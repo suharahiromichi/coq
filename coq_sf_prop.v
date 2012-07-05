@@ -184,7 +184,21 @@ Proof.
   reflexivity.
   Qed.
 
+(* 趣旨はちがうが、elimを使うなら、introは必須。 *)
 Theorem plus_one_r' : forall n : nat,
+  n + one = S n.
+Proof.
+  intros n.                                 (* introsは必須。 *)
+  elim n.
+  simpl.
+  reflexivity.
+  simpl.
+  intros n0 H.
+  rewrite H.
+  reflexivity.
+Qed.
+
+Theorem plus_one_r'' : forall n : nat,
   n + one = S n.
 Proof.
   (** apply nat_indは、
@@ -208,6 +222,23 @@ Proof.
   rewrite H.
   reflexivity.
   Qed.
+
+(* refineで証明を与える *)
+(*
+   elim n は、refine (XXX_ind (ゴール) _ _ n) とおなじ。
+   *)
+Theorem plus_one_r''' : forall n : nat,
+  n + one = S n.
+Proof.
+  intros n.
+  refine (nat_ind (fun n => n + one = S n) _ _ n).
+  simpl.
+  reflexivity.
+  simpl.
+  intros n0 H.
+  rewrite H.
+  reflexivity.
+Qed.
 
 (** 3. 帰納法の原理 *)
 (** コンストラクタ [c1] ... [cn] を持った型 [t] を定義すると、Coqは次の形の定理を生成します。
