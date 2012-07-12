@@ -201,6 +201,13 @@ Theorem hypothese_eq2 : forall m n : nat,
   trivial.                              (* auto 1、introとapply *)
 Qed.
 
+(* 等式の両辺が明らかに異なるコンストラクタである場合は、discriminate
+   を使うことで False を導き直ちに任意のゴールを証明することができる。 *)
+Theorem hypothese_eq3 : 0 = 1 -> 2 = 4.
+  intros H.
+  discriminate H.
+(* 単にdiscriminateでもよい。 *)
+Qed.
 
 (*********************)
 (* 前提に、~がある。 否定 *)
@@ -219,14 +226,31 @@ Qed.
 (*********************)
 Theorem hypothese_neq : forall n, n<>0 -> n=0 -> 1=2.
   intros n H1 H2.
-  apply H1 in H2.                       (* 前提どうし適用して、前提をFalseにする。*)
-  case H2.                              (* 前提がFalseの場合を参照 *)
+  apply H1 in H2.         (* 前提どうし適用して、前提をFalseにする。*)
+  case H2.                (* 前提がFalseの場合を参照 *)
 Qed.
 
+(* 不等式の両辺が明らかに等しくない場合。 *)
+Theorem hypothese_neq' : forall n, n<>0 -> n=0 -> 1=2.
+  congruence.
+Qed.
+
+Theorem hypothese_neq2 :
+  forall m, m <> 0 -> exists n, m = S n.
+  intros m H.
+  destruct m as [ | m' ].
+  congruence.
+  exists m'.
+  reflexivity.
+Qed.
 
 (* <>と=から矛盾を導くのではなく、
   reflexivityの逆に、(not false) <> false を証明するには、
   discriminate を使う。*)
-
+Theorem hypothese_neq3 : 2 <> 3.
+  intros H.
+  discriminate H.
+(* 単にdiscriminateでもよい。 *)
+Qed.
 
 (* END *)

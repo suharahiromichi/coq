@@ -97,7 +97,7 @@ Theorem goal_eq : 1 = 1.
   (* apply refl_equal. と同じ意味である *)
 Qed.
 
-
+(* ゴール f a = f b を a = b に変形する。 *)
 Theorem goal_eq2 : forall m n, m = n -> S m = S n.
   intros m n H.
   (* Goal Sm = Sn、前提 m=n *)
@@ -106,7 +106,6 @@ Theorem goal_eq2 : forall m n, m = n -> S m = S n.
   apply H.
 Qed.
 
-
 (* 前提が。。。、で使った方法 *)
 Theorem goal_eq2' : forall m n, m = n -> S m = S n.
   intros m n H.
@@ -114,5 +113,10 @@ Theorem goal_eq2' : forall m n, m = n -> S m = S n.
   reflexivity.
 Qed.
 
+(* ゴールが同値変形の繰り返しで導ける場合。*)
+Theorem goal_eq3 :
+  forall a b c d e, a = b + c -> a = e -> b + c = d -> d = e.
+  congruence.
+Qed.
 
 (* END *)
