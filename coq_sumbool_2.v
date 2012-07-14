@@ -8,15 +8,15 @@ Hypothesis Aeq_dec :
   forall a b : A, {a = b} + {a <> b}.
 
 Definition bool_of_sumbool :
-  forall A B:Prop, {A} + {B} -> {b : bool | if b then A else B}.
-  intros A B H.
+  forall x y:Prop, {x} + {y} -> {b : bool | if b then x else y}.
+intros x y H.
   elim H; intro; [exists true | exists false]; assumption.
 Defined.
 
 (* 標準ライブラリ List.v *)
-Inductive list (A : Type) : Type :=
-| nil : list A
-| cons : A -> list A -> list A.
+Inductive list (a : Type) : Type :=
+| nil : list a
+| cons : a -> list a -> list a.
 
 Fixpoint In (a:A) (l:list A) : Prop :=
   match l with
@@ -40,21 +40,17 @@ Proof.
   right; unfold not; intros [Hc1 | Hc2]; auto.
 Defined.
 
-(*
-proj1_sig は 常に定義されている。
-Init/Specif.v
-
-Variable P : A -> Prop.
-Definition proj1_sig' (e:sig P) :=
+(* Init/Specif.v
+   つねにRequireされているので、proj1_sigは定義済み。*)
+Definition proj1'_sig (a : Type) (P : a -> Prop) (e:sig P) :=
   match e with
     | exist a b => a
   end.
-*)
 
 (* erutuf さんの diff.v *)
 (* boolを返すin関数を定義する。 *)
 Definition in_bool (a : A)(l : list A) : bool :=
-  proj1_sig (bool_of_sumbool _ _ (in_dec Aeq_dec a l)).
+  proj1'_sig _ _ (bool_of_sumbool _ _ (in_dec Aeq_dec a l)).
 
 (* in_bool と In が、同値であることを証明する。 *)
 Lemma in_bool_impl_In :
