@@ -298,8 +298,8 @@ Inductive natlist1 : Type :=
 Definition natlist1_ind_me :
   forall P : natlist1 -> Prop,
     P nnil1 ->
-    (forall n : natlist1, P n -> forall n0 : nat, P (nsnoc1 n n0)) ->
-    forall n : natlist1, P n :=
+    (forall l : natlist1, P l -> forall n : nat, P (nsnoc1 l n)) ->
+    forall l : natlist1, P l :=
       fun P : natlist1 -> Prop => natlist1_rect P.
 
 Inductive ExSet : Type :=
