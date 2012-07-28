@@ -60,6 +60,20 @@ Inductive good_day : day -> Prop :=
 | gd_sat : good_day saturday
 | gd_sun : good_day sunday.
 
+(** [Inductive] キーワードは、「データ値の集合を定義する場合( [Type] の
+    世界)」であっても「根拠の集合を定義する場合( [Prop] の世界)」であっ
+    てもまったく同じ意味で使われます。上記の定義の意味はそれぞれ次のよ
+    うになっています:
+
+    - 最初の行は「 [good_day] は日によってインデックスされた命題である
+      こと」を宣言しています。
+    - 二行目は [gd_sat] コンストラクタを宣言しています。このコンストラ
+      クタは [good_day saturday] という主張の根拠として使えます。
+    - 三行目は [gd_sun] コンストラクタを宣言しています。このコンストラ
+      クタは [good_day sunday] という主張の根拠として使えます。
+      コンストラクタ [gd_sun] は、日曜日が良いという主張を正当化する"原
+      始的（primitive）な根拠"、つまり公理です。*)
+
 Inductive day_before : day -> day -> Prop :=
 | db_tue : day_before tuesday monday
 | db_wed : day_before wednesday tuesday
@@ -176,10 +190,11 @@ Definition one : nat := S O.
 Theorem plus_one_r : forall n : nat,
   n + one = S n.
 Proof.
-  intros.
+  intros n.                                 (* intorosはなくてもよい。 *)
   induction n.
   reflexivity.
   simpl.
+  (* ここのintrosは自動。 *)
   rewrite IHn.
   reflexivity.
   Qed.
@@ -193,7 +208,7 @@ Proof.
   simpl.
   reflexivity.
   simpl.
-  intros n0 H.
+  intros n0 H.                              (* 必要 *)
   rewrite H.
   reflexivity.
 Qed.
@@ -212,7 +227,7 @@ Proof.
      n + one = O
      forall n0 : nat, n + one = n0 -> n + one = S n0
      にわけることになってしまい、証明がたちいかなくなる。
-     induction nなら、そこをなんとかしてくれるのだろう。
+     induction nなら、そこをなんとかしてくれる（注）。
      *)
   apply nat_ind.
   simpl.
@@ -222,7 +237,10 @@ Proof.
   rewrite H.
   reflexivity.
   Qed.
-
+(** （注）[induction] タクティックはコンテキストにある変数にもゴール内
+   の量子化された変数のどちらにでも使えます。[apply] で使うためにはこの
+   結論と限量子を含んだゴールの形とぴったりと一致する必要があります*)
+  
 (* refineで証明を与える *)
 (*
    elim n は、refine (XXX_ind (ゴール) _ _ n) とおなじ。
