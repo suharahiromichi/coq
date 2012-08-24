@@ -86,6 +86,7 @@ Fixpoint double (n:nat) :=
   | S n' => S (S (double n'))
   end.
 
+
 (* ****** *)
 (* ev_ind *)
 (* ****** *)
@@ -220,6 +221,7 @@ Proof.
   apply E'.
 Qed.
 
+
 (* ********** *)
 (* MyProp_ind *)
 (* ********** *)
@@ -334,5 +336,64 @@ Definition ev_MyProp' : forall n : nat, MyProp n -> ev n :=
     (fun (n' : nat) (_ : MyProp (2 + n')) (IHE2 : ev (2 + n')) =>
       SSev_even n' IHE2)
     n H.
+
+
+(* *********** *)
+(* natlist_ind *)
+(* *********** *)
+Inductive natlist : Type :=
+  | nnil : natlist
+  | ncons : nat -> natlist -> natlist.
+Notation "x :: l" := (ncons x l) (at level 60, right associativity).
+Notation "[ ]" := nnil.
+Notation "[ x , .. , y ]" := (ncons x .. (ncons y nnil) ..).
+
+Definition natlist_ind' : forall P : natlist -> Prop,
+  P [] ->
+  (forall (n : nat) (n0 : natlist), P n0 -> P (n :: n0)) ->
+  forall n : natlist, P n :=
+    fun P : natlist -> Prop => natlist_rect P.
+
+Fixpoint app (l1 l2 : natlist) : natlist :=
+  match l1 with
+  | [] => l2
+  | h :: t => h :: (app t l2)
+  end.
+Notation "x ++ y" := (app x y) (right associativity, at level 60).
+
+Theorem app_ass : forall l1 l2 l3 : natlist,
+  (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
+Proof.
+  intros l1 l2 l3.
+  induction l1 as [| n l1'].
+  reflexivity.
+  simpl.
+  rewrite -> IHl1'.
+  reflexivity.
+Qed.
+
+Definition pp_ass : forall l1 l2 l3 : natlist, (l1 ++ l2) ++ l3 = l1 ++ l2 ++ l3 :=
+  fun l1 l2 l3 : natlist =>
+    natlist_ind' (fun l4 : natlist => (l4 ++ l2) ++ l3 = l4 ++ l2 ++ l3)
+    (eq_refl ([] ++ l2 ++ l3))
+    (fun (n : nat) (l1' : natlist)
+      (IHl1' : (l1' ++ l2) ++ l3 = l1' ++ l2 ++ l3) =>
+      eq_ind_r (fun n0 : natlist => n :: n0 = n :: l1' ++ l2 ++ l3)
+      (eq_refl (n :: l1' ++ l2 ++ l3)) IHl1')
+    l1.
+
+
+(* ******** *)
+(* list_ind *)
+(* ******** *)
+Inductive list (X : Type) : Type :=
+  | nil : list X
+  | cons : X -> list X -> list X.
+
+Definition list_ind' : forall (X : Type) (P : list X -> Prop),
+  P (nil X) ->
+  (forall (x : X) (l : list X), P l -> P (cons X x l)) ->
+  forall l : list X, P l :=
+    fun (X : Type) (P : list X -> Prop) => list_rect X P.
 
 (* END *)
