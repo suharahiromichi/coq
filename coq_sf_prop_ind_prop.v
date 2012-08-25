@@ -2,7 +2,20 @@
    Prop_J: 命題と根拠からの抜粋
    「Inductive xx : xxx -> Prop := xxxx.」の定義の例
    練習問題の回答が含まれていても、正解ではないかもしれない。
-   @suharahiromichi *)
+   不完全ながら、章末の追加練習問題も解いている。
+
+   Inductiveで宣言されるものが多相型になる場合の扱いは、このようにする
+   のが私には解りやすい。
+
+   (1) InductiveでTypeを定義す場合は、Inductive list (X : Type) : Type
+   として、コンストラクタのIdentifireに対して、Implicit Arguments cons [[X]]
+   を宣言する。要すれば同時に演算子も宣言する。
+
+   (2) (1)以外、つまりInductive以外またはType以外の場合は、
+   Inductive pal {X : Type} : list X -> Prop
+   Fixpoint length {X : Type} (l : list X) : nat
+   Lemma rev_snoc {X : Type} : forall (x : X) (l : list X)
+   のように{}を使用する。@suharahiromichi *)
 
 (** ev *)
 Inductive ev : nat -> Prop :=
@@ -15,7 +28,7 @@ Inductive MyProp : nat -> Prop :=
 | MyProp2 : forall n : nat, MyProp n -> MyProp (4 + n)
 | MyProp3 : forall n : nat, MyProp (2 + n) -> MyProp n.
 
-Lemma ev_plus4 : forall n,
+Theorem ev_plus4 : forall n,
   ev n -> ev (4 + n).
 Proof.
   intros.
@@ -25,7 +38,7 @@ Proof.
   apply H.                                  (* Goal : n *)
 Qed.
 
-Lemma SSev_even : forall n,
+Theorem SSev_even : forall n,
   ev (S (S n)) -> ev n.
 Proof.
   intros n E.
@@ -50,7 +63,7 @@ Proof.
   apply IHE2.
 Qed.
 
-Lemma MyProp_0 : MyProp 0.
+Theorem MyProp_0 : MyProp 0.
 Proof.
   SearchAbout MyProp.
   apply MyProp3.
@@ -60,7 +73,7 @@ Proof.
   apply MyProp1.
 Qed.
 
-Lemma MyProp_plustwo : forall n : nat,
+Theorem MyProp_plustwo : forall n : nat,
   MyProp n -> MyProp (S (S n)).
 Proof.
   intros n H.
@@ -96,18 +109,20 @@ Proof.
 Qed.
 
 (** p *)
-Inductive tree (X:Type) : Type :=
+Inductive tree (X : Type) : Type :=
 | leaf : X -> tree X
 | node : tree X -> tree X -> tree X.
+Implicit Arguments leaf [[X]].
+Implicit Arguments node [[X]].
 
-Inductive p : (tree nat) -> nat -> Prop :=
-| c1 : forall n, p (leaf _ n) 1
+Inductive p {X : Type} : tree X -> nat -> Prop :=
+| c1 : forall n, p (leaf n) 1
 | c2 : forall t1 t2 n1 n2,
-  p t1 n1 -> p t2 n2 -> p (node _ t1 t2) (n1 + n2)
+  p t1 n1 -> p t2 n2 -> p (node t1 t2) (n1 + n2)
 | c3 : forall t n, p t n -> p t (S n).
 
 (* list *)
-Inductive list (X:Type) : Type :=
+Inductive list (X : Type) : Type :=
 | nil : list X
 | cons : X -> list X -> list X.
 
@@ -116,8 +131,6 @@ Implicit Arguments cons [[X]].
 Notation "x :: l" := (cons x l) (at level 60, right associativity).
 Notation "[ ]" := nil.
 Notation "[ x , .. , y ]" := (cons x .. (cons y nil) ..).
-Notation "x ++ y" := (app x y)
-  (at level 60, right associativity).
 
 Fixpoint length {X : Type} (l : list X) : nat :=
   match l with
@@ -130,9 +143,10 @@ Fixpoint app {X : Type} (l1 l2 : list X) : (list X) :=
     | nil      => l2
     | cons h t => cons h (app t l2)
   end.
+Notation "x ++ y" := (app x y) (at level 60, right associativity).
 
 Lemma app_ass : forall (X : Type) (l1 l2 l3 : list X),
-  app (app l1 l2) l3 = app l1 (app l2 l3).
+  (l1 ++ l2) ++ l3 = l1 ++ (l2 ++ l3).
 Proof.
   intros X l1 l2 l3.
   induction l1 as [ | n l1'].
@@ -151,7 +165,7 @@ Fixpoint snoc {X : Type} (l : list X) (v : X) : (list X) :=
   end.
 
 Lemma snoc_append : forall (X : Type) (l : list X) (x : X),
-  snoc l x = app l [x].
+  snoc l x = l ++ [x].
 Proof.
   intros X l x.
   induction l.
@@ -165,7 +179,7 @@ Qed.
 
 Lemma snoc_with_append : forall X : Type,
   forall l1 l2 : list X, forall v : X,
-    snoc (app l1 l2) v = app l1 (snoc l2 v).
+    snoc (l1 ++ l2) v = l1 ++ (snoc l2 v).
 Proof.
   intros X l1 l2 x.
   rewrite snoc_append.
@@ -179,14 +193,14 @@ Fixpoint rev {X : Type} (l : list X) : list X :=
   end.
 
 (** pal *)
-Inductive pal : list nat -> Prop :=
+Inductive pal {X : Type} : list X -> Prop :=
 | pal0 : pal []
-| pal1 : forall (x : nat), pal [x]
-| pal2 : forall (x : nat) (l : list nat),
+| pal1 : forall (x : X), pal [x]
+| pal2 : forall (x : X) (l : list X),
   pal l -> pal (x :: (snoc l x)).
 
-Theorem pal_app_rev : forall (l : list nat),
-  pal (app l (rev l)).
+Theorem pal_app_rev {X : Type} : forall (l : list X),
+  pal (l ++ (rev l)).
 Proof.
   intros l.
   induction l.
@@ -202,7 +216,7 @@ Proof.
   apply IHl.
 Qed.
 
-Lemma rev_snoc : forall (x : nat) (l : list nat),
+Lemma rev_snoc {X : Type} : forall (x : X) (l : list X),
   x :: rev l = rev (snoc l x).
 Proof.
   intros x l.
@@ -216,7 +230,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma snoc_rev : forall (x : nat) (l : list nat),
+Lemma snoc_rev {X : Type} : forall (x : X) (l : list X),
   snoc (rev l) x = rev (x :: l).
 Proof.
   intros x l.
@@ -227,7 +241,7 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma snoc_xlx : forall (x : nat)  (l : list nat),
+Lemma snoc_xlx {X : Type} : forall (x : X)  (l : list X),
   x :: (snoc l x) = snoc (x :: l) x.
 Proof.
   intros x l.
@@ -238,7 +252,8 @@ Proof.
   reflexivity.
 Qed.
 
-Theorem pal_eq_rev : forall l, pal l -> l = rev l.
+Theorem pal_eq_rev {X : Type} : forall (l : list X),
+  pal l -> l = rev l.
 Proof.
   intros l H.
   induction H.
@@ -258,7 +273,8 @@ Proof.
   reflexivity.
 Qed.
 
-Theorem eq_rev_pal : forall l, l = rev l -> pal l.
+Theorem eq_rev_pal {X : Type} : forall (l : list X),
+  l = rev l -> pal l.
 Proof.
   intros l E.
   rewrite E.
@@ -272,14 +288,14 @@ Proof.
 Abort.                                      (* XXXXX *)
 
 (** subseq *)      
-Inductive subseq : list nat -> list nat -> Prop :=
+Inductive subseq {X : Type} : list X -> list X -> Prop :=
 | nseq0 : subseq [] []
-| nseq1 : forall (n : nat) (l1 : list nat) (l2 : list nat),
+| nseq1 : forall (n : X) (l1 : list X) (l2 : list X),
   subseq l1 l2 -> subseq (n :: l1) (n :: l2)
-| nseq2 : forall (n : nat) (l1 : list nat) (l2 : list nat),
+| nseq2 : forall (n : X) (l1 : list X) (l2 : list X),
   subseq l1 l2 -> subseq       l1  (n :: l2).
 
-Theorem subseq_sym : forall l : list nat, subseq l l.
+Theorem subseq_sym {X : Type} : forall (l : list X), subseq l l.
 Proof.
   intros.
   induction l.
@@ -288,8 +304,8 @@ Proof.
   apply IHl.
 Qed.
 
-Theorem subseq_app :
-  forall l1 l2 l3 : list nat, subseq l1 l2 -> subseq l1 (app l2 l3).
+Theorem subseq_app {X : Type} : forall (l1 l2 l3 : list X),
+  subseq l1 l2 -> subseq l1 (l2 ++ l3).
 Proof.
   intros l1 l2 l3 H.
   induction H.
@@ -311,8 +327,8 @@ Proof.
   apply IHsubseq.
 Qed.
 
-Theorem subseq_trs :                        (* XXXXXX *)
-  forall l1 l2 l3 : list nat, subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
+Theorem subseq_trs {X : Type} : forall (l1 l2 l3 : list X), (* XXXXXX *)
+  subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
 Proof.
   intros l1 l2 l3.
 Abort.
