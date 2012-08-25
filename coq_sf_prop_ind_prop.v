@@ -15,7 +15,7 @@ Inductive MyProp : nat -> Prop :=
 | MyProp2 : forall n : nat, MyProp n -> MyProp (4 + n)
 | MyProp3 : forall n : nat, MyProp (2 + n) -> MyProp n.
 
-Theorem ev_plus4 : forall n,
+Lemma ev_plus4 : forall n,
   ev n -> ev (4 + n).
 Proof.
   intros.
@@ -25,7 +25,7 @@ Proof.
   apply H.                                  (* Goal : n *)
 Qed.
 
-Theorem SSev_even : forall n,
+Lemma SSev_even : forall n,
   ev (S (S n)) -> ev n.
 Proof.
   intros n E.
@@ -50,7 +50,7 @@ Proof.
   apply IHE2.
 Qed.
 
-Theorem MyProp_0 : MyProp 0.
+Lemma MyProp_0 : MyProp 0.
 Proof.
   SearchAbout MyProp.
   apply MyProp3.
@@ -60,7 +60,7 @@ Proof.
   apply MyProp1.
 Qed.
 
-Theorem MyProp_plustwo : forall n : nat,
+Lemma MyProp_plustwo : forall n : nat,
   MyProp n -> MyProp (S (S n)).
 Proof.
   intros n H.
