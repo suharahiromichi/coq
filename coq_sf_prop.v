@@ -159,23 +159,40 @@ Definition okd_before2_valid' : okd_before2 :=
 Inductive nat : Type :=
 | O : nat
 | S : nat -> nat.
+
 Definition nat_ind_me :
   forall P : nat -> Prop,
     P O ->                                  (* O : nat *)
     (forall n : nat, P n -> P (S n))  ->    (* S : nat -> nat *)
-    forall n : nat, P n :=
-      fun P : nat -> Prop => nat_rect P.
-(** 記載はないが、:= 以降をつけると、実際にapplyできるようになる。
-   nat_rect の定義はInductiveの定義による。内容は、Printで確認できる。
-   *)
+    forall n : nat, P n.
+Proof.
+  (* fun P : nat -> Prop => nat_rect P *)
+  intros P H H0 n.
+  apply nat_rect.
+  apply H.
+  apply H0.
+Defined.
+Print nat_ind.
 Print nat_rect.
+Print nat_ind_me.
+(** テキストには記載はないが、上記のように証明を付けることで、nat_indの
+   中身を定義をすることができる。
+   
+   apply nat_rect の代わりに induction を使っても証明はきるが、それは、
+   nat_indを使うことになるので、意味がないわけでだ。
+   *)
 
 Inductive False' : Prop := .
 Definition False_ind_me :
   forall P : Prop,
     False' ->                               (* 存在しないコンストラクタ *)
-    P :=
-    fun P : Prop => False'_rect P.
+    P.
+Proof.
+  intros P H.
+  case H.
+Defined.
+Print False_ind.
+Print False_ind_me.
 
 Fixpoint plus (n : nat) (m : nat) : nat :=
   match n with
@@ -281,54 +298,89 @@ Qed.
 Inductive yesno : Type :=
 | yes : yesno
 | no : yesno.
+
+(* 帰納的ではない型については、t_rectなしでも、t_indが定義できる。 *)
 Definition yesno_ind_me :
   forall P : yesno -> Prop,
     P yes  ->
     P no  ->
-    forall y : yesno, P y :=
-      fun P : yesno -> Prop => yesno_rect P.
+    forall y : yesno, P y.
+Proof.
+  intros P Hyes Hno y.
+  case y.
+  apply Hyes.
+  apply Hno.
+Defined.
 
 Inductive rgb : Type :=
 | red : rgb
 | green : rgb
 | blue : rgb.
+
 Definition rgb_ind_me :
   forall P : rgb -> Prop,
     P red ->
       P green ->
       P blue ->
-      forall r : rgb, P r :=
-        fun P : rgb -> Prop => rgb_rect P.
+      forall r : rgb, P r.
+Proof.
+  intros P Hr Hg Hb r.
+  case r.
+  apply Hr.
+  apply Hg.
+  apply Hb.
+Defined.
 
 Inductive natlist : Type :=
 | nnil : natlist
 | ncons : nat -> natlist -> natlist.
+
 Definition natlist_ind_me :
   forall P : natlist -> Prop,
     P nnil  ->
     (forall (n : nat) (l : natlist), P l -> P (ncons n l)) ->
-    forall n : natlist, P n :=
-      fun P : natlist -> Prop => natlist_rect P.
+    forall n : natlist, P n.
+Proof.
+  (* fun P : natlist -> Prop => natlist_rect P *)
+  intros P H H0 n.
+  apply natlist_rect.
+  apply H.
+  apply H0.
+Defined.
 
 Inductive natlist1 : Type :=
   | nnil1 : natlist1
   | nsnoc1 : natlist1 -> nat -> natlist1.
+
 Definition natlist1_ind_me :
   forall P : natlist1 -> Prop,
     P nnil1 ->
     (forall l : natlist1, P l -> forall n : nat, P (nsnoc1 l n)) ->
-    forall l : natlist1, P l :=
-      fun P : natlist1 -> Prop => natlist1_rect P.
+    forall l : natlist1, P l.
+Proof.
+  (* fun P : natlist1 -> Prop => natlist1_rect P *)
+  intros P H H0 n.
+  apply natlist1_rect.
+  apply H.
+  apply H0.
+Defined.
 
 Inductive ExSet : Type :=
   | con1 : bool -> ExSet
   | con2 : nat -> ExSet -> ExSet.
+
 Definition ExSet_ind_me :
   forall P : ExSet -> Prop,
     (forall b : bool, P (con1 b)) ->
     (forall (n : nat) (e : ExSet), P e -> P (con2 n e)) ->
-    forall e : ExSet, P e :=
-      fun P : ExSet -> Prop => ExSet_rect P.
+    forall e : ExSet, P e.
+Proof.
+  (* fun P : ExSet -> Prop => ExSet_rect P *)
+  intros P H H0 e.
+  apply ExSet_rect.
+  apply H.
+  apply H0.
+Defined.
 
 (** 多相的なデータ型
    定義全体が集合 [X] によってパラメータ化されていることです。つまり、
@@ -345,18 +397,31 @@ Definition list_ind_me :
   forall (X : Type) (P : list X -> Prop),
     P (nil X) ->
     (forall (x : X) (l : list X), P l -> P (cons X x l)) ->
-    forall l : list X, P l :=
-      fun X : Type => fun P : list X -> Prop => list_rect X P.
+    forall l : list X, P l.
+Proof.
+  (* fun X : Type => fun P : list X -> Prop => list_rect X P *)
+  intros X P H H0 l.
+  apply list_rect.
+  apply H.
+  apply H0.
+Defined.
 
 Inductive tree (X:Type) : Type :=
 | leaf : X -> tree X
 | node : tree X -> tree X -> tree X.
+
 Definition tree_ind_me :
   forall (X : Type) (P : tree X -> Prop),
     (forall x : X, P (leaf X x)) ->
     (forall t1 : tree X, P t1 -> (forall t2 : tree X, P t2 -> P (node X t1 t2))) ->
-    (forall t : tree X, P t) :=
-    fun X : Type => fun P : tree X -> Prop => tree_rect X P.
+    (forall t : tree X, P t).
+Proof.
+(* fun X : Type => fun P : tree X -> Prop => tree_rect X P *)
+  intros X P H H0 t.
+  apply tree_rect.
+  apply H.
+  apply H0.
+Defined.
 
 Inductive mytype (X : Type) : Type :=
 | constr1 : X -> mytype X
@@ -367,8 +432,15 @@ Definition mytype_ind_me :
     (forall x : X, P (constr1 X x)) ->
     (forall n : nat, P (constr2 X n)) ->
     (forall m : mytype X, P m -> forall n : nat, P (constr3 X m n)) ->
-    forall m : mytype X, P m :=
-      fun X : Type => fun P : mytype X -> Prop => mytype_rect X P.
+    forall m : mytype X, P m.
+Proof.
+(* fun X : Type => fun P : mytype X -> Prop => mytype_rect X P *)
+  intros X P H H0 H1 m.
+  apply mytype_rect.
+  apply H.
+  apply H0.
+  apply H1.
+Defined.
 
 Inductive foo (X Y : Type) : Type :=
 | bar : X -> foo X Y
@@ -379,18 +451,32 @@ Definition foo_ind_me :
     (forall x : X, P (bar X Y x)) ->        (* bar *)
     (forall y : Y, P (baz X Y y)) ->        (* baz *)
     (forall f1 : nat -> foo X Y, (forall n : nat, P (f1 n)) -> P (quux X Y f1)) -> (* quux *)
-    forall f2 : foo X Y, P f2 :=
-      fun X Y : Type => fun P : foo X Y -> Prop => foo_rect X Y P.
+    forall f2 : foo X Y, P f2.
+Proof.
+(* fun X Y : Type => fun P : foo X Y -> Prop => foo_rect X Y P *)
+  intros X Y P H H0 H1 f2.
+  apply foo_rect.
+  apply H.
+  apply H0.
+  apply H1.
+Defined.
 
 Inductive foo' (X : Type) : Type :=
   | C1 : list X -> foo' X -> foo' X
   | C2 : foo' X.
+
 Definition foo'_ind_me :
   forall (X : Type) (P : foo' X -> Prop),
     (forall (l : list X) (f : foo' X), P f -> P (C1 X l f)) -> (* C1 *)
     P (C2 X) ->                                                (* C2 *)
-    forall f : foo' X, P f :=
-      fun X : Type => fun P : foo' X -> Prop => foo'_rect X P.
+    forall f : foo' X, P f.
+Proof.
+(* fun X : Type => fun P : foo' X -> Prop => foo'_rect X P *)
+  intros X P H H0 f.
+  apply foo'_rect.
+  apply H.
+  apply H0.
+Defined.
 
 (** 4. 根拠に対する帰納法の推測 *)
 
