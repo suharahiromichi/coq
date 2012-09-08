@@ -96,7 +96,7 @@ Definition hs (x : mfd) : panel :=
 Definition rs (x m : mfd) : panel :=
   match (eq_dec x m) with
     | left _ => Hud                         (* HUD *) (* MFDは選択解除 *)
-    | right _ => xs x m                     (* MFD + MFD *)
+    | right _ => Huds x                     (* HUD + MFD *)
   end.
 
 (* MFD : MFDひとつだけ *)
