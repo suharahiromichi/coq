@@ -22,11 +22,51 @@ Inductive ev : nat -> Prop :=
 | ev_0 : ev O
 | ev_SS : forall n : nat, ev n -> ev (S (S n)).
 
+Definition ev_ind_me : forall P : nat -> Prop,
+  P 0 ->
+  (forall n : nat, ev n -> P n -> P (S (S n))) ->
+  forall n : nat, ev n -> P n.
+Proof.
+  intros P f f0.
+  fix F 2.                                  (* ev n による帰納！ *)
+  intros n e.
+  destruct e.
+  apply f.
+  apply f0.
+  apply e.
+  apply F.
+  apply e.
+Qed.
+Print ev_ind.
+Print ev_ind_me.
+  
 (** MyProp *)
 Inductive MyProp : nat -> Prop :=
 | MyProp1 : MyProp 4
 | MyProp2 : forall n : nat, MyProp n -> MyProp (4 + n)
 | MyProp3 : forall n : nat, MyProp (2 + n) -> MyProp n.
+
+Definition MyProp_ind_me : forall P : nat -> Prop,
+  P 4 ->
+  (forall n : nat, MyProp n -> P n -> P (4 + n)) ->
+  (forall n : nat, MyProp (2 + n) -> P (2 + n) -> P n) ->
+  forall n : nat, MyProp n -> P n.
+Proof.
+  intros P f f0 f1.
+  fix F 2.                                  (* MyProp nによる帰納 *)
+  intros n m.                               (* m : MyProp n *)
+  destruct m.
+  apply f.
+  apply f0.
+  apply m.
+  apply F.
+  apply m.
+
+  apply f1.
+  apply m.
+  apply F.
+  apply m.
+Qed.
 
 Theorem ev_plus4 : forall n,
   ev n -> ev (4 + n).
