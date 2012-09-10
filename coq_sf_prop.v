@@ -160,26 +160,40 @@ Inductive nat : Type :=
 | O : nat
 | S : nat -> nat.
 
-Definition nat_ind_me :
-  forall P : nat -> Prop,
+Definition nat_rect_me : forall P : nat -> Type,
+  P O ->
+  (forall n : nat, P n -> P (S n)) ->
+  forall n : nat, P n.
+Proof.
+  intros P f f0.
+  (* Fは任意な名前。1はゴールの最初の前提 n を示す。*)
+  fix F 1.                                  (* nによる帰納 *)
+  intros n.
+  destruct n.
+  apply f.
+  apply f0.
+  apply F.
+Qed.
+
+Definition nat_ind_me : forall P : nat -> Prop,
     P O ->                                  (* O : nat *)
     (forall n : nat, P n -> P (S n))  ->    (* S : nat -> nat *)
     forall n : nat, P n.
 Proof.
   (* fun P : nat -> Prop => nat_rect P *)
   intros P H H0 n.
-  apply nat_rect.
+  apply nat_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 Print nat_ind.
-Print nat_rect.
 Print nat_ind_me.
+Print nat_rect.
+Print nat_rect_me.
 (** テキストには記載はないが、上記のように証明を付けることで、nat_indの
    中身を定義をすることができる。
-   
-   apply nat_rect の代わりに induction を使っても証明はきるが、それは、
-   nat_indを使うことになるので、意味がないわけでだ。
+   ここでも、apply nat_rect の代わりに induction を使っても証明はきるが、それは、
+   nat_indを使うことになるので、意味がないわけだ。
    *)
 
 Inductive False' : Prop := .
@@ -190,7 +204,7 @@ Definition False_ind_me :
 Proof.
   intros P H.
   case H.
-Defined.
+Qed.
 Print False_ind.
 Print False_ind_me.
 
@@ -310,7 +324,7 @@ Proof.
   case y.
   apply Hyes.
   apply Hno.
-Defined.
+Qed.
 
 Inductive rgb : Type :=
 | red : rgb
@@ -329,58 +343,98 @@ Proof.
   apply Hr.
   apply Hg.
   apply Hb.
-Defined.
+Qed.
 
 Inductive natlist : Type :=
 | nnil : natlist
 | ncons : nat -> natlist -> natlist.
 
-Definition natlist_ind_me :
-  forall P : natlist -> Prop,
+Print natlist_rect.
+Definition natlist_rect_me : forall P : natlist -> Type,
+  P nnil ->
+  (forall (n : nat) (n0 : natlist), P n0 -> P (ncons n n0)) ->
+  forall n : natlist, P n.
+Proof.
+  intros P f f0.
+  fix F 1.
+  intro n.
+  destruct n.
+  apply f.
+  apply f0.
+  apply F.
+Qed.
+
+Definition natlist_ind_me : forall P : natlist -> Prop,
     P nnil  ->
     (forall (n : nat) (l : natlist), P l -> P (ncons n l)) ->
     forall n : natlist, P n.
 Proof.
   (* fun P : natlist -> Prop => natlist_rect P *)
   intros P H H0 n.
-  apply natlist_rect.
+  apply natlist_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 
 Inductive natlist1 : Type :=
   | nnil1 : natlist1
   | nsnoc1 : natlist1 -> nat -> natlist1.
 
-Definition natlist1_ind_me :
-  forall P : natlist1 -> Prop,
-    P nnil1 ->
-    (forall l : natlist1, P l -> forall n : nat, P (nsnoc1 l n)) ->
-    forall l : natlist1, P l.
+Definition natlist1_rect_me : forall P : natlist1 -> Type,
+  P nnil1 ->
+  (forall l : natlist1, P l -> forall n : nat, P (nsnoc1 l n)) ->
+  forall l : natlist1, P l.
+Proof.
+  intros P f f0.
+  fix F 1.
+  intro l.
+  destruct l.
+  apply f.
+  apply f0.
+  apply F.
+Qed.
+
+Definition natlist1_ind_me : forall P : natlist1 -> Prop,
+  P nnil1 ->
+  (forall l : natlist1, P l -> forall n : nat, P (nsnoc1 l n)) ->
+  forall l : natlist1, P l.
 Proof.
   (* fun P : natlist1 -> Prop => natlist1_rect P *)
   intros P H H0 n.
-  apply natlist1_rect.
+  apply natlist1_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 
 Inductive ExSet : Type :=
   | con1 : bool -> ExSet
   | con2 : nat -> ExSet -> ExSet.
 
-Definition ExSet_ind_me :
-  forall P : ExSet -> Prop,
+Definition ExSet_rect_me : forall P : ExSet -> Type,
+    (forall b : bool, P (con1 b)) ->
+    (forall (n : nat) (e : ExSet), P e -> P (con2 n e)) ->
+    forall e : ExSet, P e.
+Proof.
+  intros P f f0.
+  fix F 1.                                  (* eによる帰納 *)
+  intro e.
+  destruct e.
+  apply f.
+  apply f0.
+  apply F.
+Qed.  
+
+Definition ExSet_ind_me : forall P : ExSet -> Prop,
     (forall b : bool, P (con1 b)) ->
     (forall (n : nat) (e : ExSet), P e -> P (con2 n e)) ->
     forall e : ExSet, P e.
 Proof.
   (* fun P : ExSet -> Prop => ExSet_rect P *)
   intros P H H0 e.
-  apply ExSet_rect.
+  apply ExSet_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 
 (** 多相的なデータ型
    定義全体が集合 [X] によってパラメータ化されていることです。つまり、
@@ -390,25 +444,57 @@ Defined.
 Inductive list (X:Type) : Type :=
 | nil : list X
 | cons : X -> list X -> list X.
-(** コンストラクタに対しては、毎回明示的に[X]（パラメータ化された型）を与える必要がある。
-   タクテッィクから使う場合は、Implicit Arguments で省略できる(see. sfja/Poly_J.v)。
-   しかし、list_indの定義としては、省略されるわけではない。*)
-Definition list_ind_me :
-  forall (X : Type) (P : list X -> Prop),
+
+(** コンストラクタに対しては、毎回明示的に[X]（パラメータ化された型）を
+   与える必要がある。タクテッィクから使う場合は、Implicit Arguments で
+   省略できる(see. sfja/Poly_J.v)。しかし、list_indの定義としては、省略
+   されるわけではない。*)
+
+Definition list_rect_me :  forall (X : Type) (P : list X -> Type),
+    P (nil X) ->
+    (forall (x : X) (l : list X), P l -> P (cons X x l)) ->
+    forall l : list X, P l.
+Proof.
+  intros X P f f0.
+  fix F 1.                                  (* lによる帰納 *)
+  intro l.
+  destruct l.
+  apply f.
+  apply f0.
+  apply F.
+Qed.
+
+Definition list_ind_me : forall (X : Type) (P : list X -> Prop),
     P (nil X) ->
     (forall (x : X) (l : list X), P l -> P (cons X x l)) ->
     forall l : list X, P l.
 Proof.
   (* fun X : Type => fun P : list X -> Prop => list_rect X P *)
   intros X P H H0 l.
-  apply list_rect.
+  apply list_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 
 Inductive tree (X:Type) : Type :=
 | leaf : X -> tree X
 | node : tree X -> tree X -> tree X.
+
+Definition tree_rect_me :
+  forall (X : Type) (P : tree X -> Type),
+    (forall x : X, P (leaf X x)) ->
+    (forall t1 : tree X, P t1 -> (forall t2 : tree X, P t2 -> P (node X t1 t2))) ->
+    (forall t : tree X, P t).
+Proof.
+  intros X P f f0.
+  fix F 1.                                  (* tによる帰納 *)
+  intros t.
+  destruct t.
+  apply f.
+  apply f0.
+  apply F.
+  apply F.
+Qed.
 
 Definition tree_ind_me :
   forall (X : Type) (P : tree X -> Prop),
@@ -418,17 +504,33 @@ Definition tree_ind_me :
 Proof.
 (* fun X : Type => fun P : tree X -> Prop => tree_rect X P *)
   intros X P H H0 t.
-  apply tree_rect.
+  apply tree_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 
 Inductive mytype (X : Type) : Type :=
 | constr1 : X -> mytype X
 | constr2 : nat -> mytype X
 | constr3 : mytype X -> nat -> mytype X.
-Definition mytype_ind_me :
-  forall (X : Type) (P : mytype X -> Prop),
+
+Definition mytype_rect_me : forall (X : Type) (P : mytype X -> Type),
+    (forall x : X, P (constr1 X x)) ->
+    (forall n : nat, P (constr2 X n)) ->
+    (forall m : mytype X, P m -> forall n : nat, P (constr3 X m n)) ->
+    forall m : mytype X, P m.
+Proof.
+  intros X P f f0 f1.
+  fix F 1.                                  (* mによる帰納 *)
+  intro m.
+  destruct m.
+  apply f.
+  apply f0.
+  apply f1.
+  apply F.
+Qed.
+
+Definition mytype_ind_me : forall (X : Type) (P : mytype X -> Prop),
     (forall x : X, P (constr1 X x)) ->
     (forall n : nat, P (constr2 X n)) ->
     (forall m : mytype X, P m -> forall n : nat, P (constr3 X m n)) ->
@@ -436,47 +538,79 @@ Definition mytype_ind_me :
 Proof.
 (* fun X : Type => fun P : mytype X -> Prop => mytype_rect X P *)
   intros X P H H0 H1 m.
-  apply mytype_rect.
+  apply mytype_rect_me.
   apply H.
   apply H0.
   apply H1.
-Defined.
+Qed.
 
 Inductive foo (X Y : Type) : Type :=
 | bar : X -> foo X Y
 | baz : Y -> foo X Y
 | quux : (nat -> foo X Y) -> foo X Y.
-Definition foo_ind_me :
-  forall (X Y : Type) (P : foo X Y -> Prop),
+
+Definition foo_rect_me : forall (X Y : Type) (P : foo X Y -> Type),
     (forall x : X, P (bar X Y x)) ->        (* bar *)
     (forall y : Y, P (baz X Y y)) ->        (* baz *)
-    (forall f1 : nat -> foo X Y, (forall n : nat, P (f1 n)) -> P (quux X Y f1)) -> (* quux *)
+    (forall f1 : nat -> foo X Y, (forall n : nat, P (f1 n)) ->
+      P (quux X Y f1)) ->                   (* quux *)
+    forall f2 : foo X Y, P f2.
+Proof.
+  intros X Y P f f0 f1.
+  fix F 1.                                  (* f2による帰納 *)
+  intro f2.
+  destruct f2.
+  apply f.
+  apply f0.
+  apply f1.
+  intro n.                                  (* 必要 *)
+  apply F.
+Qed.
+
+Definition foo_ind_me : forall (X Y : Type) (P : foo X Y -> Prop),
+    (forall x : X, P (bar X Y x)) ->        (* bar *)
+    (forall y : Y, P (baz X Y y)) ->        (* baz *)
+    (forall f1 : nat -> foo X Y, (forall n : nat, P (f1 n)) ->
+      P (quux X Y f1)) ->                   (* quux *)
     forall f2 : foo X Y, P f2.
 Proof.
 (* fun X Y : Type => fun P : foo X Y -> Prop => foo_rect X Y P *)
   intros X Y P H H0 H1 f2.
-  apply foo_rect.
+  apply foo_rect_me.
   apply H.
   apply H0.
   apply H1.
-Defined.
+Qed.
 
 Inductive foo' (X : Type) : Type :=
   | C1 : list X -> foo' X -> foo' X
   | C2 : foo' X.
 
-Definition foo'_ind_me :
-  forall (X : Type) (P : foo' X -> Prop),
-    (forall (l : list X) (f : foo' X), P f -> P (C1 X l f)) -> (* C1 *)
-    P (C2 X) ->                                                (* C2 *)
-    forall f : foo' X, P f.
+Definition foo'_rect_me : forall (X : Type) (P : foo' X -> Type),
+  (forall (l : list X) (f : foo' X), P f -> P (C1 X l f)) -> (* C1 *)
+  P (C2 X) ->                                                (* C2 *)
+  forall f : foo' X, P f.
+Proof.
+  intros X P f f0.
+  fix F 1.                                  (* f1による帰納 *)
+  intro f1.
+  destruct f1.
+  apply f.
+  apply F.
+  apply f0.
+Qed.
+
+Definition foo'_ind_me : forall (X : Type) (P : foo' X -> Prop),
+  (forall (l : list X) (f : foo' X), P f -> P (C1 X l f)) -> (* C1 *)
+  P (C2 X) ->                                                (* C2 *)
+  forall f : foo' X, P f.
 Proof.
 (* fun X : Type => fun P : foo' X -> Prop => foo'_rect X P *)
   intros X P H H0 f.
-  apply foo'_rect.
+  apply foo'_rect_me.
   apply H.
   apply H0.
-Defined.
+Qed.
 
 (** 4. 根拠に対する帰納法の推測 *)
 
