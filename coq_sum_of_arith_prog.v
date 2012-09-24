@@ -11,7 +11,7 @@
    0以上の自然数と、その足し算と掛け算を定義する。
    ***************************************************************)
 Inductive nat : Type :=
-  | O : nat
+  | O : nat                                 (* Oは0 *)
   | S : nat -> nat.                         (* Sは後者関数 *)
 
 Fixpoint plus (n : nat) (m : nat) : nat :=
@@ -30,27 +30,26 @@ Notation "x * y" := (mult x y)  (at level 40, left associativity) : nat_scope.
 (* 自然数の定義、おわり *)
 
 (*****************************************************************
-   等差数列の和の（帰納的、繰り返し的）定義
+   等差数列の和の帰納的定義
    Sum(0) = 0
-   Sum(n + 1) = 1 + Sum(n)
+   Sum(n + 1) = Sum(n) + (n + 1)
 
    実際は2倍のほうを使う。
    Sum2(0) = 0
-   Sum2(n + 1) = 2 + Sum2(n)
+   Sum2(n + 1) = Sum2(n) + 2*(n + 1)
    ***************************************************************)
-(* issum n s は、0からnまでの（等差数列）の総和がsであることを示す。 *)
+(* issum n s は、0からnまでの（等差数列の）総和がsであることを示す。 *)
 Inductive issum : nat -> nat -> Prop :=
 | Sum_0 : issum O O                         (* 0までの総和は0 *)
 | Sum_N : 
-  forall (n s : nat),
-    issum n s -> issum (S n) (S n + s).     (* nまでの総和が *)
+  forall (n s : nat), issum n s ->          (* nまでの総和がsなら、*)
+    issum (S n) (S n + s).                  (* n+1までの総和は(n+1)+s *)
 
-(* issum2 n s は、0からnまでの（等差数列）の総和の2倍がsであることを示す。 *)
+(* issum2 n s は、0からnまでの（等差数列の）総和の2倍がsであることを示す。 *)
 Inductive issum2 : nat -> nat -> Prop :=
-| Sum2_0 : issum2 O O                       (* 0までの総和は0 *)
-| Sum2_N : 
-  forall (n s : nat),
-    issum2 n s -> issum2 (S n) (S n + S n + s). (* nまでの総和が *)
+| Sum2_0 : issum2 O O
+| Sum2_N :
+  forall (n s : nat), issum2 n s -> issum2 (S n) (S n + S n + s).
 (* 等差数列の和の定義、終わり *)
 
 (*****************************************************************
@@ -135,15 +134,16 @@ Proof.
   (* nについての帰納法をおこなう。*)
   induction n as [| n'].
 
-  (* n = 0 のとき *)
-  simpl.
-  apply Sum2_0.
+  (* n = 0 を証明する。 *)
+  (* issum2 O (O * S O) *)
+  simpl.                              (* β簡約する。 *)
+  apply Sum2_0.                       (* 帰納的定義のSum2_0と同じ。 *)
 
-  (* n = S n' *)
-  rewrite <- mult_develop.
-  Check Sum2_N.
-  apply Sum2_N.
-  apply IHn'.
+  (* n = n' が成立するとして、n = S n' を証明する。 *)
+  (* issum2 n' (n' * S n') ならば、issum2 (S n') (S n' * S (S n')) *)
+  rewrite <- mult_develop.  (* 足し算と掛け算の変形をする。 *)
+  apply Sum2_N.             (* 帰納的定義のSum2_Nを使って変形する。 *)
+  apply IHn'.               (* 帰納法の仮定とおなじ。 *)
 Qed.
 
 (* [] *)
