@@ -318,5 +318,104 @@ Qed.
    等式の書き換えのほうが解りやすいでしょうか。
    サブゴールを証明するためのrewriteを簡潔に書くのは次のステップです。
    *)
+(** [] *)
 
+(*  **** Exercise: 4 stars (palindromes) *)
+(** **** 練習問題: ★★★★ (palindromes) *)
+
+(** palindrome（回文）は、最初から読んでも逆から読んでも同じになるよう
+    なシーケンスです。
+
+    - 以下を証明しなさい。
+[[ forall l, pal (l ++ rev l). ]]
+    - 以下を証明しなさい。
+[[ forall l, pal l -> l = rev l. ]]
+*)
+
+Inductive pal : list nat -> Prop :=
+| pal0 : pal []
+| pal1 : forall (x : nat), pal [x]
+| pal2 : forall (x : nat) (l : list nat),
+  pal l -> pal (x :: (snoc l x)).
+
+Theorem pal_app_rev : forall l, pal (l ++ rev l).
+Proof.
+  intros l.
+  induction l.
+  (* pal ([] ++ rev []) *)
+  simpl.
+  apply pal0.
+  (* pal ((x :: l) ++ rev (x :: l)) *)
+  simpl.
+  SearchAbout list.
+  Check snoc_with_append.
+  rewrite <- snoc_with_append.
+  apply pal2.
+  apply IHl.
+Qed.
+
+Fixpoint rev (l : list nat) : list nat :=
+  match l with
+    | []    => []
+    | h :: t => snoc (rev t) h
+  end.
+
+Lemma rev_snoc : forall x l, x :: rev l = rev (snoc l x).
+Proof.
+  intros x l.
+  induction l.
+  simpl.  
+  reflexivity.
+
+  simpl.
+  rewrite <- IHl.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma snoc_rev : forall x l, snoc (rev l) x = rev (x :: l).
+Proof.
+  intros x l.
+  induction l.
+  simpl.
+  reflexivity.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma snoc_xlx : forall (x : nat)  l, x :: (snoc l x) = snoc (x :: l) x.
+Proof.
+  intros x l.
+  induction l.
+  simpl.
+  reflexivity.
+  simpl.
+  reflexivity.
+Qed.
+
+Theorem pal_eq_rev : forall l, pal l -> l = rev l.
+Proof.
+  intros l H.
+  induction H.
+  (* [] = rev [] *)
+  simpl.
+  reflexivity.  
+
+  (* [x] = rev [x] *)
+  simpl.
+  reflexivity.  
+
+  (* x :: snoc l x = rev (x :: snoc l x) *)
+  rewrite <- snoc_rev.
+  rewrite <- rev_snoc.
+  rewrite <- snoc_xlx.
+  rewrite <- IHpal.
+  reflexivity.
+Qed.
+
+(* 模範解答はこちらです。https://gist.github.com/3963617
+   補助定理を自分で証明せず、List.v の
+   rev_unit : forall (l:list A) (a:A), rev (l ++ [a]) = a :: rev l.
+   を使って解いています。
+   *)
 (** [] *)
