@@ -230,6 +230,15 @@ Inductive MyProp : nat -> Prop :=
   | MyProp2 : forall n : nat, MyProp n -> MyProp (4 + n)
   | MyProp3 : forall n : nat, MyProp (2 + n) -> MyProp n.
 
+(** [MyProp] の非形式的な定義の最初の3つの節は、帰納的な定義の最初の3つ
+    の節に反映されています。4つ目の節は、[Inductive] キーワードによって
+    強制されます。
+    
+    補足：Inductiveは、その性質を満たす最小の集合であるから、「その他の
+    数は、性質 [MyProp] を満たさない」ことは、Inductiveを使った時点で、
+    その性質として決まっているので、記載する必要はない。最大の集合を示
+    すのがcoinductiveである。*)
+
 Definition MyProp_ind' : forall P : nat -> Prop,
   P 4 ->
   (forall n : nat, MyProp n -> P n -> P (4 + n)) ->
@@ -260,19 +269,19 @@ Definition MyProp_0' : MyProp 0 :=
 Theorem MyProp_plustwo : forall n : nat, MyProp n -> MyProp (S (S n)).
 Proof.
   intros n H.
-  inversion H.
+  induction H.
   apply (MyProp2 2).
   apply (MyProp3 2).
   apply MyProp1.
   simpl.
-  apply (MyProp2 (S (S n0))).            (* -4する。 *)
+  apply (MyProp2 (S (S n))).                (* -4する。 *)
   simpl.
-  apply (MyProp3 (S (S n0))).            (* +2する。 *)
+  apply (MyProp3 (S (S n))).                (* +2する。 *)
   simpl.
-  apply (MyProp2 n0).                    (* -4する。 *)
+  apply (MyProp2 n).                        (* -4する。 *)
   simpl.
-  apply H0.
-  apply H0.
+  apply H.
+  apply H.
 Qed.
 
 Theorem MyProp_ev : forall n : nat,
