@@ -230,7 +230,13 @@ Inductive MyProp : nat -> Prop :=
   | MyProp2 : forall n : nat, MyProp n -> MyProp (4 + n)
   | MyProp3 : forall n : nat, MyProp (2 + n) -> MyProp n.
 
-(** [MyProp] の非形式的な定義の最初の3つの節は、帰納的な定義の最初の3つ
+(** 例えば以下のように定義される[MyProp] という性質について考えてみましょ
+   う。
+       - [4] は性質 [MyProp] を満たす
+       - [n] が性質 [MyProp] を満たすならば、 [4+n] も満たす
+       - もし[2+n]が性質 [MyProp] を満たすならば、 [n] も満たす
+       - その他の数は、性質 [MyProp] を満たさない
+    [MyProp] の非形式的な定義の最初の3つの節は、帰納的な定義の最初の3つ
     の節に反映されています。4つ目の節は、[Inductive] キーワードによって
     強制されます。
     
