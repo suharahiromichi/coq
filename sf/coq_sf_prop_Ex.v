@@ -419,3 +419,215 @@ Qed.
    を使って解いています。
    *)
 (** [] *)
+
+(*  **** Exercise: 5 stars, optional (palindrome_converse) *)
+(** **** 練習問題: ★★★★★, optional (palindrome_converse) *)
+(**  一つ前の練習問題で定義した [pal] を使って、これを証明しなさい。
+[[
+     forall l, l = rev l -> pal l.
+]]
+*)
+
+Theorem eq_rev_pal : forall l, l = rev l -> pal l.
+Proof.
+Admitted.                                   (* XXXXXX *)
+(** [] *)
+
+(*  **** Exercise: 4 stars (subsequence) *)
+(** **** 練習問題: ★★★★ (subsequence) *)
+(** あるリストが、別のリストのサブシーケンス（ _subsequence_ ）であるとは、
+    最初のリストの要素が全て二つ目のリストに同じ順序で現れるということです。
+    ただし、その間に何か別の要素が入ってもかまいません。例えば、
+[[
+    [1,2,3]
+]]
+    は、次のいずれのリストのサブシーケンスでもあります。
+[[
+    [1,2,3]
+    [1,1,1,2,2,3]
+    [1,2,7,3]
+    [5,6,1,9,9,2,7,3,8]
+]]
+    しかし、次のいずれのリストのサブシーケンスでもありません。
+[[
+    [1,2]
+    [1,3]
+    [5,6,2,1,7,3,8]
+]]
+
+    - [list nat] 上に、そのリストがサブシーケンスであることを意味するよ
+      うな命題 [subseq] を定義しなさい。（ヒント：三つのケースが必要に
+      なります）
+
+    - サブシーケンスである、という関係が「反射的」であることを証明しな
+      さい。つまり、どのようなリストも、それ自身のサブシーケンスである
+      ということです。
+
+    - 任意のリスト [l1]、 [l2]、 [l3] について、もし [l1] が [l2] のサ
+      ブシーケンスならば、 [l1] は [l2 ++ l3] のサブシーケンスでもある、
+      ということを証明しなさい。.
+
+    - （これは少し難しいですので、任意とします）サブシーケンスという関
+      係は推移的である、つまり、 [l1] が [l2] のサブシーケンスであり、
+      [l2] が [l3] のサブシーケンスであるなら、 [l1] は [l3] のサブシー
+      ケンスである、というような関係であることを証明しなさい。（ヒント：
+      何について帰納法を適用するか、よくよく注意して下さい。）
+*)
+
+Inductive subseq : list nat -> list nat -> Prop :=
+| nseq0 : subseq [] []
+| nseq1 : forall (n : nat) (l1 : list nat) (l2 : list nat),
+  subseq l1 l2 -> subseq (n :: l1) (n :: l2)
+| nseq2 : forall (n : nat) (l1 : list nat) (l2 : list nat),
+  subseq l1 l2 -> subseq       l1  (n :: l2).
+
+Theorem subseq_sym : forall l : list nat, subseq l l.
+Proof.
+  intros.
+  induction l.
+  apply nseq0.
+  apply nseq1.
+  apply IHl.
+Qed.
+
+Theorem subseq_app :
+  forall l1 l2 l3 : list nat, subseq l1 l2 -> subseq l1 (l2 ++ l3).
+Proof.
+  intros l1 l2 l3 H.
+  induction H.
+  simpl.
+  (* subseq [] l3 *)
+  induction l3.
+  (** subseq [] [] *)
+  apply nseq0.
+  (** subseq [] (x :: l3) *)
+  apply nseq2.
+  apply IHl3.
+  simpl.
+  (* subseq (n :: l1) (n :: l2 ++ l3) *)
+  apply nseq1.
+  apply IHsubseq.
+  simpl.
+  (*  subseq l1 (n :: l2 ++ l3) *)
+  apply nseq2.
+  apply IHsubseq.
+Qed.
+
+Theorem subseq_trs :
+  forall l1 l2 l3 : list nat, subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
+Proof.
+Admitted.                                   (* XXXXXX *)
+(** [] *)
+
+(*  **** Exercise: 2 stars, optional (foo_ind_principle) *)
+(** **** 練習問題: ★★, optional (foo_ind_principle) *)
+
+(** 次のような、帰納的な定義をしたとします： *)
+Inductive foo'' (X : Set) (Y : Set) : Set :=
+| foo''1 : X -> foo'' X Y
+| foo''2 : Y -> foo'' X Y
+| foo''3 : foo'' X Y -> foo'' X Y.
+Print foo''_ind.
+(*
+   次の空欄を埋め、この定義のために Coq が生成する帰納法の原理を完成させなさい。
+   回答：
+*)
+Definition foo''_ind_me : forall P : nat -> Prop,
+  forall (X Y : Set) (P : foo'' X Y -> Prop),
+    (forall x : X, P (foo''1 X Y x)) ->
+    (forall y : Y, P (foo''2 X Y y)) ->
+    (forall p : foo'' X Y, P p  -> P (foo''3 X Y p)) ->
+    (forall p : foo'' X Y, P p).
+(** [] *)
+
+(** **** 練習問題: ★★, optional (bar_ind_principle) *)
+(*
+   ↓これ(bar'''_ind)に対応する帰納的な集合の定義を書きなさい。
+   回答：
+*)
+Inductive bar''' : Set :=
+| bar'''1 : nat -> bar'''
+| bar'''2 : bar''' -> bar'''
+| bar'''3 : bool -> bar''' -> bar'''.
+Print bar'''_ind.
+
+(** 次に挙げた帰納法の原理について考えてみましょう：↑ *)
+Definition bar'''_ind_me : forall P : bar''' -> Prop,
+  (forall n : nat, P (bar'''1 n)) ->
+  (forall b : bar''', P b -> P (bar'''2 b)) ->
+  (forall (b : bool) (b0 : bar'''), P b0 -> P (bar'''3 b b0)) ->
+  forall b : bar''', P b.
+(** [] *)
+
+(*  **** Exercise: 2 stars, optional (no_longer_than_ind) *)
+(** **** 練習問題: ★★, optional (no_longer_than_ind) *)
+
+(** 次のような、帰納的に定義された命題が与えられたとします：*)
+Inductive no_longer_than (X : Set) : (list X) -> nat -> Prop :=
+| nlt_nil  : forall n, no_longer_than X [] n
+| nlt_cons : forall x l n, no_longer_than X l n ->
+  no_longer_than X (x::l) (S n)
+| nlt_succ : forall l n, no_longer_than X l n ->
+  no_longer_than X l (S n).
+Check no_longer_than_ind.
+
+(*
+   この命題のために Coq が生成する帰納法の原理を完成させなさい。
+   回答：
+*)
+Definition no_longer_than_ind_me : forall (X : Set) (P : list X -> nat -> Prop),
+  (forall n : nat, P [] n) ->               (* nlt_nil *)
+  (forall (x : X) (l : list X) (n : nat),
+    no_longer_than X l n -> P l n -> P (x :: l) (S n)) -> (* nlt_cons *)
+  (forall (l : list X) (n : nat),
+    no_longer_than X l n -> P l n -> P l (S n)) -> (* nlt_succ *)
+  forall (l : list X) (n : nat), no_longer_than X l n ->  P l n.
+(** [] *)
+
+(*  **** Exercise: 2 stars, optional (R_provability) *)
+(** **** 練習問題: ★★, optional (R_provability) *)
+(** Coq に次のような定義を与えたとします： *)
+
+Inductive R : nat -> list nat -> Prop :=
+  | c1 : R 0 []
+  | c2 : forall n l, R n l -> R (S n) (n :: l)
+  | c3 : forall n l, R (S n) l -> R n l.
+
+(*
+   次のうち、証明可能なのはどの命題でしょうか？
+    - [R 2 [1,0]]
+    - [R 1 [1,2,1,0]]
+    - [R 6 [3,2,1,0]]
+*)
+
+Goal (R 2 [1,0]).
+Proof.
+  apply c2.
+  apply c2.
+  apply c1.
+Qed.
+
+Goal (R 1 [1,2,1,0]).
+Proof.
+  apply c3.
+  apply c2.    
+  apply c3.
+  apply c3.
+  apply c2.
+  apply c2.
+  apply c2.
+  apply c1.
+Qed.
+
+Goal (R 6 [3,2,1,0]).
+Proof.
+(* 
+  回答：
+  c2を使わないと、リストは減らない（[]に向かわない)。
+  c2を使えるためには、c3をつかって、[R 4 [3,...]] に持っていく必要があるが、
+  c3をつかうと、[R 7 [3,...]] と、第一引数の値が増加するばかり。
+  ゆえに、[R 6 [3,2,1,0]]は、証明可能ではない。
+*)
+Abort.
+
+(** [] *)
