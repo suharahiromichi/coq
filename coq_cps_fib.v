@@ -9,7 +9,7 @@
    *)
 
 (** 普通のフィボナッチ関数の定義 *)
-Fixpoint fib (n: nat) : nat :=
+Fixpoint fib (n: nat) {struct n} : nat :=
   match n with
       | 0 => 1
       | 1 => 1
@@ -19,7 +19,7 @@ Eval cbv in fib 5.                          (* 8 *)
 Eval cbv in fib 6.                          (* 13 *)
 
 (** CPS変換されたフィボナッチ関数の定義 *)
-Fixpoint fib_cps (n : nat) (cont : nat -> nat) : nat :=
+Fixpoint fib_cps (n : nat) (cont : nat -> nat) {struct n} : nat :=
   match n with
     | 0 =>  cont 1
     | 1 =>  cont 1
