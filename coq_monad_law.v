@@ -1,9 +1,8 @@
 (*
    Maybeモナド と Listモナドの証明
-   2012_11_18
-   
-   「わかめモナ化」mzpさんの発表をもとに、独自にList Monadを追加した。
    >>= オペレータの優先順位を低くしているので、括弧の位置が違う。
+   2012_11_18 「わかめモナ化」mzpさんの発表をもとに、独自にList Monadを追加した。
+   2012_11_21 可換図式の証明を追加した。
    *)
 
 (*
@@ -33,6 +32,12 @@ Module MaybeMonad.
   
   Definition ret {A : Type} (v : A) : option A :=
     Some v.
+
+  Definition id {A : Type} (v : A) : A := v.
+  Definition join {A : Type} (v : option (option A)) : option A :=
+    v >>= id.
+  Definition fmap {A B : Type} (f : A -> B) (mx : option A) : option B :=
+    mx >>= (fun x => ret (f x)).
   
   (* Evalしてみる *)
   Eval compute in ret 1.
@@ -80,7 +85,87 @@ Module MaybeMonad.
   (* Extractしよう。OCamlに変換しましょう。*)
   Require Import ExtrOcamlBasic.
   Extraction "maybeMonad.ml" bind ret.
+
+  (* 可換図式を証明してみる。 *)
+  (*
+     assosiative law
+     LLLA---------fmap join---------->LLA
+     |                                |
+     |                                |
+     join                             join
+     |                                |
+     V                                V
+     TTA--------------join----------->LA
+     *)
+  Theorem assoc_law : forall (A : Type) (m : option (option (option A))),
+    join (join m) = join ((fmap join) m).
+  Proof.
+    intros A m.
+    unfold join.
+    unfold fmap.
+    rewrite monad_3.
+    induction m.
+    simpl.
+    reflexivity.
+    simpl.
+    reflexivity.
+  Qed.
+
+  (*  
+     unit law
+     LA-------ret----->LLA<--fmap ret----LA
+     .\                |             /
+     . \id             join         /id
+     .  \              |           /
+     .   v             v          v
+     .                 LA
+     *)
+  Theorem unit_left_law : forall (A : Type) (m : option (option A)),
+    join (ret m) = id m.
+  Proof.
+    intros A m.
+    unfold join.
+    rewrite monad_1.
+    reflexivity.
+  Qed.
+
+  Theorem unit_right_law : forall (A : Type) (m : option (option A)),
+    join ((fmap ret) m) = id m.
+  Proof.
+    intros A m.
+    unfold join.
+    unfold fmap.
+    unfold id.
+    induction m.
+    simpl.
+    unfold ret.
+    reflexivity.
+
+    rewrite monad_3.
+    rewrite monad_2.
+    reflexivity.
+  Qed.
+
+  Theorem unit_law : forall (A : Type) (m : option (option A)),
+    join (ret m) = join ((fmap ret) m).
+  Proof.
+    intros A m.
+    unfold join.
+    unfold fmap.
+    rewrite monad_3.
+    rewrite monad_1.
+    unfold id.
+    simpl.
+    induction m.
+    simpl.
+    unfold ret.
+    reflexivity.
+    simpl.
+    reflexivity.
+  Qed.
 End MaybeMonad.
+
+(* ********************************************************** *)
 
 Module ListMonad.
   Require Import List.
@@ -97,6 +182,12 @@ Module ListMonad.
   Definition ret {A : Type} (v : A) : list A :=
     v :: nil.
   
+  Definition id {A : Type} (v : A) : A := v.
+  Definition join {A : Type} (v : list (list A)) : list A :=
+    v >>= id.
+  Definition fmap {A B : Type} (f : A -> B) (mx : list A) : list B :=
+    mx >>= (fun x => ret (f x)).
+  
   (* Evalしてみる *)
   Eval compute in ret 1.
   Eval compute in (fun x => ret (1+x)) 1.
@@ -105,6 +196,11 @@ Module ListMonad.
   Eval compute in ret 1 >>= fun x => ret (1+x).
   (* op.の優先順位に注意 *)
   Eval compute in (1 :: nil) >>= fun x => ret (1+x). 
+  Eval compute in ret (1 :: 2 :: nil).
+  Eval compute in join (ret (1 :: 2 :: nil)).
+  Eval compute in join ((1 :: nil) :: (2 :: nil) :: nil).
+  Eval compute in join ((1 :: 2 :: nil) :: nil).
+  Eval compute in fmap (fun x => x + 1) (1 :: 2 :: nil).
   
   Check List.app_nil_r.
   Check List.app_assoc.
@@ -174,6 +270,92 @@ Module ListMonad.
   (* Extractしよう。OCamlに変換しましょう。*)
   Require Import ExtrOcamlBasic.
   Extraction "listMonad.ml" bind ret.
+
+  (* 可換図式を証明してみる。 *)
+  (*
+     assosiative law
+     
+     [[[1 2][3 4]][[5 6][7 8]]]      [[1 2][3 4][5 6][7 8]]
+     LLLA---------fmap join---------->LLA
+     |                                |
+     |                                |
+     join                             join
+     |                                |
+     V                                V
+     TTA--------------join----------->LA
+     [[1 2 3 4][5 6 7 8]]          [1 2 3 4 5 6 7 8]
+     *)
+  Theorem assoc_law : forall (A : Type) (m : list (list (list A))),
+    join (join m) = join ((fmap join) m).
+  Proof.
+    intros A m.
+    unfold join.
+    unfold fmap.
+    rewrite monad_3.
+    induction m.
+    simpl.
+    reflexivity.
+    simpl.
+    rewrite <- IHm.
+    unfold id.
+    reflexivity.
+  Qed.
+
+  (*  
+     unit law
+     [1 2]     →    [[1 2]]
+     .            [[1] [2]]   ←    [1 2]
+     LA-------ret----->LLA<--fmap ret----LA
+     .\                |             /
+     . \id             join         /id
+     .  \              |           /
+     .   v             v          v
+     .                 LA
+     .                 [1 2]
+     *)
+  Theorem unit_left_law : forall (A : Type) (m : list (list A)),
+    join (ret m) = id m.
+  Proof.
+    intros A m.
+    unfold join.
+    rewrite monad_1.
+    reflexivity.
+  Qed.
+
+  Theorem unit_right_law : forall (A : Type) (m : list (list A)),
+    join ((fmap ret) m) = id m.
+  Proof.
+    intros A m.
+    unfold join.
+    unfold fmap.
+    unfold id.
+    induction m.
+    simpl.
+    reflexivity.
+
+    rewrite <- IHm.
+    rewrite monad_3.
+    rewrite monad_2.
+    reflexivity.
+  Qed.
+
+  Theorem unit_law : forall (A : Type) (m : list (list A)),
+    join (ret m) = join ((fmap ret) m).
+  Proof.
+    intros A m.
+    unfold join.
+    unfold fmap.
+    rewrite monad_3.
+    rewrite monad_1.
+    unfold id.
+    simpl.
+    induction m.
+    simpl.
+    reflexivity.
+    simpl.
+    rewrite <- IHm.
+    reflexivity.
+  Qed.
 End ListMonad.
 
 (*    
