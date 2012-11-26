@@ -39,15 +39,14 @@ Proof.
   unfold not.
 
   intros H P.
-  intros HPFF.
+  intros HnnP.
   apply (H P False).
-  intros HPF.
-  apply ex_falso_quodlibet.
-  apply (H False P).
-  intros.
-  apply HPFF.
-  apply HPF.
+  intros HnP.
+  induction HnnP.                           (* ！ *)
+  apply HnP.
 Qed.
+(* ゴールの二重否定が前提にあるとき、
+   その前提をinductionすると、一重否定が得られる。 *)
 
 Theorem classic__peirc : classic -> peirce.
 Proof.
@@ -137,15 +136,14 @@ Proof.
   unfold excluded_middle.
   unfold not.
   
- intros H P.
-  intros HnnP_P.
-  destruct (H P) as [HnnP | HP].
+  intros H P.
+  intros HnnP.
+  destruct (H P) as [HP | HnP].
   (* P *)
-  apply HnnP.
-  (* P *)
-  apply ex_falso_quodlibet.
-  apply HnnP_P.
   apply HP.
+  (* ~P *)
+  induction HnnP.                           (* ！ *)
+  apply HnP.
 Qed.
 
 Theorem excluded_middle__de_morgan_not_and_not :
@@ -164,8 +162,7 @@ Proof.
   destruct (H Q) as [HQ | HnQ].
   right.
   apply HQ.
-  apply ex_falso_quodlibet.
-  apply Hn_nPnQ.
+  induction Hn_nPnQ.                        (* ！ *)
   split.
   apply HnP.
   apply HnQ.
@@ -199,7 +196,7 @@ Proof.
   destruct (H P P) as [HnP1 | HnP2].
   intros HP.
   apply HP.
-  induction HnnP.
+  induction HnnP.                           (* ！ *)
   apply HnP1.
   apply HnP2.
 Qed.
