@@ -3,11 +3,12 @@
 
 (** **** 練習問題: ★★★★★, optional (classical_axioms) *)
 
-(** さらなる挑戦を求める人のために、 Coq'Art book (p. 123) から一つ練習問題を取り上げてみます。次の五
-    つの文は、よく「古典論理の特性」と考えられているもの（Coqにビルトインされている構成的論理の対極に
-    あるもの）です。これらをCoqで証明することはできませんが、古典論理を使うことが必要なら、矛盾なく
-    「証明されていない公理」として道具に加えることができます。これら五つの命題が等価であることを証明
-    しなさい。 *)
+(** さらなる挑戦を求める人のために、 Coq'Art book (p. 123) から一つ練習問題を
+   取り上げてみます。次の五つの文は、よく「古典論理の特性」と考えられているもの
+   （Coqにビルトインされている構成的論理の対極にあるもの）です。
+   これらをCoqで証明することはできませんが、古典論理を使うことが必要なら、矛盾なく
+   「証明されていない公理」として道具に加えることができます。
+   これら五つの命題が等価であることを証明しなさい。 *)
 
 (* 公理 *)
 
@@ -96,7 +97,6 @@ Qed.
 Theorem classic__de_morgan_not_and_not : 
   de_morgan_not_and_not -> classic.
 Proof.
-  (* <- *)
   intros H P HnnQ.
   Check (H P P).
   destruct (H P P) as [HP1 | HP2].
@@ -187,6 +187,21 @@ Proof.
   (* Q *)
   left.
   apply HnP.
+Qed.
+
+Theorem implies_to_or__classic : implies_to_or -> classic.
+Proof.
+  unfold classic.
+  unfold implies_to_or.
+  unfold not.
+  
+  intros H P HnnP.
+  destruct (H P P) as [HnP1 | HnP2].
+  intros HP.
+  apply HP.
+  induction HnnP.
+  apply HnP1.
+  apply HnP2.
 Qed.
 
 Theorem implies_to_or__excluded_middle :
