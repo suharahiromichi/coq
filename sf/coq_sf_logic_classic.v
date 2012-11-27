@@ -24,29 +24,12 @@ Definition implies_to_or := forall P Q:Prop,
   (P->Q) -> (~P\/Q).
 
 (* 上記の公理が、同値であることの証明 *)
-
 Theorem ex_falso_quodlibet : forall (P:Prop),
   False -> P.
 Proof.
   intros P contra.
   inversion contra.
 Qed.
-
-Theorem peirce__classic : peirce -> classic.
-Proof.
-  unfold classic.
-  unfold peirce.
-  unfold not.
-
-  intros H P.
-  intros HnnP.
-  apply (H P False).
-  intros HnP.
-  induction HnnP.                           (* ！ *)
-  apply HnP.
-Qed.
-(* ゴールの二重否定が前提にあるとき、
-   その前提をinductionすると、一重否定が得られる。 *)
 
 Theorem classic__peirc : classic -> peirce.
 Proof.
@@ -63,50 +46,6 @@ Proof.
   intros HQ_F.
   apply HP_F.
   apply HP.
-Qed.
-
-(*
-   情報論理学
-   九州大学大学院システム情報科学研究院 情報学部門 長谷川先生
-   平成24年4月
-   http://opal.is.kyushu-u.ac.jp/~hasegawa/lecture/infologic/h24/il-txt-haifu-h24.pdf
-   p.32, p.33
-   
-   自然演繹の証明図をcoqに写す練習でもある。
-   *)
-Theorem classic__excluded_middle :
-  classic -> excluded_middle.
-Proof.
-  unfold classic.
-  unfold excluded_middle.
-  unfold not.
-
-  intros H P.
-  apply H.
-  intros Hn_P_or_n_P.
-  apply Hn_P_or_n_P.
-  right.
-  (* not P *)
-  intros HP.
-  apply Hn_P_or_n_P.
-  left.
-  apply HP.
-Qed.
-
-Theorem classic__de_morgan_not_and_not : 
-  de_morgan_not_and_not -> classic.
-Proof.
-  intros H P HnnQ.
-  Check (H P P).
-  destruct (H P P) as [HP1 | HP2].
-  intros Hn_nPnP.
-  apply HnnQ.
-  intros HP.
-  destruct Hn_nPnP as [HnP1 HnP2].
-  apply HnP1.
-  apply HP.
-  apply HP1.
-  apply HP2.
 Qed.
 
 Theorem excluded_middle__peirce :
@@ -126,95 +65,6 @@ Proof.
   intros HP.
   apply ex_falso_quodlibet.
   apply HnP.
-  apply HP.
-Qed.
-
-Theorem excluded_middle__classic :
-  excluded_middle -> classic.
-Proof.
-  unfold classic.
-  unfold excluded_middle.
-  unfold not.
-  
-  intros H P.
-  intros HnnP.
-  destruct (H P) as [HP | HnP].
-  (* P *)
-  apply HP.
-  (* ~P *)
-  induction HnnP.                           (* ！ *)
-  apply HnP.
-Qed.
-
-Theorem excluded_middle__de_morgan_not_and_not :
-  excluded_middle -> de_morgan_not_and_not.
-Proof.
-  unfold excluded_middle.
-  unfold de_morgan_not_and_not.
-  unfold not.
-  
-  intros H P Q Hn_nPnQ.
-  destruct (H P) as [HP | HnP].
-  (* H1 = P *)
-  left.
-  apply HP.
-  (* H1 = ~P *)
-  destruct (H Q) as [HQ | HnQ].
-  right.
-  apply HQ.
-  induction Hn_nPnQ.                        (* ！ *)
-  split.
-  apply HnP.
-  apply HnQ.
-Qed.
-
-Theorem excluded_middle__implies_to_or :
-  excluded_middle -> implies_to_or.
-Proof.
-  unfold excluded_middle.
-  unfold implies_to_or.
-  unfold not.
-
-  intros H P Q HPQ.
-  destruct (H P) as [HP | HnP].
-  (* ~P *)
-  right.
-  apply HPQ.
-  apply HP.
-  (* Q *)
-  left.
-  apply HnP.
-Qed.
-
-Theorem implies_to_or__classic : implies_to_or -> classic.
-Proof.
-  unfold classic.
-  unfold implies_to_or.
-  unfold not.
-  
-  intros H P HnnP.
-  destruct (H P P) as [HnP1 | HnP2].
-  intros HP.
-  apply HP.
-  induction HnnP.                           (* ！ *)
-  apply HnP1.
-  apply HnP2.
-Qed.
-
-Theorem implies_to_or__excluded_middle :
-  implies_to_or -> excluded_middle.
-Proof.
-  intros H P.
-  destruct (H P P) as [HnP | HP].
-  (* P -> P *)
-  intros HP.
-  apply HP.
-  (* P \/ ~P *)
-  right.
-  (* ~P *)
-  apply HnP.
-  left.
-  (* P *)
   apply HP.
 Qed.
 
@@ -244,6 +94,44 @@ Proof.
   apply H0.
 Qed.
 
+Theorem implies_to_or__peirc :
+  implies_to_or -> peirce.
+Proof.
+Admitted.
+
+Theorem peirce__classic : peirce -> classic.
+Proof.
+  unfold classic.
+  unfold peirce.
+  unfold not.
+
+  intros H P.
+  intros HnnP.
+  apply (H P False).
+  intros HnP.
+  induction HnnP.                           (* ！ *)
+  apply HnP.
+Qed.
+(* 前提が二重否定のとき、そをinductionすると、
+   一重否定が得られる。 *)
+
+Theorem excluded_middle__classic :
+  excluded_middle -> classic.
+Proof.
+  unfold classic.
+  unfold excluded_middle.
+  unfold not.
+  
+  intros H P.
+  intros HnnP.
+  destruct (H P) as [HP | HnP].
+  (* P *)
+  apply HP.
+  (* ~P *)
+  induction HnnP.                           (* ！ *)
+  apply HnP.
+Qed.
+
 Theorem de_morgan_not_and_not__classic :
   classic -> de_morgan_not_and_not.
 Proof.
@@ -266,6 +154,55 @@ Proof.
   apply HQ.
 Qed.
 
+Theorem implies_to_or__classic :
+  implies_to_or -> classic.
+Proof.
+  unfold classic.
+  unfold implies_to_or.
+  unfold not.
+  
+  intros H P HnnP.
+  destruct (H P P) as [HnP1 | HnP2].
+  intros HP.
+  apply HP.
+  induction HnnP.                           (* ！ *)
+  apply HnP1.
+  apply HnP2.
+Qed.
+
+Theorem peirce__excluded_middle :
+  peirce -> excluded_middle.
+Proof.
+Admitted.
+
+(*
+   情報論理学
+   九州大学大学院システム情報科学研究院 情報学部門 長谷川先生
+   平成24年4月
+   http://opal.is.kyushu-u.ac.jp/~hasegawa/lecture/infologic/h24/il-txt-haifu-h24.pdf
+   p.32, p.33
+   
+   自然演繹の証明図をcoqに写す練習でもある。
+   *)
+Theorem classic__excluded_middle :
+  classic -> excluded_middle.
+Proof.
+  unfold classic.
+  unfold excluded_middle.
+  unfold not.
+
+  intros H P.
+  apply H.
+  intros Hn_P_or_n_P.
+  apply Hn_P_or_n_P.
+  right.
+  (* not P *)
+  intros HP.
+  apply Hn_P_or_n_P.
+  left.
+  apply HP.
+Qed.
+
 Theorem de_morgan_not_and_not__excluded_middle :
   de_morgan_not_and_not -> excluded_middle.
 Proof.
@@ -280,9 +217,107 @@ Proof.
   apply HP.
 Qed.
 
+Theorem implies_to_or__excluded_middle :
+  implies_to_or -> excluded_middle.
+Proof.
+  intros H P.
+  destruct (H P P) as [HnP | HP].
+  (* P -> P *)
+  intros HP.
+  apply HP.
+  (* P \/ ~P *)
+  right.
+  (* ~P *)
+  apply HnP.
+  left.
+  (* P *)
+  apply HP.
+Qed.
+
+Theorem peirce__de_morgan_not_and_not :
+  peirce -> de_morgan_not_and_not.
+Proof.
+Admitted.
+
+Theorem classic__de_morgan_not_and_not : 
+  de_morgan_not_and_not -> classic.
+Proof.
+  intros H P HnnQ.
+  Check (H P P).
+  destruct (H P P) as [HP1 | HP2].
+  intros Hn_nPnP.
+  apply HnnQ.
+  intros HP.
+  destruct Hn_nPnP as [HnP1 HnP2].
+  apply HnP1.
+  apply HP.
+  apply HP1.
+  apply HP2.
+Qed.
+
+Theorem excluded_middle__de_morgan_not_and_not :
+  excluded_middle -> de_morgan_not_and_not.
+Proof.
+  unfold excluded_middle.
+  unfold de_morgan_not_and_not.
+  unfold not.
+  
+  intros H P Q Hn_nPnQ.
+  destruct (H P) as [HP | HnP].
+  (* H1 = P *)
+  left.
+  apply HP.
+  (* H1 = ~P *)
+  destruct (H Q) as [HQ | HnQ].
+  right.
+  apply HQ.
+  induction Hn_nPnQ.                        (* ！ *)
+  split.
+  apply HnP.
+  apply HnQ.
+Qed.
+
+Theorem implies_to_or__de_morgan_not_and_not :
+  implies_to_or -> de_morgan_not_and_not.
+Proof.
+Admitted.
+
+Theorem peirce__implies_to_or : 
+  peirce -> implies_to_or.
+Proof.
+Admitted.
+
+Theorem classic__implies_to_or :
+  classic -> implies_to_or.
+Proof.
+Admitted.
+
+Theorem excluded_middle__implies_to_or :
+  excluded_middle -> implies_to_or.
+Proof.
+  unfold excluded_middle.
+  unfold implies_to_or.
+  unfold not.
+
+  intros H P Q HPQ.
+  destruct (H P) as [HP | HnP].
+  (* ~P *)
+  right.
+  apply HPQ.
+  apply HP.
+  (* Q *)
+  left.
+  apply HnP.
+Qed.
+
+Theorem de_morgan_not_and_not__implies_to_or :
+  de_morgan_not_and_not -> implies_to_or.
+Proof.
+Admitted.
+
 (* 上記以外の証明は、間接的に行える。 *)
 
-Theorem implies_to_or__peirc : implies_to_or -> peirce.
+Theorem implies_to_or__peirc' : implies_to_or -> peirce.
 Proof.
   intros.
   apply classic__peirc.
