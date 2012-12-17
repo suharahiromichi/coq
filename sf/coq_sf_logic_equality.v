@@ -1,7 +1,11 @@
 (** * Logic_J: Coqにおける論理 *)
 (* @suharahiromochi 2012_11_26 *)
+
 (*  * Equality *)
 (** * 等しいということ（同値性） *)
+
+(* ** Inversion, Again *)
+(** ** Inversion 再び *)
 
 Module MyEquality.
 
@@ -105,6 +109,43 @@ Proof.
   apply refl_equal.
 Qed.
 
+(** inversion を使う証明 *)
+(*
+   例 : [eq] で構築された仮定を反転（ invert ）すると、これにもやはりコンストラクタが
+   一つしかないため、サブゴールも一つしか生成されません。しかしこの場合 
+   コンストラクタ [refl_equal] の形は我々にもう少し情報を与えてくれます。
+   それは、[eq] の二つの引数は同じでなければならないという点です。
+    [inversion] タクティックはこの事実をコンテキストに加えてくれます。
+*)
+Theorem two_defs_of_eq_coincide'' : forall (X:Type) (x y : X),
+  x = y <-> x =' y.
+Proof.
+  intros X x y.
+  split.
+(* -> *)
+  intros H.
+  inversion H.
+  (* 
+     ゴールは、y =' y
+     前提に以下が追加される。
+     H0 : x0 = x
+     H1 : x = y
+     結果として、追加された前提は使われない。
+ *)
+  apply refl_equal'.
+
+(* <- *)
+  intros H'.
+  inversion H'.
+  (* 
+     ゴールは、y = y
+     前提に以下が追加される。
+     H : x = y
+     結果として、追加された前提は使われない。
+     *)
+  apply refl_equal.
+Qed.
+
 (** [] *)
 
 (**
@@ -136,3 +177,19 @@ Definition four' : 2 + 2 =' 1 + 3 :=
   refl_equal' nat 4.
 
 End MyEquality.
+
+
+(**
+   invertion の動き：
+    - 帰納的に定義された型 [P] の命題 [H] をとる。
+    - その型 [P] の定義にある各コンストラクタ [C] が、
+      - [H] が [C] から成っていると仮定するような新しいサブゴールを作る。
+      - [C] の引数（前提）を、追加の仮定としてサブゴールのコンテキストに加える。
+      - [C] の結論（戻り値の型）を現在のゴールとmatchして、 
+      [C] を適用できるような一連の等式算出する。
+      - そしてこれらの等式をサブゴールのコンテキストに加えてから、
+      - もしこの等式が充足可能でない場合（[S n = O] というような式を含むなど）は、
+        即座にサブゴールを解決する。
+*)
+
+(* END *)
