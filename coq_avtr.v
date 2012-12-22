@@ -1,6 +1,7 @@
 (* 
    AVTR コントロールパネルの仕様記述
    2012_09_07
+   2012_12_22
    *)
 
 (* MFDS型 *)
@@ -111,8 +112,8 @@ Definition ds (x m n : mfd) : panel :=
   match (eq_dec x m) with
     | left _ => Mfd n                       (* MFD 選択解除 *)
     | right _  => match (eq_dec x n) with
-                   | right _ => Mfd m       (* MFD 選択解除 *)
-                   | left _ => xs m n       (* MFD + MFD 変化なし *)
+                    | left _ => Mfd m       (* MFD 選択解除 *)
+                    | right _ => xs m n     (* MFD + MFD 変化なし *)
                  end
   end.
 
@@ -144,9 +145,17 @@ match e with
 end.
 
 Eval cbv in ts (M Left) (Nml Hud).
+(* => Nml (Huds Left) *)
 Eval cbv in ts (M Left) (Nml (Huds Left)).
+(* => Nml Hud *)
 Eval cbv in ts (M Center) (Nml (Huds Left)).
+(* => Nml (Mfds Center Left) *)
+Eval cbv in ts (M Center) (Nml (Huds Center)).
+(* => Nml Hud *)
 Eval cbv in ts (M Center) (Nml (Mfds (mkmfds Center Left notcl))).
+(* => Nml (Mfd Left) *)
+Eval cbv in ts (M Right) (Nml (Mfds (mkmfds Center Left notcl))).
+(* => 変化なし *)
 
 (* OCamlコードの生成 *)
 Extraction xs.                        (* ここに「証明」は含まない。 *)
