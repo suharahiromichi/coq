@@ -179,13 +179,20 @@ Theorem n_le_m__Sn_le_Sm : forall n m,
   n <= m -> S n <= S m.
 Proof.
   intros n m H.
-  induction H as [| m].
-  Case "n = m".                             (* Sn <= Sn *)
+  induction H as [| m'].
+  Case "m = n".                             (* Sn <= Sn *)
     apply le_n.
-  Case "n < m".                             (* Sn <= SSm *)
+  Case "m = S m'".                          (* Sn <= SSm' *)
     apply le_S.
     apply IHle.
 Qed.
+(*
+補足説明：
+H : n <= m から、
+m = n なら、  n <= n   つまり、n = n  となり、等号の場合
+m = Sm' なら、n <= Sm' つまり、n < m' となり、不等号の場合
+サブゴールはもとのゴールに m = n や m = Sm' を代入したもの。
+*)
 
 Lemma ble_Sn_Sm__ble_n_m : forall n m,
   ble_nat (S n) (S m) = true -> ble_nat n m = true.
@@ -207,16 +214,11 @@ Proof.
   Case "n = Sn'".                          (*  forall m : nat, ble_nat (S n) m = true -> S n <= m *)
     intros m H.
     induction m as [| m'].
-    SCase "m = 0".                          (* S n' <= m *)
+    SCase "m = 0".                          (* S n' <= 0 *)
       inversion H.
     SCase "m = Sm'".                        (* S n' <= S m' *)
       apply n_le_m__Sn_le_Sm.
       apply IHn'.
-      assert (ble_nat (S n') (S m') = true ->
-              ble_nat n' m' = true) as Hble_Sn_Sm__ble_n_m.
-      SSCase "Hble_Sn_Sm__ble_n_m".
-        intros Hble_Sn_Sm.
-        apply Hble_Sn_Sm.
       apply H.
 Qed.
 
@@ -225,11 +227,11 @@ Lemma n_le_m__n_le_Sm : forall n m,
 Proof.
   intros n m H.
   (* 補足：induction n. induction m ではうまくいかない。 *)
-  induction H as [| n'].                    (* !!!! *)
-  Case "n = 0".                             (* n <= S n *)
+  induction H as [| m'].                    (* !!!! *)
+  Case "m = n".                             (* n <= Sn *)
     apply le_S.
     apply le_n.
-  Case "n = Sn'".                           (* n <= S (S m) *)
+  Case "m = Sm'".                           (* n <= SSm' *)
     apply le_S.
     apply IHle.
 Qed.
@@ -238,11 +240,11 @@ Lemma Sn_le_m__n_le_m : forall n m,
   S n <= m -> n <= m.
 Proof.
   intros n m H.
-  induction H as [| m].
-  Case "Sn = m".                            (* n <= Sn *)
+  induction H as [| m'].
+  Case "m = S n".                           (* n <= Sn *)
     apply le_S.
     apply le_n.
-  Case "Sn < m".                            (* n <= Sm *)
+  Case "m = m'".                            (* n <= Sm' *)
     apply n_le_m__n_le_Sm.
     apply IHle.
 Qed.
@@ -252,31 +254,31 @@ Lemma Sn_le_Sm__n_le_m : forall n m,
 Proof.
   intros n m.
   generalize dependent n.
-  induction m.
+  induction m as [| m'].
   (* ここまでは、ヒント。 *)
   Case "m = 0".                             (* forall n : nat, S n <= 1 -> n <= 0 *)
   intros n H.
-    induction n.
-    SCase "n = 0".                          (* n <= n *)
+    induction n as [| n'].
+    SCase "n = 0".                          (* 0 <= 0 *)
       apply le_n.
-    SCase "n = Sn".                         (* Sn <= 0 *)
+    SCase "n = Sn'".                        (* Sn' <= 0 *)
       inversion H.
       inversion H1.
   (* inversion でゴールが変わらなくても、あきらめてはいけない。
      *)
-  Case "m = Sm".                            (* forall n : nat, S n <= S (S m) -> n <= S m *)
+  Case "m = Sm'".                           (* forall n : nat, S n <= S (S m') -> n <= S m' *)
      intros n.
-     induction n.
-     SCase "m = 0".                         (* 1 <= S (S m) -> 0 <= S m *)
+     induction n as [| n'].
+     SCase "n = 0".                         (* 1 <= S (S m') -> 0 <= S m' *)
        intros H.
        apply O_le_n.
        
-     SCase "m = Sm".                        (* S (S n) <= S (S m) -> S n <= S m *)
+     SCase "n = Sn'".                       (* S (S n') <= S (S m') -> S n' <= S m' *)
        intros H.
-       inversion  H as [H1| m' H2].
-       SSCase "SSn = SSm".                  (* Sm <= Sm, H1 : n = m *)
+       inversion H as [H1| m'' H2].
+       SSCase "SSm' = SSn'".                (* Sm' <= Sm', H1 : n' = m' *)
          apply le_n.
-       SSCase "SSn < SSm".                  (* Sn <= Sm, H2 : SSn <= Sm *)
+       SSCase "SSm = Sm''".                 (* Sn' <= Sm', H1 : m'' = Sm' *)
          apply Sn_le_m__n_le_m.
          apply H2.
 Qed.
