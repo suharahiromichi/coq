@@ -81,23 +81,11 @@ Qed.
 Theorem beq_nat_sym : forall (n m : nat),
   beq_nat n m = beq_nat m n.
 Proof.
-  intros n. induction n as [| n'].
-  Case "n = 0".
-    intros m. induction m as [| m'].
-    SCase "m = 0".
-      simpl.
-      reflexivity.
-    SCase "m = S m'".
-      simpl.
-      reflexivity.
-  Case "n = S n'".
-    induction m as [| m'].
-    SCase "m = 0".
-      simpl.
-      reflexivity.
-    SCase "m = S m'".
-      simpl.
-      apply (IHn' m').
+  intros n.
+  induction n as [| n'];
+    intros m; induction m as [| m']; try (reflexivity).
+  SCase "m = S m'".
+    apply (IHn' m').
 Qed.
 
 (* Poly.vから *)
@@ -156,11 +144,13 @@ Theorem ev_not_ev_S : forall n,
 Proof. 
   unfold not.
   intros n Hevn HevSn.
-  induction Hevn.
-  inversion HevSn.
-  apply IHHevn.
-  apply SSev_even.
-  apply HevSn.
+  induction Hevn as [| n'].
+  Case "n = 0".                             (* ev 0 *)
+     inversion HevSn.
+  Case "n = SSn'".                          (* ev SSn' *)
+    apply IHHevn.
+    apply SSev_even.
+    apply HevSn.
 Qed.
 
 Theorem O_le_n : forall n,
