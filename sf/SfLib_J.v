@@ -158,9 +158,9 @@ Theorem O_le_n : forall n,
 Proof.
   intros n.
   induction n as [| n'].
-  Case "n = 0".                             (* 0 <= 0" *)
+  Case "n = 0".                             (* 0 <= 0 *)
     apply le_n.
-  Case "n = S n'".                          (* 0 <= Sn" *)
+  Case "n = S n'".                          (* 0 <= Sn' *)
     apply le_S.
     apply IHn'.
 Qed.
