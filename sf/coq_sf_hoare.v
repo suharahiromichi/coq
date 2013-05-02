@@ -1610,12 +1610,17 @@ Proof.
   intros. inversion H0.
 Qed.
 
-Lemma pp : forall x y, x + y = (x - 1) + (y + 1). (* XXX *)
+Lemma x_plus_y__x_m1_plus_y_p1 : forall x y,
+             x <> 0 -> x + y = (x - 1) + (y + 1).
 Proof.
-   intros x y.
-  SearchAbout plus.
-  rewrite (plus_assoc (x - 1) y 1).
-Admitted.
+  intros x y H.
+  induction x as [| x'].
+  Case "x = 0".
+    apply ex_falso_quodlibet.               (* 単にomegaでもよい *)
+    apply H. reflexivity.
+  Case "x = Sx'".
+    omega.
+Qed.
 
 Theorem slow_asgn_prog_correct :
   slow_asgn_prog_spec.
@@ -1641,9 +1646,14 @@ Proof.
   intros st [H1 H2].
   unfold bassn in H2.
   unfold update. simpl.
-  rewrite <- pp.                            (* XXXX *)
-  apply H1.
-
+  rewrite <- x_plus_y__x_m1_plus_y_p1.
+  rewrite H1.
+  reflexivity.
+  (* X <> 0 の証明をする。 *)
+  apply beq_nat_false.
+  unfold bassn in H2.
+  apply negb_true_iff in H2.
+  apply H2.
 (*
    修飾(2)
    {{ X = x /\ Y = 0 }} => {{ X + Y = x }}
@@ -1674,4 +1684,4 @@ Proof.
   apply H1.
 Qed.
 
- (* END *)
+(* END *)
