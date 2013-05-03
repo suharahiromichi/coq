@@ -1006,7 +1006,7 @@ Proof.
   rewrite <- H.
   rewrite H0.
   simpl. omega.
-(** [] *)
+Qed.
 
   (* すべて、ここで証明した場合 *)
 Theorem fact_com_dec_correct' : forall x,
@@ -1018,8 +1018,8 @@ Proof.
   subst. rewrite H0. omega.
   (* negb (beq_nat Z 0) = true -> Z <> 0 *)
   destruct (asnat (st Z)) as [| n'].
-  intros Contra. inversion H0.
-  intros Contra. rewrite Contra in H0. inversion H0.
+  intro Contra. inversion H0.
+  intro Contra. rewrite Contra in H0. inversion H0.
   (* Z <> 0 -> negb (beq_nat Z 0) = true *)
   destruct (asnat (st Z)) as [| n'].
   simpl. apply ex_falso_quodlibet. apply H0. reflexivity.
@@ -1030,8 +1030,8 @@ Proof.
   apply ex_falso_quodlibet. apply H0. reflexivity.
   (* Z = 0 -> negb (beq_nat Z 0) <> true *)
   destruct (asnat (st Z)) as [| n'].
-  intros Contra. inversion Contra.
-  intros Contra. rewrite H0 in Contra. inversion Contra.
+  intro Contra. inversion Contra.
+  intro Contra. rewrite H0 in Contra. inversion Contra.
   (* 導出(4) *)
   destruct (asnat (st Z)) as [| z'].
   apply ex_falso_quodlibet. inversion H0.
@@ -1042,8 +1042,13 @@ Proof.
   rewrite <- H.
   rewrite H0.
   simpl. omega.
+Qed.
 (** [] *)
 
+(* ####################################################### *)
+(* ####################################################### *)
+(* ####################################################### *)
+(* ####################################################### *)
 (* Finally, for a bigger example, let's redo the proof of
     [list_member_correct] from above using our new tools.
 
@@ -1117,7 +1122,91 @@ Definition list_member_dec (n : nat) (l : list nat) : dcom := (
      /\ ~bassn (BIsCons (AId X)) st }}
    =>
    {{ fun st => st Z = VNat 1 <-> appears_in n l }}
-) %dcom.
+) % dcom.
+
+Fixpoint snoc {X:Type} (l:list X) (v:X) : (list X) :=
+  match l with
+  | nil      =>  [ v ]
+  | cons h t => h :: (snoc t v)
+  end.
+
+Lemma snoc_equation : forall (A : Type) (h:A) (x y : list A),
+  snoc x h ++ y = x ++ h :: y.
+Proof.
+  intros A h x y.
+  induction x.
+    Case "x = []". reflexivity.
+    Case "x = cons". simpl. rewrite IHx. reflexivity.
+Qed.
+
+Lemma append_nil : forall (A : Type) (l : list A),
+  l ++ [] = l.
+Proof.
+  induction l.
+    reflexivity.
+    simpl. rewrite IHl. reflexivity.
+Qed.
+
+Lemma beq_true__eq : forall n n',
+  beq_nat n n' = true ->
+  n = n'.
+Proof.
+  induction n; destruct n'.
+  Case "n = 0, n' = 0".     reflexivity.
+  Case "n = 0, n' = S _".   simpl. intros H. inversion H.
+  Case "n = S, n' = 0".     simpl. intros H. inversion H.
+  Case "n = S, n' = S".     simpl. intros H.
+                            rewrite (IHn n' H). reflexivity.
+Qed.
+
+Lemma appears_in_snoc1 : forall a l,
+  appears_in a (snoc l a).
+Proof.
+  induction l.
+    Case "l = []". apply ai_here.
+    Case "l = cons". simpl. apply ai_later. apply IHl.
+Qed.
+
+Lemma appears_in_snoc2 : forall a b l,
+  appears_in a l ->
+  appears_in a (snoc l b).
+Proof.
+  induction l; intros H; inversion H; subst; simpl.
+    Case "l = []". apply ai_here.
+    Case "l = cons". apply ai_later. apply IHl. assumption.
+Qed.
+
+Lemma appears_in_snoc3 : forall a b l,
+   appears_in a (snoc l b) ->
+   (appears_in a l \/ a = b).
+Proof.
+   induction l; intros H.
+   Case "l = []". inversion H.
+     SCase "ai_here". right. reflexivity.
+     SCase "ai_later". left. assumption.
+   Case "l = cons". inversion H; subst.
+     SCase "ai_here". left. apply ai_here.
+     SCase "ai_later". destruct (IHl H1).
+       left. apply ai_later. assumption.
+       right. assumption.
+Qed.
+
+Lemma append_singleton_equation : forall (x : nat) l l',
+  (l ++ [x]) ++ l' = l ++ x :: l'.
+Proof.
+  intros x l l'.
+  induction l.
+    reflexivity.
+    simpl. rewrite IHl. reflexivity.
+Qed.
+
+Lemma beq_nat_refl : forall n,
+  beq_nat n n = true.
+Proof.
+  induction n.
+    reflexivity.
+    simpl. assumption.
+Qed.
 
 Theorem list_member_correct' : forall n l,
   dec_correct (list_member_dec n l).
@@ -1173,5 +1262,317 @@ Proof.
        rewrite append_nil in H3. subst. apply H4. assumption.
        apply ex_falso_quodlibet. apply H1. reflexivity.
 Qed.
+
+(* ####################################################### *)
+(* ####################################################### *)
+(* ####################################################### *)
+(* ####################################################### *)
+Definition max a b :=
+  if ble_nat a b then b else a.
+
+Definition maximum l := fold_right max 0 l.
+
+Definition maximum_com_dec (l : list nat) : dcom :=
+  (
+    {{ fun st => aslist (st X) = l }}       (* 初期値 *)
+    =>                                      (* 導出(1) *)
+    {{ fun st => aslist (st X) = l /\ 0 = 0 }}
+    Y ::= ANum 0
+    {{ fun st => aslist (st X) = l /\ asnat (st Y) = 0 }}
+    =>                                      (* 導出(2) *)
+    {{ fun st =>                            (* ループ不変式 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }};
+    WHILE (BNot (BIsNull (AId X))) DO
+    {{ fun st =>                            (* ループ不変式かつループ実行条件 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
+         aslist (st X) <> [] }}
+    =>                                      (* 導出(3) *)
+    {{ fun st =>                            (* ... head-tail分解、maxの結合 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l }}
+    IFB (BLe (AId Y) (AHead (AId X))) THEN
+    {{ fun st =>                            (* THEN条件 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
+         asnat (st Y) <= head (aslist (st X)) }}
+    =>                                      (* 導出(4) *)
+    {{ fun st =>                            (* ... max Y (head X) = (head X) *)
+         max (head (aslist (st X))) (maximum (tail (aslist (st X)))) = maximum l }}
+    Y ::= AHead (AId X)
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    ELSE
+    {{ fun st =>                            (* ELSE条件 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
+         head (aslist (st X)) < asnat (st Y) }}
+    =>                                      (* 導出(5) *)
+    {{ fun st =>                            (* ... max Y (head X) = Y *)
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+      SKIP
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    FI;
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) =  maximum l }}
+    X ::= ATail (AId X)
+    {{ fun st =>                            (* ループ不変式 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) =  maximum l }}
+    END
+    {{ fun st =>                            (* ループ不変式かつループ終了条件 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) =  maximum l /\
+         aslist (st X) = [] }}
+    =>                                       (* 導出(6) *)
+    {{ fun st => asnat (st Y) = maximum l }} (* 結果 *)
+    ) % dcom.
+
+(*
+ * maxについての補題
+ *)
+Lemma eq_comm : forall A : Type, forall a b : A,
+  a = b -> b = a.
+Proof.
+  intros A a b H.
+  rewrite <- H. reflexivity.
+Qed.
+
+Lemma max0r : forall a,
+  max a 0 = a.
+Proof.
+  intros a.
+  unfold max.
+  induction a; (simpl; reflexivity).
+Qed.
+
+Lemma max_assoc : forall a b c,
+  max a (max b c) = max (max a b) c.
+Proof.
+  intros a b c.
+  unfold max.
+  remember (ble_nat a b) as ab.
+  remember (ble_nat b c) as bc.
+  remember (ble_nat a c) as ac.
+
+  destruct ab.
+  destruct bc.
+  destruct ac.
+  (* a ≦ b /\ b ≦ c /\ a ≦ c *)
+  rewrite <- Heqac. rewrite <- Heqbc. reflexivity.
+
+  (* a ≦ b /\ b ≦ c /\ a > c *)
+  rewrite <- Heqac. rewrite <- Heqbc.
+  apply eq_comm in Heqab. apply ble_nat_true in Heqab.
+  apply eq_comm in Heqbc. apply ble_nat_true in Heqbc.
+  apply eq_comm in Heqac. apply ble_nat_false in Heqac.
+  omega.
+
+  destruct ac.
+  (* a ≦ b /\ b > c /\ a ≦ c *)
+  rewrite <- Heqab. rewrite <- Heqbc. reflexivity.
+
+  (* a ≦ b /\ b > c /\ a > c *)
+  rewrite <- Heqab. rewrite <- Heqbc. reflexivity.
+
+  destruct bc.
+  destruct ac.
+  (* a > b /\ b ≦ c /\ a ≦ c *)
+  rewrite <- Heqac. reflexivity.
+
+  (* a > b /\ b ≦ c /\ a > c *)
+  rewrite <- Heqac. reflexivity.
+
+  destruct ac.
+  (* a > b /\ b > c /\ a ≦ c *)
+  rewrite <- Heqab.
+  apply eq_comm in Heqab. apply ble_nat_false in Heqab.
+  apply eq_comm in Heqbc. apply ble_nat_false in Heqbc.
+  apply eq_comm in Heqac. apply ble_nat_true in Heqac.
+(*
+  apply ex_falso_quodlibet.
+  apply Heqab.
+*)
+  omega.
+
+  (* a > b /\ b > c /\ a > c *)
+  rewrite <- Heqab. rewrite <- Heqac. reflexivity.
+Qed.
+
+Lemma max_hdtl_equation : forall l,
+  max (head l) (maximum (tail l)) = maximum l.
+Proof.
+  intros l.
+  induction l; simpl.
+  apply max0r.
+  reflexivity.
+Qed.
+
+Lemma max_nil : 
+  maximum [] = 0.
+Proof.
+  simpl. reflexivity.
+Qed.
+
+(*
+ * 不等号についての補題
+ *)
+Lemma ble_nat_true__le : forall x y : nat,
+                          ble_nat x y = true -> x <= y.
+Proof.
+  intros x y H.
+  apply ble_nat_true.                       (* おなじもの。 *)
+  apply H.
+Qed.
+
+Lemma ble_nat_false__gt : forall x y : nat,
+                            ble_nat x y = false -> x > y.
+Proof.
+  intros x y H.
+  apply ble_nat_false in H.
+  apply not_le in H.
+  apply H.
+Qed.
+
+Lemma le__ble_nat_true : forall x y : nat,
+                           x <= y -> ble_nat x y = true.
+Proof.
+  intros x y H.
+  apply not_false_iff_true. unfold not.
+  intro Contra.
+  apply ble_nat_false__gt in Contra.
+  (* 対偶である ble_nat_false__gt を使って証明する。 *)
+  omega.
+Qed.
+
+Lemma gt__ble_nat_false : forall x y : nat,
+                            y < x -> ble_nat x y = false.
+Proof.
+  intros x y H.
+  apply not_true_is_false. unfold not.
+  intro Contra.
+  apply ble_nat_true__le in Contra.
+  (* 対偶である ble_nat_true__le を使って証明する。 *)
+  omega.
+Qed.
+
+(* 
+ * リストについての補題
+ *)
+
+Definition bnull {A : Type} (l : list A) : bool :=
+  match l with
+    | [] => true
+    |  _ :: _ => false
+  end.
+
+Lemma bnull_true__nil : forall (A : Type) (l : list A),
+                          bnull l = true -> l = [].
+Proof.
+  intros A l H.
+  destruct l as [| a' l'].
+  Case "[]".
+  reflexivity.
+  Case "a' :: l'".
+  inversion H.
+Qed.
+
+Lemma nil__bnull_true : forall (A : Type) (l : list A),
+                          l = [] -> bnull l = true.
+Proof.
+  intros A l H.
+  destruct l as [| a' l'].
+  Case "[]".
+  simpl.
+  reflexivity.
+  Case "a' :: l'".
+  simpl. inversion H.
+Qed.
+
+Lemma bnull_false__not_nil : forall (A : Type) (l : list A),
+                               bnull l = false -> l <> [].
+Proof.
+  intros A l H.
+  intro Contra.
+  apply nil__bnull_true in Contra.
+  apply not_true_iff_false in H. apply H.
+  apply Contra.
+Qed.
+
+Lemma not_nil__bnull_false : forall (A : Type) (l : list A),
+                          l <> [] -> bnull l = false.
+Proof.
+  intros A l H.
+  apply not_true_is_false. unfold not.
+  intro Contra.
+  apply bnull_true__nil in Contra.          (* 対偶を使う。 *)
+  apply H. apply Contra.
+Qed.
+
+(*
+ * 本題
+ *)
+Theorem maximum_com_dec_correct : forall l,
+  dec_correct (maximum_com_dec l).
+Proof.
+  intros l.
+  verify.
+  (* 導出(2) *)
+  rewrite H. rewrite H0. unfold max.
+  simpl. reflexivity.
+
+  (* negb (isNull X) = true -> X <> [] *)
+  apply negb_true_iff in H0.
+  apply bnull_false__not_nil.
+  apply H0.
+
+  (* X <> [] -> negb (isNull X) = true *)
+  apply not_nil__bnull_false in H0.
+  apply negb_true_iff.
+  apply H0.
+  
+  (* negb (isNull X) <> true -> X = [] *)
+  apply bnull_true__nil.
+  apply negb_not_true_iff in H0.
+  apply H0.
+
+  (* X = [] -> negb (isNill X) <> true *)
+  apply nil__bnull_true in H0.
+  apply negb_not_true_iff.
+  apply H0.
+
+  (* 導出(3) *)
+  rewrite <- max_assoc.
+  rewrite max_hdtl_equation.
+  apply H.
+  
+  (* ble_nat Y (head X) = true -> Y <= head X *)
+  apply ble_nat_true__le.
+  apply H0.
+  
+  (* ble_nat Y (head X) <> true -> head X < asnat Y *)
+  apply ble_nat_false__gt.
+  apply not_true_iff_false in H0.
+  apply H0.
+  
+  (* 導出(4) *)
+  unfold max in H at 2.
+  erewrite le__ble_nat_true in H.
+  apply H. apply H0.
+  
+  (* 導出(5) *)
+  unfold max in H at 2.  
+  erewrite gt__ble_nat_false in H.
+  apply H. apply H0.
+  
+  (* 導出(6) *)
+  remember (aslist (st X)) as x'.
+  destruct x'.
+  (* X = [] のとき *)
+  rewrite max_nil in H. rewrite max0r in H.
+  apply H.
+  (* X = n :: x' のとき *)
+  rewrite H0 in H.
+  simpl in H.
+  rewrite max0r in H.
+  apply H.
+Qed.
+
+(* [] *)
 
 (* END *)
