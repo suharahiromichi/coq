@@ -720,13 +720,21 @@ Theorem dec_while_correct :
   dec_correct dec_while.
 Proof.
   verify; destruct (asnat (st X)).
+  (* negb (beq_nat 0 0) = true -> 0 <> 0 *)
     inversion H0.
+  (* negb (beq_nat Sn 0) = true -> Sn <> 0 *)
     unfold not. intros. inversion H1.
+  (* 0 <> 0 -> negb (beq_nat 0 0) = true *)
     apply ex_falso_quodlibet. apply H. reflexivity.
+  (* Sn <> 0 -> negb (beq_nat Sn 0) = true *)
     reflexivity.
+  (* negb (beq_nat 0 0) <> true -> 0 = 0 *)
     reflexivity.
+  (* negb (beq_nat Sn 0) <> true -> Sn = 0 *)
     apply ex_falso_quodlibet. apply H0. reflexivity.
+  (* 0 = 0 -> negb (beq_nat 0 0) <> true *)
     unfold not. intros. inversion H0.
+  (* Sn = 0 -> nebg (beq_nat Sn 0) <> true *)
     inversion H.
 Qed.
 
@@ -748,7 +756,7 @@ Example subtract_slowly_dec (x:nat) (z:nat) : dcom := (
                  - asnat (st X)
                  = z - x
               /\ ~ bassn (BNot (BEq (AId X) (ANum 0))) st }}
-    =>
+    =>                                      (* *** *)
     {{ fun st => asnat (st Z) = z - x }}
 ) % dcom.
 
@@ -756,11 +764,13 @@ Theorem subtract_slowly_dec_correct : forall x z,
   dec_correct (subtract_slowly_dec x z).
 Proof.
   intros. verify.
+  (*  *)
     rewrite <- H.
     assert (H1: update st Z (VNat (asnat (st Z) - 1)) X = st X).
       apply update_neq. reflexivity.
     rewrite -> H1. destruct (asnat (st X)) as [| X'].
       inversion H0. simpl. rewrite <- minus_n_O. omega.
+  (* *** *)
     destruct (asnat (st X)).
       omega.
       apply ex_falso_quodlibet. apply H0. reflexivity.
@@ -807,8 +817,9 @@ Qed.
     and prove it correct. *)
 (** 対応する[dcom]型の値を返す関数を記述し、その正しさを証明しなさい。*)
 
+(* 導出の記述をしない。 *)
 Example slow_assignment_dec (x:nat) : dcom := (
-  {{ fun st => True }} (* => {{ fun st => x = x }} *)
+  {{ fun st => True }}
   X ::= (ANum x)
   {{ fun st => asnat (st X) = x }};
   Y ::= (ANum 0)
@@ -824,6 +835,7 @@ Example slow_assignment_dec (x:nat) : dcom := (
 ) % dcom.
 (* 修飾のなかの (>0)や(=0)を、IMPの式で書いてbassnを通してもよい。 *)
 
+(* 導出の記述をする。 *)
 Example slow_assignment_dec' (x:nat) : dcom := (
   {{ fun st => True }}  => {{ fun st => x = x }} 
   X ::= (ANum x)
@@ -1311,13 +1323,13 @@ Definition maximum_com_dec (l : list nat) : dcom :=
          max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
     FI;
     {{ fun st =>
-         max (asnat (st Y)) (maximum (tail (aslist (st X)))) =  maximum l }}
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
     X ::= ATail (AId X)
     {{ fun st =>                            (* ループ不変式 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) =  maximum l }}
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }}
     END
     {{ fun st =>                            (* ループ不変式かつループ終了条件 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) =  maximum l /\
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
          aslist (st X) = [] }}
     =>                                       (* 導出(6) *)
     {{ fun st => asnat (st Y) = maximum l }} (* 結果 *)
@@ -1441,7 +1453,7 @@ Proof.
 Qed.
 
 Lemma gt__ble_nat_false : forall x y : nat,
-                            y < x -> ble_nat x y = false.
+                            x > y -> ble_nat x y = false.
 Proof.
   intros x y H.
   apply not_true_is_false. unfold not.
@@ -1525,7 +1537,7 @@ Proof.
   apply not_nil__bnull_false in H0.
   apply negb_true_iff.
   apply H0.
-  
+
   (* negb (isNull X) <> true -> X = [] *)
   apply bnull_true__nil.
   apply negb_not_true_iff in H0.
@@ -1540,7 +1552,7 @@ Proof.
   rewrite <- max_assoc.
   rewrite max_hdtl_equation.
   apply H.
-  
+
   (* ble_nat Y (head X) = true -> Y <= head X *)
   apply ble_nat_true__le.
   apply H0.
@@ -1549,7 +1561,7 @@ Proof.
   apply ble_nat_false__gt.
   apply not_true_iff_false in H0.
   apply H0.
-  
+
   (* 導出(4) *)
   unfold max in H at 2.
   erewrite le__ble_nat_true in H.
@@ -1574,5 +1586,10 @@ Proof.
 Qed.
 
 (* [] *)
+
+(*
+ 導出の記述を省く、または、書き忘れた場合、その分だけ証明が難しくなる。
+ 導出は省かないほうがよいようだ。
+ *)
 
 (* END *)
