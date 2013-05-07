@@ -386,13 +386,13 @@ Notation "'WHILE' b 'DO' {{ Pbody }} d 'END' {{ Ppost }}"
 Notation "'IFB' b 'THEN' {{ P }} d 'ELSE' {{ P' }} d' 'FI'"
       := (DCIf b P d P' d')
       (at level 80, right associativity)  : dcom_scope.
-Notation "'=>' {{ P }} d"
+Notation "'==>' {{ P }} d"
       := (DCPre P d)
       (at level 90, right associativity)  : dcom_scope.
 Notation "{{ P }} d"
       := (DCPre P d)
       (at level 90)  : dcom_scope.
-Notation "d '=>' {{ P }}"
+Notation "d '==>' {{ P }}"
       := (DCPost d P)
       (at level 91, right associativity)  : dcom_scope.
 Notation " d ; d' "
@@ -756,7 +756,7 @@ Example subtract_slowly_dec (x:nat) (z:nat) : dcom := (
                  - asnat (st X)
                  = z - x
               /\ ~ bassn (BNot (BEq (AId X) (ANum 0))) st }}
-    =>                                      (* *** *)
+    ==>                                     (* *** *)
     {{ fun st => asnat (st Z) = z - x }}
 ) % dcom.
 
@@ -837,22 +837,22 @@ Example slow_assignment_dec (x:nat) : dcom := (
 
 (* 帰結の記述をする。 *)
 Example slow_assignment_dec' (x:nat) : dcom := (
-  {{ fun st => True }}  => {{ fun st => x = x }} 
+  {{ fun st => True }}  ==> {{ fun st => x = x }} 
   X ::= (ANum x)
   {{ fun st => asnat (st X) = x }};
   Y ::= (ANum 0)
   {{ fun st => asnat (st X) = x /\ asnat (st Y) = 0 }}
-  => {{ fun st => asnat (st X) + asnat (st Y) = x }};  (* ループ不変式 *)
+  ==> {{ fun st => asnat (st X) + asnat (st Y) = x }};  (* ループ不変式 *)
   WHILE (BNot (BEq (AId X) (ANum 0))) DO
     {{ fun st => asnat (st X) + asnat (st Y) = x /\ asnat (st X) <> 0 }} (* ループ不変式かつループ実行条件 *)
-    => {{ fun st => (asnat (st X) - 1) + (asnat (st Y) + 1) = x }} 
+    ==> {{ fun st => (asnat (st X) - 1) + (asnat (st Y) + 1) = x }} 
     X ::= AMinus (AId X) (ANum 1)
     {{ fun st => asnat (st X) + (asnat (st Y) + 1) = x }};
     Y ::= APlus (AId Y) (ANum 1)
     {{ fun st => asnat (st X) + asnat (st Y) = x }}  (* ループ不変式 *)
   END
   {{ fun st => asnat (st Y) + asnat (st X) = x /\ asnat (st X) = 0 }}  (* ループ不変式かつループ終了条件 *)
-  => {{ fun st => asnat (st Y) = x }}
+  ==> {{ fun st => asnat (st Y) = x }}
 ) % dcom.
 
 (* 補題：coq_sf_hoare.v と同じ。 *)
@@ -953,22 +953,22 @@ Fixpoint real_fact (n:nat) : nat :=
 Example fact_com_dec (x:nat) : dcom :=
   (
     {{ fun st => True }}
-    =>                                      (* 帰結(1) *)
+    ==>                                     (* 帰結(1) *)
     {{ fun st => x = x }}
     Z ::= (ANum x)
     {{ fun st => asnat (st Z) = x}}
-    =>                                      (* 帰結(2) *)
+    ==>                                     (* 帰結(2) *)
     {{ fun st => asnat (st Z) = x /\ 1 = 1 }};
     Y ::= (ANum 1)
     {{ fun st => asnat (st Z) = x /\ asnat (st Y) = 1 }}
-    =>                                      (*  帰結(3) *)
+    ==>                                     (*  帰結(3) *)
     {{ fun st =>
          asnat (st Y) * real_fact (asnat (st Z)) = real_fact x }}; (* ループ不変式 *)
     WHILE (BNot (BEq (AId Z) (ANum 0))) DO
     {{ fun st =>
          asnat (st Y) * real_fact (asnat (st Z)) = real_fact x /\
          asnat (st Z) <> 0 }}               (* ループ不変式、かつ、ループ実行条件 *)
-    =>                                      (* 帰結(4) *)
+    ==>                                     (* 帰結(4) *)
     {{ fun st =>
          asnat (st Y) * asnat (st Z) * real_fact (asnat (st Z) - 1) = real_fact x }}
     Y ::= (AMult (AId Y) (AId Z))
@@ -981,7 +981,7 @@ Example fact_com_dec (x:nat) : dcom :=
     {{ fun st => 
          asnat (st Y) * real_fact (asnat (st Z)) = real_fact x /\
          asnat (st Z) = 0 }}                   (* ループ不変式、かつ、終了条件 *)
-    =>                                         (* 帰結(5) *)
+    ==>                                        (* 帰結(5) *)
     {{ fun st => asnat (st Y) = real_fact x }} (* 要求仕様 *)
   ) % dcom.
 
@@ -1095,7 +1095,7 @@ Definition list_member_dec (n : nat) (l : list nat) : dcom := (
                 /\ (st Z = VNat 1 <-> appears_in n p)))
           /\ bassn (BIsCons (AId X)) st)
           /\ bassn (BEq (AId Y) (AHead (AId X))) st }}
-        =>
+        ==>
         {{ fun st =>
             st Y = VNat n
             /\ (exists p, p ++ tail (aslist (st X)) = l
@@ -1111,7 +1111,7 @@ Definition list_member_dec (n : nat) (l : list nat) : dcom := (
                   /\ (st Z = VNat 1 <-> appears_in n p)))
           /\ bassn (BIsCons (AId X)) st)
           /\ ~bassn (BEq (AId Y) (AHead (AId X))) st }}
-        =>
+        ==>
         {{ fun st =>
           st Y = VNat n
           /\ (exists p, p ++ tail (aslist (st X)) = l
@@ -1132,7 +1132,7 @@ Definition list_member_dec (n : nat) (l : list nat) : dcom := (
        /\ (exists p, p ++ aslist (st X) = l
             /\ (st Z = VNat 1 <-> appears_in n p)))
      /\ ~bassn (BIsCons (AId X)) st }}
-   =>
+   ==>
    {{ fun st => st Z = VNat 1 <-> appears_in n l }}
 ) % dcom.
 
@@ -1283,57 +1283,6 @@ Definition max a b :=
   if ble_nat a b then b else a.
 
 Definition maximum l := fold_right max 0 l.
-
-Definition maximum_com_dec (l : list nat) : dcom :=
-  (
-    {{ fun st => aslist (st X) = l }}       (* 初期値 *)
-    =>                                      (* 帰結(1) *)
-    {{ fun st => aslist (st X) = l /\ 0 = 0 }}
-    Y ::= ANum 0
-    {{ fun st => aslist (st X) = l /\ asnat (st Y) = 0 }}
-    =>                                      (* 帰結(2) *)
-    {{ fun st =>                            (* ループ不変式 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }};
-    WHILE (BNot (BIsNull (AId X))) DO
-    {{ fun st =>                            (* ループ不変式かつループ実行条件 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
-         aslist (st X) <> [] }}
-    =>                                      (* 帰結(3) *)
-    {{ fun st =>                            (* ... head-tail分解、maxの結合 *)
-         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l }}
-    IFB (BLe (AId Y) (AHead (AId X))) THEN
-    {{ fun st =>                            (* THEN条件 *)
-         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
-         asnat (st Y) <= head (aslist (st X)) }}
-    =>                                      (* 帰結(4) *)
-    {{ fun st =>                            (* ... max Y (head X) = (head X) *)
-         max (head (aslist (st X))) (maximum (tail (aslist (st X)))) = maximum l }}
-    Y ::= AHead (AId X)
-    {{ fun st =>
-         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
-    ELSE
-    {{ fun st =>                            (* ELSE条件 *)
-         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
-         head (aslist (st X)) < asnat (st Y) }}
-    =>                                      (* 帰結(5) *)
-    {{ fun st =>                            (* ... max Y (head X) = Y *)
-         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
-      SKIP
-    {{ fun st =>
-         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
-    FI;
-    {{ fun st =>
-         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
-    X ::= ATail (AId X)
-    {{ fun st =>                            (* ループ不変式 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }}
-    END
-    {{ fun st =>                            (* ループ不変式かつループ終了条件 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
-         aslist (st X) = [] }}
-    =>                                       (* 帰結(6) *)
-    {{ fun st => asnat (st Y) = maximum l }} (* 結果 *)
-    ) % dcom.
 
 (*
  * maxについての補題
@@ -1516,6 +1465,60 @@ Proof.
   apply H. apply Contra.
 Qed.
 
+(* ####################################################### *)
+
+(* 修飾つきプログラム *)
+Definition maximum_com_dec (l : list nat) : dcom :=
+  (
+    {{ fun st => aslist (st X) = l }}       (* 初期値 *)
+    ==>                                     (* 帰結(1) *)
+    {{ fun st => aslist (st X) = l /\ 0 = 0 }}
+    Y ::= ANum 0
+    {{ fun st => aslist (st X) = l /\ asnat (st Y) = 0 }}
+    ==>                                     (* 帰結(2) *)
+    {{ fun st =>                            (* ループ不変式 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }};
+    WHILE (BNot (BIsNull (AId X))) DO
+    {{ fun st =>                            (* ループ不変式かつループ実行条件 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
+         aslist (st X) <> [] }}
+    ==>                                     (* 帰結(3) *)
+    {{ fun st =>                            (* ... head-tail分解、maxの結合 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l }}
+    IFB (BLe (AId Y) (AHead (AId X))) THEN
+    {{ fun st =>                            (* THEN条件 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
+         asnat (st Y) <= head (aslist (st X)) }}
+    ==>                                     (* 帰結(4) *)
+    {{ fun st =>                            (* ... max Y (head X) = (head X) *)
+         max (head (aslist (st X))) (maximum (tail (aslist (st X)))) = maximum l }}
+    Y ::= AHead (AId X)
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    ELSE
+    {{ fun st =>                            (* ELSE条件 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
+         head (aslist (st X)) < asnat (st Y) }}
+    ==>                                     (* 帰結(5) *)
+    {{ fun st =>                            (* ... max Y (head X) = Y *)
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+      SKIP
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    FI;
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    X ::= ATail (AId X)
+    {{ fun st =>                            (* ループ不変式 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }}
+    END
+    {{ fun st =>                            (* ループ不変式かつループ終了条件 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
+         aslist (st X) = [] }}
+    ==>                                      (* 帰結(6) *)
+    {{ fun st => asnat (st Y) = maximum l }} (* 結果 *)
+    ) % dcom.
+
 (*
  * 本題
  *)
@@ -1524,6 +1527,7 @@ Theorem maximum_com_dec_correct : forall l,
 Proof.
   intros l.
   verify.
+  
   (* 帰結(2) *)
   rewrite H. rewrite H0. unfold max.
   simpl. reflexivity.
@@ -1533,7 +1537,7 @@ Proof.
   apply bnull_false__not_nil.
   apply H0.
 
-  (* X <> [] -> negb (isNull X) = true *)
+  (* X <> [] -> negb (isNull X) = true、DCWhileの<~~>を~~>にすると要らなくなる。 *)
   apply not_nil__bnull_false in H0.
   apply negb_true_iff.
   apply H0.
@@ -1543,7 +1547,7 @@ Proof.
   apply negb_not_true_iff in H0.
   apply H0.
 
-  (* X = [] -> negb (isNill X) <> true *)
+  (* X = [] -> negb (isNill X) <> true、DCWhileの<~~>を~~>にすると要らなくなる。 *)
   apply nil__bnull_true in H0.
   apply negb_not_true_iff.
   apply H0.
@@ -1587,48 +1591,28 @@ Qed.
 
 (* [] *)
 
-(*
- 帰結の記述を省く、または、書き忘れた場合、その分だけ証明が難しくなる。
- 帰結は省かないほうがよいようだ。
- *)
-
-(* 修飾の論理式をbassnで書いた場合 *)
+(* 帰結の=>の右を抜いた。証明自体が簡単になっているわけではない。
+なお、帰結(6)の=>右をとると、結論がなくなるので残してある。*)
 Definition maximum_com_dec' (l : list nat) : dcom :=
   (
     {{ fun st => aslist (st X) = l }}       (* 初期値 *)
-(*                                         
-    =>                                      (* 帰結(1) *)
-    {{ fun st => aslist (st X) = l /\ 0 = 0 }}
-*)
     Y ::= ANum 0
-    {{ fun st => aslist (st X) = l /\ asnat (st Y) = 0 }}
-    =>                                      (* 帰結(2) *)
-    {{ fun st =>                            (* ループ不変式 *)
-         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }};
+    {{ fun st => aslist (st X) = l /\ asnat (st Y) = 0 }};
     WHILE (BNot (BIsNull (AId X))) DO
     {{ fun st =>                            (* ループ不変式かつループ実行条件 *)
          max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
-         bassn (BNot (BIsNull (AId X))) st }}
-    =>                                      (* 帰結(3) *)
-    {{ fun st =>                            (* ... head-tail分解、maxの結合 *)
-         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l }}
+         aslist (st X) <> [] }}
     IFB (BLe (AId Y) (AHead (AId X))) THEN
     {{ fun st =>                            (* THEN条件 *)
          max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
-         bassn (BLe (AId Y) (AHead (AId X))) st }}
-    =>                                      (* 帰結(4) *)
-    {{ fun st =>                            (* ... max Y (head X) = (head X) *)
-         max (head (aslist (st X))) (maximum (tail (aslist (st X)))) = maximum l }}
+         asnat (st Y) <= head (aslist (st X)) }}
     Y ::= AHead (AId X)
     {{ fun st =>
          max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
     ELSE
     {{ fun st =>                            (* ELSE条件 *)
          max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
-         ~ bassn (BLe (AId Y) (AHead (AId X))) st }}
-    =>                                      (* 帰結(5) *)
-    {{ fun st =>                            (* ... max Y (head X) = Y *)
-         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+         head (aslist (st X)) < asnat (st Y) }}
       SKIP
     {{ fun st =>
          max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
@@ -1641,27 +1625,38 @@ Definition maximum_com_dec' (l : list nat) : dcom :=
     END
     {{ fun st =>                            (* ループ不変式かつループ終了条件 *)
          max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
-         bassn (BIsNull (AId X)) st }}
-    =>                                       (* 帰結(6) *)
+         aslist (st X) = [] }}
+    ==>                                      (* 帰結(6) *)
     {{ fun st => asnat (st Y) = maximum l }} (* 結果 *)
     ) % dcom.
 
-(* 修飾の論理式をbassnで書いた場合、証明するべきゴールが減ることは減る。
-   が、美しくないとおもう。 *)
 Theorem maximum_com_dec'_correct : forall l,
   dec_correct (maximum_com_dec' l).
 Proof.
   intros l.
   verify.
+  
   (* 帰結(2) *)
   rewrite H. rewrite H0. unfold max.
   simpl. reflexivity.
 
-  (* negb (X = []) <> true -> (X = []) = true *)
+  (* negb (isNull X) = true -> X <> [] *)
+  apply negb_true_iff in H0.
+  apply bnull_false__not_nil.
+  apply H0.
+
+  (* X <> [] -> negb (isNull X) = true *)
+  apply not_nil__bnull_false in H0.
+  apply negb_true_iff.
+  apply H0.
+
+  (* negb (isNull X) <> true -> X = [] *)
+  apply bnull_true__nil.
   apply negb_not_true_iff in H0.
   apply H0.
 
-  (* (X = []) = true -> negb (X = []) <> true *)
+  (* X = [] -> negb (isNill X) <> true *)
+  apply nil__bnull_true in H0.
   apply negb_not_true_iff.
   apply H0.
 
@@ -1670,21 +1665,30 @@ Proof.
   rewrite max_hdtl_equation.
   apply H.
 
+  (* ble_nat Y (head X) = true -> Y <= head X *)
+  apply ble_nat_true__le.
+  apply H0.
+  
+  (* 帰結(3)、もういちど *)
+  rewrite <- max_assoc.
+  rewrite max_hdtl_equation.
+  apply H.
+
+  (* ble_nat Y (head X) <> true -> head X < asnat Y *)
+  apply ble_nat_false__gt.
+  apply not_true_iff_false in H0.
+  apply H0.
+
   (* 帰結(4) *)
   unfold max in H at 2.
   erewrite le__ble_nat_true in H.
-  apply H.
-  apply ble_nat_true__le.
-  apply H0.
+  apply H. apply H0.
   
   (* 帰結(5) *)
   unfold max in H at 2.  
   erewrite gt__ble_nat_false in H.
-  apply H.
-  apply ble_nat_false__gt.
-  apply not_true_iff_false.
-  apply H0.
-  
+  apply H. apply H0.
+
   (* 帰結(6) *)
   remember (aslist (st X)) as x'.
   destruct x'.
@@ -1692,9 +1696,18 @@ Proof.
   rewrite max_nil in H. rewrite max0r in H.
   apply H.
   (* X = n :: x' のとき *)
-  inversion H0.
+  rewrite H0 in H.
+  simpl in H.
+  rewrite max0r in H.
+  apply H.
 Qed.
 
 (* [] *)
+
+(* 帰結の=>を左を抜くと、証明が立ち行かなくなる。
+
+また、修飾の論理式をImpの論理式としてbassnで包むと、証明はより簡単になる。
+しかし、それが証明になるとはいえないだろう。
+ *)
 
 (* END *)
