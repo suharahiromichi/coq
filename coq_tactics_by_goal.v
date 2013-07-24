@@ -84,8 +84,8 @@ Qed.
 (*************************)
 Theorem ex_0 : exists n : nat, n = 0.
   exists 0.                              (* 実例である「0」を与える。 *)
-  (* apply ex_intro with 0.
-     apply ではかならず、with X が必要である。*)
+  (* apply ex_intro with (x := 0).
+     apply ではかならず、with 0 が必要である。*)
   reflexivity.
 Qed.
 
