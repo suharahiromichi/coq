@@ -69,7 +69,10 @@ Qed.
 Theorem hypothese_mujun : P -> ~P -> 0 = 1.
   intros H1 H2.
   (* Goal 0 = 1 *)
-  elimtype False.                       (* 前提に、Pと~Pがある。 *)
+  (* 前提に、Pと~Pがある。 *)
+  exfalso.                                  (* elimtype False. *)
+  (* ソフトウェアの基礎では、apply ex_falso_quodlibet *)
+  (* Goal を False に置き換える。 *)
   apply H2.
   apply H1.
 Qed.
@@ -78,17 +81,20 @@ Qed.
 Theorem hypothese_mujun' : P -> ~P -> 0 = 1.
   intros H1 H2.
   (* Goal 0 = 1 *)
-  absurd P.                             (* 前提に、Pと~Pがある。 *)
+  absurd P.                                 (* 前提に、Pと~Pがある。 *)
   apply H2.
   apply H1.
 Qed.
 
+Theorem hypothese_mujun'' : P -> ~P -> 0 = 1.
+  contradiction.                            (* 完全に自動化する。 *)
+Qed.
 
 Theorem hypothese_mujun2 : (P -> Q) -> (P -> ~Q) -> ~P.
   intros H1 H2 H3.
   (* Goal False *)
   (* 前提に、P->QとP->~Qがある。 *)
-  absurd Q.                             (* いまのゴールを捨て、Qと~Qをゴールにする。*)
+  absurd Q.                                 (* いまのゴールを捨て、Qと~Qをゴールにする。*)
   apply H2.
   apply H3.
   apply H1.
