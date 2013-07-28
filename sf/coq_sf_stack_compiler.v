@@ -1,7 +1,7 @@
 (** ソフトウエアの基礎 Benjamin C. Pierceさん他、梅村さん他訳
-   Imo_J : 単純な命令型プログラム より抜粋
+   Imp_J : 単純な命令型プログラム より抜粋
  *)
-(** 練習問題の回答が含まれていても、正解ではないかもしれない。
+(** 練習問題の回答例
    @suharahiromichi
  *)
 
@@ -9,9 +9,10 @@
 stack_compilerが正しく動作することの証明
 *)
 
+(* 本ファイル単独で動作することを確認しています。*)
 Require Export SfLib_J.
 
-(** 状態(_state_)はプログラムの実行のある時点のすべての変数の現在値を表します。
+(** 状態(state)はプログラムの実行のある時点のすべての変数の現在値を表します。
  *)
 Definition state := id -> nat.
 
@@ -60,32 +61,34 @@ Inductive sinstr : Type :=
 Fixpoint aeval (st : state) (e : aexp) : nat :=
   match e with
   | ANum n => n
-  | AId X => st X                                        (* <----- NEW *)
+  | AId X => st X
   | APlus a1 a2 => (aeval st a1) + (aeval st a2)
   | AMinus a1 a2  => (aeval st a1) - (aeval st a2)
   | AMult a1 a2 => (aeval st a1) * (aeval st a2)
   end.
 
-(** スタック言語のプログラムを評価するための関数を書きなさい。
+(** スタック言語のプログラムを評価するための関数を書く。
  *)
 Fixpoint s_exec (st : state) (ins : sinstr) (stack : list nat) : list nat :=
   match ins with
     | SPush n =>  n :: stack
-    | SLoad id => (st id) :: stack
+    | SLoad idx => (st idx) :: stack
     | SPlus => match stack with
                  | b :: a :: stack' => (a + b) :: stack'
-                 | stack' => stack'
+                 | _ => stack
                end
     | SMinus => match stack with
                  | b :: a :: stack' => (a - b) :: stack'
-                 | stack' => stack'
+                 | _ => stack
                end
     | SMult => match stack with
                  | b :: a :: stack' => (a * b) :: stack'
-                 | stack' => stack'
+                 | _ => stack
                end
   end.
-(* stackの条件分けを前に出すと、証明が立ち行かなくなる。 *)
+(* 補足：stack(overflow)の判定を前に出すと、証明が立ち行かなくなる。
+また、stack overflow時の処理を無視することで、s_compile_correct_app の証明が簡単になっている、
+と思う。*)
 
 Fixpoint s_execute (st : state) (stack : list nat) (prog : list sinstr) : list nat :=
   match prog with
@@ -95,7 +98,8 @@ Fixpoint s_execute (st : state) (stack : list nat) (prog : list sinstr) : list n
       s_execute st (s_exec st ins stack) prog'
   end.
 
-(** 次に、[aexp] をスタック機械のプログラムにコンパイルする関数を書きなさい。*)
+(** [aexp] をスタック機械のプログラムにコンパイルする関数を書く。
+ *)
 Fixpoint s_compile (e : aexp) : list sinstr :=
   match e with
     | ANum n => [SPush n]
@@ -105,7 +109,9 @@ Fixpoint s_compile (e : aexp) : list sinstr :=
     | AMult a b =>  (s_compile a) ++ (s_compile b) ++ [SMult]
   end.
 
-(** 最後に、[compile] 関数が正しく振る舞うことを述べている以下の定理を証明しなさい。*)
+(** [compile] 関数が正しく振る舞うことを述べている定理を証明する。
+ *)
+(* 補助定理として、スタック言語の命令列がappendできることを証明する。 *)
 Lemma s_compile_correct_app : forall (st : state)
   (stack1 stack2 stack3: list nat)
   (prog1 prog2 : list sinstr),
@@ -125,21 +131,23 @@ Proof.
       (simpl; apply IHprog1' with (stack2 := stack2); assumption).
 Qed.
 
+(* より一般的な、stackが任意の状態の場合について、証明する。 *)
 Lemma s_compile_correct_stack : forall (st : state) (stack : list nat) (e : aexp),
   s_execute st stack (s_compile e) = [ aeval st e ] ++ stack.
 Proof.
   intros st stack e.
-  generalize stack.                         (* ← ここが肝 *)
+  generalize stack as stack0.               (* ここが肝 *)
   aexp_cases (induction e) Case;
     try reflexivity;                        (* ANum, AId *)
     try (intros st0; simpl;                 (* APlus, AMinus, AMult *)
      apply s_compile_correct_app with (stack2 := aeval st e1 :: st0);
      [rewrite IHe1; reflexivity |
       apply s_compile_correct_app with (stack2 := aeval st e2 :: aeval st e1 :: st0);
-        [rewrite (IHe2 (aeval st e1 :: st0)); reflexivity |
+        [rewrite (IHe2 (aeval st e1 :: st0)); reflexivity | (* generalizeが役立つ *)
          reflexivity]]).
 Qed.
 
+(* stackが初期状態（空[]）の場合について、証明する。 *)
 Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
