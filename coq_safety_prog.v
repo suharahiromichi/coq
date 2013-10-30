@@ -27,15 +27,13 @@ Proof.
   exists x.
   apply t_copied.
 Defined.                                    (* Qedではいけない！！！！ *)
-
-
 Definition cp (x : nat) := proj1_sig (safe_copy x).
 (* existなので、proj1_sigで値を取り出す。 *)
-
 
 (* Coq上で動作を確認する。 *)
 Eval cbv in cp 120.                         (* 120 : nat *)
 
+Definition cp_proof (x : nat) := proj2_sig (safe_copy x).
 
 (* Camlのコードを生成する。*)
 Extraction safe_copy.                       (* let copy x = x *)
@@ -86,14 +84,12 @@ Proof.
   exists (S x)%nat.
   auto with length.                         (* apply length1. apply l. *)
 Defined.                                    (* Definedであること。 *)
-
-
 Definition len (a : list Z) := proj1_sig (safe_len a).
-
 
 (* テストする *)
 Eval cbv in len (1::2::3::nil).             (* 3%nat *)
 
+Definition len_proof (a : list Z) := proj2_sig (safe_len a).
 
 (* コード生成 *)
 Extraction safe_len.
@@ -103,5 +99,57 @@ let rec safe_len = function
   | Cons (a, l0) -> S (safe_len l0)
 *)
 
+(* ***************************** *)
+(* ***************************** *)
+(* ***************************** *)
+
+(* 
+最大公約数の計算
+http://www.math.nagoya-u.ac.jp/~garrigue/lecture/2013_SS/coq7.pdf
+ *)
+Require Import Arith Euclid Ring Omega Recdef.
+Check modulo.
+
+(*
+引数が 0 でないという条件があり，結果は依存型になっている．
+プログラムで使うには，まず引数の条件を削らなければならない．
+引数に後者関数 S をかけることで条件が満たせる．引数の順番も普通に戻す．
+*)
+
+Definition mod' n m := (modulo (S m) (lt_O_Sn m) n).
+(* proj1_sig と proj2_sig を使ってみる。 *)
+Definition mod'_safe n m := proj1_sig (modulo (S m) (lt_O_Sn m) n).
+Definition mod'_proof n m := proj2_sig (modulo (S m) (lt_O_Sn m) n).
+
+Function gcd (m n : nat) {wf lt m} : nat :=
+  match m with
+    | O => n
+    | S m' => gcd (mod'_safe n m') m
+  end.
+(* 減少の証明 *)
+intros m n m' teq.
+destruct (mod'_proof n m'). simpl.
+destruct H as [Hn Hm].
+apply Hm.
+(* 整礎性の証明 *)
+Search well_founded.
+exact lt_wf.
+Defined.
+
+(* 講義ノートのオリジナルな定義 *)
+Function gcd_orig (m n : nat) {wf lt m} : nat :=
+match m with
+| O => n
+| S m' => gcd_orig (proj1_sig (mod' n m')) m
+end.
+(* 減少の証明 *)
+intros.
+destruct (mod' n m'). simpl.
+destruct e as [q [Hn Hm]].
+apply Hm.
+(* 整礎性の証明 *)
+Search well_founded.
+exact lt_wf.
+Defined.
 
 (* END *)
