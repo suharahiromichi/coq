@@ -26,25 +26,23 @@ Section Equational_logic.
   Definition eleq (e1 e2 : elexp) : elexp :=
     if eleval e1 is true then
       if eleval e2 is true then
-        ELtrue                              (* true = true *)
+        ELtrue
       else
-        ELfalse                             (* true = false *)
-    else if eleval e2 is true then
-           ELfalse                          (* false = true *)
-         else
-           ELtrue.                          (* false = false *)
-
-  Definition elne (e1 e2 : elexp) : elexp :=
-    if eleval e1 is true then
+        ELfalse
+    else
       if eleval e2 is true then
         ELfalse
       else
-        ELtrue
-    else if eleval e2 is true then
-           ELtrue
-         else
-           ELfalse.
-             
+        ELtrue.
+  
+  Definition elne (e1 e2 : elexp) : elexp :=
+    match eleval e1, eleval e2 with
+      | true, true => ELfalse
+      | true, false => ELtrue
+      | false, true => ELtrue
+      | false, false => ELfalse
+    end.
+
   Reserved Notation "b &&& c" (at level 91, left associativity).
   Notation "b &&& c" := (ELand b c) : bool_scope.
 
@@ -72,19 +70,21 @@ Section Equational_logic.
   Check ELtrue &&& ELtrue === ELtrue ||| ELfalse.
   Eval compute in ELtrue &&& ELtrue === ELtrue ||| ELfalse.
 
+
   Lemma refl_eleq : forall e, (e === e) = ELtrue.
   Proof.
     move=> e.
     rewrite /eleq.
-    by case: (eleval e).
+      by case: (eleval e).
   Qed.
 
-  Lemma sym_eleq : forall e1 e2, (e1 === e2) = (e2 === e1).
+ Lemma sym_eleq : forall e1 e2, (e1 === e2) = (e2 === e1).
   Proof.
     move=> e1 e2.
     rewrite /eleq.
       by case: (eleval e1).
   Qed.
+
 
   Lemma if_then_else__else_then :
     forall (e e1 e2 : elexp),
@@ -170,7 +170,106 @@ Section Equational_logic.
       by case (eleval e1); simpl.
   Qed.
 
+  Inductive reflect (P: Prop) : elexp -> Type :=
+  | Reflect_true: P -> reflect P ELtrue
+  | Reflect_false: ~P -> reflect P ELfalse.
+
+(*
+  Inductive reflect (P: elexp) : bool -> Type :=
+  | Reflect_true: (P = ELtrue) -> reflect P true
+  | Reflect_false: (P = ELfalse) -> reflect P false.
+*)
+
+  (* 「=」で結ぶには evalが必要であることに注意！ *)
+  Lemma eqP: forall e1 e2, reflect (eleval e1 = eleval e2) (e1 === e2).
+  Proof.
+    move=> e1 e2.
+    rewrite /eleq.
+    case: (eleval e1); case: (eleval e2).
+      by apply Reflect_true.
+        by apply Reflect_false.
+          by apply Reflect_false.
+            by apply Reflect_true.
+  Qed.
+
+  Lemma eqE: forall e1 e2, (eleval e1 = eleval e2) <-> (e1 === e2) = ELtrue.
+  Proof.
+    move=> e1 e2.
+    split.
+    (* -> *)
+    move=> H. rewrite /eleq -H.
+      by case: (eleval e1).
+    (* <- *)
+      rewrite /eleq.
+        by case (eleval e1); case (eleval e2).
+  (* 途中で、ゴールに ELfalse = ELtrue -> true = false になるが、inverseしなくても、doneできる。 *)
+Qed.
+
 End Equational_logic.
+
+
+Section Sumbool_Equational_logic.
+
+  Hypothesis elexp_eq_dec :
+    forall a b : elexp, {a = b} + {a <> b}.
+
+  Hypothesis elexp_ne_dec :
+    forall a b : elexp, {a <> b} + {a = b}.
+
+  Definition bool_of_sumbool :
+    forall A B:Prop, {A} + {B} -> {b : bool | if b then A else B}.
+    intros A B H.
+    elim H; intro; [exists true | exists false]; assumption.
+  Defined.
+
+  Definition eleqp (e1 e2 : elexp) : Prop :=
+    eleval e1 = eleval e2.
+
+  Definition eleq_dec :
+    (forall (x y : elexp), {x = y} + {x <> y}) ->
+    forall e1 e2, {eleqp e1 e2} + {~ eleqp e1 e2}.
+  Proof.
+    move=> H e1 e2.
+    admit.
+  Defined.
+
+  Definition elne_dec :
+    (forall (x y : elexp), {x <> y} + {x = y}) ->
+    forall e1 e2, {~ eleqp e1 e2} + {eleqp e1 e2}.
+  Proof.
+    move=> H e1 e2.
+    admit.
+  Defined.
+
+  Definition eleq' (x y : elexp) : bool :=
+    proj1_sig (bool_of_sumbool _ _ (eleq_dec elexp_eq_dec x y)).
+
+  Definition elne' (x y : elexp) : bool :=
+    proj1_sig (bool_of_sumbool _ _ (elne_dec elexp_ne_dec x y)).
+
+  Definition eleq'' (x y : elexp) : elexp :=
+    if (eleqb x y) is true then
+      ELtrue
+    else
+      ELfalse.
+
+  Definition elne'' (x y : elexp) : elexp :=
+    if (eleqb x y) is false then
+      ELtrue
+    else
+      ELfalse.
+
+
+  Reserved Notation "b === c" (at level 101, left associativity).
+  Notation "b === c" := (eleq b c) : bool_scope.
+
+  Reserved Notation "b =!= c" (at level 101, left associativity).
+  Notation "b =!= c" := (elne b c) : bool_scope.
+
+  Eval compute in true && true.
+  Check true && true === true.
+  Eval compute in true && true === true.
+
 
 
 (* おまけ *)
