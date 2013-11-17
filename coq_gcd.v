@@ -36,9 +36,9 @@ Proof.
   auto with arith.
 Defined.                                    (* Qed ではだめ。 *)
 
-Definition mod'      n m :=           (modulo (S m) (lt_O_Sn m) n).
-Definition mod_safe  n m := proj1_sig (modulo (S m) (lt_O_Sn m) n).
-Definition mod_proof n m := proj2_sig (modulo (S m) (lt_O_Sn m) n).
+Definition mod'      n m :=           (safe_modulo (S m) (lt_O_Sn m) n).
+Definition mod_safe  n m := proj1_sig (safe_modulo (S m) (lt_O_Sn m) n).
+Definition mod_proof n m := proj2_sig (safe_modulo (S m) (lt_O_Sn m) n).
 
 Require Import Recdef.
 Function gcd (m n : nat) {wf lt m} : nat :=
