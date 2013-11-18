@@ -255,14 +255,38 @@ Section Sumbool_Equational_logic.
   Reserved Notation "b =!= c" (at level 101, left associativity).
   Notation "b =!= c" := (elne' b c) : bool_scope.
 
-  Eval compute in ELtrue === ELtrue.
+  Eval compute in (ELtrue === ELtrue).
 
   Lemma refl_eleq' : forall e, (e === e) = ELtrue.
   Proof.
+    unfold eleq'.
     move=> e.
-    destruct (elexp_eq_dec e e).
+    case: (eleq_dec elexp_eq_dec e e);
+      by rewrite /eleqp.
+(*    simpl. unfold not in H1. exfalso. apply H1. done. *)
+    Qed.
+  
+ Lemma sym_eleq' : forall e1 e2, (e1 === e2) = (e2 === e1).
+  Proof.
+    unfold eleq'.
+    move=> e1 e2.
+    case: (eleq_dec elexp_eq_dec e1 e2).
+    rewrite /eleqp //. move=> H //=.
+    admit.
+    rewrite /eleqp //. move=> H //=.
+    admit.
+  Qed.
+  
+  Lemma assoc_eleq' : forall e1 e2 e3, ((e1 === e2) === e3) = (e1 === (e2 === e3)).
+  Proof.
+    unfold eleq'.
+    move=> e1 e2 e3.
+    case: (eleq_dec elexp_eq_dec e1 e2) => H1.
+    case: (eleq_dec elexp_eq_dec e2 e3) => H2.
+    unfold eleqp in *.
+    simpl.
   Admitted.
-
+  
 End Sumbool_Equational_logic.
 
 (* おまけ *)
