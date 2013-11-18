@@ -211,66 +211,59 @@ End Equational_logic.
 Section Sumbool_Equational_logic.
 
   Hypothesis elexp_eq_dec :
-    forall a b : elexp, {a = b} + {a <> b}.
+    forall a b : elexp, {eleval a = eleval b} + {eleval a <> eleval b}.
 
   Hypothesis elexp_ne_dec :
-    forall a b : elexp, {a <> b} + {a = b}.
+    forall a b : elexp, {eleval a <> eleval b} + {eleval a = eleval b}.
 
-  Definition bool_of_sumbool :
-    forall A B:Prop, {A} + {B} -> {b : bool | if b then A else B}.
+  Definition elexp_of_sumbool :
+    forall A B : Prop, {A} + {B} -> {e | if e is ELtrue then A else B}.
     intros A B H.
-    elim H; intro; [exists true | exists false]; assumption.
+    elim H; intro; [exists ELtrue | exists ELfalse]; assumption.
   Defined.
 
   Definition eleqp (e1 e2 : elexp) : Prop :=
     eleval e1 = eleval e2.
 
   Definition eleq_dec :
-    (forall (x y : elexp), {x = y} + {x <> y}) ->
+    (forall (x y : elexp), {eleval x = eleval y} + {eleval x <> eleval y}) ->
     forall e1 e2, {eleqp e1 e2} + {~ eleqp e1 e2}.
   Proof.
     move=> H e1 e2.
-    admit.
+    elim: (H e1 e2) => H12; [left | right];
+                       rewrite /eleqp; assumption.
   Defined.
 
   Definition elne_dec :
-    (forall (x y : elexp), {x <> y} + {x = y}) ->
+    (forall (x y : elexp), {eleval x <> eleval y} + {eleval x = eleval y}) ->
     forall e1 e2, {~ eleqp e1 e2} + {eleqp e1 e2}.
   Proof.
     move=> H e1 e2.
-    admit.
+    elim: (H e1 e2) => H12; [left | right];
+                       rewrite /eleqp; assumption.
   Defined.
 
-  Definition eleq' (x y : elexp) : bool :=
-    proj1_sig (bool_of_sumbool _ _ (eleq_dec elexp_eq_dec x y)).
+  Definition eleq' (x y : elexp) : elexp :=
+    proj1_sig (elexp_of_sumbool _ _ (eleq_dec elexp_eq_dec x y)).
 
-  Definition elne' (x y : elexp) : bool :=
-    proj1_sig (bool_of_sumbool _ _ (elne_dec elexp_ne_dec x y)).
-
-  Definition eleq'' (x y : elexp) : elexp :=
-    if (eleqb x y) is true then
-      ELtrue
-    else
-      ELfalse.
-
-  Definition elne'' (x y : elexp) : elexp :=
-    if (eleqb x y) is false then
-      ELtrue
-    else
-      ELfalse.
-
+  Definition elne' (x y : elexp) : elexp :=
+    proj1_sig (elexp_of_sumbool _ _ (elne_dec elexp_ne_dec x y)).
 
   Reserved Notation "b === c" (at level 101, left associativity).
-  Notation "b === c" := (eleq b c) : bool_scope.
+  Notation "b === c" := (eleq' b c) : bool_scope.
 
   Reserved Notation "b =!= c" (at level 101, left associativity).
-  Notation "b =!= c" := (elne b c) : bool_scope.
+  Notation "b =!= c" := (elne' b c) : bool_scope.
 
-  Eval compute in true && true.
-  Check true && true === true.
-  Eval compute in true && true === true.
+  Eval compute in ELtrue === ELtrue.
 
+  Lemma refl_eleq' : forall e, (e === e) = ELtrue.
+  Proof.
+    move=> e.
+    destruct (elexp_eq_dec e e).
+  Admitted.
 
+End Sumbool_Equational_logic.
 
 (* おまけ *)
 
