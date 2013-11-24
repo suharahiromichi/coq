@@ -42,10 +42,17 @@ Section Equational_logic.
   Variable axiom_3_35 : forall p q : bool, p && q == p == q == p || q. (* golden *)
   Variable axiom_3_57 : forall p q : bool, p ==> q == p || q == q.     (* implication *)
 
-  Ltac use H X :=
+  Ltac use H X :=                           (* substituion *)
     (have H := X;
      try rewrite assoc in H;
      move/eqP in H).
+
+  Lemma leibniz : forall (p q : bool) (f : bool -> bool),
+                    p = q -> f p = f q.
+  Proof.
+    intros. f_equal. apply H.
+  Qed.
+  Implicit Arguments leibniz [p q].
 
   Theorem theorem_3_4 : true.
   Proof.
@@ -64,13 +71,32 @@ Section Equational_logic.
                            ~~p == q == p == ~~q. (* ちょっと込みいった *)
   Proof.
     move=> p q.
-    use H1 (axiom_3_2 p q).                    (* 定理を前提に置く。 *)
-    use H2 (axiom_3_2 p (~~ q)).
     use H3 (axiom_3_9 p q).
     use H4 (axiom_3_9 q p).
+    use H1 (axiom_3_2 p q).                    (* 定理を前提に置く。 *)
+    use H2 (axiom_3_2 p (~~ q)).
     rewrite assoc.
     rewrite -H3 H2 -H4 -H1.
     apply/eqP. reflexivity.
+  Qed.
+  
+  (* leibniz equation を使用する場合 *)
+  Theorem theorem_3_11' : forall p q : bool,
+                            ~~p == q == p == ~~q. (* ちょっと込みいった *)
+  Proof.
+    move=> p q.
+    use H1 (theorem_3_5 (p != q)).          (* reflexivityで終わるなら要らない。 *)
+    use H2 (axiom_3_2 p q).
+    apply (leibniz (fun x => (p != q) == ~~ x)) in H2.
+    use H3 (axiom_3_9 p q).
+    apply (leibniz (fun x => x == (q != p))) in H3.
+    use H4 (axiom_3_9 q p).
+    apply (leibniz (fun x => ~~ p == q == x)) in H4.
+    rewrite assoc.
+    use H5 (axiom_3_2 p (~~ q)).
+    
+    rewrite H5 -H4 -H3 -H2.
+    apply/eqP. apply H1.                    (* または reflexivity *)
   Qed.
 
   Theorem theorem_3_12 : forall p : bool,
@@ -136,6 +162,36 @@ Section Equational_logic.
     apply/eqP. reflexivity.
   Qed.
 
+  (* leibniz equation を使用する場合 *)
+  Theorem theorem_3_30' : forall p : bool, p || false == p.
+  Proof.
+    move=> p.
+    use H1 (axiom_3_27 p p (~~ p)).
+    use H2 (axiom_3_26 p).
+    apply (leibniz (fun x => p || (p == ~~ p) == x)) in H2.
+    use H3 (axiom_3_9 p p).
+    apply (leibniz (fun x => p || x == p)) in H3.
+    use H4 (axiom_3_3 p).
+    apply (leibniz (fun x => p || ~~ x == p)) in H4.
+    use H5 axiom_3_8.
+    apply (leibniz (fun x => p || x == p)) in H5.
+    use H6 (axiom_3_2 p (~~ p)).
+    rewrite H5 H4 H3.
+    rewrite -H6.
+    rewrite -H2.
+    rewrite H1.
+    (* (p || p == p || ~~ p) == p || p *)
+
+    use H7 (axiom_3_28 p).
+    use H8 (axiom_3_3 (p || p)).
+    use H9 (axiom_3_2 (p || p) true).
+    rewrite H7.
+    rewrite H9.
+    rewrite assoc.
+    rewrite -H8.
+    apply/eqP. reflexivity.
+  Qed.
+  
   Theorem theorem_3_32 : forall p q : bool,
                            p || q == p || ~~ q == p.
   Proof.
