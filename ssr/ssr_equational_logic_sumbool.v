@@ -1,4 +1,13 @@
-(* 等式論理 *)
+(*
+等式論理 (===) : elexp -> elexp -> elexp を使う論理体系。
+2013_11_25 @suharahiromichi
+
+=== についてassocが働くので（はず）、A === B === C という書き方ができる。
+それを sumbool を使って定義する。
+
+@hatsugai さんの等式論理の証明チェッカ を参考にした。
+http://www.principia-m.com/ts/0072/index-jp.html
+*)
 
 Require Import ssreflect ssrbool ssrnat seq.
 Require Import ssrfun.
