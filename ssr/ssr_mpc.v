@@ -217,6 +217,7 @@ Inductive id : Type :=
 
 Inductive aexp : Type :=
   | ANum : nat -> aexp
+  | AId : id -> aexp
   | APlus : aexp -> aexp -> aexp
   | AMinus : aexp -> aexp -> aexp
   | AMult : aexp -> aexp -> aexp.
@@ -246,5 +247,56 @@ Notation "'WHILE' b 'DO' c 'END'" :=
   (CWhile b c) (at level 80, right associativity).
 Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" :=
   (CIf e1 e2 e3) (at level 80, right associativity).
+
+(* *** A Recursive-Descent Parser for Imp *)
+(** *** Impの再帰下降パーサ *)
+
+(* Identifiers *)
+(* 識別子 *)
+Definition parseIdentifier (symtable :string->nat) : parser aexp :=
+  fun xs =>
+    match xs with
+      | [::] =>
+        NoneE "Expected identifier"
+      | x::xs' =>
+        if forallb isLowerAlpha (list_of_string x) then
+          SomeE (AId (Id (symtable x)), xs')
+        else
+          NoneE ("Illegal identifier:'" ++ x ++ "'")
+    end.
+(* Numbers *)
+(* 数値 *)
+Definition parseNumber : parser aexp :=
+  fun xs =>
+    match xs with
+      | [::] =>
+        NoneE "Expected number"
+      | x::xs' =>
+        if forallb isDigit (list_of_string x) then
+          SomeE (ANum (foldl (fun n d =>
+                                10 * n + (nat_of_ascii d - nat_of_ascii "0"%char))
+                             0
+                             (list_of_string x)),
+                 xs')
+        else
+          NoneE "Expected number"
+    end.
+
+(* Parse arithmetic expressions *)
+(* 算術式の構文解析 *)
+Fixpoint parsePrimaryExp (steps : nat) symtable : parser aexp :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      (parseIdentifier symtable)
+        <|>
+        parseNumber
+  end.
+
+Eval compute in parseNumber [:: "123"]%string.
+Eval compute in parseIdentifier 
+                  (build_symtable [::]%string 0) [:: "X"]%string.
+Eval compute in parsePrimaryExp 1000 (build_symtable [::] 0) [:: "123"]%string.
 
 (* END *)
