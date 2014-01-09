@@ -61,6 +61,13 @@ Definition or_ {T : Type} (p1 p2 : parser T) : parser T :=
     end.
 Infix "<|>" := or_ (right associativity, at level 71).
 
+(* and : parser T -> parser S -> parser (T * S) *)
+Definition and_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser (T * S) :=
+  p1
+    >>= fun x => p2
+                   >>= fun y => ret (x, y).
+Infix ">*<" := and_ (right associativity, at level 71).
+
 (* many : parser T -> parser (list T) *)
 Fixpoint many {T : Type} (steps : nat) (p : parser T) : parser (list T) :=
   match steps with
