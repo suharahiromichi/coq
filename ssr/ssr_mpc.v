@@ -152,7 +152,17 @@ Definition bind_ {T S : Type} (p : parser T) (f : T -> parser S) : parser S :=
       | NoneE err => NoneE err
     end.
 Infix ">>=" := bind_ (left associativity, at level 61).
-  
+
+(* bind2 : parser T -> parser S -> parser S *)
+Definition bind2_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser S :=
+  p1 >>= fun _ => p2.
+Infix ">>>" := bind2_ (left associativity, at level 61).
+
+(* bind1 : parser T -> parser S -> parser T *)
+Definition bind1_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser T :=
+  p1 >>= fun x => p2 >>> ret x.
+Infix "<<<" := bind1_ (left associativity, at level 61).
+
 (* or : parser T -> parser T -> parser T *)
 Definition or_ {T : Type} (p1 p2 : parser T) : parser T :=
   fun (xs : list token) =>
@@ -237,6 +247,7 @@ Inductive com : Type :=
   | CIf : bexp -> com -> com -> com
   | CWhile : bexp -> com -> com.
 
+(*
 Notation "'SKIP'" :=
   CSkip.
 Notation "X '::=' a" :=
@@ -247,6 +258,7 @@ Notation "'WHILE' b 'DO' c 'END'" :=
   (CWhile b c) (at level 80, right associativity).
 Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" :=
   (CIf e1 e2 e3) (at level 80, right associativity).
+*)
 
 (* *** A Recursive-Descent Parser for Imp *)
 (** *** Impの再帰下降パーサ *)
@@ -273,10 +285,11 @@ Definition parseNumber : parser aexp :=
         NoneE "Expected number"
       | x::xs' =>
         if forallb isDigit (list_of_string x) then
-          SomeE (ANum (foldl (fun n d =>
-                                10 * n + (nat_of_ascii d - nat_of_ascii "0"%char))
-                             0
-                             (list_of_string x)),
+          SomeE (ANum
+                   (foldl (fun n d =>
+                             10 * n + (nat_of_ascii d - nat_of_ascii "0"%char))
+                          0
+                          (list_of_string x)),
                  xs')
         else
           NoneE "Expected number"
@@ -292,11 +305,21 @@ Fixpoint parsePrimaryExp (steps : nat) symtable : parser aexp :=
       (parseIdentifier symtable)
         <|>
         parseNumber
+        <|>
+        expect "("%string
+        >>> parsePrimaryExp steps' symtable
+        <<< expect ")"%string
   end.
 
 Eval compute in parseNumber [:: "123"]%string.
 Eval compute in parseIdentifier 
-                  (build_symtable [::]%string 0) [:: "X"]%string.
-Eval compute in parsePrimaryExp 1000 (build_symtable [::] 0) [:: "123"]%string.
+                  (build_symtable [::]%string 0)
+                  [:: "X"]%string.
+Eval compute in parsePrimaryExp 1000
+                                (build_symtable [::] 0)
+                                [:: "123"]%string.
+Eval compute in parsePrimaryExp 1000
+                                (build_symtable [::] 0)
+                                [:: "("; "123"; ")"]%string.
 
 (* END *)
