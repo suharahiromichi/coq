@@ -314,25 +314,47 @@ Fixpoint parsePrimaryExp (steps : nat) symtable : parser aexp :=
     | 0 =>
       fun _ => NoneE "Too_many_recursive_calls"
     | S steps' =>
-      (parseIdentifier symtable)      (* この括弧は、PGのauto indentで浅くするため(＊)。 *)
-        <|>
-        parseNumber
-        <|>
-        ((expect "("%string)                   (* ＊ *)
-           >>> parsePrimaryExp steps' symtable (* parseSumExp *)
-           <<< expect ")"%string)
+      parseIdentifier symtable
+                      <|>
+                      parseNumber
+                      <|>
+                      ((expect "("%string)
+                         >>>
+                         parseSumExp steps' symtable
+                         <<<
+                         expect ")"%string)
   end
 with parseProductExp (steps : nat) symtable : parser aexp :=
   match steps with
     | 0 =>
       fun _ => NoneE "Too_many_recursive_calls"
     | S steps' =>
-      (parsePrimaryExp steps' symtable)     (* ＊ *)
-        >>= fun (x : aexp) => foldlParser AMult
-                                 x
-                                 (many steps' ((expect "*"%string)
-                                                 >>> parsePrimaryExp steps' symtable))
+      parsePrimaryExp steps' symtable
+                      >>=
+                      fun (x : aexp) =>
+                        foldlParser AMult
+                                    x
+                                    (many steps' (expect "*"%string
+                                                         >>>
+                                                         parsePrimaryExp steps' symtable))
+  end
+with parseSumExp (steps : nat) symtable : parser aexp :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      parseProductExp steps' symtable
+                      >>=
+                      fun (x : aexp) =>
+                        foldlParser APlus
+                                    x
+                                    (many steps' (expect "+"%string
+                                                         >>>
+                                                         parseProductExp steps' symtable))
+  (* AMinus ("-") は、未実装。 *)
   end.
+
+Definition parseAExp := parseSumExp.
 
 Eval compute in parseNumber [:: "123"]%string.
 Eval compute in parseIdentifier 
@@ -350,5 +372,14 @@ Eval compute in parseProductExp 1000
 Eval compute in parseProductExp 1000
                                 (build_symtable [::] 0) (* 左結合になっている。 *)
                                 [:: "123"; "*"; "456"; "*"; "789"]%string.
+Eval compute in parseSumExp 1000
+                                (build_symtable [::] 0) (* 左結合になっている。 *)
+                                [:: "123"; "+"; "456"; "+"; "789"]%string.
+Eval compute in parseAExp 1000
+                                (build_symtable [::] 0)
+                                [:: "("; "123"; "+"; "345"; ")"; "*"; "679" ]%string.
+Eval compute in parseAExp 1000
+                                (build_symtable [::] 0)
+                                [:: "123"; "+"; "345"; "*"; "679" ]%string.
 
 (* END *)
