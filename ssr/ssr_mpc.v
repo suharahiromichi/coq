@@ -351,7 +351,7 @@ with parseSumExp (steps : nat) symtable : parser aexp :=
                                     (many steps' (expect "+"%string
                                                          >>>
                                                          parseProductExp steps' symtable))
-  (* AMinus ("-") は、未実装。 *)
+  (* AMinus ("-") は、未実装。foldlParser で挿入するコンストラクタをどう選べばよいのか。 *)
   end.
 
 Definition parseAExp := parseSumExp.
