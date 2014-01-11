@@ -266,31 +266,27 @@ Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" :=
 
 (* Identifiers *)
 (* 識別子 *)
-Definition parseIdentifier (symtable :string->nat) : parser aexp :=
-  fun xs =>
+Definition parseIdentifier symtable (xs : list token) : optionE (id * list token) :=
     match xs with
       | [::] =>
         NoneE "Expected identifier"
       | x::xs' =>
         if forallb isLowerAlpha (list_of_string x) then
-          SomeE (AId (Id (symtable x)), xs')
+          SomeE (Id (symtable x), xs')
         else
           NoneE ("Illegal identifier:'" ++ x ++ "'")
     end.
 (* Numbers *)
 (* 数値 *)
-Definition parseNumber : parser aexp :=
-  fun xs =>
+Definition parseNumber (xs : list token) : optionE (nat * list token) :=
     match xs with
       | [::] =>
         NoneE "Expected number"
       | x::xs' =>
         if forallb isDigit (list_of_string x) then
-          SomeE (ANum
-                   (foldl (fun n d =>
-                             10 * n + (nat_of_ascii d - nat_of_ascii "0"%char))
-                          0
-                          (list_of_string x)),
+          SomeE (foldl (fun n d => 10 * n + (nat_of_ascii d - nat_of_ascii "0"%char))
+                       0
+                       (list_of_string x),
                  xs')
         else
           NoneE "Expected number"
@@ -314,15 +310,15 @@ Fixpoint parsePrimaryExp (steps : nat) symtable : parser aexp :=
     | 0 =>
       fun _ => NoneE "Too_many_recursive_calls"
     | S steps' =>
-      parseIdentifier symtable
+      (parseIdentifier symtable >>= fun x => ret (AId x))
                       <|>
-                      parseNumber
+                      (parseNumber >>= fun x => ret (ANum x))
                       <|>
-                      ((expect "("%string)
-                         >>>
-                         parseSumExp steps' symtable
-                         <<<
-                         expect ")"%string)
+                      (expect "("%string
+                              >>>
+                              parseSumExp steps' symtable
+                              <<<
+                              expect ")"%string)
   end
 with parseProductExp (steps : nat) symtable : parser aexp :=
   match steps with
@@ -356,30 +352,168 @@ with parseSumExp (steps : nat) symtable : parser aexp :=
 
 Definition parseAExp := parseSumExp.
 
+Fixpoint parseAtomicExp (steps : nat) symtable : parser bexp :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      (expect "true"%string
+              >>>
+              ret BTrue)
+        <|>
+        (expect "false"%string
+                >>>
+                ret BFalse)
+        <|>
+        (expect "not"%string
+                >>>
+                parseAtomicExp steps' symtable)
+        <|>
+        (expect "("%string
+                >>>
+                parseConjunctionExp steps' symtable
+                <<<
+                expect ")"%string)
+        <|>
+        (parseProductExp steps' symtable
+                         >>=
+                         fun x =>
+                           (expect "=="%string
+                                   >>>
+                                   (parseAExp steps' symtable)
+                                   >>=
+                                   fun x' => ret (BEq x x'))
+                             <|>
+                             (expect "<="%string
+                                     >>>
+                                     (parseAExp steps' symtable)
+                                     >>=
+                                     fun x' => ret (BLe x x')))
+  end
+with parseConjunctionExp (steps : nat) symtable : parser bexp :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      parseAtomicExp steps' symtable
+                     >>=
+                     fun (x : bexp) =>
+                       foldlParser BAnd
+                                    x
+                                    (many steps' (expect "&&"%string
+                                                         >>>
+                                                         parseAtomicExp steps' symtable))
+  end.
+
+Definition parseBExp := parseConjunctionExp.
+
+Fixpoint parseSimpleCommand (steps : nat) symtable : parser com :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      (expect "SKIP"%string
+              >>>
+              ret CSkip)
+        <|>
+        (expect "IF"%string
+                >>>
+                (parseBExp steps' symtable
+                           >>=
+                           fun x =>
+                             expect "THEN"%string
+                                    >>>
+                                    (parseSequencedCommand steps' symtable
+                                                           >>=
+                                                        fun x' =>
+                                                          expect "ELSE"%string
+                                                                 >>>
+                                                                 (parseSequencedCommand steps' symtable
+                                                                                     >>=
+                                                                                     fun x'' =>
+                                                                                       expect "END"%string
+                                                                                              >>>
+                                                                                              ret (CIf x x' x'')))))
+        <|>
+        (expect "WHILE"%string
+                >>>
+                (parseBExp steps' symtable
+                           >>=
+                           fun x =>
+                             expect "DO"%string
+                                    >>>
+                                    (parseSequencedCommand steps' symtable
+                                                        >>=
+                                                        fun x' =>
+                                                          expect "END"%string
+                                                                 >>>
+                                                                 ret (CWhile x x'))))
+        <|>
+        (parseIdentifier symtable
+                         >>=
+                         fun x =>
+                           expect ":="%string
+                                  >>>
+                                  (parseAExp steps' symtable
+                                             >>=
+                                             fun x' => ret (CAss x x')))
+  end
+with parseSequencedCommand (steps : nat) symtable : parser com :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      (parseSimpleCommand steps' symtable
+                          >>=
+                          fun x =>
+                            (expect ";"%string
+                                    >>> 
+                                    (parseSequencedCommand steps' symtable
+                                                           >>=
+                                                           fun x' => ret (CSeq x x')))
+                              <|>
+                              ret x)
+        
+  end.
+
+(* Sample *)
+Eval compute in build_symtable [:: "a"; "+"; "b"]%string.
+Eval compute in build_symtable [:: "a"; "+"; "b"]%string 0 "a"%string. (* 0 *)
+Eval compute in build_symtable [:: "a"; "+"; "b"]%string 0 "b"%string. (* 1 *)
+
 Eval compute in parseNumber [:: "123"]%string.
-Eval compute in parseIdentifier 
-                  (build_symtable [::]%string 0)
-                  [:: "X"]%string.
-Eval compute in parsePrimaryExp 1000
-                                (build_symtable [::] 0)
+Eval compute in parseIdentifier (build_symtable [:: "a"]%string 0)
+                                [:: "a"]%string.
+Eval compute in parsePrimaryExp 1000 (build_symtable [::] 0)
                                 [:: "123"]%string.
-Eval compute in parsePrimaryExp 1000
-                                (build_symtable [::] 0)
+Eval compute in parsePrimaryExp 1000 (build_symtable [::] 0)
                                 [:: "("; "123"; ")" ]%string.
-Eval compute in parseProductExp 1000
-                                (build_symtable [::] 0)
+Eval compute in parseProductExp 1000 (build_symtable [::] 0)
                                 [:: "123" ]%string.
-Eval compute in parseProductExp 1000
-                                (build_symtable [::] 0) (* 左結合になっている。 *)
+Eval compute in parseProductExp 1000 (build_symtable [::] 0) (* 左結合になっている。 *)
                                 [:: "123"; "*"; "456"; "*"; "789"]%string.
-Eval compute in parseSumExp 1000
-                                (build_symtable [::] 0) (* 左結合になっている。 *)
-                                [:: "123"; "+"; "456"; "+"; "789"]%string.
-Eval compute in parseAExp 1000
-                                (build_symtable [::] 0)
-                                [:: "("; "123"; "+"; "345"; ")"; "*"; "679" ]%string.
-Eval compute in parseAExp 1000
-                                (build_symtable [::] 0)
-                                [:: "123"; "+"; "345"; "*"; "679" ]%string.
+Eval compute in parseSumExp 1000 (build_symtable [::] 0) (* 左結合になっている。 *)
+                            [:: "123"; "+"; "456"; "+"; "789"]%string.
+Eval compute in parseAExp 1000 (build_symtable [::] 0)
+                          [:: "("; "123"; "+"; "345"; ")"; "*"; "679" ]%string.
+Eval compute in parseAExp 1000 (build_symtable [::] 0)
+                          [:: "123"; "+"; "345"; "*"; "679" ]%string.
+
+Eval compute in parseBExp 10 (build_symtable [::] 0)
+                          [:: "123"; "=="; "345" ]%string.
+Eval compute in parseBExp 10 (build_symtable [::] 0)
+                          [:: "123"; "=="; "345"; "&&"; "321"; "=="; "543"]%string.
+Eval compute in parseBExp 10 (build_symtable [::] 0) (* 左結合になっている。 *)
+                          [:: "1"; "=="; "2"; "&&"; "3"; "<="; "4"; "&&";
+                           "5"; "<="; "6"; "&&"; "7"; "=="; "8"]%string.
+
+Eval compute in parseSimpleCommand 10 (build_symtable [::] 0)
+                                   [:: "IF"; "1"; "=="; "1"; "THEN"; "SKIP"; "ELSE"; "SKIP"; "END"]%string.
+Eval compute in parseSimpleCommand 10 (build_symtable [::] 0)
+                                   [:: "WHILE"; "1"; "=="; "1"; "DO"; "SKIP"; "END"]%string.
+Eval compute in parseSimpleCommand 10 (build_symtable [:: "a"; "="; "1"]%string 0)
+                                   [:: "a"; ":="; "1"]%string.
+Eval compute in parseSequencedCommand 10 (build_symtable [::] 0) (* 右結合になっている。 *)
+                                      [:: "SKIP"; ";"; "SKIP"; ";"; "SKIP"]%string.
 
 (* END *)
