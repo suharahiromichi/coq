@@ -151,17 +151,18 @@ Definition bind_ {T S : Type} (p : parser T) (f : T -> parser S) : parser S :=
       | SomeE (t, xs') => f t xs'
       | NoneE err => NoneE err
     end.
-Infix ">>=" := bind_ (left associativity, at level 61).
+Infix ">>=" := bind_ (left associativity, at level 71).
+(* OCamlにあわせて、>,<から始まる演算子は、すべて左結合で同一優先順位とする。 *)
 
 (* bind2 : parser T -> parser S -> parser S *)
 Definition bind2_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser S :=
   p1 >>= fun _ => p2.
-Infix ">>>" := bind2_ (left associativity, at level 61).
+Infix ">>>" := bind2_ (left associativity, at level 71).
 
 (* bind1 : parser T -> parser S -> parser T *)
 Definition bind1_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser T :=
   p1 >>= fun x => p2 >>> ret x.
-Infix "<<<" := bind1_ (left associativity, at level 61).
+Infix "<<<" := bind1_ (left associativity, at level 71).
 
 (* or : parser T -> parser T -> parser T *)
 Definition or_ {T : Type} (p1 p2 : parser T) : parser T :=
@@ -174,14 +175,14 @@ Definition or_ {T : Type} (p1 p2 : parser T) : parser T :=
           | NoneE err2 => NoneE (err1 ++ err2) (* エラー文字列の連結 *)
         end
     end.
-Infix "<|>" := or_ (right associativity, at level 71).
+Infix "<|>" := or_ (left associativity, at level 71).
 
 (* and : parser T -> parser S -> parser (T * S) *)
 Definition and_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser (T * S) :=
   p1
     >>= fun x => p2
                    >>= fun y => ret (x, y).
-Infix ">*<" := and_ (right associativity, at level 71).
+Infix ">*<" := and_ (left associativity, at level 71).
 
 (* many : parser T -> parser (list T) *)
 Fixpoint many {T : Type} (steps : nat) (p : parser T) : parser (list T) :=
@@ -189,9 +190,9 @@ Fixpoint many {T : Type} (steps : nat) (p : parser T) : parser (list T) :=
     | 0 => 
       fun _ => NoneE "Too_many_recursive_calls"
     | S steps' =>
-      p
-        >>= fun x => many steps' p
-                          >>= fun xs => ret (x :: xs)
+      (p                                    (* ここの括弧は必要！ *)
+         >>= fun x => many steps' p
+                           >>= fun xs => ret (x :: xs))
       <|>
       ret [::]
   end.
@@ -295,6 +296,17 @@ Definition parseNumber : parser aexp :=
           NoneE "Expected number"
     end.
 
+(* parser (seq T) を parser T に変換するユーティリティ *)
+Definition foldlParser {T : Type}
+           (f : T -> T -> T) (e : T) (p : parser (seq T)) : parser T :=
+  fun (xs : list token) =>
+    match p xs with
+      | SomeE (es, rest') =>
+        SomeE (foldl f e es, rest')         (* T * token list *)
+      | NoneE err =>
+        NoneE err
+    end.
+
 (* Parse arithmetic expressions *)
 (* 算術式の構文解析 *)
 Fixpoint parsePrimaryExp (steps : nat) symtable : parser aexp :=
@@ -302,13 +314,24 @@ Fixpoint parsePrimaryExp (steps : nat) symtable : parser aexp :=
     | 0 =>
       fun _ => NoneE "Too_many_recursive_calls"
     | S steps' =>
-      (parseIdentifier symtable)
+      (parseIdentifier symtable)      (* この括弧は、PGのauto indentで浅くするため(＊)。 *)
         <|>
         parseNumber
         <|>
-        expect "("%string
-        >>> parsePrimaryExp steps' symtable
-        <<< expect ")"%string
+        ((expect "("%string)                   (* ＊ *)
+           >>> parsePrimaryExp steps' symtable (* parseSumExp *)
+           <<< expect ")"%string)
+  end
+with parseProductExp (steps : nat) symtable : parser aexp :=
+  match steps with
+    | 0 =>
+      fun _ => NoneE "Too_many_recursive_calls"
+    | S steps' =>
+      (parsePrimaryExp steps' symtable)     (* ＊ *)
+        >>= fun (x : aexp) => foldlParser AMult
+                                 x
+                                 (many steps' ((expect "*"%string)
+                                                 >>> parsePrimaryExp steps' symtable))
   end.
 
 Eval compute in parseNumber [:: "123"]%string.
@@ -320,6 +343,12 @@ Eval compute in parsePrimaryExp 1000
                                 [:: "123"]%string.
 Eval compute in parsePrimaryExp 1000
                                 (build_symtable [::] 0)
-                                [:: "("; "123"; ")"]%string.
+                                [:: "("; "123"; ")" ]%string.
+Eval compute in parseProductExp 1000
+                                (build_symtable [::] 0)
+                                [:: "123" ]%string.
+Eval compute in parseProductExp 1000
+                                (build_symtable [::] 0) (* 左結合になっている。 *)
+                                [:: "123"; "*"; "456"; "*"; "789"]%string.
 
 (* END *)
