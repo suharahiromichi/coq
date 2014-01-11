@@ -15,7 +15,7 @@ Require Import ssrfun.
 Require Import String.
 Require Import Ascii.
 
-(** ** 字句解析 *)
+(** (1) 字句解析 *)
 Definition isWhite (c : ascii) : bool :=
   let n := nat_of_ascii c in
   (n == 32) ||                              (* space *)
@@ -102,7 +102,7 @@ Inductive optionE (T : Type) : Type :=
 Implicit Arguments SomeE [[T]].
 Implicit Arguments NoneE [[T]].
 
-(** *** Symbol Table *)
+(** (2) Symbol Table *)
 Fixpoint forallb {A} f (l:list A) : bool :=
   match l with
     | nil => true
@@ -129,7 +129,7 @@ Eval compute in build_symtable [:: "aaa"; "+"; "bbb"; "+"; "ccc"]%string
 Eval compute in build_symtable [:: "aaa"; "+"; "bbb"; "+"; "ccc"]%string
                                0 "xxx"%string. (* 3 *)
 
-(** コンビネータ *)
+(** (3) パーサ コンビネータ *)
 Definition parser (T : Type) :=
   list token -> optionE (T * list token).
 (* Tとしてとるものは、unit(予約語)、id、nat、bexp、aexp、com
@@ -152,7 +152,8 @@ Definition bind_ {T S : Type} (p : parser T) (f : T -> parser S) : parser S :=
       | NoneE err => NoneE err
     end.
 Infix ">>=" := bind_ (left associativity, at level 71).
-(* OCamlにあわせて、>,<から始まる演算子は、すべて左結合で同一優先順位とする。 *)
+(* OCamlにあわせて、>,<から始まる演算子は、すべて左結合で同一優先順位とする。
+実際は、右結合のほうが使いやすいとおもう。 *)
 
 (* bind2 : parser T -> parser S -> parser S *)
 Definition bind2_ {T S : Type} (p1 : parser T) (p2 : parser S) : parser S :=
@@ -261,8 +262,7 @@ Notation "'IFB' e1 'THEN' e2 'ELSE' e3 'FI'" :=
   (CIf e1 e2 e3) (at level 80, right associativity).
 *)
 
-(* *** A Recursive-Descent Parser for Imp *)
-(** *** Impの再帰下降パーサ *)
+(** Impの再帰下降パーサ を「モナディック パーサー コンビネータ」で書き換えた。 *)
 
 (* Identifiers *)
 (* 識別子 *)
@@ -476,6 +476,12 @@ with parseSequencedCommand (steps : nat) symtable : parser com :=
         
   end.
 
+Definition parse (str : string) : optionE (com * list token) :=
+  let tokens := tokenize str in             (* (1) *)
+    parseSequencedCommand 20                (* (3) *)
+    (build_symtable tokens 0)               (* (2) *)
+    tokens.
+
 (* Sample *)
 Eval compute in build_symtable [:: "a"; "+"; "b"]%string.
 Eval compute in build_symtable [:: "a"; "+"; "b"]%string 0 "a"%string. (* 0 *)
@@ -515,5 +521,27 @@ Eval compute in parseSimpleCommand 10 (build_symtable [:: "a"; "="; "1"]%string 
                                    [:: "a"; ":="; "1"]%string.
 Eval compute in parseSequencedCommand 10 (build_symtable [::] 0) (* 右結合になっている。 *)
                                       [:: "SKIP"; ";"; "SKIP"; ";"; "SKIP"]%string.
+
+Eval compute in parse "
+    IF x == y + 1 + 2 + y * 6 + 3 THEN
+      x := x * 1;
+      y := 0
+    ELSE
+      SKIP
+    END  ".
+
+Eval compute in parse "
+    SKIP;
+    z:=x*y*(x*x);
+    WHILE x==x DO
+      IF z <= z*z && not x == 2 THEN
+        x := z;
+        y := z
+      ELSE
+        SKIP
+      END;
+      SKIP
+    END;
+    x:=z  ".
 
 (* END *)
