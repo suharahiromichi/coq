@@ -1,4 +1,4 @@
-(** Monadic TASK Combinators *)
+(** Monadic Task Combinators *)
 (** モナディック タスク コンビネータ *)
 
 (* @suharahiromichi 2014_01_13 *)
@@ -16,23 +16,27 @@ Implicit Arguments SomeE [[T]].
 Implicit Arguments NoneE [[T]].
 
 (** タスク コンビネータ *)
-Definition task (T : Type) := unit -> optionE (T).
+Inductive sched : Set :=
+.                                           (* TBD *)
+Definition thunk := list sched.
+
+Definition task (T : Type) :=
+  thunk -> optionE (T * thunk).
 Print unit.
 Check unit.
 Check (task unit).
 Check (task nat).
 
 (* ret : T -> task T *)
-Definition ret {T : Type} (t : T) : task T :=
-  fun (xs : unit) => SomeE t.
-Check ret tt.                               (* tt : unit *)
+Definition ret {T : Type} (x : T) : task T :=
+  fun (u : thunk) => SomeE (x, u).
 Check ret 1.
 
 (* bind : task T -> (T -> task S) -> task S *)
 Definition bind_ {T S : Type} (p : task T) (f : T -> task S) : task S :=
-  fun (xs : unit) =>
-    match p xs with
-      | SomeE t => f t xs
+  fun (u : thunk) =>
+    match p u with
+      | SomeE (x, u') => f x u'
       | NoneE err => NoneE err
     end.
 Infix ">>=" := bind_ (left associativity, at level 71).
@@ -49,11 +53,11 @@ Infix "<<<" := bind1_ (left associativity, at level 71).
 
 (* or : task T -> task T -> task T *)
 Definition or_ {T : Type} (p1 p2 : task T) : task T :=
-  fun (xs : unit) =>
-    match p1 xs with
+  fun (u : thunk) =>
+    match p1 u with
       | SomeE t => SomeE t
       | NoneE err1 =>
-        match p2 xs with
+        match p2 u with
           | SomeE t => SomeE t
           | NoneE err2 => NoneE (err1 ++ err2) (* エラー文字列の連結 *)
         end
@@ -67,7 +71,7 @@ Definition and_ {T S : Type} (p1 : task T) (p2 : task S) : task (T * S) :=
                    >>= fun y => ret (x, y).
 Infix ">*<" := and_ (left associativity, at level 71).
 
-(* many : task T -> task (list T) *)
+(* many : task T -> task (list T)、結果をリストで返す。 *)
 Fixpoint many {T : Type} (steps : nat) (p : task T) : task (list T) :=
   match steps with
     | 0 => 
@@ -75,12 +79,12 @@ Fixpoint many {T : Type} (steps : nat) (p : task T) : task (list T) :=
     | S steps' =>
       (p                                    (* ここの括弧は必要！ *)
          >>= fun x => many steps' p
-                           >>= fun xs => ret (x :: xs))
+                           >>= fun u => ret (x :: u))
       <|>
       ret [::]
   end.
 
-(* many : task T -> task unit *)
+(* loop : task T -> task unit、結果を返さない。 *)
 Fixpoint loop {T : Type} (steps : nat) (p : task T) : task unit :=
   match steps with
     | 0 => 
@@ -102,11 +106,14 @@ Definition read (fd : nat) : task nat :=
 Definition write (fd : nat) (s : string) : task nat :=
   ret fd.
 
-(* タスクの合成例 *)
+(* タスクの合成 *)
 Definition test (fd : nat) : task unit :=
   loop 10
        ((read 1 >>> sleep 10)
           >*<
           (write 1 "test" >>> sleep 10)).
+
+(* タスクの実行 *)
+(* TBD *)
 
 (* END *)
