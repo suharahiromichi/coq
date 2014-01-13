@@ -7,6 +7,21 @@ Require Import ssreflect ssrbool ssrnat seq eqtype.
 Require Import ssrfun.
 Require Import String.                      (* Error *)
 
+(* スケジュラー *)
+Inductive time : Set :=
+Time of nat.
+
+Inductive fd : Set :=
+Fd of nat.
+
+Inductive sched : Set :=                    (* TBD *)
+| sleep_ of time                            (* 時間待ち *)
+| read_ of fd                               (* fd待ち *)
+| write_ of fd & string.
+(* 実行中を示すReadyを追加するべきだ。 *)
+
+Definition thunk := list sched.
+
 (** Option と Error *)
 Inductive optionE (T : Type) : Type :=
   | SomeE : T -> optionE T
@@ -16,10 +31,6 @@ Implicit Arguments SomeE [[T]].
 Implicit Arguments NoneE [[T]].
 
 (** タスク コンビネータ *)
-Inductive sched : Set :=
-.                                           (* TBD *)
-Definition thunk := list sched.
-
 Definition task (T : Type) :=
   thunk -> optionE (T * thunk).
 Print unit.
@@ -97,14 +108,21 @@ Fixpoint loop {T : Type} (steps : nat) (p : task T) : task unit :=
   end.
 
 (* タスク部品 *)
+Check sleep_ (Time 1).
+Check SomeE (1, (sleep_ (Time 1))).
+Check SomeE (1, (sleep_ (Time 1)) :: nil).
+
 Definition sleep (time : nat) : task unit :=
-  ret tt.                                   (* timeだけsleepして、unitを返す。 *)
+  fun (u : thunk) =>
+    SomeE (tt, (sleep_ (Time time)) :: u).  (* timeだけsleepして、unitを返す。 *)
 
-Definition read (fd : nat) : task nat :=
-  ret fd.                                   (* fdからreadして、 fdを返す。*)
+Definition read (fd : nat) : task unit :=
+  fun (u : thunk) =>
+    SomeE (tt, (read_ (Fd fd)) :: u).       (* fdからreadする。 *)
 
-Definition write (fd : nat) (s : string) : task nat :=
-  ret fd.
+Definition write (fd : nat) (s : string) : task unit :=
+  fun (u : thunk) =>
+    SomeE (tt, (write_ (Fd fd) s) :: u).
 
 (* タスクの合成 *)
 Definition test (fd : nat) : task unit :=
@@ -112,8 +130,28 @@ Definition test (fd : nat) : task unit :=
        ((read 1 >>> sleep 10)
           >*<
           (write 1 "test" >>> sleep 10)).
+Eval compute in test 1.
+(* これでは、>>>と>*<の区別無く、ひとつのリストになってしまう。 *)
 
 (* タスクの実行 *)
-(* TBD *)
+Definition one (us : thunk) : thunk :=
+  match us with
+    | [::] => [::]
+    | u :: us' => us'   (* ここでは、左から順に実行するが、 *)
+(*  | u :: us' => u :: us'  ... 終了しなれば、uを戻してもよい。 *)
+  end.
+
+Fixpoint run (step : nat) (us : thunk) : thunk :=
+  match step with
+    | 0 => us
+    | S steps' =>
+      run steps' (one us)
+  end.
+
+Definition main :=
+  match test 1 [::] with                    (* [::]は、初期状態の空のthunk *)
+    | SomeE (x, u) => run 100 u
+    | NoneE err => [::]
+  end.
 
 (* END *)
