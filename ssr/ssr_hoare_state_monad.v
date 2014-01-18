@@ -52,10 +52,17 @@ Program Definition bind :
         (x, s2) => c2 x s2
     end.
 Obligation 2.
-  admit.
+  unfold HoareState in *.
+  apply p0.
+  destruct c1 as [H1 H2].
+  simpl in H2.
+  simpl in Heq_anonymous.
+  rewrite <- Heq_anonymous in H2.
+  apply H2.
 Qed.
 
 Obligation 3.
+  destruct (c2 x) as [H1 H2].  
   admit.
 Qed.
 
