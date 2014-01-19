@@ -4,6 +4,7 @@
 
 Require Import ssreflect ssrbool ssrnat seq eqtype.
 Require Import ssrfun.
+(* Require Import List. *)
 Require Import String.                      (* Error *)
 Require Import Program.                     (* Program *)
 
@@ -52,6 +53,7 @@ Program Definition bind :
           (x, s2) => c2 x s2
       end.
 Obligation 2.
+Proof.
   unfold HoareState in *.
   destruct c1 as [x0 H0].
   simpl in H0.
@@ -62,6 +64,7 @@ Obligation 2.
 Qed.
 
 Obligation 3.
+Proof.
   unfold HoareState in *.
   destruct (c2 x) as [x1 H1].
   simpl in H1.
@@ -108,16 +111,29 @@ Fixpoint size {a : Set} (t : Tree a) : nat :=
     | Node l r => size l + size r
   end.
 
-Fixpoint seq (x n : nat) : list nat :=
+Fixpoint sequence (x n : nat) : list nat :=
   match n with
     | 0 => nil
-    | S k => x :: seq (S x) k
+    | S k => x :: sequence (S x) k
   end.
+
+Lemma SequenceSpilt : forall y x z,
+                        sequence x (y + z) = sequence x y ++ sequence (x + y) z.
+Proof.
+  induction y.
+  (* y = 0 *)
+  simpl.
+  intros x z. rewrite add0n. rewrite addn0. reflexivity.
+  (* y = y.+1 *)
+  simpl.
+  intros. rewrite (IHy (x.+1)).
+  rewrite addSn. rewrite addnS. reflexivity.
+Qed.
 
 Program Fixpoint relabel (a : Set) (t : Tree a) :
   HoareState top
              (Tree nat)
-             (fun i t f => f = i + size t /\ flatten t = seq i (size t))
+             (fun i t f => f = i + size t /\ flatten t = sequence i (size t))
   :=
     match t with
       | Leaf x =>
@@ -129,16 +145,10 @@ Program Fixpoint relabel (a : Set) (t : Tree a) :
                 fun l => relabel a r >>=
                                   fun r => ret (Node l r)
     end.
-Next Obligation.
+Obligation 4.
+Proof.
   admit.
 Defined.
-
-Next Obligation.
-  admit.
-Qed.
-
-Next Obligation.
-Admitted.
 
 Check relabel.
 
