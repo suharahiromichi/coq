@@ -1,5 +1,5 @@
 (** The Hoare State Monad - Proof Pearl, Wouter Swierstra *)
-(** 後半 HoareState モナド *)
+(* latter half, Proof of the HoareState *)
 (* @suharahiromichi 2014_01_13 *)
 
 Require Import ssreflect ssrbool ssrnat seq eqtype.
@@ -53,17 +53,31 @@ Program Definition bind :
     end.
 Obligation 2.
   unfold HoareState in *.
-  apply p0.
-  destruct c1 as [H1 H2].
-  simpl in H2.
+  destruct c1 as [x0 H0].
+  simpl in H0.
   simpl in Heq_anonymous.
-  rewrite <- Heq_anonymous in H2.
-  apply H2.
+  rewrite <- Heq_anonymous in H0.
+  apply p0.
+  apply H0.
 Qed.
 
 Obligation 3.
-  destruct (c2 x) as [H1 H2].  
-  admit.
+  unfold HoareState in *.
+  destruct (c2 x) as [x1 H1].
+  simpl in H1.
+  simpl.
+  destruct x1.
+  exists x.
+  exists s2.
+  split.
+  (* Q1 s1 x s2 *)
+  destruct c1 as [x0 H0].
+  simpl in H0.
+  simpl in Heq_anonymous.
+  rewrite <- Heq_anonymous in H0.
+  apply H0.
+  (* Q2 x s2 b0 s0 *)
+  apply H1.
 Qed.
 
 Check bind.
