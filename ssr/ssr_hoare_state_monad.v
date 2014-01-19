@@ -37,20 +37,20 @@ Definition top : Pre := fun s => True.
 Program Definition ret {a : Set} :
   forall x, HoareState top a (fun i y f => i = f /\ y = x)
   :=
-  fun x s => (x, s).
+    fun x s => (x, s).
 
 Program Definition bind :
   forall {a b P1 P2 Q1 Q2},
     (HoareState P1 a Q1) ->
     (forall (x : a), HoareState (P2 x) b (Q2 x)) ->
-    HoareState (fun s1 => P1 s1 /\ forall x s2, Q1 s1 x s2 -> P2 x s2)
+    HoareState (fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 x s2))
                b
                (fun s1 y s3 => exists x, exists s2, Q1 s1 x s2 /\ Q2 x s2 y s3)
   :=
-  fun {a b P1 P2 Q1 Q2} c1 c2 s1 =>
-    match c1 s1 with
-        (x, s2) => c2 x s2
-    end.
+    fun {a b P1 P2 Q1 Q2} c1 c2 s1 =>
+      match c1 s1 with
+          (x, s2) => c2 x s2
+      end.
 Obligation 2.
   unfold HoareState in *.
   destruct c1 as [x0 H0].
@@ -85,17 +85,15 @@ Infix ">>=" := bind (right associativity, at level 71).
 
 Program Definition bind2 :
   forall {a b P1 P2 Q1 Q2},
-    (HoareState P1 a Q1) -> (HoareState P2 b Q2) -> (HoareState P2 b Q2)
+    (HoareState P1 a Q1) ->
+    (HoareState P2 b Q2) ->
+    HoareState (fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 s2))
+               b
+               (fun s1 y s3 => exists x, exists s2, Q1 s1 x s2 /\ Q2 s2 y s3)
   :=
   fun {a b P1 P2 Q1 Q2} c1 c2 =>
     c1 >>= fun _ => c2.
-Obligation 1.
-  admit.
-Qed.
-
-Obligation 2.
-  admit.
-Qed.
+Check bind2.
 Infix ">>>" := bind2 (right associativity, at level 71).
 
 Program Definition get : HoareState top s (fun i x f => i = f /\ x = i)
