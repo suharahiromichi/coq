@@ -126,7 +126,7 @@ Proof.
   intros x z. rewrite add0n. rewrite addn0. reflexivity.
   (* y = y.+1 *)
   simpl.
-  intros. rewrite (IHy (x.+1)).
+  intros x z. rewrite (IHy (x.+1)).
   rewrite addSn. rewrite addnS. reflexivity.
 Qed.
 
@@ -142,14 +142,49 @@ Program Fixpoint relabel (a : Set) (t : Tree a) :
                       ret (Leaf n)
       | Node l r =>
         relabel a l >>=
-                fun l => relabel a r >>=
-                                  fun r => ret (Node l r)
+                fun l' => relabel a r >>=
+                                  fun r' => ret (Node l' r')
     end.
 Obligation 4.
 Proof.
-  admit.
+  unfold HoareState in *.
+  Check ((relabel a) l).
+  induction ((relabel a l >>=
+         (fun l' : Tree nat =>
+          relabel a r >>= (fun r' : Tree nat => ret (Node l' r'))))
+          (exist
+             (fun t : s =>
+              top t /\
+              (forall (x0 : Tree nat) (s2 : s),
+               s2 = t + size x0 /\ flatten x0 = sequence t (size x0) ->
+               top s2 /\
+               (forall (x1 : Tree nat) (s0 : s),
+                s0 = s2 + size x1 /\ flatten x1 = sequence s2 (size x1) ->
+                top s0))) x
+             (conj H
+                (fun (x0 : Tree nat) (s2 : s)
+                   (_ : s2 = x + size x0 /\ flatten x0 = sequence x (size x0)) =>
+                 conj H
+                   (fun (x1 : Tree nat) (s0 : s)
+                      (_ : s0 = s2 + size x1 /\
+                           flatten x1 = sequence s2 (size x1)) => H))))).
+  destruct x0.
+  destruct p.
+  destruct H0.
+  destruct H0.
+  destruct H1.
+  simpl in *.
+  destruct H0.
+  subst.
+  destruct H1.
+  destruct H0.
+  destruct H0.
+  destruct H1.
+  subst.
+  Check (relabel a l).
 Defined.
 
 Check relabel.
 
 (* END *)
+
