@@ -1,10 +1,11 @@
+(* -*- coding: utf-8 -*- *)
 (** The Hoare State Monad - Proof Pearl, Wouter Swierstra *)
-(* latter half, Proof of the HoareState *)
-(* @suharahiromichi 2014_01_13 *)
+(* http://www.staff.science.uu.nl/~swier004/Publications/HoareLogicStateMonad.pdf *)
+(* 後半、HoareState の証明 *)
+(* @suharahiromichi 2014_01_25 *)
 
 Require Import ssreflect ssrbool ssrnat seq eqtype.
 Require Import ssrfun.
-(* Require Import List. *)
 Require Import String.                      (* Error *)
 Require Import Program.                     (* Program *)
 
@@ -117,7 +118,7 @@ Fixpoint sequence (x n : nat) : list nat :=
     | S k => x :: sequence (S x) k
   end.
 
-Lemma SequenceSpilt : forall y x z,
+Lemma SequenceSplit : forall y x z,
                         sequence x (y + z) = sequence x y ++ sequence (x + y) z.
 Proof.
   induction y.
@@ -130,7 +131,7 @@ Proof.
   rewrite addSn. rewrite addnS. reflexivity.
 Qed.
 
-Program Fixpoint relabel (a : Set) (t : Tree a) :
+Program Fixpoint relabel {a : Set} (t : Tree a) {struct t} :
   HoareState top
              (Tree nat)
              (fun i t f => f = i + size t /\ flatten t = sequence i (size t))
@@ -141,15 +142,16 @@ Program Fixpoint relabel (a : Set) (t : Tree a) :
                   put (n + 1) >>>
                       ret (Leaf n)
       | Node l r =>
-        relabel a l >>=
-                fun l' => relabel a r >>=
+        relabel l >>=
+                fun l' => relabel r >>=
                                   fun r' => ret (Node l' r')
     end.
 Obligation 4.
+Locate "`".                                 (* proj1_sig *)
+(* ProofCafe 2014_01_25 で教えていただいた証明。 *)
 Proof.
-  unfold HoareState in *.
-  Check ((relabel a) l).
-  induction ((relabel a l >>=
+  (* set (xx := .. ). とすると、ゴールがxxで書き換えられないことに注意！ *)
+  set xx := ((relabel a l >>=
          (fun l' : Tree nat =>
           relabel a r >>= (fun r' : Tree nat => ret (Node l' r'))))
           (exist
@@ -168,23 +170,40 @@ Proof.
                    (fun (x1 : Tree nat) (s0 : s)
                       (_ : s0 = s2 + size x1 /\
                            flatten x1 = sequence s2 (size x1)) => H))))).
-  destruct x0.
-  destruct p.
-  destruct H0.
-  destruct H0.
+  case_eq xx.                               (* destruct xx だと、情報が失われる *)
+  simpl.
+  intros tpl H1 H2.
+  clear xx H2.
+  destruct tpl as [x0 f].
+  destruct H1 as [t1 H1].
+  destruct H1 as [n2 H1].
+  destruct H1 as [H1 H3].
   destruct H1.
-  simpl in *.
-  destruct H0.
-  subst.
-  destruct H1.
-  destruct H0.
-  destruct H0.
-  destruct H1.
-  subst.
-  Check (relabel a l).
-Defined.
+  destruct H3 as [t2 H3].
+  destruct H3 as [n3 H3].
+  repeat destruct H3.
 
+  split.
+     (* n3 = x + size x0  *)
+     rewrite H4. simpl.
+     rewrite addnA.                         (* ADD-Nat-Associative law *)
+     rewrite <- H0.
+     destruct H2.
+     apply H2.
+
+     (* flatten x0 = sequence x (size x0) *)
+     rewrite H4. simpl.
+     rewrite SequenceSplit.
+     rewrite <- H1.
+     destruct H2.
+     rewrite <- H0.
+     rewrite <- H3.
+     reflexivity.
+Defined.
 Check relabel.
 
-(* END *)
+(* OCaml 3.12.1 *)
+(* coq-8.4pl2 *)
+(* ssreflect-1.4 *)
 
+(* END *)
