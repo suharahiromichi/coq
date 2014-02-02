@@ -134,8 +134,7 @@ Proof.
   apply: functional_extensionality.
   move=> q.
   rewrite /bind /ret.
-  destruct s.
-  done.
+    by elim: s.
 Qed.
 
 (** モナド則 その3 *)
@@ -149,8 +148,7 @@ Proof.
   apply: functional_extensionality.
   move=> q.
   rewrite /bind.
-  destruct s.
-  done.
+    by elim: s.
 Qed.
 
 (** 可換図式を証明する。 *)
@@ -160,7 +158,7 @@ Theorem assoc_law :
 Proof.
   move => T s.
   rewrite /join_ /fmap_ /ret.
-  by rewrite !monad_3.
+    by rewrite ! monad_3.
 Qed.
 
 Theorem unit_left_law :
@@ -169,7 +167,7 @@ Theorem unit_left_law :
 Proof.
   move => T s.
   rewrite /join_.
-  by rewrite monad_1.
+    by rewrite monad_1.
 Qed.
 
 Theorem unit_right_law :
@@ -199,8 +197,7 @@ Theorem monad_2' :
 Proof.
   move=> T s q.
   rewrite /bind /ret.
-  destruct s.
-  done.
+    by elim: s.
 Qed.
 
 Theorem monad_3' :
@@ -211,8 +208,7 @@ Theorem monad_3' :
 Proof.
   move=> T S R f g s q.
   rewrite /bind.
-  destruct s.
-  done.
+    by elim: s.
 Qed.
 
 (* END *)
