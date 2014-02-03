@@ -109,6 +109,13 @@ Proof.
   done.
 Qed.
 
+(** ifelse を定義する。 *)
+Definition ifelse (s1 : Stack nat) (s2 : Stack nat) : Stack nat :=
+  pop >>= fun n => if n == 0 then s2 else s1.
+
+Eval compute in
+    push 1 >> ifelse (push 0) (push 1) >> pop.
+
 (** モナド則を証明する。 *)
 Axiom functional_extensionality :
   forall {T : Type},
