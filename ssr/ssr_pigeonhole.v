@@ -18,19 +18,12 @@ Proof.
   by apply (@ltn_trans n.+1 n m).
 Qed.
 
-Fixpoint fold_right {A B : Type}
-         (f : B -> A -> A) (a : A) (l : list B) : A :=
-  match l with
-  | nil => a
-  | b :: t => f b (fold_right f a t)
-  end.
-
 Inductive InList (A : Type)(a : A) : list A -> Prop :=
 | headIL : forall xs, InList A a (a::xs)                     (* 1 *)
 | consIL : forall x xs, InList A a xs -> InList A a (x::xs). (* 2 *)
 
 Theorem pigeonhole : forall (xs : list nat),
-                       size xs < fold_right plus 0 xs ->
+                       size xs < foldr plus 0 xs ->
                        exists x : nat, InList nat x.+2 xs.
 Proof.
   move=> xs. elim: xs.
