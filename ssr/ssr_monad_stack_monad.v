@@ -218,6 +218,41 @@ Proof.
     by elim: s.
 Qed.
 
+(** おまけ2。do記法 *)
+(** @suharahiromichi 2014_02_23 *)
+
+Notation "'do' [ a <- A ; B ]" :=
+  (A >>= fun a => B)
+    (at level 100, right associativity).
+Notation "'do' [ a <- A ; b <- B ; C ]" :=
+  (A >>= fun a => B >>= fun b => C)
+    (at level 100, right associativity).
+Notation "'do' [ a <- A ; b <- B ; c <- C ; D ]" :=
+  (A >>= fun a => B >>= fun b => C >>= fun c => D)
+    (at level 100, right associativity).
+Notation "'do' [ a <- A ; b <- B ; c <- C ; d <- D ; E ]" :=
+  (A >>= fun a => B >>= fun b => C >>= fun c => D >>= fun d => E)
+    (at level 100, right associativity).
+
+Definition binary_op' (op : nat -> nat -> nat) : Stack nat :=
+  do [ n <- pop;
+       m <- pop;
+       push (op m n) ].
+
+Definition ifelse' (s1 : Stack nat) (s2 : Stack nat) : Stack nat :=
+  do [ n <- pop;
+       if n == 0 then s2 else s1 ].
+
+(* 別の定義 *)
+Notation "'do' a <- A ; B" :=
+  (A >>= fun a => B)
+    (at level 100, right associativity).
+
+Definition binary_op'' (op : nat -> nat -> nat) : Stack nat :=
+  do n <- pop;
+  do m <- pop;
+  push (op m n).
+
 (* END *)
 
 (** 参考：
