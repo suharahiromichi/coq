@@ -53,10 +53,7 @@ Definition leibnitz_eq_ind' : forall (A : Type) (x : A) (P : A -> Prop),
     fun (A : Type) (x : A) (P : A -> Prop) (H : P x) (y : A)
       (H0 : forall P0 : A -> Prop, P0 x -> P0 y) => H0 P H.
 
-(* 参考：eq_indも同様な形で定義できる。 *)
-Print eq_ind.
-Print eq_rect.
-
+(* 参考：eq_indも同様な形で、自分で定義できる。 *)
 Definition eq_ind_me : forall (A : Type) (x : A) (P : A -> Prop),
   P x -> forall y : A, eq A x y -> P y.
 Proof.
@@ -78,6 +75,10 @@ Definition eq_ind_me'' : forall (A : Type) (x : A) (P : A -> Prop),
       end.
 
 (*
+以下は、
+http://d.hatena.ne.jp/m-a-o/touch/20110325/p1
+からの引用である。
+
 ちなみに、Leibnitz equalityが関数の外延的等価性
 forall (A B : Type) (f g  :  A -> B) , (forall x,  f x = g x) -> f = g.
 を持つことをCoqでは証明できないよう。
