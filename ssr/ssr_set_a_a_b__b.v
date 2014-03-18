@@ -48,5 +48,41 @@ Proof.
   by [].
 Qed.
 
+(* Boolを経由しないようにする。 *)
+Lemma a_a_b__b'' (A B : {set T}) : B \subset A -> (A :\: (A :\: B)) = B.
+Proof.
+  move/setIidPr.
+  move/setP => H.
+  apply/setP. move: H.
+  rewrite /eq_mem => H x.
+  (* x \in A の形式になる。 *)
+  rewrite -(H x) {H}.
+  apply/setDP/idP.
+  (* -> *)
+  rewrite -in_setC setDE setCI.
+  case=> H1.
+  move/setUP => H2.
+  apply/setIP.
+  case H2 => H3 {H2}.
+  split.
+  by [].
+  by move/setCP in H3.
+  by rewrite setCK in H3.
+  (* <- *)  
+  move/setIP.
+  case=> H1 H2.
+  rewrite -in_setC.
+  split.
+  by [].
+  apply/setCP.
+  unfold not=> H3.
+  move/setDP in H3.
+  destruct H3.
+  rewrite -in_setC in H0.
+  move/setCP in H0.
+  unfold not in H0.
+  by [].
+Qed.
+
 (* END *)
 
