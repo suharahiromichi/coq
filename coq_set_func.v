@@ -39,7 +39,7 @@ Definition                                  (* Lamma でもよい *)
   safe_append (T : Type) (xs ys : list T) :
   {zs : list T | app T xs ys zs}.
 Proof.
-  intros T xs ys.
+  intros.
   induction xs.
   exists ys.
   apply app_nil.
@@ -68,7 +68,7 @@ Eval cbv in append nat (1::2::3::nil) (4::5::6::nil).
 Definition                                  (* Lamma でもよい *)
   append2 (T : Type) (xs ys : list T) : list T.
 Proof.
-  intros T xs ys.
+  intros.
   induction xs.
   apply ys.
   apply cons.

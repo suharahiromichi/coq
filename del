@@ -1,0 +1,8 @@
+1 subgoal
+  
+  n : nat
+  H : forall f : nat -> A, f (fib n) = fib_cps n f
+  H0 : forall g : nat -> A, g (fib (S n)) = fib_cps (S n) g
+  g : nat -> A
+  ============================
+   g (fib (S (S n))) = fib_cps (S (S n)) g

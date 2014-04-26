@@ -30,9 +30,9 @@ Reset max.
 
 Fixpoint max (n m:nat) {struct n} : nat :=
   match n, m with
-  | O, _ => m
-  | S n' as p, O => p                       (* as p は、S n'の別名 *)
-  | S n', S m' => S (max n' m')
+    | O, _ => m
+    | S n' as p, O => p                       (* as p は、S n'の別名 *)
+    | S n', S m' => S (max n' m')
   end.
 Reset max.
 
