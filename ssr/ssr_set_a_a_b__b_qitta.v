@@ -32,7 +32,7 @@ Proof.
   rewrite -in_setC => /setIP [Ha Hb].
   by split; [ |
               apply/setCP; rewrite /not => /setDP; elim => [_ H_b]; 
-              move: H_b; rewrite -in_setC; move/setCP].
+              move: H_b; rewrite -in_setC => /setCP].
 Qed.
 
 (**
