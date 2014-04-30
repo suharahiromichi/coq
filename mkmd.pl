@@ -22,10 +22,11 @@ while (<>) {
         next;
     } elsif ($isprog == 0 && /^\s*\*\)/) {
         $isprog = 1;
+        printf("\n");
         next;
     }
 
-    if ($isprog == 0 && /^\S/ && /^[^#=a-z0-9\*\+\>]/) {
+    if ($isprog == 0 && /^\S/ && /^[^#=@a-z0-9\*\+\-\>]/) {
         $istext = 1;
     } else {
         $istext = 0;
