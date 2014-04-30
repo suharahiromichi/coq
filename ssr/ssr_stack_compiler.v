@@ -1,19 +1,14 @@
 (**
 スタックコンパイラの証明
 ========
-
 @suharahiromichi
 
 2014_04_30
  *)
-
 Require Import ssreflect ssrbool ssrnat seq eqtype ssrfun.
-
 (**
 スタック言語のための stack compiler が正しく動作することの証明をする。
-
 *)
-
 (**
 状態(state)はプログラムの実行のある時点のすべての変数の現在値を表す。
  *)
@@ -45,17 +40,11 @@ Definition Z : id := Id 2.
 (**
 スタック言語の命令セットは、以下の命令から構成される:
 
-
 - [SPush n]: 数 [n] をスタックにプッシュする。
-
 - [SLoad X]: ストアから識別子 [X] に対応する値を読み込み、スタックにプッシュする。
-
 - [SPlus]:   スタックの先頭の 2 つの数をポップし、それらを足して、結果をスタックにプッシュする。
-
 - [SMinus]:  上と同様。ただし引く。
-
 - [SMult]:   上と同様。ただし掛ける。
-
 *)
 
 Inductive sinstr : Type :=
