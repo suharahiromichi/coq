@@ -168,7 +168,7 @@ Qed.
 Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [::] (s_compile e) = [:: aeval st e].
 Proof.
-  intros st e.
+  move=> st e.
   apply s_compile_correct_stack.
 Qed.
 
