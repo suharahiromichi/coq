@@ -1,12 +1,15 @@
 (**
-SSReflectによる鳩の巣定理の証明
+SSReflectによる鳩の巣原理の証明
 ======
+
 @suharahiromichi
+
 
 プログラミング Coq 自然数を扱う
 http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt4.html
 
-鳩の巣原理の証明をSSReflectに移してみました。
+
+で解説されている鳩の巣原理の証明をSSReflectに移してみました。
 証明の内容はまったく同じなので、比べるとおもしろいとおもいます。
  *)
 
@@ -56,4 +59,4 @@ Qed.
 http://proofcafe.org/sf/Logic_J.
  *)
 
-(* $Id: ssr_pigeonhole.v,v 1.20 2014/04/30 04:14:36 suhara Exp suhara $ *)
+(* $Id: ssr_pigeonhole.v,v 1.21 2014/04/30 04:25:03 suhara Exp suhara $ *)
