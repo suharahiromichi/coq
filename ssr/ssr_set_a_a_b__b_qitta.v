@@ -1,16 +1,26 @@
 (**
+リフレクションを使って集合の問題を解いてみる
+=========
+2014/04/29 @suharahiromichi
+ *)
+
+(**
+# はじめに
+
 リフレクションというと、論理式とbool式の関係が重要だが、
-それ以外にも、集合演算と論理演算の関係も馴染み深い。
+それ以外にも集合演算と論理演算の関係も馴染み深い。
 もちろん、SSReflectはその機能を持っている。
 そのリフレクションを使って問題を解いてみる。
-*)
+ *)
+
+(**
+# 定理：B ⊆ A のとき、A - (A - B) = B を証明する。
+ *)
 
 Require Import ssreflect ssrbool ssrnat.
 Require Import fintype finset.
 
 Variable T : finType.
-
-(** 定理：B ⊆ A のとき、A - (A - B) = B *)
 
 Theorem a_a_b__b (A B : {set T}) : B \subset A -> (A :\: (A :\: B)) = B.
 Proof.
@@ -36,9 +46,14 @@ Proof.
 Qed.
 
 (**
- 実は、finsetの中の定理を使用すると、reflectionを使わずに解けてしまう。
- もちろん、これらの定理はreflectionで証明されているのだけれど。
+# finset内の補題を使って証明する。
+*)
+
+(**
+実は、finsetの中の補題を使用すると、reflectionを使わずに解けてしまう。
+もちろん、これらの定理はreflectionで証明されているのだけれど。
  *)
+
 Theorem a_a_b__b' (A B : {set T}) : B \subset A -> (A :\: (A :\: B)) = B.
 Proof.
   move=> H.
@@ -46,4 +61,8 @@ Proof.
   by apply/setIidPr.
 Qed.
 
-(* END *)
+(**
+注意：このふたつの証明の間に相互の対応はない。
+ *)
+
+(* $Id:$ *)
