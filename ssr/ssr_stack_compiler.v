@@ -11,29 +11,16 @@ Require Import ssreflect ssrbool ssrnat seq eqtype ssrfun.
 
 (**
 スタック言語のための stack compiler が正しく動作することの証明をする。
-*)
 
-(**
-SfLib.v の定義のうち必要なものをここで定義する。
 *)
-Inductive id : Type := 
-  Id of nat.
-
-Definition beq_id id1 id2 :=
-  match (id1, id2) with
-    (Id n1, Id n2) => n1 == n2
-  end.
 
 (**
 状態(state)はプログラムの実行のある時点のすべての変数の現在値を表す。
  *)
+Inductive id : Type := 
+  Id of nat.
+
 Definition state := id -> nat.
-
-Definition empty_state : state :=
-  fun _ => 0.
-
-Definition update (st : state) (X:id) (n : nat) : state :=
-  fun X' => if beq_id X X' then n else st X'.
 
 (**
 ソースコードにあたる算術式 [aexp] を定義する。
@@ -183,4 +170,3 @@ Proof.
 Qed.
 
 (* END *)
-
