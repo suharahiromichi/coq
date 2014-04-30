@@ -137,7 +137,7 @@ Lemma s_compile_correct_stack : forall (st : state) (stack : seq nat) (e : aexp)
   s_execute st stack (s_compile e) = [:: aeval st e] ++ stack.
 Proof.
   move=> st stack e.
-  elim: e stack;
+  elim: e stack;                            (* 「stack」をpushするのが肝。 *)
     (* ANum, AId の場合 *)
     try by [];
   (* APlus, AMinus, AMult の場合 *)
