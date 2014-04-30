@@ -8,7 +8,11 @@
 Require Import ssreflect ssrbool ssrnat seq eqtype ssrfun.
 (**
 スタック言語のための stack compiler が正しく動作することの証明をする。
+証明は SSReflect を使っておこなう。
 *)
+(**
+# ソース言語([aexp])の定義
+ *)
 (**
 状態(state)はプログラムの実行のある時点のすべての変数の現在値を表す。
  *)
@@ -18,7 +22,7 @@ Inductive id : Type :=
 Definition state := id -> nat.
 
 (**
-ソースコードにあたる算術式 [aexp] を定義する。
+ソース言語である算術式 [aexp] を定義する。
  *)
 Inductive aexp : Type :=
 | ANum of nat
@@ -35,7 +39,19 @@ Definition Y : id := Id 1.
 Definition Z : id := Id 2.
 
 (**
-スタック指向のプログラミング言語
+[aexp] を評価する関数を定義する。
+ *)
+Fixpoint aeval (st : state) (e : aexp) : nat :=
+  match e with
+  | ANum n => n
+  | AId X => st X
+  | APlus a1 a2 => (aeval st a1) + (aeval st a2)
+  | AMinus a1 a2 => (aeval st a1) - (aeval st a2)
+  | AMult a1 a2 => (aeval st a1) * (aeval st a2)
+  end.
+
+(**
+# スタック指向のプログラミング言語（スタック言語）
  *)
 (**
 スタック言語の命令セットは、以下の命令から構成される:
@@ -53,15 +69,6 @@ Inductive sinstr : Type :=
 | SPlus
 | SMinus
 | SMult.
-
-Fixpoint aeval (st : state) (e : aexp) : nat :=
-  match e with
-  | ANum n => n
-  | AId X => st X
-  | APlus a1 a2 => (aeval st a1) + (aeval st a2)
-  | AMinus a1 a2 => (aeval st a1) - (aeval st a2)
-  | AMult a1 a2 => (aeval st a1) * (aeval st a2)
-  end.
 
 (**
 スタック言語のプログラムを評価するための関数を書く。
@@ -98,7 +105,7 @@ Fixpoint s_execute (st : state) (stack : seq nat) (prog : seq sinstr) : seq nat 
   end.
 
 (**
-[aexp] をスタック機械のプログラムにコンパイルする関数を書く。
+[aexp] をスタック言語の命令列にコンパイルする関数 [s_compile] を書く。
  *)
 Fixpoint s_compile (e : aexp) : seq sinstr :=
   match e with
@@ -110,10 +117,13 @@ Fixpoint s_compile (e : aexp) : seq sinstr :=
   end.
 
 (**
-[compile] 関数が正しく振る舞うことを述べている定理を証明する。
+# コンパイルが正しいことの証明
  *)
 (**
-補題として、スタック言語の命令列が append できることを証明する。
+以下で、[s_compile] 関数が正しく振る舞うことを述べる定理を証明する。
+ *)
+(**
+最初に補題として、スタック言語の命令列が append できることを証明する。
  *)
 Lemma s_compile_correct_app : forall (st : state)
   (stack1 stack2 stack3: seq nat)
@@ -131,7 +141,9 @@ Proof.
 Qed.
 
 (**
-より一般的な、stackが任意の状態の場合について証明する。
+より一般的な、stackが任意の状態の場合について、
+[aexp]をコンパイルしたスタック言語の命令列を実行した結果（左辺）と、
+[aexp]を直接実行した結果（右辺）が一致することを証明する。
  *)
 Lemma s_compile_correct_stack : forall (st : state) (stack : seq nat) (e : aexp),
   s_execute st stack (s_compile e) = [:: aeval st e] ++ stack.
@@ -149,10 +161,12 @@ Proof.
 Qed.
 
 (**
-最後に、stackが初期状態（空[]）の場合について証明する。
+最後に、stackが初期状態（空[]）の場合について、
+[aexp]をコンパイルしたスタック言語の命令列を実行した結果（左辺）と、
+[aexp]を直接実行した結果（右辺）が一致することを証明する。
  *)
 Theorem s_compile_correct : forall (st : state) (e : aexp),
-  s_execute st [::] (s_compile e) = [:: aeval st e ].
+  s_execute st [::] (s_compile e) = [:: aeval st e].
 Proof.
   intros st e.
   apply s_compile_correct_stack.
