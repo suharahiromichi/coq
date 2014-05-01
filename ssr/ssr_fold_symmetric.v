@@ -44,21 +44,24 @@ Proof.
   move=> A f H H0 a l. move: a.
   case: l.
     (* l = [] のとき。 *)
-    done.
-    (* l = a :: l のとき。 *)
-    move=> a0 l. move: a0.
-    elim: l => a1 l.
-      (* l = a1 :: [] のとき。 *)
-      apply H0.
+    by [].
+    
+  (* l = a :: l のとき。 *)
+  move=> a0 l.
+  elim: l a0 => a1 l.                  (* 「:」の右の a0 が 必須のgeneralize。 *)
+  (* move: a0; elim: l => a1 l. と同じ。*)
+  
+    (* l = a1 :: [] のとき。 *)
+    by apply H0.
 
-      (* l = a2 :: a1 :: l のとき。 *)
-      move=> IHl a2 a3.
-      rewrite /= H.
-      replace (f (f a3 a2) a1) with (f a3 (f a2 a1)).
-      apply IHl. 
+  (* l = a2 :: a1 :: l のとき。 *)
+  move=> IHl a2 a3.
+  rewrite /= H.
+  replace (f (f a3 a2) a1) with (f a3 (f a2 a1)).
+    by apply IHl. 
 
-      (* replace できることを証明する。 *)
-      apply H.
+  (* replace できることを証明する。 *)
+  by apply H.
 Qed.
 
 (* END *)
