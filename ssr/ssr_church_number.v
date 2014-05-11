@@ -1,5 +1,5 @@
 (**
-「リストは自分自身のfoldr関数として定義される」または、チャーチ数について
+「リストは自分自身のfoldr関数として定義される」または、チャーチ数について（仮版）
 =========
 
 2014_05_11 @suharahiromichi
@@ -34,6 +34,19 @@ Inductive nat : Type :=
 | O
 | succ of nat.
 
+Print nat_rect.
+(* 
+nat_rect = 
+fun (P : nat -> Type) (f : P O) (f0 : forall n : nat, P n -> P (succ n)) =>
+fix F (n : nat) : P n :=
+  match n as n0 return (P n0) with
+  | O => f
+  | succ n0 => f0 n0 (F n0)
+  end
+     : forall P : nat -> Type,
+       P O -> (forall n : nat, P n -> P (succ n)) -> forall n : nat, P n
+ *)
+
 Fixpoint foldnat (f : nat -> nat) (n : nat) : nat :=
   match n with
     | O => O
@@ -61,73 +74,6 @@ Check foldnat succ.
 Eval compute in foldnat succ (succ (succ (succ O))).
 
 (**
-# 自然数のPair
-
-PairNatとfoldpairnatを以下のように定義する。
-*)
-
-Inductive PairNat : Type :=
-  pairNat of nat & nat.
-
-Fixpoint foldpairnat (f : nat -> nat -> PairNat) (x : PairNat) : PairNat :=
-  match x with
-    | pairNat a b => f a b
-  end.
-
-Check foldpairnat.
-
-(**
-foldpairnat の型は以下である。
-
-    foldpairnat : (nat -> nat -> PairNat) -> PairNat -> PairNat
-
-「PairNat」を全称∀で抽象したものが、チャーチ表現になる。
-
-    CPairNat = ∀X. (nat -> nat -> X) -> X -> X
-*)
-
-(**
-foldpairnat pairNat は何もしない関数になる。
-*)
-
-Check foldpairnat pairNat. 
-Eval compute in foldpairnat pairNat (pairNat (succ O) O).
-
-
-(**
-# 任意の型のPair
-
-Pairとfoldpairを以下のように定義する。
-*)
-
-Inductive Pair (T : Type) : Type :=
-  pair of T & T.
-
-Fixpoint foldpair (T : Type) (f : T -> T -> Pair T) (x : Pair T) : Pair T :=
-  match x with
-    | pair a b => f a b
-  end.
-
-Check foldpair.
-
-(**
-foldpair の型は以下である。
-
-    foldpair : (T -> T -> Pair T) -> Pair T -> Pair T
-
-「Pair T」を全称∀で抽象したものが、チャーチ表現になる。
-
-    CPair T = ∀X. (T -> T -> X) -> X -> X
-*)
-
-(**
-foldpairnat pairNat は何もしない関数になる。
-*)
-
-Check foldpair nat (pair nat).
-Eval compute in foldpair nat (pair nat) (pair nat (succ O) O).
-
-(**
 # リスト
 
 Listとfoldrを以下のように定義する。
@@ -136,6 +82,22 @@ Listとfoldrを以下のように定義する。
 Inductive List (X : Type) : Type :=
 | nil
 | cons of X & List X.
+
+Print List_rect.
+(* 
+List_rect = 
+fun (X : Type) (P : List X -> Type) (f : P (nil X))
+  (f0 : forall (x : X) (l : List X), P l -> P (cons X x l)) =>
+fix F (l : List X) : P l :=
+  match l as l0 return (P l0) with
+  | nil => f
+  | cons y l0 => f0 y l0 (F l0)
+  end
+     : forall (X : Type) (P : List X -> Type),
+       P (nil X) ->
+       (forall (x : X) (l : List X), P l -> P (cons X x l)) ->
+       forall l : List X, P l
+ *)
 
 Fixpoint foldr (X : Type) (f : X -> List X -> List X) (l : List X) : List X :=
   match l with
@@ -161,5 +123,46 @@ foldr cons は何もしない関数になる。
 
 Check foldr nat (cons nat).
 Eval compute in foldr nat (cons nat) (cons nat O (cons nat O (nil nat))).
+
+(* END *)
+
+(**
+以下は、再帰的構造ではないので、予備とする。
+ *)
+
+(**
+# 自然数のPair
+
+PairNatとfoldpairnatを以下のように定義する。
+*)
+
+Inductive PairNat : Type :=
+  pairNat of nat & nat.
+
+Print PairNat_rect.
+
+Fixpoint foldpairnat (f : nat -> nat -> PairNat) (x : PairNat) : PairNat :=
+  match x with
+    | pairNat a b => f a b
+  end.
+
+Check foldpairnat.
+
+(**
+foldpairnat の型は以下である。
+
+    foldpairnat : (nat -> nat -> PairNat) -> PairNat -> PairNat
+
+「PairNat」を全称∀で抽象したものが、チャーチ表現になる。これは間違い。
+
+    CPairNat = ∀X. (nat -> nat -> X) -> X -> X
+*)
+
+(**
+foldpairnat pairNat は何もしない関数になる。
+*)
+
+Check foldpairnat pairNat. 
+Eval compute in foldpairnat pairNat (pairNat (succ O) O).
 
 (* END *)
