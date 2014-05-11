@@ -140,7 +140,16 @@ Inductive PairNat : Type :=
   pairNat of nat & nat.
 
 Print PairNat_rect.
-
+(* 
+PairNat_rect = 
+fun (P : PairNat -> Type) (f : forall n n0 : nat, P (pairNat n n0))
+  (p : PairNat) =>
+match p as p0 return (P p0) with
+| pairNat x x0 => f x x0
+end
+     : forall P : PairNat -> Type,
+       (forall n n0 : nat, P (pairNat n n0)) -> forall p : PairNat, P p
+ *)
 Fixpoint foldpairnat (f : nat -> nat -> PairNat) (x : PairNat) : PairNat :=
   match x with
     | pairNat a b => f a b
