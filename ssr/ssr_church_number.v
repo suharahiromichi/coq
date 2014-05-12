@@ -108,7 +108,7 @@ Proof.
   rewrite /build /unbuild.
   elim.
     by [].
-  by rewrite /=; move=> n0 ->.
+  by move=> /= n0 ->.
 Qed.
 
 (**
@@ -190,7 +190,7 @@ Proof.
   rewrite /build' /unbuild'.
   elim.
     by [].
-  by rewrite /=; move=> n l ->.
+  by move=> /= n l ->.
 Qed.
 
 (**
