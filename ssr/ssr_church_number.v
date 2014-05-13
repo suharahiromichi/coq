@@ -52,6 +52,11 @@ Definition C1 : CNat := fun X => fun s : X -> X =>
                                    fun z : X => s z.
 Definition C2 : CNat := fun X => fun s : X -> X =>
                                    fun z : X => s (s z).
+Definition CSucc : CNat -> CNat :=
+  fun n : CNat => fun X =>
+                    fun s : X -> X =>
+                      fun z : X => s (n X s z).
+Eval compute in CSucc C0.
 
 (**
 ## チャーチ数をInductiveな定義にする
@@ -94,9 +99,27 @@ Eval compute in nat2cnat (S (S O)).
  *)
 
 (**
-## cnat2natとnat2cnatとで元に戻ることの証明
-*)
+## 証明
 
+### C0とOが同じ、CSuccとSの結果が同じこの証明
+*)
+Theorem cnat_nat_zero :
+  cnat2nat C0 = O.
+Proof.
+    by [].
+Qed.
+
+Theorem cnat_nat_succ :
+  forall c n,
+    cnat2nat c = n -> cnat2nat (CSucc c) = S n.
+Proof.
+  rewrite /cnat2nat /CSucc.
+    by move=> c n ->.
+Qed.
+
+(**
+### cnat2natとnat2cnatとで元に戻ることの証明
+*)
 Theorem cnat2nat_nat2cnat :
   forall n : Nat, cnat2nat(nat2cnat n) = n.
 Proof.
@@ -134,6 +157,13 @@ Definition CL2 : CListNat :=
 Definition CL3 : CListNat :=
   fun R => fun c : nat -> R -> R =>
              fun n : R => c 1 (c 2 (c 3 n)). (* [1,2,3] *)
+Definition CCons : nat -> CListNat -> CListNat :=
+  fun hd : nat =>
+    fun tl : CListNat =>
+      fun R =>
+        fun c : nat -> R -> R =>
+          fun n : R => c hd (tl R c n).
+Eval compute in CCons 1 CNil.
 
 (**
 ## チャーチ表現をInductiveな定義にする
@@ -176,6 +206,26 @@ Eval compute in list2clist (Cons 1 (Cons 2 Nil)).
  *)
 
 (**
+## 証明
+
+### CNilとnilが同じ、CConsとConsの結果が同じこの証明
+*)
+Theorem clist_list_nil :
+  clist2list CNil = Nil.
+Proof.
+    by [].
+Qed.
+
+Theorem clist_list_cons :
+  forall c l n,
+    clist2list c = l ->
+    clist2list (CCons n c) = Cons n l.
+Proof.
+  rewrite /clist2list /CCons.
+    by move=> c l n ->.
+Qed.
+
+(**
 ## clist2listとlist2clistとで元に戻ることの証明
 *)
 
@@ -190,6 +240,8 @@ Qed.
 
 (**
 # まとめ
+
+(ここに、気の利いたことを補足する)
 
 参考文献2.は、無限大のチャーチ数と不動点演算子の
 関係をHaskellで論じていて、参考になった。
