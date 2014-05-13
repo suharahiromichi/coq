@@ -26,11 +26,6 @@ System Fはそれらの型付けをすることができる。と理解するべ
 3. fold関数
 
 の関係を調べてみる。
-
-なお、チャーチ数のbuildとunbuildについては参考文献2.を参考にした。
-参考文献2.は、無限大のチャーチ数と不動点演算子の関係について論じているが、
-ここでは、任意の自然数（長さのリスト）に対して、
-Inductiveな定義とチャーチ表現の相互変換ができることを証明する。
 *)
 
 Require Import ssreflect ssrbool ssrnat.
@@ -61,14 +56,14 @@ Definition C2 : CNat := fun X => fun s : X -> X =>
 (**
 ## チャーチ数をInductiveな定義にする
 *)
-Definition build (c : CNat) : Nat :=
+Definition cnat2nat (c : CNat) : Nat :=
   c Nat S O.
 
-Eval compute in build C2.
+Eval compute in cnat2nat C2.
 (**
 = S (S O) : Nat
 
-buildは、チャーチ数cに、Sをfoldしているとみることもできる。
+cnat2natは、チャーチ数cに、Sをfoldしているとみることもできる。
  *)
 
 (**
@@ -88,24 +83,24 @@ Check foldNat.
 (**
 ## Inductiveな定義をチャーチ数にする
 *)
-Definition unbuild (n : Nat) : CNat :=
+Definition nat2cnat (n : Nat) : CNat :=
   fun X =>
     fun s : X -> X =>
       fun z : X => foldNat X s z n.
 
-Eval compute in unbuild (S (S O)).
+Eval compute in nat2cnat (S (S O)).
 (**
  = fun (X : Type) (s : X -> X) (z : X) => s (s z) : CNat
  *)
 
 (**
-## buildとunbuildとで元に戻ることの証明
+## cnat2natとnat2cnatとで元に戻ることの証明
 *)
 
-Theorem build_unbuild :
-  forall n : Nat, build(unbuild n) = n.
+Theorem cnat2nat_nat2cnat :
+  forall n : Nat, cnat2nat(nat2cnat n) = n.
 Proof.
-  rewrite /build /unbuild.
+  rewrite /cnat2nat /nat2cnat.
   elim.
     by [].
   by move=> /= n0 ->.
@@ -143,14 +138,14 @@ Definition CL3 : CListNat :=
 (**
 ## チャーチ表現をInductiveな定義にする
 *)
-Definition build' (c : CListNat) : ListNat :=
+Definition clist2list (c : CListNat) : ListNat :=
   c ListNat Cons Nil.
 
-Eval compute in build' CL2.
+Eval compute in clist2list CL2.
 (**
 = Cons 1 (Cons 2 Nil) : ListNat
 
-build'は、チャーチ表現のリストcに、Consをfoldrしているとみることもできる。
+clist2listは、チャーチ表現のリストcに、Consをfoldrしているとみることもできる。
  *)
 
 (**
@@ -168,30 +163,37 @@ Check foldr.
  *)
 
 (**
-## Inductiveな定義をチャーチ数にする
+## Inductiveな定義をチャーチ表現にする
 *)
-Definition unbuild' (l : ListNat) : CListNat :=
+Definition list2clist (l : ListNat) : CListNat :=
   fun R =>
     fun c : nat -> R -> R =>
       fun n : R => foldr R c n l.
 
-Eval compute in unbuild' (Cons 1 (Cons 2 Nil)).
+Eval compute in list2clist (Cons 1 (Cons 2 Nil)).
 (**
  = fun (R : Type) (c : nat -> R -> R) (n : R) => c 1 (c 2 n) : CListNat
  *)
 
 (**
-## buildとunbuildとで元に戻ることの証明
+## clist2listとlist2clistとで元に戻ることの証明
 *)
 
-Theorem build'_unbuild' :
-  forall l : ListNat, build'(unbuild' l) = l.
+Theorem clist2list_list2clist :
+  forall l : ListNat, clist2list(list2clist l) = l.
 Proof.
-  rewrite /build' /unbuild'.
+  rewrite /clist2list /list2clist.
   elim.
     by [].
   by move=> /= n l ->.
 Qed.
+
+(**
+# まとめ
+
+参考文献2.は、無限大のチャーチ数と不動点演算子の
+関係をHaskellで論じていて、参考になった。
+*)
 
 (**
 # 参考文献
