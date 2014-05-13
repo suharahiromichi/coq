@@ -108,7 +108,7 @@ Inductiveに定義された整数nに、sをFoldし、そのsをλ抽象する�
 (**
 ## 証明
 
-### C0とOが同じ、CSuccとSの結果が同じことの証明
+### C0とOが同じ、CSuccとSの結果が同じになることの証明
 *)
 Theorem cnat_nat_zero :
   cnat2nat C0 = O.
@@ -216,13 +216,13 @@ Eval compute in list2clist (Cons 1 (Cons 2 Nil)).
  = fun (R : Type) (c : nat -> R -> R) (n : R) => c 1 (c 2 n) : CListNat
 
 Inductiveに定義されたリストlに、cをFoldrし、そのcをλ抽象すると、
-チャーチ記法で表したリストが得られる。
+チャーチ表現で表したリストが得られる。
  *)
 
 (**
 ## 証明
 
-### CNilとnilが同じ、CConsとConsの結果が同じことの証明
+### CNilとnilが同じ、CConsとConsの結果が同じになることの証明
 *)
 Theorem clist_list_nil :
   clist2list CNil = Nil.
