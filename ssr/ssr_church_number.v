@@ -101,6 +101,8 @@ Definition nat2cnat (n : Nat) : CNat :=
 Eval compute in nat2cnat (S (S O)).
 (**
  = fun (X : Type) (s : X -> X) (z : X) => s (s z) : CNat
+
+Inductiveに定義された整数nに、sをFoldし、そのsをλ抽象すると、チャーチ数が得られる。
  *)
 
 (**
@@ -212,6 +214,9 @@ Definition list2clist (l : ListNat) : CListNat :=
 Eval compute in list2clist (Cons 1 (Cons 2 Nil)).
 (**
  = fun (R : Type) (c : nat -> R -> R) (n : R) => c 1 (c 2 n) : CListNat
+
+Inductiveに定義されたリストlに、cをFoldrし、そのcをλ抽象すると、
+チャーチ記法で表したリストが得られる。
  *)
 
 (**
@@ -250,7 +255,9 @@ Qed.
 (**
 # まとめ
 
-(ここに、気の利いたことを補足する)
+わかったこと。
+チャーチ数やリストのチャーチ表現は、それ自身にFoldの機能を持っていること。
+また、Inductiveに定義したnatやlistは、Fold関数によってチャーチ表現に変換できること。
 
 参考文献2.は、無限大のチャーチ数と不動点演算子の
 関係をHaskellで論じていて、参考になった。
