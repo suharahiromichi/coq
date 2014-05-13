@@ -13,8 +13,8 @@ TAPL（参考文献1.)には、p.47とp.275の2箇所に渡って、
 と書かれている。
 しかし、前後の説明を読んでもこの一文の意味することはよくわからなかった。
 
-また、別なところで、
-「fixに頼ることなく純粋な言語でソート関数のようなものが書ける…」（同 p.277）
+また、別なところ（同 p.277）で、
+「fixに頼ることなく純粋な言語でソート関数のようなものが書ける…」
 と極めて重要そうなことが書いてある。
 これは、チャーチ数やリストのチャーチ表現がそのような性質を持つのであって、
 System Fはそれらの型付けをすることができる。と理解するべきなのだろう。
@@ -25,7 +25,8 @@ System Fはそれらの型付けをすることができる。と理解するべ
 2. チャーチ表現
 3. fold関数
 
-の関係を調べてみる。
+
+の関係を調べてみる。証明はSSRefelctで行う。
 *)
 
 Require Import ssreflect ssrbool ssrnat.
@@ -35,14 +36,14 @@ Require Import ssreflect ssrbool ssrnat.
   *)
 
 (**
-## Inductiveな定義
+## Inductiveなnatの定義
 *)
 Inductive Nat : Type :=
 | O
 | S of Nat.
 
 (**
-## チャーチ数
+## チャーチ数(cnat)
 *)
 Definition CNat := forall X, (X -> X) -> X -> X.
 
@@ -59,7 +60,9 @@ Definition CSucc : CNat -> CNat :=
 Eval compute in CSucc C0.
 
 (**
-## チャーチ数をInductiveな定義にする
+## cnatとnatの間の変換
+
+### cnatをnatに変換する関数
 *)
 Definition cnat2nat (c : CNat) : Nat :=
   c Nat S O.
@@ -68,11 +71,13 @@ Eval compute in cnat2nat C2.
 (**
 = S (S O) : Nat
 
-cnat2natは、チャーチ数cに、Sをfoldしているとみることもできる。
+これはチャーチ数cに、Sをfoldしているとみることもできる。
  *)
 
 (**
-## Fold関数
+### Fold関数
+
+Inductiveに定義したnatに対しては、Foldを定義しなければならない。
 *)
 Fixpoint foldNat (X : Type) (s : X -> X) (z : X) (n : Nat) : X :=
   match n with
@@ -86,7 +91,7 @@ Check foldNat.
  *)
 
 (**
-## Inductiveな定義をチャーチ数にする
+### natをcnatに変換する関数
 *)
 Definition nat2cnat (n : Nat) : CNat :=
   fun X =>
@@ -101,7 +106,7 @@ Eval compute in nat2cnat (S (S O)).
 (**
 ## 証明
 
-### C0とOが同じ、CSuccとSの結果が同じこの証明
+### C0とOが同じ、CSuccとSの結果が同じことの証明
 *)
 Theorem cnat_nat_zero :
   cnat2nat C0 = O.
@@ -118,7 +123,7 @@ Proof.
 Qed.
 
 (**
-### cnat2natとnat2cnatとで元に戻ることの証明
+### cnat2natとnat2cnatで元に戻ることの証明
 *)
 Theorem cnat2nat_nat2cnat :
   forall n : Nat, cnat2nat(nat2cnat n) = n.
@@ -166,7 +171,9 @@ Definition CCons : nat -> CListNat -> CListNat :=
 Eval compute in CCons 1 CNil.
 
 (**
-## チャーチ表現をInductiveな定義にする
+## clistとlistの間の変換
+
+### clistをlistに変換する関数
 *)
 Definition clist2list (c : CListNat) : ListNat :=
   c ListNat Cons Nil.
@@ -179,7 +186,9 @@ clist2listは、チャーチ表現のリストcに、Consをfoldrしていると
  *)
 
 (**
-## Foldr関数
+### Foldr関数
+
+Inductiveに定義したlistに対しては、Foldを定義しなければならない。
 *)
 Fixpoint foldr (R : Type) (c : nat -> R -> R) (n : R) (l : ListNat) : R :=
   match l with
@@ -193,7 +202,7 @@ Check foldr.
  *)
 
 (**
-## Inductiveな定義をチャーチ表現にする
+### listをclistに変換する関数
 *)
 Definition list2clist (l : ListNat) : CListNat :=
   fun R =>
@@ -208,7 +217,7 @@ Eval compute in list2clist (Cons 1 (Cons 2 Nil)).
 (**
 ## 証明
 
-### CNilとnilが同じ、CConsとConsの結果が同じこの証明
+### CNilとnilが同じ、CConsとConsの結果が同じことの証明
 *)
 Theorem clist_list_nil :
   clist2list CNil = Nil.
@@ -226,7 +235,7 @@ Proof.
 Qed.
 
 (**
-## clist2listとlist2clistとで元に戻ることの証明
+## clist2listとlist2clistで元に戻ることの証明
 *)
 
 Theorem clist2list_list2clist :
