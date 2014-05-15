@@ -4,7 +4,7 @@ Coqで継続モナド
 2014_05_15 @suharahiromichi
 *)
 
-Require Import ssreflect ssrbool ssrnat seq eqtype ssrfun.
+Require Import ssreflect ssrbool ssrnat seq.
 
 (**
 # 継続モナド
@@ -19,7 +19,8 @@ Definition bind {R A : Type} (c : MCont R A)
            (f : A -> MCont R A) : MCont R A :=
   fun (k : A -> R) => c (fun (a : A) => f a k).
 
-Infix ">>=" := bind (left associativity, at level 42).
+Infix ">>=" := bind (left associativity, at level 42). (* 文献1. *)
+
 Notation "'DO' a <- A ; b <- B ; C 'OD'" :=
   (A >>= fun a => B >>= fun b => C)
     (at level 100, right associativity).
@@ -42,6 +43,7 @@ Qed.
 
 Lemma monad_3 : forall (R A : Type) (f g : A -> MCont R A) (m : MCont R A),
                   (m >>= f) >>= g = m >>= fun x => f x >>= g.
+(* 右結合なので、実際は、この括弧は不要である。 *)
 Proof.
   by [].
 Qed.
