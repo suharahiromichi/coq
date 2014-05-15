@@ -1,14 +1,36 @@
 (**
 Coqで継続モナド
+=========================
 
 2014_05_15 @suharahiromichi
+
+
+継続モナドについて解説したページは多いけれど、
+大部分がHaskellであるから、Coq SSReflect で書いてみた。
+もっとも、本資料の内容もHaskellについて解説した
+文献2.を多く参考にした。
+
+また、フィボナッチ関数の証明は文献3.
+のCoqによる証明をSSReflectに修正したものである。
+
+Coqのモナドのパッケージは文献1.にあるが、
+これは使用していない。ただし「>>=」演算子の優先順位はあわせた。
+
+本資料のソースコードは以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_monad_continuation_monad.v
 *)
 
 Require Import ssreflect ssrbool ssrnat seq.
 
 (**
 # 継続モナド
+
 ## 定義
+
+A->Rの型の関数が「継続」である。その「継続」受け取るのが継続モナド
+であり、(A->R)->Rの型をもつ。
+モナドであることを強調するために、大文字のMContとラベルする。
 *)
 Definition MCont R A := (A -> R) -> R.
 
@@ -19,6 +41,9 @@ Definition bind {R A : Type} (c : MCont R A)
            (f : A -> MCont R A) : MCont R A :=
   fun (k : A -> R) => c (fun (a : A) => f a k).
 
+(**
+おなじみの「>>=」演算子と、do記法も定義しておく。
+*)
 Infix ">>=" := bind (left associativity, at level 42). (* 文献1. *)
 
 Notation "'DO' a <- A ; b <- B ; C 'OD'" :=
@@ -27,8 +52,9 @@ Notation "'DO' a <- A ; b <- B ; C 'OD'" :=
 
 (**
 ## モナド則の証明
-*)
 
+モナド則の証明は自明である。
+*)
 Lemma monad_1 : forall (R A : Type) (a : A) (f : A -> MCont R A),
                   ret a >>= f = f a.
 Proof.
@@ -54,6 +80,8 @@ Qed.
 Section factorial.
 (**
 ## 定義
+
+階乗を再帰で計算する関数と、CPSで計算する関数を定義する。
 *)
 Fixpoint fact (n : nat) : nat :=
   match n with
@@ -69,6 +97,8 @@ Fixpoint fact_cps (n : nat) : MCont nat nat :=
 
 (**
 ## 証明
+
+任意の自然数に対して、両者が同じ結果になることを証明する。
 *)
 Lemma fact_cps_Sn :
   forall n f,
@@ -78,6 +108,9 @@ Proof.
     by [].
 Qed.
 
+(**
+任意の継続fについて証明する。
+*)
 Lemma eq_f_fact_fact_cps_f :
   forall (n : nat),
     (forall f, f (fact n) = fact_cps n f).
@@ -89,6 +122,9 @@ Proof.
   by rewrite fact_cps_Sn; rewrite <-IHn, mulnC.
 Qed.
 
+(**
+証明したかった定理
+*)
 Theorem eq_fact_fact_cps :
   forall (n : nat), fact n = fact_cps n id.
 Proof.
@@ -99,11 +135,14 @@ Qed.
 End factorial.
 
 (**
-# フィボナッチ数の計算
+# フィボナッチ関数
 *)
 Section fibonacci.
 (**
 ## 定義
+
+フィボナッチ数を再帰で計算する関数と、CPSで計算する関数を定義する。
+後者の中でdo記法を使ってみた。
 *)
 Fixpoint fib (n : nat) : nat :=
   match n with
@@ -127,7 +166,8 @@ Fixpoint fib_cps (n : nat) : MCont nat nat :=
 (**
 ## 証明
 
-文献3.を参考にしました。
+任意の自然数に対して、両者が同じ結果になることを証明する。
+この証明は文献3.を参考にした。
 *)
 
 (**
@@ -158,16 +198,24 @@ Proof.
     by [].
   case=> Hf Hg.
   split; move=> f; rewrite fib_cps_SSn.
+  (* ゴールの/\の左 *)
     by rewrite Hg.
+  (* ゴールの/\の右 *)
   by rewrite <-Hg, <-Hf.
 Qed.
 
+(**
+任意の継続fについて証明する。
+*)
 Lemma eq_f_fib_fib_cps_f : forall n f, f (fib n) = fib_cps n f.
 Proof.
   move=> n f.
   apply (eq_fib_fib_cps_aux n).
 Qed.
 
+(**
+証明したかった定理
+*)
 Theorem eq_fib_fib_cps : forall n, fib n = fib_cps n id.
 Proof.
   move=> n.
@@ -182,7 +230,7 @@ End fibonacci.
 1. Library lc.Monad
    http://coq.inria.fr/pylons/contribs/files/lc/trunk/lc.Monad.html
 
-2. お気楽 Haskell プログラミング入門
+2. お気楽 Haskell プログラミング入門 ●継続渡しスタイル
    http://www.geocities.jp/m_hiroi/func/haskell38.html
 
 3. CPS変換されたフィボナッチ関数の証明をしてみた」
