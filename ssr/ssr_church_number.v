@@ -1,5 +1,5 @@
 (**
-「リストは自分自身のfoldr関数として定義される」こと、または、チャーチ数について
+「リストは自分自身のfoldr関数として定義される」につついて
 =========
 
 2014_05_11 @suharahiromichi
@@ -16,8 +16,9 @@ TAPL（参考文献1.)には、p.47とp.275の2箇所に渡って、
 また、別なところ（同 p.277）で、
 「fixに頼ることなく純粋な言語でソート関数のようなものが書ける…」
 と極めて重要そうなことが書いてある。
-これは、チャーチ数やリストのチャーチ表現がそのような性質を持つのであって、
-System Fはそれらの型付けをすることができる。と理解するべきなのだろう。
+これは、チャーチ数やリストのチャーチ表現がそのような性質を
+持つのであって、System Fはそれらの型付けをすることができる。
+と理解するべきなのだろう。
 
 以上のことを納得するために、数やリストについて、
 
@@ -26,7 +27,12 @@ System Fはそれらの型付けをすることができる。と理解するべ
 3. fold関数
 
 
-の関係を調べてみる。証明はSSRefelctで行う。
+の関係を調べてみる。証明はCoq SSRefelctで行う。
+*)
+(**
+この文章のソースコードは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_church_number.v
 *)
 
 Require Import ssreflect ssrbool ssrnat.
@@ -34,13 +40,6 @@ Require Import ssreflect ssrbool ssrnat.
 (**
 # チャーチ数
   *)
-
-(**
-## Inductiveなnatの定義
-*)
-Inductive Nat : Type :=
-| O
-| S of Nat.
 
 (**
 ## チャーチ数(cnat)
@@ -58,6 +57,13 @@ Definition CSucc : CNat -> CNat :=
                     fun s : X -> X =>
                       fun z : X => s (n X s z).
 Eval compute in CSucc C0.
+
+(**
+## Inductiveなnatの定義
+*)
+Inductive Nat : Type :=
+| O
+| S of Nat.
 
 (**
 ## cnatとnatの間の変換
@@ -139,14 +145,6 @@ Qed.
 (**
 # リスト
 *)
-
-(**
-## Inductiveな定義
-*)
-Inductive ListNat : Type :=
-| Nil
-| Cons of nat & ListNat.
-
 (**
 ## チャーチ表現
 *)
@@ -171,6 +169,13 @@ Definition CCons : nat -> CListNat -> CListNat :=
         fun c : nat -> R -> R =>
           fun n : R => c hd (tl R c n).
 Eval compute in CCons 1 CNil.
+
+(**
+## Inductiveな定義
+*)
+Inductive ListNat : Type :=
+| Nil
+| Cons of nat & ListNat.
 
 (**
 ## clistとlistの間の変換
@@ -259,8 +264,8 @@ Qed.
 チャーチ数やリストのチャーチ表現は、それ自身にFoldの機能を持っていること。
 また、Inductiveに定義したnatやlistは、Fold関数によってチャーチ表現に変換できること。
 
-参考文献2.は、無限大のチャーチ数と不動点演算子の
-関係をHaskellで論じていて、参考になった。
+参考文献2.は、無限大のチャーチ数と不動点演算子の関係をHaskellで
+論じたもので、FoldNatの定義などを参考にさせていただいた。
 *)
 
 (**
