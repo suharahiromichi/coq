@@ -4,11 +4,11 @@ Coqで継続モナド
 
 2014_05_15 @suharahiromichi
 
-
+モナドと継続の話を一度で片付けてしまおうと思う。
 継続モナドについて解説したページは多いけれど、
 大部分がHaskellであるから、Coq SSReflect で書いてみた。
 もっとも、本資料の内容もHaskellについて解説した
-文献2.を多く参考にした。
+文献2.を多く参考にさせていただいた。
 
 また、フィボナッチ関数の証明は文献3.
 のCoqによる証明をSSReflectに修正したものである。
@@ -34,26 +34,41 @@ A->Rの型の関数が「継続」である。その「継続」受け取るの�
 *)
 Definition MCont R A := (A -> R) -> R.
 
-Definition ret {R A : Type} (a : A) : MCont R A :=
-  fun k => k a.
-
 Definition bind {R A : Type} (c : MCont R A)
            (f : A -> MCont R A) : MCont R A :=
   fun (k : A -> R) => c (fun (a : A) => f a k).
 
+Definition ret {R A : Type} (a : A) : MCont R A :=
+  fun k => k a.
+
+(* call/cc *)
+Definition callcc {R A : Type}
+           (f : (A -> MCont R A) -> MCont R A) : MCont R A :=
+  fun (k : A -> R) => f (fun (a : A) => fun _ => k a) k.
+
 (**
-おなじみの「>>=」演算子と、do記法も定義しておく。
+演算子と、do記法も定義しておく。
 *)
-Infix ">>=" := bind (left associativity, at level 42). (* 文献1. *)
+Notation "c >>= f" :=
+  (bind c f)
+    (at level 42, left associativity).      (* 文献1. *)
+
+Notation "s1 >> s2" :=
+  (s1 >>= fun _ => s2)
+    (at level 42, left associativity).
 
 Notation "'DO' a <- A ; b <- B ; C 'OD'" :=
   (A >>= fun a => B >>= fun b => C)
-    (at level 100, right associativity).
+    (at level 100, no associativity).
+
+Notation "'DO' A ; B ; C 'OD'" :=
+  (A >> B >> C)
+    (at level 100, no associativity).
 
 (**
 ## モナド則の証明
 
-モナド則の証明は自明である。
+モナド則の証明は簡単である。
 *)
 Lemma monad_1 : forall (R A : Type) (a : A) (f : A -> MCont R A),
                   ret a >>= f = f a.
@@ -96,9 +111,19 @@ Fixpoint fact_cps (n : nat) : MCont nat nat :=
   end.
 
 (**
+## 実行例
+*)
+Eval cbv in fact_cps 0 id.                  (* 1 *)
+Eval cbv in fact_cps 2 id.                  (* 2 *)
+Eval cbv in fact_cps 3 id.                  (* 6 *)
+Eval cbv in fact_cps 4 id.                  (* 24 *)
+
+(**
 ## 証明
 
 任意の自然数に対して、両者が同じ結果になることを証明する。
+
+補題として、fact_cpsの計算の一段階分の証明しておく。
 *)
 Lemma fact_cps_Sn :
   forall n f,
@@ -115,15 +140,14 @@ Lemma eq_f_fact_fact_cps_f :
   forall (n : nat),
     (forall f, f (fact n) = fact_cps n f).
 Proof.
-  move=> n f.
-  elim: n f.
+  elim.
     by [].
   move=> n IHn f.
-  by rewrite fact_cps_Sn; rewrite <-IHn, mulnC.
+  by rewrite fact_cps_Sn -IHn mulnC.
 Qed.
 
 (**
-証明したかった定理
+証明したい定理
 *)
 Theorem eq_fact_fact_cps :
   forall (n : nat), fact n = fact_cps n id.
@@ -164,6 +188,16 @@ Fixpoint fib_cps (n : nat) : MCont nat nat :=
   end.
 
 (**
+## 実行例
+*)
+Eval cbv in fib_cps 0 id.                  (* 1 *)
+Eval cbv in fib_cps 1 id.                  (* 1 *)
+Eval cbv in fib_cps 2 id.                  (* 2 *)
+Eval cbv in fib_cps 3 id.                  (* 3 *)
+Eval cbv in fib_cps 4 id.                  (* 5 *)
+Eval cbv in fib_cps 6 id.                  (* 13 *)
+
+(**
 ## 証明
 
 任意の自然数に対して、両者が同じ結果になることを証明する。
@@ -171,8 +205,8 @@ Fixpoint fib_cps (n : nat) : MCont nat nat :=
 *)
 
 (**
-補題: fib_cpsの定義の三番目の節を取り出したもので、
-   fib_cpsの計算を一段進めるのに使う。
+補題: fib_cpsの定義の三番目の節を取り出したもので、fib_cpsの
+計算を一段進めるのに使う。
  *)
 Lemma fib_cps_SSn : forall n f,
   fib_cps n.+2 f =
@@ -187,21 +221,28 @@ Qed.
 Lemma eq_fib_fib_cps_aux :
   forall n,
     (forall f, f (fib n) = fib_cps n f) /\
-    (forall g, g (fib (S n)) = fib_cps (S n) g).
+    (forall g, g (fib n.+1) = fib_cps n.+1 g).
 Proof.
   elim.
-  (* n = 0 のとき *)
+  (* fib 0 = fib_cps 0 /\ fib 1 = fib_cps 1 を証明する。 *)
     by [].
 
-  (* n = n'+1 のとき *)
+  (* fib n = fib_cps n /\ fib n+1 = fib_cps n+1 ならば、
+     fib n+1 = fib_cps n+1 /\ fib n+2 = fib_cps n+2 を証明する。 *)
   case=> n.
+
+  (* fib 0 = fib_cps 0 /\ fib 1 = fib_cps 1 ならば、
+     fib 1 = fib_cps 1 /\ fib 2 = fib_cps 2 を証明する。 *)
     by [].
+
+  (* fib n+1 = fib_cps n+1 /\ fib n+2 = fib_cps n+2 ならば、
+     fib n+2 = fib_cps n+2 /\ fib n+3 = fib_cps n+3 を証明する。 *)
   case=> Hf Hg.
   split; move=> f; rewrite fib_cps_SSn.
-  (* ゴールの/\の左 *)
+  (* ゴールの/\の左を証明する。 *)
     by rewrite Hg.
-  (* ゴールの/\の右 *)
-  by rewrite <-Hg, <-Hf.
+  (* ゴールの/\の右を証明する。 *)
+  by rewrite -Hg -Hf.
 Qed.
 
 (**
@@ -214,7 +255,7 @@ Proof.
 Qed.
 
 (**
-証明したかった定理
+証明したい定理
 *)
 Theorem eq_fib_fib_cps : forall n, fib n = fib_cps n id.
 Proof.
@@ -233,7 +274,7 @@ End fibonacci.
 2. お気楽 Haskell プログラミング入門 ●継続渡しスタイル
    http://www.geocities.jp/m_hiroi/func/haskell38.html
 
-3. CPS変換されたフィボナッチ関数の証明をしてみた」
+3. CPS変換されたフィボナッチ関数の証明をしてみた
    http://d.hatena.ne.jp/yoshihiro503/20100830#p2
 
 *)
