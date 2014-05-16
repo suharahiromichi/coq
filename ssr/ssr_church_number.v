@@ -14,10 +14,10 @@ TAPL（参考文献1.)には、p.47とp.275の2箇所に渡って、
 しかし、前後の説明を読んでもこの一文の意味することはよくわからなかった。
 
 また、別なところ（同 p.277）で、
-「fixに頼ることなく純粋な言語でソート関数のようなものが書ける…」
-と極めて重要そうなことが書いてある。
+「(System Fは)fixに頼ることなく純粋な言語でソート関数のようなものが書ける…」
+と極めて重要なことが書いてある。
 これは、チャーチ数やリストのチャーチ表現がそのような性質を
-持つのであって、System Fはそれらの型付けをすることができる。
+持つのであって、System Fはそれらを扱える（型付けをすることができる）
 と理解するべきなのだろう。
 
 以上のことを納得するために、数やリストについて、
@@ -42,7 +42,7 @@ Require Import ssreflect ssrbool ssrnat.
   *)
 
 (**
-## チャーチ数(cnat)
+## チャーチ数(CNat)
 *)
 Definition CNat := forall X, (X -> X) -> X -> X.
 
@@ -59,21 +59,21 @@ Definition CSucc : CNat -> CNat :=
 Eval compute in CSucc C0.
 
 (**
-## Inductiveなnatの定義
+## InductiveなNatの定義
 *)
 Inductive Nat : Type :=
 | O
 | S of Nat.
 
 (**
-## cnatとnatの間の変換
+## CNatとNatの間の変換
 
-### cnatをnatに変換する関数
+### CNatをNatに変換する関数
 *)
-Definition cnat2nat (c : CNat) : Nat :=
+Definition CNat2Nat (c : CNat) : Nat :=
   c Nat S O.
 
-Eval compute in cnat2nat C2.
+Eval compute in CNat2Nat C2.
 (**
 = S (S O) : Nat
 
@@ -83,7 +83,7 @@ Eval compute in cnat2nat C2.
 (**
 ### Fold関数
 
-Inductiveに定義したnatに対しては、Foldを定義しなければならない。
+Inductiveに定義したNatに対しては、Foldを定義しなければならない。
 *)
 Fixpoint foldNat (X : Type) (s : X -> X) (z : X) (n : Nat) : X :=
   match n with
@@ -97,14 +97,14 @@ Check foldNat.
  *)
 
 (**
-### natをcnatに変換する関数
+### NatをCNatに変換する関数
 *)
-Definition nat2cnat (n : Nat) : CNat :=
+Definition Nat2CNat (n : Nat) : CNat :=
   fun X =>
     fun s : X -> X =>
       fun z : X => foldNat X s z n.
 
-Eval compute in nat2cnat (S (S O)).
+Eval compute in Nat2CNat (S (S O)).
 (**
  = fun (X : Type) (s : X -> X) (z : X) => s (s z) : CNat
 
@@ -116,34 +116,36 @@ Inductiveに定義された整数nに、sをFoldし、そのsをλ抽象する�
 
 ### C0とOが同じ、CSuccとSの結果が同じになることの証明
 *)
-Theorem cnat_nat_zero :
-  cnat2nat C0 = O.
+Theorem CNat_Nat_zero :
+  CNat2Nat C0 = O.
 Proof.
     by [].
 Qed.
 
-Theorem cnat_nat_succ :
+Theorem CNat_Nat_succ :
   forall c n,
-    cnat2nat c = n -> cnat2nat (CSucc c) = S n.
+    CNat2Nat c = n -> CNat2Nat (CSucc c) = S n.
 Proof.
-  rewrite /cnat2nat /CSucc.
+  rewrite /CNat2Nat /CSucc.
     by move=> c n ->.
 Qed.
 
 (**
-### cnat2natとnat2cnatで元に戻ることの証明
+### CNat2NatとNat2CNatで元に戻ることの証明
 *)
-Theorem cnat2nat_nat2cnat :
-  forall n : Nat, cnat2nat(nat2cnat n) = n.
+Theorem CNat2Nat_Nat2CNat :
+  forall n : Nat, CNat2Nat(Nat2CNat n) = n.
 Proof.
-  rewrite /cnat2nat /nat2cnat.
+  rewrite /CNat2Nat /Nat2CNat.
   elim.
     by [].
   by move=> /= n0 ->.
 Qed.
 
 (**
-# リスト
+# 自然数のリスト
+
+要素の自然数は、SSReflectのnatの定義を使う。
 *)
 (**
 ## チャーチ表現
