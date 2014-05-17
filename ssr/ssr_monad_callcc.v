@@ -1,16 +1,22 @@
 (**
-Coqで call/cc
+Coqでcall/cc (継続モナドの続き)
+===============================
 
-2014_05_15 @suharahiromichi
+2014_05_18 @suharahiromichi
+
+
+文献1.に紛れ込ませておいたcall/ccの定義を使ってみる。
+今回も例題は文献2.からいただいています。
+
+本資料のソースコードは以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_monad_callcc.v
 *)
 
 Require Import ssreflect ssrbool ssrnat seq.
 
 (**
 # 継続モナド
-
-文献1.に紛れ込ませておいたcall/ccの定義を使ってみる。
-今回も、例題は文献2.からいただいています。
 
 ## 定義
 *)
@@ -31,9 +37,10 @@ Check callcc.
 (**
     : ((A -> MCont R B) -> MCont R A) -> MCont R A
 
-この型は古典論理のためのパースの公理と同じになる。。。
+call/ccの型は、モナドの部分を除いて見ると、
+古典論理を扱うときの「パースの公理」と対応する。
 
-     ((A -> B) -> A) -> A
+     ((P -> Q) -> P) -> P
 *)
 
 (**
@@ -112,6 +119,80 @@ Definition flatten_callcc (l : seq (seq nat)) : MCont (seq nat) (seq nat) :=
 Eval cbv in flatten_callcc [:: [:: 1;2];[:: 3;4];[:: 5;6]] id.
 Eval cbv in flatten_callcc [:: [:: 1;2];[:: 3;4];[::];[:: 5;6]] id. (* [::] *)
 Eval cbv in flatten_callcc [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
+
+(**
+以上で、継続モナドの枠でのcall/ccの話は終わりである
+（flatten_cpsとflatten_callccの等価の証明も大変そうなので）。
+しかし、Coqでcall/ccという表題をつけたからには、
+古典論理の定理をcall/ccを使って証明しなければいけないだろう。
+
+
+# 二重否定の証明
+
+古典論の定理の「二重否定の除去」とは、任意のP:Propに対して以下が成立することである。
+
+    ~ ~ P -> P
+
+ここで、~P は P->False であるから以下と同じである。
+
+    ((P -> False) -> False) -> P
+
+さらに、モナドを使ったcallccの定義にあわせて、MContを挿入してみる（恣意的）。
+
+    (P -> MCont R False) -> MCont R False) -> MCont R P
+
+これを、callccを使って証明してみる。callccは以下の型をとる、
+ 
+    (P -> MCont R Q) -> MCont R P) -> MCont R P
+*)
+
+Axiom exfalso_with_monad : 
+  forall R (P : Prop), MCont R False -> MCont R P.
+
+Theorem double_negative_elimination_joke :
+  forall R (P : Prop),
+    ((P -> MCont R False) -> MCont R False) -> MCont R P.
+Proof.
+  move=> R P HPFF.
+  Check @callcc.                            (* callccの暗黙の引数 R,A,B に対して、それぞれ *)
+  Check @callcc R P False.                  (* R,P,False を与える。 *)
+  Check @callcc R False P.                  (* R,False,P を与える。 *)
+  
+  apply (@callcc R P False) => HPF.
+  apply exfalso_with_monad.
+  apply (@callcc R False P) => HFP.
+    by apply HPFF, HPF.
+Qed.
+
+Print double_negative_elimination_joke.
+(**
+中身は以下のようなものである。
+
+    double_negative_elimination_joke = 
+    fun (R : Type) (P : Prop) (HPFF : (P -> MCont R False) -> MCont R False) =>
+      callcc
+        (fun HPF : P -> MCont R False =>
+           exfalso_with_monad R P
+             (callcc (fun _ : False -> MCont R P => HPFF HPF)))
+      : forall (R : Type) (P : Prop),
+          ((P -> MCont R False) -> MCont R False) -> MCont R P
+*)
+
+(**
+前に書いたとおり、二重否定除去はパースの公理：
+*)
+Axiom peirce : forall P Q : Prop, ((P -> Q) -> P) -> P.
+(**
+を使って証明できるので、
+上記のような恣意的な変形をしておけば証明できるのは当然である。
+
+ただし、パースの公理を使う場合でも同じだが、
+二重否定除去を証明する場合は、
+次の両方が必要なるだろうことに留意する必要がありそうだ。
+
+    @callcc P False : (P -> False) -> P -> P
+    @callcc False P : (False -> P) -> False -> False
+*)
 
 (**
 # 文献
