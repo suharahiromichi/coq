@@ -28,7 +28,7 @@ Require Import ssreflect ssrbool ssrnat seq.
 
 ## 定義
 
-A->Rの型の関数が「継続」である。その「継続」受け取るのが継続モナド
+A->Rの型の関数が「継続」である。その「継続」を受け取るのが継続モナド
 であり、(A->R)->Rの型をもつ。
 モナドであることを強調するために、大文字のMContとラベルする。
 *)
@@ -42,8 +42,8 @@ Definition ret {R A : Type} (a : A) : MCont R A :=
   fun k => k a.
 
 (* call/cc *)
-Definition callcc {R A : Type}
-           (f : (A -> MCont R A) -> MCont R A) : MCont R A :=
+Definition callcc {R A B : Type}
+           (f : (A -> MCont R B) -> MCont R A) : MCont R A :=
   fun (k : A -> R) => f (fun (a : A) => fun _ => k a) k.
 
 (**
