@@ -1,5 +1,5 @@
 (**
-Coqでcall/cc (継続モナドの続き)
+Coqでcall/cc（Coqで継続モナド、その2）
 ===============================
 
 2014_05_18 @suharahiromichi
@@ -141,7 +141,7 @@ Eval cbv in flatten_callcc [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
 
     (P -> MCont R False) -> MCont R False) -> MCont R P
 
-これを、callccを使って証明してみる。callccは以下の型をとる、
+これを、callccを使って証明してみる。callccは以下の型をとる。
  
     (P -> MCont R Q) -> MCont R P) -> MCont R P
 *)
@@ -187,11 +187,10 @@ Axiom peirce : forall P Q : Prop, ((P -> Q) -> P) -> P.
 上記のような恣意的な変形をしておけば証明できるのは当然である。
 
 ただし、パースの公理を使う場合でも同じだが、
-二重否定除去を証明する場合は、
-次の両方が必要なるだろうことに留意する必要がありそうだ。
+二重否定除去を証明する場合は、次の両方が必要なるようだ。
 
-    @callcc P False : (P -> False) -> P -> P
-    @callcc False P : (False -> P) -> False -> False
+     peirce P False : (P -> False) -> P -> P
+     peirce False P : (False -> P) -> False -> False
 *)
 
 (**
