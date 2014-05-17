@@ -5,8 +5,9 @@ Coqでcall/cc（Coqで継続モナド、その2）
 2014_05_18 @suharahiromichi
 
 
-文献1.に紛れ込ませておいたcall/ccの定義を使ってみる。
-今回も例題は文献2.からいただいています。
+継続モナドの続きとして、
+前回（文献1.）にも定義してあったcall/ccを使ってみる。
+例題は今回も文献2.からいただいています。
 
 本資料のソースコードは以下にあります。
 
@@ -18,7 +19,7 @@ Require Import ssreflect ssrbool ssrnat seq.
 (**
 # 継続モナド
 
-## 定義
+## 定義（再掲）
 *)
 Definition MCont R A := (A -> R) -> R.
 
@@ -121,7 +122,7 @@ Eval cbv in flatten_callcc [:: [:: 1;2];[:: 3;4];[::];[:: 5;6]] id. (* [::] *)
 Eval cbv in flatten_callcc [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
 
 (**
-以上で、継続モナドの枠でのcall/ccの話は終わりである
+以上で、継続モナドに関連してのcall/ccの話は終わりである
 （flatten_cpsとflatten_callccの等価の証明も大変そうなので）。
 しかし、Coqでcall/ccという表題をつけたからには、
 古典論理の定理をcall/ccを使って証明しなければいけないだろう。
@@ -129,7 +130,7 @@ Eval cbv in flatten_callcc [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
 
 # 二重否定の証明
 
-古典論の定理の「二重否定の除去」とは、任意のP:Propに対して以下が成立することである。
+「二重否定の除去」とは、任意のP:Propに対して以下が成立することである。
 
     ~ ~ P -> P
 
@@ -141,12 +142,12 @@ Eval cbv in flatten_callcc [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
 
     (P -> MCont R False) -> MCont R False) -> MCont R P
 
-これを、callccを使って証明してみる。callccは以下の型をとる。
- 
-    (P -> MCont R Q) -> MCont R P) -> MCont R P
+「二重否定の除去」古典論理の範疇に属する定理だから、
+何かの規則を追加しないとCoqでは証明できない。
+ここでは、callccを使うことで証明してみる。
 *)
 
-Axiom exfalso_with_monad : 
+Axiom exfalso_with_monad :
   forall R (P : Prop), MCont R False -> MCont R P.
 
 Theorem double_negative_elimination_joke :
@@ -154,7 +155,7 @@ Theorem double_negative_elimination_joke :
     ((P -> MCont R False) -> MCont R False) -> MCont R P.
 Proof.
   move=> R P HPFF.
-  Check @callcc.                            (* callccの暗黙の引数 R,A,B に対して、それぞれ *)
+  Check @callcc.       (* callccの暗黙の引数 R,A,B に対して、それぞれ *)
   Check @callcc R P False.                  (* R,P,False を与える。 *)
   Check @callcc R False P.                  (* R,False,P を与える。 *)
   
@@ -166,7 +167,7 @@ Qed.
 
 Print double_negative_elimination_joke.
 (**
-中身は以下のようなものである。
+中身は以下のようなものである。実行してもなにも出てこない。
 
     double_negative_elimination_joke = 
     fun (R : Type) (P : Prop) (HPFF : (P -> MCont R False) -> MCont R False) =>
@@ -179,15 +180,17 @@ Print double_negative_elimination_joke.
 *)
 
 (**
-前に書いたとおり、二重否定除去はパースの公理：
+本章の内容は半ば以上冗談である。
+二重否定除去はパースの公理：
 *)
 Axiom peirce : forall P Q : Prop, ((P -> Q) -> P) -> P.
 (**
-を使って証明できるので、
-上記のような恣意的な変形をしておけば証明できるのは当然である。
+を使って証明できる（文献4. 練習問題: classical_axioms）。
+なので、上記のように変形をしておけば、callccで
+証明できるのは当然である。
 
 ただし、パースの公理を使う場合でも同じだが、
-二重否定除去を証明する場合は、次の両方が必要なるようだ。
+二重否定除去を証明する場合は、次の両方が必要になるようだ。
 
      peirce P False : (P -> False) -> P -> P
      peirce False P : (False -> P) -> False -> False
@@ -204,6 +207,9 @@ Axiom peirce : forall P Q : Prop, ((P -> Q) -> P) -> P.
 
 3. モナドのすべて Continuationモナド
    http://www.sampou.org/haskell/a-a-monads/html/contmonad.html
+
+4. Pierce他、梅村他訳「ソフトウエアの基礎」、Coqにおける論理
+   http://proofcafe.org/sf/Logic_J.html
 *)
 
 (* END *)
