@@ -10,28 +10,20 @@
    「証明されていない公理」として道具に加えることができます。
    これら五つの命題が等価であることを証明しなさい。 *)
 
-(* 公理 *)
-
 Definition peirce := forall P Q: Prop,
-  ((P->Q)->P)->P.
+  ((P -> Q) -> P) -> P.
 Definition classic := forall P:Prop,
-  ~~P -> P.
+  ~ ~ P -> P.
 Definition excluded_middle := forall P:Prop,
-  P \/ ~P.
+  P \/ ~ P.
 Definition de_morgan_not_and_not := forall P Q:Prop,
-  ~(~P/\~Q) -> P\/Q.
+  ~ (~ P /\ ~ Q) -> P \/ Q.
 Definition implies_to_or := forall P Q:Prop,
-  (P->Q) -> (~P\/Q).
+  (P -> Q) -> (~ P \/ Q).
 
-(* 上記の公理が、同値であることの証明 *)
-Theorem ex_falso_quodlibet : forall (P:Prop),
-  False -> P.
-Proof.
-  intros P contra.
-  inversion contra.
-Qed.
+(* 上記の命題が、同値であることの証明をする。 *)
 
-Theorem classic__peirc : classic -> peirce.
+Theorem classic__peirce : classic -> peirce.
 Proof.
   intros H P Q HPQP.
   (* P *)
@@ -63,7 +55,7 @@ Proof.
   (* H = ~P *)
   apply HPQ_P.
   intros HP.
-  apply ex_falso_quodlibet.
+  exfalso.
   apply HnP.
   apply HP.
 Qed.
@@ -83,7 +75,7 @@ Proof.
   apply HnP.
   apply HPQP.
   intros HP.
-  apply ex_falso_quodlibet.
+  exfalso.
   apply HnP.
   apply HP.
   (* P *)
@@ -93,11 +85,6 @@ Proof.
   intros HP.
   apply H0.
 Qed.
-
-Theorem implies_to_or__peirc :
-  implies_to_or -> peirce.
-Proof.
-Admitted.
 
 Theorem peirce__classic : peirce -> classic.
 Proof.
@@ -114,6 +101,21 @@ Proof.
 Qed.
 (* 前提が二重否定のとき、そをinductionすると、
    一重否定が得られる。 *)
+
+(* http://joaoff.com/2012/01/29/on-peirces-law-and-the-law-of-the-excluded-middle/ *)
+Theorem peirce__excluded_middle : peirce -> excluded_middle.
+Proof.
+  unfold excluded_middle.
+  intros H P.
+  apply H with (Q := ~ (P \/ ~ P)).
+  unfold not.
+  intros HPP.
+  right.
+  intros HP.
+  apply HPP.
+  left. apply HP.
+  left. apply HP.
+Qed.
 
 Theorem excluded_middle__classic :
   excluded_middle -> classic.
@@ -132,7 +134,7 @@ Proof.
   apply HnP.
 Qed.
 
-Theorem de_morgan_not_and_not__classic :
+Theorem classic__de_morgan_not_and_not :
   classic -> de_morgan_not_and_not.
 Proof.
   unfold classic.
@@ -169,11 +171,6 @@ Proof.
   apply HnP1.
   apply HnP2.
 Qed.
-
-Theorem peirce__excluded_middle :
-  peirce -> excluded_middle.
-Proof.
-Admitted.
 
 (*
    情報論理学
@@ -234,12 +231,7 @@ Proof.
   apply HP.
 Qed.
 
-Theorem peirce__de_morgan_not_and_not :
-  peirce -> de_morgan_not_and_not.
-Proof.
-Admitted.
-
-Theorem classic__de_morgan_not_and_not : 
+Theorem de_morgan_not_and_not__classic: 
   de_morgan_not_and_not -> classic.
 Proof.
   intros H P HnnQ.
@@ -277,21 +269,6 @@ Proof.
   apply HnQ.
 Qed.
 
-Theorem implies_to_or__de_morgan_not_and_not :
-  implies_to_or -> de_morgan_not_and_not.
-Proof.
-Admitted.
-
-Theorem peirce__implies_to_or : 
-  peirce -> implies_to_or.
-Proof.
-Admitted.
-
-Theorem classic__implies_to_or :
-  classic -> implies_to_or.
-Proof.
-Admitted.
-
 Theorem excluded_middle__implies_to_or :
   excluded_middle -> implies_to_or.
 Proof.
@@ -310,17 +287,12 @@ Proof.
   apply HnP.
 Qed.
 
-Theorem de_morgan_not_and_not__implies_to_or :
-  de_morgan_not_and_not -> implies_to_or.
-Proof.
-Admitted.
-
 (* 上記以外の証明は、間接的に行える。 *)
 
-Theorem implies_to_or__peirc' : implies_to_or -> peirce.
+Theorem implies_to_or__peirce' : implies_to_or -> peirce.
 Proof.
   intros.
-  apply classic__peirc.
+  apply classic__peirce.
   apply excluded_middle__classic.
   apply implies_to_or__excluded_middle.
   apply H.
