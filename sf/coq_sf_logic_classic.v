@@ -99,8 +99,38 @@ Proof.
   induction HnnP.                           (* ！ *)
   apply HnP.
 Qed.
-(* 前提が二重否定のとき、そをinductionすると、
-   一重否定が得られる。 *)
+(* 前提が二重否定のとき、それをinductionすると、一重否定が得られる。 *)
+
+Theorem peirce__classic' : peirce -> classic.
+Proof.
+  unfold classic.
+  unfold not.
+
+  intros H P HnnP.
+  apply (H P False).
+  intros HPn.
+  exfalso.
+  apply (H False P).
+  intros HnP.
+  apply HnnP.
+  apply HPn.
+Qed.
+
+(* http://joaoff.com/2012/01/29/on-peirces-law-and-the-law-of-the-excluded-middle/ *)
+Theorem peirce__classic'' : peirce -> classic.
+Proof.
+  unfold classic.
+  unfold not.
+
+  intros H P HnnP.
+  assert ((P -> False) -> P) as HPnP.
+    intros HPn.
+    apply HnnP in HPn.
+    exfalso.
+    apply HPn.
+  apply H in HPnP.
+  apply HPnP.
+Qed.
 
 (* http://joaoff.com/2012/01/29/on-peirces-law-and-the-law-of-the-excluded-middle/ *)
 Theorem peirce__excluded_middle : peirce -> excluded_middle.
