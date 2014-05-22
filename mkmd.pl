@@ -1,17 +1,28 @@
 #! /usr/bin/perl
 # $Id:$
 
+my $filename = $ARGV[0];
+
+if ($filename =~ /\.v$/) {
+    $lang = "coq";
+} elsif ($filename =~ /\.swi$/) {
+    $lang = "prolog";
+} elsif ($filename =~ /\.[ch]$/) {
+    $lang = "C";
+}
+
 my $debug = 0;
 
-my $istext = 0;
+my $istext = 0;                             # Markdownの地のテキストである。
 my $lastistext = 0;
 
-my $isprog = 0;
+my $isprog = 0;                             # Markdownのプログラム引用である。
 my $lastisprog = 0;
 
 while (<>) {
     chop;
 
+    # プログラムの部分かどうかを判定する。
     if (/^\s*$/) {
         printf("\n");
         next;
@@ -26,18 +37,19 @@ while (<>) {
         next;
     }
 
-    if ($isprog == 0 && /^\S/ && /^[^#%=@a-z0-9\*\+\-\>]/) {
+    # テキストの部分かどうかを判定する。
+    # Markdownの指示記号から始まる行は、テキストに含めない。
+    if ($isprog == 0 && /^\S/ && /^[^0-9#%=@\*\+\-\>\`]/) {
         $istext = 1;
     } else {
         $istext = 0;
     }
-    
-    if ($lastisprog == 1 &&
-        $isprog == 0) {
-        printf("\n\n```\n");
-    } elsif ($lastisprog == 0 &&
-             $isprog == 1) {
-        printf("\n\n```\n");
+        
+    # プログラムの部分を```でくくる。
+   if ($lastisprog == 0 && $isprog == 1) {       # 開始か？
+       printf("\n\n```%s:\n", $lang);            # ```開く。
+    } elsif ($lastisprog == 1 && $isprog == 0) { # 終了か？
+        printf("\n\n```\n");                     # ```閉じる。
     }
     
     if ($debug == 1) {
