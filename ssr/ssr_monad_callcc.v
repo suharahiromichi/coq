@@ -1,7 +1,6 @@
 (**
 Coqでcall/cc（Coqで継続モナド、その2）
 ===============================
-
 2014_05_17 @suharahiromichi
 
 2014_05_18 @suharahiromichi 「証明」の部分を見直した
@@ -32,22 +31,26 @@ Definition bind {R A : Type} (c : MCont R A)
 Definition ret {R A : Type} (a : A) : MCont R A :=
   fun k => k a.
 
+
 (* call/cc、文献3の定義を参考にした。 *)
 Definition callcc {R A B : Type}
            (f : (A -> MCont R B) -> MCont R A) : MCont R A :=
-  fun (k : A -> R) => f (fun (a : A) => fun _ => k a) k.
+  fun (k : A -> R) => f (fun (a : A) => fun (b : B -> R) => k a) k.
 Check callcc.
+
 (**
     : ((A -> MCont R B) -> MCont R A) -> MCont R A
 
-call/ccの型は、モナドの部分を除いて見ると、
-古典論理を扱うときの「パースの公理」に対応する。
+すこし強引だが、
+call/ccの型は、「MCont R」の部分を除いて見ると、
+古典論理を扱うときの「パースの公理」に対応するといえる。
 
-     ((P -> Q) -> P) -> P
+    ((P -> Q) -> P) -> P
 *)
 
 (**
-演算子と、do記法も定義しておく。
+演算子と、
+do記法も定義しておく。
 *)
 Notation "c >>= f" :=
   (bind c f)
@@ -217,6 +220,20 @@ Qed.
 も必要としていて、「call/ccで証明した」とは言い難かった。
 証明を見直すにあたって文献5.を参考にさせていただいた。
 *)
+
+(**
+補足説明：
+パースの公理を使った「二重否定除去」の証明を以下に示す。
+*)
+Theorem double_negative_elimination : forall P, ~ ~ P -> P.
+Proof.
+  move=> P H.
+  apply (peirce P False) => H1.
+  elim: H.
+  rewrite /not.
+  by apply H1.
+Qed.
+Print  double_negative_elimination.
 
 (**
 # 文献
