@@ -7,14 +7,15 @@
  *)
 Require Import ssreflect ssrbool ssrnat seq eqtype ssrfun.
 (**
-スタック言語のための stack compiler が正しく動作することの証明をする。
+算術式をスタック指向のプログラミング言語にコンパイルするコンパイラ
+（スタックコンパイラ）が正しく動作することの証明をする。
 証明は SSReflect を使っておこなう。
 *)
 (**
-# ソース言語([aexp])の定義
+# ソース言語（算術式）の定義
  *)
 (**
-状態(state)はプログラムの実行のある時点のすべての変数の現在値を表す。
+状態(`state`)はプログラムの実行のある時点のすべての変数の現在値を表す。
  *)
 Inductive id : Type := 
   Id of nat.
@@ -22,7 +23,7 @@ Inductive id : Type :=
 Definition state := id -> nat.
 
 (**
-ソース言語である算術式 [aexp] を定義する。
+ソース言語である算術式 `aexp` を定義する。
  *)
 Inductive aexp : Type :=
 | ANum of nat
@@ -32,14 +33,14 @@ Inductive aexp : Type :=
 | AMult of aexp & aexp.
 
 (**
-変数の略記法:
+変数の略記法を以下に定義する。
  *)
 Definition X : id := Id 0.
 Definition Y : id := Id 1.
 Definition Z : id := Id 2.
 
 (**
-[aexp] を評価する関数を定義する。
+`aexp` を評価する関数を定義する。
  *)
 Fixpoint aeval (st : state) (e : aexp) : nat :=
   match e with
@@ -54,13 +55,13 @@ Fixpoint aeval (st : state) (e : aexp) : nat :=
 # スタック指向のプログラミング言語（スタック言語）
  *)
 (**
-スタック言語の命令セットは、以下の命令から構成される:
+スタック言語の命令セット`sinstr`は、以下の命令から構成される:
 
-- [SPush n]: 数 [n] をスタックにプッシュする。
-- [SLoad X]: ストアから識別子 [X] に対応する値を読み込み、スタックにプッシュする。
-- [SPlus]:   スタックの先頭の 2 つの数をポップし、それらを足して、結果をスタックにプッシュする。
-- [SMinus]:  上と同様。ただし引く。
-- [SMult]:   上と同様。ただし掛ける。
+- `SPush n`: 数 `n` をスタックにプッシュする。
+- `SLoad X`: ストアから識別子 `X` に対応する値を読み込み、スタックにプッシュする。
+- `SPlus`:   スタックの先頭の 2 つの数をポップし、それらを足して、結果をスタックにプッシュする。
+- `SMinus`:  上と同様。ただし引く。
+- `SMult`:   上と同様。ただし掛ける。
 *)
 
 Inductive sinstr : Type :=
@@ -105,7 +106,7 @@ Fixpoint s_execute (st : state) (stack : seq nat) (prog : seq sinstr) : seq nat 
   end.
 
 (**
-[aexp] をスタック言語の命令列にコンパイルする関数 [s_compile] を書く。
+`aexp` をスタック言語の命令列にコンパイルする関数 `s_compile` を書く。
  *)
 Fixpoint s_compile (e : aexp) : seq sinstr :=
   match e with
@@ -120,7 +121,7 @@ Fixpoint s_compile (e : aexp) : seq sinstr :=
 # コンパイルが正しいことの証明
  *)
 (**
-以下で、[s_compile] 関数が正しく振る舞うことを述べる定理を証明する。
+以下で、`s_compile` 関数が正しく振る舞うことを述べる定理を証明する。
  *)
 (**
 最初に補題として、スタック言語の命令列が append できることを証明する。
@@ -142,8 +143,8 @@ Qed.
 
 (**
 より一般的な、stackが任意の状態の場合について、
-[aexp]をコンパイルしたスタック言語の命令列を実行した結果（左辺）と、
-[aexp]を直接実行した結果（右辺）が一致することを証明する。
+`aexp`をコンパイルしたスタック言語の命令列を実行した結果（左辺）と、
+`aexp`を直接実行した結果（右辺）が一致することを証明する。
  *)
 Lemma s_compile_correct_stack : forall (st : state) (stack : seq nat) (e : aexp),
   s_execute st stack (s_compile e) = [:: aeval st e] ++ stack.
@@ -162,8 +163,8 @@ Qed.
 
 (**
 最後に、stackが初期状態（空[]）の場合について、
-[aexp]をコンパイルしたスタック言語の命令列を実行した結果（左辺）と、
-[aexp]を直接実行した結果（右辺）が一致することを証明する。
+`aexp`をコンパイルしたスタック言語の命令列を実行した結果（左辺）と、
+`aexp`を直接実行した結果（右辺）が一致することを証明する。
  *)
 Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [::] (s_compile e) = [:: aeval st e].
