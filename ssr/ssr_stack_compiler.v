@@ -10,12 +10,16 @@ Require Import ssreflect ssrbool ssrnat seq eqtype ssrfun.
 算術式をスタック指向のプログラミング言語にコンパイルするコンパイラ
 （スタックコンパイラ）が正しく動作することの証明をする。
 証明は SSReflect を使っておこなう。
+
+ソースコードは以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_stack_compiler.v
 *)
 (**
 # ソース言語（算術式）の定義
  *)
 (**
-状態(`state`)はプログラムの実行のある時点のすべての変数の現在値を表す。
+状態`state`はプログラムの実行のある時点のすべての変数の現在値を表す。
  *)
 Inductive id : Type := 
   Id of nat.
