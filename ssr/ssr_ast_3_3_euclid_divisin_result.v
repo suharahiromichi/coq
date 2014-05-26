@@ -39,7 +39,7 @@ Proof.
   rewrite subn_if_gt; case: ltnP => [// | le_dm].
   rewrite -{1}(subnK le_dm) -addnS addnA.
   rewrite addnAC -mulSnr.                   (* addnAC を追加した。  *)
-  apply (IHn (m - d) q.+1).                 (* apply: IHn でもよい。 *)
+  apply: IHn.
   apply: leq_trans le_mn; exact: leq_subr.
 Qed.
 
@@ -47,7 +47,7 @@ Lemma edivn_eq : forall d q r, r < d -> edivn (q * d + r) d = (q, r).
 Proof.
   move=> d q r lt_rd; have d_pos: 0 < d by exact: leq_trans lt_rd.
   case: edivnP lt_rd => q' r'; rewrite d_pos /=.
-    wlog: q q' r r' / q <= q'. by case (ltnP q q'); last symmetry; eauto.
+    wlog: q q' r r' / q <= q' by case (ltnP q q'); last symmetry; eauto.
   rewrite leq_eqVlt; case: eqP => [-> _|_] /=; first by move/addnI->.
     rewrite -(leq_pmul2r d_pos); move/leq_add=> Hqr Eqr _; move/Hqr {Hqr}.
     by rewrite addnS ltnNge mulSn -addnA Eqr addnCA addnA leq_addr.
@@ -60,27 +60,32 @@ Eval compute in edivn (2 * 3 + 1) 3.        (* (2,1) *)
 Lemma edivnP' : forall m d, edivn_spec m d (edivn m d).
 Proof.
   rewrite /edivn.
-  move => m; case; last move=> d; move=> //=;
+  move => m.
+  case.
+  move=> //=.
+  move=> d.
+  move=> //=.
   change m with (0 * d.+1 + m) at 1.        (* rewrite -{1}[m]/(0 * d.+1 + m).  *)
   Check (leqnn m).                          (* m <= m *)
   move: (leqnn m).
   move: 0.                                  (* ゴールの中の数字の「0」 *)
   move: {-2}m.
   move: m.
-  elim;
-    last move => n IHn;
-                case;
-                last move=> m;
-                           move=> q //=.
+
+  elim; last move=> n IHn.
+  case; last move=> m; move=> q //=.
+  case; last move=> m; move=> q //=.
+
   Check (ltnS m n).                         (* (m < n.+1) = (m <= n) *)
   rewrite (ltnS m n).
   move=> le_mn.                             (* 前提 *)
   Check (@subn_if_gt (nat*nat) m d).
   Check (@subn_if_gt (nat*nat) m d (fun m => edivn_rec d (m - d) q.+1) (q, m.+1)).
   rewrite (@subn_if_gt (nat*nat) m d (fun m => edivn_rec d m q.+1) (q, m.+1)).
-  move: ltnP; case;
-      first move=> //;
-      last  move=> le_dm.                   (* 前提 *)
+  move: ltnP.
+  case.
+  move=> //.
+  move=> le_dm.                             (* 前提 *)
   Check (subnK le_dm).                      (* 引いて足す。 m - d + d = m *)
   rewrite -{1}(subnK le_dm).
   Check (addnS (m - d) d).                  (* m - d + d.+1 = (m - d + d).+1 *)
@@ -100,7 +105,7 @@ Proof.
   apply.
   Check (leq_subr d m).                     (* m - d <= m *)
   move: (leq_subr d m).
-  by apply.
+  apply.
 Qed.
 
 Lemma edivn_eq' : forall d q r, r < d -> edivn (q * d + r) d = (q, r).
@@ -112,26 +117,25 @@ Proof.
     Check (@leq_trans r.+1 1 d).            (* 0 <  r.+1 -> r    <  d -> 0 <  d *)
     move: (@leq_trans r.+1 1 d).
     apply.
-    by [].
+    done.
   move: lt_rd.                              (* 前提 *)
   move: edivnP.
   case.
   move=> q' r'.
   rewrite d_pos.                            (* 前提 *)
   rewrite /=.
-  wlog: / (q <= q').                        (* ├ (P->G)->G *)
+  wlog: q q' r r' /(q <= q').               (* ├ (P->G)->G *)
   (* (P->G)->G *)
-    move: (q) (q') r r'.
     move: (ltnP q q').
     case.
-    admit.                                  (* XXXX *)
-    admit.                                  (* XXXX *)
-
+      eauto.
+    symmetry.
+    eauto.
   (* ├ P -> G *)
   Check (leq_eqVlt q q').                   (* (q <= q') = (q == q') || (q < q') *)
   rewrite (leq_eqVlt q q').
-  Check (@eqP _ q q').
-  move: (@eqP _ q q').
+  Check (@eqP _ q q').                      (* reflect (q = q') (q == q') *)
+  move: (@eqP _ q q').                      (* '_' は eqTypeななにか。 *)
   case.
         move=> -> ?.
         Check addnI.
