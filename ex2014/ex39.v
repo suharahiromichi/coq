@@ -45,18 +45,17 @@ Fixpoint bind_list {A B : Type} (m : list A) (f : A -> list B) : list B :=
 分配則も証明しておく。
  *)
 Lemma bind_list_distr : 
-  forall {B C : Type} (m n : list B) (g : B -> list C),
-    bind_list (m ++ n) g = bind_list m g ++ bind_list n g.
+  forall {A B : Type} (m n : list A) (f : A -> list B),
+    bind_list (m ++ n) f = bind_list m f ++ bind_list n f.
 Proof.
-  move=> B C m n g.
+  move=> A B m n f.
   elim: m.
     by [].
   move=> a m.
   elim: n.
     move=> IHn.
     by rewrite /= 2!app_nil_r.
-  move=> b n IHm IHn.
-  rewrite /= IHn.
+  move=> b n IHm /= ->.
   by apply app_assoc.
 Qed.
 
@@ -80,8 +79,7 @@ Qed.
 Next Obligation.                            (* 補足説明：モナド則 3 *)
   elim m.
     by [].
-  move=> a l IHm /=.
-  rewrite -IHm.
+  move=> a l /= <-.
   apply bind_list_distr.
 Qed.
 
