@@ -1,9 +1,9 @@
 Require Import ssreflect.
 
 (**
-# 第8回
+# 第7回 ソースファイルの分割とコンパイル/SectionとModule (2014/05/18)
 
-http://qnighy.github.io/coqex2014/ex8.html
+http://qnighy.github.io/coqex2014/ex7.html
 
 ## 課題32 (種別:A / 締め切り : 2014/05/25)
 
