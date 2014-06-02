@@ -56,7 +56,7 @@ Proof.
     move=> IHn.
     by rewrite /= 2!app_nil_r.
   move=> b n IHm /= ->.
-  by apply app_assoc.
+  by apply: app_assoc.
 Qed.
 
 Program Instance ListMonad : Monad list :=
@@ -68,7 +68,7 @@ Program Instance ListMonad : Monad list :=
   |}.
 Next Obligation.                            (* 補足説明：モナド則 1 *)
   (* ここに証明を書く *)
-  apply app_nil_r.
+  apply: app_nil_r.
 Qed.
 (* 以下、ListMonadが定義できるまでNext Obligation -> Qed を繰り返す *)
 Next Obligation                             (* 補足説明：モナド則 2 *).
@@ -80,7 +80,7 @@ Next Obligation.                            (* 補足説明：モナド則 3 *)
   elim m.
     by [].
   move=> a l /= <-.
-  apply bind_list_distr.
+  apply: bind_list_distr.
 Qed.
 
 (* モナドの使用例 *)
@@ -90,7 +90,8 @@ Definition foo : list nat := 1 :: 2 :: 3 :: nil.
 (* 内包記法もどき *)
 (*
 補足説明：
-SSReflectのタクティカルと重ならないように「DO」とした
+SSReflectのタクティカルと重ならないように「DO」とし、
+結合方向に悩まなくてすむようにDO...OD形式とした。
  *)
 Notation "s1 >> s2" :=
   (s1 >>= fun _ => s2)
