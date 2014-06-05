@@ -1,0 +1,131 @@
+Require Import ssreflect ssrnat.
+
+(**
+# 第8回
+
+http://qnighy.github.io/coqex2014/ex6.html
+
+## 課題37 (種別:A / 締め切り : 2014/06/01)
+
+自然数の対の商集合として整数を定義する。下の証明の空欄を埋めよ。
+omega等を使ってもよい。
+*)
+Require Import SetoidClass Omega.
+
+Record int :=
+  {
+    Ifst : nat;
+    Isnd : nat
+  }.
+
+Program Instance ISetoid : Setoid int :=
+  {|
+    equiv x y :=                            (* == *)
+      Ifst x + Isnd y = Ifst y + Isnd x
+  |}.
+Next Obligation.
+Proof.
+  (* http://d.hatena.ne.jp/m-a-o/20110112 *)
+  apply Build_Equivalence.
+  by rewrite /Reflexive.
+  by rewrite /Symmetric.
+  rewrite /Transitive.
+  move=> x y z.
+  move=> Hxy Hyz.
+(*
+  x : int
+  y : int
+  z : int
+  Hxy : Ifst x + Isnd y = Ifst y + Isnd x
+  Hyz : Ifst y + Isnd z = Ifst z + Isnd y
+  ============================
+   Ifst x + Isnd z = Ifst z + Isnd x
+*)
+  rewrite addnC.
+  rewrite addnC in Hxy.
+  rewrite addnC in Hyz.
+  admit.                                    (* XXXXX *)
+Qed.
+
+Definition zero : int :=
+  {|
+    Ifst := 0;
+    Isnd := 0
+  |}.
+
+Definition int_minus (x y : int) : int :=
+  {|
+    Ifst := Ifst x + Isnd y;
+    Isnd := Isnd x + Ifst y
+  |}.
+
+Lemma int_sub_diag : forall x, int_minus x x == zero.
+Proof.
+  move=> x.
+  by rewrite /= addn0 add0n addnC.
+Qed.
+
+(* まず、int_minus_compatを証明せずに、下の2つの証明を実行して、どちらも失敗することを確認せよ。*)
+(* 次に、int_minus_compatを証明し、下の2つの証明を実行せよ。 *)
+
+Instance int_minus_compat :
+  Proper (equiv ==> equiv ==> equiv) int_minus.
+Proof.
+  unfold Proper.
+  unfold respectful.                        (* ==> *)
+  move=> x y Hxy x' y' Hx'y'.
+  rewrite /int_minus /=.
+
+  have Hxy2 : (Ifst x + Isnd y = Ifst y + Isnd x) by apply Hxy.
+  have Hx'y'2 : (Ifst x' + Isnd y' = Ifst y' + Isnd x') by apply Hx'y'.
+  
+  rewrite 2!addnA.
+  rewrite [Ifst x + Isnd x' + Isnd y]addnC.
+  rewrite [Ifst y + Isnd y' + Isnd x]addnC.
+  rewrite 2!addnA.
+  rewrite [Isnd y + Ifst x]addnC.
+  rewrite -addnA.
+  rewrite [Isnd x' + Ifst y']addnC.
+  rewrite [Isnd x + Ifst y]addnC.
+  rewrite -Hx'y'2.
+  rewrite -Hxy2.
+  rewrite -[(Ifst x + Isnd y) + Isnd y' + Ifst x']addnA.
+  rewrite [Isnd y' + Ifst x']addnC.
+  by [].
+Qed.
+
+Goal forall x y, int_minus x (int_minus y y) == int_minus x zero.
+Proof.
+  intros x y.
+  rewrite int_sub_diag.
+  reflexivity.
+Qed.
+
+Goal forall x y, int_minus x (int_minus y y) == int_minus x zero.
+Proof.
+  intros x y.
+  setoid_rewrite int_sub_diag.
+  reflexivity.
+Qed.
+
+(**
+
+おまけ : ISetoidの定義においてProgram InstanceをInstanceに変更し、Next Obligation. を取り除
+いてもISetoidは定義できるが、続きがうまくいかなくなる。これは何故か？
+
+ヒント
+
+通常のイコール (Coq.Init.Logic.eq) 以外の同値関係を入れたい場合、Setoidを使います。Setoidに
+よる書き換えは、通常rewriteで行えます。明示的にSetoidを使う場合は、setoid_rewriteを使います。
+
+Setoidによってreplaceを行いたい場合はsetoid_replaceを使えます。通常のイコールと違い、
+Setoidの同値関係を保存しない写像が存在する可能性があります。例えば、この問題におけるIfst関
+数はSetoidの同値関係を保存しません。Setoidによる書き換えを行うためには、それぞれの関数が同
+値関係を保存することを逐一証明する必要があります。
+
+Recordは単一のコンストラクタを持ち再帰的でない型を定義するのに使えるコマンドです。メンバを
+取り出す関数(この例ではIfst, Isnd)が自動的に定義されることや、{| ... |} という構文でRecord
+型の値を記述できるという利点があります。
+*)
+
+(* END *)
