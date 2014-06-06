@@ -61,6 +61,12 @@ Definition zero : int :=
     Isnd := 0
   |}.
 
+Definition int_plus (x y : int) : int :=
+  {|
+    Ifst := Ifst x + Ifst y;
+    Isnd := Isnd x + Isnd y
+  |}.
+
 Definition int_minus (x y : int) : int :=
   {|
     Ifst := Ifst x + Isnd y;
@@ -73,8 +79,30 @@ Proof.
   by rewrite /= addn0 add0n addnC.
 Qed.
 
-(* まず、int_minus_compatを証明せずに、下の2つの証明を実行して、どちらも失敗することを確認せよ。*)
-(* 次に、int_minus_compatを証明し、下の2つの証明を実行せよ。 *)
+Instance int_plus_compat :
+  Proper (equiv ==> equiv ==> equiv) int_plus.
+Proof.
+  unfold Proper.
+  unfold respectful.                        (* ==> *)
+  move=> x y Hxy x' y' Hx'y'.
+  rewrite /int_plus /=.
+
+  have Hxy2 : (Ifst x + Isnd y = Ifst y + Isnd x) by apply Hxy.
+  have Hx'y'2 : (Ifst x' + Isnd y' = Ifst y' + Isnd x') by apply Hx'y'.
+  
+  rewrite 2!addnA.
+  rewrite -[Ifst x + Ifst x' + Isnd y]addnA.
+  rewrite [Ifst x' + Isnd y]addnC.
+  rewrite addnA.
+  rewrite Hxy2.  
+  rewrite -[(Ifst y + Isnd x) + Ifst x' + Isnd y']addnA.
+  rewrite Hx'y'2.
+  rewrite addnA.
+  rewrite -[Ifst y + Isnd x + Ifst y']addnA.
+  rewrite [Isnd x + Ifst y']addnC.
+  rewrite addnA.
+  by [].
+Qed.
 
 Instance int_minus_compat :
   Proper (equiv ==> equiv ==> equiv) int_minus.
