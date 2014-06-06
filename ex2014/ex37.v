@@ -1,4 +1,4 @@
-Require Import ssreflect ssrnat.
+Require Import ssreflect ssrbool eqtype ssrnat.
 
 (**
 # 第8回
@@ -10,13 +10,20 @@ http://qnighy.github.io/coqex2014/ex6.html
 自然数の対の商集合として整数を定義する。下の証明の空欄を埋めよ。
 omega等を使ってもよい。
 *)
-Require Import SetoidClass Omega.
+Require Import SetoidClass.
 
 Record int :=
   {
     Ifst : nat;
     Isnd : nat
   }.
+
+Lemma addn2r p m n : (m + p = n + p) -> (m = n).
+Proof.
+  move/eqP => H.
+  apply/eqP.
+  by rewrite -(eqn_add2r p).
+Qed.
 
 Program Instance ISetoid : Setoid int :=
   {|
@@ -32,19 +39,20 @@ Proof.
   rewrite /Transitive.
   move=> x y z.
   move=> Hxy Hyz.
-(*
-  x : int
-  y : int
-  z : int
-  Hxy : Ifst x + Isnd y = Ifst y + Isnd x
-  Hyz : Ifst y + Isnd z = Ifst z + Isnd y
-  ============================
-   Ifst x + Isnd z = Ifst z + Isnd x
-*)
-  rewrite addnC.
-  rewrite addnC in Hxy.
-  rewrite addnC in Hyz.
-  admit.                                    (* XXXXX *)
+  apply (addn2r (Ifst y + Isnd y)).
+  rewrite !addnA.
+  rewrite [Ifst x + Isnd z + Ifst y + Isnd y]addnC.
+  rewrite [Ifst z + Isnd x + Ifst y + Isnd y]addnC.
+  rewrite !addnA.
+  rewrite [Isnd y + Ifst x]addnC.
+  rewrite [Isnd y + Ifst z]addnC.
+  rewrite Hxy.
+  rewrite -Hyz.
+  rewrite [Ifst y + Isnd z + Isnd x + Ifst y]addnC.
+  rewrite [Ifst y + Isnd z + Isnd x]addnC.
+  rewrite [Ifst y + Isnd z]addnC.
+  rewrite !addnA.
+  by [].
 Qed.
 
 Definition zero : int :=
