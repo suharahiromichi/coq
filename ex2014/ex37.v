@@ -79,6 +79,9 @@ Proof.
   by rewrite /= addn0 add0n addnC.
 Qed.
 
+(* まず、int_minus_compatを証明せずに、下の2つの証明を実行して、
+どちらも失敗することを確認せよ。*)
+
 Instance int_plus_compat :
   Proper (equiv ==> equiv ==> equiv) int_plus.
 Proof.
@@ -134,6 +137,13 @@ Goal forall x y, int_minus x (int_minus y y) == int_minus x zero.
 Proof.
   intros x y.
   rewrite int_sub_diag.
+  reflexivity.
+Qed.
+
+Goal forall x y, int_minus x (int_minus y y) == int_minus x zero.
+Proof.
+  intros x y.
+  rewrite -!{1}int_sub_diag.                (* SSReflectのタクティカルも使える。 *)
   reflexivity.
 Qed.
 
