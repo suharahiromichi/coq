@@ -11,6 +11,7 @@ http://qnighy.github.io/coqex2014/ex6.html
 omega等を使ってもよい。
 
 オリジナルの出題は SetoidClass を使用しているが、それを使わない場合。
+「Add Setoid int equiv eq_int_equiv as ISetoid」を使う。
 
 参考：
 http://d.hatena.ne.jp/m-a-o/20110112
