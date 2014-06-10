@@ -19,8 +19,10 @@ Require Import Recdef.
 
 Require Import Lt.
 
-(* http://gcg00467.xii.jp/wp/archives/891 *)
-(* http://www.cse.chalmers.se/research/group/logic/TypesSS05/resources/coq/CoqArt/gen-rec/SRC/chap15.v *)
+(*
+ well_founded lt を示す定理が見つからない。
+ これは、Coq'n art の一部
+ *)
 Theorem lt_Acc : forall n:nat, Acc lt n.
 Proof.
  induction n.
@@ -62,21 +64,55 @@ Proof.
   by [].
 Qed.
 
+Lemma mn2__2mn : forall n m, (m <= n %/ 2) = (2 * m <= n).
+Proof.
+  move=> n m.
+  rewrite leq_divRL.
+  + by rewrite -mulnC.
+  + by [].
+Qed.
+
+Lemma mn2_2mn : forall n m, m <= n %/ 2 -> 2 * m <= n.
+Proof.
+  move=> n m H.
+  have Hmn : forall n m, (m <= n %/ 2) = (2 * m <= n)
+                         by apply mn2__2mn.
+  case Hmn.
+  by [].
+Qed.
+
+Lemma np2d2_nd2p1 : forall n, (n + 2) %/ 2 = (n %/ 2) + 1.
+Proof.
+  move=> n.
+  rewrite divnDr.
+  have H : 2 %/ 2 = 1 by rewrite //.
+  + by rewrite H.                                 
+  + by [].
+Qed.
+
 Lemma log_pow_lb: forall n, 1 <= n -> pow (log n) <= n.
 Proof.
   move=> n H.
   functional induction (log n).
   + by [].                                  (* pow 0 <= 0 *)
   + by [].                                  (* pow 0 <= 1 *)
-    rewrite pown1_2pown.
-    admit.                                  (* XXXXX *)
+  + rewrite pown1_2pown.
+    apply mn2_2mn.
+    apply IHn0.
+    destruct n.
+    - inversion H.
+    - destruct n.
+      * inversion y.
+      * rewrite -addn2.
+        rewrite np2d2_nd2p1.
+        apply ltn_addl.
+        by [].
 Qed.
-
+  
 (**
 ヒント
 
 functional inductionタクティックを使うと、Functionで定義した計算の構造に従う帰納法を行うことができます。
-
 *)
 
 (* END *)
