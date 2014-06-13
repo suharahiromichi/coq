@@ -43,14 +43,9 @@ Theorem le_min'' : forall m n, m <= n -> min'' m n = m.
 Proof.
   move=> n p H.
   rewrite /min''.
-  move/leP in H.
-  case: H.                                  (* H は Prop *)
-  + have Hnn : n <= n by apply/idP.         (* Hnn は bool *)
-    by rewrite Hnn.
-  + move=> m Hnm.
-    have Hnm1 : n <= m.+1
-      by apply leqW; apply/leP; apply Hnm.  (* Hnm1はbool *)
-    by rewrite Hnm1.
+  move/leP in H.                            (* H は Prop *)
+  have Hnp : n <= p by apply/leP.           (* Hnp は bool *)
+    by rewrite Hnp.
 Qed.
 
 (* END *)
