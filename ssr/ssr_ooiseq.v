@@ -10,14 +10,14 @@ https://twitter.com/pi8027/status/476708668239384576
 
 Require Import ssreflect ssrnat ssrbool eqtype seq.
 
-Inductive OI : Set :=
-| ss of OI & OI
-| oosi of OI
-| isoo of OI
-| osiso of OI
+Inductive S : Set :=
+| ss of S & S
+| oosi of S
+| isoo of S
+| osiso of S
 | ε.
 
-Fixpoint icount (l : OI) : nat :=
+Fixpoint icount (l : S) : nat :=
   match l with
     | ss m n => (icount m) + (icount n)
     | oosi m => (icount m).+1
@@ -26,7 +26,7 @@ Fixpoint icount (l : OI) : nat :=
     | ε => 0
   end.
 
-Fixpoint ocount (l : OI) : nat :=
+Fixpoint ocount (l : S) : nat :=
   match l with
     | ss m n => (ocount m) + (ocount n)
     | oosi m => (ocount m).+2
@@ -35,7 +35,7 @@ Fixpoint ocount (l : OI) : nat :=
     | ε => 0
   end.
 
-Goal forall l : OI, (icount l).*2 = ocount l.
+Goal forall l : S, (icount l).*2 = ocount l.
 Proof.
   elim;
   first                                     (* SS *)
