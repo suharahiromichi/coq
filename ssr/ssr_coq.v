@@ -39,9 +39,16 @@ Definition min'' m n :=
     | false => n
   end.
 
+(**
+m < n はすでにboolである。
+
+ssrnat.vに、
+Link to the legacy comparison predicates.
+として、leP と ltP が定義されている。
+*)
 Theorem le_min'' : forall m n, m <= n -> min'' m n = m.
 Proof.
-  move=> n p H.
+  move=> n p H.                             (* H は bool *)
   rewrite /min''.
   move/leP in H.                            (* H は Prop *)
   have Hnp : n <= p by apply/leP.           (* Hnp は bool *)
