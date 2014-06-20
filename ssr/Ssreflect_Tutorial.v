@@ -461,11 +461,13 @@ Variables (D : eqType) (x y : D).
 
 Lemma eq_prop_bool : x = y -> x == y.
 Proof.
+    (* 前提の x = y を x == y にリフレクションする。 *)
     by move/eqP.
 Qed.
 
 Lemma eq_bool_prop : x == y -> x = y.
 Proof.
+    (* 前提の x == y を x = y にリフレクションする。 *)
     by move/eqP.
 Qed.
 End Equality.
@@ -501,21 +503,25 @@ Qed.
 Lemma subset_trans2 : transitive set subset.
 Proof.
   move=> x y z subxy subyz t.
+    (* move/subxy は、前提 x t を y t にリフレクションする。 *)
+    (* move/subyz は、前提 y t を z t にリフレクションする。 *)
     by move/subxy; move/subyz.
 Qed.
 
-Lemma subset_trans2' : transitive set subset.
+(** 実際は以下と同じ *)
+Lemma subset_trans2'' : transitive set subset.
 Proof.
   move=> x y z subxy subyz t.
+  move=> H.
 (**
 [subxy : forall x0 : U, x x0 -> y x0]
 *)
-  move/subxy.
+  apply subxy in H.
 (**
 [subyz : forall x : U, y x -> z x]
  *)
-  move/subyz.
-  done.
+  apply subyz in H.
+  by [].
 Qed.
 End Using_Definition.
 
@@ -557,6 +563,7 @@ Fixpoint subn_rec (m n : nat) {struct m} :=
     | m'.+1, n'.+1 => (m' - n')
     | _, _ => m
 end.
+Eval compute in subn_rec 5 3.               (* 2 *)
 
 Lemma concrete_big_leq : 0 <= 51.
 Proof.
@@ -574,9 +581,31 @@ Proof.
     by [].
 Qed.
 
+(* plusの可換性 *)
 Lemma plus_commute : forall n1 m1, n1 + m1 = m1 + n1.
 Proof.
     by elim=> [| n IHn m]; [elim | rewrite -[n.+1 + m]/(n + m).+1 IHn; elim: m].
+Qed.
+
+(* 展開して書く *)
+Lemma plus_commute' : forall n1 m1, n1 + m1 = m1 + n1.
+Proof.
+  elim=> [| n IHn m].
+  + by elim.
+  + rewrite -[n.+1 + m]/(n + m).+1.         (* n.+1 + m を (n + m).+1 で置き換える。 *)
+    (* change (n.+1 + m) with (n + m).+1. とおなじ。 *)
+    (* rewrite -[n.+1 + m]/(n.+1 + m).  これは、 なにもしないが -をとると。。。 *)
+
+(*
+No 6455 p.39
+rewrite -[ term1 ]/ term2. is equivalent to: change term1 with term.
+If term2 is a single constant and term1 head symbol is not term2 , then the head symbol
+of term1 is repeatedly unfolded until term2 appears.
+*)
+    rewrite IHn.
+    elim: m.
+    - by [].
+    - by [].
 Qed.
 
 (* 3.2 Deﬁnitions *)
@@ -584,15 +613,26 @@ Qed.
 Definition edivn_rec d :=
   fix loop (m q : nat) {struct m} :=
   if m - d is m'.+1 then loop m' q.+1 else (q, m).
-
+Eval compute in edivn_rec 3.-1 10 0.        (* 3 あまり 1 *)
+(* 
+計算の様子。
+d   m   q   m-d   m'  q+1
+2  10   0    8    7   1
+2   7   1    5    4   2
+2   4   2    2    1   3
+2   1   3    0    -   - .. else .. (q, m) = (3, 1)
+ *)
 Definition edivn m d :=
   if d > 0 then edivn_rec d.-1 m 0 else (0, m).
+Eval compute in edivn 10 3.                 (* 3 あまり 1 *)
 
+(* *** *)
 Definition edivn_rec2 d := fix loop (m q : nat) {struct m} :=
   if m - (d - 1) is m'.+1 then loop m' q.+1 else (q, m).
 
 Definition edivn2 m d :=
   if d > 0 then edivn_rec2 d m 0 else (0, m).
+Eval compute in edivn2 10 3.                (* 3 あまり 1 *)
 
 (*
 [
@@ -654,10 +694,26 @@ CoInductive edivn_spec_left (m d : nat)(qr : nat * nat) : Type :=
     edivn_spec_left m d qr.
 
 Lemma edivnP_right : forall m d, edivn_spec_right m d (edivn m d).
-Admitted.
+ (* 証明は、edivnP と同じ。 *)
+  rewrite /edivn => m [|d] //=; rewrite -{1}[m]/(0 * d.+1 + m).
+  elim: m {-2}m 0 (leqnn m) => [|n IHn] [|m] q //=; rewrite ltnS => le_mn.
+  rewrite subn_if_gt; case: ltnP => [// | le_dm].
+  rewrite -{1}(subnK le_dm) -addnS addnA.
+  rewrite addnAC -mulSnr.                   (* addnAC を追加した。  *)
+  apply (IHn (m - d) q.+1).                 (* apply: IHn でもよい。 *)
+  apply: leq_trans le_mn; exact: leq_subr.
+Qed.
 
 Lemma edivnP_left : forall m d, edivn_spec_left m d (edivn m d).
-Admitted.
+ (* 証明は、edivnP と同じ。 *)
+  rewrite /edivn => m [|d] //=; rewrite -{1}[m]/(0 * d.+1 + m).
+  elim: m {-2}m 0 (leqnn m) => [|n IHn] [|m] q //=; rewrite ltnS => le_mn.
+  rewrite subn_if_gt; case: ltnP => [// | le_dm].
+  rewrite -{1}(subnK le_dm) -addnS addnA.
+  rewrite addnAC -mulSnr.                   (* addnAC を追加した。  *)
+  apply (IHn (m - d) q.+1).                 (* apply: IHn でもよい。 *)
+  apply: leq_trans le_mn; exact: leq_subr.
+Qed.
 
 Lemma edivn_eq_right : forall d q r, r < d -> edivn (q * d + r) d = (q, r).
 Proof.
