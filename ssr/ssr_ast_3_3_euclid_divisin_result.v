@@ -61,19 +61,20 @@ Lemma edivnP' : forall m d, edivn_spec m d (edivn m d).
 Proof.
   rewrite /edivn.
   move => m.
-  case.
-  move=> //=.
+  case.                                     (* d で場合わけ。 *)
+    by move=> //=.
   move=> d.
   move=> //=.
   change m with (0 * d.+1 + m) at 1.        (* rewrite -{1}[m]/(0 * d.+1 + m).  *)
   Check (leqnn m).                          (* m <= m *)
   move: (leqnn m).
   move: 0.                                  (* ゴールの中の数字の「0」 *)
-  move: {-2}m.
-  move: m.
+  move: {-2}m.                              (* 2番めのmを残し、他のmをm0として、forall m0 とする。 *)
+  move: m.                                  (* 残ったmをforall m とする。 *)
 
   elim; last move=> n IHn.
-  case; last move=> m; move=> q //=.
+  by case; last move=> m; move=> q //=.
+
   case; last move=> m; move=> q //=.
 
   Check (ltnS m n).                         (* (m < n.+1) = (m <= n) *)
@@ -96,6 +97,7 @@ Proof.
   rewrite (addnAC (q * d.+1) (m - d) d.+1).
   Check (mulSnr q d.+1).
   rewrite -(mulSnr q d.+1).
+
   Check (IHn (m - d) q.+1).                 (* m - d <= n -> 
                                  edivn_spec (q.+1 * d.+1 + (m - d)) d.+1 (edivn_rec d (m - d) q.+1) *)
   apply: (IHn (m - d) q.+1).
@@ -105,7 +107,7 @@ Proof.
   apply.
   Check (leq_subr d m).                     (* m - d <= m *)
   move: (leq_subr d m).
-  apply.
+  by apply.
 Qed.
 
 Lemma edivn_eq' : forall d q r, r < d -> edivn (q * d + r) d = (q, r).
@@ -144,7 +146,7 @@ Proof.
         Check addn.
         move/addnI.                         (* q' * d + r = q' * d + r' が、 r = r' になる。 *)
 
-        move=> ->.                          (* move -> でもよい。 *)
+        move ->.                          (* move -> でもよい。 *)
         by [].
   move=> ? /=.
            
@@ -182,5 +184,23 @@ Qed.
 Eval compute in edivn 7 3.                  (* (2,1) *)
 Eval compute in edivn (2 * 3 + 1) 3.        (* (2,1) *)
 
+
+(**
+式を変形したなら、それを一旦前提に置くと解りやすいだろうの例
+@ProofCafe 2014_06_28 
+ *)
+Lemma edivnP'' : forall m d, edivn_spec m d (edivn m d).
+Proof.
+  rewrite /edivn => m [|d] //=; rewrite -{1}[m]/(0 * d.+1 + m).
+  elim: m {-2}m 0 (leqnn m) => [|n IHn] [|m] q //=. rewrite ltnS => le_mn.
+  rewrite subn_if_gt; case: ltnP => [// | le_dm].
+  
+  have H : q * d.+1 + m.+1 = q.+1 * d.+1 + (m - d)
+    by rewrite -{1}(subnK le_dm) -addnS addnA addnAC -mulSnr.
+  rewrite H.
+  
+  apply: IHn.
+  apply: leq_trans le_mn; exact: leq_subr.
+Qed.
 
 (* END *)
