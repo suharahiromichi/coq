@@ -146,7 +146,8 @@ Proof.
         Check addn.
         move/addnI.                         (* q' * d + r = q' * d + r' が、 r = r' になる。 *)
 
-        move ->.                          (* move -> でもよい。 *)
+        move=> ->.                          (* move -> でもよい。 *)
+                 (* 単なる rewrite だけではだめ。スタックtopをrewriteしない。 *)
         by [].
   move=> ? /=.
            
