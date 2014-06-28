@@ -274,6 +274,7 @@ Qed.
 End Symmetric_Conjunction_Disjunction.
 
 (** 2.3 Two so-called paradoxes *)
+(* https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_ast_2_two_so_called_paradoxes.v *)
 
 Section R_sym_trans.
 Variables (D : Type) (R : D -> D -> Prop).
@@ -527,6 +528,21 @@ End Using_Definition.
 
 (** 3 Arithmetic for Euclidean division *)
 
+(**
+この節のまとめ。
+「<=」はleq, 「+」はaddn, 「*」はmuln, 「-」はsubnという関数
+
+さらに、
+addn := nosimpl addn_rec. (* := nosmpl plus *)
+subn := nosimpl subn_rec.
+muln := nosimpl muln_rec.
+leq m n := subn m n == 0
+
+nosimpl addn_rec は、
+let 'tt := tt in addn_rec
+の意味。
+ *)
+
 (** 3.1 Basics *)
 Variable n : nat.
 
@@ -547,6 +563,28 @@ Proof.
     by [].
 Qed.
 
+(* Coqの「+」は、addnであり、これは simpl しないplusである。 *)
+Locate "+".                                 (* addn. *)
+Print addn.                                 (* nosimpl addn_rec *)
+Print nosimpl.                              (* t := (let 'tt := tt in t) *)
+
+Lemma concrete_plus_bis : 16 + 64 = 80.
+Proof.
+  simpl.                                    (* 16 + 64 = 80 のまま。 *)
+    by [].
+Qed.
+
+Definition addn' := (let 'tt := tt in plus).
+(* let 'は以下
+http://coq.inria.fr/refman/Reference-Manual004.html#hevea_default73
+ *)
+
+Lemma concrete_plus_bis' : addn' 16 64 = 80.
+Proof.
+  simpl.                                    (* 16 + 64 = 80 のまま。 *)
+    by [].
+Qed.
+
 (*
 Inductive le (n : nat) : nat -> Prop :=
 | le_n : (n <= n)
@@ -558,23 +596,50 @@ Proof.
     by apply: (Le.le_trans _ 2); apply: Le.le_n_Sn.
 Qed.
 
+(*
 Fixpoint subn_rec (m n : nat) {struct m} :=
   match m, n with
     | m'.+1, n'.+1 => (m' - n')
     | _, _ => m
 end.
 Eval compute in subn_rec 5 3.               (* 2 *)
+*)
+
+(* Coqの「<=」は、leqであり、これは subn m n == 0 の意味である *)
+Locate "<=".
+Print leq.
+Locate "-".
+Print subn.
+(* さらに、subn は、nosimpl subn_rec である。 *)
 
 Lemma concrete_big_leq : 0 <= 51.
 Proof.
     by [].
 Qed.
 
+Definition subn_rec' := (let 'tt := tt in subn).
+Definition leq' m n := subn_rec' m n == 0.
+Lemma concrete_big_leq' : leq' 0 51.
+Proof.
+    by [].
+Qed.
 
 Lemma semi_concrete_leq : forall n m, n <= m -> 51 + n <= 51 + m.
 Proof.
     by [].
 Qed.
+
+Lemma semi_concrete_leq' : forall n m, n <= m -> 51 + n <= 51 + m.
+Proof.
+  move=> n m.
+  rewrite /leq /subn /=.
+  by apply.
+Qed.
+
+(*
+Lemma semi_concrete_leq'' : forall n m, n <= m -> (n + 51) <= (m + 51).
+Proof.
+*)
 
 Lemma concrete_arith : (50 < 100) && (3 + 4 < 3 * 4 <= 17 - 2).
 Proof.
@@ -641,18 +706,16 @@ Definition edivn_rec3 d := fix loop (m q : nat) {struct m} :=
 ]
 *)
 
-(*
-[
 CoInductive edivn_spec (m d : nat) : nat * nat -> Type :=
   EdivnSpec q r of m = q * d + r & (d > 0) ==> (r < d) :
     edivn_spec m d (q, r).
-]
-*)
-CoInductive edivn_spec (m d : nat) : nat * nat -> Type :=
-  EdivnSpec :
-    forall q r, m = q * d + r -> (d > 0 -> r < d) -> edivn_spec m d (q, r).
+
+CoInductive edivn_spec' (m d : nat) : nat * nat -> Type :=
+  EdivnSpec' :
+    forall q r, m = q * d + r -> (d > 0 -> r < d) -> edivn_spec' m d (q, r).
 
 (* 3.3 Results *)
+(* https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_ast_3_3_euclid_divisin_result.v *)
 
 Lemma edivnP : forall m d, edivn_spec m d (edivn m d).
 Proof.
@@ -680,6 +743,7 @@ Proof.
 Qed.
 
 (* 3.4 Parametric type families and alternative speciﬁcations *)
+(* https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_ast_3_euclid_divisin.v *)
 
 CoInductive edivn_spec3 (m d : nat) : nat * nat -> Type :=
   EdivnSpec3 q r of m = q * d + r & (d > 0) ==> (r < d) :
