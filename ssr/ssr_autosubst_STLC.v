@@ -9,6 +9,12 @@ https://www.ps.uni-saarland.de/autosubst/
 https://www.ps.uni-saarland.de/autosubst/doc/toc.html
 *)
 
+(*
+以下を同じディレクトリに置いて、
+Autosubst.v  Lib.v  MMap.v  ssr_autosubst_STLC.v
+coq_makefile *.v > Makefile
+*)
+
 Require Import Autosubst MMap.
 Require Import Relations.
 Require Import Relation_Operators.          (* rt1n_trans が上書きされぬよう。 *)
@@ -154,7 +160,6 @@ Lemma substitutivity s1 s2 :
   s1 ==> s2 -> forall sigma, s1.[sigma] ==> s2.[sigma].
 Proof.
   by elim; intros; autosubst; constructor; trivial; subst; autosubst.
- (* case: H; autosubst; intros; constructor. *)
 Qed.
 
 Lemma substitutivity' s1 s2 :
@@ -175,15 +180,6 @@ Proof.
   + move=> t1 t1' t2 Hs IH sigma.
     autosubst.
     by apply ST_App2.
-(*
-     apply ST_App2.
-     case: Ht1.
-       - autosubst.
-         by move=> T s; apply v_abs.
-       - autosubst.
-         by rewrite /=.
-       - by autosubst.
-*)
   + move=> t1 t2 sigma.
     autosubst.
     by apply ST_IfTrue.
@@ -227,11 +223,7 @@ Lemma step_example2 :
 Proof.
   eapply rt1n_trans.
   + apply ST_App2.
-    - by auto.
-(*
-    - apply ST_AppAbs.
-      by auto.
-*)
+    by auto.
   + eapply rt1n_trans.
     - apply ST_AppAbs. 
       simpl. by auto.
@@ -252,8 +244,7 @@ Lemma step_example2'' :
 Proof.
   eapply rt1n_trans.
   + apply ST_App2.
-(*    - by autosubst. *)
-    - apply ST_AppAbs.
+      apply ST_AppAbs.
       by autosubst.
   + eapply rt1n_trans.
     - autosubst.
@@ -470,10 +461,9 @@ Proof.
   simpl in H4.
   (* H1 : T11 = ty_arrow T11 T12 *)
 (*
-
-  induction x.
+ inversion H1.
   (* H1 : ty_Bool = ty_arrow ty_Bool T12 *)
-  inversion H1.
+ inversion H1.
   (* H1 : ty_arrow T11_1 T11_2 = ty_arrow (ty_arrow T11_1 T11_2) T12 *)
   apply IHT11_1.
   (* Goal : T11_1 = ty_arrow T11_1 T12 *)
@@ -484,5 +474,83 @@ Proof.
 *)
 Admitted.
 (** [] *)
+
+(** ## 性質 *)
+(** ### 自由な出現 *)
+(** ### 置換 *)
+
+Lemma substitution_preserves_typing : forall Gamma U v t T,
+     has_type (U :: Gamma) t T ->
+     has_type [::] v U   ->
+     has_type Gamma t.[beta v] T.
+Proof with eauto.
+  admit.
+Qed.
+
+(** ### 保存 *)
+Theorem preservation : forall t t' T,
+     has_type [::] t T  ->
+     t ==> t'  ->
+     has_type [::] t' T.
+Proof with eauto.
+  intros t t' T HT. generalize dependent t'.
+  induction HT.
+  +  intros t' HE; subst; subst.
+     inversion HE; subst; auto.
+  +  intros t' HE; subst; subst.
+     inversion HE; subst; auto.
+  +  intros t' HE; subst; subst.
+     inversion HE; subst...
+     apply substitution_preserves_typing with T11.
+       * inversion HT1; subst; auto.
+       * admit.
+  +  intros t' HE; subst; subst;
+     inversion HE; subst; auto.
+  +  intros t' HE; subst; subst;
+     inversion HE; subst; auto.
+  +  intros t' HE; subst; subst;
+     inversion HE; subst; auto.
+Qed.
+
+Theorem preservation' : forall t t' T,
+     has_type [::] t T  ->
+     t ==> t'  ->
+     has_type [::] t' T.
+Proof with eauto.
+  move=> t t' T HT.
+  elim: HT t'.
+  (* T_Var *)
+  +  move=> Gamma x T0 H H0 t' HE.
+     by inversion HE.
+  (* T_Abs *)
+  +  move=> Gamma T11 T12 t12 H0 t' t'0 HE.
+     by inversion HE.
+  (* T_App *)
+  +  move=> T11 T12 Gamma t1 t2 H0 t' HT1 HT2 t'0 HE.
+     inversion HE; subst.
+     (* ST_AppAbs *)
+     - apply substitution_preserves_typing with T11.
+       * by inversion HT1; subst; auto; admit.
+       * by admit.
+     (* ST_App1 *)
+     - inversion HE; subst.                 (* HE : tm_app t1 t2 ==> tm_app t1' t2 *)
+       * by admit.
+       * by admit.
+       * by admit.
+     (* ST_App2 *)
+     - inversion HE; subst.
+       * by admit.
+       * by admit.
+       * by admit.
+  (* T_True  *)
+  +  move=> Gamma t' HE.
+     by inversion HE.
+  (* T_False *)
+  +  move=> Gamma t' HE.
+     by inversion HE.
+  (* T_If *)
+  +  move=> t1 t2 t3 T0 Gamma HT1 IHT1 HT2 IHT2 HT3 IHT3 t' HE.
+     by inversion HE; subst; auto.
+Qed.
 
 (* END *)
