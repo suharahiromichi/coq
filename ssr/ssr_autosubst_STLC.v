@@ -483,8 +483,17 @@ Lemma substitution_preserves_typing : forall Gamma U v t T,
      has_type (U :: Gamma) t T ->
      has_type [::] v U   ->
      has_type Gamma t.[beta v] T.
-Proof with eauto.
-  admit.
+Proof.
+  move=> Gamma U v t.
+  elim: v Gamma.
+  + move=> x Gamma T H1 H2.
+    autosubst.
+    admit.
+(*
+  intros Gamma U v t T Ht Hv.
+  generalize dependent Gamma. generalize dependent T.
+  induction t; intros T' Gamma H.
+*)
 Qed.
 
 (** ### 保存 *)
@@ -493,6 +502,7 @@ Theorem preservation : forall t t' T,
      t ==> t'  ->
      has_type [::] t' T.
 Proof with eauto.
+  remember [::] as Gamma.
   intros t t' T HT. generalize dependent t'.
   induction HT.
   +  intros t' HE; subst; subst.
@@ -503,7 +513,7 @@ Proof with eauto.
      inversion HE; subst...
      apply substitution_preserves_typing with T11.
        * inversion HT1; subst; auto.
-       * admit.
+       * apply HT2.
   +  intros t' HE; subst; subst;
      inversion HE; subst; auto.
   +  intros t' HE; subst; subst;
@@ -512,6 +522,7 @@ Proof with eauto.
      inversion HE; subst; auto.
 Qed.
 
+(* SSReflect風の証明：まだできていない。 *)
 Theorem preservation' : forall t t' T,
      has_type [::] t T  ->
      t ==> t'  ->
@@ -520,20 +531,21 @@ Proof with eauto.
   move=> t t' T HT.
   elim: HT t'.
   (* T_Var *)
-  +  move=> Gamma x T0 H H0 t' HE.
+  +  move=> Gamma x T0 H H0. move=> t' HE.
      by inversion HE.
   (* T_Abs *)
-  +  move=> Gamma T11 T12 t12 H0 t' t'0 HE.
+  +  move=> Gamma' T11 T12 t12 H0. move=> t' t'0 HE.
+     subst.
      by inversion HE.
   (* T_App *)
-  +  move=> T11 T12 Gamma t1 t2 H0 t' HT1 HT2 t'0 HE.
+  +  move=> T11 T12 Gamma' t1 t2 HT1 IHT1 HT2 IHT2 t' HE.
      inversion HE; subst.
      (* ST_AppAbs *)
      - apply substitution_preserves_typing with T11.
        * by inversion HT1; subst; auto; admit.
        * by admit.
      (* ST_App1 *)
-     - inversion HE; subst.                 (* HE : tm_app t1 t2 ==> tm_app t1' t2 *)
+     - inversion HE; subst.
        * by admit.
        * by admit.
        * by admit.
