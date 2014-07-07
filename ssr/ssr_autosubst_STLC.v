@@ -477,9 +477,143 @@ Admitted.
 
 (** ## 性質 *)
 (** ### 自由な出現 *)
+
+(* 単純なシフト *)
+Compute rename (+1) (tm_app (tm_var 0) (tm_var 1)).
+
+(* 取り出す *)
+Compute  [:: ty_var 1; ty_Bool; ty_var 0]`_1.
+
+(* 代入するとシフトもしてくれる。 *)
+Compute (tm_app (tm_var 0) (tm_var 1)).[beta (tm_var 3)].
+
+Inductive appears_free_in : var -> term -> Prop :=
+  | afi_var : forall x,
+      appears_free_in x (tm_var x)
+  | afi_app1 : forall x t1 t2,
+      appears_free_in x t1 -> appears_free_in x (tm_app t1 t2)
+  | afi_app2 : forall x t1 t2,
+      appears_free_in x t2 -> appears_free_in x (tm_app t1 t2)
+  | afi_abs : forall x T11 t12,
+      appears_free_in x t12 ->
+      appears_free_in x (tm_abs T11 (rename (+1) t12))
+  | afi_if1 : forall x t1 t2 t3,
+      appears_free_in x t1 ->
+      appears_free_in x (tm_if t1 t2 t3)
+  | afi_if2 : forall x t1 t2 t3,
+      appears_free_in x t2 ->
+      appears_free_in x (tm_if t1 t2 t3)
+  | afi_if3 : forall x t1 t2 t3,
+      appears_free_in x t3 ->
+      appears_free_in x (tm_if t1 t2 t3).
+Hint Constructors appears_free_in.
+
+Definition closed (t : term) :=
+  forall x, ~ appears_free_in x t.
+
 (** ### 置換 *)
 
+Lemma free_in_context : forall x t T Gamma,
+   appears_free_in x t ->
+   has_type Gamma t T ->
+   exists T', Gamma`_x = T'.
+Proof.
+  intros. generalize dependent Gamma. generalize dependent T.
+  induction H;
+         intros; try solve [inversion H0; eauto].
+Qed.
+
+(** #### 練習問題: ★★ (typable_empty__closed) *)
+Corollary typable_empty__closed : forall t T,
+    has_type [::] t T  ->
+    closed t.
+Proof.
+  intros t T H x contra.
+  destruct (free_in_context x t T [::] contra H).
+  inversion H0.                             (* H0 : [::]`_x = x0 *)
+  admit.                                    (* XXXX *)
+Qed.
+
+Goal forall x y, [::]`_x <> y.
+
+Corollary typable_empty__closed' : forall t T,
+    has_type [::] t T  ->
+    closed t.
+Proof.
+  unfold closed.
+  intros t T H x contra.
+  generalize dependent T.
+  induction contra;
+    intros T He; try (inversion He; subst).
+  (* 
+  generalize dependent T. をしておかないと、
+  H1 : empty x = Some T
+  がなくなってしまう。
+   *)
+  + inversion H0.
+  + apply (IHcontra (ty_arrow T11 T)).
+    apply H2.
+  + apply (IHcontra T11).
+    apply H4.
+  + destruct (free_in_context x
+              (tm_abs T11 (rename (+1) t12))  (ty_arrow T11 T12) [::]).
+    Check afi_abs.
+    apply afi_abs. apply contra. apply He.
+    (* inversion H0, H0 : empty x = Some x0 *)
+    admit.                                  (* XXXXX *)
+  + apply (IHcontra ty_Bool). apply H3.
+  + apply (IHcontra T). apply H5.
+  + apply (IHcontra T). apply H6.
+Qed.
+
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx *)
+(** コンテキスト不変補題 *)
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx *)
+Lemma context_invariance : forall x Gamma Gamma' t S,
+     has_type Gamma t S  ->
+     (appears_free_in x t -> Gamma`_x = Gamma'`_x) ->
+     has_type Gamma' t S.
+Proof with eauto.
+  intros.
+  generalize dependent Gamma'.
+  induction H; intros; auto; subst.
+  + apply T_Var.
+    - admit.
+    - admit.
+  + apply T_Abs.
+    apply IHhas_type.
+    admit.
+  + apply T_App with T11.
+    - auto.
+    - auto.
+Qed.
+
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx *)
+(** 置換補題 *)
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx *)
 Lemma substitution_preserves_typing : forall Gamma U v t T,
+     has_type (U :: Gamma) t T ->
+     has_type [::] v U   ->
+     has_type Gamma t.[beta v] T.
+Proof with eauto.
+  intros Gamma U v t T Ht Hv.
+  generalize dependent Gamma. generalize dependent T.
+  induction t; intros T' Gamma H;
+    (* in each case, we'll want to get at the derivation of H *)
+    inversion H; subst; simpl...
+  (* Case "tm_var". *)
+
+  admit.
+  (* Case "tm_abs". *)
+  apply T_Abs.
+  (* SCase "x=y". *)
+      eapply context_invariance...
+  (* SCase "x<>y". *)
+Admitted.
+
+
+
+Lemma substitution_preserves_typing'' : forall Gamma U v t T,
      has_type (U :: Gamma) t T ->
      has_type [::] v U   ->
      has_type Gamma t.[beta v] T.
@@ -488,16 +622,32 @@ Proof.
   elim: v Gamma.
   + move=> x Gamma T H1 H2.
     autosubst.
-    admit.
+    Admitted.
 (*
   intros Gamma U v t T Ht Hv.
   generalize dependent Gamma. generalize dependent T.
   induction t; intros T' Gamma H.
 *)
-Qed.
 
 (** ### 保存 *)
 Theorem preservation : forall t t' T,
+     has_type [::] t T  ->
+     t ==> t'  ->
+     has_type [::] t' T.
+Proof with eauto.
+  remember [::] as Gamma.
+  intros t t' T HT. generalize dependent t'.
+  induction HT;
+     intros t' HE; subst Gamma; subst;
+     try solve [inversion HE; subst; auto].
+  inversion HE; subst...
+    (* Most of the cases are immediate by induction,
+       and [auto] takes care of them *)
+  apply substitution_preserves_typing with T11...
+  inversion HT1...
+Qed.
+
+Theorem preservation' : forall t t' T,
      has_type [::] t T  ->
      t ==> t'  ->
      has_type [::] t' T.
@@ -523,7 +673,7 @@ Proof with eauto.
 Qed.
 
 (* SSReflect風の証明：まだできていない。 *)
-Theorem preservation' : forall t t' T,
+Theorem preservation'' : forall t t' T,
      has_type [::] t T  ->
      t ==> t'  ->
      has_type [::] t' T.
