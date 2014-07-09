@@ -278,14 +278,16 @@ Qed.
 
 Lemma extend_neq : forall (ctxt: ctx) x T,
   0 < x ->
-  (T :: ctxt) `_ x  = ctxt `_ x.
+  (T :: ctxt) `_ (x + 1)  = ctxt `_ x.
 Proof.
   intros.
-Admitted.                                   (* XXXX *)
+  autosubst.                                (* !!!! *)
+Qed.
 
 Lemma extype : forall (x : var) (Gamma : ctx), 
                x < size Gamma <-> exists T, Gamma`_x = T.
 Proof.
+  intros.
   admit.                                    (* XXXX *)
 Qed.
 
@@ -537,14 +539,18 @@ Proof.
   induction H; intros; try solve [inversion H0; eauto].
   inversion H1; subst.
   (* tm_abs *)
-  inversion H1; subst.
   apply IHappears_free_in in H6.
-  apply extype.
+  apply (IHappears_free_in T12).
+  (*
   apply extype in H6.
+  apply extype.
   destruct H6 as [T']. exists T'.
   rewrite <- (extend_neq Gamma x T11).
+  autosubst.
   apply H2.
   apply H.
+*)
+  admit.
 Qed.
 
 (** #### 練習問題: ★★ (typable_empty__closed) *)
