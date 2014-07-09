@@ -276,6 +276,19 @@ Proof.
   by [].
 Qed.
 
+Lemma extend_neq : forall (ctxt: ctx) x T,
+  0 < x ->
+  (T :: ctxt) `_ x  = ctxt `_ x.
+Proof.
+  intros.
+Admitted.                                   (* XXXX *)
+
+Lemma extype : forall (x : var) (Gamma : ctx), 
+               x < size Gamma <-> exists T, Gamma`_x = T.
+Proof.
+  admit.                                    (* XXXX *)
+Qed.
+
 (** ### 型付け関係 *)
 Inductive has_type : ctx -> term -> type -> Prop :=
   | T_Var : forall (Gamma : ctx) (x : var) (T : type),
@@ -495,8 +508,10 @@ Inductive appears_free_in : var -> term -> Prop :=
   | afi_app2 : forall x t1 t2,
       appears_free_in x t2 -> appears_free_in x (tm_app t1 t2)
   | afi_abs : forall x T11 t12,
+  (* x は自由変数でも、0 だと、tm_absで束縛されてしまう。 *)
+      0 < x ->
       appears_free_in x t12 ->
-      appears_free_in x (tm_abs T11 (rename (+1) t12))
+      appears_free_in x (tm_abs T11 t12)
   | afi_if1 : forall x t1 t2 t3,
       appears_free_in x t1 ->
       appears_free_in x (tm_if t1 t2 t3)
@@ -516,11 +531,20 @@ Definition closed (t : term) :=
 Lemma free_in_context : forall x t T Gamma,
    appears_free_in x t ->
    has_type Gamma t T ->
-   exists T', Gamma`_x = T'.
+   x < size Gamma.
 Proof.
   intros. generalize dependent Gamma. generalize dependent T.
-  induction H;
-         intros; try solve [inversion H0; eauto].
+  induction H; intros; try solve [inversion H0; eauto].
+  inversion H1; subst.
+  (* tm_abs *)
+  inversion H1; subst.
+  apply IHappears_free_in in H6.
+  apply extype.
+  apply extype in H6.
+  destruct H6 as [T']. exists T'.
+  rewrite <- (extend_neq Gamma x T11).
+  apply H2.
+  apply H.
 Qed.
 
 (** #### 練習問題: ★★ (typable_empty__closed) *)
@@ -529,41 +553,9 @@ Corollary typable_empty__closed : forall t T,
     closed t.
 Proof.
   intros t T H x contra.
-  destruct (free_in_context x t T [::] contra H).
-  inversion H0.                             (* H0 : [::]`_x = x0 *)
-  admit.                                    (* XXXX *)
-Qed.
-
-Goal forall x y, [::]`_x <> y.
-
-Corollary typable_empty__closed' : forall t T,
-    has_type [::] t T  ->
-    closed t.
-Proof.
-  unfold closed.
-  intros t T H x contra.
-  generalize dependent T.
-  induction contra;
-    intros T He; try (inversion He; subst).
-  (* 
-  generalize dependent T. をしておかないと、
-  H1 : empty x = Some T
-  がなくなってしまう。
-   *)
-  + inversion H0.
-  + apply (IHcontra (ty_arrow T11 T)).
-    apply H2.
-  + apply (IHcontra T11).
-    apply H4.
-  + destruct (free_in_context x
-              (tm_abs T11 (rename (+1) t12))  (ty_arrow T11 T12) [::]).
-    Check afi_abs.
-    apply afi_abs. apply contra. apply He.
-    (* inversion H0, H0 : empty x = Some x0 *)
-    admit.                                  (* XXXXX *)
-  + apply (IHcontra ty_Bool). apply H3.
-  + apply (IHcontra T). apply H5.
-  + apply (IHcontra T). apply H6.
+  apply (free_in_context x t T [::]) in contra.
+  inversion contra.
+  apply H.
 Qed.
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx *)
