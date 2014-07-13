@@ -1,14 +1,18 @@
 (**
+Autosubst Manual
 https://www.ps.uni-saarland.de/autosubst/doc/manual.pdf
+
+これをもとに、System F を作ってみた。Reference Manualの抄訳も含む。
 *)
 
 (*
+使い方（これは、Autosubstのバージョンアップで変わるので、注意すること）
 以下を同じディレクトリに置いて、
 Autosubst.v  Lib.v  MMap.v  <このファイル>
 coq_makefile *.v > Makefile
 *)
 
-Require Import Autosubst.                   (* これだけでよい。 *)
+Require Import Autosubst MMap.              (* MMapはいらなくなるか。 *)
 Require Import Relations.
 Require Import Relation_Operators.          (* rt1n_trans が上書きされぬよう。 *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq. (* SSReflect *)
@@ -16,7 +20,10 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq. (* SSReflect *)
 (**
 # Tutorial
 *)
+
 (**
+Defining the Syntax
+
 Figure 4: Declaration of the syntax of System F
 *)
 Inductive type : Type :=
@@ -31,6 +38,11 @@ Inductive term :=
 | TAbs (s : {bind type in term})
 | TApp (s : term) (A : type).
 
+(**
+Generating the Operation
+
+Figure 5: Declarations to derive the operations and lemmas for System F
+ *)
 Instance VarConstr_type : VarConstr type. derive. Defined.
 Instance Rename_type : Rename type. derive. Defined.
 Instance Subst_type : Subst type. derive. Defined.
@@ -57,6 +69,7 @@ Goal rename ξ s = s.[ren ξ]. Proof. apply (rename_subst ξ s). Qed.
 
 Check ren.                                  (* (var -> var) -> var -> term *)
 Check rename.                               (* (var -> var) -> type -> type *)
+
 Goal (TyVar 0).[σ] = σ 0. Proof. auto. Qed.
 End SubstLemmas.
 
@@ -94,26 +107,44 @@ Inductive ty (Γ : var -> type) : term -> type -> Prop :=
 | Ty_Abs s A B : ty (A .: Γ) s B -> ty Γ (Abs A s) (Arr A B)
 | Ty_App s t A B : ty Γ s (Arr A B) -> ty Γ t A ->  ty  Γ (App s t) B.
 
-Lemma ty_ren Γ s A : ty Γ s A ->
-                      forall Δ ξ, Γ = (ξ >>> Δ) ->
-                                    ty Δ s.[ren ξ] A.
-  Proof.
+(**
+### 補題
+型付けのコンテキストΓを、コンテキストΔとリネーム規則ξにわける方法を示す。
+ *)
+Lemma ty_ren (Γ : var -> type) (s : term) (A : type) :
+  ty Γ s A ->
+  forall (Δ : var -> type) (ξ : var -> var),
+    Γ = (ξ >>> Δ) -> ty Δ s.[ren ξ] A.
+Proof.
     induction 1; intros; subst; autosubst; econstructor; eauto.
     - eapply IHty. autosubst.
 Qed.                                     
 
-Lemma ty_subst Γ s A: ty Γ s A ->
-                       forall σ Δ, (forall x, ty Δ (σ x) (Γ x)) ->
-                                     ty Δ s.[σ] A.
+(**
+### 置換補題(Substitution Lemma)?
+ *)
+(**
+Γのもとで項sがAの型を持つとしよう。
+すべての変数xについて、Δのもとで、σで置き換えた項(σ x)が、Γで置き換えた型(Γ x)を持つならば、
+Δのもとで、項sにσで置換した項は、型Aを持つ。
+つまり、項sから型Aを保ちながら、別の項(s.[σ])を作る方法を示す。
+*)
+Lemma ty_subst (Γ : var -> type) (s : term) (A : type) :
+  ty Γ s A ->
+  forall (σ : var -> term) (Δ : var -> type),
+    (forall x, ty Δ (σ x) (Γ x)) -> ty Δ s.[σ] A.
 Proof.
   induction 1; intros; subst; autosubst; eauto using ty.
   - econstructor. eapply IHty.
     intros [|] *; autosubst; eauto using ty, ty_ren.
 Qed.
 
-Lemma ty_pres Γ s A : ty Γ s A ->
-                       forall s', step s s' ->
-                                  ty Γ s' A.
+(**
+### 型の保存性の定理
+ *)
+Lemma ty_pres (Γ : var -> type) (s : term) (A : type) :
+  ty Γ s A ->
+  forall (s' : term), step s s' -> ty Γ s' A.
 Proof.
   induction 1; intros s' H_step; autosubst;
   inversion H_step; ainv; eauto using ty.
@@ -121,20 +152,165 @@ Proof.
     intros [|]; simpl; eauto using ty.
 Qed.
 
+(**
+# Reference Manual
+ *)
 
+(**
+## Defining the Syntax （構文を定義する）
+*)
+(**
+Figure 4を参照。
 
-Section Defined_Operation.
+- you first have to define an inductive type of terms with de Bruijn indices. This should
+  be a simple inductive definition without dependent types.
+  ド・ブラウン・インデックスで項の型を定義する。これは、依存型を持たない単純な帰納的な定義であること。
+
+- There must be at most one constructor for variables, aka de Bruijn indices. It must have
+  a single argument of type var, which is a type synonym for nat.
+  高々1個の変数（いわゆるド・ブラウン・インデックス）のコンストラクタがあること。それは、
+  var型（natの別名）の1引数を持つこと。
+
+- If a constructor acts as a binder for a variable of the term type T in a constructor
+  argument of type U, then U has to be replaced by {bind T in U}. We can write {bind T}
+  instead of {bind T in T}.
+*)
+
+(**
+## Generating the Operation （substitution操作を生成する）
+*)
+(**
+生成は。Figure 5を参照。
+*)
+
+(* Table.1 *)
+Print VarConstr.                            (* fun term : Type => var -> term *)
+Check Var.                                  (* var -> term *)
+
+Print Rename.                               (* fun term : Type => (var -> var) -> term -> term *)
+Check rename.                               (* (var -> var) -> term -> term *)
+
+Print Subst.                                (* fun term : Type => (var -> term) -> term -> term *)
+Check subst.                                (* (var -> term) -> term -> term *)
+Locate ".[".                                (* "s .[ sigma ]" := subst sigma s *)
+
+Print HSubst.                               (* fun inner outer : Type => (var -> inner) -> outer -> outer *)
+Check hsubst.                               (* (var -> type) -> term -> term *)
+Locate ".|[".                               (* s .|[ sigma ]" := hsubst sigma s *)
+
+(* Table. 2 *)
+Section GeneratingOperation_SubstLemmas.
 Variables (x : var) (s : type).
-Variables (σ  τ: var -> type).            (* 代入 *)
+Variables (σ  τ : var -> type).            (* 代入 *)
 Variables (ξ : var -> var).
+
+(* SubstLemmas *)
+Goal rename ξ s = s.[ren ξ]. Proof. apply (rename_subst ξ s). Qed.
+Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
+Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
+Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed. (* Manual では >>> *)
+End GeneratingOperation_SubstLemmas.
+
+Section GeneratingOperation_HSubstLemmas.
+Variables (x : var) (s : term).
+Variables (σ  τ : var -> type).            (* 代入 *)
+
+(* HSubstLemmas *)
+Goal s.|[Autosubst.Var] = s. Proof. autosubst. reflexivity. Qed.
+Goal (Autosubst.Var x).|[σ] = Autosubst.Var x. Proof. autosubst. Qed.
+Goal s.|[σ].|[τ] = s.|[σ >> τ]. Proof. autosubst. Qed. (* Manual では >>> *)
+End GeneratingOperation_HSubstLemmas.
+
+Section GeneratingOperation_SubstHSubstComp.
+Variables (x : var) (s : term).
+Variables (σ : var -> term).            (* 代入 *)
+Variables (τ : var -> type).            (* 代入 *)
+
+Check subst.                                (* (var -> term) -> term -> term *)
+Check subst σ.                             (* term -> term *)
+Check subst σ s.                           (* term *)
+Check s.[σ].                               (* term *)
+Check hsubst.                               (* (var -> type) -> term -> term *)
+Check hsubst τ.                            (* term -> term *)
+Check s.|[τ].                              (* term *)
+Check σ >>| τ.                            (* var -> term *)
+Check (s.[σ]).|[τ].
+Check (s.|[τ]).[σ >>| τ].
+Check (s.[σ]).|[τ] = (s.|[τ]).[σ >>| τ]. (* 括弧は省略できる。 *)
+
+Goal s.[σ].|[τ] = s.|[τ].[σ >>| τ]. Proof. autosubst. Qed.
+
+End GeneratingOperation_SubstHSubstComp.
+
+(* Table. 3 *)
+(* 略 *)
+
+(**
+## Defined Operations （定義されたsubstitution操作）
+*)
+
+(* Table. 4 *)
+Section DefinedOperations_1.
+Variables (x : var) (s : type).
+Variables (σ  τ : var -> type).            (* 代入 *)
 Variables (Δ : type -> type).
+Variable a : term.
+Variable f : var -> term.
 
-(* 諸定義 *)
-Goal s.[σ] = subst σ s. Proof. auto. Qed.
-Goal (σ >>> Δ) x = Δ (σ x). Proof. auto. Qed.
+Goal (σ >>> Δ) = fun x => Δ (σ x). Proof. auto. Qed.
+Locate ">>>".                               (* Lib.funcomp f g  *)
+
+Goal a .: f = fun x => match x with O => a | S x' => f x' end. Proof. auto. Qed.
 Goal σ >> τ = σ >>> (subst τ). Proof. auto. Qed.
-End Defined_Operation.
+End DefinedOperations_1.
 
+Section DefinedOperations_2.
+Variables (x : var) (s : type).
+Variables (σ : var -> term).            (* 代入 *)
+Variables (Θ : var -> type).            (* 代入 *)
+Variables (ξ : var -> var).
+Definition ids := fun x : var => Var x.
+
+Goal σ >>| Θ = σ >>> (hsubst Θ). Proof. auto. Qed.
+Goal ren ξ = ξ >>> ids. Proof. auto. Qed.
+Goal forall n : nat, (+ n) = lift n. auto. Qed.
+Print lift.                                 (* fun x : nat => [eta plus x] *)
+
+End DefinedOperations_2.
+
+(**
+## The Automation Tactics
+*)
+(**
+- asimpl : Normalizes the claim.
+
+- autosumbst : Normalizes the claim and tries to solve the resulting equation.
+*)
+
+(**
+# Internals
+*)
+
+(**
+# Best Practices
+
+## Adding Primitives to autosubst
+*)
+
+(**
+# FAQ
+*)
+
+(**
+- simplは、autosubsetの実装の詳細までカバーしないので、asimplを使うこと。
+
+- constructorやapplyを使うまえに、もうこれ以上reductionしなくてよいか確認するために、
+  asimplを試して(try)みること。
+*)
+
+(**
+# （補足）代入をリストに拡張する。
+*)
 
 
 (* END *)
