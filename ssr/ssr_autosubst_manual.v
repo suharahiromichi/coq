@@ -64,7 +64,7 @@ Variables (x : var) (s : term).
 Variables (σ  τ: var -> term).            (* 代入 *)
 Variables (ξ : var -> var).
 
-(* autosubst で解けるようになる命題 term (Figure.3) *)
+(* (Figure.3) autosubst で解けるようになる命題 term *)
 Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed.
 Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
 Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
@@ -77,7 +77,7 @@ Variables (x : var) (s : type).
 Variables (σ  τ: var -> type).            (* 代入 *)
 Variables (ξ : var -> var).
 
-(* autosubst で解けるようになる命題 type System Fのみ。(Figure.3) *)
+(* (Figure.3) autosubst で解けるようになる命題 type System Fのみ。*)
 Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed.
 Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
 Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
@@ -167,6 +167,32 @@ Proof.
   inversion H_step; ainv; eauto using ty.
   - eapply ty_subst; try eassumption.
     intros [|]; simpl; eauto using ty.
+Qed.
+
+(**
+## 進行性の定理
+*)
+Inductive value : term -> Prop :=
+| v_var : forall x, value (Var x)           (* Base *)
+| v_abs : forall T s, value (Abs T s).      (* Arr A B *)
+
+Lemma ty_prog (Γ : var -> type) (s : term) (A : type) :
+  ty Γ s A -> value s \/ exists s', step s s'.
+Proof.
+  intros H; induction H.
+  + left. apply v_var.
+  + left. apply v_abs.
+  + right. destruct IHty1.
+    - destruct IHty2.
+      * inversion H1; subst.
+        (*  H0 : ty Γ t A *)
+        (*  H2 : value t *)
+        (* H : ty Γ (Var x) (Arr A B) *)
+        (* H1 : value (Var x) *)
+        + admit.                           (* exists s' : term, step (App (Var x) t) s' *)
+        + exists (s0.[beta t]). apply Step_Beta. reflexivity.
+      * destruct H2 as [t']. exists (App s t'). apply Step_App2. apply H2.
+    - destruct H1 as [s']. exists (App s' t). apply Step_App1. apply H1.
 Qed.
 
 (**
