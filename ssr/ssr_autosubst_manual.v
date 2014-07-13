@@ -2,7 +2,8 @@
 Autosubst Manual
 https://www.ps.uni-saarland.de/autosubst/doc/manual.pdf
 
-これをもとに、System F を作ってみた。Reference Manualの抄訳も含む。
+これをもとに、STLC を作ってみた。Reference Manualの抄訳も含む。
+System F にする途中であり、コメントで消してある。
 *)
 
 (*
@@ -27,59 +28,71 @@ Defining the Syntax
 Figure 4: Declaration of the syntax of System F
 *)
 Inductive type : Type :=
-| TyVar (x : var)
-| Arr (A B : type)
-| All (A : {bind type}).
+| Base
+(* | TyVar (x : var). *)
+| Arr (A B : type).
+(* | All (A : {bind type}). *)
 
 Inductive term :=
 | Var (x : var)
 | Abs (A : type) (s : {bind term})
-| App (s t : term)
+| App (s t : term).
+(*
 | TAbs (s : {bind type in term})
 | TApp (s : term) (A : type).
+*)
 
 (**
 Generating the Operation
 
-Figure 5: Declarations to derive the operations and lemmas for System F
+Figure 5: Declarations to derive the operations and lemmas for STLC (* System F *)
  *)
-Instance VarConstr_type : VarConstr type. derive. Defined.
+(* Instance VarConstr_type : VarConstr type. derive. Defined. *)
 Instance Rename_type : Rename type. derive. Defined.
 Instance Subst_type : Subst type. derive. Defined.
-Instance SubstLemmas_type : SubstLemmas type. derive. Qed.
+(* Instance SubstLemmas_type : SubstLemmas type. derive. Qed. *)
 Instance HSubst_term : HSubst type term. derive. Defined.
 Instance VarConstr_term : VarConstr term. derive. Defined.
 Instance Rename_term : Rename term. derive. Defined.
 Instance Subst_term : Subst term. derive. Defined.
-Instance HSubstLemmas_term : HSubstLemmas type term. derive. Qed.
+(* Instance HSubstLemmas_term : HSubstLemmas type term. derive. Qed. *)
 Instance SubstHSubstComp_type_term : SubstHSubstComp type term. derive. Qed.
 Instance SubstLemmas_term : SubstLemmas term. derive. Qed.
 
-Section SubstLemmas.
-Variables (x : var) (s : type).
-Variables (σ  τ: var -> type).            (* 代入 *)
+Section SubstLemmas_term.
+Variables (x : var) (s : term).
+Variables (σ  τ: var -> term).            (* 代入 *)
 Variables (ξ : var -> var).
-Variables (Δ : type -> type).
 
-(* autosubst で解けるようになる命題 (Figure.3) *)
+(* autosubst で解けるようになる命題 term (Figure.3) *)
 Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed.
 Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
 Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
 Goal rename ξ s = s.[ren ξ]. Proof. apply (rename_subst ξ s). Qed.
+End SubstLemmas_term.
 
-Check ren.                                  (* (var -> var) -> var -> term *)
-Check rename.                               (* (var -> var) -> type -> type *)
+(*
+Section SubstLemmas_type.
+Variables (x : var) (s : type).
+Variables (σ  τ: var -> type).            (* 代入 *)
+Variables (ξ : var -> var).
 
-Goal (TyVar 0).[σ] = σ 0. Proof. auto. Qed.
-End SubstLemmas.
+(* autosubst で解けるようになる命題 type System Fのみ。(Figure.3) *)
+Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed.
+Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
+Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
+Goal rename ξ s = s.[ren ξ]. Proof. apply (rename_subst ξ s). Qed.
+Goal (TyVar 0).[σ] = σ 0. Proof. auto. Qed. (* こちらだけ。 *)
+End SubstLemmas_type.
+*)
 
 (**
-## Small Step Reduction (System F)
+## Small Step Reduction STLC (* System F *)
 *)
 
 Inductive step : term -> term -> Prop :=
 | Step_Beta A s s' t : s' = s.[t .: Autosubst.Var] -> step (App (Abs A s) t) s'
-| Step_TBeta B s s' : s' = s.|[B .: Autosubst.Var] -> step (TApp (TAbs s) B) s'
+(* | Step_TBeta B s s' : s' = s.|[B .: Autosubst.Var] -> step (TApp (TAbs s) B) s' *)
 | Step_App1 s s' t: step s s' -> step (App s t) (App s' t)
 | Step_App2 s t t': step t t' -> step (App s t) (App s t')
 | Step_Abs A s s' : step s s' -> step (Abs A s) (Abs A s').
@@ -100,12 +113,16 @@ Proof. induction 1; constructor; subst; autosubst. Qed.
 
 
 (**
-## 型付け (型付きラムダ式)
+## 型付け STLC (* System F 途中 *)
 *)
 Inductive ty (Γ : var -> type) : term -> type -> Prop :=
 | Ty_Var x A : Γ x = A -> ty Γ (Var x) A
 | Ty_Abs s A B : ty (A .: Γ) s B -> ty Γ (Abs A s) (Arr A B)
 | Ty_App s t A B : ty Γ s (Arr A B) -> ty Γ t A ->  ty  Γ (App s t) B.
+(*
+| Ty_TAbs s A : ty (Γ) s A -> ty Γ (TAbs s) (All A)  (* ????? *)
+| Ty_TApp s A B : ty Γ s (All A) -> ty Γ (TApp s B) A.[B .: TyVar].
+*)
 
 (**
 ### 補題
@@ -199,19 +216,33 @@ Check hsubst.                               (* (var -> type) -> term -> term *)
 Locate ".|[".                               (* s .|[ sigma ]" := hsubst sigma s *)
 
 (* Table. 2 *)
-Section GeneratingOperation_SubstLemmas.
-Variables (x : var) (s : type).
-Variables (σ  τ : var -> type).            (* 代入 *)
+Section GeneratingOperation_SubstLemmas_term.
+Variables (x : var) (s : term).
+Variables (σ  τ : var -> term).            (* 代入 *)
 Variables (ξ : var -> var).
 
-(* SubstLemmas *)
+(* SubstLemmas term *)
 Goal rename ξ s = s.[ren ξ]. Proof. apply (rename_subst ξ s). Qed.
 Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
 Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
 Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed. (* Manual では >>> *)
-End GeneratingOperation_SubstLemmas.
+End GeneratingOperation_SubstLemmas_term.
 
-Section GeneratingOperation_HSubstLemmas.
+(*
+Section GeneratingOperation_SubstLemmas_type.
+Variables (x : var) (s : type).
+Variables (σ  τ : var -> type).            (* 代入 *)
+Variables (ξ : var -> var).
+
+(* SubstLemmas type (System Fのみ) *)
+Goal rename ξ s = s.[ren ξ]. Proof. apply (rename_subst ξ s). Qed.
+Goal s.[Autosubst.Var] = s. Proof. apply (subst_id s). Qed.
+Goal (Autosubst.Var x).[σ] = σ x. Proof. apply (id_subst x σ). Qed.
+Goal s.[σ].[τ] = s.[σ >> τ]. Proof. apply (subst_comp s σ τ). Qed. (* Manual では >>> *)
+End GeneratingOperation_SubstLemmas_type.
+*)
+(*
+Section GeneratingOperation_HSubstLemmas_term.
 Variables (x : var) (s : term).
 Variables (σ  τ : var -> type).            (* 代入 *)
 
@@ -219,9 +250,9 @@ Variables (σ  τ : var -> type).            (* 代入 *)
 Goal s.|[Autosubst.Var] = s. Proof. autosubst. reflexivity. Qed.
 Goal (Autosubst.Var x).|[σ] = Autosubst.Var x. Proof. autosubst. Qed.
 Goal s.|[σ].|[τ] = s.|[σ >> τ]. Proof. autosubst. Qed. (* Manual では >>> *)
-End GeneratingOperation_HSubstLemmas.
-
-Section GeneratingOperation_SubstHSubstComp.
+End GeneratingOperation_HSubstLemmas_term.
+*)
+Section GeneratingOperation_SubstHSubstComp_term.
 Variables (x : var) (s : term).
 Variables (σ : var -> term).            (* 代入 *)
 Variables (τ : var -> type).            (* 代入 *)
@@ -239,8 +270,7 @@ Check (s.|[τ]).[σ >>| τ].
 Check (s.[σ]).|[τ] = (s.|[τ]).[σ >>| τ]. (* 括弧は省略できる。 *)
 
 Goal s.[σ].|[τ] = s.|[τ].[σ >>| τ]. Proof. autosubst. Qed.
-
-End GeneratingOperation_SubstHSubstComp.
+End GeneratingOperation_SubstHSubstComp_term.
 
 (* Table. 3 *)
 (* 略 *)
@@ -250,7 +280,21 @@ End GeneratingOperation_SubstHSubstComp.
 *)
 
 (* Table. 4 *)
-Section DefinedOperations_1.
+Section DefinedOperations_1_term.
+Variables (x : var) (s : term).
+Variables (σ  τ : var -> term).            (* 代入 *)
+Variables (Δ : term -> term).
+Variable a : term.
+Variable f : var -> term.
+
+Goal (σ >>> Δ) = fun x => Δ (σ x). Proof. auto. Qed.
+Locate ">>>".                               (* Lib.funcomp f g  *)
+
+Goal a .: f = fun x => match x with O => a | S x' => f x' end. Proof. auto. Qed.
+Goal σ >> τ = σ >>> (subst τ). Proof. auto. Qed.
+End DefinedOperations_1_term.
+
+Section DefinedOperations_1_type.
 Variables (x : var) (s : type).
 Variables (σ  τ : var -> type).            (* 代入 *)
 Variables (Δ : type -> type).
@@ -262,21 +306,33 @@ Locate ">>>".                               (* Lib.funcomp f g  *)
 
 Goal a .: f = fun x => match x with O => a | S x' => f x' end. Proof. auto. Qed.
 Goal σ >> τ = σ >>> (subst τ). Proof. auto. Qed.
-End DefinedOperations_1.
+End DefinedOperations_1_type.
 
-Section DefinedOperations_2.
+Section DefinedOperations_2_term.
+Variables (x : var) (s : term).
+Variables (σ : var -> term).            (* 代入 *)
+Variables (Θ : var -> term).            (* 代入 *)
+Variables (ξ : var -> var).
+Definition ids := fun x : var => Var x.
+
+(* Goal σ >>| Θ = σ >>> (hsubst Θ). Proof. auto. Qed. *)
+Goal ren ξ = ξ >>> ids. Proof. auto. Qed.
+Goal forall n : nat, (+ n) = lift n. auto. Qed.
+Print lift.                                 (* fun x : nat => [eta plus x] *)
+End DefinedOperations_2_term.
+
+Section DefinedOperations_2_type.
 Variables (x : var) (s : type).
 Variables (σ : var -> term).            (* 代入 *)
 Variables (Θ : var -> type).            (* 代入 *)
 Variables (ξ : var -> var).
-Definition ids := fun x : var => Var x.
+Definition ids' := fun x : var => Var x.
 
 Goal σ >>| Θ = σ >>> (hsubst Θ). Proof. auto. Qed.
-Goal ren ξ = ξ >>> ids. Proof. auto. Qed.
+Goal ren ξ = ξ >>> ids'. Proof. auto. Qed.
 Goal forall n : nat, (+ n) = lift n. auto. Qed.
 Print lift.                                 (* fun x : nat => [eta plus x] *)
-
-End DefinedOperations_2.
+End DefinedOperations_2_type.
 
 (**
 ## The Automation Tactics
@@ -311,6 +367,5 @@ End DefinedOperations_2.
 (**
 # （補足）代入をリストに拡張する。
 *)
-
 
 (* END *)
