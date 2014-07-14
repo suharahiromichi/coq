@@ -13,11 +13,9 @@ coq_makefile *.v > Makefile
 *)
 
 Require Import Autosubst. (* MMap. *)
-(*
 Require Import Relations.
 Require Import Relation_Operators.          (* rt1n_trans が上書きされぬよう。 *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq. (* SSReflect *)
-*)
 
 (**
 Defining the Syntax
@@ -46,6 +44,7 @@ Instance SubstLemmas_term : SubstLemmas term. derive. Qed.
 (**
 ## Small Step Reduction STLC
 *)
+
 Inductive step : term -> term -> Prop :=
 | Step_Beta A s s' t : s' = s.[t .: Autosubst.Var] -> step (App (Abs A s) t) s'
 | Step_App1 s s' t: step s s' -> step (App s t) (App s' t)
@@ -62,7 +61,6 @@ Inductive ty (Γ : var -> type) : term -> type -> Prop :=
 
 (**
 ### 補題
-
 型付けのコンテキストΓを、コンテキストΔとリネーム規則ξにわける方法を示す。
  *)
 Lemma ty_ren (Γ : var -> type) (s : term) (A : type) :
@@ -76,8 +74,9 @@ Qed.
 
 (**
 ### 置換補題(Substitution Lemma)?
-
-Γのもとで項sがAの型を持つとする。
+ *)
+(**
+Γのもとで項sがAの型を持つとしよう。
 すべての変数xについて、Δのもとで、σで置き換えた項(σ x)が、Γで置き換えた型(Γ x)を持つならば、
 Δのもとで、項sにσで置換した項は、型Aを持つ。
 つまり、項sから型Aを保ちながら、別の項(s.[σ])を作る方法を示す。
@@ -115,7 +114,7 @@ Lemma ty_prog (Γ : var -> type) (s : term) (A : type) :
   ty Γ s A -> value s \/ exists s', step s s'.
 Proof.
   intros H; induction H.
-  + admit.                                  (* Γはemptyでないので、H : Γ x = A が矛盾でない。 *)
+  + admit.                          (* Γはemptyでないので、H : Γ x = A が矛盾でない。 *)
   + left. apply v_abs.
   + right. destruct IHty1.
     - destruct IHty2.
