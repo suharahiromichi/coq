@@ -105,4 +105,25 @@ Proof.
     intros [|]; simpl; eauto using ty.
 Qed.
 
+(**
+## 進行性の定理
+*)
+Inductive value : term -> Prop :=
+| v_abs : forall T s, value (Abs T s).      (* Arr A B *)
+
+Lemma ty_prog (Γ : var -> type) (s : term) (A : type) :
+  ty Γ s A -> value s \/ exists s', step s s'.
+Proof.
+  intros H; induction H.
+  + admit.                                  (* Γはemptyでないので、H : Γ x = A が矛盾でない。 *)
+  + left. apply v_abs.
+  + right. destruct IHty1.
+    - destruct IHty2.
+      * inversion H1; subst.
+        + inversion H.
+        + exists (s0.[beta t]). apply Step_Beta. reflexivity.
+      * destruct H2 as [t']. exists (App s t'). apply Step_App2. apply H2.
+    - destruct H1 as [s']. exists (App s' t). apply Step_App1. apply H1.
+Qed.
+
 (* END *)
