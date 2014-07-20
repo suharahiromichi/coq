@@ -52,7 +52,8 @@ Inductive ty (Gamma : list type) : term -> type -> Prop :=
     TY A::Gamma |- s : B ->
     TY Gamma |- Abs A s : Arr A B
 | ty_app A B s t:
-    TY Gamma |- s : Arr A B -> TY Gamma |- t : A ->
+    TY Gamma |- s : Arr A B ->
+    TY Gamma |- t : A ->
     TY Gamma |- App s t : B
 | ty_tabs A s :
     TY Gamma..[ren (+1)] |- s : A ->
@@ -69,7 +70,7 @@ Reserved Notation "'EV' s => t"
   (at level 68, s at level 80, no associativity, format "'EV'   s  =>  t").
 Inductive eval : term -> term -> Prop :=
 | E_AppAbs A s t : EV App (Abs A s) t => s.[t/]
-| E_TAppTAbs A s B : EV TApp (TAbs A) B => s.|[B/]
+| E_TAppTAbs s B : EV TApp (TAbs s) B => s.|[B/]
 | E_AppFun s s' t :
      EV s => s' ->
      EV App s t => App s' t
@@ -165,20 +166,28 @@ Lemma ty_inv_abs' Gamma A A' B T s :
   TY Gamma |- Abs A s : T ->
   TY A'::Gamma |- s : B.
 Proof.
- move: (Abs A s) => t ty. elim: ty A A' B s => {Gamma t T} //.
+  move: (Abs A s) => t ty. elim: ty A s => {Gamma t} //.
+ - move=> Gamma x h B' s'.
+ admit.                                     (* XXXXX *)
+  eauto using ty.
+ admit.                                     (* XXXXX *)
+  eauto using ty.
+
  admit.                                     (* XXXXX *)
 Qed.
 
 Lemma ty_inv_abs Gamma A A' B s :
   TY Gamma |- Abs A s : Arr A' B -> TY A'::Gamma |- s : B.
-Proof. move=> ty. apply: ty_inv_abs' ty. Qed.
+Proof.
+  move=> ty. apply: ty_inv_abs' ty.
+Qed.
 
 
 (* ***** *)
 
 
-Lemma ty_betaT Gamma t s A B :
-  TY Gamma..[ren (+1)] |- t : A ->
+Lemma ty_betaT Gamma s A B :
+  TY Gamma..[ren (+1)] |- s : A ->
   TY Gamma |- s.|[B/] : A.[B/].
 Proof.
   move=> ty.
@@ -186,22 +195,22 @@ Proof.
   admit.                                    (* XXXX *)
 Qed.
 
-Lemma ty_inv_tabs' Gamma A B T s :
-  TY Gamma |- TAbs A : T ->
+Lemma ty_inv_tabs' Gamma B T s :
+  TY Gamma |- TAbs s : T ->
   TY Gamma..[ren(+1)] |- s : B.
 Proof.
-  move e: (TAbs A) => t ty.
-  elim: ty A B s e => {Gamma t T} //.
-  move=> Gamma A s ty ih H0 A' s' e.
+  move e: (TAbs s) => t ty.
+  elim: ty B s e => {Gamma t T} //.
+  move=> Gamma s ty ih H0 A' s' e.
   admit.                                    (* XXXX *)
 Qed.
 
-Lemma ty_inv_tabs Gamma A B s :
-  TY Gamma |- TAbs A : All B ->
+Lemma ty_inv_tabs Gamma B s :
+  TY Gamma |- TAbs s : All B ->
   TY Gamma..[ren(+1)] |- s : B.
 Proof.
   move=> ty.
-  apply: (ty_inv_tabs' _ A _ (All B)).
+  apply: (ty_inv_tabs' _ _ (All B)).
   by [].
 Qed.
 
@@ -213,12 +222,22 @@ Proof with eauto using ty.
   move=> ty. elim: ty t => {Gamma s A}...
   - move=> Gamma x _ t ev. by inv ev.
   - move=> Gamma A B s _ i t ev. by inv ev.
-  - move=> Gamma A B s t ty1 ih1 ty2 ih2 u ev. inv ev...
-    move: ty1 => /ty_inv_abs. exact: ty_beta.
+  - move=> Gamma A B s t ty1 ih1 ty2 ih2 u ev.
+    inversion ev.               (* inv ev *)
+    (* ty1 :  TY Gamma |- Abs A0 s0 : Arr A B これがおかしい？
+  そのため、ty_inv_abs がおかしい（証明不能）なものを使っている。
+  ty1 がおかしくなるのは、EV App ... の一番最初の条件のinv.
+  inversion あとの subst.  で、H0 : Abs A0 s0 = s が代入される。
+     *)
+    subst.
+    Check ty_inv_abs.
+    (* move: ty1. move/ty_inv_abs. exact: ty_beta. *)
+    apply ty_inv_abs in ty1. move: ty1. exact: ty_beta.
+    eauto using ty.
+    eauto using ty.
   - move=> Gamma A B s _ t ev. by inv ev.
   - move=> Gamma A B s ty ih t ev. inv ev.
-    + move: ty0 => /ty_inv_tabs H. apply: (ty_betaT _ _ s0 _ _). (* XXX *)
-      apply (H s0).
+    + move: ty0 => /ty_inv_tabs H. apply: (ty_betaT _ s0 _ _)...
     + apply: ty_tapp...
 Qed.
 
