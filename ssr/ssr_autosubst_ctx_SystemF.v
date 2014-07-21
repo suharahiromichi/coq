@@ -162,38 +162,59 @@ Proof.
   move=> ty. apply: ty_subst => -[|n lt] //=. exact: ty_var.
 Qed.
 
+Lemma ty_betaT Gamma s A B C :
+  C = A ->
+  TY Gamma..[ren (+1)] |- s : B ->
+  TY Gamma |- s.|[C/] : B.[C/].
+Proof.
+  move=> subt ty.
+(*
+  cut (TY Delta;Gamma..[ren(+1)]..[C/] |- s.|[C/] : B.[C/]). autosubst.
+  apply: ty_hsubst ty => -[_|x lt]; asimpl => //. exact: sub_var_trans.
+*)
+  admit.                                    (* XXXX *)
+Qed.
+
+(* ***** *)
+
+Lemma eqn_abs : forall A A' s s', Abs A s = Abs A' s' -> A = A' /\ s = s'.
+Proof.
+  move=> A A' s s' H.
+  inversion H.
+  by [].
+Qed.
+
+Lemma eqn_arr : forall A A' B B', Arr A B = Arr A' B' -> A = A' /\ B = B'.
+Proof.
+  move=> A A' B B' H.
+  by inv H.
+Qed.
+
 Lemma ty_inv_abs' Gamma A A' B T s :
   TY Gamma |- Abs A s : T ->
+  T = Arr A' B ->
   TY A'::Gamma |- s : B.
 Proof.
-  move: (Abs A s) => t ty. elim: ty A s => {Gamma t} //.
- - move=> Gamma x h B' s'.
- admit.                                     (* XXXXX *)
-  eauto using ty.
- admit.                                     (* XXXXX *)
-  eauto using ty.
-
- admit.                                     (* XXXXX *)
+  move e: (Abs A s) => t ty.
+  elim: ty A A' B s e; move => {Gamma t T} //.
+ - move=> Gamma A B s h ih A' A'' B' s' eqn sub2.
+   apply eqn_abs in eqn. destruct eqn as [eqn1 eqn2].
+   apply eqn_arr in sub2. destruct sub2 as [sub21 sub22].
+   subst.
+   by apply h.
 Qed.
 
 Lemma ty_inv_abs Gamma A A' B s :
   TY Gamma |- Abs A s : Arr A' B -> TY A'::Gamma |- s : B.
 Proof.
-  move=> ty. apply: ty_inv_abs' ty.
+  move=> ty. apply: ty_inv_abs'.
+  - by apply ty.
+  - by [].
 Qed.
 
 
 (* ***** *)
 
-
-Lemma ty_betaT Gamma s A B :
-  TY Gamma..[ren (+1)] |- s : A ->
-  TY Gamma |- s.|[B/] : A.[B/].
-Proof.
-  move=> ty.
-  Check ty_hsubst.
-  admit.                                    (* XXXX *)
-Qed.
 
 Lemma ty_inv_tabs' Gamma B T s :
   TY Gamma |- TAbs s : T ->
@@ -224,11 +245,6 @@ Proof with eauto using ty.
   - move=> Gamma A B s _ i t ev. by inv ev.
   - move=> Gamma A B s t ty1 ih1 ty2 ih2 u ev.
     inversion ev.               (* inv ev *)
-    (* ty1 :  TY Gamma |- Abs A0 s0 : Arr A B これがおかしい？
-  そのため、ty_inv_abs がおかしい（証明不能）なものを使っている。
-  ty1 がおかしくなるのは、EV App ... の一番最初の条件のinv.
-  inversion あとの subst.  で、H0 : Abs A0 s0 = s が代入される。
-     *)
     subst.
     Check ty_inv_abs.
     (* move: ty1. move/ty_inv_abs. exact: ty_beta. *)
