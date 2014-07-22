@@ -114,23 +114,26 @@ Lemma ty_weak Gamma s A B :
 Proof. exact: ty_ren. Qed.
 
 Lemma ty_hsubst Gamma s A sigma :
-(*  (forall x, x < size Delta1) -> *)
   TY Gamma |- s : A -> TY Gamma..[sigma] |- s.|[sigma] : A.[sigma].
 Proof with eauto using ty.
-  admit.
-(*
-  move=> h ty. elim: ty Delta2 sigma h => {Delta1 Gamma s A}/=...
-  - move=> Delta1 Gamma x lt Delta2 sigma h. apply: ty_evar. by rewrite get_map.
-    by rewrite size_map.
-  - move=> Delta1 Gamma A B s _ ih Delta2 sigma h. apply: ty_tabs.
-    specialize (ih (A.[sigma] :: Delta2) (up sigma)). move: ih. asimpl.
-    apply. move=> [_|x/h/sub_weak] /=. apply: sub_var_trans => //. autosubst.
-    autosubst.
-  - move=> Delta1 Gamma A B C s _ ih sub Delta2 sigma h. asimpl.
-    eapply ty_etapp. Focus 2. by eapply ih. autosubst. exact: sub_subst sub.
-  - move=> Delta1 Gamma A B s _ ih sub Delta2 sigma h.
-    eapply ty_sub. by eapply ih. exact: sub_subst sub.
-*)
+  move=> ty.
+  elim: ty sigma => {Gamma s A}/=...
+  - move=> Gamma x lt sigma.
+    apply: ty_evar.
+      + by rewrite get_map.
+      + by rewrite size_map.
+  - move=> Gamma A s ty ih sigma.
+    apply ty_tabs.
+    specialize (ih (up sigma)).
+    move: ih.
+    asimpl.
+    by apply.
+  - move=> Gamma A B s ty ih sigma.
+    asimpl.
+    Check ty_etapp.
+    eapply (ty_etapp _ (A.[up sigma]) _ _ (s.|[sigma])).
+    + by autosubst.
+    + by eapply ih.
 Qed.
 
 Lemma ty_tweak Gamma s A :
@@ -160,14 +163,6 @@ Lemma ty_beta Gamma s t A B :
   TY Gamma |- s.[t/] : B.
 Proof.
   move=> ty. apply: ty_subst => -[|n lt] //=. exact: ty_var.
-Qed.
-
-Lemma test Gamma s A B:
-  TY Gamma |- TAbs s : A ->
-  TY Gamma |- s.|[B/] : A.[B/].
-Proof.
-  move=> ty.
-  admit.
 Qed.
 
 Lemma ty_betaT' Gamma s B C :
