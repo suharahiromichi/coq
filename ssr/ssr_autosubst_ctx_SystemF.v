@@ -115,7 +115,7 @@ Proof. exact: ty_ren. Qed.
 
 Lemma ty_hsubst Gamma s A sigma :
 (*  (forall x, x < size Delta1) -> *)
-  TY Gamma |- s : A -> TY Gamma..[sigma] |- s.|[sigma] :A.[sigma].
+  TY Gamma |- s : A -> TY Gamma..[sigma] |- s.|[sigma] : A.[sigma].
 Proof with eauto using ty.
   admit.
 (*
@@ -162,17 +162,29 @@ Proof.
   move=> ty. apply: ty_subst => -[|n lt] //=. exact: ty_var.
 Qed.
 
+Lemma test Gamma s A B:
+  TY Gamma |- TAbs s : A ->
+  TY Gamma |- s.|[B/] : A.[B/].
+Proof.
+  move=> ty.
+  admit.
+Qed.
+
+Lemma ty_betaT' Gamma s B C :
+  TY Gamma..[ren (+1)]..[C/] |- s.|[C/] : B.[C/] ->
+  TY Gamma |- s.|[C/] : B.[C/].
+Proof.
+  autosubst.
+Qed.
+
 Lemma ty_betaT Gamma s A B C :
   C = A ->
   TY Gamma..[ren (+1)] |- s : B ->
   TY Gamma |- s.|[C/] : B.[C/].
 Proof.
   move=> subt ty.
-(*
-  cut (TY Delta;Gamma..[ren(+1)]..[C/] |- s.|[C/] : B.[C/]). autosubst.
-  apply: ty_hsubst ty => -[_|x lt]; asimpl => //. exact: sub_var_trans.
-*)
-  admit.                                    (* XXXX *)
+  apply ty_betaT'.
+  apply: ty_hsubst ty.
 Qed.
 
 (* ***** *)
@@ -188,6 +200,20 @@ Lemma eqn_arr : forall A A' B B', Arr A B = Arr A' B' -> A = A' /\ B = B'.
 Proof.
   move=> A A' B B' H.
   by inv H.
+Qed.
+
+Lemma eqn_tabs : forall s s', TAbs s = TAbs s' -> s = s'.
+Proof.
+  move=> s s' H.
+  inversion H.
+  by [].
+Qed.
+
+Lemma eqn_all : forall s s', All s = All s' -> s = s'.
+Proof.
+  move=> s s' H.
+  inversion H.
+  by [].
 Qed.
 
 Lemma ty_inv_abs' Gamma A A' B T s :
@@ -218,12 +244,16 @@ Qed.
 
 Lemma ty_inv_tabs' Gamma B T s :
   TY Gamma |- TAbs s : T ->
+  T = All B ->
   TY Gamma..[ren(+1)] |- s : B.
 Proof.
   move e: (TAbs s) => t ty.
   elim: ty B s e => {Gamma t T} //.
-  move=> Gamma s ty ih H0 A' s' e.
-  admit.                                    (* XXXX *)
+  move=> Gamma A s ty ih A' s' e1 e2.
+  apply eqn_tabs in e1.
+  apply eqn_all in e2.
+  subst.
+  by apply: ty0.
 Qed.
 
 Lemma ty_inv_tabs Gamma B s :
@@ -232,7 +262,8 @@ Lemma ty_inv_tabs Gamma B s :
 Proof.
   move=> ty.
   apply: (ty_inv_tabs' _ _ (All B)).
-  by [].
+    - by apply ty.
+    - by [].
 Qed.
 
 (* ***** *)
@@ -253,7 +284,11 @@ Proof with eauto using ty.
     eauto using ty.
   - move=> Gamma A B s _ t ev. by inv ev.
   - move=> Gamma A B s ty ih t ev. inv ev.
-    + move: ty0 => /ty_inv_tabs H. apply: (ty_betaT _ s0 _ _)...
+      Check E_TAppTAbs.
+      Check ty_tapp Gamma A B s0.
+    + apply ty_inv_tabs in ty0. move: ty0.
+    (* move: ty0 => /ty_inv_tabs H. *)
+      apply: (ty_betaT _ s0 _ _)...
     + apply: ty_tapp...
 Qed.
 
