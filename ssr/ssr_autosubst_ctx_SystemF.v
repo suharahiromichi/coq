@@ -1,5 +1,9 @@
 (**
 System F
+
+examples/ssr/POPLmark.v をもとに作成した。
+
+@suharahiromichi 2014_07_23
  *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
@@ -295,13 +299,15 @@ Definition is_tabs s := if s is TAbs _ then true else false.
 Lemma canonical_arr Gamma s A B :
   TY Gamma |- s : Arr A B -> value s -> is_abs s.
 Proof.
-  admit.
+  move=> ty.
+  by inv ty.
 Qed.
 
 Lemma canonical_all Gamma s A :
   TY Gamma |- s : All A -> value s -> is_tabs s.
 Proof.
-  admit.
+  move=> ty.
+  by inv ty.
 Qed.
 
 Lemma ev_progress' Gamma s A :
