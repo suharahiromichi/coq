@@ -6,7 +6,7 @@ http://hal.inria.fr/docs/00/55/53/79/PDF/main-rr.pdf
 Require Import ssreflect ssrbool.
 
 (**
-- Bool型の式をProp型の式に書き換えることをInterpretationという。
+- Bool型の式とProp型の式とを書き換えることをInterpretationという。
 - Inductive reflect ... による書き換えだけではない。
 - move/V と apply/V だけではない。
 *)
@@ -21,14 +21,15 @@ Hypothesis P2Q : forall a b, P (a || b) -> Q a.
 Goal forall a, P (a || a) -> Q a.
 Proof.
   move=> a HPa.
-  move: (P2Q _ _ HPa).                      (* ├ Q a -> Q a *)
+  move: {HPa} (P2Q _ _ HPa).                (* ├ Q a -> Q a *)
   by [].
 Qed.
 
 Goal forall a, P (a || a) -> Q a.
 Proof.
   move=> a HPa.
-  apply P2Q in HPa.                         (* HPa : Q a ├ Q a -> Q a *)
+  apply P2Q in HPa.                         (* HPa : Q a ├ Q a *)
+  move: HPa.                                (* ├ Q a -> Q a *)
   by [].
 Qed.
 
@@ -54,11 +55,18 @@ Section Specializing_Assumptions.
 Goal forall z, (forall x y, x + y = z -> z = x) -> z = 0.
 Proof.
   move=> z.
-  move/(_ 0 z).
+  move/(_ 0 z).                             (* 前提に 0 z をapplyする。「_」は前提を指す。 *)
   apply.
   by [].
 Qed.
 
+Goal forall z, (forall x y, x + y = z -> z = x) -> z = 0.
+Proof.
+  move=> z H.
+  move: {H} (H 0 z).
+  apply.
+  by [].
+Qed.
 End Specializing_Assumptions.
 
 (**
@@ -105,13 +113,12 @@ Qed.
 
 Goal forall a b : bool, a && b -> a /\ b.
 Proof.
-  move=> a b H; apply/andP.
-  by [].
+  by move=> a b; apply/andP.
 Qed.
 
 Goal forall a b : bool, a /\ b -> a && b.
 Proof.
-  move=> a b H; apply/andP.
+  move=> a b; move/andP.
   by [].
 Qed.
 
@@ -151,10 +158,11 @@ Qed.
 Goal forall (P : Prop) (b : bool), reflect P b.
 Proof.
   move=> P b.
-  admit.
 (*  apply: (iffP (idP b)). *)
-Qed.
-
+  eapply (iffP _ _ _ (idP _ _)).
+(* Goal : b -> P *)
+(* Goal : P -> b *)
+  Admitted.
 End Proving_reflect_Equivalences.
 
 (* END *)
