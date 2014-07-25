@@ -39,7 +39,7 @@ Instance SubstLemmas_term : SubstLemmas term. derive. Qed.
 
 (** **** Subtyping *)
 
-Notation "Gamma `_ x" := (dget Gamma x).
+Notation "Gamma `_ x" := (dget Gamma x).    (* not used *)
 Notation "Gamma ``_ x" := (get Gamma x) (at level 3, x at level 2,
   left associativity, format "Gamma ``_ x").
 
@@ -91,41 +91,62 @@ where "'EV' s => t" := (eval s t).
 Lemma ty_ren Gamma1 Gamma2 s A xi :
   (forall x, x < size Gamma1 -> xi x < size Gamma2) ->
   (forall x, x < size Gamma1 -> Gamma2``_(xi x) = Gamma1``_x) ->
-  TY Gamma1 |- s : A -> TY Gamma2 |- s.[ren xi] : A.
+  TY Gamma1 |- s : A ->
+  TY Gamma2 |- s.[ren xi] : A.
 Proof with eauto using ty.
-  move=> h1 h2 ty. elim: ty Gamma2 xi h1 h2 => {Gamma1 s A} /=...
-  - move=> Gamma1 x lt Gamma2 xi h1 h2. rewrite -h2 //. apply: ty_var...
-  - move=> Gamma1 A B s _ ih Gamma2 xi h1 h2. asimpl. apply: ty_abs.
+  move=> h1 h2 ty.
+  elim: ty Gamma2 xi h1 h2 => {Gamma1 s A} /=...
+  - move=> Gamma1 x lt Gamma2 xi h1 h2.
+    rewrite -h2 //.
+    apply: ty_var...
+  - move=> Gamma1 A B s _ ih Gamma2 xi h1 h2.
+    asimpl.
+    apply: ty_abs.
     by apply: ih => [[|x/h1]|[|x/h2]].
- - move=> Gamma1 A B s ih Gamma2 xi h1 h2. apply: ty_tabs.
-    apply: ih => x. by rewrite !size_map => /h1. rewrite !size_map => lt.
-    rewrite !get_map ?h2 //. exact: h1.
+  - move=> Gamma1 A B s ih Gamma2 xi h1 h2.
+    apply: ty_tabs.
+    apply: ih => x.
+    + by rewrite !size_map => /h1.
+    + rewrite !size_map => lt.
+      rewrite !get_map ?h2 //.
+      exact: h1.
 Qed.
 
 Lemma ty_evar Gamma x A :
-  A = Gamma``_x -> x < size Gamma -> TY Gamma |- TeVar x : A.
-Proof. move->. exact: ty_var. Qed.
+  A = Gamma``_x ->
+  x < size Gamma ->
+  TY Gamma |- TeVar x : A.
+Proof.
+  move ->.
+  exact: ty_var.
+Qed.
 
 Lemma ty_etapp Gamma A C D s :
   D = A.[C/] ->
   TY Gamma |- s : All A ->
   TY Gamma |- TApp s C : D.
-Proof. move->. exact: ty_tapp. Qed.
-
+Proof.
+  move->.
+  exact: ty_tapp.
+Qed.
 
 Lemma ty_weak Gamma s A B :
-  TY Gamma |- s : A -> TY B::Gamma |- s.[ren (+1)] : A.
-Proof. exact: ty_ren. Qed.
+  TY Gamma |- s : A ->
+  TY B::Gamma |- s.[ren (+1)] : A.
+Proof.
+  exact: ty_ren.
+Qed.
 
 Lemma ty_hsubst Gamma s A sigma :
-  TY Gamma |- s : A -> TY Gamma..[sigma] |- s.|[sigma] : A.[sigma].
+  TY Gamma |- s : A ->
+  TY Gamma..[sigma] |- s.|[sigma] : A.[sigma].
 Proof with eauto using ty.
   move=> ty.
-  elim: ty sigma => {Gamma s A}/=...
+  elim: ty sigma => {Gamma s A} /=...
   - move=> Gamma x lt sigma.
     apply: ty_evar.
-      + by rewrite get_map.
-      + by rewrite size_map.
+    + by rewrite get_map.
+    + by rewrite size_map.
   - move=> Gamma A s ty ih sigma.
     apply ty_tabs.
     specialize (ih (up sigma)).
@@ -144,29 +165,42 @@ Lemma ty_tweak Gamma s A :
   TY Gamma |- s : A ->
   TY Gamma..[ren (+1)] |- s.|[ren (+1)] : A.[ren (+1)].
 Proof.
-  apply: ty_hsubst => x. (* exact: sub_var_trans. *)
+  by apply: ty_hsubst.
 Qed.
 
 Lemma ty_subst Gamma1 Gamma2 s A sigma :
   (forall x, x < size Gamma1 -> TY Gamma2 |- sigma x : Gamma1``_x) ->
-  TY Gamma1 |- s : A -> TY Gamma2 |- s.[sigma] : A.
+  TY Gamma1 |- s : A ->
+  TY Gamma2 |- s.[sigma] : A.
 Proof with eauto using ty.
-  move=> h ty. elim: ty Gamma2 sigma h => {Gamma1 s A}/=...
-  - move=> Gamma1 A B s _ ih Gamma2 sigma h /=. apply: ty_abs.
-    move: ih. apply; move=> [/= | x /h /ty_weak].
-    + intros. apply ty_var. auto.
+  move=> h ty.
+  elim: ty Gamma2 sigma h => {Gamma1 s A} /=...
+  - move=> Gamma1 A B s _ ih Gamma2 sigma h /=.
+    apply: ty_abs.
+    move: ih.
+    apply; move=> [/= | x /h /ty_weak].
+    + move=> Hsz.
+      by apply: ty_var.
     + autosubst.
-  - move=> Gamma1 A B s ih Gamma2 sigma h. apply: ty_tabs. apply: ih.
-    move=> x. rewrite size_map => lt. rewrite get_map //=. exact/ty_tweak/h.
+  - move=> Gamma1 A B s ih Gamma2 sigma h.
+    apply: ty_tabs.
+    apply: ih.
+    move=> x.
+    rewrite size_map => lt.
+    rewrite get_map //=.
+    exact/ty_tweak/h.                       (* by apply ty_tweak; apply h *)
 Qed.
 
 (* ***** *)
 
 Lemma ty_beta Gamma s t A B :
-  TY Gamma |- t : A -> TY A::Gamma |- s : B ->
+  TY Gamma |- t : A ->
+  TY A::Gamma |- s : B ->
   TY Gamma |- s.[t/] : B.
 Proof.
-  move=> ty. apply: ty_subst => -[|n lt] //=. exact: ty_var.
+  move=> ty.
+  apply: ty_subst => -[|n lt] //=.
+  exact: ty_var.
 Qed.
 
 Lemma ty_betaT' Gamma s B C :
@@ -230,16 +264,15 @@ Proof.
 Qed.
 
 Lemma ty_inv_abs Gamma A A' B s :
-  TY Gamma |- Abs A s : Arr A' B -> TY A'::Gamma |- s : B.
+  TY Gamma |- Abs A s : Arr A' B ->
+  TY A'::Gamma |- s : B.
 Proof.
   move=> ty. apply: ty_inv_abs'.
   - by apply ty.
   - by [].
 Qed.
 
-
 (* ***** *)
-
 
 Lemma ty_inv_tabs' Gamma B T s :
   TY Gamma |- TAbs s : T ->
@@ -329,7 +362,10 @@ Qed.
 
 Theorem ev_progress s A:
   TY nil |- s : A -> value s \/ exists t,  EV s => t.
-Proof. move=> ty. exact: ev_progress' ty _. Qed.
+Proof.
+  move=> ty.
+  exact: ev_progress' ty _.
+Qed.
 
 (* Local Variables: *)
 (* coq-load-path: (("." "Ssr")) *)
