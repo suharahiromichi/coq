@@ -9,9 +9,14 @@ Require Import ssreflect ssrbool eqtype ssrnat ssrfun.
 
 (* 3.2 Deﬁnitions *)
 
-Definition edivn_rec d :=
+Fixpoint edivn_rec (d m q : nat) : nat*nat :=
+  if m - d is m'.+1 then edivn_rec d m' q.+1 else (q, m).
+Eval compute in edivn_rec 3 7 1.            (* (2,3) *)
+
+Definition edivn_rec'' d :=
   fix loop (m q : nat) {struct m} :=
   if m - d is m'.+1 then loop m' q.+1 else (q, m).
+Eval compute in edivn_rec'' 3 7 1.            (* (2,3) *)
 
 Definition edivn m d :=                     (* 商と余 *)
   if d > 0 then edivn_rec d.-1 m 0 else (0, m).
@@ -19,16 +24,16 @@ Eval compute in edivn 7 3.
 
 Definition edivn_rec2 d := fix loop (m q : nat) {struct m} := (* 不使用 *)
   if m - (d - 1) is m'.+1 then loop m' q.+1 else (q, m).
+Eval compute in edivn_rec2 4 7 1.            (* (2,3) *)
 
 Definition edivn2 m d :=                    (* 不使用 *)
   if d > 0 then edivn_rec2 d m 0 else (0, m).
 
 CoInductive edivn_spec (m d : nat) : nat * nat -> Type :=
-  EdivnSpec q r of m = q * d + r & (d > 0) ==> (r < d) :
+  EdivnSpec q r of (m = q * d + r) & ((d > 0) ==> (r < d)) :
     edivn_spec m d (q, r).
 Eval compute in (EdivnSpec 7 3 2 1).       (* 7 / 3 = 2 ... 1 *)
 (* :  7 = 2 * 3 + 1 -> (0 < 3) ==> (1 < 3) -> edivn_spec 7 3 (2, 1) *)
-
 
 (* 3.3 Results *)
 
@@ -65,13 +70,13 @@ Eval compute in (EdivnSpec_right 7 3 2 1).  (* 7 / 3 = 2 ... 1 *)
 (* :  7 = 2 * 3 + 1 -> (0 < 3) ==> (1 < 3) -> edivn_right 7 3 (2, 1) *)
 
 CoInductive edivn_spec_left (m d : nat)(qr : nat * nat) : Type :=
-  EdivnSpec_left of m = (fst qr) * d + (snd qr) & (d > 0) ==> (snd qr < d) :
+  EdivnSpec_left of m = qr.1 * d + qr.2 & (d > 0) ==> (snd qr < d) :
     edivn_spec_left m d qr.
 Eval compute in (EdivnSpec_left 7 3 (2,1)).  (* 7 / 3 = 2 ... 1 *)
 (* : 7 = (2, 1).1 * 3 + (2, 1).2 ->
        (0 < 3) ==> ((2, 1).2 < 3) -> edivn_spec_left 7 3 (2, 1) *)
 
-Lemma edivnP_right : forall m d, edivn_spec_right m d (edivn m d).
+Lemma edivnP_right' : forall m d, edivn_spec_right m d (edivn m d).
 Proof.
   (* 証明は、edivnP と同じ。 *)
   rewrite /edivn => m [|d] //=; rewrite -{1}[m]/(0 * d.+1 + m).
@@ -83,7 +88,16 @@ Proof.
   apply: leq_trans le_mn; exact: leq_subr.
 Qed.
 
-Lemma edivnP_left : forall m d, edivn_spec_left m d (edivn m d).
+(* ProofCafe yoshihiro503 による。 *)
+Lemma edivnP_right : forall m d, edivn_spec_right m d (edivn m d).
+Proof.
+Check edivnP.
+ move=> m d.
+ case: (edivnP m d) => q r eq_m_dqr impl_0d_rd.
+ by apply: EdivnSpec_right.
+Qed.
+
+Lemma edivnP_left' : forall m d, edivn_spec_left m d (edivn m d).
 Proof.
   (* 証明は、edivnP と同じ。 *)
   rewrite /edivn => m [|d] //=; rewrite -{1}[m]/(0 * d.+1 + m).
@@ -93,6 +107,14 @@ Proof.
   rewrite addnAC -mulSnr.                   (* addnAC を追加した。  *)
   apply (IHn (m - d) q.+1).                 (* apply: IHn でもよい。 *)
   apply: leq_trans le_mn; exact: leq_subr.
+Qed.
+
+(* ProofCafe yoshihiro503 による。 *)
+Lemma edivnP_left : forall m d, edivn_spec_left m d (edivn m d).
+Proof.
+ move=> m d.
+ case: (edivnP m d) => q r eq impl.
+ by apply EdivnSpec_left.
 Qed.
 
 Lemma edivn_eq_right : forall d q r, r < d -> edivn (q * d + r) d = (q, r).
