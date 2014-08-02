@@ -17,9 +17,63 @@ Require Import ssreflect ssrbool.
 (**
 4.1.1 Interpreting assumptions.
 *)
+(* 参考： P Q は、P2QとGoalで同じものでないと、意図どおりにならない。 *)
+Hypothesis P2Q : forall (P Q : bool -> Prop) (a : bool), P a -> Q a.
+Goal forall (P Q : bool -> Prop) (a : bool), P a -> Q a.
+Proof.
+  move=> P Q a.
+  move/P2Q.
+  (* Goal : (forall P0 : bool -> Prop, P0 a) -> Q a *)
+  apply.
+Qed.
+
+Section Basic.
+  Variable P Q : bool -> Prop.
+  (* P2QとGoalのP,Qは同じものを指す。 *)
+  Hypothesis P2Q : forall a, P a -> Q a.
+  
+  Goal forall a, P a -> Q a.
+  Proof.
+    move=> a HPa.
+    move: (P2Q a HPa).
+    apply.
+  Qed.
+  (* これと同じ。 *)
+  Goal forall a, P a -> Q a.
+  Proof.
+    move=> a HPa.
+    apply P2Q in HPa.
+    apply HPa.
+  Qed.
+  (* これと同じ。 *)  
+  Goal forall a, P a -> Q a.
+  Proof.
+    move=> a.
+    move/P2Q.
+    apply.
+  Qed.
+
+  (* ゴールに適用する場合 *)
+  Goal forall a, P a -> Q a.
+  Proof.
+    move=> a HPa.
+    apply P2Q.
+    apply HPa.
+  Qed.
+  (* これと同じ。 *)  
+  Goal forall a, P a -> Q a.
+  Proof.
+    move=> a.
+    apply/P2Q.
+  Qed.
+End Basic.
+
 Section Interpreting_Assumptions.
   Variable P Q : bool -> Prop.
+
+  (** 基本の例 *)
   Hypothesis P2Q : forall a b, P (a || b) -> Q a.
+  (* P2QとGoalのP,Qは同じものを指す。 *)
   
   Goal forall a, P (a || a) -> Q a.
   Proof.
@@ -27,7 +81,7 @@ Section Interpreting_Assumptions.
     move: {HPa} (P2Q _ _ HPa).              (* ├ Q a -> Q a *)
       by [].
   Qed.
-
+  (* これと同じ。 *)
   Goal forall a, P (a || a) -> Q a.
   Proof.
     move=> a HPa.
@@ -35,18 +89,56 @@ Section Interpreting_Assumptions.
     move: HPa.                              (* ├ Q a -> Q a *)
       by [].
   Qed.
-
+  (* これと同じ。 *)
   Goal forall a, P (a || a) -> Q a.
   Proof.
     move=> a HPa; move/P2Q : HPa.           (* ├ Q a -> Q a *)
       (* move=> a HPa; move : HPa; move/P2Q. *)
       by [].
   Qed.
-
+  (* これと同じ。 *)
   Goal forall a, P (a || a) -> Q a.
   Proof.
     move=> a; move/P2Q.                     (* ├ Q a -> Q a *)
       by [].
+  Qed.
+
+  (** 場合わけする *)
+  Hypothesis Q2P : forall a b, Q (a || b) -> P a \/ Q b.
+  (* GoalのP,Qは同じものを指す。 *)
+
+  Goal forall a b, Q (a || b) -> P a \/ Q b.
+  Proof.
+    move=> a b.
+    move/Q2P => [HPa | HPb]; by [left | right].
+  Qed.
+
+  (** <->  *)
+  Hypothesis PQequiv : forall a b, P (a || b) <-> Q a.
+  (* GoalのP,Qは同じものを指す。 *)
+
+  Goal forall a b, P (a || b) -> True.
+  Proof.
+    move=> a b.
+    move/PQequiv.
+    by [].
+  Qed.
+  (* これと同じ。 *)
+  Goal forall a b, P (a || b) -> True.
+  Proof.
+    move=> a b HPab.
+    (* 基本の例のように、(PQequiv a b HPab) とはできない。 *)
+    Check iffLR (PQequiv a b).
+    Check iffLR (PQequiv a b) HPab.
+    move: (iffLR (PQequiv a b) HPab).
+    by [].
+  Qed.
+  (* これと同じ。 *)
+  Goal forall a b, P (a || b) -> True.
+  Proof.
+    move=> a b.
+    move/(iffLR (PQequiv a b)).
+    by [].
   Qed.
 End Interpreting_Assumptions.
 
