@@ -7,7 +7,7 @@ http://hal.inria.fr/docs/00/55/53/79/PDF/main-rr.pdf
 
 4.1 The two sides of deduction
 *)
-Require Import ssreflect ssrbool.
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 (**
 - Bool型の式とProp型の式とを書き換えることをInterpretationという。
 - Inductive reflect ... による書き換えだけではない。
@@ -350,6 +350,90 @@ End Proving_reflect_Equivalences.
 (**
 4.2 Exercises: sequenences
  *)
+(** Exercise 4.2.1 *)
+Section Exo_4_2_1.
+  Variable A : Type.
+  Implicit Types s : seq A.
+  Implicit Types x : A.
+
+  Lemma tuto_size_cat : forall s1 s2,
+                          size (s1 ++ s2) = size s1 + size s2.
+  Proof.
+    move=> s1 s2.
+    elim: s1.
+    + by [].
+    + by move=> a l /= ->.
+  Qed.
+
+  Lemma tuto_last_cat : forall x s1 s2,
+                          last x (s1 ++ s2) = last (last x s1) s2.
+  Proof.
+    move=> x s1 s2.
+    elim: s1 x.
+    + by [].
+    + move=> a l /= IHs1 _.
+      by rewrite IHs1.
+      (* by move=> a l /= ->. でもよいが、もう少し親切に書いた。 *)
+  Qed.
+
+  Compute take 2 [:: 0; 1; 2; 3].           (* [:: 0; 1] *)
+  Compute drop 2 [:: 0; 1; 2; 3].           (* [:: 2; 3] *)
+  Lemma tuto_cat_take_drop : forall (n0 : nat) (s : seq A),
+                               take n0 s ++ drop n0 s = s.
+  Proof.
+    move=> n0 s.
+    elim: s n0.
+    + by elim.
+    + move=> a l IHs.
+      elim.                                 (* elim by n0. *)
+      - by [].
+      - move=> n IH.
+        by rewrite -{3}(IHs n).
+  Qed.
+
+  Lemma le_Snm_nm : forall (n m : nat), n.+1 <= m -> n <= m.
+  Proof.
+    move=> n m.
+      by apply (@leq_trans n.+1 n m).
+  Qed.
+
+  Eval compute in rot 4 [:: 1; 2; 3; 4; 5].
+  Eval compute in rot 2 (rot 2 [:: 1; 2; 3; 4; 5]).
+  Lemma tuto_rot_addn : forall m n (s : seq A),
+                          m + n <= size s -> rot (m + n) s = rot m (rot n s).
+  Proof.
+    move=> m n s.
+    elim: m.
+    move=> Hsize.
+    + by rewrite add0n rot0.
+    + move=> m IHm Hsize.
+      elim: n IHm Hsize.
+      - move=> Hsize1 Hsize2.
+        by rewrite rot0 addn0.
+      - move=> n IHm1 IHm2 Hsize.
+        rewrite rotS.
+        + rewrite addSn.
+          * rewrite rotS.
+            rewrite IHm2.
+            ++ by [].
+            (* m + n <= size s *)
+            ++ by apply le_Snm_nm.
+          (* m + n <= size s *)
+          * by rewrite addSn in Hsize.
+        (* m < size (rot n.+1 s) *)
+        + rewrite size_rot.
+          rewrite addSn in Hsize.
+          Check @ltn_trans (m + n.+1) m (size s).
+          rewrite (@ltn_trans (m + n.+1) m (size s)).
+          * by [].
+          * by rewrite addnS addnC -addnS ltn_addl.
+          * by [].
+  Qed.
+End Exo_4_2_1.
+
+(** Exercise 4.2.2 *)
+
+(** Exercise 4.2.3 *)
 
 (**
 4.3 Exercises: Boolean equations
