@@ -113,7 +113,7 @@ Section Interpreting_Assumptions.
     move/Q2P => [HPa | HPb]; by [left | right].
   Qed.
 
-  (** <->  *)
+  (** Viewに <-> のある場合 *)
   Hypothesis PQequiv : forall a b, P (a || b) <-> Q a.
   (* GoalのP,Qは同じものを指す。 *)
 
@@ -177,23 +177,45 @@ Section Interpreting_Goals.
     Check (Q2P _ _ HPa).
       by apply: (Q2P _ _ HPa).
   Qed.
-  
+  (* これと同じ。 *)  
   Goal forall a, Q a -> P (a || a).
   Proof.
     move=> a HPa.
     apply Q2P.
       by [].
   Qed.
-  
+  (* これと同じ。 *)  
   Goal forall a, Q a -> P (a || a).
   Proof.
       (* move=> a HPa; move : HPa; apply/Q2P. *)
       by move=> a HPa; apply/Q2P : HPa.
   Qed.
-  
+  (* これと同じ。 *)  
   Goal forall a, Q a -> P (a || a).
   Proof.
       by move=> a; apply/Q2P.
+  Qed.
+
+  (** Viewに <-> のある場合 *)
+  Hypothesis PQequiv : forall a b, P (a || b) <-> Q a.
+  (* GoalのP,Qは同じものを指す。 *)
+  
+  Goal forall a, P ((~~ a) || a).
+  Proof.
+    move=> a.
+    apply/PQequiv.
+    (* Goal : Q (~~ a) *)
+    admit.
+  Qed.
+  (* これと同じ。 *)  
+  Goal forall a, P ((~~ a) || a).
+  Proof.
+    move=> a.
+    Check (PQequiv (~~ a) a).
+    Check iffRL (PQequiv (~~ a) a).
+    apply: (iffRL (PQequiv (~~ a) a)). 
+    (* Goal : Q (~~ a) *)
+    admit.
   Qed.
 End Interpreting_Goals.
 
@@ -236,12 +258,9 @@ Section use_reflect_predicates.
   Proof.
       by move=> a b; apply/andP.
   Qed.
+
   
-  Goal forall a b : bool, a /\ b -> a && b.
-  Proof.
-    move=> a b; move/andP.
-      by [].
-  Qed.
+
 End use_reflect_predicates.
 
 (**
@@ -260,6 +279,34 @@ Section Interpreting_Equivalences.
     move=> b1 b2 H.
     apply/idP/idP;
       by rewrite //=; apply H.
+  Qed.
+
+  (** norを変換しない例 *)
+  Goal forall b1 b2 b3 : bool, ~~ (b1 || b2) = b3.
+  Proof.
+    move=> b1 b2 b3.
+    apply/idP/idP.
+    admit.                                  (* Goal : ~~ (b1 || b2) -> b3 *) 
+    admit.                                  (* Goal : b3 -> ~~ (b1 || b2) *)
+  Qed.
+
+  (** norを変換をする例 *)
+  Goal forall b1 b2 b3 : bool, ~~ (b1 || b2) = b3.
+  Proof.
+    move=> b1 b2 b3.
+    apply/norP/idP.
+    admit.                                  (* Goal : ~~ b1 /\ ~~ b2 -> b3 *) 
+    admit.                                  (* Goal : b3 -> ~~ b1 /\ ~~ b2) *)
+  Qed.
+
+  Goal forall b1 b2 b3 : bool, ~~ (b1 || b2) = b3.
+  Proof.
+    move=> b1 b2 b3.
+    apply/idP/idP.
+    move/norP.
+    admit.                                  (* Goal : ~~ b1 /\ ~~ b2 -> b3 *) 
+    move=> Hb3. apply/norP. move: Hb3.
+    admit.                                  (* Goal : b3 -> ~~ b1 /\ ~~ b2) *)
   Qed.
 End Interpreting_Equivalences.
 
