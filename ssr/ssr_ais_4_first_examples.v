@@ -258,9 +258,6 @@ Section use_reflect_predicates.
   Proof.
       by move=> a b; apply/andP.
   Qed.
-
-  
-
 End use_reflect_predicates.
 
 (**
@@ -432,6 +429,30 @@ Section Exo_4_2_1.
 End Exo_4_2_1.
 
 (** Exercise 4.2.2 *)
+Section Exo_4_3_1.
+  Variable T : eqType.
+  Implicit Types x y : T.
+  Implicit Type b : bool.
+  
+  Lemma tuto_count_predUI :
+    forall (a1 a2 : pred T) (s : seq T),
+      count (predU a1 a2) s + count (predI a1 a2) s = count a1 s + count a2 s.
+  Proof.
+    move=> a1 a2.
+    elim.
+    - by [].
+    - move=> a l IH /=.
+      rewrite addnCA.
+      rewrite [a1 a + count a1 l + (a2 a + count a2 l)]addnCA.
+      nat_norm.
+      rewrite IH.
+      rewrite [a1 a && a2 a + (a1 a || a2 a + _)]addnA.
+      rewrite [a2 a + (a1 a + _)]addnA.
+      nat_congr.                            (* f_equal. *)
+      (* a1 a && a2 a + (a1 a || a2 a) = a2 a + a1 a *)
+      by elim: (a1 a).
+  Qed.
+End Exo_4_3_1.
 
 (** Exercise 4.2.3 *)
 
