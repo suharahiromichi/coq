@@ -450,7 +450,17 @@ Section Exo_4_3_1.
       rewrite [a2 a + (a1 a + _)]addnA.
       nat_congr.                            (* f_equal. *)
       (* a1 a && a2 a + (a1 a || a2 a) = a2 a + a1 a *)
-      by elim: (a1 a).
+      by case: (a1 a).
+  Qed.
+
+  Lemma tuto_count_filter :
+    forall (a : pred T) (s : seq T), count a s = size (filter a s).
+  Proof.
+    move=> a.
+    elim.                                   (* elim by s *)
+    - by [].
+    - move=> a' l IH /=.
+      by case: (a a') => /=; nat_congr.
   Qed.
 End Exo_4_3_1.
 
