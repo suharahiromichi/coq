@@ -499,11 +499,9 @@ Section Exo_4_2_3.
     elim: p x.
     - by [].
     - move=> a l /= IH x /andP [H1 H2].       (* move/andP in H *)
-      elim=> /=.                            (* elim by i *)
+      elim=> /=.                              (* elim by i *)
       + by move=> Hs; apply H1.
-      + move=> n H Hs.
-        apply: (IH a H2 n).
-        by [].
+      + move=> n H Hs; by apply: (IH a H2 n).
   Qed.
 
   Lemma tuto_pathP : forall (T : Type)(e : rel T)(x : T)(p : seq T) x0,
@@ -514,12 +512,74 @@ Section Exo_4_2_3.
     move=> T e x p x0.
     apply: (@iffP (path e x p)).            (* apply: (@equivP (path e x p)). *)
     + by apply: idP.
-    + by apply: pathP_path.
-    + by apply: path_pathP.
+    + by apply: pathP_path.                 (* <- *)
+    + by apply: path_pathP.                 (* -> *)
   Qed.
 End Exo_4_2_3.
 
 (**
 4.3 Exercises: Boolean equations
  *)
+
+Module Equality.
+
+  Definition axiom T e := forall x y : T, reflect (x = y) (e x y).
+
+  Record mixin_of (T : Type) :=
+    Mixin {
+        op : rel T;
+        _ : axiom T op
+      }.
+
+  Record type :=
+    Pack {
+        sort :> Type;
+        _ : mixin_of sort
+      }.
+
+  Check forall x y, eq_op x y.              (* x == y *)
+  Check eqP .                               (* reflect (x = y) (x == y) *)
+
+(** Exercise 4.3.1 *)
+  Lemma tuto_eqxx : forall (T : eqType) (x : T), x == x.
+  Proof.
+    move=> T x.
+    by apply/eqP.                           (* x = x *)
+  Qed.
+
+  Lemma tuto_predU1l : forall (T : eqType) (x y : T) (b : bool),
+                         x = y -> (x == y) || b.
+  Proof.
+    move=> T x y b H.
+    apply/orP.
+    left.
+    by apply/eqP.
+  Qed.
+  
+  Lemma tuto_predD1P : forall (T : eqType) (x y : T) (b : bool),
+                         reflect (x <> y /\ b) ((x != y) && b).
+  Proof.
+    move=> T x y b.
+    apply: (@iffP ((x != y) && b)).
+    - by apply: idP.
+    - move/andP. case=> Hxny Hb. move/negP in Hxny.
+      split.
+      + rewrite /not=> Hxy.
+        apply: Hxny.
+        by apply/eqP.
+      + by [].
+    - case=> Hxny Hb.
+      apply/andP.
+      split.
+      + apply/negP=> Hxy.
+        move/eqP in Hxy.
+        by apply Hxny.
+      + by [].
+  Qed.
+
+  Lemma tuto_eqVneq : forall (T : eqType) (x y : T), {x = y} + {x!= y}.
+  Proof.
+  Qed.
+End Equality.
+
 (* END *)
