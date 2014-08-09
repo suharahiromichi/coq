@@ -577,8 +577,9 @@ Module Equality.
       + by [].
   Qed.
 
-  Lemma tuto_eqVneq : forall (T : eqType) (x y : T), {x = y} + {x!= y}.
+  Lemma tuto_eqVneq : forall (T : eqType) (x y : T), {x = y} + {x != y}.
   Proof.
+    by move=> T x y; case: eqP; [left | right].
   Qed.
 End Equality.
 
