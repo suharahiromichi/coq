@@ -295,7 +295,7 @@ Section Interpreting_Equivalences.
     admit.                                  (* Goal : ~~ b1 /\ ~~ b2 -> b3 *) 
     admit.                                  (* Goal : b3 -> ~~ b1 /\ ~~ b2) *)
   Qed.
-
+  (* これと同じ。 *)
   Goal forall b1 b2 b3 : bool, ~~ (b1 || b2) = b3.
   Proof.
     move=> b1 b2 b3.
@@ -431,9 +431,10 @@ End Exo_4_2_1.
 (** Exercise 4.2.2 *)
 Section Exo_4_3_1.
   Variable T : eqType.
+(*
   Implicit Types x y : T.
   Implicit Type b : bool.
-  
+*)  
   Lemma tuto_count_predUI :
     forall (a1 a2 : pred T) (s : seq T),
       count (predU a1 a2) s + count (predI a1 a2) s = count a1 s + count a2 s.
@@ -465,6 +466,58 @@ Section Exo_4_3_1.
 End Exo_4_3_1.
 
 (** Exercise 4.2.3 *)
+Section Exo_4_2_3.
+
+  Fixpoint path {T : Type} (e : rel T) x (p : seq T) {struct p} :=
+    if p is y :: p' then e x y && path e y p' else true.
+
+  Lemma path_pathP : forall (T : Type)(e : rel T)(x : T)(p : seq T) x0,
+                       (forall i, i < size p -> e (nth x0 (x :: p) i) (nth x0 p i)) ->
+                       path e x p.
+  Proof.
+    move=> T e x p.
+    elim: p x.
+    (* p = [::] *)
+    - by [].
+    (* p = [a :: l] *)
+    - move=> a l IH x x0 H /=.
+      apply/andP; split.
+      (* e x a *)
+      + by apply (H 0).
+      (* path e a l *)
+      +  apply: (IH a).
+        elim.                               (* elim by i *)
+         * move=> H1; by apply (H 1).       (* i = 0 *)
+         * move=> n H2; by apply (H n.+2).  (* i = i.+1 *)
+  Qed.
+
+  Lemma pathP_path : forall (T : Type)(e : rel T)(x : T)(p : seq T) x0,
+                       path e x p ->
+                       (forall i, i < size p -> e (nth x0 (x :: p) i) (nth x0 p i)).
+  Proof.
+    move=> T e x p x0.
+    elim: p x.
+    - by [].
+    - move=> a l /= IH x /andP [H1 H2].       (* move/andP in H *)
+      elim=> /=.                            (* elim by i *)
+      + by move=> Hs; apply H1.
+      + move=> n H Hs.
+        apply: (IH a H2 n).
+        by [].
+  Qed.
+
+  Lemma tuto_pathP : forall (T : Type)(e : rel T)(x : T)(p : seq T) x0,
+                       reflect
+                         (forall i, i < size p -> e (nth x0 (x :: p) i) (nth x0 p i))
+                         (path e x p).
+  Proof.
+    move=> T e x p x0.
+    apply: (@iffP (path e x p)).            (* apply: (@equivP (path e x p)). *)
+    + by apply: idP.
+    + by apply: pathP_path.
+    + by apply: path_pathP.
+  Qed.
+End Exo_4_2_3.
 
 (**
 4.3 Exercises: Boolean equations
