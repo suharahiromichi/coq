@@ -9,7 +9,8 @@ http://hal.inria.fr/docs/00/55/53/79/PDF/main-rr.pdf
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import path choice fintype tuple finfun finset.
 
-Set Implicit Arguments.                     (* この宣言は必須 *)
+Set Implicit Arguments.
+(* この宣言は必須である。これによって省かれた項はコメントしてある。 *)
 Unset Strict Implicit.
 Import Prenex Implicits.
 
@@ -34,9 +35,13 @@ Record zmodule : Type :=
       spec : zmodule_mixin_of carrier
     }.
 (** bool_zodule は少し後ろにずらした。 *)
-Definition zmadd (Z : zmodule) := add (spec Z).
 
-Notation "x \+ y" := (@zmadd _ x y) (at level 50, left associativity).
+Definition zmadd (Z : zmodule) := add (spec Z).
+(* add の forall T の T （つまり、 zmodule_mixin_of (T : Type) の T)
+ が省かれている。zmaddACの証明も同様。 *)
+
+Notation "x \+ y" := (zmadd x y) (at level 50, left associativity).
+(* zmadd の Zが省かれている。 *)
 
 (** Excercise 5.1.1 *)
 Lemma zmaddAC : forall (m : zmodule)(x y z : m),
@@ -53,10 +58,13 @@ Qed.
 (** bool_zodule *)
 
 Definition bool_zmoduleMixin :=
-  ZmoduleMixin (* Type:=bool zero:=false opp:=(@id bool) add:=addb *)
+  ZmoduleMixin
+    (* 最初の4引数が省かれている。 *)
+    (* Type:=bool zero:=false opp:=(@id bool) add:=addb *)
     addbA addbC addFb addbb.
 
-Definition bool_zmodule := Zmodule bool_zmoduleMixin.
+Definition bool_zmodule := Zmodule (* bool *) bool_zmoduleMixin.
+(* Zmodule の bool が省かれている。  *)
 Variable b : bool_zmodule.
 
 Canonical Structure bool_zmodule.           (* 以下が有効になる。 *)
