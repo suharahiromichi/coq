@@ -125,4 +125,36 @@ Qed.
 Definition nat_eqMixin := EqMixin nat_eqP.
 Canonical Structure nat_eqType := EqType nat nat_eqMixin.
 
+(** Exercise 5.2.2 *)
+
+Definition pair_eq (T1 T2 : eqType) :=
+  [rel u v : T1 * T2 | (u.1 == v.1) && (u.2 == v.2)].
+
+Lemma tuto_pair_eqP : forall T1 T2, Equality.axiom (pair_eq T1 T2).
+Proof.
+  (* u v の場合わけして、u1 u2 v1 v2としてpopするのが味噌 *)
+  move=> T1 T2 [u1 u2] [v1 v2].
+  apply/(@iffP (pair_eq T1 T2 (u1, u2) (v1, v2))).
+  - by apply/idP.
+  - rewrite /pair_eq /=.
+    case/andP.
+    move/eqP => H1.
+    move/eqP => H2.
+    by subst.
+  - rewrite /pair_eq /=.
+    (* 前提 (u1,u2)=(v1,v2)を u1=v1とu2=v2にわけてpopするのが味噌 *)
+    move=> [H1 H2].
+    apply/andP.
+    by subst.
+Qed.
+
+Definition prod_eqMixin (T1 T2 : eqType) :=
+  EqMixin (@tuto_pair_eqP T1 T2).
+
+Canonical Structure prod_eqType (T1 T2 : eqType) :=
+  EqType (T1 * T2) (prod_eqMixin T1 T2).    (* 最後のT1 T2 は略せない。 *)
+
+Check (true, 3) == (true && true, 1 + 2).   (* bool *)
+Print Canonical Projections.
+
 (* END *)
