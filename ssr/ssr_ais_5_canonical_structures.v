@@ -77,4 +77,52 @@ Proof.
   apply zmaddAC.
 Qed.
 
+(**
+5.2 Canonical constructions
+*)
+
+(* eqtype.v の定義が使用される。 *)
+Lemma unit_eqP : Equality.axiom (fun _ _ : unit => true).
+Proof.
+    by do 2!case; left.
+Qed.
+
+Definition unit_eqMixin := EqMixin unit_eqP.
+Canonical Structure unit_eqType := EqType unit unit_eqMixin.
+
+(** Exercise 5.2.1 *)
+
+(** bool *)
+Definition eqb x y :=
+  if x then y else ~~ y.
+
+Lemma bool_eqP : Equality.axiom eqb.
+Proof.
+  move=> x y.
+  apply/(@iffP (eqb x y)).
+  - by apply/idP.
+  - case: x=> /= Hy.
+    + by [].
+    + by move/negPf in Hy.
+  - case: x=> /= Hy.
+    + by [].
+    + by apply/negPf.
+Qed.
+
+Definition bool_eqMixin := EqMixin bool_eqP.
+Canonical Structure bool_eqType := EqType bool bool_eqMixin.
+
+(** nat *)
+Lemma nat_eqP : Equality.axiom (fun m n : nat => eqn m n).
+Proof.
+  move=> m n.
+  apply/(@iffP (eqn m n)).
+  - by apply/idP.
+  - by apply/eqP.
+  - by move/eqP.
+Qed.
+
+Definition nat_eqMixin := EqMixin nat_eqP.
+Canonical Structure nat_eqType := EqType nat nat_eqMixin.
+
 (* END *)
