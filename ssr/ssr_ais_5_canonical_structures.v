@@ -157,4 +157,82 @@ Canonical Structure prod_eqType (T1 T2 : eqType) :=
 Check (true, 3) == (true && true, 1 + 2).   (* bool *)
 Print Canonical Projections.
 
+(**
+5.3 Predtypes: canonical structures for notations
+ *)
+Section SeqMem.
+  Variable T : eqType.
+  Implicit Type s : seq T.
+  Implicit Types x y : T.
+
+  Lemma tuto_in_cons : forall y s x,
+                         (x \in y :: s) = (x == y) || (x \in s).
+  Proof.
+      by [].
+  Qed.
+
+  (** Exercise 5.3.1 *)
+  Lemma tuto_in_nil : forall x, (x \in [::]) = false.
+  Proof.
+    by [].
+  Qed.
+  
+  Lemma tuto_mem_seq1 : forall x y, (x \in [:: y]) = (x == y).
+  Proof.
+    move=> x y.
+    Locate "\in".
+    rewrite /in_mem /=.
+      by case: (x == y).
+  Qed.
+  
+  Lemma tuto_mem_head : forall x s, x \in x :: s.
+  Proof.
+    move=> x s.
+    rewrite /in_mem /=.
+    apply/orP.
+    by left.
+  Qed.
+
+  (** Exercise 5.3.2 *)
+  Lemma tuto_mem_cat : forall x s1 s2,
+                         (x \in s1 ++ s2) = (x \in s1) || (x \in s2).
+  Proof.
+    have HorC p q r : p || q || r = p || (q || r)
+      by case: p; case: q; case: r.
+    move=> x s1 s2.
+    rewrite /in_mem /=.
+    apply/idP/idP.
+    - elim: s1.
+      + by [].
+      + move=> a l IH /= H.
+        rewrite HorC.
+        apply/orP.
+        move/orP in H.
+        case H.
+        * by left.
+        * move=> H2.
+          right.
+          by apply IH.
+    - elim: s1.
+      + by [].
+      + move=> a l IH /= H.
+        rewrite HorC in H.
+        apply/orP.
+        move/orP in H.
+        case H.
+        * by left.
+        * move=> H2.
+          right.
+          by apply IH.
+  Qed.
+
+  Lemma tuto_mem_behead: forall s, {subset (behead s) <= s}.
+  Proof.
+    move=> s.
+    Locate "<=".
+    Check @mem.
+    Print sub_mem.
+    Print mem_pred.
+    
+
 (* END *)
