@@ -197,33 +197,14 @@ Section SeqMem.
   Lemma tuto_mem_cat : forall x s1 s2,
                          (x \in s1 ++ s2) = (x \in s1) || (x \in s2).
   Proof.
-    have HorC p q r : p || q || r = p || (q || r)
+    have orC p q r : p || q || r = p || (q || r)
       by case: p; case: q; case: r.
     move=> x s1 s2.
     rewrite /in_mem /=.
-    apply/idP/idP.
-    - elim: s1.
-      + by [].
-      + move=> a l IH /= H.
-        rewrite HorC.
-        apply/orP.
-        move/orP in H.
-        case H.
-        * by left.
-        * move=> H2.
-          right.
-          by apply IH.
-    - elim: s1.
-      + by [].
-      + move=> a l IH /= H.
-        rewrite HorC in H.
-        apply/orP.
-        move/orP in H.
-        case H.
-        * by left.
-        * move=> H2.
-          right.
-          by apply IH.
+    elim: s1.
+    + by [].
+    + move=> a l IH /=.
+      by rewrite IH. (* rewrite orC. も使われる。 *)
   Qed.
 
   Lemma tuto_mem_behead: forall s, {subset (behead s) <= s}.
