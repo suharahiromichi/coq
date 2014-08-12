@@ -209,11 +209,17 @@ Section SeqMem.
 
   Lemma tuto_mem_behead: forall s, {subset (behead s) <= s}.
   Proof.
-    move=> s.
-    Locate "<=".
-    Check @mem.
-    Print sub_mem.
-    Print mem_pred.
+    rewrite /sub_mem /in_mem /mem /=.
+    elim.                                   (* by s *)
+    + by [].
+    + move=> a l IH /= x H.
+      apply/orP.
+      by right.
+  Qed.    
+
+  Lemma tuto_hasP : forall (a : pred T) s,
+                      reflect (exists2 x, x \in s & a x) (has a s).
+  Proof.
     
 
 (* END *)
