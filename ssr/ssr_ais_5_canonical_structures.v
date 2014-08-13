@@ -244,52 +244,46 @@ Section SeqMem.
                  + by [].
   Qed.
 
-  Goal forall (a : pred T) s,
-         has a s -> (exists2 x : T, x \in s & a x).
+  Lemma has__exists : forall (a : pred T) s,
+                        has a s -> (exists2 x : T, x \in s & a x).
   Proof.
     move=> a s.
-    elim: s.
+    elim: s => [|y l IH /=].
     - by [].
-    - move=> a0 l IH /=.
-      case/orP=> [H1 | H2].
-      + exists a0.
+    - case/orP=> [H1 | H2].
+      + exists y.
         rewrite /in_mem /=.
         apply/orP.
         * by left.
         * by [].                
-      + case IH.
+      (* ここでmoveせず、caseで=>[|..]する。 *)
+      + case IH => [|x H3 H4].
         * by [].
-        * move=> x H3 H4.
-          exists x.
-          apply: tuto_mem_tail.
-            by [].
-              by [].
+        (* ここでmoveせず、caseで=>[|..]する。 *)
+        * exists x.
+           - by apply: tuto_mem_tail.
+           - by [].
   Qed.
 
-  Goal forall (a : pred T) s,
-         (exists2 x : T, x \in s & a x) -> has a s.
+  Lemma exists__has : forall (a : pred T) s,
+                        (exists2 x : T, x \in s & a x) -> has a s.
   Proof.
     move=> a s.
-    elim: s.
-    - case=> x Hc Hax /=.
+    elim: s =>  [|y l IH H /=].
+    - case=> x /=.
             by rewrite -(tuto_in_nil x).
-    - move=> y l IH H /=.
-      case ay : (a y).
-      + apply/orP. by left.
-      + apply/orP. right. apply IH.
-        case: H => x H2 H3.
+    - case ay : (a y).                      (* ！味噌！ *)
+      + apply/orP. by left.                 (* a y = true *)
+      + apply/orP. right. apply IH.         (* a y = false *)
+        case: H => x ylx ax.
         exists x.
-        * case: (predU1P H2) ay=> H11 H12.
-          - move: H3.
-            rewrite H11.
-            rewrite H12.
-              by [].
-        * move: H3. by [].
-      + by [].
+        * case: (predU1P ylx) ay => xy ay.  (* *** *)
+          - move: ax.
+            rewrite xy ay. by [].
+          - by [].
+        * by [].
   Qed.
 End SeqMem.
 
           
 (* END *)
-
-
