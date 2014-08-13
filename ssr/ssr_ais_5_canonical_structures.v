@@ -217,9 +217,74 @@ Section SeqMem.
       by right.
   Qed.    
 
-  Lemma tuto_hasP : forall (a : pred T) s,
-                      reflect (exists2 x, x \in s & a x) (has a s).
+  Lemma tuto_mem_tail : forall y y0 m,
+                          y \in m -> y \in y0 :: m.
   Proof.
-    
+    move=> y y0 m.
+      by rewrite tuto_in_cons=> H5; apply/orP; right.
+  Qed.
+  
+  Lemma tuto_hasP'' : forall (a : pred T) s,
+                      reflect (exists2 x, (x \in s) & (a x)) (has a s).
+  Proof.
+    move=> a s.
+    elim: s => [|y s IHs] /=.
+    - right.                                (* s = [::] *)
+      move=> H. case: H. by [].             (* by case. *)
+    - case ay : (a y).                      (* ay が前提に残る。 *)
+      + left; exists y.                     (* ay = true *)
+        * by rewrite ?mem_head.
+        * by [].
+      + apply: (iffP IHs) => [] [x ysx ax]. (* ay = false *)
+        * exists x => //.
+          by apply: mem_behead.
+        * exists x => //.
+          case: (predU1P ysx) ax => [H1|H2].
+                 + rewrite H1. rewrite ay. by [].
+                 + by [].
+  Qed.
 
+  Goal forall (a : pred T) s,
+         has a s -> (exists2 x : T, x \in s & a x).
+  Proof.
+    move=> a s.
+    elim: s.
+    - by [].
+    - move=> a0 l IH /=.
+      case/orP=> [H1 | H2].
+      + exists a0.
+        rewrite /in_mem /=.
+        apply/orP.
+        * by left.
+        * by [].                
+      + case IH.
+        * by [].
+        * move=> x H3 H4.
+          exists x.
+          apply: tuto_mem_tail.
+            by [].
+              by [].
+  Qed.
+
+  Goal forall (a : pred T) s,
+         (exists2 x : T, x \in s & a x) -> has a s.
+  Proof.
+    move=> a s.
+    elim: s => [|y s IHs].
+      - case=> x Hc Hax /=.
+              by rewrite -(tuto_in_nil x).
+      - case ay : (a y)=> H /=.
+        + apply/orP.
+          left. rewrite ay. by [].
+        + apply/orP.
+          right.
+          apply IHs.
+          exists y.
+          * admit.
+
+Qed.
+
+          
 (* END *)
+
+
