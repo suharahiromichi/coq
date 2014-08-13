@@ -270,19 +270,24 @@ Section SeqMem.
          (exists2 x : T, x \in s & a x) -> has a s.
   Proof.
     move=> a s.
-    elim: s => [|y s IHs].
-      - case=> x Hc Hax /=.
-              by rewrite -(tuto_in_nil x).
-      - case ay : (a y)=> H /=.
-        + apply/orP.
-          left. rewrite ay. by [].
-        + apply/orP.
-          right.
-          apply IHs.
-          exists y.
-          * admit.
-
-Qed.
+    elim: s.
+    - case=> x Hc Hax /=.
+            by rewrite -(tuto_in_nil x).
+    - move=> y l IH H /=.
+      case ay : (a y).
+      + apply/orP. by left.
+      + apply/orP. right. apply IH.
+        case: H => x H2 H3.
+        exists x.
+        * case: (predU1P H2) ay=> H11 H12.
+          - move: H3.
+            rewrite H11.
+            rewrite H12.
+              by [].
+        * move: H3. by [].
+      + by [].
+  Qed.
+End SeqMem.
 
           
 (* END *)
