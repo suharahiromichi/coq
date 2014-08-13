@@ -283,6 +283,51 @@ Section SeqMem.
           - by [].
         * by [].
   Qed.
+
+  Lemma all_allin : forall (a : pred T) s,
+                      all a s -> forall x, x \in s -> a x.
+  Proof.
+    move=> a.
+    elim.                                   (* by s *)
+    - by [].
+    - move=> y l IH.
+      rewrite /in_mem /=.
+      move/andP => [ay  allal] x.
+      move/orP => [xy | lx].
+      * move/eqP in xy.                     (* x == y *)
+          by rewrite xy.
+      + apply IH.                           (* l x *)
+        * by [].
+        * by [].
+  Qed.
+
+  Lemma allin_all : forall (a : pred T) s,
+                    (forall x, x \in s -> a x) -> all a s.
+  Proof.
+    move=> a.
+    elim.                                   (* by s *)
+    - by [].
+    - rewrite /in_mem /= => y l IH.
+      move=> H.
+      apply/andP.
+      split.
+      + apply: H. apply/orP.
+          by left.
+      + apply: IH => x lx.
+        apply: H.
+        apply/orP.
+          by right.
+  Qed.      
+  
+  Lemma tuto_allP : forall (a : pred T) s,
+                      reflect (forall x, x \in s -> a x) (all a s).
+  Proof.
+    move=> a s.
+    apply: (@iffP (all a s)).
+    - by apply/idP.
+    - by apply: all_allin.
+    - by apply: allin_all.
+  Qed.
 End SeqMem.
 
           
