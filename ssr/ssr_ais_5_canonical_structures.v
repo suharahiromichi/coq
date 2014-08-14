@@ -336,38 +336,31 @@ Section SeqMem.
     elim=> [|y l IH].
     - by [].
     - case ay : (a y).
-      + move/negP; rewrite /not=> H1.
+      + move/negP; rewrite /not=> Hc.       (* a y = true *)
         case: IH.
-        * apply/negP. rewrite /not=> H2.
-          apply H1.
-          simpl.
+        * apply/negP. rewrite /not=> allal. (* ~~ all a l *)
+          apply: Hc => /=.
           apply/andP.
           split.
-            by [].
-              by [].
-        * move=> x H11 H12.
+            by [].                          (* a y *)
+            by [].                          (* all a l *)
+        * move=> x lx notax.                (* 前提のexistに対するcase *)
           exists x.
           rewrite /in_mem /=.
-                  rewrite /in_mem /= in H11.
+          rewrite /in_mem /= in lx.
           apply/orP.
           right.
-            by [].
-              by [].
-    - move=> H21.
-      exists y.
-                rewrite /in_mem /=.
-                apply/orP.
-                left.
-                by [].
-                simpl in H21.
-                move/negP in H21. rewrite /not in H21.
-                apply/negP.
-                rewrite /not.
-                move=> H31.
-                move/negP in ay.
-                rewrite /not in ay.
-                apply ay.
-                by [].
+            by [].                          (* l x *)
+            by [].                          (* ~~ a x *)
+      + move=> /= Hc.                       (* a y = false *)
+        exists y.
+        * by apply: tuto_mem_head.
+        * move/negP in Hc. rewrite /not in Hc.
+          apply/negP. rewrite /not.
+          move=> ay'.
+          move/negP in ay. rewrite /not in ay.
+          apply: ay.
+          by [].
   Qed.
 
   Lemma exnot_notall : forall (a : pred T) s,
