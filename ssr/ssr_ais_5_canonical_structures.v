@@ -328,7 +328,78 @@ Section SeqMem.
     - by apply: all_allin.
     - by apply: allin_all.
   Qed.
-End SeqMem.
 
+  Lemma notall_exnot : forall (a : pred T) s,
+                         (~~ all a s) -> (exists2 x, x \in s & ~~ a x).
+  Proof.
+    move=> a.
+    elim=> [|y l IH].
+    - by [].
+    - case ay : (a y).
+      + move/negP; rewrite /not=> H1.
+        case: IH.
+        * apply/negP. rewrite /not=> H2.
+          apply H1.
+          simpl.
+          apply/andP.
+          split.
+            by [].
+              by [].
+        * move=> x H11 H12.
+          exists x.
+          rewrite /in_mem /=.
+                  rewrite /in_mem /= in H11.
+          apply/orP.
+          right.
+            by [].
+              by [].
+    - move=> H21.
+      exists y.
+                rewrite /in_mem /=.
+                apply/orP.
+                left.
+                by [].
+                simpl in H21.
+                move/negP in H21. rewrite /not in H21.
+                apply/negP.
+                rewrite /not.
+                move=> H31.
+                move/negP in ay.
+                rewrite /not in ay.
+                apply ay.
+                by [].
+  Qed.
+
+  Lemma exnot_notall : forall (a : pred T) s,
+                           (exists2 x, x \in s & ~~ a x) -> (~~ all a s).
+  Proof.
+    move=> a.
+    elim=> [|y l IH /= H].
+    - case.
+      by [].
+    - apply/negP => /andP Hc.               (* apply/negP; move/andP *)
+      case: Hc => ay.
+      apply/negP. apply: IH.                (* ~~ all a l に戻る。 *)
+      case: H => x lxy notax.
+      exists x.
+      + case: (predU1P lxy) ay => [H11 | H12].
+        * rewrite -H11.
+          move=> ax.                        (* a x *)
+          move=> /negP in notax.            (* ~ a x *)
+            by [].                          (* ゴールの x in l はどうでもよい。 *)
+        * by [].
+      + by [].
+  Qed.
+
+  Lemma tuto_allPn : forall (a : pred T) s,
+                       reflect (exists2 x, x \in s & ~~ a x) (~~ all a s).
+  Proof.
+    move=> a s.
+    apply: (@iffP (~~ all a s)).
+    - by apply/idP.
+    - by apply: notall_exnot.
+    - by apply: exnot_notall.
+  Qed.
+End SeqMem.
           
 (* END *)
