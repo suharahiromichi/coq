@@ -111,18 +111,18 @@ Definition tuto_sum_enum (T1 T2 : finType) : seq (T1 + T2) :=
 Lemma tuto_sum_enum_uniq : forall T1 T2, uniq (tuto_sum_enum T1 T2).
 Proof.
   move=> T1 T2.
-  rewrite /tuto_sum_enum.
-  elim: [seq inl y | y <- Finite.enum T1].
-  - rewrite cat0s.
-    elim: [seq inr y | y <- Finite.enum T2].
-    by [].
-    admit.
-  - move=> a l IH //=.
-    apply/andP.
-    split.
-    * apply/negP. rewrite /not => Hc.
-      admit.
-    * by [].
+  rewrite cat_uniq -!enumT.
+  rewrite !(enum_uniq, map_inj_uniq);       (* よくわかならい。 *)
+    try by move=> ? ? [].                   (* _にするとinjective が残ってしまう。 *)
+  rewrite andbT andTb.                      (* true をとる。 *)
+  apply/hasP => [] [H1 H2 H3].
+  move/mapP in H2.
+  case: H2 => x H21 H22.
+  move/mapP in H3.
+  case: H3 => y H31 H32.
+  rewrite H22 in H32.
+    (* Goal : inr x = inl y *)
+  by [].
 Qed.  
 
 Definition tuto_sum_finMixin (T1 T2 : finType) :=
