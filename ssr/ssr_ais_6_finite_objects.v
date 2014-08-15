@@ -131,4 +131,76 @@ Definition tuto_sum_finMixin (T1 T2 : finType) :=
 Canonical Structure sum_finType (T1 T2 : finType) :=
   Eval hnf in FinType (T1 + T2) (tuto_sum_finMixin T1 T2).
 
+(**
+Exercise 6.1.4 
+*)
+
+(**
+6.1.2 Cardinality, set operations
+*)
+Section OpsTheory.
+Variable T : finType.
+Implicit Types A B C P Q : pred T.
+Implicit Types x y : T.
+Implicit Type s : seq T.
+
+Lemma card0 : #|@pred0 T| = 0.
+Proof.
+    by rewrite cardE enum0.
+Qed.
+
+Lemma cardT : #|T| = size (enum T).
+Proof.
+    by rewrite cardE.
+Qed.
+
+Lemma card1 : forall x, #|pred1 x| = 1.
+Proof.
+    by move=> x; rewrite cardE enum1.
+Qed.
+
+(**
+Exercise 6.1.5
+*)
+Definition pred0b (T : finType) (P : pred T) := #|P| == 0.
+
+Lemma tuto_eq_card0 : forall A,
+                        A =i pred0 -> #|A| = 0.
+Proof.
+  move=> A.
+  rewrite -card0.                           (* #|A| = #|pred0| *)
+  move=> eqA0.
+  f_equal.
+  admit.
+(*  by apply eq_card.  これは、後の練習問題！ なので使えない。 *)
+Qed.
+
+Lemma tuto_card0_eq : forall A,
+                        #|A| = 0 -> A =i pred0.
+Proof.
+  move=> A.
+  rewrite -card0.
+  move=> eqA0.
+  move=> x.                                 (* ゴールが "=i"なら、強引に！ *)
+  f_equal.
+  admit.
+Qed.
+  
+Lemma tuto_pred0P : forall P, reflect (P =1 pred0) (pred0b T P).
+Proof.
+  move=> P.
+  apply (iffP idP).
+(*
+これよりも簡単！
+  apply/(@iffP (pred0b T P)).
+  - by apply/idP.
+*)
+  - rewrite /pred0b => /eqP H.
+    by apply: tuto_card0_eq.
+  - move=> H.
+    apply (@eq_card0 T P) in H.
+    rewrite /pred0b.
+    by apply/eqP.
+Qed.
+
 (* END *)
