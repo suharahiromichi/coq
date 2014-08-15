@@ -169,20 +169,21 @@ Lemma tuto_eq_card0 : forall A,
 Proof.
   move=> A.
   rewrite -card0.                           (* #|A| = #|pred0| *)
-  move=> eqA0.
-  f_equal.
-  admit.
-(*  by apply eq_card.  これは、後の練習問題！ なので使えない。 *)
+  move=> H.
+  rewrite !cardE.
+  rewrite (eq_enum H).
+  by [].
 Qed.
 
 Lemma tuto_card0_eq : forall A,
                         #|A| = 0 -> A =i pred0.
 Proof.
   move=> A.
-  rewrite -card0.
-  move=> eqA0.
+  move=> H.
   move=> x.                                 (* ゴールが "=i"なら、強引に！ *)
-  f_equal.
+  rewrite !cardE in H.
+  rewrite /in_mem /mem /=.
+  apply/negP. rewrite /not => Hc.
   admit.
 Qed.
   
@@ -201,6 +202,27 @@ Proof.
     apply (@eq_card0 T P) in H.
     rewrite /pred0b.
     by apply/eqP.
+Qed.
+
+(**
+Exercise 6.1.6
+*)
+Lemma tuto_cardUI : forall A B,
+                      #|[predU A & B]| + #|[predI A & B]| = #|A| + #|B|.
+Proof.
+  move=> A B.
+  rewrite !cardE.
+  rewrite -!count_filter.
+  rewrite count_predUI.
+    by [].
+Qed.
+
+Lemma tuto_eq_card : forall A B, A =i B -> #|A| = #|B|.
+Proof.
+  move=> A B H.
+  rewrite !cardE.
+  rewrite (eq_enum H).
+  by [].
 Qed.
 
 (* END *)
