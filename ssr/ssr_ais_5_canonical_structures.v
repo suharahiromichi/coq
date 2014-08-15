@@ -99,8 +99,12 @@ Definition eqb x y :=
 Lemma bool_eqP : Equality.axiom eqb.
 Proof.
   move=> x y.
+  apply (iffP idP).
+(*
+これより簡単！
   apply/(@iffP (eqb x y)).
   - by apply/idP.
+*)
   - case: x=> /= Hy.
     + by [].
     + by move/negPf in Hy.
@@ -116,8 +120,7 @@ Canonical Structure bool_eqType := EqType bool bool_eqMixin.
 Lemma nat_eqP : Equality.axiom (fun m n : nat => eqn m n).
 Proof.
   move=> m n.
-  apply/(@iffP (eqn m n)).
-  - by apply/idP.
+  apply: (iffP idP).
   - by apply/eqP.
   - by move/eqP.
 Qed.
@@ -134,8 +137,11 @@ Lemma tuto_pair_eqP : forall T1 T2, Equality.axiom (pair_eq T1 T2).
 Proof.
   (* u v の場合わけして、u1 u2 v1 v2としてpopするのが味噌 *)
   move=> T1 T2 [u1 u2] [v1 v2].
+  apply: (iffP idP).
+(*
   apply/(@iffP (pair_eq T1 T2 (u1, u2) (v1, v2))).
   - by apply/idP.
+*)
   - rewrite /pair_eq /=.
     case/andP.
     move/eqP => H1.
@@ -323,8 +329,12 @@ Section SeqMem.
                       reflect (forall x, x \in s -> a x) (all a s).
   Proof.
     move=> a s.
+    apply (iffP idP).
+(*
+これより簡単！
     apply: (@iffP (all a s)).
     - by apply/idP.
+*)
     - by apply: all_allin.
     - by apply: allin_all.
   Qed.
@@ -388,8 +398,12 @@ Section SeqMem.
                        reflect (exists2 x, x \in s & ~~ a x) (~~ all a s).
   Proof.
     move=> a s.
+    apply (iffP idP).
+(*
+これより簡単
     apply: (@iffP (~~ all a s)).
     - by apply/idP.
+*)
     - by apply: notall_exnot.
     - by apply: exnot_notall.
   Qed.
