@@ -67,18 +67,68 @@ Proof.
   - rewrite /= count_map /=.                (* x = Some a *)
             nat_norm.
     rewrite enumP.
+      (*
+    rewriteの様子を詳しく見る。
+    have H' := enumP.
+    rewrite /Finite.axiom in H'.
+    rewrite /pred1 in H'.
+    rewrite /preim /=.
+            rewrite H'.
+     *)
       by [].
   - rewrite /= count_map /=.                (* x = None *)
             nat_congr.
     rewrite count_pred0.
-    by [].
+      (*
+    rewriteの様子を詳しく見る。
+    have H' := count_pred0.
+    rewrite /pred0 in H'.
+    rewrite /preim /=.
+    rewrite H'.
+    *)
+      by [].
 Qed.
-(* rewrite はまとめて、(count_pred0, enumP) と書ける。 *)
+(* このふたつの rewrite はまとめて、(count_pred0, enumP) と書ける。 *)
 
 Definition tuto_option_finMixin (T : finType) :=
   FinMixin (tuto_option_enumP T).
 
 Canonical Structure tuto_option_finType (T : finType) :=
   FinType (option T) (tuto_option_finMixin T).
+
+(**
+Exercise 6.1.3
+*)
+Definition tuto_sum_enum (T1 T2 : finType) : seq (T1 + T2) :=
+  [seq @inl T1 T2 x | x <- Finite.enum T1]
+    ++ [seq @inr T1 T2 y | y <- Finite.enum T2].
+(*
+(Finite.enum T1) ++ (Finite.enum T2)
+では、++の左右で型が違うので、appendできない。
+また、@inl T1 T2 は、inl でよい。inrも。
+*)
+
+Lemma tuto_sum_enum_uniq : forall T1 T2, uniq (tuto_sum_enum T1 T2).
+Proof.
+  move=> T1 T2.
+  rewrite /tuto_sum_enum.
+  elim: [seq inl y | y <- Finite.enum T1].
+  - rewrite cat0s.
+    elim: [seq inr y | y <- Finite.enum T2].
+    by [].
+    admit.
+  - move=> a l IH //=.
+    apply/andP.
+    split.
+    * apply/negP. rewrite /not => Hc.
+      admit.
+    * by [].
+Qed.  
+
+Definition tuto_sum_finMixin (T1 T2 : finType) :=
+  Eval hnf in UniqFinMixin (tuto_sum_enum_uniq T1 T2) (@mem_sum_enum T1 T2).
+
+Canonical Structure sum_finType (T1 T2 : finType) :=
+  Eval hnf in FinType (T1 + T2) (tuto_sum_finMixin T1 T2).
 
 (* END *)
