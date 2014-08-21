@@ -225,4 +225,55 @@ Proof.
   by [].
 Qed.
 
+(**
+Exercise 6.1.7
+*)
+Lemma tuto_disjoint0 : forall A, [disjoint pred0 & A].
+Proof.
+  move=> A.
+  rewrite /disjoint.
+  apply/pred0P.                             (* pred0b X を X =1 pred0 にする。 *)
+  move=> x /=.                              (* X =1 Y を X x = Y x にする。  *)
+  by [].
+Qed.
+
+Lemma tuto_disjoint_sym : forall A B,
+                            [disjoint A & B] = [disjoint B & A].
+Proof.
+  admit.
+Qed.
+
+Lemma tuto_disjointU : forall A B C,
+                         [disjoint predU A B & C] = [disjoint A & C] && [disjoint B & C].
+Proof.
+  admit.
+Qed.
+
+(**
+Exercise 6.1.8
+ *)
+Lemma tuto_subsetP : forall A B,
+                       reflect {subset A <= B} (A \subset B).
+Proof.
+  rewrite unlock.                           (* \subset が展開される。 *)
+  move=> A B.
+  apply (iffP idP).
+  (* <- *)
+  - move/pred0P => H x.
+    case: {H} (H x) => /= /nandP H Ax.
+    case: H => /negPn.
+    + by [].
+    + by [].
+  (* -> *)
+    admit.
+Qed.
+
+Lemma tuto_subsetPn : forall A B,
+                        reflect (exists2 x, x \in A & x \notin B) (~~ (A \subset B)).
+Proof.
+  admit.
+Qed.
+
+End OpsTheory.
+
 (* END *)
