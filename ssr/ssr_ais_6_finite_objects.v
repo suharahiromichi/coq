@@ -182,6 +182,7 @@ Proof.
   move=> H.
   move=> x.                                 (* ゴールが "=i"なら、強引に！ *)
   rewrite !cardE in H.
+  rewrite /mem /=.
   rewrite /in_mem /mem /=.
   apply/negP. rewrite /not => Hc.
   admit.
@@ -240,8 +241,17 @@ Qed.
 Lemma tuto_disjoint_sym : forall A B,
                             [disjoint A & B] = [disjoint B & A].
 Proof.
-  admit.
+  move=> A B.
+  rewrite /disjoint.                        (* ここで、f_equalしてはいけない。 *)
+  congr (_ == 0).                           (* pred0b X := #|X| == 0 から。
+  pred0b X = preb0b Y  を (#|X| == 0) = (#|Y| == 0) から、#|X| = #|Y| にする。 *)
+  apply eq_card.                            (* #|X| = #|Y| を X =1 Y にする。  *)
+  move=> x.                                 (* x を popする。 *)
+  apply andbC.                              (* x があるので、使える。 *)
 Qed.
+(* 単純な書き換えや f_equal で [predI A & B] = [predI A & B] はもとめられるが、
+「=1」でないので、xを自由変数にできずに、andbCが使えない。
+ *)
 
 Lemma tuto_disjointU : forall A B C,
                          [disjoint predU A B & C] = [disjoint A & C] && [disjoint B & C].
@@ -265,7 +275,11 @@ Proof.
     + by [].
     + by [].
   (* -> *)
-    admit.
+  - rewrite /sub_mem => H.
+    apply/pred0P => x /=.
+    apply/andP.
+    case=> /negP H1 H2.
+    by apply H1, H, H2.
 Qed.
 
 Lemma tuto_subsetPn : forall A B,
