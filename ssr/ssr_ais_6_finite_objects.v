@@ -256,8 +256,45 @@ Qed.
 Lemma tuto_disjointU : forall A B C,
                          [disjoint predU A B & C] = [disjoint A & C] && [disjoint B & C].
 Proof.
-  admit.
+  move=> A B C.
+  rewrite /disjoint.
+  Check fintype.pred0b [predI (predU A B) & C].
+  apply/idP/idP => H.
+  - move/pred0P in H.
+    apply/andP.
+    split.
+    + apply/pred0P => x.
+      case: {H} (H x) => /= /negP H.
+      apply/negP => Hc.
+      apply: H; rewrite andb_orl; apply/orP.
+        by left.
+    + apply/pred0P => x.
+      case: {H} (H x) => /= /negP H.
+      apply/negP => Hc;
+      apply: H; rewrite andb_orl; apply/orP.
+        by right.
+  - apply/pred0P => x /=.
+    apply/negP.
+    move/andP in H.
+    case: H => /pred0P H1 /pred0P H2.
+    move/andP => H3.
+    case: H3 => H31 H32.
+    rewrite /in_mem /mem /= in H31.
+    rewrite /in_mem /mem /= in H32.
+    case: (H1 x) => /= /negP {H1} H1 .
+    case: (H2 x) => /= /negP {H2} H2 .
+    move/orP in H31.
+    case H31 => HA.
+    + apply: H1.
+      rewrite /in_mem /mem /=.
+      apply/andP.
+      by split.
+    + apply: H2.
+      rewrite /in_mem /mem /=.
+      apply/andP.
+      by split.
 Qed.
+(* これは、congr ではなくて、not X を X -> False に展開する。 *)
 
 (**
 Exercise 6.1.8
