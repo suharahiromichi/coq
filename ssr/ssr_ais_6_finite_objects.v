@@ -9,10 +9,9 @@ http://hal.inria.fr/docs/00/55/53/79/PDF/main-rr.pdf
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat div seq.
 Require Import path choice fintype tuple finfun finset.
 
-(* Set Implicit Arguments.
+Set Implicit Arguments.
 Unset Strict Implicit.
 Import Prenex Implicits.
-*)
 
 (**
 6.1 Finite types
@@ -91,7 +90,7 @@ Qed.
 (* このふたつの rewrite はまとめて、(count_pred0, enumP) と書ける。 *)
 
 Definition tuto_option_finMixin (T : finType) :=
-  FinMixin (tuto_option_enumP T).
+  FinMixin (@tuto_option_enumP T).
 
 Canonical Structure tuto_option_finType (T : finType) :=
   FinType (option T) (tuto_option_finMixin T).
@@ -188,7 +187,7 @@ Proof.
   admit.
 Qed.
   
-Lemma tuto_pred0P : forall P, reflect (P =1 pred0) (pred0b T P).
+Lemma tuto_pred0P : forall P, reflect (P =1 pred0) (@pred0b T P).
 Proof.
   move=> P.
   apply (iffP idP).
@@ -253,7 +252,35 @@ Qed.
 「=1」でないので、xを自由変数にできずに、andbCが使えない。
  *)
 
-Lemma tuto_disjointU : forall A B C,
+Lemma disjointU A B C :
+  [disjoint predU A B & C] = [disjoint A & C] && [disjoint B & C].
+Proof.
+  case: [disjoint A & C] / (tuto_pred0P (xpredI A C)) => [A0 | nA0] /=.
+  - congr (_ == 0).
+    apply: eq_card => x.
+    rewrite [x \in _]andb_orl A0 /=.
+    by [].
+  - apply/pred0P=> nABC.
+    case: nA0 => x.
+    apply/idPn=> /=.
+    move/(_ x): nABC.
+    rewrite [_ x]andb_orl /=.
+    case/norP.
+    by [].
+(*
+    move/norP.
+    case => H1 H2.
+            by [].
+    move/nandP in H1.
+    move/nandP in H2.
+    apply/nandP.
+    case: H1.
+      by left.
+      by right.
+*)
+Qed.
+
+Lemma tuto_disjointU' : forall A B C,
                          [disjoint predU A B & C] = [disjoint A & C] && [disjoint B & C].
 Proof.
   move=> A B C.
@@ -326,5 +353,20 @@ Proof.
 Qed.
 
 End OpsTheory.
+
+(* END *)
+
+(* おまけ *)
+Goal forall (T : finType) (x : T) (B C : pred T),
+       (x \in B) && (x \in C) = (x \in [predI B & C]).
+Proof.
+  by [].
+Qed.
+
+Goal forall (T : finType) (x : T) (B C : pred T),
+       (x \in B) || (x \in C) = (x \in [predU B & C]).
+Proof.
+  by [].
+Qed.
 
 (* END *)
