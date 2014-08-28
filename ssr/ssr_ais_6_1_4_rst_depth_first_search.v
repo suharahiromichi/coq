@@ -24,6 +24,8 @@ Check (fun x y : nat => y \in [:: x]) : rel nat.
 (* 参考 *)
 Check [pred n : nat | n == 0] : pred nat.
 Check (fun n : nat => n == 0) : pred nat.
+Check mem [pred n : nat | n == 0] : mem_pred nat.
+Check mem [:: 1 ; 2] : mem_pred nat.
 
 Fixpoint dfs (n : nat) (a : seq T) (x : T) {struct n} :=
   if n is n'.+1 then
@@ -41,7 +43,7 @@ Inductive dfs_path' x y (a : seq T) : Prop :=
 dfs_path の意味：
 - ふたつの連続した要素からなるseq 「x :: p」 は、grel関係である。それらはグラフ上で隣接adjacentしている。
 - y は p の最後の要素である。
-- seq 「x :: p」は、seq a の要素ではない。disjoint
+- seq 「x :: p」は、seq a の要素ではない。
 *)
 
 Lemma dfsP : forall n x y (a : seq T),
