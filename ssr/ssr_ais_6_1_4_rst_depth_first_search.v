@@ -37,14 +37,21 @@ Inductive dfs_path x y (a : seq T) : Prop :=
 
 (* 古い書き方 *)
 Inductive dfs_path' x y (a : seq T) : Prop :=
-  DfsPath' p : (path grel x p) -> (y = last x p) -> [disjoint (x :: p) & a] -> dfs_path' x y (a : seq T).
+  DfsPath' p : (path grel x p) -> (y = last x p) ->
+               [disjoint (x :: p) & a] -> dfs_path' x y (a : seq T).
 
 (**
 dfs_path の意味：
-- ふたつの連続した要素からなるseq 「x :: p」 は、grel関係である。それらはグラフ上で隣接adjacentしている。
+- ふたつの連続した要素からなるseq 「x :: p」 は、
+  grel関係である。それらはグラフ上で隣接adjacentしている。
 - y は p の最後の要素である。
 - seq 「x :: p」は、seq a の要素ではない。
 *)
+
+Lemma max_card : forall (T : finType) (A : pred T), #|A| <= #|T|.
+Proof.
+  admit.
+Qed.
 
 Lemma dfsP : forall n x y (a : seq T),
                #|T| <= #|a| + n ->
@@ -52,13 +59,16 @@ Lemma dfsP : forall n x y (a : seq T),
                             reflect (dfs_path x y a) (y \in dfs n a x).
 Proof.
   elim=> [|n IHn] x y a Hn Hy /=.           (* elim by n *)
-  admit.
-  admit.
-Qed.
-
-Lemma max_card : forall (T : finType) (A : pred T), #|A| <= #|T|.
-Proof.
-  admit.
+  - case/idPn: (max_card (predU1 y (mem a))).
+    by rewrite -ltnNge cardU1 (negPf Hy) addSn addnC.
+  - case Hx: (x \in a).
+    + move Da': (x :: a) => a'.
+      case Hya': (y \in a').
+  (* Hya' : (y \in a') = true *)
+      * admit.                                  (* Exercise 6.1.15 *)
+  (* Hya' : (y \in a') = false *)
+      * admit.
+    + admit.
 Qed.
 
 (* last は、pの最後の要素、[::]ならx。 *)
