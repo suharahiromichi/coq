@@ -22,9 +22,8 @@ Program Definition test1 (N : nat) : test1_tp N :=
 Next Obligation.
   rewrite /conseq => /=.
   move=> i ->.                              (* rewriteは、 i = Unit  *)
-  heval=> acc.                              (* acc <-- alloc 1 をheapに。 *)
+  apply: bnd_allocR => /= x.                (* heval. だけでもよい。 *)
   rewrite unitR.                            (* x \+ Unit を x *)
-  Search (verify _ _ _).
   apply: bnd_readR => /=.
   apply: bnd_deallocR => /=.
   apply: val_ret => /=.
