@@ -29,8 +29,7 @@ mutual inductive types, nested types)
 *)
 
 (*
-elim/P => [|n' IH] := move=> n; elim (P n); move=> [|n' IH].
-
+elim/P === move=> tmp; elim: (P tmp); move=> {tmp}
 つまり、n でなく (P n) 帰納法をおこなう。
 *)
 
