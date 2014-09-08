@@ -12,31 +12,24 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/coq-jssst2014.pdf
  *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
-(**
-COQの基本
-predicative_example.v
+(***********************************
+COQの基本  predicative_example.v
 *)
+(* see. ssr_jsst2014_predicative_example.v *)
 
-
-(**
-SSREFLECT
-*)
-(**
-elimタクティク
+(***********************************
+SSREFLECT : elimタクティク
 
 ユーザが帰納法の補題を選べる (書き方: elim/myT_ind) (NB: 必要な時:
 mutual inductive types, nested types)
 *)
-
 (*
 elim/P === move=> tmp; elim: (P tmp); move=> {tmp}
 つまり、n でなく (P n) 帰納法をおこなう。
 *)
 
-(**
-等式の生成
-
-tactics_example.v
+(***********************************
+SSREFLECT : 等式の生成 tactics_example.v
 *)
 Goal forall s1 s2 : seq nat, rev (s1 ++ s2) = rev s2 ++ rev s1.
 Proof.
@@ -61,10 +54,8 @@ Proof.
       by rewrite rev_cons.
 Qed.
 
-(**
-move/H の意味。
-
-view_example.v
+(***********************************
+SSREFLECT : move/H の意味 view_example.v
 *)
 Goal forall (P Q : Prop), (P -> Q) -> P -> Q.
 Proof.
@@ -77,20 +68,37 @@ Proof.
   done.
 Qed.
 
-(* ビューヒントによって、補題(例：iffLR)が適用される。 *)
 Goal forall (P Q : Prop), (P <-> Q) -> P -> Q.
 Proof.
   move=> P Q PQ.
   move/PQ.
   Undo 1.
   move/(iffLR PQ).
+  (* ビューヒントによって、補題(例：iffLR)が適用される。 *)
   done.
 Qed.
 
-(**
-ssrboolのboolP
+(***********************************
+SSREFLECT : apply/H の意味 view_example.v
+*)
+Goal forall (P Q : Prop), (P <-> Q) -> P -> Q.
+Proof.
+  move=> P Q PQ Hp.
+  apply PQ.
+  Undo.
+  apply/PQ.
+  Undo.
+  apply/(iffLR PQ).
+  (* ビューヒントによって、補題(例：iffLR)が適用される。 *)
+  Undo.
+  apply PQ, Hp.                             (* 続けてapplyする。 *)
+  Undo.
+  apply/PQ/Hp.
+(* x == y に対する、 apply/idP/idP とは別の意味。. *)
+Qed.
 
-ssrbool_example.v
+(***********************************
+SSREFLECT : ssrboolのboolP ssrbool_example.v
 *)
 Lemma boolP_example : forall n : nat, n * n - 1 < n ^ n.
 Proof.
@@ -129,10 +137,8 @@ Proof.
           by rewrite expn_gt0.
 Qed.
 
-(**
-ssrboolのifP
-
-ssrbool_example.v
+(***********************************
+SSREFLECT : ssrboolのifP ssrbool_example.v
 *)
 Lemma ifP_example : forall n : nat, odd (if odd n then n else n.+1).
 Proof.
@@ -145,18 +151,28 @@ Proof.
       by rewrite Hn.
 Qed.
 
-(* END *)
-
-(* 
-SSREFLECT
-eqtype_example.v
-ssrnat_example.v
-fintype_example.v
+(***********************************
+SSREFLECT : eqtype_example.v
 *)
 
-(*
-MATHCOMP
-bigop_example.v
-tuple_example.v
-permutation_example.v
+(***********************************
+SSREFLECT : ssrnat_example.v
+*)
+
+(***********************************
+SSREFLECT : fintype_example.v
+*)
+
+(***********************************
+MATHCOMP : bigop_example.v
+*)
+
+(***********************************
+MATHCOMP : tuple_example.v
+*)
+
+(***********************************
+MATHCOMP : permutation_example.v
  *)
+
+(* END *)
