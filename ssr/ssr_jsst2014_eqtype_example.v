@@ -78,9 +78,11 @@ Qed.
 (** その型はeqType として登録できる。 *)
 Check S O = S O.
 Fail Check S O == S O.
+Fail Check S O != S O.
 Canonical nat_eqMixin := EqMixin eqnP.
 Canonical nat_eqType := Eval hnf in EqType nat nat_eqMixin.
-Check S O == S O.
+Compute S O == S O.
+Compute S O != S O.
 
 (** 証明 *)
 Goal forall n m : nat, n == m <-> n = m.
