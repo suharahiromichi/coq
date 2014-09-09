@@ -29,20 +29,20 @@ Fixpoint eqn (m  n : nat) {struct m} : bool :=
     | _, _ => false
   end.
 
-(**
+(*************************
 eqType を使わない場合（普通はこれをしない）
 eqtype_sample.v
  *)
-Lemma myeqnP n m : eqn n m = true -> n = m.
-Proof.
-    by elim: n m => [|n IHn] [|m] //= /IHn ->.
-Qed.
-
 Record myeq := Eqtype {
   car : Set ; 
   myequality : car -> car -> bool ;
   Heq : forall x y : car, myequality x y = true -> x = y }.
 Notation "a '===' b" := (myequality _ a b) (at level 70).
+
+Lemma myeqnP n m : eqn n m = true -> n = m.
+Proof.
+    by elim: n m => [|n IHn] [|m] //= /IHn ->.
+Qed.
 
 Check S O = S O.
 Fail Compute S O === S O.                   (* まだ===は使えない。 *)
@@ -62,13 +62,10 @@ Proof.
   by [].
 Qed.
 
-(**
+(*************************
 eqType を使う場合
  *)
 Require Import eqtype. (* eqtypeまで *)
-
-Check S O = S O.
-Fail Check S O == S O.
 
 (** そのブール値等式と Leibniz 同値関係の等価性が証明をする。 *)
 (* ここでは、<-> ではなく reflect を使う。 *)
@@ -91,31 +88,21 @@ Proof.
   move=> n m.
   by split; move/eqnP.
 Qed.
+
+(** リフレクションと書き換えができる。  *)
+Goal forall n m l : nat, n == m -> m == l -> n == l.
+Proof.
+  move=> n m l Hnm Hml.
+  apply/eqP.                                (* n = l *)
+  Undo 1.
+  rewrite (eqP Hnm).                        (* m == l *)
+  by [].
+Qed.
+
 (** ssrnat のおまけ *)
 Lemma eqnE : eqn = eq_op. Proof. by []. Qed.
 Lemma eqSS m n : (S m == S n) = (m == n). Proof. by []. Qed.
 Lemma nat_irrelevance (x y : nat) (E E' : x = y) : E = E'.
 Proof. exact: eq_irrelevance. Qed.
-
-(**
-より簡単だが、同じこと。
-eqtype_sample.v のおまけ。
- *)
-Structure myeq' := Myeq {
-  car' : Set ;                              (* carrier *)
-  myequality' : car' -> car' -> bool }.
-Notation "a '===' b" := (myequality' _ a b) (at level 70).
-
-Fail Check (true === false).
-(* eqb : bool -> bool -> bool *)
-Canonical Structure myeq_bool := Myeq bool eqb.
-Check (true === false).
-Eval compute in (true === false).
-
-Fail Check (O === O).
-(* eqn : nat -> nat -> bool *)
-Canonical Structure myeq_nat := Myeq nat eqn.
-Check (S O === S O).
-Eval compute in (S O === S O).
 
 (* END *)
