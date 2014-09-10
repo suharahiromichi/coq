@@ -181,14 +181,24 @@ Proof.
   (* 前提 H : (n <= 5) = true を追加する。ゴールの n <= 5 を true にする。 *)
   - done.
   (* 前提 H : (n <= 5) = false を追加する。ゴールの n > 5 を false にする。 *)
-  - move/negbT : H.
-    by rewrite -ltnNge.
-    Undo 2.
-    move/negbT in H.
-    rewrite -ltnNge in H.
+  - Check @negbT (n <= 5) : (n <= 5) = false -> ~~ (n <= 5).
+    apply (@negbT (n <= 5)) in H.
+    Undo 1.
+    move/(@negbT (n <= 5)) in H.
+    Undo 1.
+
+    (* すこし遠回りだが。 *)
+    move/negbT in H.                        (* ~~ (n <= 5) にする。 *)
+    Search (_ = ~~ (_ <= _)).
+    rewrite -ltnNge in H.                   (* n < 5 にする。 *)
     move : H.
     move=> ->.
     done.
+    Undo 5.
+    
+    (* 一番短い例。 *)
+    move/negbT : H.
+      by rewrite -ltnNge.
 (* pros: replace (n <= 5) by true, etc.
    cons: useless rewrite in the 2nd branch,
    does not scale to three way case analysis *)
