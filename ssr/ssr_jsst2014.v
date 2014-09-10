@@ -154,10 +154,65 @@ Qed.
 (***********************************
 SSREFLECT : eqtype_example.v
 *)
+(* see. ssr_jsst2014_eqtype_example.v *)
 
 (***********************************
 SSREFLECT : ssrnat_example.v
+about leqP
 *)
+(* Standard Coq の例 *)
+Goal forall n : nat, (n <= 5 \/ 5 < n)%coq_nat.
+Proof.
+  move=> n.
+  Check (Compare_dec.le_gt_dec n 5) : {(n <= 5)%coq_nat} + {(n > 5)%coq_nat}.
+  destruct (Compare_dec.le_gt_dec n 5).
+  (* 前提 l : n <= 5 が追加される。n <= 5 を true に置き換えるわけではない。 *)
+  auto.
+  (* 前提 l : n > 5 が追加される。n > 5 を true に置き換えるわけではない。 *)
+  auto.
+  Show Proof.
+Qed.
+
+(* SSReflect の例 *)
+Goal forall n : nat, (n <= 5) || (5 < n).
+Proof.
+  move=> n.
+  case H : (n <= 5).
+  (* 前提 H : (n <= 5) = true を追加する。ゴールの n <= 5 を true にする。 *)
+  - done.
+  (* 前提 H : (n <= 5) = false を追加する。ゴールの n > 5 を false にする。 *)
+  - move/negbT : H.
+    by rewrite -ltnNge.
+    Undo 2.
+    move/negbT in H.
+    rewrite -ltnNge in H.
+    move : H.
+    move=> ->.
+    done.
+(* pros: replace (n <= 5) by true, etc.
+   cons: useless rewrite in the 2nd branch,
+   does not scale to three way case analysis *)
+Qed.
+
+(* もっと SSReflect らしい例 *)
+Goal forall n : nat, (n <= 5) || (5 < n).
+Proof.
+  move=> n.
+  Check (leqP n 5).
+  case: (leqP n 5).
+  (* 前提に n <= 5 を追加する。ゴールは true || false *)
+  done.
+  (* 前提に 5 < 5 を追加する。ゴールは false || true *)
+  done.
+Qed.
+
+(**
+類似の定理（Comparison predicates）
+Lemma leqP m n : leq_xor_gtn m n (m <= n) (n < m).
+Lemma ltnP m n : ltn_xor_geq m n (n <= m) (m < n).
+Lemma posnP n : eqn0_xor_gt0 n (n == 0) (0 < n).
+Lemma ltngtP m n : compare_nat m n (m < n) (n < m) (m == n).
+  *)
 
 (***********************************
 SSREFLECT : fintype_example.v
