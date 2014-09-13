@@ -43,7 +43,7 @@ The notation x :-> y corresponds to the the points-to assertion x → y in the m
 representation of separation logic,
 *)
 
-(* 最も簡単な例 *)
+(** 最も簡単な例 *)
 Definition test1_tp (N : nat) :=
   STsep ([Pred h | h = Unit], 
          [vfun res h => res = N /\ h = Unit]).
@@ -65,27 +65,26 @@ Next Obligation.
 Qed.
 
 
-(* 最も簡単な関数呼び出しの例 *)
-
-(** ループ不変式 *)
+(** 関数呼び出しの例 *)
+(** ループ不変式、上位処理からはループで呼ばれていないが。 *)
 Definition func_inv (n : ptr) (N : nat) h : Prop := 
-  exists n' a': nat,
+  exists n' : nat,
     h = n :-> n' /\ n' = N.
 
-(** 関数部分の証明  *)
+(** 関数部分の証明 *)
 Definition func_acc_tp (n : ptr) := 
   unit -> {N},
   STsep (func_inv n N, 
            [vfun (res : nat) h => func_inv n N h /\ res = N]).
 
+(** 引数でもらったポインタの値を返すだけの関数 *)
 Program Definition func_acc (n : ptr) : func_acc_tp n := 
   fun (_ : unit) =>
     Do (n' <-- !n;
         ret n').
 Next Obligation. 
   apply: ghR => i N.                        (* conseq を消す。 *)
-  case=> n' [a'] []. move=> -> Hi _.        (* case=> n' [a'][->{i}] Hi _.  *)
-
+  case=> n' [] []. move=> -> Hi _.          (* case=> n' [][->{i}] Hi _.  *)
   Search (verify _ _ _).
   heval.
 Qed.
@@ -117,17 +116,16 @@ Next Obligation.
   (* (Do func_acc n acc tt) *)
   apply: val_doR => //.
 
-  (* func_inv n acc N (n :-> N) の証明 *)
-  - by exists N, 1.
+  (* func_inv n N (n :-> N) の証明 *)
+  - by exists N.
   (*  *)
   - move=> x m.
     case.
     case=> n'.
-    case=> a'.
     case=> H1 _ H2 _.
-    (* move=> x m [] [n'] [a'] [] H1 _ H2 _.
+    (* move=> x m [] [n'] [] H1 _ H2 _.
        または
-       move=> x m [[n'] [a'] [H1] _ H2 _]. *)
+       move=> x m [[n'] [] [H1] _ H2 _]. *)
     rewrite H1 H2.
     by heval.                               (* e1;; e2;; ret _ *)
 Qed.
