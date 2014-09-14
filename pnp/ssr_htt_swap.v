@@ -1,5 +1,8 @@
-(* とても簡単な例を作ってみた。 *)
+(** Programs and Proofs Ilya Sergey *)
 (* http://ilyasergey.net/pnp/ *)
+
+(** * 「Hoare Type Theory の基礎」から抜粋 *)
+(** * Elements of Hoare Type Theory *)
 
 Require Import ssreflect ssrbool ssrnat eqtype seq ssrfun.
 
@@ -11,32 +14,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(** 最も簡単な例 *)
-Definition test1_tp (N : nat) :=
-  STsep ([Pred h | h = Unit], 
-         [vfun res h => res = N /\ h = Unit]).
-
-Program Definition test1 (N M : nat) : test1_tp N :=
-  Do (n <-- alloc N;
-      m <-- alloc M;
-      res <-- !n;
-      dealloc n;;
-      dealloc m;;
-      ret res).
-Next Obligation.
-  rewrite /conseq => /=.
-  move=> i ->.                              (* rewriteは、 i = Unit  *)
-  heval => n.                               (* heval. だけでもよい。 *)
-  rewrite unitR.                            (* x \+ Unit を x *)
-  heval => m.
-  apply: bnd_readR => /=.
-  apply: bnd_deallocR => /=.
-  apply: bnd_deallocR => /=.
-  apply: val_ret => /=.
-  heval.
-Qed.
-
-(* ふたつのポインタに対して、なにもしない。 *)
+(** ふたつのポインタに対して、なにもしない。 *)
 Definition test2_tp (n m : ptr) (N M : nat) :=
   STsep ([Pred h |                 h = n :-> N \+ m :-> M], 
          [vfun res h => res = N /\ h = n :-> N \+ m :-> M]).
@@ -50,7 +28,7 @@ Next Obligation.
   heval.
 Qed.
 
-(* ふたつのポインタに対して、一方の内容を上書きする。 *)
+(** ふたつのポインタに対して、一方の内容を上書きする。 *)
 Definition test3_tp (n m : ptr) (N M : nat) :=
   STsep ([Pred h |                 h = n :-> N \+ m :-> M], 
          [vfun res h => res = N /\ h = n :-> N \+ m :-> N]).
@@ -65,8 +43,10 @@ Next Obligation.
   heval.
 Qed.
 
+(** n' <-- !n ではなく、n' <-- read nat n と「de-sugared」する。 *)
+(** p.133 の Hint にあるとおり、そうしないとうまくいかない。  *)
 Program Definition test3' (n m : ptr) (N M : nat) : test3_tp n m N M :=
-  Do (n' <-- read nat n;
+  Do (n' <-- read nat n;                    (* Hint *)
       m ::= n';;
       ret n').
 Next Obligation.
@@ -75,47 +55,44 @@ Next Obligation.
   heval.
 Qed.
 
+(** ふたつのポインタを読み出して、もとにもどす。  *)
 Definition test4_tp (n m : ptr) (N M : nat) :=
   STsep ([Pred h |                 h = n :-> N \+ m :-> M], 
          [vfun res h => res = N /\ h = n :-> N \+ m :-> N]).
 
 Program Definition test4 (n m : ptr) (N M : nat) : test4_tp n m N M :=
-  Do (n' <-- !n;
+  Do (n' <-- read nat n;                    (* !n *)
       m' <-- read nat m;                    (* Hint *)
       n ::= n';;
       m ::= n';;
       ret n').
 Next Obligation.
-  admit.
+  rewrite /conseq => /= _ ->.
+  heval.
 Qed.
 
-(* swap *)
+(** Exercise 8.1 swap *)
+(** ふたつのポインタを読み出して、swapしてもどす。  *)
 Definition swap_tp (n m : ptr) (N M : nat) :=
   STsep ([Pred h |                 h = n :-> N \+ m :-> M], 
          [vfun res h => res = N /\ h = n :-> M \+ m :-> N]).
 
 Program Definition swap (n m : ptr) (N M : nat) : swap_tp n m N M :=
-  Do (n' <-- !n;
+  Do (n' <-- read nat n;                    (* !n *)
       p <-- alloc(n');
 
-      m' <-- read nat m;
+      m' <-- read nat m;                    (* !m *)
       n ::= m';;
 
-      t' <-- read nat p;
+      t' <-- read nat p;                    (* !p *)
       m ::= t';;
 
       dealloc(p);;
       ret n').
 Next Obligation.
-  admit.
+  rewrite /conseq => /= _ ->.
+  heval => p.
+  heval.
 Qed.
-
-  (* 
-Obligation 1 of swap_acc:
-ptr -> ptr -> unit -> nat -> ptr -> Type.
-が残るのは、: の右の型がおかしいから。
-うまくいった例であっても、: の右の型を省くと同じ事象がおきる。
- *)
-
 
 (* END *)
