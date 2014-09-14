@@ -95,4 +95,34 @@ Next Obligation.
   heval.
 Qed.
 
+(** Exercise 8.2 swap' *)
+(** 自動証明を使わないで証明する。 *)
+Program Definition swap' (n m : ptr) (N M : nat) : swap_tp n m N M :=
+  Do (n' <-- read nat n;                    (* !n *)
+      p <-- alloc(n');
+
+      m' <-- read nat m;                    (* !m *)
+      n ::= m';;
+
+      t' <-- read nat p;                    (* !p *)
+      m ::= t';;
+
+      dealloc(p);;
+      ret n').
+Next Obligation.
+  rewrite /conseq => /= _ ->.
+  Search _ (verify _ _ _).
+  apply: bnd_readR => /=.
+  apply: bnd_allocR => /= p.
+  apply: bnd_readR => /=.
+  apply: bnd_writeR => /=.
+  apply: bnd_readR => /=.
+  apply: bnd_writeR => /=.
+  apply: bnd_deallocR => /=.
+  rewrite joinC unitR.
+  Search _ (verify _ _ _) (ret _).
+  apply: val_ret => /=.
+  by [].
+Qed.
+
 (* END *)
