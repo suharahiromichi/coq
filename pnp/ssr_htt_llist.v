@@ -7,7 +7,7 @@ Require Import ssreflect ssrbool ssrnat eqtype seq ssrfun.
 
 Add LoadPath "./../htt".
 Require Import prelude pred pcm unionmap heap heaptac
-        stmod stsep stlog stlogR.  
+        stmod stsep stlog stlogR.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -36,7 +36,7 @@ Fixpoint lseg (p q : ptr) (xs : seq T) : Pred heap :=
     [Pred h | p = q /\ h = Unit].
 
 (** 
-[Pred h | ... ] は、heap -> Prep 型である。
+[Pred h | ..] は、heap -> Prep 型である。
 h \In f は、f h と同義である。
 
 次の補題は、リンクスリトに関係づけられたヒープhが与えられたとき、
@@ -48,15 +48,21 @@ Lemma lseg_null xs q h :
   valid h -> h \In lseg null q xs -> 
   [/\ q = null, xs = [::] & h = Unit].
 Proof.
-  case: xs => [|x xs] D /= H; first by case: H=><- ->.
-  case: H D => r [h'][->] _. 
-  Check   hvalidPtUn.                       (* heap.v で定義 *)
-  rewrite hvalidPtUn. 
-  done.
-Qed. 
+  case: xs.
+  - move=> /= D H.
+    by case: H => <- ->.
+  - move=> x xs /= D H.
+    case: H D => r [] h' [] -> _.
+    (* =>の右の最初の[]はexist、次の[]は/\を場合分けする。
+       最後は、h=... でrewriteする。*)
+    Check   hvalidPtUn.                     (* heap.v で定義 *)
+    rewrite hvalidPtUn => /=.
+    (* -> の左を書き換えると false になる。 *)
+    done.
+Qed.
 
 (**  
-linked listの典型例である、nullターミネートされた場合について、
+linked listの典型例であるnullターミネートされた場合について、
 単純な挿入のプログラム、
 新しいメモリセルをアロケートしてそれをリストの新しい先頭にする、
 の仕様を証明する。
@@ -64,18 +70,33 @@ linked listの典型例である、nullターミネートされた場合につ�
 
 Definition lseq p := lseg p null.
 
-Program Definition insert p x : 
+(** pが先頭のリストに、値がxのセルを追加する。新しい先頭はqでそれを返値とする。 *)
+Program Definition insert p x :
   {xs},
   STsep (lseq p xs,                         (* 事前 *)
          [vfun y => lseq y (x::xs)]) :=     (* 事後 *)
   Do (q <-- allocb p 2; 
       q ::= x;;
-      ret q). 
-Next Obligation. 
-  apply: ghR => i xs H _. 
-  heval => x1. 
-  rewrite unitR -joinA. 
-  heval. 
+      ret q).
+Next Obligation.
+  apply: ghR => h' xs H _.
+
+  heval=> x1.
+  Undo 1.
+  apply: bnd_allocbR => /= q.
+  apply: bnd_writeR => /=.
+
+  rewrite unitR -joinA.
+  
+  heval.
+  Undo 1.
+  apply: val_ret => /=.
+  rewrite /lseq /lseq /= => D.
+  exists p, h'.
+  split.
+  - by [].
+  - rewrite /lseq in H.
+    by apply H.
 Qed.
 
 (** 
@@ -89,7 +110,7 @@ Lemma lseq_null xs h :
   valid h ->
   h \In lseq null xs -> xs = [::] /\ h = Unit.
 Proof.
-    by move => D; case/(lseg_null D) => _ ->.
+    by move=> D; case/(lseg_null D) => _ ->.
 Qed.
 
 (** 
@@ -105,10 +126,19 @@ Lemma lseq_pos xs p h :
           [/\ xs = x :: behead xs, 
               p :-> x \+ (p .+ 1 :-> r \+ h') = h & h' \In lseq r (behead xs)].
 Proof.
-  case: xs => [|x xs] /= H []. 
-  - move => E. 
+  case: xs => [|x xs] /= H [].
+  - move => E.
       by rewrite E eq_refl in H.
   - by move => y [h'][->] H1; heval.
+    Undo 1.
+    rewrite -/lseg.
+    move => y [h'][->] H1.
+    exists x, y, h'.
+    split.
+    + by [].
+    + by [].
+    + rewrite /lseq.
+        by apply H1.
 Qed.
 
 (** 
@@ -120,24 +150,44 @@ Program Definition
 remove p :
   {xs},
   STsep (lseq p xs,
-         [vfun y  =>  lseq y (behead xs)]) :=
+         [vfun y => lseq y (behead xs)]) :=
   Do (if p == null then
         ret p 
       else
         pnext <-- !(p .+ 1);
         dealloc p;; 
         dealloc p .+ 1;;
-        ret pnext). 
+        ret pnext).
 (** 
 証明は簡単であり、リストがnullのときに、lesq_nullを適用し、
 リストがひとつ以上の要素を持つとき、lseq_posを適用する。
 *)
 
 Next Obligation.
-  apply: ghR => i xs H V; case: ifP H => H1.
-  - by rewrite (eqP H1); case/(lseq_null V) => ->->; heval. 
+  apply: ghR => i xs H V.
+  Check ifP.
+  case: ifP H => H1.
+
+  - rewrite (eqP H1); case/(lseq_null V) => -> ->.
+    heval. 
+    Undo 1.
+    Search _ (verify _ (ret _) _).
+    apply: val_ret => /= D.
+    rewrite /lseq /lseg /=.
+    by [].
+
   - case/(lseq_pos (negbT H1)) => x [q][h][->] <- /= H2.
-      by heval; rewrite 2!unitL.
+    heval.
+    Undo 1.
+    apply: bnd_readR => /=.
+    apply: bnd_deallocR => /=.
+    apply: bnd_deallocR => /=.
+    apply: val_ret => /=.
+
+    rewrite 2!unitL.
+    by [].
+    Undo 1.
+    move=> D. by apply: H2.
 Qed.
 
 End LList.
@@ -205,11 +255,11 @@ type [revT].
 *)
 
 Definition revT T : Type := 
-  forall p, {ps}, STsep (@shape_rev T p ps, [vfun y  =>  lseq y (rev ps.1 ++ ps.2)]).
+  forall p, {ps}, STsep (@shape_rev T p ps, [vfun y => lseq y (rev ps.1 ++ ps.2)]).
 
 Program Definition 
-reverse T p : {xs}, STsep (@lseq T p xs, [vfun y  =>  lseq y (rev xs)]) :=
-  Do (let: reverse := Fix (fun (reverse : revT T) p  =>
+reverse T p : {xs}, STsep (@lseq T p xs, [vfun y => lseq y (rev xs)]) :=
+  Do (let: reverse := Fix (fun (reverse : revT T) p =>
                         Do (if p.1 == null then ret p.2 
                             else xnext <-- !p.1 .+ 1;
                                  p.1 .+ 1 ::= p.2;;
