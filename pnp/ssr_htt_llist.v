@@ -119,6 +119,8 @@ beheadedできることを示す。
 先頭の値xと、次のポインタrと、残りのヒープh'が存在して、
 ヒープh'は、リストのtail(SSReflect の behead関数で表される)に対応する。
 *)
+(* behead関数は、空なら空、空でないなら先頭要素を取り出す。 *)
+Print behead.
 
 Lemma lseq_pos xs p h : 
         p != null -> h \In lseq p xs -> 
@@ -146,16 +148,15 @@ remove手続は、リストの現在の先頭を取り除き、
 次の要素（またはリストが空のときnull）を返す。
 *)
 
-Program Definition 
-remove p :
+Program Definition remove p :
   {xs},
   STsep (lseq p xs,
          [vfun y => lseq y (behead xs)]) :=
   Do (if p == null then
-        ret p 
+        ret p
       else
         pnext <-- !(p .+ 1);
-        dealloc p;; 
+        dealloc p;;
         dealloc p .+ 1;;
         ret pnext).
 (** 
@@ -190,10 +191,67 @@ Next Obligation.
     move=> D. by apply: H2.
 Qed.
 
+(* 先頭の要素を取り出す(Some)。 リストが空のときはNoneとする。 *)
+(* ohead関数は、空ならNone、空でないなら先頭要素をオプション型で取り出す。 *)
+Program Definition value p :
+  {xs},
+  STsep (lseq p xs,
+         [vfun res _ => res = ohead xs]) :=
+  Do (if p == null then
+        ret None
+      else
+        x <-- !p;
+        ret (Some x)).
+Next Obligation.
+  apply: ghR => i xs H V.
+  case: ifP H => H1.
+  - rewrite (eqP H1); case/(lseq_null V) => -> ->.
+    heval. 
+  - case/(lseq_pos (negbT H1)) => x [q][h][->] <- /= H2.
+    heval.
+Qed.
+
+(**
+例題 8.4 Value-returning list beheading
+ *)
+(* exists が残念なので、みなおす。 *)
+Program Definition remove_val p :
+  {xs},
+  STsep (lseq p xs,
+         [vfun res h => res = ohead xs /\ exists q, lseq q (behead xs) h]) :=
+  Do (if p == null then
+        ret None
+      else
+        x <-- read T p;                     (* !p *)
+        pnext <-- read ptr (p .+ 1);        (* !(p.+1) *)
+        dealloc p;;
+        dealloc p .+ 1;;
+        ret (Some x)).
+Next Obligation.
+  apply: ghR => i xs H V.
+  case: ifP H => H1.
+  - rewrite (eqP H1); case/(lseq_null V) => -> ->.
+    heval.
+  - case/(lseq_pos (negbT H1)) => x [q][h][->] <- /= H2.
+    heval; rewrite 2!unitL.
+    Undo 1.
+    apply: bnd_readR => /=.
+    apply: bnd_readR => /=.
+    apply: bnd_deallocR => /=.
+    rewrite unitL.
+    apply: bnd_deallocR => /=.
+    rewrite unitL.
+    apply: val_ret => /=.
+    (* *** *)
+    move=> D.
+    split.
+    + by [].
+    + by exists q.
+Qed.
+
 End LList.
 
 (** 例題 *)
-
 (** 
 ---------------------------------------------------------------------
 Exercise [Value-returning list beheading]
