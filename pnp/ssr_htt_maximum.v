@@ -55,7 +55,7 @@ Next Obligation.
   admit.
 Qed.
 
-(* リストに関する補題 *)
+(** リストに関する補題 *)
 Lemma lseg_null xs q h : 
   valid h -> h \In lseg null q xs -> 
   [/\ q = null, xs = [::] & h = Unit].
@@ -99,6 +99,44 @@ Proof.
     + by [].
     + rewrite /lseq.
         by apply H1.
+Qed.
+
+(** max に関する補題 *)
+Lemma max0r : forall a,
+  max a 0 = a.
+Proof.
+  apply: Max.max_0_r.
+Qed.
+
+Lemma max0l : forall a,
+  max 0 a = a.
+Proof.
+  apply/Max.max_0_l.
+Qed.
+
+Lemma maxS : forall a b,
+  max a.+1 b.+1 = (max a b).+1.
+Proof.
+  move=> a b.
+  by rewrite Max.succ_max_distr.
+Qed.  
+
+Lemma max_assoc : forall a b c,
+  max a (max b c) = max (max a b) c.
+Proof.
+  apply/Max.max_assoc.
+Qed.
+
+Lemma max_nil : 
+  maximum_pure [::] = 0.
+Proof.
+  by [].
+Qed.
+
+Lemma max_hdtl_equation : forall (a : nat) (xs : seq nat),
+  max a (maximum_pure xs) = maximum_pure (a :: xs).
+Proof.
+  by [].
 Qed.
 
 (* テスト *)
