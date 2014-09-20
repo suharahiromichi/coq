@@ -32,7 +32,8 @@ Definition lseq p := lseg p null.
 (** リストに関する補題 *)
 Lemma lseg_null xs q h : 
   valid h -> h \In lseg null q xs -> 
-  [/\ q = null, xs = [::] & h = Unit].
+  [/\ q = null,
+   xs = [::] & h = Unit].
 Proof.
   case: xs.
   - move=> /= D H.
@@ -58,7 +59,8 @@ Lemma lseq_pos xs p h :
         p != null -> h \In lseq p xs -> 
         exists x, exists r, exists h', 
           [/\ xs = x :: behead xs, 
-              p :-> x \+ (p .+ 1 :-> r \+ h') = h & h' \In lseq r (behead xs)].
+              p :-> x \+ (p .+ 1 :-> r \+ h') = h &
+              h' \In lseq r (behead xs)].
 Proof.
   case: xs => [|x xs] /= H [].
   - move => E.
@@ -113,67 +115,85 @@ Proof.
   by [].
 Qed.
 
+(* 補題 *)
+Lemma lseq_heap q xs h' h :
+  lseq q xs h -> lseq q xs (h' \+ h).
+Proof.
+  admit.
+Qed.
+
 (** プログラムの証明 *)
 Definition maximum_inv p acc (l : seq nat) h : Prop := 
   exists a1 : nat,
-    exists xs : seq nat,
-      exists h' : heap,
-        [/\ h = acc :-> a1 \+ h',
-         lseq p xs h' &
-              max a1 (maximum_pure xs) = maximum_pure l].
+    exists q : ptr,
+      exists xs : seq nat,
+        exists h' : heap,
+          [/\ h = acc :-> a1 \+ (p :-> q \+ h'),
+           lseq q xs h' &
+                max a1 (maximum_pure xs) = maximum_pure l].
 
 Definition maximum_acc_tp p acc := 
   unit -> {l : seq nat}, 
-     STsep (maximum_inv p acc l,
-           [vfun (res : nat) h => maximum_inv p acc l h /\ res = maximum_pure l]).
+  STsep (maximum_inv p acc l,
+         [vfun (res : nat) h =>
+          maximum_inv p acc l h /\ res = maximum_pure l]).
 
 Program Definition maximum_acc (p acc : ptr) : maximum_acc_tp p acc := 
   Fix (fun (loop : maximum_acc_tp p acc) (_ : unit) => 
-         Do (if (p == null) then
-               a0 <-- read nat acc;
-               ret a0
+         Do (q <-- read ptr p;
+             a1 <-- read nat acc;
+             if (q == null) then
+               ret a1
              else
-               a1 <-- read nat acc;
-               a2 <-- read nat p;
-               nextp <-- read ptr (p .+ 1); (* 「.+1」 ではなく、2項の「.+」。 *)
-               p ::= nextp;;
+               a2 <-- read nat q;
+               nextq <-- read ptr (q .+ 1); (* 「.+1」 ではなく、2項の「.+」。 *)
                acc ::= max a1 a2;;
+               p ::= nextq;;
                loop tt)).
 Next Obligation.
   apply: ghR => {H} h l H V.               (* conseq を消す。 *)
-  case: H => a1 [] xs' [] h'.              (* ループ不変式での場合分け。 *)
-  case H1: (p == null).
-  - move=> [] -> q Hmax.
-    apply: bnd_readR => //=.
-    apply: val_ret => //=.
+  case: H => a1 [] q [] xs [] h'.          (* ループ不変式での場合分け。 *)
+  case=> -> Hq Hmax.                       (* ループ不変式由来のヒープ *)
+  apply: bnd_readR => //=.
+  apply: bnd_readR => //=.
+  case H1: (q == null).
+  - apply: val_ret => //=.
     move=> D.
     split.
     + rewrite /maximum_inv.
-      exists a1, xs', h'.
+      exists a1, q, xs, h'.
       split; by [].
-    + move/eqP : H1 => Z; subst.              (* 前提H1から p = null を反映する。 *)
-      eapply (@lseq_null xs' _ _) in q.
-      case: q Hmax => Hxs'.
+    + move/eqP : H1 => Z. subst.            (* 前提H1から p = null を反映する。 *)
+      Check (@lseq_null xs _ _).
+      eapply (@lseq_null xs _ _) in Hq.
+      case: Hq Hmax => Hxs'.
       rewrite Hxs' => _ /=.
       rewrite max0r.
         by [].
-  - move=> [] => H2 H3 H4.
-    rewrite H2.                             (* ループ不変式由来のヒープ *)
-    apply: bnd_readR => //=.
-    move: H3.                          
-    case/(lseq_pos (negbT H1)) => x [q2][h3][->] /= H5 H6.
-    rewrite -H5.
+  - move: Hq.
+    case/(lseq_pos (negbT H1)) => a2 [q2][h3][->] /= H5 H6.
+    rewrite -H5.                            (* lseg 由来のヒープ *)
+    subst.
     apply: bnd_readR => //=.
     apply: bnd_readR => //=.
     apply: bnd_writeR => //=.
     apply: bnd_writeR => //=.
-    apply: (gh_ex [::]).
-    apply: val_do => /=.        
+    apply: (gh_ex l).
+    apply: val_doR => /=.
     + move=> D.
-      admit.
-    + 
-    + admit.
+      rewrite /maximum_inv.
+      exists (max a1 a2), q2, (behead xs).
+      exists (q :-> a2 \+ (q .+ 1 :-> q2 \+ h3)).
+      split.
+      * by [].
+      * rewrite joinA.
+        apply: lseq_heap.                   (* XXXX *)
+        by apply H6.
+      * admit.                              (* XXXX *)
+    + move=> a' h'. by [].
+    + move=> _ m. by rewrite -H1.           (* admitが残る限り、エラーになる。 *)
 Qed.
+
 
 (* テスト *)
 Program Definition nop' p :
