@@ -29,32 +29,6 @@ Fixpoint lseg (p q : ptr) (xs : seq nat) : Pred heap :=
 
 Definition lseq p := lseg p null.
 
-Definition maximum_inv (p acc : ptr) (l : seq nat) h : Prop := 
-  exists a1 : nat,
-    exists xs : seq nat,
-      h = acc :-> a1 /\ lseq p xs h /\
-                  max a1 (maximum_pure xs) = maximum_pure l.
-
-Definition maximum_acc_tp p acc := 
-  unit -> {l : seq nat}, 
-     STsep (maximum_inv p acc l,
-           [vfun (res : nat) h => maximum_inv p acc l h /\ res = maximum_pure l]).
-
-Program Definition maximum_acc (p acc : ptr) : maximum_acc_tp p acc := 
-  Fix (fun (loop : maximum_acc_tp p acc) (_ : unit) => 
-         Do (a1 <-- read nat acc;
-             if (p == null) then
-               ret a1
-             else
-               a2 <-- read nat p;
-               nextp <-- read ptr (p .+ 1);
-               p ::= nextp;;
-               acc ::= max a1 a2;;
-               loop tt)).
-Next Obligation.
-  admit.
-Qed.
-
 (** リストに関する補題 *)
 Lemma lseg_null xs q h : 
   valid h -> h \In lseg null q xs -> 
@@ -137,6 +111,68 @@ Lemma max_hdtl_equation : forall (a : nat) (xs : seq nat),
   max a (maximum_pure xs) = maximum_pure (a :: xs).
 Proof.
   by [].
+Qed.
+
+(** プログラムの証明 *)
+Definition maximum_inv p acc (l : seq nat) h : Prop := 
+  exists a1 : nat,
+    exists xs : seq nat,
+      exists h' : heap,
+        [/\ h = acc :-> a1 \+ h',
+         lseq p xs h' &
+              max a1 (maximum_pure xs) = maximum_pure l].
+
+Definition maximum_acc_tp p acc := 
+  unit -> {l : seq nat}, 
+     STsep (maximum_inv p acc l,
+           [vfun (res : nat) h => maximum_inv p acc l h /\ res = maximum_pure l]).
+
+Program Definition maximum_acc (p acc : ptr) : maximum_acc_tp p acc := 
+  Fix (fun (loop : maximum_acc_tp p acc) (_ : unit) => 
+         Do (if (p == null) then
+               a0 <-- read nat acc;
+               ret a0
+             else
+               a1 <-- read nat acc;
+               a2 <-- read nat p;
+               nextp <-- read ptr (p .+ 1); (* 「.+1」 ではなく、2項の「.+」。 *)
+               p ::= nextp;;
+               acc ::= max a1 a2;;
+               loop tt)).
+Next Obligation.
+  apply: ghR => {H} h l H V.               (* conseq を消す。 *)
+  case: H => a1 [] xs' [] h'.              (* ループ不変式での場合分け。 *)
+  case H1: (p == null).
+  - move=> [] -> q Hmax.
+    apply: bnd_readR => //=.
+    apply: val_ret => //=.
+    move=> D.
+    split.
+    + rewrite /maximum_inv.
+      exists a1, xs', h'.
+      split; by [].
+    + move/eqP : H1 => Z; subst.              (* 前提H1から p = null を反映する。 *)
+      eapply (@lseq_null xs' _ _) in q.
+      case: q Hmax => Hxs'.
+      rewrite Hxs' => _ /=.
+      rewrite max0r.
+        by [].
+  - move=> [] => H2 H3 H4.
+    rewrite H2.                             (* ループ不変式由来のヒープ *)
+    apply: bnd_readR => //=.
+    move: H3.                          
+    case/(lseq_pos (negbT H1)) => x [q2][h3][->] /= H5 H6.
+    rewrite -H5.
+    apply: bnd_readR => //=.
+    apply: bnd_readR => //=.
+    apply: bnd_writeR => //=.
+    apply: bnd_writeR => //=.
+    apply: (gh_ex [::]).
+    apply: val_do => /=.        
+    + move=> D.
+      admit.
+    + 
+    + admit.
 Qed.
 
 (* テスト *)
