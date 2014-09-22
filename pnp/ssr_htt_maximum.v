@@ -79,17 +79,17 @@ Proof.
 Qed.
 
 (** プログラムの証明 *)
-(* acc は、 maximumを保持する。aがその値。 *)
-(* s は、ポインタをたどるワーク領域。 *)
-(* p は、実際のリストの先頭。xsがリストの内容の論理表現。 *)
+(* acc は、 maximumを保持する。 *)
+(* s は、領域の先頭を保持する。 *)
 Definition maximum_inv s acc (l : seq nat) h : Prop := 
-  exists a : nat,
-    exists p : ptr,
-      exists xs : seq nat,
+  exists a : nat,             (* acc の中身 *)
+    exists p : ptr,           (* 実際のリストの先頭 *)
+      exists xs : seq nat,    (* リストの内容の論理表現。 *)
         exists h' : heap,
-          [/\ h = acc :-> a \+ (s :-> p \+ h'),
-           lseq p xs h' &
-                maxn a (maximum_pure xs) = maximum_pure l].
+          exists h'' : heap,
+            [/\ h = acc :-> a \+ (s :-> p \+ (h' \+ h'')),
+             lseq p xs h'' &
+                  maxn a (maximum_pure xs) = maximum_pure l].
 
 Definition maximum_acc_tp p acc := 
   unit -> {l : seq nat}, 
@@ -111,7 +111,7 @@ Program Definition maximum_acc (s acc : ptr) : maximum_acc_tp s acc :=
                loop tt)).
 Next Obligation.
   apply: ghR => {H} h l H V.                (* conseq を消す。 *)
-  case: H => a [] p [] xs [] h'.            (* ループ不変式での場合分け。 *)
+  case: H => a [] p [] xs [] h' [] h''.     (* ループ不変式での場合分け。 *)
   case=> -> Hh Hi.                          (* ループ不変式由来のヒープ *)
   apply: bnd_readR => //=.                  (* x <-- !p0 *)
   apply: bnd_readR => //=.                  (* nextp <-- !p0.+1 *)
@@ -120,7 +120,7 @@ Next Obligation.
     move=> D.
     split.
     + rewrite /maximum_inv.
-      exists a, p, xs, h'.
+      exists a, p, xs, h', h''.
       split; by [].
     + move/eqP : H1 => Z. subst.            (* 前提H1から r = null を反映する。 *)
       Check (@lseq_null xs _ _).
@@ -130,7 +130,7 @@ Next Obligation.
       rewrite maxn0.
         by [].
   - move: Hh.
-    case/(lseq_pos (negbT H1)) => x [r][h''][->] /= Hh Hr.
+    case/(lseq_pos (negbT H1)) => x [r][h'''][->] /= Hh Hr.
     rewrite -Hh.                            (* lseg 由来のヒープ *)
     apply: bnd_readR => //=.                (* x0 <-- !p *)
     apply: bnd_readR => //=.                (* nextp <-- !p0.+1 *)
@@ -140,23 +140,14 @@ Next Obligation.
     apply: val_doR => /=.                   (* Do loop tt からループ不変式を取り出す。 *)
     + move=> D.
       rewrite /maximum_inv.
-(* ループの後を代入する場合 *)
-      exists (max a x), r, (behead xs).
-      exists h''. subst.
+      exists (maxn a x), r, (behead xs).
+      exists (h' \+ p :-> x \+ (p .+ 1 :-> r)), h'''.
+      subst.
       split.
-      * admit.
+      * rewrite -2!joinA. by [].
       * apply: Hr.
       * admit.
       * by [].
-(* ループの前を代入する場合
-      exists a, p, xs.
-      exists h'. subst.
-      split.
-      * admit.
-      * admit.
-      * apply: Hi.
-      * by [].
-*)
     + by [].                                (* admitが残る限り、エラーになる。 *)
 Qed.
 
