@@ -126,7 +126,7 @@ Next Obligation.
       Check (@lseq_null).
       Check (@lseq_null xs h'' _).
       have H : valid h'' by admit.          (* XXXXX *)
-      eapply (@lseq_null xs h'' H) in Hh.
+      apply (@lseq_null xs h'' H) in Hh.
       case: Hh Hi => Hxs'.
       rewrite Hxs' => _ /=.
       rewrite maxn0.
