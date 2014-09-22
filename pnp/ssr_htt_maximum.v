@@ -106,12 +106,12 @@ Program Definition maximum_acc (s acc : ptr) : maximum_acc_tp s acc :=
              else
                x <-- read nat p;
                nextp <-- read ptr (p .+ 1); (* 「.+1」 ではなく、2項の「.+」。 *)
-               acc ::= maxn a x;;           (* maxn をここで使っていいか？ *)
+               acc ::= maxn a x;;           (* maxn をここで使っていい。 *)
                s ::= nextp;;
                loop tt)).
 Next Obligation.
   apply: ghR => {H} h l H V.                (* conseq を消す。 *)
-  case: H => a [] p [] xs [] h' [] h''.     (* ループ不変式での場合分け。 *)
+  case: H => a [p] [xs] [h'] [h''].         (* ループ不変式での場合分け。 *)
   case=> -> Hh Hi.                          (* ループ不変式由来のヒープ *)
   apply: bnd_readR => //=.                  (* x <-- !p0 *)
   apply: bnd_readR => //=.                  (* nextp <-- !p0.+1 *)
@@ -122,7 +122,7 @@ Next Obligation.
     + rewrite /maximum_inv.
       exists a, p, xs, h', h''.
       split; by [].
-    + move/eqP : H1 => Z. subst.            (* 前提H1から r = null を反映する。 *)
+    + move/eqP : H1 => Z. rewrite Z in Hh.  (* 前提H1から p = null を反映する。 *)
       Check (@lseq_null xs _ _).
       eapply (@lseq_null xs _ _) in Hh.
       case: Hh Hi => Hxs'.
@@ -130,7 +130,8 @@ Next Obligation.
       rewrite maxn0.
         by [].
   - move: Hh.
-    case/(lseq_pos (negbT H1)) => x [r][h'''][->] /= Hh Hr.
+    case/(lseq_pos (negbT H1))
+    => x [r] [h'''] [Hxs] Hh Hr.            (* xs = x :: behead xs は残しておく。 *)
     rewrite -Hh.                            (* lseg 由来のヒープ *)
     apply: bnd_readR => //=.                (* x0 <-- !p *)
     apply: bnd_readR => //=.                (* nextp <-- !p0.+1 *)
@@ -153,7 +154,7 @@ Next Obligation.
           by case => xs' ->.
         + by [].
         + exists (behead xs).
-          admit.                            (* xs = x :: behead xs *) (*XXX*)
+          by [].                            (* xs = x :: behead xs は残しておく。 *)
       * by [].                              (* ループ不変式 *)
     + by [].                                (* admitが残る限り、エラーになる。 *)
 Qed.
