@@ -106,7 +106,7 @@ Program Definition maximum_acc (s acc : ptr) : maximum_acc_tp s acc :=
              else
                x <-- read nat p;
                nextp <-- read ptr (p .+ 1); (* 「.+1」 ではなく、2項の「.+」。 *)
-               acc ::= maxn a x;;
+               acc ::= maxn a x;;           (* maxn をここで使っていいか？ *)
                s ::= nextp;;
                loop tt)).
 Next Obligation.
@@ -140,14 +140,21 @@ Next Obligation.
     apply: val_doR => /=.                   (* Do loop tt からループ不変式を取り出す。 *)
     + move=> D.
       rewrite /maximum_inv.
+      (* ループ実行後の値を設定する。 *)
       exists (maxn a x), r, (behead xs).
       exists (h' \+ p :-> x \+ (p .+ 1 :-> r)), h'''.
-      subst.
       split.
-      * rewrite -2!joinA. by [].
-      * apply: Hr.
-      * admit.
-      * by [].
+      * rewrite -2!joinA. by [].            (* ヒープの一致 *)
+      * apply: Hr.                          (* rの指すリスト *)
+      * rewrite -maxnA -Hi.                 (* maximum_pure *)
+        congr (maxn a _).
+        have -> : (exists xs', xs = x :: xs') ->
+                  maxn x (maximum_pure (behead xs)) = maximum_pure xs.
+          by case => xs' ->.
+        + by [].
+        + exists (behead xs).
+          admit.                            (* xs = x :: behead xs *) (*XXX*)
+      * by [].                              (* ループ不変式 *)
     + by [].                                (* admitが残る限り、エラーになる。 *)
 Qed.
 
