@@ -116,15 +116,17 @@ Next Obligation.
   apply: bnd_readR => //=.                  (* x <-- !p0 *)
   apply: bnd_readR => //=.                  (* nextp <-- !p0.+1 *)
   case H1: (p == null).
-  - apply: val_ret => //=.                  (* ret a *)
+  - apply: val_retR => //=.                 (* ret a *)
     move=> D.
     split.
     + rewrite /maximum_inv.
       exists a, p, xs, h', h''.
       split; by [].
     + move/eqP : H1 => Z. rewrite Z in Hh.  (* 前提H1から p = null を反映する。 *)
-      Check (@lseq_null xs _ _).
-      eapply (@lseq_null xs _ _) in Hh.
+      Check (@lseq_null).
+      Check (@lseq_null xs h'' _).
+      have H : valid h'' by admit.          (* XXXXX *)
+      eapply (@lseq_null xs h'' H) in Hh.
       case: Hh Hi => Hxs'.
       rewrite Hxs' => _ /=.
       rewrite maxn0.
@@ -154,9 +156,10 @@ Next Obligation.
           by case => xs' ->.
         + by [].
         + exists (behead xs).
-          by [].                            (* xs = x :: behead xs は残しておく。 *)
+          by [].                            (* xs = x :: behead xs を使う。 *)
       * by [].                              (* ループ不変式 *)
-    + by [].                                (* admitが残る限り、エラーになる。 *)
+    + by [].
+(* eapply があるとエラーになる *)
 Qed.
 
 (* END *)
