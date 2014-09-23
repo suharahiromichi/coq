@@ -117,18 +117,17 @@ Next Obligation.
   apply: bnd_readR => //=.                  (* nextp <-- !p0.+1 *)
   case H1: (p == null).
   - apply: val_retR => //=.                 (* ret a *)
-    move=> D.
+    move=> D.                               (* これは大切にとっておく。 *)
     split.
     + rewrite /maximum_inv.
       exists a, p, xs, h', h''.
       split; by [].
     + move/eqP : H1 => Z. rewrite Z in Hh.  (* 前提H1から p = null を反映する。 *)
-      Check (@lseq_null).
-      Check (@lseq_null xs h'' _).
-      have H : valid h'' by admit.          (* XXXXX *)
-      apply (@lseq_null xs h'' H) in Hh.
+      rewrite 2!joinA in D; apply validR in D. (* D : valid h'' を作る。 *)
+      Check (@lseq_null xs h'' D).
+      apply (@lseq_null xs h'' D) in Hh.
       case: Hh Hi => Hxs'.
-      rewrite Hxs' => _ /=.
+      rewrite Hxs' => Hh'' /=.
       rewrite maxn0.
         by [].
   - move: Hh.
