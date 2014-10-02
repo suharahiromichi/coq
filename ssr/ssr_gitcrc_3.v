@@ -1,6 +1,10 @@
-(*
+(**
 A Gentle Introduction to Type Classes and Relations in Coq
-の Chapter 3. を SSReflectで書いてみた。
+の
+Chapter 3. Lost in Manhattan
+を SSReflectで書いてみた。
+
+@suharahiromichi
 
 SSReflectなので、route_eqb が中心となり =r== で表す。
 *)
@@ -13,6 +17,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Local Open Scope ring_scope.
 
+(**
+3.2 Data Types and Definitions
+*)
 (** Types for representing routes in the dicrete  plane *)
 
 Inductive direction : Type :=
@@ -63,6 +70,9 @@ Proof.
   - by rewrite (Point_eqb_correct p p').
 Qed.
 
+(**
+3.3 Route Semantics
+*)
 (*  move P r follows the route r starting from P *)
 
 Fixpoint move (r : route) (P : Point) : Point :=
@@ -80,7 +90,7 @@ Fixpoint move (r : route) (P : Point) : Point :=
 
 (* これは、SSReflect の rel ではない。 *)
 Definition route_equiv (r r' : route) :=
-  forall (P : Point), Point_eqb (move r P) (move  r' P).
+  forall (P : Point), (move r P) = (move  r' P).
 Check route_equiv : route -> route -> Prop.
 Infix "=r=" := route_equiv (at level 70):type_scope.
 
@@ -91,11 +101,15 @@ Check route_eqb : route -> route -> bool.
 Check route_eqb : rel route.
 Infix "=r==" := route_eqb (at level 70):type_scope. (* ！注意！ *)
 
+(* route_eqb (=r==) を使う場合。 *)
 Example Ex1' : East::North::West::South::East::nil =r== East::nil.
 Proof.
   by [].
 Qed.
 
+(**
+3.4 On Route Equivalence 
+*)
 Check rel route.
 Check reflexive.
 Check reflexive route_eqb.
@@ -141,20 +155,18 @@ Proof.
       * by apply: H2.
 Qed.
 
-(* これだけ、=r= を使う。 *)
+(* ここは、=r= を使う。 *)
 Lemma route_cons : forall r r' d, r =r= r' -> d::r =r= d::r'.
 Proof. 
   move=> r r' d H.
   rewrite /route_equiv in H.
   rewrite /route_equiv.
   move=> P.
-  case: d.
-  by rewrite (H (translate 0 1 P)).
-  by rewrite (H (translate 1 0 P)).
-  by rewrite (H (translate 0 (-1) P)).
-  by rewrite (H (translate (-1) 0 P)).
+  case: P => Point_x0 Point_y0.
+  case: d => //=.
 Qed.
 
+(* route_eqb (=r==) を使う場合。 *)
 Example Ex2' : South::East::North::West::South::East::nil =r== South::East::nil.
 Proof.
   (* apply: route_cons. *)
@@ -168,50 +180,54 @@ Proof.
   by rewrite //=.
 Qed.
 
-Example Ex3 : forall r, North::East::South::West::r =r= r.
-Proof.
-  move=> r.
-  rewrite /route_equiv /translate /=.
-  move=> P.
-  apply/PointEqP.
-  f_equal.
-  rewrite /translate //=.
-  have H1 : forall (x : int), x + 0 + 1 + 0 - 1 = x.
-    by admit.
-  have H2 : forall (y : int), y + 1 + 0 - 1 + 0 = y.
-    by admit.
-  rewrite (H1 (Point_x P)).
-  rewrite (H2 (Point_y P)).
-(*  {| Point_x := Point_x P; Point_y := Point_y P |} = P *)
-  admit.
-Qed.
-
 Example Ex4' : forall r r', r =r== r' -> 
                 North::East::South::West::r =r== r'.
 Proof.
   by [].
 Qed.
 
-Example Ex5 : forall r r',  r ++ North::East::South::West::r' =r= r ++ r'.
-Proof.
-  move=> r r'.
-  rewrite Ex3.
-  admit.
-Qed.
+(**
+3.5 Proper Functions
+3.6 Some Other instances of Proper
 
-(* *************** *)
+Properによる、reflexivityとrewriteを拡張する。
+Vanilla Coqを使うため省略する。
+coq_gitcrc_3_lost_in_ny.v
+*)
 
-Lemma route_equiv_Origin (r r' : route) :
-  forall r r', r =r= r' <-> move r Point_O = move r' Point_O .
-Proof.
-  admit.
-Qed.
+(**
+3.7 Deciding Route Equivalence
+
+ここでは、Prop版とbool版のReflectを証明する。
+*)
 
 Lemma route_equiv_equivb (r r' : route) :
   route_equiv r r' <-> route_eqb r r' = true.
 Proof.
-  admit.
+  (* coq_gitcrc_3_lost_in_ny.v *)
+  admit.                                    (* 3.6を参照 *)
 Qed.
 
+Lemma route_equivP (r r' : route) :
+  reflect (route_equiv r r') (route_eqb r r').
+Proof.
+  apply: (@iffP (route_eqb r r')).
+  - by apply: idP.
+  - by apply (route_equiv_equivb r r').
+  - by apply (route_equiv_equivb r r').
+Qed.
+
+(* route_eqb (=r=) を使う場合。 *)
+Example Ex1 : East::North::West::South::East::nil =r= East::nil.
+Proof.
+  apply/route_equivP.
+  by [].
+Qed.
+
+(* Ex5 は、=r= による rewrite を使うので、この範囲では解けない。 *)
+Example Ex5' : forall r r',  r ++ North::East::South::West::r' =r== r ++ r'.
+Proof.
+  admit.
+Qed.
 
 (* END *)
