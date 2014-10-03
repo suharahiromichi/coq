@@ -19,7 +19,7 @@ Require Import Setoid.
 (**
 3.2 Data Type and Definitions
  *)
-(** Types for representing routes in the dicrete  plane *)
+(* Types for representing routes in the dicrete  plane *)
 Inductive direction : Type := North | East | South | West.
 Definition route := list direction.
 
@@ -37,7 +37,7 @@ Definition Point_O := Build_Point 0 0.
 Definition translate (dx dy:Z) (P : Point) :=
   Build_Point (Point_x P + dx) (Point_y P + dy).
 
-(** Equality test  between Points *)
+(* Equality test  between Points *)
 Definition Point_eqb (P P':Point) :=
   Zeq_bool (Point_x P) (Point_x P') &&
            Zeq_bool (Point_y P) (Point_y P').
@@ -59,6 +59,28 @@ Fixpoint move (r:route) (P:Point) : Point :=
 Definition route_equiv : relation route :=
   fun r r' => forall P:Point , move r P = move  r' P.
 Infix "=r=" := route_equiv (at level 70):type_scope.
+
+(**
+ここでできること。
+・route_equiv の定義による書き換え。
+例： r =r= r' のとき、
+move r' P ---> move r P
+ *)
+
+Goal forall r r' P, r =r= r' -> move r P = move r' P.
+Proof.
+  intros r r' P H.
+  rewrite H.
+  reflexivity.
+Qed.
+
+(* Cons and app are Proper functions w.r.t. route_equiv *)
+Lemma route_cons : forall r r' d, r =r= r' -> d::r =r= d::r'.
+Proof. 
+  intros r r' d H P;
+  destruct d; simpl;
+  rewrite H; reflexivity.                   (* move r _ = move r' _ *)
+Qed.
 
 (**
 3.4 On Route Equivalence
@@ -91,27 +113,20 @@ Proof.
 Qed.
 
 (**
-ここでできること（これは、route_equiv の定義だけで可能である）
-・○ =r= ○ の reflexivityで、証明を終える。
-・単独のをrewriteできる。
-例：
-r =r= r' のとき、
-move r' P ---> move r P
+ここでできること
+・○ =r= ○ の reflexivity。
  *)
-(* Cons and app are Proper functions w.r.t. route_equiv *)
-Lemma route_cons : forall r r' d, r =r= r' -> d::r =r= d::r'.
+Goal forall r, r =r= r.
 Proof. 
-  intros r r' d H P;
-  destruct d; simpl;
-  rewrite H; reflexivity.
+  reflexivity.
 Qed.
 
 (**
 3.5 Proper Functions
 *)
-(* ************** ************* *)
+(********************************)
 (* cons に対して Propperである。 *)
-(* ************** ************* *)
+(********************************)
 Require Import Morphisms.
 Instance cons_route_Proper (d:direction): 
     Proper (route_equiv ==> route_equiv) (cons d) .
@@ -122,18 +137,26 @@ Proof.
 Qed.
 
 (**
-ここでできること： consのtailをrewriteする。
+ここでできること：
+consのtailをrewriteする（route_consによる）。
 例：
 r =r= r' のとき、
-South :: West :: r ---> South :: West :: r'
+d :: r ---> d :: r'
  *)
 
-(**  cons_route_Proper allows to replace a route with an =r= equivalent one
+(*  cons_route_Proper allows to replace a route with an =r= equivalent one
      in a context composed by "cons" *)
 Goal forall r r', r =r= r' ->
                   South::West::r =r= South::West::r'.
 Proof.
   intros r r' H.
+  rewrite H.
+  reflexivity.
+Qed.
+
+Lemma route_cons' : forall r r' d, r =r= r' -> d::r =r= d::r'.
+Proof. 
+  intros r r' d H.
   rewrite H.
   reflexivity.
 Qed.
@@ -163,11 +186,11 @@ Proof.
   now rewrite Ex3.
 Qed.
 
-(* ************** *************** *)
+(**********************************)
 (* append に対して Propperである。 *)
-(* ************** *************** *)
+(**********************************)
 Instance app_route_Proper :
-  Proper (route_equiv==>route_equiv ==> route_equiv)
+  Proper (route_equiv ==> route_equiv ==> route_equiv)
          (@app direction).
 Proof. 
   intros r r' H r'' r''' H' P.
@@ -178,7 +201,8 @@ Proof.
 Qed.
 
 (**
-ここでできること：appendの一部をrewriteする。
+ここでできること：appendの一部をrewriteする
+（route_composeによる）。
 例：
 North::East::South::West::r' =r= r' のとき、
 r ++ North::East::South::West::r' ---> r ++ r'
@@ -188,6 +212,31 @@ Example Ex5 : forall r r',
 Proof.
   intros r r'.
   now rewrite Ex3.
+Qed.
+
+(**
+おまけ
+*)
+(********************************)
+(* move に対して Propperである。 *)
+(********************************)
+Instance move_Proper :
+  Proper (route_equiv ==> @eq Point ==> @eq Point) move . 
+Proof.
+  intros r r' Hr_r' p q Hpq.
+  rewrite Hpq; apply Hr_r'.
+Qed.
+
+(**********************************)
+(* length に対して Propperでない。 *)
+(**********************************)
+Example length_not_Proper :
+  ~Proper (route_equiv ==> @eq nat) (@length _).
+Proof.
+  intro H; generalize (H (North::South::nil) nil); simpl; intro H0.
+  discriminate H0.
+  intro P;destruct P; simpl;
+  unfold translate; simpl; f_equal; simpl; ring.
 Qed.
 
 (* END *)
