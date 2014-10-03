@@ -85,19 +85,19 @@ Qed.
 (**
 3.4 On Route Equivalence
  *)
-Lemma route_equiv_refl : reflexive _ route_equiv.
+Lemma route_equiv_refl : reflexive route route_equiv.
 Proof.
   intros r p;
   reflexivity.
 Qed.
 
-Lemma route_equiv_sym : symmetric _ route_equiv.
+Lemma route_equiv_sym : symmetric route route_equiv.
 Proof.
   intros r r' H p;
   symmetry; apply H.
 Qed.
 
-Lemma route_equiv_trans : transitive _ route_equiv.
+Lemma route_equiv_trans : transitive route route_equiv.
 Proof.
   intros r r' r'' H H' p;
   rewrite H;
