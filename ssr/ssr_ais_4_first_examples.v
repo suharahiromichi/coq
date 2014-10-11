@@ -110,9 +110,18 @@ Section Interpreting_Assumptions.
   Goal forall a b, Q (a || b) -> P a \/ Q b.
   Proof.
     move=> a b.
-    move/Q2P => [HPa | HPb]; by [left | right].
+    move/Q2P => [HPa | HPb];                (* |- Pa \/ Q b *)
+   (* case/Q2P => .. でも同じ。 *)
+     by [left | right].
   Qed.
-
+  (* これと同じ。 *)
+  Goal forall a b, Q (a || b) -> P a \/ Q b.
+  Proof.
+    move=> a b HQ.
+    case: {HQ} (Q2P _ _ HQ) => [HPa | HPb]; (* |- Pa \/ Q b *)
+    by [left | right].
+  Qed.
+  
   (** Viewに <-> のある場合 *)
   Hypothesis PQequiv : forall a b, P (a || b) <-> Q a.
   (* GoalのP,Qは同じものを指す。 *)
@@ -120,24 +129,23 @@ Section Interpreting_Assumptions.
   Goal forall a b, P (a || b) -> True.
   Proof.
     move=> a b.
-    move/PQequiv.
+    move/PQequiv.                           (* |- Q a -> True *)
     by [].
   Qed.
   (* これと同じ。 *)
   Goal forall a b, P (a || b) -> True.
   Proof.
     move=> a b HPab.
-    (* 基本の例のように、(PQequiv a b HPab) とはできない。 *)
     Check iffLR (PQequiv a b).
     Check iffLR (PQequiv a b) HPab.
-    move: (iffLR (PQequiv a b) HPab).
+    move: (iffLR (PQequiv a b) HPab).       (* |- Q a -> True *)
     by [].
   Qed.
   (* これと同じ。 *)
   Goal forall a b, P (a || b) -> True.
   Proof.
     move=> a b.
-    move/(iffLR (PQequiv a b)).
+    move/(iffLR (PQequiv a b)).             (* |- Q a -> True *)
     by [].
   Qed.
 End Interpreting_Assumptions.
@@ -154,12 +162,12 @@ Section Specializing_Assumptions.
     apply.
       by [].
   Qed.
-
+  (* これと同じ。 *)
   Goal forall z, (forall x y, x + y = z -> z = x) -> z = 0.
   Proof.
     move=> z H.
-    move: {H} (H 0 z).
-    apply.
+    move: {H} (H 0 z).                      (* |- (0 + z = z -> z = 0) -> z = 0 *)
+    apply.                                  (* |- 0 + z = z *)
       by [].
   Qed.
 End Specializing_Assumptions.
@@ -268,7 +276,7 @@ Section Interpreting_Equivalences.
   Lemma idP : forall {b1 : bool}, reflect b1 b1.
   Proof.
     move=> b1.
-      by case b1; constructor.
+      by case: b1; constructor.
   Qed.
   
   Goal forall b1 b2 : bool, (b1 <-> b2) -> b1 = b2.
