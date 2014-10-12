@@ -227,6 +227,7 @@ Lemma ltngtP m n : compare_nat m n (m < n) (n < m) (m == n).
 (***********************************
 SSREFLECT : fintype_example.v
 *)
+(* see. ssr_jsst2014_fintype_example.v *)
 
 (***********************************
 MATHCOMP : bigop_example.v
