@@ -37,7 +37,7 @@ Qed.
 Definition lang (a b : char) : word char -> Prop :=
   fun (s : word char) => count (fun c => c == a) s = count (fun c => c == b) s.
 
-(** lang が正規言語でないことを証明する *) (* 一部を冗長に書き直している。 *)
+(** lang が正規言語でないことを証明する *) (* 1.5.1 節とほとんど変わらない証明 *)
 Lemma anbn_non_regular (a b : char) :
   a != b -> ~ regular (lang a b).
 Proof.
@@ -69,9 +69,11 @@ Proof.
     rewrite !eqxx.
     rewrite (eq_sym b a) H => /=.
     nat_norm => /eqP.                       (* 以降、数式の計算をする。 *)
+    (* u + 1 * w == 1 * (u + (v + w)).+1 -> False *)
     rewrite !mul1n -addnS -addSn.
     rewrite eqn_add2l -{1}[w]add0n.         (* 両辺のuを消す。 *)
     rewrite eqn_add2r.                      (* 両辺のwを消す。 *)
+    (* 0 == v.+1 -> False *)
     by [].
 Qed.
 
