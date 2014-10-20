@@ -216,7 +216,7 @@ Proof.
     by [].
 Qed.
 *)
-Goal forall (L1 : dlang) (w : seq char) (n : nat),
+Lemma star_rep : forall (L1 : dlang) (w : seq char) (n : nat),
        L1 w -> (star L1) (rep w n).
 Proof.
   move=> L1 w.
@@ -247,12 +247,80 @@ Qed.
 正規表現の言語
 *)
 
-(** 正規表現 a* b a* の言語は、{a^n b a^m : n,m ∈ Nat} である。 *)
-Goal forall (n m : nat), re_lang
-                           (Conc (Conc (Star (Atom a)) (Atom b)) (Star (Atom a)))
-                           (rep [:: a] n ++ [:: b] ++ rep [:: a] m).
+Lemma size_rep a :
+  forall n m, size (rep [:: a] n ++ b :: rep [:: a] m) = n + m + 1.
 Proof.
   admit.
+Qed.
+
+Lemma size_take (T : Type) n :
+  forall (l : seq T), size (take n l) = n.
+Proof.
+  admit.
+Qed.
+
+Lemma take_take (T : Type) n :
+  forall (l : seq T), take n (take (n + 1) l) = take n l.
+Proof.
+  admit.
+Qed.
+
+Lemma take_drop n :
+  forall (b : char) (w1 w2 : seq char), 
+    drop n (take (n + 1) (rep w1 n ++ b :: w2)) = [:: b].
+Proof.
+  admit.
+Qed.
+
+Lemma take_rep n :
+  forall (a : char) (l : seq char), take n (rep [:: a] n ++ l) = rep [:: a] n.
+Proof.
+  admit.
+Qed.
+
+Lemma drop_rep n :
+  forall (a b : char) (w : seq char),
+    drop (n + 1) (rep [:: a] n ++ b :: w) = w.
+Proof.
+  admit.
+Qed.
+
+(** 正規表現 a* b a* の言語は、{a^n b a^m : n,m ∈ Nat} である。 *)
+Goal forall (n m : nat),
+       re_lang
+         (Conc (Conc (Star (Atom a)) (Atom b)) (Star (Atom a)))
+         (rep [:: a] n ++ [:: b] ++ rep [:: a] m).
+Proof.
+  move=> n m.
+  rewrite /re_lang /conc /=.
+  apply/existsP => /=.
+  rewrite (size_rep a n m).
+  rewrite -addn1.
+  have lt_n__n_m_1 : (n + 1) < (n + m + 1 + 1) by admit.
+  exists (Ordinal lt_n__n_m_1).
+
+  apply/andP.
+  split.
+  - apply/existsP => /=.
+    Check size_take char (n + 1).
+    rewrite (size_take char (n + 1)).
+    rewrite -addn1.
+    have lt_n__n_1 : n < n + 1 + 1 by admit.
+    exists (Ordinal lt_n__n_1).
+    apply/andP.
+    split.
+    + simpl.
+      rewrite take_take.
+      rewrite take_rep.
+      apply star_rep.
+      by rewrite /atom /=.
+    + simpl.
+      rewrite take_drop.
+      by rewrite /atom /=.
+  - simpl.
+    rewrite drop_rep.
+    apply star_rep.
+      by rewrite /atom /=.
 Qed.
 
 (** 正規表現 (aaa)* の言語は、{a^3n : n ∈ Nat} である。 *)
@@ -300,6 +368,15 @@ Proof.
   (* Goal : L1 w = L2 w *)
   apply/(f_equal (fun L => w \in L)).
   (* Goal : L1 = L2 *)
+  by [].
+Qed.
+
+(* w \in L は、「rewrite /in_mem /mem /=」 で、L w になる。
+   実際は、直接 apply できる。
+*)
+Goal forall (L : dlang), (L w <-> w \in L).
+Proof.
+  rewrite /in_mem /mem /=.                  (* 不要 *)
   by [].
 Qed.
 
