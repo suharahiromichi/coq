@@ -32,7 +32,9 @@ Section Sample1.
   
 (**
 仮定の書き換え：Interpreting assumptions
-ゴール「△->○」のとき、△の部分を書き換える。*)
+
+ゴール「△->○」のとき、△の部分を書き換えます。
+*)
   Goal forall a, P a -> Q a.
   Proof.
     move=> a.
@@ -48,9 +50,9 @@ Section Sample1.
   
 (**
 ゴールの書き換え：Interpreting goals
-ゴール全体を書き換える。
 
-ゴールが△->○の場合でもその全体が対象になるが、通常はintroして○だけを対象にする。
+ゴール全体を書き換えます。
+ゴールが△->○の場合でもその全体が対象になるが、通常はintroして○だけを対象にします。
 *)
   Goal forall a, P a -> Q a.
   Proof.
@@ -169,7 +171,7 @@ End Sample3.
 # reflect述語を使用可能にするView Hint
 
 より重要なView Hintに elimT と intorT があります。
-このView Hintのおがけで、andPのような、「reclect .. ..」のreflect predicateをViewに書くことができます。
+このView Hintのおがけで、andPやorPのような「reclect P b」のかたちのreflect述語をViewに書くことができます。
 *)
 Check elimT.                              (* forall (P : Prop) (b : bool), reflect P b -> b -> P *)
 Check introT.                             (* forall (P : Prop) (b : bool), reflect P b -> P -> b *)
@@ -253,24 +255,36 @@ xorPif xorPifn
 ``
 *)
 
+(* move/で使用できる： *)
+Check elimTF.                             (* forall (P : Prop) (b c : bool), reflect P b -> b = c -> if c then P else ~ P *)
+Check elimNTF.                            (* forall (P : Prop) (b c : bool), reflect P b -> ~~ b = c -> if c then ~ P else P *)
+Check elimTFn.                            (* forall (P : Prop) (b c : bool), reflect P (~~ b) -> b = c -> if c then ~ P else P *)
+(* apply/で使用できる： *)
+Check elimT.                              (* forall (P : Prop) (b : bool), reflect P b -> b -> P *)
+Check elimTn.                             (* forall (P : Prop) (b : bool), forall (P : Prop) (b' : bool), reflect P (~~ b') -> b' -> ~ P *)
+Check elimN.                              (* forall (P : Prop) (b : bool), reflect P b -> ~~ b -> ~ P *)
+(* apply//で使用できる： *)
+Check equivPif.                           (* forall (P Q : Prop) (b : bool), reflect P b -> (Q -> P) -> (P -> Q) -> if b then Q else ~ Q *)
+Check equivPifn.                          (* forall (P Q : Prop) (b : bool), reflect P (~~ b) -> (Q -> P) -> (P -> Q) -> if b then ~ Q else Q *)
+
+(* move/で使用できる： *)
+Check introTF.                            (* forall (P : Prop) (b c : bool), reflect P b -> (if c then P else ~ P) -> b = c *)
+Check introNTF.                           (* forall (P : Prop) (b c : bool), reflect P b -> (if c then ~ P else P) -> ~~ b = c *)
+Check introTFn.                           (* forall (P : Prop) (b c : bool), reflect P (~~ b) -> (if c then ~ P else P) -> b = c *)
+(* apply/で使用できる： *)
+Check introT.                             (* forall (P : Prop) (b : bool), reflect P b -> P -> b *)
+Check introTn.                            (* forall (P : Prop) (b' : bool), reflect P (~~ b') -> ~ P -> b' *)
+Check introN.                             (* forall (P : Prop) (b : bool), reflect P b -> ~ P -> ~~ b *)
+(* apply//で使用できる： *)
+Check xorPif.                             (* forall (P Q : Prop) (b : bool), reflect P b -> Q \/ P -> ~ (Q /\ P) -> if b then ~ Q else Q *)
+Check xorPifn.                            (* forall (P Q : Prop) (b : bool), reflect P (~~ b) -> Q \/ P -> ~ (Q /\ P) -> if b then Q else ~ Q *)
+  
 Section SampleX.
   Variable a b : bool.
   Hypothesis andP : reflect (a /\ b) (a && b).
   Hypothesis nandP : reflect (~~ a \/ ~~ b) (~~ (a && b)).
   Hypothesis idP : reflect b b.
   
-  (* move/で使用できる： *)
-  Check elimTF.                             (* forall (P : Prop) (b c : bool), reflect P b -> b = c -> if c then P else ~ P *)
-  Check elimNTF.                            (* forall (P : Prop) (b c : bool), reflect P b -> ~~ b = c -> if c then ~ P else P *)
-  Check elimTFn.                            (* forall (P : Prop) (b c : bool), reflect P (~~ b) -> b = c -> if c then ~ P else P *)
-  (* apply/で使用できる： *)
-  Check elimT.                              (* forall (P : Prop) (b : bool), reflect P b -> b -> P *)
-  Check elimTn.                             (* forall (P : Prop) (b : bool), forall (P : Prop) (b' : bool), reflect P (~~ b') -> b' -> ~ P *)
-  Check elimN.                              (* forall (P : Prop) (b : bool), reflect P b -> ~~ b -> ~ P *)
-  (* apply//で使用できる： *)
-  Check equivPif.                           (* forall (P Q : Prop) (b : bool), reflect P b -> (Q -> P) -> (P -> Q) -> if b then Q else ~ Q *)
-  Check equivPifn.                          (* forall (P Q : Prop) (b : bool), reflect P (~~ b) -> (Q -> P) -> (P -> Q) -> if b then ~ Q else Q *)
-
   (* move/で使用できる： *)
   Check elimTF andP.                        (* a && b = c -> if c then a /\ b else ~ (a /\ b) *)
   Check elimNTF andP.                       (* ~~ (a && b) = c -> if c then ~ (a /\ b) else a /\ b *)
@@ -283,19 +297,6 @@ Section SampleX.
   Check equivPif andP.                      (* (c -> a /\ b) -> (a /\ b -> c) -> if a && b then c else ~ c*)
   Check equivPifn nandP.                    (* (c -> ~~ a \/ ~~ b) -> (~~ a \/ ~~ b -> c) -> if a && b then ~ c else c *)
  
-
-  (* move/で使用できる： *)
-  Check introTF.                            (* forall (P : Prop) (b c : bool), reflect P b -> (if c then P else ~ P) -> b = c *)
-  Check introNTF.                           (* forall (P : Prop) (b c : bool), reflect P b -> (if c then ~ P else P) -> ~~ b = c *)
-  Check introTFn.                           (* forall (P : Prop) (b c : bool), reflect P (~~ b) -> (if c then ~ P else P) -> b = c *)
-  (* apply/で使用できる： *)
-  Check introT.                             (* forall (P : Prop) (b : bool), reflect P b -> P -> b *)
-  Check introTn.                            (* forall (P : Prop) (b' : bool), reflect P (~~ b') -> ~ P -> b' *)
-  Check introN.                             (* forall (P : Prop) (b : bool), reflect P b -> ~ P -> ~~ b *)
-  (* apply//で使用できる： *)
-  Check xorPif.                             (* forall (P Q : Prop) (b : bool), reflect P b -> Q \/ P -> ~ (Q /\ P) -> if b then ~ Q else Q *)
-  Check xorPifn.                            (* forall (P Q : Prop) (b : bool), reflect P (~~ b) -> Q \/ P -> ~ (Q /\ P) -> if b then Q else ~ Q *)
-  
   (* move/で使用できる： *)
   Check introTF andP.                       (* (if c then a /\ b else ~ (a /\ b)) -> a && b = c *)
   Check introNTF andP.                      (* (if c then ~ (a /\ b) else a /\ b) -> ~~ (a && b) = c *)
