@@ -327,7 +327,7 @@ idPまたはidPn を使う例
   (* move/で使用： *)
   Check elimTF idP.                        (* b = c -> if c then b else ~ b *)
   Check elimNTF idP.                       (* ~~ b = c -> if c then ~ b else b *)
-  Check elimTFn idPn.                      (* a = b -> if b then ~ ~~ a else ~~ a *)
+  Check elimTFn idPn.                      (* b = c -> if c then ~ ~~ b else ~~ b *)
   (* apply/で使用： *)
   Check elimT idP.                         (* b -> b *)
   Check elimTn idPn.                       (* b -> ~ ~~ b *)
