@@ -13,9 +13,17 @@ https://hal.inria.fr/inria-00515548/PDF/main-rr.pdf
 
 の4章「4 Small scale reflection, first examples」の説明をしましたが、
 その補足（訂正を含む）を以下にまとめます。
+
+ご注意：
+この文章では、説明を簡単にするために、セクションの中でVariableを宣言しています。
+そのため、「Viewを使わない例」が実際よりも単純にみえるかもしれません。
+
+通常の証明をViewを使わないように書き直す場合など、以下の例に沿った機械的な書き直しでエラーになるでしょう。
+その場合、適宜に、述語の引数を補う必要があります（アンダースコア「_」でもよい場合がある）。
+そのあたりについては、上記の文献を参照してください。
 *)
 
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+Require Import ssreflect ssrfun ssrbool.
 
 (**
 # View
@@ -31,9 +39,9 @@ Section Sample1.
   Hypothesis P2Q : forall a, P a -> Q a.
   
 (**
-仮定の書き換え：Interpreting assumptions
+## 仮定の書き換え：Interpreting assumptions
 
-ゴール「△->○」のとき、△の部分を書き換えます。
+ゴール「△->○」のとき、△の部分（スタックトップ）を書き換えます。
 *)
   Goal forall a, P a -> Q a.
   Proof.
@@ -49,10 +57,11 @@ Section Sample1.
   Qed.
   
 (**
-ゴールの書き換え：Interpreting goals
+## ゴールの書き換え：Interpreting goals
 
 ゴール全体を書き換えます。
-ゴールが△->○の場合でもその全体が対象になるが、通常はintroして○だけを対象にします。
+ゴールが△->○の場合はその全体が対象になりますが、通常はintro(move=>)して○だけを対象にします。
+（このことについて、ProofCafe Nr.42での説明がまちがっていました。）
 *)
   Goal forall a, P a -> Q a.
   Proof.
@@ -60,9 +69,9 @@ Section Sample1.
     (* Goal : Q a *)
     apply/P2Q; apply HPa.                   (* 最初のapplyの後、HPa : P a |- P a *)
     Undo 1.
-    apply: (P2Q a HPa).
+    apply: (P2Q a HPa).                     (* apply (P2Q a HPa) でもよい。 *)
     Undo 1.
-    apply P2Q; apply HPa.                   (* Standard Coq風 *)
+    apply P2Q; apply HPa.                   (* Standard Coq風、一番簡単？ *)
   Qed.
 End Sample1.
 
@@ -76,7 +85,7 @@ View Hint のひとつに、iffLR があります。
 Check iffLR.                          (* iffLR : forall P Q : Prop, (P <-> Q) -> P -> Q *)
 
 (**
-「P<->Q」のかたちをした述語をViewとして使った場合、iffLRが自動的に補われて、「P->Q」として適用されるわけです。
+「P<->Q」のかたちをした述語をViewとして使った場合、iffLRが自動的に補われ、「P->Q」として適用されるわけです。
 *)
 
 Section Sample2.
@@ -84,7 +93,7 @@ Section Sample2.
   Hypothesis PQequiv : forall a, P a <-> Q a.
 
 (**
-仮定の書き換え：Interpreting assumptions
+## 仮定の書き換え：Interpreting assumptions
 *)
   Goal forall a, P a -> Q a.
   Proof.
@@ -101,7 +110,7 @@ Section Sample2.
   Qed.
 
 (**
-ゴールの書き換え：Interpreting goals
+## ゴールの書き換え：Interpreting goals
 *)
   Goal forall a, P a -> Q a.
   Proof.
@@ -121,7 +130,7 @@ End Sample2.
 (**
 # 標準のView Hint の例 (iffLRn, iffRLn, iffLR, iffRL)
 
-これらは、SSReflectのソースコードを見ると、theories/ssreflect.v の最後で宣言されています。
+SSReflectのソースコードを見ると、theories/ssreflect.v の最後に四つのView Hintが宣言されています。
 *)
 
 Check iffLR.                              (* forall P Q : Prop, (P <-> Q) -> P -> Q *)
@@ -140,7 +149,7 @@ Section Sample3.
   Check iffRLn PQequiv.                     (* ~ Q a -> ~ P a *)
 
 (**
-仮定の書き換え：Interpreting assumptions
+## 仮定の書き換え：Interpreting assumptions
 
 端折った言い方をすると、move/PQequiv は、
 move/(iffLR PQequiv) または move/(iffRL PQequiv) または move/(iffLRn PQequiv) または move/(iffRLn PQequiv)
@@ -152,7 +161,7 @@ move/(iffLR PQequiv) または move/(iffRL PQequiv) または move/(iffLRn PQequ
   Goal ~ Q a -> ~ P a. move/PQequiv. by apply. Qed. (* ~ P a -> ~ P a *)
 
 (**
-ゴールの書き換え：Interpreting goals
+## ゴールの書き換え：Interpreting goals
 
 同様に、apply/PQequiv は、
 apply/(iffLR PQequiv) または apply/(iffRL PQequiv) または apply/(iffLRn PQequiv) または apply/(iffRLn PQequiv)
@@ -177,7 +186,7 @@ Section Sample4.
   Variable a b : bool.
 
 (**
-仮定の書き換え：Interpreting assumptions
+## 仮定の書き換え：Interpreting assumptions
 *)
   Hypothesis andP : reflect (a /\ b) (a && b).
   Check elimT andP.                         (* a && b -> a /\ b *)
@@ -195,7 +204,7 @@ Section Sample4.
   Qed.
 
 (**
-ゴールの書き換え：Interpreting goals
+## ゴールの書き換え：Interpreting goals
 *)
   Hypothesis orP  : reflect (a \/ b) (a || b).
   Check introT orP.                         (* a \/ b -> a || b *)  
@@ -228,6 +237,7 @@ End Sample4.
 - move/とapply/のView Hintの区別がある理由。
 - 独自にView Hintを定義する方法。
 - 上記以外のssrboolにふくまれるView Hint。
+- Standard Coqと比較や、それへの書き換え。
 *)
 
 (**
@@ -264,6 +274,9 @@ xorPif xorPifn
 ``
 *)
 
+(**
+## 標準定義のView Hintの一覧
+*)
 (* move/で使用： *)
 Check elimTF.                             (* forall (P : Prop) (b c : bool), reflect P b -> b = c -> if c then P else ~ P *)
 Check elimNTF.                            (* forall (P : Prop) (b c : bool), reflect P b -> ~~ b = c -> if c then ~ P else P *)
@@ -295,7 +308,7 @@ Section Sample5.
   Hypothesis idP : reflect b b.
 
 (**
-andPまたはnandP を使う例
+## andPまたはnandP を使う例
 *)
   (* move/で使用： *)
   Check elimTF andP.                        (* a && b = c -> if c then a /\ b else ~ (a /\ b) *)
@@ -322,7 +335,7 @@ andPまたはnandP を使う例
   Check xorPifn nandP.                      (* c \/ ~~ a \/ ~~ b -> ~ (c /\ (~~ a \/ ~~ b)) -> if a && b then c else ~ c *)
 
 (**
-idPまたはidPn を使う例
+## idPまたはidPn を使う例
 *)
   (* move/で使用： *)
   Check elimTF idP.                        (* b = c -> if c then b else ~ b *)
