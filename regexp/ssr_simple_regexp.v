@@ -290,18 +290,70 @@ Proof.
 Qed.
 *)
 
+Lemma take_take_1 (a : char) (n m : nat) (ln lm : seq char) :
+  size ln = n ->
+  size lm = m ->
+  take (n + 1) ((ln ++ [:: a]) ++ lm) = ln ++ [:: a].
+Proof.
+  move=> Hn Hm.
+  have Hsize :  n + 1 <= size (ln ++ [:: a]) by admit.
+  have Hsize2 :  n + 1 = size (ln ++ [:: a]) by admit.
+  Check @takel_cat (n + 1) char (ln ++ [:: a]) Hsize lm.
+  rewrite (@takel_cat (n + 1) char (ln ++ [:: a]) Hsize lm).
+  rewrite Hsize2.
+  Check @take_size char (ln ++ [:: a]).
+  rewrite (@take_size char (ln ++ [:: a])).
+  by [].
+Qed.
+  
+Lemma take_take' (a : char) (n m : nat) (ln lm : seq char) :
+  size ln = n ->
+  size lm = m ->
+  take n (take (n + 1) ((ln ++ [:: a]) ++ lm)) = ln.
+Proof.
+  move=> Hn Hm.
+  rewrite (take_take_1 a n m ln lm).
+  have Hsize : n <= size ln by admit.
+  Check @takel_cat n char ln Hsize [:: a].
+  rewrite (@takel_cat n char ln Hsize [:: a]).
+  rewrite -Hn.
+  Check @take_size char ln.
+  rewrite (@take_size char ln).
+  by [].
+  by apply Hn.
+  by apply Hm.
+Qed.
+
+Lemma drop_take' (a : char) (n m : nat) (ln lm : seq char) :
+  size ln = n ->
+  size lm = m ->
+  drop n (take (n + 1) ((ln ++ [:: a]) ++ lm)) = [:: a].
+Proof.
+  move=> Hn Hm.
+  rewrite (take_take_1 a n m ln lm).
+  have Hsize : n = size ln by admit.
+  Check @drop_cat n char ln [:: a].
+  rewrite (@drop_cat n char ln [:: a]).
+  rewrite -Hsize.
+  case: (n < n).
+  - rewrite -Hn.
+    rewrite (drop_size ln).
+    by [].
+  - have Hzero : n - n = 0.
+      by admit.
+    rewrite Hzero //=.
+    by [].
+  - apply Hm.
+Qed.
+
+(* もっと特殊化した形で証明する。 *)
 Lemma take_take (T : Type) n :
   forall (l : seq T), take n (take (n + 1) l) = take n l.
 Proof.
-  Search take.
-  move=> l.
-  elim: n.
-  - rewrite addn1.
-  Compute take 3 [:: 1;2;3;4].
-  admit.
   admit.
 Qed.
 
+(* もっと特殊化した形で証明する。 *)
 Lemma take_drop n :
   forall (b : char) (w1 w2 : seq char), 
     drop n (take (n + 1) (rep w1 n ++ b :: w2)) = [:: b].
@@ -312,14 +364,39 @@ Qed.
 Lemma take_rep n :
   forall (a : char) (l : seq char), take n (rep [:: a] n ++ l) = rep [:: a] n.
 Proof.
-  admit.
+  move=> a l.
+  have Hsize : n <= size (rep [:: a] n) by admit.
+  Check @takel_cat n char (rep [:: a] n) Hsize l.
+  rewrite (@takel_cat n char (rep [:: a] n) Hsize l).
+
+  have Hsize2 : size (rep [:: a] n) = n by admit.
+  rewrite -{1}Hsize2.
+  Check @take_size char (rep [:: a] n).
+  rewrite (@take_size char (rep [:: a] n)).
+  by [].
 Qed.
 
 Lemma drop_rep n :
-  forall (a b : char) (w : seq char),
-    drop (n + 1) (rep [:: a] n ++ b :: w) = w.
+  forall (a b : char) (l : seq char),
+    drop (n + 1) (rep [:: a] n ++ b :: l) = l.
 Proof.
-  admit.
+  move=> a b l.
+  have Hsize2 : n + 1 = size (rep [:: a] n ++ [:: b]) by admit.
+  have H : drop (n + 1) ((rep [:: a] n ++ [:: b]) ++ l) = l.
+  - Check @drop_cat (n + 1) char ((rep [:: a] n) ++ [:: b]) l.
+    rewrite (@drop_cat (n + 1) char ((rep [:: a] n) ++ [:: b]) l).
+    rewrite -Hsize2.
+    case (n + 1 < n + 1).
+    + Check (drop_size (rep [:: a] n ++ [:: b])).
+      rewrite {1}Hsize2.
+      rewrite (drop_size (rep [:: a] n ++ [:: b])).
+      by [].
+    + have Hzero : (n + 1 - (n + 1)) = 0 by admit.
+      rewrite Hzero.
+      by apply drop0.
+  - Search ((_ ++ _) ++ _).
+    Check @catA char.
+      by rewrite -catA //= in H.
 Qed.
 
 (** 正規表現 a* b a* の言語は、{a^n b a^m : n,m ∈ Nat} である。 *)
@@ -369,9 +446,10 @@ Proof.
     + simpl.
       rewrite take_drop.
       by rewrite /atom /=.
-  - simpl.
-    rewrite drop_rep.
-    apply star_rep.
+      admit.
+    + simpl.
+      rewrite drop_rep.
+      apply star_rep.
       by rewrite /atom /=.
 Qed.
 
