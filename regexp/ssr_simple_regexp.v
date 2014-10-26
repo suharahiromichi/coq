@@ -247,21 +247,58 @@ Qed.
 正規表現の言語
 *)
 
+Lemma size_rep_one a n :
+  size (rep [:: a] n) = n.
+Proof.
+  elim: n => /=.
+  - by [].
+  - move=> n IHn.
+    by rewrite IHn.
+Qed.
+
+Lemma size_cons (a :char)  l n :
+  size l = n -> size (a :: l) = n.+1.
+Proof.
+  move=> H /=.
+  by rewrite H.
+Qed.
+
+Search (size (_ ++ _)).
 Lemma size_rep a :
   forall n m, size (rep [:: a] n ++ b :: rep [:: a] m) = n + m + 1.
 Proof.
-  admit.
+  move=> n m.
+  rewrite size_cat.
+  Check (size_cons b (rep [::a] m)).
+  rewrite (size_cons b (rep [::a] m) m).
+  rewrite size_rep_one.
+  by nat_norm.
+  rewrite size_rep_one.
+  by [].
 Qed.
 
-Lemma size_take (T : Type) n :
+(*
+Lemma size_take' (T : Type) n :
   forall (l : seq T), size (take n l) = n.
 Proof.
+  move=> l.
+  Search (size (take _ _)).
+  rewrite size_takel.
+  - by [].
+  - 
   admit.
 Qed.
+*)
 
 Lemma take_take (T : Type) n :
   forall (l : seq T), take n (take (n + 1) l) = take n l.
 Proof.
+  Search take.
+  move=> l.
+  elim: n.
+  - rewrite addn1.
+  Compute take 3 [:: 1;2;3;4].
+  admit.
   admit.
 Qed.
 
@@ -296,16 +333,31 @@ Proof.
   apply/existsP => /=.
   rewrite (size_rep a n m).
   rewrite -addn1.
-  have lt_n__n_m_1 : (n + 1) < (n + m + 1 + 1) by admit.
+  have lt_n__n_m_1 : n + 1 < n + m + 1 + 1.
+  - apply/ltP.
+    rewrite 2!addn1.
+    apply Lt.lt_n_S.
+    rewrite -addnA.
+    rewrite [m + 1]addnC.
+    rewrite addnA.
+    apply/ltP.
+    apply (@ltn_addr n (n + 1) m).
+    rewrite addn1.
+    apply ltnSn.
+    
   exists (Ordinal lt_n__n_m_1).
 
   apply/andP.
   split.
   - apply/existsP => /=.
-    Check size_take char (n + 1).
-    rewrite (size_take char (n + 1)).
+    Check size_takel.
+    rewrite size_takel.
     rewrite -addn1.
-    have lt_n__n_1 : n < n + 1 + 1 by admit.
+    have lt_n__n_1 : n < n + 1 + 1.
+      apply (@ltn_addr n (n + 1) 1).
+      rewrite addn1.
+      apply ltnSn.
+
     exists (Ordinal lt_n__n_1).
     apply/andP.
     split.
@@ -328,6 +380,7 @@ Goal forall (n : nat), re_lang
                          (Star (Conc (Conc (Atom a) (Atom a)) (Atom a)))
                          (rep [:: a] (n * 3)).
 Proof.
+  (* 次の問題 *)
   admit.
 Qed.
 
