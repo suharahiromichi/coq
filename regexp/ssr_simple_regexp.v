@@ -277,25 +277,11 @@ Proof.
   by [].
 Qed.
 
-(*
-Lemma size_take' (T : Type) n :
-  forall (l : seq T), size (take n l) = n.
-Proof.
-  move=> l.
-  Search (size (take _ _)).
-  rewrite size_takel.
-  - by [].
-  - 
-  admit.
-Qed.
-*)
-
-Lemma take_take_1 (a : char) (n m : nat) (ln lm : seq char) :
+Lemma take_take_1 (a : char) (n : nat) (ln lm : seq char) :
   size ln = n ->
-  size lm = m ->
   take (n + 1) ((ln ++ [:: a]) ++ lm) = ln ++ [:: a].
 Proof.
-  move=> Hn Hm.
+  move=> Hn.
   have Hsize :  n + 1 <= size (ln ++ [:: a]) by admit.
   have Hsize2 :  n + 1 = size (ln ++ [:: a]) by admit.
   Check @takel_cat (n + 1) char (ln ++ [:: a]) Hsize lm.
@@ -306,13 +292,12 @@ Proof.
   by [].
 Qed.
   
-Lemma take_take' (a : char) (n m : nat) (ln lm : seq char) :
+Lemma take_take' (a : char) (n : nat) (ln lm : seq char) :
   size ln = n ->
-  size lm = m ->
   take n (take (n + 1) ((ln ++ [:: a]) ++ lm)) = ln.
 Proof.
-  move=> Hn Hm.
-  rewrite (take_take_1 a n m ln lm).
+  move=> Hn.
+  rewrite (take_take_1 a n ln lm).
   have Hsize : n <= size ln by admit.
   Check @takel_cat n char ln Hsize [:: a].
   rewrite (@takel_cat n char ln Hsize [:: a]).
@@ -321,16 +306,14 @@ Proof.
   rewrite (@take_size char ln).
   by [].
   by apply Hn.
-  by apply Hm.
 Qed.
 
-Lemma drop_take' (a : char) (n m : nat) (ln lm : seq char) :
+Lemma drop_take' (a : char) (n : nat) (ln lm : seq char) :
   size ln = n ->
-  size lm = m ->
   drop n (take (n + 1) ((ln ++ [:: a]) ++ lm)) = [:: a].
 Proof.
-  move=> Hn Hm.
-  rewrite (take_take_1 a n m ln lm).
+  move=> Hn.
+  rewrite (take_take_1 a n ln lm).
   have Hsize : n = size ln by admit.
   Check @drop_cat n char ln [:: a].
   rewrite (@drop_cat n char ln [:: a]).
@@ -339,26 +322,35 @@ Proof.
   - rewrite -Hn.
     rewrite (drop_size ln).
     by [].
-  - have Hzero : n - n = 0.
-      by admit.
+  - have Hzero : n - n = 0 by admit.
     rewrite Hzero //=.
     by [].
-  - apply Hm.
 Qed.
 
-(* もっと特殊化した形で証明する。 *)
-Lemma take_take (T : Type) n :
-  forall (l : seq T), take n (take (n + 1) l) = take n l.
+(* 特殊化した形で証明する。 *)
+Lemma take_take n m (a b : char) :
+  take n (take (n + 1) (rep [:: a] n ++ b :: rep [:: a] m)) = rep [:: a] n.
 Proof.
-  admit.
+  Check take_take' b n (rep [:: a] n) (rep [:: a] m).
+  have H : take n (take (n + 1) ((rep [:: a] n ++ [:: b]) ++ rep [:: a] m)) = rep [:: a] n.
+  - rewrite (take_take' b n (rep [:: a] n) (rep [:: a] m)).
+    + by [].
+    + apply size_rep_one.
+  - Check catA.
+    rewrite -catA /= in H.
+      by apply H.
 Qed.
 
-(* もっと特殊化した形で証明する。 *)
-Lemma take_drop n :
-  forall (b : char) (w1 w2 : seq char), 
-    drop n (take (n + 1) (rep w1 n ++ b :: w2)) = [:: b].
+(* 特殊化した形で証明する。 *)
+Lemma drop_take n m (a b : char) :
+  (drop n (take (n + 1) (rep [:: a] n ++ b :: rep [:: a] m))) = [:: b].
 Proof.
-  admit.
+  have H : drop n (take (n + 1) ((rep [:: a] n ++ [:: b]) ++ rep [:: a] m)) = [:: b].
+  - Check drop_take' b n (rep [:: a] n) (rep [:: a] m).
+    apply (drop_take' b n (rep [:: a] n) (rep [:: a] m)).
+    by apply size_rep_one.
+  - rewrite -catA /= in H.
+    by apply H.
 Qed.
 
 Lemma take_rep n :
@@ -440,13 +432,12 @@ Proof.
     split.
     + simpl.
       rewrite take_take.
-      rewrite take_rep.
       apply star_rep.
       by rewrite /atom /=.
     + simpl.
-      rewrite take_drop.
+      rewrite drop_take.
       by rewrite /atom /=.
-      admit.
+      admit.                       (* n + 1 <= size (rep [:: a] n ++ b :: rep [:: a] m) *)
     + simpl.
       rewrite drop_rep.
       apply star_rep.
@@ -456,10 +447,32 @@ Qed.
 (** 正規表現 (aaa)* の言語は、{a^3n : n ∈ Nat} である。 *)
 Goal forall (n : nat), re_lang
                          (Star (Conc (Conc (Atom a) (Atom a)) (Atom a)))
-                         (rep [:: a] (n * 3)).
+                         (rep [:: a; a; a] n).
 Proof.
-  (* 次の問題 *)
-  admit.
+  move=> n.
+  rewrite /re_lang /conc /=.
+  apply star_rep.
+
+  Compute (take 1 (take 2 [:: a; a; a])).
+  Compute (drop 1 (take 2 [:: a; a; a])).
+  Compute (drop 2 [:: a; a; a]).
+
+  apply/existsP.                            (* exists 2 をする。 *)
+  have lt_2_size : 2 < (size [:: a; a; a]).+1 by admit.
+  exists (Ordinal lt_2_size).
+
+  apply/andP; split.
+  - apply/existsP.                          (* exists 1 をする。 *)
+    have lt_1_size : 1 <  (size (take 2 [:: a; a; a])).+1 by admit.
+    exists (Ordinal lt_1_size).
+    apply/andP.
+    split.
+    + simpl.
+        by rewrite /atom /=.                  (* atom a [:: a] *)
+    + simpl.
+        by rewrite /atom /=.                  (* atom a [:: a] *)
+  - simpl.
+        by rewrite /atom /=.                  (* atom a [:: a] *)
 Qed.
 
 (** 正規表現 0* の言語は、{ε} である。  *)
