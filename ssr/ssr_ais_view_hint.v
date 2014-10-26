@@ -6,6 +6,12 @@ SSReflectのViewとView Hintについてのメモ
 *)
 
 (**
+この文書のコードは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_ais_view_hint.v
+*)
+
+(**
 ProofCafe Nr.42 で、
 「An introduction to small scale reflection in Coq」
 
