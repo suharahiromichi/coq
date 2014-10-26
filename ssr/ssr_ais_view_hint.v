@@ -2,7 +2,7 @@
 SSReflectのViewとView Hintについてのメモ
 =========
 
-2014_10_25 @suharahiromichi
+2014_10_26 @suharahiromichi
 *)
 
 (**
@@ -14,11 +14,12 @@ https://hal.inria.fr/inria-00515548/PDF/main-rr.pdf
 の4章「4 Small scale reflection, first examples」の説明をしましたが、
 その補足（訂正を含む）を以下にまとめます。
 
+
 ご注意：
 この文章では、説明を簡単にするために、セクションの中でVariableを宣言しています。
 そのため、「Viewを使わない例」が実際よりも単純にみえるかもしれません。
 
-通常の証明をViewを使わないように書き直す場合など、以下の例に沿った機械的な書き直しでエラーになるでしょう。
+通常の証明をViewを使わないように書き直す場合など、機械的な書き直しでエラーになるでしょう。
 その場合、適宜に、述語の引数を補う必要があります（アンダースコア「_」でもよい場合がある）。
 そのあたりについては、上記の文献を参照してください。
 *)
@@ -61,7 +62,6 @@ Section Sample1.
 
 ゴール全体を書き換えます。
 ゴールが△->○の場合はその全体が対象になりますが、通常はintro(move=>)して○だけを対象にします。
-（このことについて、ProofCafe Nr.42での説明がまちがっていました。）
 *)
   Goal forall a, P a -> Q a.
   Proof.
@@ -173,6 +173,7 @@ apply/(iffLR PQequiv) または apply/(iffRL PQequiv) または apply/(iffLRn PQ
   Goal ~ Q a -> ~ P a. move=> H; apply/PQequiv. by apply H. Qed. (* H : ~ Q a -> ~ Q a *)
 End Sample3.
 
+
 (**
 # reflect述語を使用可能にするView Hint
 
@@ -231,9 +232,47 @@ Section Sample4.
 End Sample4.
 
 (**
+# ゴールがequivalence（「=」）であるときに、reflect述語を使用可能にするView Hint
+
+ゴールが「=」のときは、とりあえず「apply/idP/idP」と、覚えておいてもよいですが、
+このとき、左の/idPにはintroTFが、右の/idPにはequivPifが、View Hintとして使われます。
+*)
+
+Check introTF.
+Check equivPif.
+
+Section Sample4_5.
+  Variable a b : bool.
+
+  Hypothesis idP : forall b : bool, reflect b b.
+
+  Goal a || b = b || a.
+  Proof.
+    apply/idP/idP.
+    Undo 1.
+
+    Check introTF (idP (a || b)).
+    apply/(introTF (idP (a || b))).
+    Check equivPif (idP (b || a)).
+    apply/(equivPif (idP (b || a))).
+    
+    (* 説明のため、冗長に書いています。 *)
+    - move/orP=> H; apply/orP; case: H; by [right | left].
+    - move/orP=> H; apply/orP; case: H; by [right | left].
+  Qed.
+
+(**
+View Hint以前の話題ですが、次のようにも書けます。
+*)
+  Goal a || b = b || a.
+  Proof.
+    apply/orP/orP; case; by [right | left].
+  Qed.
+End Sample4_5.
+
+(**
 # まだ説明できていない事項
 
-- ゴールが「=」である場合（Interpreting equivalences）
 - move/とapply/のView Hintの区別がある理由。
 - 独自にView Hintを定義する方法。
 - 上記以外のssrboolにふくまれるView Hint。
