@@ -81,10 +81,9 @@ Fixpoint re_lang (e : regexp) : dlang :=
   | Conc e1 e2 => conc (re_lang e1) (re_lang e2)
   end.
 
-Lemma re_void__lang_none :
-  forall (w : seq char), ~~ (re_lang Void w).
+Lemma re_void__lang_none (w : seq char) :
+  ~~ (re_lang Void w).
 Proof.
-  move=> w.
   rewrite /re_lang /void.
   by [].
 Qed.
@@ -95,43 +94,40 @@ Proof.
   by [].
 Qed.
 
-Lemma re_atom__lang_atom : 
-  forall (a : char), re_lang (Atom a) [:: a].
+Lemma re_atom__lang_atom (a : char) :
+  re_lang (Atom a) [:: a].
 Proof.
-  rewrite /re_lang /atom /= => a.
+  rewrite /re_lang /atom /=.
   by [].
 Qed.
 
-Lemma re_plus__lang_or :
-  forall (e1 e2 : regexp) (w : seq char),
+Lemma re_plus__lang_or (e1 e2 : regexp) (w : seq char) :
     re_lang e1 w || re_lang e2 w ->
     re_lang (Plus e1 e2) w.
 Proof.
-  move=> e1 e2 w.
   rewrite /re_lang /=.
   case/orP => H.
     by apply/orP; left.
     by apply/orP; right.
 Qed.
 
-Goal forall (L1 L2 : dlang) (w : seq char) (i : 'I_(size w).+1),
+Lemma take_drop (L1 L2 : dlang) (w : seq char) (i : 'I_(size w).+1) :
     L1 (take i w) -> L2 (drop i w) -> (conc L1 L2) w.
 Proof.
-  move=> L1 L2 w i H1 H2.
+  move=> H1 H2.
   rewrite /conc.
   apply/existsP.
   exists i.
   by apply/andP; split.
 Qed.  
     
-Lemma re_cons__lang_take_drop :
-  forall (e1 e2 : regexp) (w : seq char) (i : 'I_(size w).+1),
+Lemma re_cons__lang_take_drop (e1 e2 : regexp) (w : seq char) (i : 'I_(size w).+1) :
     re_lang e1 (take i w) ->
     re_lang e2 (drop i w) ->
     re_lang (Conc e1 e2) w.
 Proof.
+  move=> L1 L2.
   rewrite /re_lang /conc.
-  move=> e1 e2 w i L1 L2.
   apply/existsP.
   exists i.
   apply/andP; split.
@@ -142,6 +138,12 @@ Qed.
 (**
 文献[2]で証明されている補題たち。一部を修正した。
 *)
+Lemma plusP {L1 L2 : dlang} {w : seq char} :
+  reflect (L1 w \/ L2 w) (plus L1 L2 w).
+Proof.
+    by apply/orP.
+Qed.
+
 Lemma concP {L1 L2 : dlang} {w : seq char} :
   reflect (exists w1 w2, w = w1 ++ w2 /\ L1 w1  /\ L2 w2) (conc L1 L2 w).
 Proof.
@@ -152,33 +154,32 @@ Proof.
     exists (Ordinal lt_w1); subst.
     rewrite take_size_cat // drop_size_cat //. exact/andP.
 Qed.
-(*
-使わない：
-Lemma plusP r s w :
-  reflect (w \in r \/ w \in s) (w \in plus r s).
-Proof. rewrite !inE. exact: orP. Qed.
 
-Lemma conc_cat w1 w2 L1 L2 : w1 \in L1 -> w2 \in L2 -> w1 ++ w2 \in conc L1 L2.
-Proof. move => H1 H2. apply/concP. exists w1. by exists w2. Qed.
-
-Lemma conc_eq (l1: dlang) l2 l3 l4: l1 =i l2 -> l3 =i l4 -> conc l1 l3 =i conc l2 l4.
+Lemma conc_cat {L1 L2 : dlang} {w1 w2 : seq char} :
+  L1 w1 -> L2 w2 -> conc L1 L2 (w1 ++ w2).
 Proof.
-  move => H1 H2 w. apply: eq_existsb => n.
-  by rewrite (_ : l1 =1 l2) // (_ : l3 =1 l4).
+  move => H1 H2.
+  apply/concP.
+  by exists w1, w2.
 Qed.
 
-Lemma star_eq (L1 : dlang) (L2 : dlang) :
-  L1 =i L2 -> star L1 =i star L2.
+Lemma conc_eq (L1 L2 L3 L4: dlang) :
+  L1 =i L2 ->
+  L3 =i L4 ->
+  conc L1 L3 =i conc L2 L4.
 Proof.
-  move => H1 w. apply/starP/starP; move => [] vv H3 H4; exists vv => //;
-  erewrite eq_all; try eexact H3; move => x /=; by rewrite ?H1 // -?H1.
+  move=> H1 H2.
+  move=> w.
+  apply: eq_existsb => n.
+  (* by rewrite (_ : L1 =1 L2) // (_ : L3 =1 L4). *)
+  rewrite (H1 : L1 =1 L2).                  (* rewrite (_ : L1 =1 L2) *)
+  rewrite (H2 : L3 =1 L4).                  (* rewrite (_ : L3 =1 L4) *)
+    by [].
 Qed.
-*)
 
-Lemma starP : forall {L v},
+Lemma starP {L : dlang} {v : seq char} :
   reflect (exists2 vv, all [predD L & eps] vv & v = flatten vv) (star L v).
 Proof.
-  move=> L v.
   elim: {v}_.+1 {-2}v (ltnSn (size v)) => // n IHn [|x v] /= le_v_n.
   - by left; exists [::].
   - apply: (iffP concP) => [[u] [v'] [def_v [Lxu starLv']] | [[|[|y u] vv] //=]].
@@ -188,6 +189,14 @@ Proof.
     + case/andP=> Lyu Lvv [def_x def_v]; exists u. exists (flatten vv).
       subst. split => //; split => //. apply/IHn; last by exists vv.
       by rewrite -ltnS (leq_trans _ le_v_n) // size_cat !ltnS leq_addl.
+Qed.
+
+Lemma star_eq (L1 L2 : dlang) :
+  L1 =i L2 -> star L1 =i star L2.
+Proof.
+  move => H1 w.
+  apply/starP/starP; move => [] vv H3 H4; exists vv => //;
+  erewrite eq_all; try eexact H3; move => x /=; by rewrite ?H1 // -?H1.
 Qed.
 
 Lemma star_cat (w1 w2 : seq char) (L : dlang) :
@@ -203,39 +212,37 @@ Proof.
   - by rewrite Hf //= H1.
 Qed.
 
+(**
+rep とその補題
+ *)
 Fixpoint rep (s : seq char) n : seq char :=
   if n is n'.+1 then
     s ++ rep s n'
   else
     [::].
-(*
+
 Lemma rep_nil n : rep [::] n = [::].
 Proof.
-  elim: n.
-  - by [].
-  - move=> n IHn /=.
-    by [].
+  by elim: n => //=.
 Qed.
-*)
-Lemma star_rep : forall (L1 : dlang) (w : seq char) (n : nat),
+
+Lemma star_rep (L1 : dlang) (w : seq char) (n : nat) :
        L1 w -> (star L1) (rep w n).
 Proof.
-  move=> L1 w.
-  elim.                                     (* elim by n *)
-  - move=> H1 /=.                           (* n = 0 *)
+  move=> H1.
+  elim: n.
+  - move=> /=.                              (* n = 0 *)
     by [].
-  - move=> n IHn H1 /=.                     (* n = n + 1 *)
+  - move=> n IHn /=.                        (* n = n + 1 *)
     apply star_cat.
     + by [].
     + by apply IHn.
 Qed.
 
-Lemma re_star__lang_star :
-  forall (e : regexp)  (w : seq char) (n : nat),
+Lemma re_star__lang_star (e : regexp)  (w : seq char) (n : nat) :
     re_lang e w ->
     re_lang (Star e) (rep w n).
 Proof.
-  move=> e w n.
   elim: n.
   - by [].
   - move=> n /= IHn => H.
@@ -412,7 +419,7 @@ Goal forall (n m : nat),
          (rep [:: a] n ++ [:: b] ++ rep [:: a] m).
 Proof.
   move=> n m.
-  rewrite /re_lang /conc /=.
+  rewrite /re_lang /conc /=.                (* apply conc_cat でもよい。 *)
   apply/existsP => /=.
   rewrite (size_rep a n m).
   rewrite -addn1.
