@@ -153,6 +153,7 @@ Proof.
     rewrite take_size_cat // drop_size_cat //. exact/andP.
 Qed.
 (*
+使わない：
 Lemma plusP r s w :
   reflect (w \in r \/ w \in s) (w \in plus r s).
 Proof. rewrite !inE. exact: orP. Qed.
@@ -282,8 +283,10 @@ Lemma take_take_1 (a : char) (n : nat) (ln lm : seq char) :
   take (n + 1) ((ln ++ [:: a]) ++ lm) = ln ++ [:: a].
 Proof.
   move=> Hn.
-  have Hsize :  n + 1 <= size (ln ++ [:: a]) by admit.
-  have Hsize2 :  n + 1 = size (ln ++ [:: a]) by admit.
+  have Hsize :  n + 1 <= size (ln ++ [:: a]).
+  - by rewrite size_cat Hn //=.
+  have Hsize2 : n + 1 = size (ln ++ [:: a]).
+  - by rewrite size_cat Hn //=.
   Check @takel_cat (n + 1) char (ln ++ [:: a]) Hsize lm.
   rewrite (@takel_cat (n + 1) char (ln ++ [:: a]) Hsize lm).
   rewrite Hsize2.
@@ -298,7 +301,8 @@ Lemma take_take' (a : char) (n : nat) (ln lm : seq char) :
 Proof.
   move=> Hn.
   rewrite (take_take_1 a n ln lm).
-  have Hsize : n <= size ln by admit.
+  have Hsize : n <= size ln.
+  - by rewrite Hn.
   Check @takel_cat n char ln Hsize [:: a].
   rewrite (@takel_cat n char ln Hsize [:: a]).
   rewrite -Hn.
@@ -308,21 +312,28 @@ Proof.
   by apply Hn.
 Qed.
 
+Lemma subnnn n : n - n = 0.
+Proof.
+  elim: n.
+  - by [].
+  - move=> n IHn.
+    by rewrite subSS.
+Qed.
+
 Lemma drop_take' (a : char) (n : nat) (ln lm : seq char) :
   size ln = n ->
   drop n (take (n + 1) ((ln ++ [:: a]) ++ lm)) = [:: a].
 Proof.
   move=> Hn.
   rewrite (take_take_1 a n ln lm).
-  have Hsize : n = size ln by admit.
   Check @drop_cat n char ln [:: a].
   rewrite (@drop_cat n char ln [:: a]).
-  rewrite -Hsize.
+  rewrite Hn.
   case: (n < n).
   - rewrite -Hn.
     rewrite (drop_size ln).
     by [].
-  - have Hzero : n - n = 0 by admit.
+  - have Hzero : n - n = 0 by rewrite subnnn.
     rewrite Hzero //=.
     by [].
 Qed.
@@ -357,11 +368,11 @@ Lemma take_rep n :
   forall (a : char) (l : seq char), take n (rep [:: a] n ++ l) = rep [:: a] n.
 Proof.
   move=> a l.
-  have Hsize : n <= size (rep [:: a] n) by admit.
+  have Hsize : n <= size (rep [:: a] n) by rewrite size_rep_one.
   Check @takel_cat n char (rep [:: a] n) Hsize l.
   rewrite (@takel_cat n char (rep [:: a] n) Hsize l).
 
-  have Hsize2 : size (rep [:: a] n) = n by admit.
+  have Hsize2 : size (rep [:: a] n) = n by rewrite size_rep_one.
   rewrite -{1}Hsize2.
   Check @take_size char (rep [:: a] n).
   rewrite (@take_size char (rep [:: a] n)).
@@ -373,7 +384,8 @@ Lemma drop_rep n :
     drop (n + 1) (rep [:: a] n ++ b :: l) = l.
 Proof.
   move=> a b l.
-  have Hsize2 : n + 1 = size (rep [:: a] n ++ [:: b]) by admit.
+  have Hsize2 : n + 1 = size (rep [:: a] n ++ [:: b]).
+  - by rewrite size_cat //= size_rep_one.
   have H : drop (n + 1) ((rep [:: a] n ++ [:: b]) ++ l) = l.
   - Check @drop_cat (n + 1) char ((rep [:: a] n) ++ [:: b]) l.
     rewrite (@drop_cat (n + 1) char ((rep [:: a] n) ++ [:: b]) l).
@@ -383,7 +395,9 @@ Proof.
       rewrite {1}Hsize2.
       rewrite (drop_size (rep [:: a] n ++ [:: b])).
       by [].
-    + have Hzero : (n + 1 - (n + 1)) = 0 by admit.
+    + have Hzero : (n + 1 - (n + 1)) = 0.
+      * nat_norm => //=.
+                      by rewrite subnnn.
       rewrite Hzero.
       by apply drop0.
   - Search ((_ ++ _) ++ _).
@@ -435,9 +449,13 @@ Proof.
       apply star_rep.
       by rewrite /atom /=.
     + simpl.
-      rewrite drop_take.
-      by rewrite /atom /=.
-      admit.                       (* n + 1 <= size (rep [:: a] n ++ b :: rep [:: a] m) *)
+      * rewrite drop_take.
+          by rewrite /atom /=.
+      * rewrite size_cat size_rep_one.
+          rewrite (size_cons b (rep [:: a] m) m).
+          - rewrite -[m.+1]addn1 [m + 1]addnC addnA.
+              by apply leq_addr.
+          - by rewrite size_rep_one.
     + simpl.
       rewrite drop_rep.
       apply star_rep.
@@ -458,12 +476,12 @@ Proof.
   Compute (drop 2 [:: a; a; a]).
 
   apply/existsP.                            (* exists 2 をする。 *)
-  have lt_2_size : 2 < (size [:: a; a; a]).+1 by admit.
+  have lt_2_size : 2 < (size [:: a; a; a]).+1 by [].
   exists (Ordinal lt_2_size).
 
   apply/andP; split.
   - apply/existsP.                          (* exists 1 をする。 *)
-    have lt_1_size : 1 <  (size (take 2 [:: a; a; a])).+1 by admit.
+    have lt_1_size : 1 <  (size (take 2 [:: a; a; a])).+1 by [].
     exists (Ordinal lt_1_size).
     apply/andP.
     split.
