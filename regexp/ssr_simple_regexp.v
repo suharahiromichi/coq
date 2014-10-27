@@ -255,6 +255,24 @@ Qed.
 正規表現の言語
 *)
 
+(** 正規表現 a* b a* の言語は、{a^n b a^m : n,m ∈ Nat} である。 *)
+Goal forall (n m : nat),
+       re_lang
+         (Conc (Conc (Star (Atom a)) (Atom b)) (Star (Atom a)))
+         ((rep [:: a] n ++ [:: b]) ++ rep [:: a] m).
+Proof.
+  move=> n m.
+  rewrite /conc.
+  apply conc_cat.
+  apply conc_cat.
+  - apply star_rep.
+    + by rewrite /atom /=.
+    + by rewrite /atom /=.
+  - apply star_rep.
+    + by rewrite /atom /=.
+Qed.
+
+(** すごく遠回りして解いた例 *)
 Lemma size_rep_one a n :
   size (rep [:: a] n) = n.
 Proof.
@@ -271,7 +289,6 @@ Proof.
   by rewrite H.
 Qed.
 
-Search (size (_ ++ _)).
 Lemma size_rep a :
   forall n m, size (rep [:: a] n ++ b :: rep [:: a] m) = n + m + 1.
 Proof.
@@ -345,7 +362,6 @@ Proof.
     by [].
 Qed.
 
-(* 特殊化した形で証明する。 *)
 Lemma take_take n m (a b : char) :
   take n (take (n + 1) (rep [:: a] n ++ b :: rep [:: a] m)) = rep [:: a] n.
 Proof.
@@ -359,7 +375,6 @@ Proof.
       by apply H.
 Qed.
 
-(* 特殊化した形で証明する。 *)
 Lemma drop_take n m (a b : char) :
   (drop n (take (n + 1) (rep [:: a] n ++ b :: rep [:: a] m))) = [:: b].
 Proof.
@@ -412,14 +427,13 @@ Proof.
       by rewrite -catA //= in H.
 Qed.
 
-(** 正規表現 a* b a* の言語は、{a^n b a^m : n,m ∈ Nat} である。 *)
 Goal forall (n m : nat),
        re_lang
          (Conc (Conc (Star (Atom a)) (Atom b)) (Star (Atom a)))
          (rep [:: a] n ++ [:: b] ++ rep [:: a] m).
 Proof.
   move=> n m.
-  rewrite /re_lang /conc /=.                (* apply conc_cat でもよい。 *)
+  rewrite /re_lang /conc /=.
   apply/existsP => /=.
   rewrite (size_rep a n m).
   rewrite -addn1.
@@ -468,6 +482,7 @@ Proof.
       apply star_rep.
       by rewrite /atom /=.
 Qed.
+(** すごく遠回りして解いた例、終わり。 *)
 
 (** 正規表現 (aaa)* の言語は、{a^3n : n ∈ Nat} である。 *)
 Goal forall (n : nat), re_lang
