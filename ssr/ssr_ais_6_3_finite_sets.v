@@ -145,6 +145,8 @@ Proof.
   Search ([set~ _]).
   rewrite in_setC1.
   by [].
+(* q0とq1 の定義がQedで終わっていたり、
+型だけの定義のとき、q0 != q1 は証明できない。 *)
 Qed.
 
 Goal q0 \in [set~ q1].
@@ -188,33 +190,127 @@ Section setOpsExos.
     - by move/setP.
   Qed.
   
+  Check in_set.                           (* これは覚えておくべき。 *)
+  Lemma tuto_in_set : forall (T : finType) (pA : pred T) (x : T),
+                        (x \in [set x | pA x]) = pA x.
+  Proof.
+    move=> T' pA x.
+    by rewrite inE.
+  Qed.
+  
   Lemma tuto_set1P : forall x a, reflect (x = a) (x \in [set a]).
   Proof.
-    admit.
+    move=> x a.
+    rewrite /set1.                          (* x \in [set x0 | x0 == a] *)
+    rewrite tuto_in_set.                    (* x == a *)
+    by apply/eqP.
   Qed.
 
+  Check T.                                  (* finType *)
+  Lemma tuto_in_setD1 : forall (x : T) (A : {set T}) (b : T),
+                          (x \in A :\ b) = (x != b) && (x \in A).
+  Proof.
+    move=> x A b.
+    Check inE.
+    rewrite 2!inE.
+    by [].
+  Qed.
+            
   Lemma tuto_setD1P : forall x A b,
                         reflect (x != b /\ x \in A) (x \in A :\ b).
   Proof.
-    admit.
+    move=> x A b.
+    Search (_ :\ _).
+    rewrite tuto_in_setD1.
+    by apply andP.
   Qed.
   
   Lemma tuto_setIA : forall A B C, A :&: (B :&: C) = A :&: B :&: C.
   Proof.
-    admit.
+    move=> A B C.
+    apply/setP=> x.
+    rewrite !inE.
+    (* x \in A, x \in B, x \in C の三者の&&の結合則にもちこむ。 *)
+    rewrite andbA.
+    by [].
   Qed.
 
   Lemma tuto_setUIl : forall A B C,
                         (A :&: B) :|: C = (A :|: C) :&: (B :|: C).
   Proof.
-    admit.
+    move=> A B C.
+    apply/setP => x.
+    rewrite !inE.
+    Search (_ && _ || _ = (_ || _) && (_ || _)).
+    rewrite Bool.orb_andb_distrib_l.
+    by [].
   Qed.
   
   Lemma tuto_setCU : forall A B, ~: (A :|: B) = ~: A :&: ~: B.
   Proof.
-    admit.
+    move=> A B.
+    apply/setP => x.
+    rewrite !inE.
+    rewrite negb_or.
+    by [].
   Qed.
 End setOpsExos.
 
+(** Exercise 6.3.2 *)
+
+Section MinSet.
+  Variable T : finType.
+  Notation sT := {set T}.
+  Implicit Types A B C : sT.
+  Implicit Type P : pred sT.
+
+  Definition tuto_minset' P A : Prop :=
+    forall B : sT, B \subset A -> (B == A) == P B.
+  Definition tuto_minset P A : bool :=
+    [forall (B : sT | B \subset A), (B == A) == P B].
+  Print minset.
+  Print tuto_minset.
+  Print tuto_minset'.
+  
+  Lemma tuto_minset_eq : forall P1 P2 A,
+                         P1 =1 P2 -> minset P1 A = minset P2 A.
+  Proof.
+    admit.
+  Qed.
+
+  Lemma tuto_minsetP :
+    forall P A,
+      reflect ((P A) /\ (forall B, P B -> B \subset A -> B = A)) (minset P A).
+  Proof.
+    admit.
+  Qed.
+
+  Lemma tuto_minsetp : forall P A, minset P A -> P A.
+  Proof.
+    admit.
+  Qed.
+
+  Lemma tuto_minsetinf : forall P A B,
+                           minset P A -> P B -> B \subset A -> B = A.
+  Proof.
+    admit.
+  Qed.
+
+  Lemma tuto_ex_minset : forall P, (exists A, P A) -> {A | minset P A}.
+  Proof.
+    move=> P exP; pose pS n := [pred B | P B && (#|B| == n)].
+    pose p n := ~~ pred0b (pS n); have{exP}: exists n, p n.
+      by case: exP => A PA; exists #|A|; apply/existsP; exists A;
+                      rewrite PA /=.
+    case/ex_minnP=> n; move/pred0P; case: (pickP (pS n)) => // A.
+      admit.
+  Qed.
+
+  Lemma tuto_minset_exists : forall P C,
+                               P C -> {A | minset P A & A \subset C}.
+  Proof.
+    admit.
+  Qed.
+End MinSet.
 
 (* END *)
