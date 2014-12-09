@@ -50,7 +50,7 @@ Proof.
   move=> H1 H2 Hpai.
   apply: H1.
   - by apply: Hpai.
-  - by apply H2, Hpai.
+  - by apply: H2; apply: Hpai.
 Qed.
 
 Lemma Ax3 {φ ψ : Prop} : (~ φ -> ~ ψ) -> (ψ -> φ).
@@ -62,23 +62,22 @@ Qed.
 (**
 対偶については、他の組み合わせも証明しておく。
  *)
-Lemma Ax3' (φ ψ : Prop) : (φ -> ψ) -> (~ ψ -> ~ φ).
+Lemma Ax31 (φ ψ : Prop) : (φ -> ψ) -> (~ ψ -> ~ φ).
 Proof.
   move=> H Hnpai Hpsi.
-  by apply Hnpai, H, Hpsi.
+  by apply: Hnpai; apply: H; apply: Hpsi.
 Qed.
 
-Lemma Ax3'' (φ ψ : Prop) : (φ -> ~ ψ) -> (ψ -> ~ φ).
+Lemma Ax32 (φ ψ : Prop) : (φ -> ~ ψ) -> (ψ -> ~ φ).
 Proof.
-  move=> H Hpsi Hpai.
-  by apply H in Hpai.
+  by move=> H /H.
 Qed.
 
-Lemma Ax3''' (φ ψ : Prop) : (~ φ -> ψ) -> (~ ψ -> φ).
+Lemma Ax33 (φ ψ : Prop) : (~ φ -> ψ) -> (~ ψ -> φ).
 Proof.
   move=> H.
   apply: Ax3 => Hnpai Hnpsi.
-  by apply Hnpsi, H, Hnpai.
+  by apply: Hnpsi; apply: H; apply: Hnpai.
 Qed.
 
 (*
@@ -121,9 +120,9 @@ Proof.
   apply: Ax2 => H.
   apply: D2.
   have Hcontra : φ -> (~ φ -> 0 = 1) by [].
-  apply L7_4_3 in Hcontra.
-  apply Hcontra.
-  by apply H.
+  move/L7_4_3 in Hcontra.
+  apply: Hcontra.
+  by apply: H.
 Qed.
 
 Lemma L7_5_4 (φ : Prop) :
@@ -133,7 +132,7 @@ Proof.
   move=> H.
   apply: D2.
   have Hcontra : ~ φ -> (φ -> 0 = 1) by [].
-  apply L7_4_3 in Hcontra.
+  move/L7_4_3 in Hcontra.
   apply Hcontra.
   by apply H.
 Qed.
@@ -144,8 +143,13 @@ Qed.
 ## ゲーデル文
  *)
 
+(** ゲーデル文 σ *)
 Variable σ : Prop.
+
+(** ゲーデル文の満たす性質 *)
 Axiom G : σ <-> ~ PrT ⌜σ⌝.
+
+(** 矛盾をあらわす文 Con  *)
 Definition Con := ~ PrT ⌜0 = 1⌝.
 
 (**
@@ -154,14 +158,12 @@ Definition Con := ~ PrT ⌜0 = 1⌝.
 Theorem T7_5_5_1 : Con -> ~ PrT ⌜σ⌝.
 Proof.
   have G' : PrT ⌜σ⌝ -> ~ σ.
-  - move=> G2 Gsigma.
-    apply G in Gsigma.
-    apply Gsigma.
+  - move=> G2 /G.
+    apply.
     by apply: G2.
-  apply: Ax3'.
-  apply: L7_5_3.
+  apply: Ax31; apply: L7_5_3.
   move/D3.
-  by apply L7_4_3, G'.
+  by apply: L7_4_3; apply: G'.
 Qed.
 
 (**
@@ -174,32 +176,29 @@ Proof.
   apply Ax3 => H1.
   apply not_not in H1.
   - apply.
-    apply (L7_5_4 σ).
+    apply: (L7_5_4 σ).
     + move=> H2.
-      have G' : ~ σ -> PrT ⌜σ ⌝ by apply Ax3''' => /G.
-      apply (L7_4_3 (~ σ) (PrT ⌜σ⌝)) in G'.
-      apply H, G'.
-      by apply H1.
-    + by apply H1.
-  - by apply classic.
+      have G' : ~ σ -> PrT ⌜σ ⌝ by apply Ax33 => /G.
+      * move/(L7_4_3 (~ σ) (PrT ⌜σ⌝)) in G'.
+        apply: H; apply: G'.
+        by apply: H1.
+    + by apply: H1.
+  - by apply: classic.
 Qed.
 
 (**
 # 第二不完全性定理
  *)
-
 Lemma encoding (φ ψ : Prop) :
-  (φ <-> ψ) -> (PrT ⌜φ⌝ -> PrT ⌜ψ⌝).
+  (φ -> ψ) -> (PrT ⌜φ⌝ -> PrT ⌜ψ⌝).
 Proof.
-  move=> H H0.
-  case H.
-  move=> H1 H2.
-  apply D1, (@D2 φ ψ) in H1.
-  - by apply H1.
-  - by apply (@D2 φ ψ) in H1; apply H0.
+  move=> H1 Hpr.
+  move/D1/D2 in H1.
+  apply: H1.
+  by apply: Hpr.
 Qed.    
 
-Lemma L7_5_8 :  Con <-> σ.
+Lemma L7_5_8 : Con <-> σ.
 Proof.
   split.
   (* -> *)
@@ -208,16 +207,17 @@ Proof.
     by apply T7_5_5_1 in H.
   (* <- *)
   - move/G.
-    apply Ax3'.
-    by apply L7_4_3.
+    apply: Ax31.
+    by apply: L7_4_3.
 Qed.
 
 Theorem T7_5_13 : Con -> ~ PrT ⌜Con⌝.
 Proof.
-  apply Ax3'.
-  move/(encoding  Con σ L7_5_8).
-  apply Ax3.
-  by apply T7_5_5_1.
+  apply: Ax31.
+  have H : Con -> σ by apply L7_5_8.       (* -> だけ使う。 *)
+  move/(encoding Con σ H).
+  apply: Ax3.
+  by apply: T7_5_5_1.
 Qed.
 
 (* END *)
