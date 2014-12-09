@@ -110,7 +110,7 @@ Axiom D3 : forall {φ : Prop}, PrT ⌜φ⌝ -> PrT ⌜(PrT ⌜φ⌝)⌝.
 Lemma L7_4_3 (φ ψ : Prop) : (φ -> ψ) -> PrT ⌜φ⌝ -> PrT ⌜ψ⌝.
 Proof.
   move=> H.
-  by apply D2, D1, H.
+  by apply: D2; apply: D1; apply: H.
 Qed.
 
 Lemma L7_5_3 (φ : Prop) :
@@ -189,15 +189,6 @@ Qed.
 (**
 # 第二不完全性定理
  *)
-Lemma encoding (φ ψ : Prop) :
-  (φ -> ψ) -> (PrT ⌜φ⌝ -> PrT ⌜ψ⌝).
-Proof.
-  move=> H1 Hpr.
-  move/D1/D2 in H1.
-  apply: H1.
-  by apply: Hpr.
-Qed.    
-
 Lemma L7_5_8 : Con <-> σ.
 Proof.
   split.
@@ -215,7 +206,7 @@ Theorem T7_5_13 : Con -> ~ PrT ⌜Con⌝.
 Proof.
   apply: Ax31.
   have H : Con -> σ by apply L7_5_8.       (* -> だけ使う。 *)
-  move/(encoding Con σ H).
+  move/(L7_4_3 Con σ H).
   apply: Ax3.
   by apply: T7_5_5_1.
 Qed.
