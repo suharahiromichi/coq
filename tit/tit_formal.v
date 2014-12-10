@@ -19,6 +19,9 @@ https://github.com/suharahiromichi/coq/blob/master/tit/tit_formal.v
 *)
 
 Require Import ssreflect ssrbool eqtype ssrnat.
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 (**
 # 準備
@@ -176,10 +179,10 @@ Proof.
   apply Ax3 => H1.
   apply not_not in H1.
   - apply.
-    apply: (L7_5_4 σ).
+    apply: (@L7_5_4 σ).
     + move=> H2.
       have G' : ~ σ -> PrT ⌜σ ⌝ by apply Ax33 => /G.
-      * move/(L7_4_3 (~ σ) (PrT ⌜σ⌝)) in G'.
+      * move/(@L7_4_3 (~ σ) (PrT ⌜σ⌝)) in G'.
         apply: H; apply: G'.
         by apply: H1.
     + by apply: H1.
@@ -206,7 +209,7 @@ Theorem T7_5_13 : Con -> ~ PrT ⌜Con⌝.
 Proof.
   apply: Ax31.
   have H : Con -> σ by apply L7_5_8.       (* -> だけ使う。 *)
-  move/(L7_4_3 Con σ H).
+  move/(L7_4_3 H).
   apply: Ax3.
   by apply: T7_5_5_1.
 Qed.
