@@ -66,10 +66,10 @@ Proof.
 Qed.
 
 (* ************************************ *)
-(* Lost in Manhattan の Point の Setoid *)
+(* Lost in Manhattan の Point の Setoid *)  (* ?????? *)
 (* ************************************ *)
 (* *************** *)
-(* Point の Setoid *)
+(* Point の Setoid *) (* ?????? *)
 (* *************** *) 
 
 (** Types for representing routes in the dicrete  plane *)
@@ -80,9 +80,9 @@ Record Point : Type :=
   }.
 
 (** Equality test  between Points *)
-Definition Point_eqb (P P': Point) : bool :=
-  (Point_x P == Point_x P') &&
-  (Point_y P == Point_y P').
+Definition Point_eqb (p p': Point) : bool :=
+  (Point_x p == Point_x p') &&
+  (Point_y p == Point_y p').
 
 (* Prove the correctness of Point_eqb *)
 Lemma Point_eqb_correct :
@@ -130,7 +130,7 @@ Proof.
 Qed.
 
 (* *************** *)
-(* Route の Setoid *)
+(* Route の Setoid *) (* ?????? *)
 (* *************** *) 
 Inductive direction : Type :=
   North | East | South | West.
@@ -189,7 +189,7 @@ Program Canonical Structure route_eq_Setoid :=
   Setoid_of route_eqb.
 Next Obligation.
   split.
-  - move=> //= x. apply: route_eqb_refl.
+  - move=> //= x. by apply: route_eqb_refl.
   - move=> //= x y H. by rewrite route_eqb_sym.
   - move=> //= x y z. by apply: route_eqb_trans.
 Qed.
@@ -200,6 +200,60 @@ Eval simpl in East::North::West::South::East::nil === East::nil.
 Example Ex1' : East::North::West::South::East::nil === East::nil.
 Proof.
   by [].
+Qed.
+
+(**
+mathink さんの記事（続き）を参考に ProperなMapを実装する。
+
+http://mathink.net/program/coq_map.html
+https://gist.github.com/mathink/cac3f31e29f1789b0a5f
+*)
+
+(* Mapの定義 *)
+Structure Map (X Y: Setoid) :=
+  {
+    map_body:> X -> Y;
+    prf_Map:> Proper ((===) ==> (===)) map_body
+  }.
+Existing Instance prf_Map.
+Notation makeMap f := (@Build_Map _ _ f _).
+Notation "[ x .. y :-> p ]" := 
+  (makeMap (fun x => .. (makeMap (fun y => p)) ..))
+    (at level 200, x binder, y binder, right associativity,
+     format "'[' [ x .. y :-> '/ ' p ] ']'").
+
+(* ********* *)
+(* eq の Map *)
+(* ********* *)
+Program Definition eq_Map (A B : Type) (f : A -> B) :
+  Map (eq_Setoid A) (eq_Setoid B) :=
+  [ x :-> f x ].
+
+(* *********************** *)
+(* 関数の外延的等価性で Map *)
+(* *********************** *)
+Definition fun_Map {X Y Z W : Type} (F : (X -> Y) -> (Z -> W)) :
+  Map (fun_Setoid X Y) (fun_Setoid Z W).
+  refine ([ f :-> F f ]).
+Proof.
+  unfold Proper, respectful; simpl.
+  intros f g Heq z.
+Abort.                                      (* これは、できない。 *)
+
+(* Definition const {A B : Type} (a : A): forall _ : B, A := fun _ => a. *)
+
+Program Definition point_eq_Map :           (* ?????? *)
+  Map point_eq_Setoid point_eq_Setoid :=
+  [ x :-> x ].
+Next Obligation.
+  done.
+Qed.
+
+Program Definition route_eq_Map :           (* ?????? *)
+  Map route_eq_Setoid route_eq_Setoid :=
+  [ x :-> x ].
+Next Obligation.
+  done.
 Qed.
 
 (* END *)
