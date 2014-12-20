@@ -21,7 +21,7 @@ Proof.
                  bin0 binn subn0 subnn !mul1n exp1n add1n -addnS addnC.
   rewrite -big_nat.
   rewrite (big_addn 0 p.+1 1) subn1 /= big_mkord.
-    by f_equal; apply eq_bigr => m _; rewrite exp1n add1n addn1 mul1n.
+  by congr (_ + _); apply eq_bigr => m _; rewrite exp1n add1n addn1 mul1n.
 Qed.
 
 (* pが素数なら、二項定理を使って (m + 1) ^ p を展開したときの、
