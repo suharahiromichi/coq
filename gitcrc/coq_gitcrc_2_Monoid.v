@@ -53,6 +53,7 @@ ZMultは、モノイド (Z,*,1) である。
 - 二項演算は、Zmult
 - 単位元は、1
 *)
+(* Compute binary_power 2 100. で使われる。 *)
 Instance ZMult : Monoid Zmult 1.
 Proof.
   split; intros; ring.
@@ -83,6 +84,7 @@ context are automatically quantified using a product or a lambda abstraction to 
 closed term. In the following statement for example, the variables n and m are
 autamatically generalized and become explicit arguments of the lemma as we are using `():
 *)
+(* `{} は、引数を{}で囲むのときと同様に implicit argument になる。 *)
 
 Fixpoint power `{M : Monoid A dot one} (a : A) (n : nat) :=
   match n with
@@ -101,7 +103,7 @@ introduce variables into section contexts, compatible with the implicit argument
 mechanism. The new command works similarly to the Variables vernacular (see 1.3.1), except
 it accepts any binding context as argument.
 *)  
-  Program Fixpoint binary_power_mult (acc x : A) (n : nat) {measure n} : A :=
+  Program Fixpoint binary_power_mult (acc : A) (x : A) (n : nat) {measure n} : A :=
     (* Implicit generalization によって、
        (A:Type) (dot:A->A->A) (one:A) (M: @Monoid A dot one)
        が省かれている。 *)
@@ -155,6 +157,7 @@ Definition binary_power `{M : Monoid A dot one} x n :=
 (************************************)
 (* First example : モノイド (Z,*,1) *)
 (************************************)
+(* ZMult をここで使う。 *)
 Compute binary_power 2 100.
 (* = 1267650600228229401496703205376 : Z *)
 
@@ -164,19 +167,22 @@ Proof.
   rewrite one_left.
   rewrite one_right.
   trivial.
-Save XX.                                    (* Qed *)
+Save XX.                                    (* Lemma XXX : ... Qed. とおなじ。 *)
 
 (***********************************)
 (* Second example : 2 x 2 Matrices *)
 (***********************************)
+(* M2 と M2_mult と Id2 と M2_eq_intros は、Mat.v で定義 *)
 Section M2_def.
-  Variables (A:Type)
+  Variables (A : Type)
             (zero one : A) 
-            (plus mult minus : A -> A -> A)
+            (plus : A -> A -> A)            (* (plus mult minus : A->A->A) *)
+            (mult : A -> A -> A)
+            (minus : A -> A -> A)
             (sym : A -> A).
   Notation "0" := zero.  Notation "1" := one.
   Notation "x + y" := (plus x y).  
-  Notation "x * y " := (mult x y).
+  Notation "x * y" := (mult x y).
   Variable rt : ring_theory  zero one plus mult minus sym (@eq A).
   Add Ring Aring : rt.
 
@@ -194,16 +200,20 @@ c00 := one; c01 := zero; c10 := zero; c11 := one
   Global Instance M2_Monoid : Monoid (M2_mult plus mult) (Id2 0 1).
   Proof.
     split.
-    destruct x;destruct y;destruct z;simpl.
-    unfold M2_mult;apply M2_eq_intros;simpl;  ring.
-    destruct x;simpl;
+    destruct x; destruct y; destruct z; simpl.
     unfold M2_mult; apply M2_eq_intros; simpl; ring.
-    destruct x;simpl; unfold M2_mult;apply M2_eq_intros;simpl;ring. 
+    destruct x; simpl;
+    unfold M2_mult; apply M2_eq_intros; simpl; ring.
+    destruct x; simpl; unfold M2_mult; apply M2_eq_intros; simpl; ring. 
   Qed.
 End M2_def.
 
-Instance M2Z : Monoid  _ _ := M2_Monoid Zth. (* ???? *)
-Compute power (Build_M2 1 1 1 0) 40.
+Check M2_Monoid.
+Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
+Instance M2Z : Monoid _ _ := M2_Monoid Zth.
+Check M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
+
+Compute power (Build_M2 1 1 1 0) 40.         (* M2Z をつかう。 *)
 (*
 行列の掛け算を40回繰り返す。
 [1 1]  [1 1]  [1 1] ..... [1 1]  
@@ -221,6 +231,7 @@ Compute (c00 (power (Build_M2  1 1 1 0) 20)).
 
 (** 一般的事項を証明する。 *)
 (* Generic study of power functions *)
+(** 最終的に、power と binary_power が等価なことを証明する。 *)
 Section About_power.
 
   Require Import Arith.
@@ -235,13 +246,14 @@ Section About_power.
 
   Local Infix "*" := dot.
   Local Infix "**" := power (at level 30, no associativity).
+  (* "+" はnat のplusである。power : A -> nat -> A だから。 *)
   
   Lemma power_x_plus :
     forall x n p, x ** (n + p) =  x ** n *  x ** p.
   Proof.
-    induction n as [| p IHp];simpl.
-     intros; monoid_simpl;trivial.
-     intro q;rewrite (IHp q); monoid_simpl;trivial. 
+    induction n as [| p IHp]; simpl.
+    intros; monoid_simpl; trivial.
+    intro q; rewrite (IHp q); monoid_simpl; trivial. 
   Qed.
   
   Ltac power_simpl := repeat (monoid_rw || rewrite <- power_x_plus).
@@ -249,36 +261,37 @@ Section About_power.
   Lemma power_commute :
     forall x n p, x ** n * x ** p = x ** p * x ** n. 
   Proof.
-    intros x n p; power_simpl; rewrite (plus_comm n p);trivial.
+    intros x n p; power_simpl; rewrite (plus_comm n p); trivial.
+  (* plus_comm は、nat のそれ。 *)
   Qed.
   
   Lemma power_commute_with_x :
     forall x n, x * x ** n = x ** n * x.
   Proof.
-    induction n;simpl;power_simpl;trivial.
+    induction n; simpl; power_simpl; trivial.
     repeat rewrite <- (@dot_assoc A dot one M); rewrite IHn; trivial.
   Qed.
   
   Lemma power_of_power :
     forall x n p,  (x ** n) ** p = x ** (p * n).
   Proof.
-    induction p;simpl;[| rewrite power_x_plus; rewrite IHp]; trivial.
+    induction p; simpl; [| rewrite power_x_plus; rewrite IHp]; trivial.
   Qed.
  
   Lemma power_S :
     forall x n, x *  x ** n = x ** S n.
   Proof.
-    intros;simpl;auto.
+    intros; simpl; auto.
   Qed.
 
   Lemma sqr : forall x, x ** 2 =  x * x.
   Proof.
-    simpl;intros;monoid_simpl;trivial.
+    simpl; intros; monoid_simpl; trivial.
   Qed.
 
   Ltac factorize := repeat (
                         rewrite <- power_commute_with_x ||
-                                rewrite  <- power_x_plus  ||
+                                rewrite <- power_x_plus ||
                                 rewrite <- sqr ||
                                 rewrite power_S ||
                                 rewrite power_of_power).
@@ -286,9 +299,9 @@ Section About_power.
   Lemma power_of_square :
     forall x n, (x * x) ** n = x ** n * x ** n.
   Proof.
-    induction n;simpl;monoid_simpl;trivial.
-    repeat rewrite dot_assoc;rewrite IHn; repeat rewrite dot_assoc.
-    factorize; simpl;trivial.
+    induction n; simpl; monoid_simpl; trivial.
+    repeat rewrite dot_assoc; rewrite IHn; repeat rewrite dot_assoc.
+    factorize; simpl; trivial.
   Qed.
 
   Lemma binary_power_mult_ok :
@@ -301,25 +314,24 @@ Section About_power.
     destruct (Even.even_odd_dec (S n)).
     rewrite Hn.
     rewrite power_of_square; factorize.
-    pattern (S n) at 3;replace (S n) with (div2 (S n) + div2 (S n))%nat;auto.
-    generalize (even_double _ e);simpl;auto. 
-    apply lt_div2;auto with arith.
+    pattern (S n) at 3; replace (S n) with (div2 (S n) + div2 (S n))%nat; auto.
+    generalize (even_double _ e); simpl; auto. 
+    apply lt_div2; auto with arith.
     rewrite Hn. 
-    rewrite power_of_square ; factorize.
-    pattern (S n) at 3;replace (S n) with (S (div2 (S n) + div2 (S n)))%nat;auto.
+    rewrite power_of_square; factorize.
+    pattern (S n) at 3; replace (S n) with (S (div2 (S n) + div2 (S n)))%nat; auto.
     rewrite <- dot_assoc; factorize;auto.
-    generalize (odd_double _ o);intro H;auto.
-    apply lt_div2;auto with arith.
-Qed.
+    generalize (odd_double _ o); intro H; auto.
+    apply lt_div2; auto with arith.
+  Qed.
 
   Lemma binary_power_ok :
     forall (x:A) (n:nat), binary_power x n = x ** n.
   Proof.
-    intros n x;unfold binary_power;rewrite binary_power_mult_ok;
-    monoid_simpl;auto.
-Qed.
-About binary_power_ok.
-
+    intros n x; unfold binary_power; rewrite binary_power_mult_ok;
+    monoid_simpl; auto.
+  Qed.
+  About binary_power_ok.
 End About_power.
 About binary_power_ok.
 
@@ -361,11 +373,11 @@ Section Power_of_dot.
   Theorem power_of_mult :
     forall n x y, power (dot x y)  n =  dot (power x n) (power y n). 
   Proof.
-    induction n;simpl.
-    rewrite one_left;auto.
+    induction n; simpl.
+    rewrite one_left; auto.
     intros; rewrite IHn; repeat rewrite dot_assoc.
     rewrite <- (dot_assoc x y (power x n)); rewrite (dot_comm y (power x n)).
-    repeat rewrite dot_assoc;trivial.
+    repeat rewrite dot_assoc; trivial.
   Qed.
 End Power_of_dot.
 
