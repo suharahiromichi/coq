@@ -58,7 +58,18 @@ Instance ZMult : Monoid Zmult 1.
 Proof.
   split; intros; ring.
 Qed.
-Check ZMult.
+Check ZMult : Monoid Z.mul 1.
+
+(* おまけ。 *)
+Instance Mult : Monoid mult 1%nat.
+Proof.
+  split; intros.
+  now rewrite mult_assoc.
+  now rewrite mult_1_l.
+  now rewrite mult_1_r.
+Qed.
+Check Mult :  Monoid mult 1%nat.
+
 (*
 Fixpoint power {A : Type} {dot : A -> A -> A} {one : A} {M : Monoid dot one}
          (a : A)(n : nat) :=
@@ -180,7 +191,8 @@ Section M2_def.
             (mult : A -> A -> A)
             (minus : A -> A -> A)
             (sym : A -> A).
-  Notation "0" := zero.  Notation "1" := one.
+  Notation "0" := zero.
+  Notation "1" := one.
   Notation "x + y" := (plus x y).  
   Notation "x * y" := (mult x y).
   Variable rt : ring_theory  zero one plus mult minus sym (@eq A).
@@ -197,6 +209,14 @@ c11 := plus (mult (c10 m) (c01 m')) (mult (c11 m) (c11 m'))
 - 単位元は、
 c00 := one; c01 := zero; c10 := zero; c11 := one
 *)
+
+  Check M2_mult : forall A : Type, (A -> A -> A) -> (A -> A -> A) -> M2 A -> M2 A -> M2 A.
+  (* (plus : A -> A -> A) (mult : A -> A -> A) *)
+  Check M2_mult plus mult : M2 A -> M2 A -> M2 A. (* dot *)
+  
+  Check Id2     : forall A : Type, A -> A -> M2 A. (* (zero : A) (one : A) *)
+  Check Id2 0 1 : M2 A.                            (* one *)
+  
   Global Instance M2_Monoid : Monoid (M2_mult plus mult) (Id2 0 1).
   Proof.
     split.
@@ -208,10 +228,14 @@ c00 := one; c01 := zero; c10 := zero; c11 := one
   Qed.
 End M2_def.
 
+Check M2_mult Z.add Z.mul : M2 Z -> M2 Z -> M2 Z. (* dot *)
+Check Id2 0 1 : M2 Z.                             (* one *)
 Check M2_Monoid.
 Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
+
 Instance M2Z : Monoid _ _ := M2_Monoid Zth.
 Check M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
+Check ZMult : Monoid Z.mul 1.                (* 比較 *)
 
 Compute power (Build_M2 1 1 1 0) 40.         (* M2Z をつかう。 *)
 (*
