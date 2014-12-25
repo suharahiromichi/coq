@@ -172,6 +172,7 @@ Definition binary_power `{M : Monoid A dot one} x n :=
 Compute binary_power 2 100.
 (* = 1267650600228229401496703205376 : Z *)
 
+
 Goal forall n : Z, 1 * (n * 1) = n.
 Proof.
   intro n.
@@ -233,7 +234,10 @@ Check Id2 0 1 : M2 Z.                             (* one *)
 Check M2_Monoid.
 Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
 
-Instance M2Z : Monoid _ _ := M2_Monoid Zth.
+Check Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
+Check M2_Monoid Zth.
+Instance M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) := M2_Monoid Zth.
+(* Instance M2Z : Monoid _ _ := M2_Monoid Zth. *)
 Check M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
 Check ZMult : Monoid Z.mul 1.                (* 比較 *)
 
