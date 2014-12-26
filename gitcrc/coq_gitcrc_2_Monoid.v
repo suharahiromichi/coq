@@ -60,6 +60,7 @@ Proof.
 Qed.
 Check ZMult : Monoid Z.mul 1.
 
+(*
 (* おまけ。 *)
 Instance Mult : Monoid mult 1%nat.
 Proof.
@@ -68,18 +69,21 @@ Proof.
   now rewrite mult_1_l.
   now rewrite mult_1_r.
 Qed.
-Check Mult :  Monoid mult 1%nat.
+Check Mult : Monoid mult 1%nat.
+これがあると、Check power.  が nat -> nat -> nat になる。
+*)
 
-(*
 Fixpoint power {A : Type} {dot : A -> A -> A} {one : A} {M : Monoid dot one}
          (a : A)(n : nat) :=
   match n with
     | 0%nat => one
     | S p => dot a (power a p)
   end.
+Check power.                                (* Z -> nat -> Z *)
+Check power : Z -> nat -> Z.
+Check power : nat -> nat -> nat.
 Compute power 2 10.
 Reset power.
-*)
 
 Generalizable Variables A dot one.
 (**
@@ -102,6 +106,8 @@ Fixpoint power `{M : Monoid A dot one} (a : A) (n : nat) :=
     | 0%nat => one
     | S p => dot a (power a p)
   end.
+Check power.                                (* Z -> nat -> Z *)
+Check power : Z -> nat -> Z.
 
 Section binary_power. 
   Context `{M : Monoid A dot one}.
@@ -135,7 +141,7 @@ it accepts any binding context as argument.
   Next Obligation.                          (* Obligation 2 と 3 *)
     set (M' := M); apply lt_div2; auto with arith.
     Defined.
-  Check binary_power_mult.
+  Check binary_power_mult.                  (* A -> A -> nat -> A *)
 (*
   証明を1行にまとめると、以下になる。Next Obligation も要らないので、注意。
   Solve Obligations using program_simpl; set (M' := M); apply lt_div2; auto with arith.
@@ -160,7 +166,10 @@ it accepts any binding context as argument.
                     fold binary_power_mult_func).
     simpl. destruct n; reflexivity.
   Qed.
+Check binary_power_mult : A -> A -> nat -> A.
 End binary_power.
+Check binary_power_mult. (* Z -> Z -> nat -> Z *)
+Check binary_power_mult : Z -> Z -> nat -> Z.
 
 Definition binary_power `{M : Monoid A dot one} x n :=
   binary_power_mult one x n.
