@@ -242,7 +242,8 @@ c00 := one; c01 := zero; c10 := zero; c11 := one
     unfold M2_mult; apply M2_eq_intros; simpl; ring.
     destruct x; simpl;
     unfold M2_mult; apply M2_eq_intros; simpl; ring.
-    destruct x; simpl; unfold M2_mult; apply M2_eq_intros; simpl; ring. 
+    destruct x; simpl;
+    unfold M2_mult; apply M2_eq_intros; simpl; ring. 
   Qed.
 End M2_def.
 
@@ -250,13 +251,37 @@ Check M2_mult Z.add Z.mul : M2 Z -> M2 Z -> M2 Z. (* dot *)
 Check Id2 0 1 : M2 Z.                             (* one *)
 Check M2_Monoid.
 Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
+Print Zth.
 
 Check Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
 Check M2_Monoid Zth.
-Instance M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) := M2_Monoid Zth.
+
+Instance M2Z' : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) := M2_Monoid Zth.
+(* テキストの方法 *)
 (* Instance M2Z : Monoid _ _ := M2_Monoid Zth. *)
+
+(* 自力で証明する場合 *)
+Instance M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) : Prop.
+Proof.
+  split.
+  - intros x y z.                           (* M2_mult の結合則 *)
+    apply M2_eq_intros; simpl; ring.
+    
+  - intros x.                               (* M2_mult の左単位元 *)
+    apply M2_eq_intros; unfold M2_mult; simpl.
+    case (c00 x); [ring | reflexivity | reflexivity].
+    case (c01 x); [ring | reflexivity | reflexivity].
+    case (c10 x); [ring | reflexivity | reflexivity].
+    case (c11 x); [ring | reflexivity | reflexivity].
+
+  - intros x.                               (* M2_mult の右単位元 *)
+    apply M2_eq_intros; unfold M2_mult; simpl; ring.
+Qed.
+
 Check M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
 Check ZMult : Monoid Z.mul 1.                (* 比較 *)
+
+  
 
 Compute power (Build_M2 1 1 1 0) 40.         (* M2Z をつかう。 *)
 (*
