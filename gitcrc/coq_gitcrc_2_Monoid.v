@@ -40,8 +40,9 @@ Class Monoid {A : Type} (dot : A -> A -> A) (one : A) : Type :=
     one_left  : forall x, dot one x = x;
     one_right : forall x, dot x one = x
   }.
-Print Monoid.
-About one_left.
+Print Monoid.                        (* 値コンストラクタの指定を省くと、Build_Monoid になる。 *)
+About one_left.                      (* Arguments A, dot, one, Monoid are implicit *)
+(* Class ではなく、Record の場合は、dot one は implicit ではない。 *)
 About one_right.
 
 Require Import ZArith.
@@ -58,9 +59,11 @@ Instance ZMult : Monoid Zmult 1.
 Proof.
   split; intros; ring.
 Qed.
+(* Note that we used Qed because we consider a class of sort Prop. In some cases where
+instances must store some informative constants, ending an instance construction with
+Defined may be necessary.  *)
 Check ZMult : Monoid Z.mul 1.
 
-(*
 (* おまけ。 *)
 Instance Mult : Monoid mult 1%nat.
 Proof.
@@ -70,8 +73,8 @@ Proof.
   now rewrite mult_1_r.
 Qed.
 Check Mult : Monoid mult 1%nat.
-これがあると、Check power.  が nat -> nat -> nat になる。
-*)
+(* これがあると、Check power.  が nat -> nat -> nat になる。
+でも、Z -> nat -> Z としても使える。 *)
 
 Fixpoint power {A : Type} {dot : A -> A -> A} {one : A} {M : Monoid dot one}
          (a : A)(n : nat) :=
@@ -79,10 +82,12 @@ Fixpoint power {A : Type} {dot : A -> A -> A} {one : A} {M : Monoid dot one}
     | 0%nat => one
     | S p => dot a (power a p)
   end.
-Check power.                                (* Z -> nat -> Z *)
+Check power.                                (* 無意味 *)
+About power.
 Check power : Z -> nat -> Z.
+Compute power 2%Z 10 : Z.
 Check power : nat -> nat -> nat.
-Compute power 2 10.
+Compute power 2%nat 10 : nat.
 Reset power.
 
 Generalizable Variables A dot one.
@@ -106,8 +111,9 @@ Fixpoint power `{M : Monoid A dot one} (a : A) (n : nat) :=
     | 0%nat => one
     | S p => dot a (power a p)
   end.
-Check power.                                (* Z -> nat -> Z *)
-Check power : Z -> nat -> Z.
+Check power.                                (* 無意味 *)
+About power.
+Check power : nat -> nat -> nat.
 
 Section binary_power. 
   Context `{M : Monoid A dot one}.
@@ -168,8 +174,10 @@ it accepts any binding context as argument.
   Qed.
 Check binary_power_mult : A -> A -> nat -> A.
 End binary_power.
-Check binary_power_mult. (* Z -> Z -> nat -> Z *)
+Check binary_power_mult.                    (* 無意味 *)
+About binary_power_mult.
 Check binary_power_mult : Z -> Z -> nat -> Z.
+Check binary_power_mult : nat -> nat -> nat -> nat.
 
 Definition binary_power `{M : Monoid A dot one} x n :=
   binary_power_mult one x n.
@@ -425,5 +433,32 @@ Check power (Build_M2  1 1 1 0) 3.
 Compute power (Build_M2 1 1 1 0) 3.
 Check power_of_mult 3 (Build_M2  1 1 1 0) (Build_M2  1 1 1 0).
 (* dot が ?204 のままなのは、なぜだろう。 *)
+
+(* END *)
+
+(* 補足 *)
+(* power が polymorphic type な関数のとき、Check の結果は一定ではない。 *)
+Check power.                                (* この結果に惑わされてはいけない。 *)
+About power.                                (* こちらのほうを見る習慣をつけよう。 *)
+
+(* ZMult モノイド *)
+Check power : Z -> nat -> Z.
+Check @power Z Zmult 1%Z ZMult : Z -> nat -> Z.
+Compute @power Z Zmult 1%Z ZMult 2%Z 10 : Z.
+
+(* Mult モノイド *)
+Check power : nat -> nat -> nat.
+Check @power nat mult 1%nat Mult : nat -> nat -> nat.
+Compute @power nat mult 1%nat Mult 2%nat 10 : nat.
+
+(* M2_Monoid モノイド *)
+Check power : M2 Z -> nat -> M2 Z.
+Compute power (Build_M2 1 1 1 0) 40 : M2 Z.
+Check @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0 1) (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) :
+  M2 Z -> nat -> M2 Z.
+Compute @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0%Z 1%Z) (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) 
+        (@Build_M2 Z 1%Z 1%Z 1%Z 0%Z) 40%nat : M2 Z.
+Compute @power (M2 Z) (M2_mult Zplus Zmult) (Id2 0 1) (M2_Monoid Zth) 
+        (Build_M2 1 1 1 0) 40 : M2 Z.
 
 (* END *)
