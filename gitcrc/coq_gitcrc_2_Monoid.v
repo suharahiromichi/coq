@@ -442,23 +442,40 @@ Check power.                                (* この結果に惑わされては
 About power.                                (* こちらのほうを見る習慣をつけよう。 *)
 
 (* ZMult モノイド *)
+About ZMult.
 Check power : Z -> nat -> Z.
+Compute power 2%Z 10 : Z.
 Check @power Z Zmult 1%Z ZMult : Z -> nat -> Z.
 Compute @power Z Zmult 1%Z ZMult 2%Z 10 : Z.
 
 (* Mult モノイド *)
+About Mult.
 Check power : nat -> nat -> nat.
+Compute power 2%nat 10 : nat.
 Check @power nat mult 1%nat Mult : nat -> nat -> nat.
 Compute @power nat mult 1%nat Mult 2%nat 10 : nat.
 
-(* M2_Monoid モノイド *)
+(* M2Z モノイド *)
+About M2Z.
 Check power : M2 Z -> nat -> M2 Z.
 Compute power (Build_M2 1 1 1 0) 40 : M2 Z.
-Check @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0 1) (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) :
+Check @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0 1) M2Z :
   M2 Z -> nat -> M2 Z.
-Compute @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0%Z 1%Z) (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) 
+Compute @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0%Z 1%Z) M2Z
         (@Build_M2 Z 1%Z 1%Z 1%Z 0%Z) 40%nat : M2 Z.
-Compute @power (M2 Z) (M2_mult Zplus Zmult) (Id2 0 1) (M2_Monoid Zth) 
+Compute @power (M2 Z) (M2_mult Zplus Zmult) (Id2 0 1) M2Z
+        (Build_M2 1 1 1 0) 40 : M2 Z.
+
+(* 参考；M2_Monoid を直接使う *)
+About M2_Monoid.
+Check @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0 1)
+      (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) :
+  M2 Z -> nat -> M2 Z.
+Compute @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0%Z 1%Z)
+        (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) 
+        (@Build_M2 Z 1%Z 1%Z 1%Z 0%Z) 40%nat : M2 Z.
+Compute @power (M2 Z) (M2_mult Zplus Zmult) (Id2 0 1)
+        (M2_Monoid Zth) 
         (Build_M2 1 1 1 0) 40 : M2 Z.
 
 (* END *)
