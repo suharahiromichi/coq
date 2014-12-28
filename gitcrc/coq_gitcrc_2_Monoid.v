@@ -213,9 +213,12 @@ Section M2_def.
   Notation "1" := one.
   Notation "x + y" := (plus x y).  
   Notation "x * y" := (mult x y).
-  Variable rt : ring_theory  zero one plus mult minus sym (@eq A).
-  Add Ring Aring : rt.
-
+  Variable rth : ring_theory zero one plus mult minus sym (@eq A).
+  (* セクションの外で、M2_Monoid を使うためには、rth に値を与えないといけない。 *)
+  (* ring タクティクで、ring_theory のセレクタが使える。 *)
+  Add Ring Aring : rth.
+  Print ring_theory.
+  
 (**
 M2_Monoidは、以下のモノイドである。
 - 台は M2 Z、Z の 2×2の行列
@@ -239,28 +242,34 @@ c00 := one; c01 := zero; c10 := zero; c11 := one
   Proof.
     split.
     destruct x; destruct y; destruct z; simpl.
-    unfold M2_mult; apply M2_eq_intros; simpl; ring.
+    unfold M2_mult; apply M2_eq_intros; simpl; ring. (* rth *)
     destruct x; simpl;
-    unfold M2_mult; apply M2_eq_intros; simpl; ring.
+    unfold M2_mult; apply M2_eq_intros; simpl; ring. (* rth *)
     destruct x; simpl;
-    unfold M2_mult; apply M2_eq_intros; simpl; ring. 
+    unfold M2_mult; apply M2_eq_intros; simpl; ring. (* rth *)
   Qed.
+  (* セクションの外で、M2_Monoid を使うためには、rth に値を与えないといけない。 *)
+  About M2_Monoid.                                  (* Monoid ...  *)
 End M2_def.
 
 Check M2_mult Z.add Z.mul : M2 Z -> M2 Z -> M2 Z. (* dot *)
 Check Id2 0 1 : M2 Z.                             (* one *)
-Check M2_Monoid.
+(* セクションの外で、M2_Monoid を使うためには、rth に値を与えないといけない。 *)
+About M2_Monoid.                                  (* ring_theory ... -> Monoid ...  *)
+
+(* Zth を rth に与える。Zth は M2_defセクションの rth : ring ... に与えられる。 *)
 Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
 Print Zth.
-
-Check Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
-Check M2_Monoid Zth.
+Check M2_Monoid Zth : Monoid _ _.
+Check M2_Monoid Zth : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
+Check @M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
+(* これは、M2Z と等しい *)
 
 Instance M2Z' : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) := M2_Monoid Zth.
-(* テキストの方法 *)
-(* Instance M2Z : Monoid _ _ := M2_Monoid Zth. *)
+(* テキストの方法に記載されたのは、
+Instance M2Z : Monoid _ _ := M2_Monoid Zth. *)
 
-(* 自力で証明する場合 *)
+(* Zthを使わずに、自力で証明する場合 *)
 Instance M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) : Prop.
 Proof.
   split.
@@ -489,18 +498,6 @@ Check @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0 1) M2Z :
 Compute @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0%Z 1%Z) M2Z
         (@Build_M2 Z 1%Z 1%Z 1%Z 0%Z) 40%nat : M2 Z.
 Compute @power (M2 Z) (M2_mult Zplus Zmult) (Id2 0 1) M2Z
-        (Build_M2 1 1 1 0) 40 : M2 Z.
-
-(* 参考；M2_Monoid を直接使う *)
-About M2_Monoid.
-Check @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0 1)
-      (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) :
-  M2 Z -> nat -> M2 Z.
-Compute @power (M2 Z) (@M2_mult Z Zplus Zmult) (@Id2 Z 0%Z 1%Z)
-        (@M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth) 
-        (@Build_M2 Z 1%Z 1%Z 1%Z 0%Z) 40%nat : M2 Z.
-Compute @power (M2 Z) (M2_mult Zplus Zmult) (Id2 0 1)
-        (M2_Monoid Zth) 
         (Build_M2 1 1 1 0) 40 : M2 Z.
 
 (* END *)
