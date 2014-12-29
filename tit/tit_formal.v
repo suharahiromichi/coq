@@ -84,6 +84,8 @@ Proof.
 Qed.
 
 (*
+以下は使用しない：
+
 Variable model theory : Set.
 Variable T : theory.
 Variable v : model.
@@ -96,24 +98,36 @@ Notation "v ⊧ φ" := (models v φ) (at level 100, no associativity).
 (**
 ## 可導性条件
 
-7.4節で導入された可導性条件を公理として定義する。
-本資料ではここを形式化の出発点とする。
+本資料では、7.4節で導入された可動性条件を出発点とする。
 
-また、公理と定理は T ⊦ φ の形なので、Tは省略する。
+- 言語Lを、算術の言語 LA={0,1,+,・,≦} を含み、ゲーデル数化を伴う言語とする。
+- 理論Tを、ペアノ算術を含む言語Lの理論とする。
+
+理論Tの上で、次のD1,D2,D3が成立するものとする。ただし、
+
+- ⌜φ⌝は、論理式φのゲーデル数化（エンコード）した自然数を示す。
+- PrT(x)は、自然数xに対する、論理Tで証明のある論理式を示す。
 *)
+
 Variable enc : Prop -> nat.
 Notation "⌜ φ ⌝" := (enc φ) (at level 9, no associativity).
 Variable PrT : nat -> Prop.
 
-(* φをΣ1文とすると、Σ1完全性から、T ⊦ φ -> PrT ⌜φ⌝ となる(定理7.4.4)。 *)
-Axiom D1 : forall {φ : Prop}, φ -> PrT ⌜φ⌝. (* 定理7.4.4 *)
+Axiom D1' : forall {φ : Prop}, φ -> PrT ⌜φ⌝. (* 注意 *)
 Axiom D2 : forall {φ ψ : Prop}, (PrT ⌜φ -> ψ⌝) -> PrT ⌜φ⌝ -> PrT ⌜ψ⌝.
 Axiom D3 : forall {φ : Prop}, PrT ⌜φ⌝ -> PrT ⌜(PrT ⌜φ⌝)⌝.
+
+(**
+注意：
+D1 は、正しくは、「T ⊦ φ ならば T ⊦ PrT(⌜φ⌝)」 であり、
+D1' の場合は、φをΣ1論理式に制限しないと成立しない（定理7.4.4）。
+そのため、この記述は不正確であり、見直す必要がある。
+*)
 
 Lemma L7_4_3 (φ ψ : Prop) : (φ -> ψ) -> PrT ⌜φ⌝ -> PrT ⌜ψ⌝.
 Proof.
   move=> H.
-  by apply: D2; apply: D1; apply: H.
+  by apply: D2; apply: D1'; apply: H.
 Qed.
 
 Lemma L7_5_3 (φ : Prop) :
