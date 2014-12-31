@@ -36,6 +36,8 @@ Definition ret {R A : Type} (a : A) : MCont R A :=
 Definition callcc {R A B : Type}
            (f : (A -> MCont R B) -> MCont R A) : MCont R A :=
   fun (k : A -> R) => f (fun (a : A) => fun (b : B -> R) => k a) k.
+
+
 Check callcc.
 
 (**
@@ -104,7 +106,7 @@ Fixpoint flatten_cps (l : seq (seq nat)) : MCont (seq nat) (seq nat) :=
       | x :: xs   => flatten_cps xs (fun y => cont (x ++ y))
     end.
 
-Eval cbv in flatten_cps [:: [:: 1;2];[:: 3;4];[:: 5;6]] id.
+Eval cbv in flatten_cps [:: [:: 1;2];[:: 3;4];[:: 5;6]] id.      (* [:: 1; 2; 3; 4; 5; 6] *)
 Eval cbv in flatten_cps [:: [:: 1;2];[:: 3;4];[::];[:: 5;6]] id. (* [::] *)
 Eval cbv in flatten_cps [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
 
@@ -122,7 +124,7 @@ Fixpoint flatten' (k : seq nat -> MCont (seq nat) (seq nat))
 Definition flatten_callcc (l : seq (seq nat)) : MCont (seq nat) (seq nat) :=
   callcc (fun (k : seq nat -> MCont (seq nat) (seq nat)) => flatten' k l).
 
-Eval cbv in flatten_callcc [:: [:: 1;2];[:: 3;4];[:: 5;6]] id.
+Eval cbv in flatten_callcc [:: [:: 1;2];[:: 3;4];[:: 5;6]] id.      (* [:: 1; 2; 3; 4; 5; 6] *)
 Eval cbv in flatten_callcc [:: [:: 1;2];[:: 3;4];[::];[:: 5;6]] id. (* [::] *)
 Eval cbv in flatten_callcc [:: [:: 1;2];[::];[:: 3;4];[:: 5;6]] id. (* [::] *)
 
