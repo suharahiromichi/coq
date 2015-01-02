@@ -110,7 +110,7 @@ Properについて：
 型Xでequalなら型Yでもequalとすること（同値関係の保存性）を基にして、
 rewriteによる書き換えができるようになる。 *)
 
-Structure Binop (X : Setoid) : Type :=
+Record Binop (X : Setoid) : Type :=
   {
     binop :> X -> X -> X;
     prf_Binop :> Proper ((==) ==> (==) ==> (==)) binop
@@ -186,26 +186,65 @@ Section Example_3.
   Next Obligation.
       by rewrite /eq2 /plus2 //=.
   Qed.
-End Example_3.
 
+  Definition Mzero : Mult.
+  Proof.
+    split; apply 0.
+  Defined.
+
+  Definition Mone : Mult.
+  Proof.
+    split; apply 1.
+  Defined.
+
+  Definition Mtwo : Mult.
+  Proof.
+    split; apply 2.
+  Defined.
+End Example_3.
 
 (**
 # Power
 *)
+Program Fixpoint power {dot : Binop Mult} {one : Mult} (a : Mult) (n : nat) : Mult :=
+  match n with
+    | 0%nat => one
+    | S p => dot a (@power dot one a p)
+  end.
+
+Check @power plus2_Binop Mzero Mtwo 2.
+Compute @power plus2_Binop Mzero Mtwo 10.
+
 (* *************** *)
 (* ad-hoc 多相の例 *)
 (* *************** *)
-Record Monoid' {A : Setoid} (dot : Binop A) (one : A) : Type :=
+Class Monoid' {A : Setoid} (dot : Binop A) (one : A) : Type:=
   {
     prf_Monoid_idl' : forall x, dot one x == x;
     prf_Monoid_idr' : forall x, dot x one == x
   }.
 
-Fixpoint power `{@Monoid' A dot one} (a : A) (n : nat) :=
+Definition eq2_Monoid : Monoid' plus2_Binop Mzero : Type.
+Proof.
+  split.
+  - move=> x.
+    rewrite /plus2_Binop /= /eq2 /plus2 /=.
+    split; by rewrite add0n.
+  - move=> x.
+    rewrite /plus2_Binop /= /eq2 /plus2 /=.
+    split; by rewrite addn0.
+Qed.
+
+Fixpoint power' `{@Monoid' A dot one} (a : A) (n : nat) : A :=
   match n with
     | 0%nat => one
-    | S p => dot a (power a p)
+    | S p => dot a (power' a p)
   end.
+
+Check power' Mtwo 2.
+Check power' Mtwo 2.
+Check eq2_Monoid.
+Compute @power' (eq2_Monoid) Mzero Mtwo 10.
 
 (**
 # Group
