@@ -106,7 +106,7 @@ autamatically generalized and become explicit arguments of the lemma as we are u
 *)
 (* `{} は、引数を{}で囲むのときと同様に implicit argument になる。 *)
 
-Fixpoint power `{M : Monoid A dot one} (a : A) (n : nat) :=
+Fixpoint power `{Monoid A dot one} (a : A) (n : nat) :=
   match n with
     | 0%nat => one
     | S p => dot a (power a p)
@@ -179,7 +179,7 @@ About binary_power_mult.
 Check binary_power_mult : Z -> Z -> nat -> Z.
 Check binary_power_mult : nat -> nat -> nat -> nat.
 
-Definition binary_power `{M : Monoid A dot one} x n :=
+Definition binary_power `{Monoid A dot one} x n :=
   binary_power_mult one x n.
 
 (************************************)
