@@ -11,7 +11,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Generalizable All Variables.
 
-Require Export Basics Tactics Coq.Setoids.Setoid Morphisms.
+Require Import Basics Tactics Coq.Setoids.Setoid Morphisms.
 Require Import ssreflect ssrbool ssrnat eqtype seq ssrfun.
 Require Import div.
 
@@ -34,17 +34,14 @@ Record Setoid : Type :=
 carrier について：
 
 Setoid 型の値を Type 型の値としても扱えるようにする。
-- implicitな場合は、carrier がSetoidを意味することになる。
-- explicitな場合は、carrier : Setoid -> Type となる。
-  コアーションが自動的に有効になり、「carrier s」が、「s」になる（要補足）。
+- Recordの中（implicitな場合）は、carrier がSetoidを意味することになる。
+- Recordの外（explicitな場合）は、carrier : Setoid -> Type となる。
+コアーションが自動的に有効になり、「carrier s」が、「s」になる（eq2_Setoidの例）。
  *)
-(*
-Check carrier : Type.
-Check @carrier : Setoid -> Type.
-Check equal : carrier -> carrier -> Prop.
-Check @equal : forall s : Setoid, carrier -> carrier -> Prop.
-Check @equal : forall s : Setoid, @carrier s -> @carrier s -> Prop.
-*)
+
+Check carrier : Setoid -> Type.
+Check equal : forall s : Setoid, carrier s -> carrier s -> Prop.
+
 (**
 表記：
   値コンストラクタ、第二引数のequalの定義だけを与えてSetoidを作る。
@@ -63,25 +60,33 @@ Notation "x == y" := (x == y :> _)          (* equql ではだめ。 *)
                        (at level 70, no associativity).
 
 Section Example_1.
+  (* 自然数を要素とする二次元のベクトル *)
   Definition eq2 {A : Type} (x y : A * A) : Prop :=
     x.1 = y.1 /\ x.2 = y.2.
   
   Program Definition eq2_Setoid {A : Type} : Setoid := Setoid_of (@eq2 A).
   Next Obligation.
     by rewrite /eq2.
-  Qed.
+  Defined.
   Next Obligation.
     move: H.
     rewrite /eq2; case.
     by split.
-  Qed.
+  Defined.
   Next Obligation.
     rewrite /eq2.
     case: H.
     case: H0.
     rewrite /=.
     split; by subst.
-  Qed.
+  Defined.
+  
+  Check carrier eq2_Setoid : Type.
+  Check eq2_Setoid : Setoid.
+  Check eq2_Setoid : Type.                  (* コアーションが有効 *)
+  Check eq2_Setoid = eq2_Setoid.
+  Check (carrier eq2_Setoid) = (carrier eq2_Setoid).
+  (* eq2_Setoid = eq2_Setoid であり、コアーションが有効 *)
   
   Variables x y : @eq2_Setoid nat : Type.
   Variables x' y' : @eq2_Setoid nat : Type.
@@ -120,9 +125,8 @@ Existing Instance prf_Binop.
 Notation makeBinop op := {| binop := op |}. (* binopを与える。 *)
 
 Section Example_2.
-  (* Example_1 の続き。 *)
-  Definition plus2 (x y : nat * nat) : (nat * nat) :=
-    (fst x + fst y, snd x + snd y).
+  (* Example_1 の続き。自然数を要素とする二次元のベクトル *)
+  Definition plus2 (x y : nat * nat) : (nat * nat) := (x.1 + y.1, x.2 + y.2).
   
   Program Definition plus2_Binop : Binop eq2_Setoid := {| binop := plus2 |}.
   Next Obligation.
@@ -136,26 +140,47 @@ Section Example_2.
     split.
     by rewrite H1 H3.
     by rewrite H2 H4.
+  Defined.
+  Notation "x +.2 y" := (plus2_Binop x y)
+                          (at level 50, left associativity).
+  
+(*
+  Instance propler :
+  Proper ((@equal _) ==> (@equal _) ==> (@equal _)) (plus2_Binop).
+  Proof.
+    rewrite /Proper /respectful.
+    rewrite /eq2 /plus2.
+    move=> x y H1 x' y' H2.
+    case: H1.
+    case: H2.
+    rewrite /= => H1 H2 H3 H4.
+    rewrite /plus2 /eq2 /=.
+    split.
+    by rewrite H1 H3.
+    by rewrite H2 H4.
   Qed.
+*)
   
   Variables x x' : @eq2_Setoid nat : Type.
   Variables y y' : @eq2_Setoid nat : Type.
-
+  
   (* ********** *)
   (* Properの例 *)
   (* ********** *)
-  Check binop plus2_Binop x y : eq2_Setoid.
-  Check       plus2_Binop x y : eq2_Setoid.
+  Check x +.2 y : eq2_Setoid.
+  Check binop plus2_Binop x y : eq2_Setoid. (* 同上 *)
+  Check       plus2_Binop x y : eq2_Setoid. (* 同上 *)
   Check       plus2 x y : nat * nat.
-  Goal x == x' -> y == y' -> (plus2_Binop x y) == (plus2_Binop x' y').
+
+  Goal x == x' -> y == y' -> x +.2 y == x' +.2 y'.
   Proof.
     intros Hxx' Hyy'.
-    admit.
 (*
     rewrite Hxx'.
     rewrite Hyy'.
     reflexivity.
 *)
+    admit.                                  (* XXXX *)
   Qed.
 End Example_2.
 
@@ -178,7 +203,8 @@ Notation makeMonoid s unit op :=
   |}.
 
 Section Example_3.
-  Program Definition Mult : Monoid :=
+  (* Example_2 の続き。自然数を要素とする二次元のベクトル *)
+  Program Definition N2A : Monoid :=
     makeMonoid (@eq2_Setoid nat) (0, 0) plus2_Binop.
   Next Obligation.
       by rewrite /eq2 /plus2 /=.
@@ -187,33 +213,27 @@ Section Example_3.
       by rewrite /eq2 /plus2 //=.
   Qed.
 
-  Definition Mzero : Mult.
-  Proof.
-    split; apply 0.
-  Defined.
-
-  Definition Mone : Mult.
-  Proof.
-    split; apply 1.
-  Defined.
-
-  Definition Mtwo : Mult.
-  Proof.
-    split; apply 2.
-  Defined.
+  Definition N2zero : N2A := (0, 0).
+  Definition N2one  : N2A := (1, 1).
+  Definition N2two  : N2A := (2, 2).
+  
+  Compute plus2_Binop N2one N2two.          (* (3, 3) *)
+(* Compute (N2one +.2 N2two). XXXX *)
 End Example_3.
 
 (**
 # Power
 *)
-Program Fixpoint power {dot : Binop Mult} {one : Mult} (a : Mult) (n : nat) : Mult :=
+Program Fixpoint power {dot : Binop N2A} {one : N2A}
+        (a : N2A) (n : nat) : N2A :=
   match n with
     | 0%nat => one
     | S p => dot a (@power dot one a p)
   end.
 
-Check @power plus2_Binop Mzero Mtwo 2.
-Compute @power plus2_Binop Mzero Mtwo 10.   (* (20, 20) *)
+(** plus2 N2two を10回繰り返す。 *)
+Check @power plus2_Binop N2zero N2two 10.
+Compute @power plus2_Binop N2zero N2two 10.   (* (20, 20) *)
 
 (* *************** *)
 (* ad-hoc 多相の例 *)
@@ -224,7 +244,7 @@ Class Monoid' {A : Setoid} (dot : Binop A) (one : A) : Type:=
     prf_Monoid_idr' : forall x, dot x one == x
   }.
 
-Definition eq2_Monoid : Monoid' plus2_Binop Mzero : Type.
+Definition eq2_Monoid : Monoid' plus2_Binop N2zero : Type.
 Proof.
   split.
   - move=> x.
@@ -241,21 +261,23 @@ Fixpoint power' `{Monoid' A dot one} (a : A) (n : nat) : A :=
     | S p => dot a (power' a p)
   end.
 
+(** plus2 N2two を10回繰り返す。 *)
 Check power' : _ -> nat -> _.
-Check power' Mtwo 2 : Mult.                 (* 型は決まる。 *)
-(* Compute power' Mtwo 2 : Mult. *)         (* 値は求められない。 *)
+Check power' N2two 2 : N2A.                 (* 型は決まる。 *)
+(* Compute power' N2two 2 : N2A. *)         (* 値は求められない。 *)
 
 Check @power' :
   forall (A : Setoid) (dot : Binop A) (one : A), (* ad-hoc 多相の分 *)
     Monoid' dot one -> A -> nat -> A.            (* 引数で指定された分 *)
-Check @power' Mult plus2_Binop Mzero
-      eq2_Monoid  Mtwo 10.
+Check @power' N2A plus2_Binop N2zero
+      eq2_Monoid  N2two 10.
 
-Compute @power' Mult plus2_Binop Mzero
-        eq2_Monoid  Mtwo 10.                (* (20, 20) *)
+Compute @power' N2A plus2_Binop N2zero
+        eq2_Monoid  N2two 10.               (* (20, 20) *)
 
 (**
 # Group
+未了。
  *)
 
 (**
