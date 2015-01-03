@@ -213,7 +213,7 @@ Program Fixpoint power {dot : Binop Mult} {one : Mult} (a : Mult) (n : nat) : Mu
   end.
 
 Check @power plus2_Binop Mzero Mtwo 2.
-Compute @power plus2_Binop Mzero Mtwo 10.
+Compute @power plus2_Binop Mzero Mtwo 10.   (* (20, 20) *)
 
 (* *************** *)
 (* ad-hoc 多相の例 *)
@@ -235,16 +235,24 @@ Proof.
     split; by rewrite addn0.
 Qed.
 
-Fixpoint power' `{@Monoid' A dot one} (a : A) (n : nat) : A :=
+Fixpoint power' `{Monoid' A dot one} (a : A) (n : nat) : A :=
   match n with
     | 0%nat => one
     | S p => dot a (power' a p)
   end.
 
-Check power' Mtwo 2.
-Check power' Mtwo 2.
-Check eq2_Monoid.
-Compute @power' (eq2_Monoid) Mzero Mtwo 10.
+Check power' : _ -> nat -> _.
+Check power' Mtwo 2 : Mult.                 (* 型は決まる。 *)
+(* Compute power' Mtwo 2 : Mult. *)         (* 値は求められない。 *)
+
+Check @power' :
+  forall (A : Setoid) (dot : Binop A) (one : A), (* ad-hoc 多相の分 *)
+    Monoid' dot one -> A -> nat -> A.            (* 引数で指定された分 *)
+Check @power' Mult plus2_Binop Mzero
+      eq2_Monoid  Mtwo 10.
+
+Compute @power' Mult plus2_Binop Mzero
+        eq2_Monoid  Mtwo 10.                (* (20, 20) *)
 
 (**
 # Group
@@ -253,9 +261,13 @@ Compute @power' (eq2_Monoid) Mzero Mtwo 10.
 (**
 # 参考：
     http://www.labri.fr/perso/casteran/CoqArt/TypeClassesTut/typeclassestut.pdf
+
     http://mathink.net/program/coq_setoid.html
     http://mathink.net/program/coq_map.html
     http://mathink.net/program/coq_group.html
+
+    http://qnighy.github.io/coqex2014/ex6.html
+    https://github.com/suharahiromichi/coq/blob/master/ex2014/ex37.v
  *)
 
 (* END *)
