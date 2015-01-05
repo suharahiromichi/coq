@@ -140,4 +140,62 @@ Proof.
     by [].
 Qed.
 
+(* http://tcug.jp/books/2014-12/ *)
+
+(* forall m d : nat, 0 < d -> m %% d < d の d>0の場合 *)
+Lemma ltn_pmod' m d : m %% d.+1 < d.+1.
+Proof.
+  by apply ltn_pmod.
+Qed.
+
+Lemma problem1 a : a ^ 2 %% 3 != 2.
+Proof.
+  rewrite -modnXm.                          (* Goal: (a %% 3) ^ 2 %% 3 != 2 *)
+  move: (ltn_pmod' a 2).                    (* a %% 3 < 3 を前提に追加する。 *)
+  by case: (a %% 3) => [| [| []]].          (* 0<3, 1<3, 2<3 とそれ以外に分ける。 *)
+(* それ以外のときは、前提が偽。 *)
+Qed.  
+
+Lemma problem2 a b c :
+  a ^ 2 + b ^ 2 = 3 * c ^ 2 -> [&& 3 %| a, 3 %| b & 3 %| c].
+Proof.
+  move=> H.
+  have/andP [H0 H1] : (3 %| a) && (3 %| b).
+  - move/(f_equal (modn ^~ 3)) : H.
+    rewrite -modnMml modnn mul0n mod0n.
+    move: (problem1 a) (problem1 b) (ltn_pmod' a 2) (ltn_pmod' b 2).
+    by rewrite /dvdn /= -modnDm -modnXm -(modnXm _ _ b);
+      move: (a %% 3) (b %% 3) => [| [| [| a']]] [| [| []]].
+  rewrite H0 H1 /=.
+  move/(f_equal (modn ^~ (3 ^ 2))) : H.
+  have/eqP -> : 3 ^ 2 %| a ^ 2 + b ^ 2 by apply dvdn_add; rewrite dvdn_pexp2r.
+  by move/esym/eqP; rewrite -/(dvdn _ _) dvdn_pmul2l // Euclid_dvdX //= andbT.
+Qed.
+
+Lemma well_founded_lt : well_founded (fun n m => n < m).
+Proof.
+  move=> x.
+  elim: x {1 3}x (leqnn x) => [| n IHn] x H; constructor => y H0.
+  - by case: x H H0.
+  - exact: (IHn _ (leq_trans H0 H)).
+Defined.
+
+Lemma divn_expAC d m n : d %| m -> (m %/ d) ^ n = (m ^ n) %/ (d ^ n).
+Proof.
+  move=> H; elim: n => //= n IH.
+  by rewrite !expnS IH divn_mulAC // muln_divA ?dvdn_exp2r // -divnMA (mulnC d).
+Qed.
+
+Lemma problem3 a b c :
+  a ^ 2 + b ^ 2 = 3 * c ^ 2 -> [&& a == 0, b == 0 & c == 0].
+Proof.
+  move=> H.
+  suff H0 : c = 0 by move: H; rewrite H0; move: a b => [] // [].
+  move: c (well_founded_lt c) a b H; refine (Acc_ind _ _).
+  case=> [] // c _ IH a b H.
+  case/problem2/and3P : (H) => H0 H1 H2.
+  rewrite -(divnK H2) (IH (c.+1 %/ 3) _ (a %/ 3) (b %/ 3)) ?ltn_Pdiv //.
+  by rewrite !divn_expAC // -divnDl ?dvdn_mul // H muln_divA ?dvdn_mul.
+Qed.
+
 (* END *)
