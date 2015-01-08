@@ -41,4 +41,24 @@ Proof.
     by apply (lt_le_trans y x n.+1 H0 H).
 Defined.
 
+(* 整礎帰納法の使い方の例 *)
+Goal forall c : nat, c ^ 2 >= 0.
+Proof.
+  move=> c.
+  move: c (well_founded_ltn c).
+  refine (Acc_ind _ _) => c.
+  case: c.
+    (* 
+   (forall y : nat, y < 0 -> Acc (fun n m : nat => n < m) y) ->
+   (forall y : nat, y < 0 -> 0 <= y ^ 2) -> 0 <= 0 ^ 2
+     *)
+  by [].
+    (* 
+   forall n : nat,
+   (forall y : nat, y < n.+1 -> Acc (fun n0 m : nat => n0 < m) y) ->
+   (forall y : nat, y < n.+1 -> 0 <= y ^ 2) -> 0 <= n.+1 ^ 2
+     *)
+  by [].
+Qed.
+
 (* END *)
