@@ -17,7 +17,7 @@ Proof.
   elim: x {1 3}x (leqnn x) => [| n IHn] x H; apply: Acc_intro.
   - by case: x H.
   - by move=> y H0; apply/IHn/(leq_trans H0 H).
-Defined.
+Defined.                                    (* Qedでも。 *)
 
 (** Prop の場合は、lt_wf として定理があるが、自分で証明してみる。 *)
 Search well_founded.
@@ -39,7 +39,7 @@ Proof.
     apply IHn.
     apply lt_n_Sm_le.
     by apply (lt_le_trans y x n.+1 H0 H).
-Defined.
+Defined.                                    (* Qedでも。 *)
 
 (* 整礎帰納法の使い方の例 *)
 Goal forall c : nat, c ^ 2 >= 0.
