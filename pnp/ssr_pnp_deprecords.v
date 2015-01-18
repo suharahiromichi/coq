@@ -41,7 +41,7 @@ Mixinの定義
     Lemma r_unit T (pcm: mixin_of T) (t: T) :
       (join_op pcm t (unit_op pcm)) = t.
     Proof.
-      case: pcm =>_ join unit Hc _ Hlu _ _ /=.
+      case: pcm => _ join unit Hc _ Hlu _ _ /=.
                   by rewrite Hc Hlu.
     Qed.
     
@@ -59,9 +59,29 @@ Packの定義
             _ : mixin_of type
           }.
       Local Coercion type : pack_type >-> Sortclass.
-      
+(**
+packのインスタンスは任意のsortの要素
+（typeフィールドを経由して参照される、型Typeのこと）
+にコアーションされる。コアーションのために
+
+``type :  pack_type -> Type``
+
+が挿入される。原文：
+
+an instance of pack type should be coerced into an element of an arbitrary sort,
+it should be done via referring to is type field.
+
+``Coercion F : A >-> B.``
+
+Aのインスタンスは任意のB要素（Fフィールドを経由して参照される）
+にコアーションされる。次と比較せよ。
+コアーションのために ``is_true`` が挿入される。
+
+``Coercion is_true : bool >-> Sortclass. (* Prop *)``
+ *)
+Check type.
       Variable cT: pack_type.
-      Definition pcm_struct : mixin_of cT := 
+      Definition pcm_struct : mixin_of cT := (* Coercion cT *)
         let: Pack _ c := cT return mixin_of cT in c.
       Definition valid := valid_op pcm_struct.
       Definition join := join_op pcm_struct.
@@ -86,14 +106,14 @@ Exports の宣言
       Section PCMLemmas.
         Variable U : pcm.
 
-        Lemma joinC (x y : U) : x \+ y = y \+ x.
+        Lemma joinC (x y : U) : x \+ y = y \+ x. (* Coercion U *)
         Proof.
-            by case: U x y=> tp [v j z Cj *]; apply Cj.
+            by case: U x y => tp [v j z Cj *]; apply Cj.
         Qed.
 
         Lemma joinA (x y z : U) : x \+ (y \+ z) = x \+ y \+ z.
         Proof. 
-            by case: U x y z=>tp [v j z Cj Aj *]; apply: Aj. 
+            by case: U x y z => tp [v j z Cj Aj *]; apply: Aj. 
         Qed.
 (**
 Exercices 1
@@ -195,10 +215,10 @@ Exports の宣言
 (**
 可換則を証明しておく。
  *)
-      Lemma cancel (U: cancel_pcm) (x y z: U): 
+      Lemma cancel (U: cancel_pcm) (x y z: U): (* Coecion U *)
         valid (x \+ y) -> x \+ y = x \+ z -> y = z.
       Proof.
-          by case: U x y z=> Up [Hc] x y z; apply: Hc.
+          by case: U x y z => Up [Hc] x y z; apply: Hc.
       Qed.
     End Exports.
   End CancelPCM. 
@@ -221,19 +241,41 @@ Exports の宣言
     PCMMixin addnC addnA add0n (fun x y => @id true) (erefl _).
   
   Definition NatPCM := PCM nat natPCMMixin.
-  Canonical natPCM := PCM nat natPCMMixin.
+  Canonical natPCM := NatPCM.               (* 原文では、PCM nat natPCMMixin. *)
   Print Canonical Projections.
+(**
+nat <- PCMDef.type ( natPCM )
+が追加される。typeはCoercionであることに注意！
+ *)
 
+(**
+natPCM が Canonical でないと、add_perm の定義がエラーになる。
+natPCM を Canonical にすると、add_perm の nat を natPCM として扱える。
+ *)
+  Lemma add_perm (a b c : nat) : a \+ (b \+ c) = a \+ (c \+ b).
+  Proof.
+      by rewrite [c \+ b]joinC.
+  Qed.
+  
   Lemma cancelNat : forall a b c:
                              nat, true -> a + b = a + c -> b = c.
   Proof.
-    move=> a b c; elim: a=>// n /(_ is_true_true) Hn _ H.
+    move=> a b c; elim: a => // n /(_ is_true_true) Hn _ H.
       by apply: Hn; rewrite !addSn in H; move/eq_add_S: H.
   Qed.
   
+(**
+natPCM が Canonicalでないと、cancelNat が使用できない。
+natPCM を Canonical にすると、cancelNat の nat を natPCM として扱える。
+ *)
   Definition cancelNatPCMMixin := CancelPCMMixin cancelNat.
   Canonical cancelNatPCM := CancelPCM natPCM cancelNatPCMMixin.
-
+  Print Canonical Projections.
+(**
+natPCM <- CancelPCM.pcmT ( cancelNatPCM )
+が追加される。pcmTはCoercionであることに注意！
+ *)
+  
   Section PCMExamples.
     Variables a b c: nat.
 
