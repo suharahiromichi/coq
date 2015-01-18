@@ -33,9 +33,9 @@ Mixinの定義
           unit_op : T;
           _ : commutative join_op;
           _ : associative join_op;
-          Hu : left_id unit_op join_op;
-          H : forall x y, valid_op (join_op x y) -> valid_op x; 
-          Hv : valid_op unit_op 
+          _ : left_id unit_op join_op;
+          _ : forall x y, valid_op (join_op x y) -> valid_op x; 
+          _ : valid_op unit_op 
         }.
 
     Lemma r_unit T (pcm: mixin_of T) (t: T) :
@@ -95,7 +95,7 @@ Exports の宣言
       Notation pcm := pack_type.
       Notation PCMMixin := Mixin.
       Notation PCM T m := (@Pack T m).
-      Notation "x \+ y" := (join x y) (at level 43, left associativity).
+      Notation "x \+ y" := (join x y) (at level 43, left associativity). (* join_opではない。 *)
       Notation valid := valid.
       Notation Unit := unit.
       Coercion type : pack_type >-> Sortclass.
@@ -136,35 +136,34 @@ Exercices 1
         
         Lemma validL (x y : U) : valid (x \+ y) -> valid x.
         Proof.
-          Check (@Pack U).
-          Check (@Mixin U (@valid U) (@join U) (@unit U)).
-          apply: H.
+          case: U x y => tp [v j z Cj Aj H1 H2 H3 x y] => H.
+          by apply: (H2 x y).
         Qed.
 
-(**
-Mixin の lowの部分を使うにはどうすればよいのだろうか。
-ここでは、Mixinの定義を変えて、名前を付与している。
-*)        
         Lemma validR (x y : U) : valid (x \+ y) -> valid y.
         Proof.
-          rewrite joinC.
-          apply: H.
+          case: U x y => tp [v j z Cj Aj H1 H2 H3 x y].
+          rewrite [x \+ y]Cj.
+          by apply: (H2 y x).
         Qed.
         
         Lemma unitL (x : U) : (@Unit U) \+ x = x.
         Proof.
-          apply: Hu.
+          case: U x => tp [v j z Cj Aj H1 H2 H3 x].
+          by apply H1.
         Qed.
-
+        
         Lemma unitR (x : U) : x \+ (@Unit U) = x.
         Proof.
-          rewrite joinC.
-          apply: Hu.
+          case: U x => tp [v j z Cj Aj H1 H2 H3 x].
+          rewrite [x \+ _]Cj.
+          by apply H1.
         Qed.
         
         Lemma valid_unit : valid (@Unit U).
         Proof.
-          apply: Hv.
+          case: U => tp [v j z Cj Aj H1 H2 H3].
+          by apply H3.
         Qed.
 (**
 End of Exercices 1
@@ -269,7 +268,6 @@ natPCM が Canonicalでないと、cancelNat が使用できない。
 natPCM を Canonical にすると、cancelNat の nat を natPCM として扱える。
  *)
   Definition cancelNatPCMMixin := CancelPCMMixin cancelNat.
-  Canonical cancelNatPCM := CancelPCM natPCM cancelNatPCMMixin.
   Print Canonical Projections.
 (**
 natPCM <- CancelPCM.pcmT ( cancelNatPCM )
@@ -279,6 +277,10 @@ natPCM <- CancelPCM.pcmT ( cancelNatPCM )
   Section PCMExamples.
     Variables a b c: nat.
 
+    Check PCMDef.join_op : forall T : Type, PCMDef.mixin_of T -> T -> T -> T.
+    Check PCMDef.join : forall cT : pcm, cT -> cT -> cT.
+    About "_ \+ _".                         (* PCMDef.join  *)
+    
     Goal a \+ (b \+ c) =  c \+ (b \+ a).
       by rewrite joinA [c \+ _]joinC [b \+ _]joinC.
     Qed.
@@ -333,53 +335,12 @@ Exercices 2
  *)
 
 (** 
----------------------------------------------------------------------
-Exercise [Partially-ordered sets]
----------------------------------------------------------------------
-
-A partially ordered set order is a pair (T, <==), where T is a carrier
-set and <== is a relation on T, such that
-
-- forall x in T, x <== x (reflexivity);
-
-- forall x, y in T, x <== y /\ y <== x \implies x = y (antisymmetry);
-
-- forall x, y, z in T, x <== y /\ y <== z \implies x <== z (transitivity).
-
-Implement a data structure for partially-ordered sets using mixins and
-packed classes. Prove the following laws:
-
-Lemma poset_refl (x : T) : x <== x.
-Lemma poset_asym (x y : T) : x <== y -> y <== x -> x = y.
-Lemma poset_trans (y x z : T) : x <== y -> y <== z -> x <== z.
+Exercise 7.2 Partially-ordered sets
+(see. ssr_pnp_poset.v)
 *)
 
 (**
----------------------------------------------------------------------
-Exercise [Canonical instances of partially ordered sets]
----------------------------------------------------------------------
-
-Provide canonical instances of partially ordered sets for the
-following types:
-
-- [nat] and [<=];
-
-- [prod], whose components are posets;
-
-- functions [A -> B], whose codomain (range) [B] is a partially
-  ordered set.
-
-In order to provide a canonical instance for functions, you will need
-to assume and make use of the following axiom of functional
-extensionality:
-
-*)
-
-Axiom fext : forall A (B : A -> Type) (f1 f2 : forall x, B x), 
-               (forall x, f1 x = f2 x) -> f1 = f2.
-
-(**
-End of Exercices 2
+Exercise 7.3 Canonical instances of partially ordered sets
 *)
 End DepRecords.
 
