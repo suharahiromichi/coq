@@ -48,7 +48,6 @@ Mixinの定義
 (**
 7.1.3 Packaging the structure from mixins
  *)
-
 (**
 Packの定義
 *)
@@ -235,9 +234,13 @@ Exports の宣言
 (**
 7.4 Instantiation and canonical structures
  *)
-
   Definition natPCMMixin := 
-    PCMMixin addnC addnA add0n (fun x y => @id true) (erefl _).
+    PCMMixin
+      addnC                                 (* commutative *)
+      addnA                                 (* associative *)
+      add0n                                 (* left_id *)
+      (fun x y => @id true)                 (* valid_op join_op *)
+      (erefl _).                            (* valid_op unit_op *)
   
   Definition NatPCM := PCM nat natPCMMixin.
   Canonical natPCM := NatPCM.               (* 原文では、PCM nat natPCMMixin. *)
@@ -256,6 +259,9 @@ natPCM を Canonical にすると、add_perm の nat を natPCM として扱え�
       by rewrite [c \+ b]joinC.
   Qed.
   
+(**
+簡約規則を証明しておく。
+ *)
   Lemma cancelNat : forall a b c:
                              nat, true -> a + b = a + c -> b = c.
   Proof.
@@ -267,7 +273,13 @@ natPCM を Canonical にすると、add_perm の nat を natPCM として扱え�
 natPCM が Canonicalでないと、cancelNat が使用できない。
 natPCM を Canonical にすると、cancelNat の nat を natPCM として扱える。
  *)
-  Definition cancelNatPCMMixin := CancelPCMMixin cancelNat.
+  Definition cancelNatPCMMixin :=
+    CancelPCMMixin
+      cancelNat.                            (* 簡約規則 *)
+
+  Definition CancelNatPCM := CancelPCM natPCM cancelNatPCMMixin.
+  Canonical cancelNatPCM := CancelNatPCM.
+  (* 原文では、直接、CancelPCM natPCM cancelNatPCMMixin を使って定義される。 *)
   Print Canonical Projections.
 (**
 natPCM <- CancelPCM.pcmT ( cancelNatPCM )

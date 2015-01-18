@@ -15,13 +15,13 @@ Mixinの定義
   Record mixin_of (T : Type) :=
     Mixin
       {
-(*        valid_op : T -> bool; *)
+        valid_op : T -> bool;               (* 必要か？ *)
         rel_op : T -> T -> bool;
         refl (x : T) : rel_op x x;
         asym (x y : T) : rel_op x y -> rel_op y x -> x = y;
         trans (y x z : T) : rel_op x y -> rel_op y z -> rel_op x z
       }.
-
+  
 (**
 Packの定義
 *)
@@ -36,7 +36,7 @@ Packの定義
     Variable cT: pack_type.
     Definition poset_struct : mixin_of cT := (* Coercion cT *)
       let: Pack _ c := cT return mixin_of cT in c.
-(*    Definition valid := valid_op poset_struct. *)
+    Definition valid := valid_op poset_struct.
     Definition rel := rel_op poset_struct.
   End Packing.
   
@@ -47,8 +47,9 @@ Exports の宣言
     Notation poset := pack_type.
     Notation POSETMixin := Mixin.
     Notation POSET T m := (@Pack T m).
-    Notation "x <== y" := (rel x y) (at level 70, no associativity). (* rel_op ではない！ *)
-(*    Notation valid := valid. *)
+    Notation "x <== y" := (rel x y) (at level 70, no associativity).
+    (* rel_op ではない！ *)
+    Notation valid := valid.
     Coercion type : pack_type >-> Sortclass.
 
     Section POSETLemmas.
@@ -56,19 +57,19 @@ Exports の宣言
       
       Lemma poset_refl (x : T) : x <== x.
       Proof.
-        case: T x => tp [rel Href Hasym Htrans x].
+        case: T x => tp [rel Hv Href Hasym Htrans x].
         by apply: Href.
       Qed.
       
       Lemma poset_asym (x y : T) : x <== y -> y <== x -> x = y.
       Proof.
-        case: T x y => tp [rel Href Hasym Htrans x y].
+        case: T x y => tp [rel Hv Href Hasym Htrans x y].
         by apply Hasym.
       Qed.
       
       Lemma poset_trans (y x z : T) : x <== y -> y <== z -> x <== z.
       Proof.
-        case: T x y z => tp [rel Href Hasym Htrans x y z].
+        case: T x y z => tp [rel Hv Href Hasym Htrans x y z].
         by apply Htrans.
       Qed.
     End POSETLemmas.
@@ -89,7 +90,11 @@ Proof.
 Qed.
 Check leq_trans : forall n m p : nat, m <= n -> n <= p -> m <= p.
 Definition natPOSETMixin :=
-  POSETMixin leqnn eqn_leq' leq_trans.
+  POSETMixin
+    (fun _ => id true)                      (* valid *)
+    leqnn                                   (* ref *)
+    eqn_leq'                                (* asym *)
+    leq_trans.                              (* trans *)
 
 Definition NatPOSET := POSET nat natPOSETMixin.
 Canonical natPOSET := NatPOSET.
