@@ -7,7 +7,7 @@ https://coq.inria.fr/distrib/current/refman/Reference-Manual026.html
 Set Implicit Arguments.
 Require Import Arith.
 Require Import Div2.
-Require Import Recdef.
+Require Import Recdef.                      (* Fixpoint *)
 Require Import Program.                     (* destruct_call, on_call, etc... *)
 
 (* P x = (x = n) *)
@@ -27,15 +27,19 @@ Next Obligation.
 Proof.
   case o; intro H.
   - left.
-    now rewrite H; auto.
+    rewrite H.
+    now auto.
   - right.
-    f_equal; rewrite H.
+    rewrite H.
     rewrite plus_0_r.
     pattern (x + S x); rewrite plus_comm.
-    now rewrite plus_Sn_m.
+    rewrite plus_Sn_m.
+    now auto.
 Defined.
 
 Next Obligation.
+  (* n が自然数のとき、 *)
+  (* forall p : nat, p + 2 <> n -> n = 0 \/ n = 1 *)
   destruct n ; simpl in * ; intuition.
   destruct n ; simpl in * ; intuition.
   elim (H n) ; auto.
@@ -53,6 +57,7 @@ Fixpoint power (x : nat) (n : nat) : nat :=
 
 (*
 Function コマンド
+{order} である measure は f n の形式。
 http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt7.html
  *)
 Function binary_power_mult' (acc : nat) (x : nat) (n : nat) {measure id n} : nat :=
@@ -97,6 +102,11 @@ Defined.
 
 (* 
 Program コマンド、{x | P x} の形式
+P a = (a = acc * power x n) である。
+ *)
+
+(*
+binary_power_mult と power の一致の証明が求められるので、補題を用意しておく。
  *)
 Lemma double_2x x : x + x = double x.
 Proof.
@@ -105,15 +115,17 @@ Qed.
 
 Lemma power_S : forall x n, x * power x n = power x (S n).
 Proof.
-  intros; simpl; auto.
+  intros; simpl.
+  now auto.
 Qed.
 
 Lemma power_x_plus :
- forall x n p, power x (n + p) =  power x n *  power x p.
+ forall x n p, power x (n + p) =  power x n * power x p.
 Proof.
   induction n as [| p IHp]; simpl.
   - now auto.
-  - now intro q; rewrite (IHp q); rewrite mult_assoc.
+  - intro q; rewrite (IHp q); rewrite mult_assoc.
+    now auto.
 Qed.
 
 Lemma power_of_square :
@@ -129,18 +141,22 @@ Proof.
 Qed.
 
 (* binary_power_mult_ok を参考に *)
+(* nが偶数の場合 *)
 Lemma power_even_n acc x n :
   Even.even n -> acc * power (x * x) (div2 n) = acc * power x n.
 Proof.
   intro e.
   rewrite power_of_square.
   destruct n.
-  - auto.
-  - pattern (S n) at 3; replace (S n) with (div2 (S n) + div2 (S n))%nat; auto.
-    + rewrite <- power_x_plus; auto.
-    + generalize (even_double _ e); intro H; auto.      
+  - now auto.
+  - pattern (S n) at 3; replace (S n) with (div2 (S n) + div2 (S n)).
+    + rewrite <- power_x_plus.
+      now auto.
+    + generalize (even_double _ e); intro H.
+      now auto.
 Qed.
 
+(* nが奇数の場合 *)
 Lemma power_odd_n acc x n :
   Even.odd n -> acc * x * power (x * x) (div2 n) = acc * power x n.
 Proof.
@@ -148,15 +164,15 @@ Proof.
   rewrite power_of_square.
   destruct n.
   - now inversion o.
-  - pattern (S n) at 3; replace (S n) with (S (div2 (S n) + div2 (S n)))%nat; auto.
+  - pattern (S n) at 3; replace (S n) with (S (div2 (S n) + div2 (S n))).
     + rewrite mult_assoc.
-      generalize (odd_double _ o); intro H; auto.
       rewrite <- mult_assoc.
       rewrite <- power_x_plus.
       rewrite <- mult_assoc.
-      now rewrite power_S.
-    + rewrite double_2x.
-      rewrite <- (odd_double (S n)); auto.
+      rewrite power_S.
+      now auto.
+    + generalize (odd_double _ o); intro H.
+      now auto.
 Qed.
 
 Program Fixpoint binary_power_mult (acc : nat) (x : nat) (n : nat) {measure n} :
@@ -171,39 +187,37 @@ Program Fixpoint binary_power_mult (acc : nat) (x : nat) (n : nat) {measure n} :
           binary_power_mult (acc * x) (x * x) (div2 n)
       end
   end.
-Next Obligation.                            (* 0 *)
+(* 0 *)
+Next Obligation.
   rewrite mult_1_r.
-  auto.
+  now auto.
 Defined.
-Next Obligation.                            (* 偶数 *)
-  apply lt_div2. now auto with arith.
+(* 偶数 *)
+Next Obligation.
+  apply lt_div2.
+  now auto with arith.
 Defined.
-Next Obligation.                            (* 偶数 *)
+Next Obligation.
   unfold binary_power_mult_func_obligation_2.
-  unfold eq_ind_r.
-  unfold eq_ind.
-  unfold eq_rect.
-  simpl.
-  destruct_call binary_power_mult.
-  simpl.
-  rewrite e.
+  destruct_call binary_power_mult.          (* see Program.v *)
+  rewrite e. simpl.
   apply power_even_n.
-  auto.
+  now auto.
 Defined.
-Next Obligation.                            (* 奇数 *)
-  apply lt_div2. now auto with arith.
+(* 奇数 *)
+Next Obligation.
+  apply lt_div2.
+  now auto with arith.
 Defined.
-Next Obligation.                            (* 奇数 *)
+Next Obligation.
   unfold binary_power_mult_func_obligation_4.
   destruct_call binary_power_mult.
-  rewrite e.
-  simpl.
+  rewrite e. simpl.
   apply power_odd_n.
-  auto.
+  now auto.
 Defined.
 
 (* END *)
-
 
 (**
 http://d.hatena.ne.jp/airobo/20120813/1344837154
@@ -214,5 +228,3 @@ http://d.hatena.ne.jp/airobo/20120813/1344837154
 許されていないので，uncurry化した nat * nat -> nat 型の関数を一度定義した後に curry化してや
 る必要があります．
 *)
-
-
