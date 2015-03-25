@@ -93,6 +93,29 @@ End Monad_Maybe.
 Section Monad_List.
   Definition MList := seq.
   
+  Lemma flat_map_cons (T : Type) (g : T -> seq T) a l :
+    List.flat_map g (a :: l) = g a ++ List.flat_map g l.
+  Proof.
+    by [].
+  Qed.
+  
+  Lemma flat_map_append (T : Type) (g : T -> seq T) l m :
+    List.flat_map g (l ++ m) = (List.flat_map g l) ++ (List.flat_map g m).
+  Proof.
+    elim: l.
+    - by [].
+    - move => a l.
+      elim: m.
+      + move=> IHm //=.
+        rewrite List.app_nil_r.
+        by rewrite [_ ++ [::]]List.app_nil_r.
+      + move=> a' l' IH1 IH2 //=.
+        rewrite IH2.
+        rewrite flat_map_cons.
+        rewrite List.app_assoc.
+        by [].
+  Qed.
+  
   Program Instance : Monad MList :=
     {|
       ret A a := a :: [::];
@@ -115,7 +138,11 @@ Section Monad_List.
    List.flat_map g (List.flat_map f m) =
    List.flat_map (fun x : A => List.flat_map g (f x)) m
      *)
-    admit.
+    elim: m.
+    - by [].
+    - move=> a l IHm //=.
+      rewrite -IHm.
+      by rewrite flat_map_append.
   Qed.
   
   Program Instance : Functor MList :=
@@ -130,6 +157,11 @@ Section Monad_Stack.
     seq S -> (T * seq S).
   Check MStack : (Type -> Type).
   
+  Axiom functional_extensionality :
+    forall {T : Type},
+    forall {f g : MStack T},
+      (forall (q : seq nat), f q = g q) -> f = g.
+
   Program Instance : Monad MStack :=
     {|
       ret A n := fun q : seq S => (n, q);
@@ -140,11 +172,16 @@ Section Monad_Stack.
     |}.
   Obligation 2.
   Proof.
-    admit.
+    apply functional_extensionality.
+    move=> q.
+    by elim: m.
   Qed.
   Obligation 3.
   Proof.
-    admit.
+    apply functional_extensionality.
+    move=> q.
+    elim: m.
+    by [].
   Qed.
 
   Check @bind : (forall M : Type -> Type,
@@ -157,12 +194,16 @@ Section Monad_Stack.
     |}.
 End Monad_Stack.
 
-  
 Section Monad_State.
   Definition s := nat.                      (* 状態はnatひとつで持つ。 *)
   Definition MState (T : Type) := s -> T * s.
   Check MState : (Type -> Type).
   
+  Axiom functional_extensionality' :
+    forall {T : Type},
+    forall {f g : MState T},
+      (forall (q : s), f q = g q) -> f = g.
+
   Program Instance : Monad MState :=
     {|
       ret A a := fun s => (a, s);
@@ -173,18 +214,23 @@ Section Monad_State.
     |}.
   Obligation 2.
   Proof.
-    admit.
+    apply functional_extensionality'.
+    move=> q.
+    elim: m.
+    by [].
   Qed.
   Obligation 3.
   Proof.
-    admit.
+    apply functional_extensionality'.
+    move=> q.
+    by elim: m.
   Qed.
 End Monad_State.
 
 Section Monad_Cont.
   Definition MCont R A := (A -> R) -> R.
   Check MCont : (Type -> (Type -> Type)).
-
+  
   Program Instance : Monad MCont :=
     {|
       bind R A c f :=
