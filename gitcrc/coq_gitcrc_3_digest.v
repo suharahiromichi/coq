@@ -5,6 +5,9 @@ Chapter 3. Lost in Manhattan (抜萃)
 
 Type Classを使って reflexivityとrewriteを拡張する。
 ここでは、それに向かう説明だけを抄訳する。
+
+typeclassestut.pdf
+typeclassesTut/Lost_in_NY.v
 *)
 
 (* We consider the discrete plan the coordinate system of which 
@@ -82,6 +85,13 @@ Proof.
   rewrite H; reflexivity.                   (* move r _ = move r' _ *)
 Qed.
 
+(* 問題番号は、PDFテキストではなく、サンプルソースにあわせている。 *)
+Example Ex1 : East::North::West::South::East::nil =r= East::nil.
+Proof.
+  intro P; destruct P; simpl.
+  unfold route_equiv, translate; simpl; f_equal; ring.
+Qed.
+
 (**
 3.4 On Route Equivalence
  *)
@@ -121,6 +131,12 @@ Proof.
   reflexivity.
 Qed.
 
+Example Ex2 :
+  South::East::North::West::South::East::nil =r= South::East::nil.
+Proof.
+  apply route_cons; apply Ex1.
+Qed.
+
 (**
 3.5 Proper Functions
 *)
@@ -128,6 +144,7 @@ Qed.
 (* cons に対して Propperである。 *)
 (********************************)
 Require Import Morphisms.
+Locate "_ ==> _".
 Instance cons_route_Proper (d:direction): 
     Proper (route_equiv ==> route_equiv) (cons d) .
 Proof.
@@ -174,13 +191,12 @@ Qed.
 Example Ex3 : forall r, North::East::South::West::r =r= r.
 Proof.
   intros r P;
-  destruct P; simpl. 
+    destruct P; simpl.
   unfold route_equiv, translate; simpl;
     do 2 f_equal; ring.
 Qed.
 
-Example Ex4 : forall r r', r =r= r' -> 
-                North::East::South::West::r =r= r'.
+Example Ex4 : forall r r', r =r= r' -> North::East::South::West::r =r= r'.
 Proof.
   intros r r' H.
   now rewrite Ex3.
@@ -238,5 +254,115 @@ Proof.
   intro P;destruct P; simpl;
   unfold translate; simpl; f_equal; simpl; ring.
 Qed.
+
+
+(**
+3.7 Deciding Route Equivalence
+*)
+
+(* Prove the correctness of Point_eqb *)
+Lemma Point_eqb_correct :
+  forall p p',
+    Point_eqb p p' = true <-> p = p'.
+Proof.
+  destruct p; destruct p'; simpl; split.
+  unfold Point_eqb;  simpl;  rewrite andb_true_iff; destruct 1.
+  repeat rewrite <- Zeq_is_eq_bool in *.
+  rewrite H, H0; reflexivity.
+  injection 1; intros H0 H1; rewrite H0, H1; unfold Point_eqb; simpl;
+  rewrite andb_true_iff; repeat rewrite <- Zeq_is_eq_bool;  now split.
+Qed.
+
+Lemma translate_comm :
+  forall dx dy dx' dy' P,
+    translate dx dy (translate dx' dy' P) = translate dx' dy' (translate dx dy P).
+Proof.
+  unfold translate; simpl; intros; f_equal; ring.
+Qed.
+
+Lemma move_translate :
+  forall r P dx dy,
+    move r (translate dx dy P) = translate dx dy (move r P).
+Proof.
+  induction r as [|a r]; simpl; [reflexivity|].  
+  destruct a;simpl; intros;rewrite <- IHr;rewrite  (translate_comm); auto.
+Qed.
+
+Lemma move_comm :
+  forall r r' P,
+    move r (move r' P) =  move r' (move r P).
+Proof.
+  induction r as [| a r']; [reflexivity|].
+  simpl; destruct a;
+  intros; repeat rewrite move_translate; rewrite IHr'; auto.
+Qed.
+
+Lemma app_comm : forall r r', r++r' =r=  r'++r.
+Proof.
+  intros r r' P; repeat rewrite route_compose; apply move_comm.
+Qed.
+
+(** the following lemma  will be used for deciding route equivalence *)
+Lemma route_equiv_Origin :
+  forall r r', r =r= r' <-> move r Point_O  = move r' Point_O .
+Proof.
+  split; intro H.
+  rewrite H; trivial.
+  intro P; replace P with (translate (Point_x P) (Point_y P) Point_O).
+  repeat rewrite move_translate.
+  rewrite H; reflexivity.
+  destruct P; simpl;unfold translate;f_equal.
+Qed.
+
+Definition route_eqb r r' : bool :=
+  Point_eqb (move r Point_O) (move r' Point_O).
+
+(**  ... we can now prove route_eqb's  correctness *)
+Lemma route_equiv_equivb :
+  forall r r',
+    route_equiv r r' <-> route_eqb r r' = true.
+Proof.
+  intros r r'; rewrite route_equiv_Origin; 
+  unfold route_eqb; rewrite Point_eqb_correct; tauto.
+Qed.
+
+Ltac route_eq_tac := rewrite route_equiv_equivb; reflexivity.
+
+(** another proof of Ex1, using computation  *)
+
+Example Ex1' : East::North::West::South::East::nil =r= East::nil.
+Proof.
+  route_eq_tac.
+Qed.
+
+(*****************
+オリジナル文書にはない補足説明
+@suharahiromichi
+
+route_equiv と route_eqb は、reflect の関係にあるので、それを証明すれば、
+Ex1 の =r= (route_equiv) を route_eqb にして証明することができる。
+
+SSReflectの上で、Morphisms を使うのは難しそうなので、
+ここで、試験的に局所的にSSReflectをImportしている。
+******************
+*)
+Section SSR.
+  Require Import ssreflect ssrbool.
+  
+  Lemma route_equivP (r r' : route) :
+    reflect (route_equiv r r') (route_eqb r r').
+  Proof.
+    apply: (@iffP (route_eqb r r')).
+    - by apply: idP.
+    - by apply (route_equiv_equivb r r').
+    - by apply (route_equiv_equivb r r').
+  Qed.
+  
+  Example Ex1'' : East::North::West::South::East::nil =r= East::nil.
+  Proof.
+    apply/route_equivP.
+      by [].
+  Qed.
+End SSR.
 
 (* END *)
