@@ -1,3 +1,14 @@
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice fintype.
+Require Import bigop ssralg div ssrnum ssrint.
+Open Scope int_scope.
+Import intZmod.                             (* addz *)
+
+Locate "_ + _".
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 (**
 A Gentle Introduction to Type Classes and Relations in Coq
 の
@@ -11,13 +22,15 @@ Chapter 3. Lost in Manhattan
 *)
 
 Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq path div choice.
-Require Import fintype tuple finfun bigop prime ssralg poly ssrnum ssrint rat.
+Require Import fintype tuple finfun bigop prime ssralg poly ssrnum ssrint.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Local Open Scope ring_scope.
+Local Open Scope int_scope.
+Delimit Scope int_scope with Z.
+Local Open Scope int_scope.
 
 (**
 3.2 Data Types and Definitions
@@ -214,9 +227,7 @@ Proof.
 Qed.
 
 (* ****************** *)
-(* ****************** *)
 (* route_equiv と route_eqb の reflect を証明する *)
-(* ****************** *)
 (* ****************** *)
 
 (* これは、SSReflect の rel ではない。 *)
@@ -224,8 +235,6 @@ Definition route_equiv (r r' : route) :=
   forall (P : Point), (move r P) = (move  r' P).
 Check route_equiv : route -> route -> Prop.
 Infix "=r=" := route_equiv (at level 70):type_scope.
-
-
 
 (**
 3.6 Some Other instances of Proper
@@ -247,13 +256,30 @@ Proof.
 Qed.
 *)
 
+Lemma addrC (a b c : int) :
+  (a + b + c)%R = (a + c + b)%R.
+Proof.
+  admit.
+Qed.
 
+Lemma add0r (a : int) :
+  (0 + a)%R = a%R.
+Proof.
+  admit.
+Qed.
 
 Lemma translate_comm :
   forall dx dy dx' dy' P,
     translate dx dy (translate dx' dy' P) = translate dx' dy' (translate dx dy P).
 Proof.
-  admit.
+  rewrite /translate //=.
+  move=> dx dy dx' dy' P.
+  apply Point_eqb_correct'.
+  rewrite /Point_eqb //=.
+  apply/andP.
+  split.
+  by rewrite addrC.
+  by rewrite addrC.
 Qed.
 
 Lemma move_translate :
@@ -282,7 +308,15 @@ Qed.
 Lemma route_equiv_Origin :
   forall r r', r =r= r' <-> move r Point_O  = move r' Point_O .
 Proof.
-  admit.
+  move=> r r'.
+  split; intro H.
+  rewrite H; trivial.
+  intro P; replace P with (translate (Point_x P) (Point_y P) Point_O).
+  repeat rewrite move_translate.
+  rewrite H; reflexivity.
+  destruct P; simpl; unfold translate; f_equal; simpl.
+  by rewrite add0r.
+  by rewrite add0r.
 Qed.
 
 (**  ... we can now prove route_eqb's  correctness *)
