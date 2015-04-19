@@ -29,6 +29,8 @@ Open Scope Z_scope.
 Require Import Relations.
 Require Import Setoid.
 
+Require Import coq_gitcrc_3_digest.
+(*************************************************************
 (**
 3.2 Data Type and Definitions
  *)
@@ -82,14 +84,7 @@ Proof.
   induction r as [|d s IHs]; simpl;
   [auto | destruct d; intros;rewrite IHs;auto].
 Qed.
-
-Example Ex3 : forall r, North::East::South::West::r =r= r.
-Proof.
-  intros r P;
-    destruct P; simpl.
-  unfold route_equiv, translate; simpl;
-    do 2 f_equal; ring.
-Qed.
+*************************************************************)
 
 (**
 3.7 Deciding Route Equivalence
