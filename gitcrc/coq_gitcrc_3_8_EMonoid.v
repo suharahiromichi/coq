@@ -56,9 +56,20 @@ Proof.
     route_eq_tac.
 Qed.
 
+(* ****** *)
+
 Class Abelian_EMonoid `(M:EMonoid ) :=
   {
     Edot_comm : forall x y, E_eq (dot x  y)  (dot y  x)
   }.
+
+Instance AbelianRoute : Abelian_EMonoid Route. 
+  split;  apply app_comm.
+Qed.
+
+Program Instance AbelianRoute' : Abelian_EMonoid Route. 
+Next Obligation.
+  apply app_comm.
+Qed.
 
 (* END *)
