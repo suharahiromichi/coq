@@ -167,9 +167,10 @@ In Coq this fact can be declared as an instance of:
 *)
 Instance cons_route_Proper (d : direction) :
   Proper (route_equiv ==> route_equiv) (cons d) .
+(* ∀r r', r =r= r' -> cons d r =r= cons d r' *)
 Proof.
-  intros r r' H;
-  apply route_cons;
+  intros r r' H.
+  apply route_cons.
   assumption.
 Qed.
 
@@ -226,8 +227,8 @@ Qed.
 (* append は、route_equiv に対して Propperである。 *)
 (**************************************************)
 Instance app_route_Proper :
-  Proper (route_equiv ==> route_equiv ==> route_equiv)
-         (@app direction).
+  Proper (route_equiv ==> route_equiv ==> route_equiv) (@app direction).
+(* ∀r r' r'' r''', r =r= r'' -> r' =r= r''' -> r ++ r'' =r= r' ++ r''' *)
 Proof. 
   intros r r' H r'' r''' H' P.
   repeat rewrite route_compose.
@@ -258,6 +259,7 @@ Qed.
 (***************************************************************)
 Instance move_Proper :
   Proper (route_equiv ==> @eq Point ==> @eq Point) move . 
+(* ∀r r' p q, r =r= r' -> p = q -> move r p = move r' q. 「=」はPointどうしのeq *)
 Proof.
   intros r r' Hr_r' p q Hpq.
   rewrite Hpq; apply Hr_r'.
@@ -268,6 +270,7 @@ Qed.
 (**********************************************************************)
 Example length_not_Proper :
   ~Proper (route_equiv ==> @eq nat) (@length _).
+(* ~ (∀r r', r =r= r' -> length r = length r'). 「=」はnatのeq *)
 Proof.
   intro H; generalize (H (North::South::nil) nil); simpl; intro H0.
   discriminate H0.
