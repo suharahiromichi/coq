@@ -3,8 +3,12 @@ A Gentle Introduction to Type Classes and Relations in Coq
 の
 Chapter 3. Lost in Manhattan (抜萃)
 
-Coqのrewriteタクティックは Leibniz equality より弱い関係に関しても使えて便利だ。
-ここでは、Type Classを使ってrewriteを拡張する説明を抄訳する。
+The Coq system provides now some useful tools for considering relations and proper
+functions, allowing to use the rewrite tactics for relations that are weaker than the
+Leibniz equality.
+Coqのrewriteタクティックは Leibniz equality より弱い関係に関しても使える。
+
+ここでは、Type Classを使ってrewriteとreflexivityを拡張する説明を抄訳する。
 
 typeclassestut.pdf
 typeclassesTut/Lost_in_NY.v
@@ -146,6 +150,21 @@ Qed.
 Require Import Morphisms.
 Locate "_ ==> _".
 
+(*
+What we really need is to tell to 
+the rewrite tactic how to use route_cons                     rewriteタクティクが、route_consをどのように使うか、
+for using an equivalence r =r= r'                            r =r= r' を使うために、
+for replacing r with r' in a term of the form cons d r       cons d r の中の r を r' で置き換えるために、
+for proving directly the equivalence cons d r =r= cons d r'. cons d r =r= cons d r' を直接証明するために。
+
+「rewriteタクティクが、cons d r =r= cons d r' を直接証明するために、
+cons d r の中の r を r' で置き換えるために、r =r= r' を使うために、route_consをどう使うか。」
+
+In other words, we say that cons d is proper w.-r.-t. the relation route_equiv.
+In Coq this fact can be declared as an instance of:
+
+「cons d は、 route_equiv に対して Propperである。この事実は次のインスタンスで宣言できる」
+*)
 Instance cons_route_Proper (d : direction) :
   Proper (route_equiv ==> route_equiv) (cons d) .
 Proof.
