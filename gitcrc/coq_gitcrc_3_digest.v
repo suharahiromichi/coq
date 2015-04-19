@@ -3,8 +3,8 @@ A Gentle Introduction to Type Classes and Relations in Coq
 の
 Chapter 3. Lost in Manhattan (抜萃)
 
-Type Classを使って reflexivityとrewriteを拡張する。
-ここでは、それに向かう説明だけを抄訳する。
+Coqのrewriteタクティックは Leibniz equality より弱い関係に関しても使えて便利だ。
+ここでは、Type Classを使ってrewriteを拡張する説明を抄訳する。
 
 typeclassestut.pdf
 typeclassesTut/Lost_in_NY.v
@@ -61,7 +61,7 @@ Fixpoint move (r:route) (P:Point) : Point :=
 
 Definition route_equiv : relation route :=
   fun r r' => forall P:Point , move r P = move  r' P.
-Infix "=r=" := route_equiv (at level 70):type_scope.
+Infix "=r=" := route_equiv (at level 70) : type_scope.
 
 (**
 ここでできること。
@@ -140,13 +140,14 @@ Qed.
 (**
 3.5 Proper Functions
 *)
-(********************************)
-(* cons に対して Propperである。 *)
-(********************************)
+(***************************************************)
+(* cons d は、 route_equiv に対して Propperである。 *)
+(***************************************************)
 Require Import Morphisms.
 Locate "_ ==> _".
-Instance cons_route_Proper (d:direction): 
-    Proper (route_equiv ==> route_equiv) (cons d) .
+
+Instance cons_route_Proper (d : direction) :
+  Proper (route_equiv ==> route_equiv) (cons d) .
 Proof.
   intros r r' H;
   apply route_cons;
@@ -161,7 +162,7 @@ r =r= r' のとき、
 d :: r ---> d :: r'
  *)
 
-(*  cons_route_Proper allows to replace a route with an =r= equivalent one
+(* cons_route_Proper allows to replace a route with an =r= equivalent one
      in a context composed by "cons" *)
 Goal forall r r', r =r= r' ->
                   South::West::r =r= South::West::r'.
@@ -202,9 +203,9 @@ Proof.
   now rewrite Ex3.
 Qed.
 
-(**********************************)
-(* append に対して Propperである。 *)
-(**********************************)
+(**************************************************)
+(* append は、route_equiv に対して Propperである。 *)
+(**************************************************)
 Instance app_route_Proper :
   Proper (route_equiv ==> route_equiv ==> route_equiv)
          (@app direction).
@@ -233,9 +234,9 @@ Qed.
 (**
 おまけ
 *)
-(********************************)
-(* move に対して Propperである。 *)
-(********************************)
+(***************************************************************)
+(* move は、route_equi と (Leibniz) eq に対して Propperである。 *)
+(***************************************************************)
 Instance move_Proper :
   Proper (route_equiv ==> @eq Point ==> @eq Point) move . 
 Proof.
@@ -243,9 +244,9 @@ Proof.
   rewrite Hpq; apply Hr_r'.
 Qed.
 
-(**********************************)
-(* length に対して Propperでない。 *)
-(**********************************)
+(**********************************************************************)
+(* length は、 route_equi と (Leibniz) eq に対して Propperで「ない」。 *)
+(**********************************************************************)
 Example length_not_Proper :
   ~Proper (route_equiv ==> @eq nat) (@length _).
 Proof.
