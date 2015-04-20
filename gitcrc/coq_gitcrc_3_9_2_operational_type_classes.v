@@ -360,7 +360,10 @@ Locate Proper.
 
 (* 
 The overloaded == notation will refer to the appropriate equivalence relation on the
-type of the arguments. One can develop in this fashion a hierarchy of structures. In the
+type of the arguments.
+オーバーロードされた「==」は、引数の型に応じて適切な同値関係を参照するであろう。
+
+One can develop in this fashion a hierarchy of structures. In the
 following we define the structure of semirings starting from a refinement of EMonoid.
 *)
 
@@ -531,19 +534,29 @@ Class ESemiRing (A:Type)
 About absorb_l.
 
 (* 
-
 Note that we use a kind of multiple inheritance here, as a semiring contains two monoids,
-one for addition and one for multiplication, that are related by distributivity and
-absorbtion laws. To distinguish between the correspond- ing monoid operations, we
-introduce the new operational type classes Ring*.  These classes are declared Transparent
-for typeclass resolution, so that their expansion to monoid_binop can be used freely
-during conversion: they are just abbreviations used for overloading notations.  We also
-introduce classes for the standard properties of operations like com- mutativity,
-distributivity etc... to be able to refer to them generically.  We can now develop some
-generic theory on semirings using the overloaded lemmas about distributivity or the
-constituent monoids. Resolution automati- cally goes through the ESemiRing structure to
-find proofs regarding the under- lying monoids.
+半環がふたつのモノイドを含むために、一種の多重継承を使うことに注意せよ。
 
+one for addition and one for multiplication, that are related by distributivity and absorbtion laws.
+ひとつは加算でひとつは積算で、これらは分配則と吸収則(absorbtion laws)に関係する。
+
+To distinguish between the corresponding monoid operations, we introduce the new operational type classes Ring*.
+対応したモノイドの操作を区別するために、新しい operational type classes である Ringなんとか を導入する。
+
+These classes are declared Transparent for typeclass resolution, so that their expansion
+to monoid_binop can be used freely during conversion: they are just abbreviations used for
+overloading notations.
+それでこれらのmonoid_binopへの拡張は変換を通じて公平に使われるように、
+これらのクラスは、typeclass resolution の透明性を宣言される。
+これらは、オーバーローディング記法のための短縮形が使われる。
+
+We also introduce classes for the standard properties of operations like commutativity,
+distributivity etc... to be able to refer to them generically.
+可換性や分配性などのためにも、またクラスを導入する。
+
+We can now develop some generic theory on semirings using the overloaded lemmas about
+distributivity or the constituent monoids. Resolution automatically goes through the
+ESemiRing structure to find proofs regarding the underlying monoids.
  *)
 
 Print Absorb.
