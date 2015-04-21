@@ -25,7 +25,6 @@ constant such that monoid_op f can be δβ-reduced into f.
 
 monoid_op はコンストラクタではなく、単に monoid_op f が f に簡約される。
  *)
-
 Infix "*" := monoid_op: M_scope.
 
 Open Scope M_scope.
@@ -49,34 +48,37 @@ Open Scope Z_scope.
 Print monoid_op.
 Compute (@monoid_op _ Zmult 5 6).           (* 30 : Z *)
 
-
+(* 整数の掛け算のモノイド *)
+(* opとモノイドのふたつを組で定義する。 *)
 Instance Zmult_op : monoid_binop Z | 17 := Zmult. (* monoid_binop の優先順位 17 *)
-Compute 2 * 5.                                    (* 10 : Z *)
+Check 2 * 5.                            (* 2 * 5 : Z *)
+Compute 2 * 5.                          (* 10 : Z *)
 Set Printing All.
-Compute 2 * 5.                          (* Zpos (xO (xI (xO xH))) : Z *)
 Check 2 * 5.                            (* Z.mul (Zpos (xO xH)) (Zpos (xI (xO xH))) : Z *)
+Compute 2 * 5.                          (* Zpos (xO (xI (xO xH))) : Z *)
 Unset Printing All.
-
 Instance ZMult : Monoid Zmult_op  1 | 22.   (* Monoid の優先順位 22 *)
 Proof.
   split; intros; unfold Zmult_op, monoid_op; ring. 
 Defined.                                    (* Qedでもよい。 *)
 
+(* 任意の型Aの2x2行列の掛け算のモノイド *)
 Require Import Ring.
 Section matrices.
-  Variables (A:Type)
+  Variables (A : Type)                      (* 任意の型 *)
             (zero one : A) 
             (plus mult minus : A -> A -> A)
             (sym : A -> A).
-  Notation "0" := zero.  Notation "1" := one.
+  Notation "0" := zero.
+  Notation "1" := one.
   Notation "x + y" := (plus x y).  
   Notation "x * y " := (mult x y).
  
   Variable rt : ring_theory  zero one plus mult minus sym (@eq A).
   Add Ring Aring : rt.
 
-  Global Instance M2_mult_op : monoid_binop (M2 A) := (M2_mult  plus mult ) . 
-
+  (* 組で定義する。 *)
+  Global Instance M2_mult_op : monoid_binop (M2 A) := (M2_mult plus mult ) . 
   Global Instance M2_Monoid' : Monoid  M2_mult_op (Id2 0 1).
   Proof.
     split.
@@ -87,7 +89,7 @@ Section matrices.
     destruct x; simpl; unfold M2_mult_op, monoid_op; 
     unfold M2_mult; apply M2_eq_intros; simpl; ring. 
   Defined.
-
+  (* Program コマンドを使う。 *)
   Global Program Instance M2_Monoid : Monoid  M2_mult_op (Id2 0 1).
   Next Obligation.                          (* (x * (y * z))%M = (x * y * z)%M *)
   Proof.
@@ -105,9 +107,9 @@ Section matrices.
   Qed.
 End matrices.
 
-Generalizable Variables A dot one.
-About Monoid.
+Generalizable Variables A dot one.          (* コンテキストで決まる変数 *)
 
+(* 整数型の2x2行列の掛け算のモノイド *)
 Instance M2_Z_op : monoid_binop (M2 Z) := M2_mult Zplus Zmult . 
 Instance M2_mono_Z : Monoid (M2_mult_op _ _)  (Id2 _ _) := M2_Monoid Zth.
 
@@ -116,13 +118,13 @@ Compute ((Build_M2 1 1 1 0)*(Build_M2 1 1 1 0))%M.
 Compute ((Id2 0 1)*(Id2 0 1))%M.
 (* {| c00 := 2; c01 := 1; c10 := 1; c11 := 1 |} : M2 Z *)
 
-Fixpoint power `{M : @Monoid A dot one} (a:A) (n:nat) :=
+Fixpoint power `{M : @Monoid A dot one} (a : A) (n : nat) := (* Generalizable Variables を使う。 *)
   match n with
     | 0%nat => one
     | S p => (a * power a p)%M
   end.
 
-Infix "**" := power (at level 30, no associativity):M_scope.
+Infix "**" := power (at level 30, no associativity) : M_scope.
 Compute  (2 ** 5) ** 2.                     (* 1024 : Z *)
 Unset Printing Implicit.
 About M2_mult.
@@ -137,13 +139,17 @@ Compute (2 ** 5)%M.                         (* 32 : Z *)
 (* ****************************** *)
 (* power の計算の正しさを証明する。 *)
 (* ****************************** *)
-(* A tail recursive linear function *)
-Fixpoint power_mult `{M : Monoid }
-         (acc x:A) (n:nat) : A (* acc * (x ** n) *) :=
+(* A tail recursive linear function、普通の定義 *)
+Fixpoint power_mult `{M : Monoid } (acc x : A) (n : nat) : A
+(* acc * (x ** n) *) :=
+  (* A は、Monoid からジェネリックに決まる型 *)
   match n with
     | 0%nat => acc
     | S p => power_mult (acc * x)%M x p
   end.
+Check power_mult.                     (* M2 Z -> M2 Z -> nat -> M2 Z これは、まやかし！ *)
+About power_mult.
+(* forall (A : Type) (dot : monoid_binop A) (one : A), Monoid dot one -> A -> A -> nat -> A *)
 
 Definition tail_recursive_power  `{M : Monoid} (x : A) (n : nat) :=
   power_mult one x n.
@@ -152,7 +158,7 @@ Require Import Recdef.
 Require Import Div2.
 
 Function binary_power_mult (A : Type) (dot : monoid_binop A) (one : A) 
-         (M: @Monoid A dot one) (acc x:A) (n:nat) {measure (fun i=>i) n} : A 
+         (M: @Monoid A dot one) (acc x : A) (n : nat) {measure (fun i=>i) n} : A 
   (* acc * (x ** n) *) :=
   match n with
     | 0%nat => acc
@@ -162,17 +168,27 @@ Function binary_power_mult (A : Type) (dot : monoid_binop A) (one : A)
         | right H1 => binary_power_mult _ (acc * x)%M ( x * x)%M (div2 n)
       end
   end.
-intros; apply lt_div2; auto with arith.
-intros; apply lt_div2; auto with arith.
+Proof.
+  intros; apply lt_div2; auto with arith.
+  intros; apply lt_div2; auto with arith.
 Defined.
-About Monoid.
 
-Definition binary_power `{M: Monoid} (x:A) (n:nat) := 
+Definition binary_power `{M : Monoid} (x : A) (n : nat) := 
+  binary_power_mult M one x n.                                     (* Monoidの定義の変数が使われる *)
+Definition binary_power' `{M : @Monoid A dot one} (x:A) (n:nat) := (* Generalizable Variables を使う。 *)
   binary_power_mult M one x n.
+(* 補足説明：クラスの引数を指定する場合は、Generalizable Variables でなければならない。
+クラスの引数を指定しない場合は、クラス定義で使われた変数が自動的に使われる。
+上記では、両者の変数がが同じなのだが、その場合でも、そういうことになっているようだ。 *)
 
+Compute 2 ** 5.
 Compute binary_power 2 5.                   (* 32 : Z *)
+
 Compute (Build_M2 1 1 1 0) ** 10.           (* {| c00 := 89; c01 := 55; c10 := 55; c11 := 34 |} : M2 Z *)
-Compute binary_power (Build_M2 1 1 1 0) 20. (*  {| c00 := 10946; c01 := 6765; c10 := 6765; c11 := 4181 |} : M2 Z *)
+Compute binary_power (Build_M2 1 1 1 0) 10.
+
+Compute (Build_M2 1 1 1 0) ** 20.
+Compute binary_power (Build_M2 1 1 1 0) 20. (* {| c00 := 10946; c01 := 6765; c10 := 6765; c11 := 4181 |} : M2 Z *)
 
 (*
 All the techniques we used in Sect. 2.3.1 can be applied with operational type
@@ -182,22 +198,28 @@ classes. The main section of this proof is as follows:
 *)
 
 Section About_power.
-  Context `(M:Monoid).
-  Open Scope M_scope.
+  Fail Check A.
+  Context `(M : Monoid).                    (* モノイド定義の変数が使われる。 *)
+(*  Context `(M : @Monoid A dot one). (* コンテキストが決まる（Generalizable Variables が埋まる）。 *) *)
+  Check A.                                  (* A : Type, Monoid の A *)
+  Check dot.                                (* dot : monoid_binop A *)
+  Check one.                                (* one : A *)
+  Check M.                                  (* M : Monoid dot one *)
+  Open Scope M_scope.                       (* "*" や "**" が使えるようになる。 *)
 
   Ltac monoid_rw :=
     rewrite one_left || rewrite one_right || rewrite dot_assoc.
 
   Ltac monoid_simpl := repeat monoid_rw.
-
+  
   Lemma power_x_plus :
-    forall x n p, (x ** (n + p) = x ** n * x ** p).
+    forall (x : A) (n p : nat), (x ** (n + p) = x ** n * x ** p).
   Proof.
-    induction n;simpl. 
-    intros; monoid_simpl;trivial.
-    intro p;rewrite (IHn p); monoid_simpl;trivial.
+    induction n; simpl. 
+    intros; monoid_simpl; trivial.
+    intro p; rewrite (IHn p); monoid_simpl; trivial.
   Qed.
-
+  
   Ltac power_simpl := repeat (monoid_rw || rewrite <- power_x_plus).
 
   Lemma power_commute :
@@ -302,7 +324,7 @@ Proof.
 Defined.
 
 Section Power_of_dot.
-  Context `{M: Monoid A} {AM:Abelian_Monoid M}.
+  Context `{M: Monoid A} {AM : Abelian_Monoid M}.
 
  Open Scope M_scope.
  
@@ -317,17 +339,17 @@ Section Power_of_dot.
    rewrite <- (dot_assoc  x y (power x n)); rewrite (dot_comm y (power x n)).
    repeat rewrite dot_assoc;trivial.
  Qed.
+
 End Power_of_dot.
 
 Open Scope M_scope.
 About power_of_power.
 About power_of_mult.
 
-
-Goal forall (x y z :Z) (n:nat),
+Goal forall (x y z : Z) (n : nat),
        ((x * (y * z)) ** n = x ** n *  (y ** n  * z ** n))%M.
 Proof.
-  intros;
+  intros.
   repeat (rewrite power_of_mult); trivial. 
 Qed.
 
@@ -348,15 +370,29 @@ Class Equiv A := equiv : relation A.        (* Operational Type Classes *)
 Infix "==" := equiv (at level 70):type_scope.
 
 Open Scope M_scope.
-Class EMonoid (A:Type) (E_eq :Equiv A) (E_dot : monoid_binop A) (E_one : A) :=
+Class EMonoid (A : Type) (E_eq : Equiv A) (E_dot : monoid_binop A) (E_one : A) :=
   {
     E_rel :> Equivalence equiv; 
     dot_proper :> Proper (equiv ==> equiv ==> equiv) monoid_op; 
-    E_dot_assoc : forall x y z:A, x * (y * z) == x * y * z;
-    E_one_left : forall x, E_one * x == x;
-    E_one_right : forall x, x * E_one == x
+    (* x == y -> n == p -> monoid_op x n == monoid_op y p *)
+    E_dot_assoc : forall x y z : A, x * (y * z) == x * y * z;
+    E_one_left  : forall x : A, E_one * x == x;
+    E_one_right : forall x : A, x * E_one == x
   }.
-Locate Proper.
+Locate Proper.                              (* Constant Coq.Classes.Morphisms.Proper *)
+Locate "_ ==> _".                           (* respectful R R' : signature_scope *)
+
+(* E_rel は、EMonoid _ _ _ _ から Equivalence _ へのコアーションである。
+EMonoid が 同値関係を持つ（Equivalenceから継承する）ことを示す。 *)
+Check (Equivalence equiv).                  (* Prop *)
+Print equiv.
+(* fun (A : Type) (Equiv : Equiv A) => Equiv
+     : forall A : Type, Equiv A -> relation A *)
+Print Equivalence.
+(* Record Equivalence (A : Type) (R : relation A) : Prop := Build_Equivalence
+  { Equivalence_Reflexive : Reflexive R;
+    Equivalence_Symmetric : Symmetric R;
+    Equivalence_Transitive : Transitive R } *)
 
 (* 
 The overloaded == notation will refer to the appropriate equivalence relation on the
@@ -371,8 +407,14 @@ Generalizable Variables E_eq E_dot E_one.
 
 (* --- *)
 
-Lemma E_trans `(M:EMonoid A) : transitive A  E_eq.
+Lemma E_trans `(M : EMonoid A) : transitive A E_eq.
 Proof.
+  (* `(M : EMonoid A) によって、コンテキストが決まる（Generalizable Variables が埋まる）。 *)
+  Check A.                                  (* Type *)
+  Check E_eq.                               (* Equiv A *)
+  Check E_dot.                              (* monoid_binop A *)
+  Check E_one.                              (* A *)
+  Check E_rel.                              (* Equivalence equiv *)
   apply E_rel.
 Qed.
 (*
@@ -382,7 +424,7 @@ lemmas, already avalable for every EMonoid. i.e.:
 上の証明は、既にEMonoid について証明した reflexivity, symmetry and transitivity の補題の証
 明を上書きするものである。すなわち：
 *)
-Lemma E_refl' `(M:EMonoid A) : reflexive A E_eq. 
+Lemma E_refl' `(M : EMonoid A) : reflexive A E_eq.
 Proof.
   intro.
   change (equiv x x).
@@ -531,8 +573,20 @@ Class ESemiRing (A:Type)
     ering_dist :> Distribute ring_mult ring_plus;
     ering_0_mult :> Absorb ring_mult 0
   }.
+Print Distribute.
+(* 
+Record Distribute (A : Type) (H : Equiv A) (f g : A -> A -> A) : Prop
+  := Build_Distribute
+  { distribute_l : forall a b c : A, f a (g b c) == g (f a b) (f a c);
+    distribute_r : forall a b c : A, f (g a b) c == g (f a c) (f b c) }
+ *)
+Print Absorb.
+(*
+Record Absorb (A : Type) (H : Equiv A) (m : A -> A -> A) (x : A) : Prop
+  := Build_Absorb
+  { absorb_l : forall c : A, m x c = x;  absorb_r : forall c : A, m c x = x }
+ *)
 About absorb_l.
-
 (* 
 Note that we use a kind of multiple inheritance here, as a semiring contains two monoids,
 半環がふたつのモノイドを含むために、一種の多重継承を使うことに注意せよ。
@@ -567,7 +621,8 @@ Section SemiRingTheory.
   Definition ringtwo := 1 + 1.
   Lemma ringtwomult : forall x : A, ringtwo * x == x + x.
   Proof.
-    intros. unfold ringtwo.
+    intros.
+    unfold ringtwo.
     rewrite distribute_r.                   (* ering_dist の :> が効く。 *)
     now rewrite (E_one_left x).             (* add_monoid と mul_monoid の :> が効く。 *)
   Qed.
@@ -583,7 +638,7 @@ End SemiRing.
 Section Fun_Comp.
   Variable A : Type.
 
-  Global Instance Comp : monoid_binop (A->A) := @comp A.
+  Global Instance Comp : monoid_binop (A -> A) := @comp A.
   Global Instance Fun_Mono: Monoid Comp (@id A).
   Proof.
     split.
@@ -600,7 +655,6 @@ Definition fibonacci_alt' (n:nat) :=
 Compute fibonacci_alt' 20.
 
 Require Import Coq.Lists.List  Relation_Operators  Operators_Properties.
-
 Section Partial_Com.
 
  Inductive Act : Set := a | b | c.
