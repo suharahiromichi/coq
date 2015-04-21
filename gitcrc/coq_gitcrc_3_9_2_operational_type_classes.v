@@ -428,8 +428,11 @@ Lemma E_refl' `(M : EMonoid A) : reflexive A E_eq.
 Proof.
   intro.
   change (equiv x x).
-  apply reflexivity.
+  apply reflexivity.                        (* E_rel の cersion が効く。xの同値性が判断できるようになるため。 *)
+(* ただし、dot_Proper は影響しない。 *)
 Qed.
+Set Printing Cersions.
+Print E_refl'.
 
 Fixpoint Epower `{M : EMonoid } (a:A) (n:nat):A :=
   match n with
@@ -458,7 +461,7 @@ Proof.
   induction n; simpl. 
   intros; rewrite E_one_left; reflexivity.
   intro p; rewrite <- E_dot_assoc. 
-  now rewrite <- IHn.
+  now rewrite <- IHn.                       (* dot_proper の cersion が効く。 *)
 Qed.
 
 Lemma Epower_x_mult `(M: EMonoid) : 
