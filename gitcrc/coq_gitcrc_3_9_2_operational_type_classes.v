@@ -367,7 +367,7 @@ associate an operational type class to the considered relation:
 モノイドを同値関係として考えるとき、operational type class としてまとめることが可能である。
 *)
 Class Equiv A := equiv : relation A.        (* Operational Type Classes *)
-Infix "==" := equiv (at level 70):type_scope.
+Infix "==" := equiv (at level 70) : type_scope.
 
 Open Scope M_scope.
 Class EMonoid (A : Type) (E_eq : Equiv A) (E_dot : monoid_binop A) (E_one : A) :=
@@ -442,7 +442,7 @@ Fixpoint Epower `{M : EMonoid } (a:A) (n:nat):A :=
 About Epower.
 
 
-Global Instance  Epower_Proper `(M: EMonoid) :
+Global Instance Epower_Proper `(M: EMonoid) :
   Proper (equiv ==> Logic.eq ==> equiv) Epower.
   (* x == y -> n = p -> Epower x n == Epower y p *)
 Proof.
@@ -660,42 +660,60 @@ Compute fibonacci_alt' 20.
 Require Import Coq.Lists.List  Relation_Operators  Operators_Properties.
 Section Partial_Com.
 
- Inductive Act : Set := a | b | c.
-
- Inductive transpose : list Act -> list Act -> Prop :=
- | transpose_hd : forall w, transpose(a::b::w) (b::a::w)
- | transpose_tl : forall x w u, transpose  w u -> transpose (x::w) (x::u).
+  Inductive Act : Set :=
+  | a
+  | b
+  | c.
+  
+  Inductive transpose : list Act -> list Act -> Prop :=
+  | transpose_hd : forall w, transpose(a::b::w) (b::a::w)
+  | transpose_tl : forall x w u, transpose  w u -> transpose (x::w) (x::u).
  
- Definition commute := clos_refl_sym_trans _ transpose.
-
- Instance Commute_E : Equivalence  commute.
- Proof.
-   Search Equivalence.
-   split.
-   Search Reflexive.
-   constructor 2.
-   constructor 3; auto.
-   econstructor 4; eauto.
- Qed.
-
-Instance CE : Equiv (list Act) := commute.
+  Definition commute := clos_refl_sym_trans _ transpose.
+  
+  Instance Commute_E : Equivalence commute.
+  Proof.
+    Search Equivalence.
+    split.
+    Search Reflexive.
+    constructor 2.
+    constructor 3; auto.
+    econstructor 4; eauto.
+  Qed.
+  
+Instance CE : Equiv (list Act) := commute.  (* == が使えるようになる。 *)
 
 Example ex1 : (c::a::a::b::nil) == (c::b::a::a::nil).
 Proof.
   constructor 4 with (c::a::b::a::nil).
-  constructor 1.
-  constructor 2.
-  constructor 2.
-  constructor 1.
-  constructor 1.
-  right; left.
+  - constructor 1.                          (* 右辺の最初のaとbを入れかえた場合 *)
+    constructor 2.
+    constructor 2.
+    now constructor 1.
+  - constructor 1.                          (* 左辺の2番めのaとbを入れ替えた場合 *)
+    now right; left.
 Qed. 
+
+Print clos_refl_sym_trans.           (* 1:rst_step, 2:rst_refl, 3:rst_sym, 4:rst_trans  *)
+Print transpose.                     (* left:1:transpose_hd, right:2:transpose_tl *)
+
+Example ex1' : (c::a::a::b::nil) == (c::b::a::a::nil).
+Proof.
+  apply rst_trans with (c::a::b::a::nil).   (* clos_refl_sym_trans のコンストラクタ。 *)
+  - apply rst_step.
+    apply transpose_tl.                     (* tanspose のコンストラクタ。 *)
+    apply transpose_tl.
+    now apply transpose_hd.
+  - apply rst_step.                         (* clos_refl_sym_trans のコンストラクタ。 *)
+    apply transpose_tl.                     (* tanspose のコンストラクタ。 *)
+    now apply transpose_hd.
+Qed.
 
 Instance cons_transpose_Proper (x:Act) :
   Proper (transpose ==> transpose) (cons x).
 (* ∀x l l', transpose l l' -> transpose (x :: l) (x :: l') *)
 Proof.
- intros  l l' H.
+ intros l l' H.
  constructor; auto.
 Defined.
 
@@ -723,22 +741,22 @@ Instance append_commute_Proper_1 :
 (* ∀x y z t, x = y -> commute z t -> commute (x ++ z) (y ++ t) *)
 Proof.
   intros x y e; subst y; intros z t H; elim H.
-  constructor 1.
-  apply append_transpose_Proper;auto.
+  constructor 1.                            (* intros; apply rst_step. *)
+  apply append_transpose_Proper; auto.
   reflexivity.
   intros.
-  constructor 3; auto.
+  constructor 3; auto.                      (* apply rst_sym *)
   intros.
-  constructor 4 with (x++y); auto.
+  constructor 4 with (x++y); auto.          (* apply (rst_trans _ _ _ (x ++ y)); auto *)
 Qed.
 
-Instance  append_commute_Proper_2 : 
+Instance append_commute_Proper_2 :
   Proper (commute ==> Logic.eq   ==> commute) (@app Act).
 (* commute x y -> x0 = y0 -> commute (x ++ x0) (y ++ y0) *)
 Proof.
   intros x y H; elim H. 
   intros x0 y0 H0  z t e. subst t.
-  constructor 1.
+  constructor 1.                            (* apply rst_step. *)
   apply append_transpose_Proper_1; auto.
   intros x0 z t e; subst t; constructor 2; auto.
   intros x0 y0 H0 H1 z t e; subst t.
@@ -750,9 +768,9 @@ Proof.
   apply H4; reflexivity.
 Qed.
 
-
 Instance append_Proper :
   Proper (commute ==> commute ==> commute) (@app Act).
+(* commute x y -> commute z t -> commute (x ++ z) (y ++ t) *)
 Proof.
   intros x y H z t H0.
   transitivity (y++z).
@@ -762,8 +780,9 @@ Proof.
   reflexivity.
 Qed.
 
-Instance app_op : monoid_binop (list Act) :=  @app Act.
-
+(* append のモノイド *)
+(* 組で定義する。 *)
+Instance app_op : monoid_binop (list Act) := @app Act.
 Instance PCom : EMonoid commute app_op nil.
 Proof.
   split.
@@ -778,7 +797,6 @@ Proof.
   SearchAbout (_ ++ nil).
   unfold monoid_op,app_op; intro; rewrite app_nil_r; reflexivity.
 Qed.
-
 About Epower.
 
 Example ex2:
@@ -790,7 +808,9 @@ Proof.
 Qed.
 End Partial_Com.
 
-
+(* **************  *)
+(* 優先順位について *)
+(* **************  *)
 Section Z_additive.
 Local Instance Z_plus_op : monoid_binop Z | 2 := Zplus. (* monoid_binop の優先順位 2 *)
 
