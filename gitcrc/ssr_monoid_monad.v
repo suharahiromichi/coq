@@ -4,6 +4,7 @@
 @suharahiromichi
 
 2015_01_11
+2015_04_29 (Program Instance)
 *)
 
 Set Implicit Arguments.
@@ -11,10 +12,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (*
 Generalizable All Variables.
+個々に、Generalizable Variables で宣言する。
 *)
-(* Require Import Basics Tactics Coq.Setoids.Setoid Morphisms. *)
 Require Import ssreflect ssrbool ssrnat eqtype seq ssrfun.
-Require Import div.
 
 Reserved Notation "x * y" (at level 40, left associativity).
 Reserved Notation "c >>= f" (at level 42, left associativity).
@@ -78,39 +78,41 @@ Variable M : Type.
 Variable F : Type -> Type.
 *)
 
-Instance MonMonoid `{MM : @Monoid M} `{MF : @Monad F} : @Monoid (F M) :=
+Program Instance MonMonoid `{MM : @Monoid M} `{MF : @Monad F} : @Monoid (F M) :=
   {
     one := ret one;
     dot m n :=
       m >>= (fun x => n >>= (fun y => ret (x * y)))
   }.
+Next Obligation.                            (* 結合則 *)
 Proof.
-  (* 結合則 *)
-  - move=> x y z.
-    rewrite monad_3.
-    congr (x >>= _).
-    (* x >>= A ならよいが、A >>= B を分解してはいけない。 *)
-    apply functional_extensionality => m.
-    rewrite !monad_3.
-    congr (y >>= _).
-    apply functional_extensionality => m'.
-    rewrite monad_1 monad_3.
-    congr (z >>= _).
-    apply functional_extensionality => m''.
-    rewrite monad_1.
+  rewrite monad_3.
+  congr (x >>= _).
+  (* x >>= A ならよいが、A >>= B を分解してはいけない。 *)
+  apply functional_extensionality => m.
+  rewrite !monad_3.
+  congr (y >>= _).
+  apply functional_extensionality => m'.
+  rewrite monad_1 monad_3.
+  congr (z >>= _).
+  apply functional_extensionality => m''.
+  rewrite monad_1.
     by rewrite dot_assoc.
-  (* 左単位元 *)
-  - move=> x.
-    rewrite monad_1 -{2}(monad_2 x).
-    congr (x >>= _).
-    apply functional_extensionality => y.
+Qed.
+Next Obligation.                            (* 左単位元 *)
+Proof.
+  rewrite monad_1 -{2}(monad_2 x).
+  congr (x >>= _).
+  apply functional_extensionality => y.
     by rewrite one_left.
-  (* 右単位元 *)
-  - move=> x.
-    rewrite -{2}(monad_2 x).
-    congr (x >>= _).
-    apply functional_extensionality => y.
-    by rewrite monad_1 one_right.
+Qed.
+Next Obligation.                            (* 右単位元 *)
+Proof.
+  rewrite -{2}(monad_2 x).
+  congr (x >>= _).
+  apply functional_extensionality => y.
+  rewrite monad_1.
+    by rewrite one_right.
 Qed.    
 
 (* END *)
