@@ -78,12 +78,13 @@ Next Obligation.
 Qed.
 
 Section Group_1.
-  Generalizable Variables dot inv ST MG QG one L.
+  Generalizable Variables dot divl divr one ST MG QG.
 
   Check @Magma.
+  Check `(@Magma A equal ST dot).
   Class qg_divop `{X : @Magma A equal ST dot} := qg_op : A -> A -> A.
   Infix "/" := qg_op.
-  Class Quasigroup `{X : @Magma A equal ST dot} (divl : qg_divop) (divr : qg_divop) : Prop :=
+  Class Quasigroup `{X : @Magma A equal ST dot} (divl divr : qg_divop) : Prop :=
     {
       (* divlの引数を直感的な順番にした。 *)
       divisible_l : forall (a b : A), (divl b a) * a == b;
@@ -91,15 +92,17 @@ Section Group_1.
     }.
   
   Check @Quasigroup.
-  Class lp_unitop `{X : @Quasigroup A equal ST dot MG inv inv} := lp_op : A.
-  Class Loop `{X : @Quasigroup A equal ST dot MG inv inv} (lp_unit : A) : Prop :=
+  Check `(@Quasigroup A equal ST dot MG divl divr).
+  Class lp_unitop `{X : @Quasigroup A equal ST dot MG divl divr} := lp_op : A.
+  Class Loop `{X : @Quasigroup A equal ST dot MG divl divr} (lp_unit : A) : Prop :=
     {
       lp_identical_l : forall x : A, lp_unit * x == x;
       lp_identical_r : forall x : A, x == lp_unit * x
     }.
   
   Check @Loop.
-  Class Group_1 `{X : @Loop A equal ST dot MG inv QG one} : Prop :=
+  Check `(@Loop A equal ST dot MG divl divr QG one).
+  Class Group_1 `{X : @Loop A equal ST dot MG divl divr QG one} : Prop :=
     {
       prf_group_1 : forall (x y z : A), (x * y) * z == x * (y * z)
     }.
@@ -125,11 +128,11 @@ Section Group_1.
       by case: a; case: b.
   Qed.
   
-  Check `(@lp_unitop bool eq ST xorb MG inv QG).
-  Check @lp_unitop bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_qg.
-  Instance bool_unit : @lp_unitop bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_qg := false.
+  Check `(@lp_unitop bool eq ST xorb MG divl divr QG).
+  Check @lp_unitop bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_div bool_qg.
+  Instance bool_unit : @lp_unitop bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_div bool_qg := false.
 
-  Program Instance bool_loop : @Loop bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_qg bool_unit.
+  Program Instance bool_loop : @Loop bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_div bool_qg bool_unit.
   Next Obligation.                          (* 左単位元 *)
       by case x.
   Qed.
@@ -137,8 +140,8 @@ Section Group_1.
       by case x.
   Qed.
 
-  Check @Group_1 bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_qg bool_unit bool_loop.
-  Program Instance bool_group_1 : @Group_1 bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_qg bool_unit bool_loop.
+  Check @Group_1 bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_div bool_qg bool_unit bool_loop.
+  Program Instance bool_group_1 : @Group_1 bool bool_equal bool_setoid bool_dot bool_magma bool_div bool_div bool_qg bool_unit bool_loop.
   Next Obligation.                          (* 結合則 *)
   Proof.
     rewrite /magma_op /bool_dot.
@@ -147,7 +150,7 @@ Section Group_1.
 End Group_1.
 
 Section Group_2.
-  Generalizable Variables dot inv ST MG SG one M. (* MGは、Group_1 とは別なものになる。 *)
+  Generalizable Variables dot inv one ST MG SG. (* MGは、Group_1 とは別なものになる。 *)
 
   Check @Magma.
   Class Semigroup `{X : @Magma A equal ST dot} : Prop :=
@@ -218,7 +221,7 @@ Section Group_2.
   Qed.
   Check bool_monoid'. (* forall (ST : Setoid bool_equal) (MG : Magma bool_dot) (SG : Semigroup), Monoid bool_unit *)
   
-  Program Instance bool_groop_2 : Group_2 bool_inv. (* @がいらない場合もある。 *)
+  Program Instance bool_groop_2' : Group_2 bool_inv. (* @がいらない場合もある。 *)
   Next Obligation.                          (* 左逆元 *)
     by case x.
   Qed.
@@ -227,6 +230,33 @@ Section Group_2.
   Qed.
 End Group_2.
 
+Section Group_3.
+  Generalizable Variables dot inv divl divr one ST MG QG LP SG MON GP.
+  
+  Check @Group_1.
+  Check `(@Group_1 A equal ST dot MG divl divr QG one LP).
+  Class gp1_invop `{X : @Group_1 A equal ST dot MG divl divr QG one LP} := gp1_op : A -> A.
+  Notation "'~' x" := (gp1_invop x).
+  
+  Check `(@Group_1 A equal ST dot MG divl divr QG one LP).
+  Class inv_Group_1 `{@Group_1 A equal ST dot MG divl divr QG one LP} (inv : gp1_invop) : Prop :=
+    {
+      invertible_l' : forall (x : A), (inv x) * x == one;
+      invertible_r' : forall (x : A), x * (inv x) == one
+    }.
+  
+  Check `(@Group_2 A equal ST dot MG SG one MON inv).
+  Class gp2_divop `{@Group_2 A equal ST dot MG SG one MON inv} := gp2_op : A -> A -> A.
+  Infix "/" := gp2_op.
+  Class div_Group_2 `{@Group_2 A equal ST dot MG SG one MON inv} (divl divr : gp2_divop) : Prop :=
+    {
+      (* divlの引数を直感的な順番にした。 *)
+      divisible_l' : forall (a b : A), (divl b a) * a == b;
+      divisible_r' : forall (a b : A), a * (divr b a) == b
+    }.
+  
+End Group_3.
+  
 (**
 # 参考：
     http://www.labri.fr/perso/casteran/CoqArt/TypeClassesTut/typeclassestut.pdf
