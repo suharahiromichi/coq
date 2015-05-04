@@ -182,6 +182,7 @@ Section Group_2.
     by rewrite Bool.xorb_assoc_reverse.
   Qed.
 
+  Check Monoid bool_unit.
   Check @Monoid bool bool_equal bool_setoid bool_dot bool_magma bool_sg bool_unit.
   Program Instance bool_monoid : @Monoid bool bool_equal bool_setoid bool_dot bool_magma bool_sg bool_unit.
   Next Obligation.                          (* 左単位元 *)
@@ -190,12 +191,34 @@ Section Group_2.
   Next Obligation.                          (* 右単位元 *)
       by case x.
   Qed.
-
+  Check bool_monoid : Monoid bool_unit.
+  
+  Check gp_invop.
   Check @gp_invop bool bool_equal bool_setoid bool_dot bool_magma bool_sg bool_unit bool_monoid.
   Instance bool_inv : @gp_invop bool bool_equal bool_setoid bool_dot bool_magma bool_sg bool_unit bool_monoid := id.
 
   Check @Group_2 bool bool_equal bool_setoid bool_dot bool_magma bool_sg bool_unit bool_monoid bool_inv.
   Program Instance bool_groop_2 : @Group_2 bool bool_equal bool_setoid bool_dot bool_magma bool_sg bool_unit bool_monoid bool_inv.
+  Next Obligation.                          (* 左逆元 *)
+    by case x.
+  Qed.
+  Next Obligation.                          (* 右逆元 *)
+    by case x.
+  Qed.
+
+  (* 補足説明 *)
+  Check `(@Monoid bool bool_equal ST bool_dot MG SG bool_unit).
+  (* 一部を、Generalizable Variable にしてもよいが、証明している対象が違ってきているかもしれない。 *)
+  Program Instance bool_monoid' : `(@Monoid bool bool_equal ST bool_dot MG SG bool_unit).
+  Next Obligation.                          (* 左単位元 *)
+      by case x.
+  Qed.
+  Next Obligation.                          (* 右単位元 *)
+      by case x.
+  Qed.
+  Check bool_monoid'. (* forall (ST : Setoid bool_equal) (MG : Magma bool_dot) (SG : Semigroup), Monoid bool_unit *)
+  
+  Program Instance bool_groop_2 : Group_2 bool_inv. (* @がいらない場合もある。 *)
   Next Obligation.                          (* 左逆元 *)
     by case x.
   Qed.
