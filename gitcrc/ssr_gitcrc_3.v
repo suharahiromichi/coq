@@ -1,13 +1,14 @@
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice fintype.
-Require Import bigop ssralg div ssrnum ssrint.
-Open Scope int_scope.
-Import intZmod.                             (* addz *)
-
-Locate "_ + _".
+Require Import div bigop finset ssralg ssrnum ssrint.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+Import GRing.Theory.                        (* !!! *)
+Check addrA.
+Check addrC.
+Check add0r.
 
 (**
 A Gentle Introduction to Type Classes and Relations in Coq
@@ -27,11 +28,11 @@ Require Import fintype tuple finfun bigop prime ssralg poly ssrnum ssrint.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
+(*
 Local Open Scope int_scope.
 Delimit Scope int_scope with Z.
 Local Open Scope int_scope.
-
+*)
 (**
 3.2 Data Types and Definitions
 *)
@@ -54,6 +55,8 @@ Definition Point_O := Build_Point 0 0.
  *)
 Definition translate (dx dy : int) (P : Point) :=
   Build_Point (Point_x P + dx) (Point_y P + dy).
+Check translate : int -> int -> Point -> Point.
+Check translate (-1) 1 Point_O : Point.
 
 (** Equality test  between Points *)
 Definition Point_eqb (P P': Point) : bool :=
@@ -110,18 +113,11 @@ Proof.
   by apply/andP.
   by apply/andP.
 Qed.
-(* notu *)
-
-Lemma int_eq_bool (a b : int) :
-  (a == b) = true <-> a = b.
-Proof.
-  admit.
-Qed.
 
 Lemma int_eq_boolP (a b : int) :
   reflect (a = b) (a == b).
 Proof.
-  admit.
+  by apply/eqP.
 Qed.
 
 (* Prove the correctness of Point_eqb *)
@@ -246,26 +242,34 @@ Proof.
   [auto | destruct d; intros;rewrite IHs;auto].
 Qed.
 
-(*
+Search (_ - _)%R.
+Check subr_eq.
+
+Lemma test_sub_eq (x y z : int) :           (* 使っていない *)
+  x = (y + z)%R -> (x - z)%R = y.
+Proof.
+  move/eqP => H.
+  apply/eqP.
+  by rewrite subr_eq.
+Qed.
+
+Lemma test_sub_eq0 (x y : int) :            (* 使っていない *)
+  x = y -> (x - y)%R = 0.
+Proof.
+  move/eqP => H.
+  apply/eqP.
+  by rewrite subr_eq0.
+Qed.
+
 Example Ex3 : forall r, North::East::South::West::r =r= r.
 Proof.
   intros r P;
-    destruct P; simpl.
-  unfold route_equiv, translate; simpl;
-    do 2 f_equal; ring.
-Qed.
-*)
-
-Lemma addrC (a b c : int) :
-  (a + b + c)%R = (a + c + b)%R.
-Proof.
-  admit.
-Qed.
-
-Lemma add0r (a : int) :
-  (0 + a)%R = a%R.
-Proof.
-  admit.
+  case: P => //=.
+  rewrite /translate => //= Px0 Py0.
+  congr (move r _).                         (* f_equal *)
+  congr (Build_Point _ _).                  (* f_equal *)
+  - do 2! rewrite addr0. apply/eqP. by rewrite subr_eq.
+  - do 2! rewrite addr0. apply/eqP. by rewrite subr_eq.
 Qed.
 
 Lemma translate_comm :
@@ -277,9 +281,8 @@ Proof.
   apply Point_eqb_correct'.
   rewrite /Point_eqb //=.
   apply/andP.
-  split.
-  by rewrite addrC.
-  by rewrite addrC.
+  do 4! rewrite -[(_ + _ + _)%R]addrA.
+  by split; apply/eqP; congr (_ + _)%R; rewrite addrC.
 Qed.
 
 Lemma move_translate :
@@ -356,7 +359,8 @@ Example Ex5' : forall r r',  r =r= r' -> r ++ North::East::South::West::r' =r= r
 Proof.
   move=> r r' H.
   (* rewrite H. *)
-  admit.
+  admit.                                    (* OK *)
 Qed.
 
 (* END *)
+
