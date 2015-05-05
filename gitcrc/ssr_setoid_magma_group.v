@@ -46,7 +46,7 @@ Class Magma `{X : @Setoid A equal} (dot : magma_binop) : Prop :=
 (* ******************** *)
 (* ***** 性質 ********* *)
 (* ******************** *)
-Generalizable Variables dot divl divr one ST.
+Generalizable Variables dot ST.
 
 Class Associative `{X : @Magma A equal ST dot} : Prop :=
   associative : forall (x y z : A), (x * y) * z == x * (y * z).
@@ -124,7 +124,7 @@ Next Obligation.
 Qed.
 
 Section Group_1.
-  Generalizable Variables MG QG.
+  Generalizable Variables divl divr one MG QG.
 
   Check @Magma.
   Check `(@Magma A equal ST dot).
@@ -196,7 +196,7 @@ Section Group_1.
 End Group_1.
 
 Section Group_2.
-  Generalizable Variables MG SG. (* MGは、Group_1 とは別なものになる。 *)
+  Generalizable Variables one MG SG.        (* MGは、Group_1 とは別なものになる。 *)
 
   Check @Magma.
   Class Semigroup `{X : @Magma A equal ST dot} : Prop :=
@@ -212,27 +212,7 @@ Section Group_2.
   
   Check @Monoid.
   Class gp_invop `{X : @Monoid A equal ST dot MG SG one} := gp_op : A -> A.
-(*  Notation "'~' x" := (gp_invop x). *)
-
-(*  
-  Invertible の定義を Monoid からMagmaに移動する。
-  Class LInvertible `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
-    left_invertible: forall (x : A), (inv x) * x == one.
-  
-  Class RInvertible `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
-    right_invertible: forall (x : A), x * (inv x) == one.
-  
-  Class Invertible `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
-    {
-      invertible_l :> LInvertible inv;
-      invertible_r :> RInvertible inv
-    }.
-  
-  Class Group_2 `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
-    {
-      invertible : Invertible inv
-    }.
-*)
+  (* Invertible の定義を Monoid からMagmaに移動する。 *)
   Class Group_2 `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
     {
       invertible : Invertible one inv
@@ -290,25 +270,25 @@ Section Group_2.
   Qed.
   Check bool_monoid'. (* forall (ST : Setoid bool_equal) (MG : Magma bool_dot) (SG : Semigroup), Monoid bool_unit *)
 
-(*  
   Program Instance bool_groop_2' : Group_2 bool_inv. (* @がいらない場合もある。 *)
-  Next Obligation.                          (* 左逆元 *)
-    by case x.
+  Next Obligation.
+    apply Build_Invertible.
+    - rewrite /LInvertible.                 (* 左逆元 *)
+      rewrite /bool_unit /bool_inv => x.
+        by case x.
+    - rewrite /RInvertible.                 (* 右逆元 *)
+      rewrite /bool_unit /bool_inv => x.
+        by case x.
   Qed.
-  Next Obligation.                          (* 右逆元 *)
-    by case x.
-  Qed.
-*)
 End Group_2.
 
 Section Group_3.
-  Generalizable Variables inv MG QG LP SG MON GP.
+  Generalizable Variables inv divl divr one MG QG LP SG MON GP.
   
   Check @Group_1.
   Check `(@Group_1 A equal ST dot MG divl divr QG one LP).
   Class gp1_invop `{X : @Group_1 A equal ST dot MG divl divr QG one LP} := gp1_op : A -> A.
-  (*  Notation "'~' x" := (gp1_invop x). *)
-
+  
   Class inv_Group_1 `{@Group_1 A equal ST dot MG divl divr QG one LP} (inv : gp1_invop) : Prop :=
     {
       invertible' : Invertible one inv
