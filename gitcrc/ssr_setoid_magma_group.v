@@ -76,6 +76,19 @@ Class Divisible `{X : @Magma A equal ST dot} (divL divR : A -> A -> A) : Prop :=
     divisible_r : RDivisible divL
   }.
 
+(* Invertible の定義を Monoid からMagmaに移動する。 *)
+Class LInvertible `{X : @Magma A equal ST dot}  (e : A) (inv : A -> A) : Prop :=
+  left_invertible: forall (x : A), (inv x) * x == e.
+  
+Class RInvertible `{X : @Magma A equal ST dot}  (e : A) (inv : A -> A) : Prop :=
+  right_invertible: forall (x : A), (inv x) * x == e.
+
+Class Invertible `{X : @Magma A equal ST dot}  (e : A) (inv : A -> A) : Prop :=
+  {
+    invertible_l :> LInvertible e inv;
+    invertible_r :> RInvertible e inv
+  }.
+
 (* ******************** *)
 (* bool 排他的論理和の群 *)
 (* ******************** *)
@@ -127,7 +140,7 @@ Section Group_1.
   Class lp_unitop `{X : @Quasigroup A equal ST dot MG divl divr} := lp_op : A.
   Class Loop `{X : @Quasigroup A equal ST dot MG divl divr} (lp_unit : A) : Prop :=
     {
-      lp_identical : Identical lp_unit
+      lp_identical : Identical lp_unit      (* IdenticalはMagmaで定義している。 *)
     }.
   
   Check @Loop.
@@ -194,13 +207,15 @@ Section Group_2.
   Check @Semigroup.
   Class Monoid `{X : @Semigroup A equal ST dot MG} (mon_unit : A) : Prop :=
     {
-      mon_identical : Identical mon_unit
+      mon_identical : Identical mon_unit    (* IdenticalはMagmaで定義している。 *)
   }.
   
   Check @Monoid.
   Class gp_invop `{X : @Monoid A equal ST dot MG SG one} := gp_op : A -> A.
 (*  Notation "'~' x" := (gp_invop x). *)
-  
+
+(*  
+  Invertible の定義を Monoid からMagmaに移動する。
   Class LInvertible `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
     left_invertible: forall (x : A), (inv x) * x == one.
   
@@ -216,6 +231,11 @@ Section Group_2.
   Class Group_2 `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
     {
       invertible : Invertible inv
+    }.
+*)
+  Class Group_2 `{X : @Monoid A equal ST dot MG SG one} (inv : gp_invop) : Prop :=
+    {
+      invertible : Invertible one inv
     }.
   
   (* ******************** *)
@@ -289,13 +309,9 @@ Section Group_3.
   Class gp1_invop `{X : @Group_1 A equal ST dot MG divl divr QG one LP} := gp1_op : A -> A.
   (*  Notation "'~' x" := (gp1_invop x). *)
 
-  Check `(@Group_1 A equal ST dot MG divl divr QG one LP).
-  Check `(@Invertible A equal ST dot MG SG one MON) _ _ _ _ _ _ _ _ : gp_invop -> Prop.
   Class inv_Group_1 `{@Group_1 A equal ST dot MG divl divr QG one LP} (inv : gp1_invop) : Prop :=
     {
-(*      invertible' : Invertible gp1_invop *)
-      invertible_l' : forall (x : A), (inv x) * x == one;
-      invertible_r' : forall (x : A), x * (inv x) == one
+      invertible' : Invertible one inv
     }.
   
   Check `(@Group_2 A equal ST dot MG SG one MON inv).
