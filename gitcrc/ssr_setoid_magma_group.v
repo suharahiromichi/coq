@@ -13,7 +13,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (*
 Generalizable All Variables.
-Require Import Basics Tactics Coq.Setoids.Setoid Morphisms.
+個別に宣言する。
 *)
 Require Import ssreflect ssrbool ssrnat eqtype seq ssrfun.
 
@@ -97,8 +97,6 @@ Instance bool_equal : setoid_equal bool := eq.
 Check false == true : Prop.
 
 Check @Setoid bool bool_equal.
-Program Instance bool_setoid' : @Setoid bool eq.
-(* Obligation はなし *)
 Program Instance bool_setoid : @Setoid bool bool_equal.
 Next Obligation.
     by [].                                  (* bool_equal は reflextivity できる。 *)
@@ -261,7 +259,7 @@ Section Group_2.
   Check `(@Monoid bool bool_equal ST bool_dot MG SG bool_unit).
   (* 一部を、Generalizable Variable にしてもよいが、証明している対象が違ってきているかもしれない。 *)
   Program Instance bool_monoid' : `(@Monoid bool bool_equal ST bool_dot MG SG bool_unit).
-  Next Obligation.                          (* 左単位元 *)
+  Next Obligation.
     apply Build_Identical.
     - rewrite /LIdentical.                  (* 左単位元 *)
         by case.
