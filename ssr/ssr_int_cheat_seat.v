@@ -44,6 +44,11 @@ Goal (x - y == 0) = (x == y).                     by apply subr_eq0. Qed.
 Goal (x + y == 0) = (x == -y).                    by apply addr_eq0. Qed.
 Goal (-x == -y) = (x == y).                       by apply eqr_opp. Qed.
 Goal (-x == y) = (x == -y).                       by apply eqr_oppLR. Qed.
+
+(* "*+" : int -> nat -> int、x * (+n) の意味。 *)
+(* "*-" : int -> nat -> int、x * (-n) の意味。 *)
+(* "*" : int -> int -> int *)
+
 Goal x *+ 0 = 0.                                  by apply mulr0n. Qed.
 Goal x *+ 1 = x.                                  by apply mulr1n. Qed.
 Goal x *+ 2 = x + x.                              by apply mulr2n. Qed.
@@ -58,5 +63,8 @@ Goal (x - y) *+ n = (x *+ n) - (y *+ n).          by apply mulrnBl. Qed. (* morp
 Goal n <= m -> x *+ (m - n) = x *+ m - x *+ n.    by apply mulrnBr. Qed.
 Goal x *+ (m * n) = x *+ m *+ n.                  by apply mulrnA. Qed.
 Goal x *+ m *+ n = x *+ n *+ m.                   by apply mulrnAC. Qed.
+
+Goal x * (y * z) = x * y * z.                     by apply mulrA. Qed. (* associative *)
+(* 続く。 *)
 
 (* END *)
