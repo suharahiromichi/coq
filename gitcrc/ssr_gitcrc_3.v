@@ -1,15 +1,3 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq choice fintype.
-Require Import div bigop finset ssralg ssrnum ssrint.
-
-Set Implicit Arguments.
-Unset Strict Implicit.
-Unset Printing Implicit Defensive.
-
-Import GRing.Theory.                        (* !!! *)
-Check addrA.
-Check addrC.
-Check add0r.
-
 (**
 A Gentle Introduction to Type Classes and Relations in Coq
 の
@@ -22,17 +10,23 @@ Chapter 3. Lost in Manhattan
 @suharahiromichi
 *)
 
-Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq path div choice.
-Require Import fintype tuple finfun bigop prime ssralg poly ssrnum ssrint.
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+Require Import ssralg ssrint.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-(*
-Local Open Scope int_scope.
-Delimit Scope int_scope with Z.
-Local Open Scope int_scope.
-*)
+
+Import GRing.Theory.                        (* !!! *)
+Check addrA.
+Check addrC.
+Check add0r.
+
+Check (1 + 1)%R.                            (* _ *)
+Check 1 + 1.                                (* nat *)
+Open Scope ring_scope.
+Check 1 + 1.                                (* _ *)
+
 (**
 3.2 Data Types and Definitions
 *)
@@ -242,11 +236,13 @@ Proof.
   [auto | destruct d; intros;rewrite IHs;auto].
 Qed.
 
-Search (_ - _)%R.
+
+Check (1 - 1).
+Search (_ - _).
 Check subr_eq.
 
 Lemma test_sub_eq (x y z : int) :           (* 使っていない *)
-  x = (y + z)%R -> (x - z)%R = y.
+  x = y + z -> x - z = y.                   (* %R *)
 Proof.
   move/eqP => H.
   apply/eqP.
@@ -254,7 +250,7 @@ Proof.
 Qed.
 
 Lemma test_sub_eq0 (x y : int) :            (* 使っていない *)
-  x = y -> (x - y)%R = 0.
+  x = y -> x - y = 0.                       (* %R *)
 Proof.
   move/eqP => H.
   apply/eqP.
@@ -281,8 +277,8 @@ Proof.
   apply Point_eqb_correct'.
   rewrite /Point_eqb //=.
   apply/andP.
-  do 4! rewrite -[(_ + _ + _)%R]addrA.
-  by split; apply/eqP; congr (_ + _)%R; rewrite addrC.
+  do 4! rewrite -[_ + _ + _]addrA.                   (* %R *)
+  by split; apply/eqP; congr (_ + _); rewrite addrC. (* %R *)
 Qed.
 
 Lemma move_translate :
@@ -363,4 +359,3 @@ Proof.
 Qed.
 
 (* END *)
-
