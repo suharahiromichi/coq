@@ -70,8 +70,11 @@ Goal x ^ (-m%:Z + -n%:Z) = x ^ (-m%:Z) * x ^ (-n%:Z). by apply exprzD_Nnat. Qed.
 Locate "_ < _".                             (* ssrnum が必要 *)
 Goal 0 < x -> sgz x = 1.                          by apply gtr0_sgz. Qed.
 Goal x < 0 -> sgz x = -1.                         by apply ltr0_sgz. Qed.
-Goal x = 0 -> sgz x = x.               by move=> ->; apply sgz0. Qed.
-Goal x = 1 -> sgz x = x.               by move=> ->; apply sgz1. Qed.
+Goal sgz 0%:Z = 0.                                by apply sgz0. Qed.
+Goal sgz 1%:Z = 1.                                by apply sgz1. Qed.
+
+Check 1%:Z : int_ZmodType.
+Check -(1%:Z) : int_ZmodType.
 Goal x = -1 -> sgz x = x.              by move=> ->; apply sgzN1. Qed.
 
 
@@ -99,7 +102,7 @@ Goal x + y = x + z -> y = z.                      by apply addrI. Qed. (* right_
 Goal x + y = z + y -> x = z.                      by apply addIr. Qed. (* left_injective *)
 Goal -(-x) = x.                                   by apply opprK. Qed. (* involutive (= cancel f f) *)
 Goal -x = -y -> x = y.                            by apply oppr_inj. Qed. (* injective *)
-Goal x = 0%R -> -x = x.                by move=> ->; apply oppr0. Qed.
+Goal -0 = 0 :> int.                               by apply oppr0. Qed.
 Goal (-x == 0) = (x == 0).                        by apply oppr_eq0. Qed.
 Goal x - 0 = x.                                   by apply subr0. Qed.
 Goal 0 - x = -x.                                  by apply sub0r. Qed.
@@ -121,12 +124,18 @@ Goal x *+ 2 = x + x.                              by apply mulr2n. Qed.
 Goal x *+ n.+1 = x + x *+ n.                      by apply mulrS. Qed.
 Goal x *+ n.+1 = x *+ n + x.                      by apply mulrSr. Qed.
 Goal x *+ b = (if b then x else 0).               by apply mulrb. Qed.
-Goal x = 0 -> x *+ n = x.              by move=> ->; apply mul0rn. Qed.
+
+Goal 0%:Z *+ n = 0.         by apply mul0rn. Qed. (* "*+" の左辺を nat -> int のキャストをする。*)
+Goal 0%:Z *+ n = 0%:Z.      by apply mul0rn. Qed. (* = の右辺はとくにキャストはいらないのだが、これは、 *)
+Goal 0 *+ n = 0 :> int.     by apply mul0rn. Qed. (* このように書ける。 *)
+Goal x = 0 -> x *+ n = x.   by move=> ->; apply mul0rn. Qed. (* "*+" の左が明らかにintなら、キャストはいらない。 *)
+
 Goal (-x) *+ n = x *- n.                          by apply mulNrn. Qed.
 Goal (x + y) *+ n = (x *+ n) + (y *+ n).          by apply mulrnDl. Qed. (* morphism_2 *)
 Goal x *+ (m + n) = x *+ m + x *+ n.              by apply mulrnDr. Qed.
 Goal (x - y) *+ n = (x *+ n) - (y *+ n).          by apply mulrnBl. Qed. (* morphism_2 *)
-Goal n <= m -> x *+ (m - n) = x *+ m - x *+ n.    by apply mulrnBr. Qed.
+Goal n%:Z <= m%:Z    -> x *+ (m - n) = x *+ m - x *+ n. by apply mulrnBr. Qed.
+Goal (n <= m :> int) -> x *+ (m - n) = x *+ m - x *+ n. by apply mulrnBr. Qed.
 Goal x *+ (m * n) = x *+ m *+ n.                  by apply mulrnA. Qed.
 Goal x *+ m *+ n = x *+ n *+ m.                   by apply mulrnAC. Qed.
 
@@ -148,8 +157,13 @@ Goal x ^+ 0 = 1.                                  by apply expr0. Qed.
 Goal x ^+ 1 = x.                                  by apply expr1. Qed.
 Goal x ^+ 2 = x * x.                              by apply expr2. Qed.
 Goal x ^+ n.+1 = x * x ^+ n.                      by apply exprS. Qed.
-(* Lemma expr0n n : 0 ^+ n = (n == 0%N)%:R :> R. *)
-Goal x = 1 -> x ^+ n = 1.              by move=> ->; apply expr1n. Qed.
+
+Check 0%:Z ^+ n.
+Check (n == 0%N).
+Check 0%:Z ^+ n = (n == 0%N) :> int.
+Goal 0%:Z ^+ n = (n == 0%N)%:R :> int.            by apply expr0n. Qed.
+
+Goal 1%:Z ^+ n = 1.                               by apply expr1n. Qed.
 Goal x ^+ (m + n) = x ^+ m * x ^+ n.              by apply exprD. Qed.
 Goal x ^+ n.+1 = x ^+ n * x.                      by apply exprSr. Qed.
 
