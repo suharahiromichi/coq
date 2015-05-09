@@ -2,8 +2,8 @@
 (** SSReflect で 整数 Z (int) を扱うときのメモ *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import ssralg ssrint.
-Import GRing.Theory.
+Require Import ssralg ssrnum ssrint.
+(* ssrnum は "_ < _" のために必要 *)
 Open Scope ring_scope.                      (* %Rが不要になる。 *)
 
 Set Implicit Arguments.
@@ -13,6 +13,72 @@ Unset Printing Implicit Defensive.
 Variables x y z t : int.
 Variables n m : nat.
 Variables b : bool.
+
+(* ****** *)
+(* ssrint *)
+(* ****** *)
+Import intZmod.                             (* !!!! *)
+Import intRing.                             (* !!!! *)
+
+(* nat から  int へのキャスト *)
+Locate "_ %:Z".                             (* Posz *)
+Check Posz : nat -> int.
+
+Goal x + y = y + x.                               by apply addzC. Qed. (* commutative *)
+Goal 0 + x = x.                                   by apply add0z. Qed. (* left_id *)
+Goal -(- x) = x.                                  by apply oppzK. Qed. (* involutive *)
+Goal -(x + y) = -x + -y.                          by apply oppz_add. Qed.
+Goal 1 + (x - 1) = x.                             by apply add1Pz. Qed.
+Goal 1 + x - 1 = x.                               by apply subSz1. Qed.
+Goal (m.+1%:Z + x) = 1 + (m%:Z + x).              by apply addSnz. Qed.
+Goal (1 + y) + x = 1 + (y + x).                   by apply addSz. Qed.
+Goal (y - 1) + x = (y + x) - 1.                   by apply addPz. Qed.
+Goal x + (y + z) = x + y + z.                     by apply addzA. Qed. (* associative *)
+Goal -x + x = 0.                                  by apply addNz. Qed. (* left_inverse *)
+
+Goal 0 * x = 0.                                   by apply mul0z. Qed. (* left_zero *)
+Goal x * y = y * x.                               by apply mulzC. Qed. (* commutative mulz *)
+Goal x * 0 = 0.                                   by apply mulz0. Qed. (* right_zero *)
+Goal (x * (- y))%Z = - (x * y)%Z.                 by apply mulzN. Qed.
+Goal ((- x) * y)%Z = - (x * y)%Z.                 by apply mulNz. Qed.
+Goal x * (y * z) = x * y * z.                     by apply mulzA. Qed. (* associative *)
+Goal 1 * x = x.                                   by apply mul1z. Qed. (* left_id *)
+Goal (x * n.+1%:Z)%Z = x + (x * n)%Z.             by apply mulzS. Qed.
+Goal (x + y) * z = x * z + y * z.                 by apply mulz_addl. Qed. (* left_distributive *)
+Goal 1%:Z != 0.                                   by apply nonzero1z. Qed.
+
+(* ssralg (Ring) で定義された *+ と *- を組み合わせた関数 *)
+Locate "_ *~ _".
+Check intmul : forall R : zmodType, R -> int -> R.
+Goal x *~ (y * z) = x *~ y *~ z.                  by apply mulrzA. Qed.
+(* 以下略 *)
+
+Goal x ^+ n = x ^ n.                              by apply exprnP. Qed.
+Goal x ^- n = x ^ -n%:Z.                          by apply exprnN. Qed.
+Goal x ^ 0 = 1.                                   by apply expr0z. Qed.
+Goal x ^ 1 = x.                                   by apply expr1z. Qed.
+Goal x ^ (-1) = x^-1.                             by apply exprN1. Qed.
+Goal (x ^ y)^-1 = x ^ (- y).                      by apply invr_expz. Qed.
+Goal (x^-1) ^ y = x ^ (- y).                      by apply exprz_inv. Qed.
+Goal 1%:Z ^ x = 1.                                by apply exp1rz. Qed.
+Goal x ^ n.+1 = x * x ^ n.                        by apply exprSz. Qed.
+Goal x ^ n.+1 = x ^ n * x.                        by apply exprSzr. Qed.
+Goal x ^ (m%:Z + n) = x ^ m * x ^ n.              by apply exprzD_nat. Qed.
+Goal x ^ (-m%:Z + -n%:Z) = x ^ (-m%:Z) * x ^ (-n%:Z). by apply exprzD_Nnat. Qed.
+
+(* サイン関数。整数の引数に対して、-1, 0, 1 を返す。 *)
+Locate "_ < _".                             (* ssrnum が必要 *)
+Goal 0 < x -> sgz x = 1.                          by apply gtr0_sgz. Qed.
+Goal x < 0 -> sgz x = -1.                         by apply ltr0_sgz. Qed.
+Goal x = 0 -> sgz x = x.               by move=> ->; apply sgz0. Qed.
+Goal x = 1 -> sgz x = x.               by move=> ->; apply sgz1. Qed.
+Goal x = -1 -> sgz x = x.              by move=> ->; apply sgzN1. Qed.
+
+
+(* ****** *)
+(* ssralg *)
+(* ****** *)
+Import GRing.Theory.
 
 Goal x + (y + z) = x + y + z.                     by apply addrA. Qed. (* associative *)
 Goal x + y = y + x.                               by apply addrC. Qed. (* commutative *)
