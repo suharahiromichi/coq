@@ -139,7 +139,14 @@ Compute 1::2::3::nil == 6::nil :> seq nat.  (* false *)
 Compute 1::2::3::nil == 6::nil :> lsum.     (* false *)
 
 Canonical lsum_eqMixin := EqMixin lsum_equivP.
-Canonical lsum_eqType := Eval hnf in EqType lsum lsum_eqMixin.
+Canonical lsum_eqType := EqType lsum lsum_eqMixin.
+(* Canonical lsum_eqType := Eval hnf in EqType lsum lsum_eqMixin. *)
+Print Canonical Projections.
+(*
+lsum_equiv <- Equality.op ( lsum_eqMixin )
+lsum <- Equality.sort ( lsum_eqType )
+が追加になる。
+*)
 
 Compute 1::2::3::nil == 6::nil :> seq nat.  (* false *)
 Compute 1::2::3::nil == 6::nil :> lsum.     (* true *)
