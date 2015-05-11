@@ -34,48 +34,79 @@ Record zmodule : Type :=
       carrier :> Type;
       spec : zmodule_mixin_of carrier
     }.
+Print Graph.
+
+(* コアーションが定義される。 *)
+(* [carrier] : zmodule >-> Sortclass *)
+Check carrier : zmodule -> Type.
+
 (** bool_zodule は少し後ろにずらした。 *)
 
 Definition zmadd (Z : zmodule) := add (spec Z).
 (* add の forall T の T （つまり、 zmodule_mixin_of (T : Type) の T)
  が省かれている。zmaddACの証明も同様。 *)
+Check zmadd : forall Z : zmodule, Z -> Z -> Z.
 
 Notation "x \+ y" := (zmadd x y) (at level 50, left associativity).
-(* zmadd の Zが省かれている。 *)
+(* zmadd の Zが省かれている。zmoduleなZが決まらないと、使えない。 *)
 
 (** Excercise 5.1.1 *)
-Lemma zmaddAC : forall (m : zmodule)(x y z : m),
+Lemma zmaddAC : forall (Z : zmodule) (x y z : Z),
                   x \+ y \+ z = x \+ z \+ y.
 Proof.
-  move=> m x y z.
+  move=> Z x y z.
   rewrite /zmadd.
-  rewrite -[add (spec m) (add (spec m) x y) z]addA.
-  rewrite [add (spec m) y z]addC.
-  rewrite [add (spec m) x (add (spec m) z y)]addA.
+  rewrite -[add (spec Z) (add (spec Z) x y) z]addA.
+  rewrite [add (spec Z) y z]addC.
+  rewrite [add (spec Z) x (add (spec Z) z y)]addA.
   by [].
 Qed.
 
 (** bool_zodule *)
-
 Definition bool_zmoduleMixin :=
-  ZmoduleMixin
-    (* 最初の4引数が省かれている。 *)
-    (* Type:=bool zero:=false opp:=(@id bool) add:=addb *)
+  @ZmoduleMixin
+    bool false (@id bool) addb              (* @を取ると、最初の4引数が省かれる。 *)
     addbA addbC addFb addbb.
 
-Definition bool_zmodule := Zmodule (* bool *) bool_zmoduleMixin.
+(* Definition bool_zmodule := Zmodule (* bool *) bool_zmoduleMixin. *)
+Canonical bool_zmodule := Zmodule (* bool *) bool_zmoduleMixin.
 (* Zmodule の bool が省かれている。  *)
-Variable b : bool_zmodule.
+(* Canonical Structure bool_zmodule.
+   の代わりに、Canonocal bool_zmodule := ... とするのが、SSReflect風。 *)
+Print Canonical Projections.
+(* bool <- carrier ( bool_zmodule ) *)
 
-Canonical Structure bool_zmodule.           (* 以下が有効になる。 *)
-Check false \+ true.                        (* bool_zmodule *)
+Check carrier bool_zmodule : Type.
+Check zmadd : forall Z : zmodule, Z -> Z -> Z.
+Check @zmadd bool_zmodule false true : bool_zmodule. (* これは、Definition でも有効。 *)
+Locate "_ \+ _".
+
+(* Canonical にすることによって、以下が有効になる。 *)
+(* zmodule な型であるべきところに、bool をユニファイできる。 *)
+Check @zmadd _ false true : bool.           (* ！！多分これが、一番重要！！ *)
+Fail Check @zmadd bool false true : bool.   (* 明示的に指定することは、できない。 *)
+Check zmadd false true : bool.
+Check false \+ true : bool.
+(* carrier によるコアーションは、「zmodule を型とみなす」であるから、これはコアーションではない。 *)
+
+(* zmodule な型であるべきところに、bool_zmodule をユニファイできる。 *)
+Check @zmadd _ false true : bool_zmodule.
+Check zmadd false true : bool_zmodule.
+Check false \+ true : bool_zmodule.
 Eval compute in false \+ true.              (* true *)
 
+(* Canonical にすることによって、以下が有効になる。 *)
+(* zmodule な型であるべきところに、bool をユニファイできる。 *)
 Goal forall x y z : bool, x (+) y (+) z = x (+) z (+) y.
 Proof.
   Locate "(+)".                             (* addb *)
-  apply zmaddAC.
+  Check zmaddAC.
+  apply zmaddAC.                            (* これが有効になる。 *)
+(*  *)
 Qed.
+(* ************************************************************************************************ *)
+(* 「Canonical bool_zmodule := ... は、bool を zmodule とみなせる(ユニファイできる）」と覚えればよいか *)
+(* ************************************************************************************************ *)
 
 (**
 5.2 Canonical constructions
@@ -88,7 +119,7 @@ Proof.
 Qed.
 
 Definition unit_eqMixin := EqMixin unit_eqP.
-Canonical Structure unit_eqType := EqType unit unit_eqMixin.
+Canonical unit_eqType := EqType unit unit_eqMixin.
 
 (** Exercise 5.2.1 *)
 
@@ -114,7 +145,7 @@ Proof.
 Qed.
 
 Definition bool_eqMixin := EqMixin bool_eqP.
-Canonical Structure bool_eqType := EqType bool bool_eqMixin.
+Canonical bool_eqType := EqType bool bool_eqMixin.
 
 (** nat *)
 Lemma nat_eqP : Equality.axiom (fun m n : nat => eqn m n).
@@ -126,7 +157,7 @@ Proof.
 Qed.
 
 Definition nat_eqMixin := EqMixin nat_eqP.
-Canonical Structure nat_eqType := EqType nat nat_eqMixin.
+Canonical nat_eqType := EqType nat nat_eqMixin.
 
 (** Exercise 5.2.2 *)
 
@@ -154,11 +185,8 @@ Proof.
     by subst.
 Qed.
 
-Definition prod_eqMixin (T1 T2 : eqType) :=
-  EqMixin (@tuto_pair_eqP T1 T2).
-
-Canonical Structure prod_eqType (T1 T2 : eqType) :=
-  EqType (T1 * T2) (prod_eqMixin T1 T2).    (* 最後のT1 T2 は略せない。 *)
+Definition prod_eqMixin (T1 T2 : eqType) := EqMixin (@tuto_pair_eqP T1 T2).
+Canonical prod_eqType (T1 T2 : eqType) := EqType (T1 * T2) (prod_eqMixin T1 T2).    (* 最後のT1 T2 は略せない。 *)
 
 Check (true, 3) == (true && true, 1 + 2).   (* bool *)
 Print Canonical Projections.
