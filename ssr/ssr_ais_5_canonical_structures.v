@@ -35,6 +35,7 @@ Record zmodule : Type :=
       spec : zmodule_mixin_of carrier
     }.
 Print Graph.
+(* [carrier] : zmodule >-> Sortclass *)
 
 (* コアーションが定義される。 *)
 (* [carrier] : zmodule >-> Sortclass *)
@@ -120,6 +121,8 @@ Qed.
 
 Definition unit_eqMixin := EqMixin unit_eqP.
 Canonical unit_eqType := EqType unit unit_eqMixin.
+Print Canonical Projections.
+(* unit <- Equality.sort ( eqtype.unit_eqType ) *)
 
 (** Exercise 5.2.1 *)
 
@@ -146,6 +149,8 @@ Qed.
 
 Definition bool_eqMixin := EqMixin bool_eqP.
 Canonical bool_eqType := EqType bool bool_eqMixin.
+Print Canonical Projections.
+(* bool <- Equality.sort ( eqtype.bool_eqType ) *)
 
 (** nat *)
 Lemma nat_eqP : Equality.axiom (fun m n : nat => eqn m n).
@@ -158,6 +163,8 @@ Qed.
 
 Definition nat_eqMixin := EqMixin nat_eqP.
 Canonical nat_eqType := EqType nat nat_eqMixin.
+Print Canonical Projections.
+(* nat <- Equality.sort ( ssrnat.nat_eqType ) *)
 
 (** Exercise 5.2.2 *)
 
@@ -188,8 +195,16 @@ Qed.
 Definition prod_eqMixin (T1 T2 : eqType) := EqMixin (@tuto_pair_eqP T1 T2).
 Canonical prod_eqType (T1 T2 : eqType) := EqType (T1 * T2) (prod_eqMixin T1 T2).    (* 最後のT1 T2 は略せない。 *)
 
-Check (true, 3) == (true && true, 1 + 2).   (* bool *)
 Print Canonical Projections.
+(* prod <- Equality.sort ( prod_eqType ) *)
+
+Check (true, 3) == (true && true, 1 + 2) : bool.
+
+Set Printing Coercions.
+Print Graph.                                (* [Equality.sort] : Equality.type >-> Sortclass *)
+Check @eq_op : forall T : eqType, rel (Equality.sort T).
+Check @eqP : forall T : eqType, Equality.axiom eq_op.
+Unset Printing Coercions.
 
 (**
 5.3 Predtypes: canonical structures for notations
