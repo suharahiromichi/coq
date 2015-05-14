@@ -2,6 +2,8 @@
 SSReflect もどきを作ってみる。
 
 @suharahiromichi
+
+2015_05_13
  *)
 
 Set Implicit Arguments.
@@ -17,10 +19,7 @@ Inductive reflect (P : Prop) : bool -> Set :=
 
 Definition axiom T e :=
   forall x y : T, reflect (x = y) (e x y).
-(*
-Definition pred T := T -> bool.
-Definition rel T := T -> pred T.
-*)
+
 Definition rel T := T -> T -> bool.
 
 Record mixin_of (T : Type) :=
@@ -46,17 +45,38 @@ Check eqP : eqType -> Type.
 
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
+
+Coercion is_true : bool >-> Sortclass. (* Prop *)
+Print Graph.                           (* コアーション *)
+(* [is_true] : bool >-> Sortclass *)
+
 (* **** *)
 (* bool *)
 (* **** *)
-Require Import Bool.
-
 Lemma iffP : forall (P Q : Prop) (b : bool),
-               Top.reflect P b -> (P -> Q) -> (Q -> P) -> Top.reflect Q b.
-Admitted.
+               reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
+Proof.
+  intros P Q b HPb HPQ HQP.
+  case HPb; intros HP.
+  - apply ReflectT. auto.
+  - apply ReflectF. auto.
+Qed.
 
-Lemma idP : forall b1 : bool, Top.reflect (b1 = true) b1.
-Admitted.
+Lemma idP : forall b : bool, reflect b b.
+Proof.
+  intros b.
+  case b.
+  - now apply ReflectT.
+  - now apply ReflectF.
+Qed.
+
+Definition eqb (b1 b2:bool) : bool :=
+  match b1, b2 with
+    | true, true => true
+    | true, false => false
+    | false, true => false
+    | false, false => true
+  end.
 
 Lemma bool_eqP : axiom eqb.
 Proof.
@@ -73,15 +93,46 @@ Fail Check true == true.
 
 (* ここここ *)
 Definition bool_eqMixin := EqMixin bool_eqP.
-Canonical bool_eqType := EqType (* bool *) bool_eqMixin.
+Definition bool_eqType := @EqType bool bool_eqMixin.
+Canonical Structure bool_eqType.
 Print Canonical Projections.
 (* bool <- sort ( bool_eqType ) *)
 
 (* bool に対して、eq_op が使用可能になる。 *)
-Check true == true : bool.
+Check true == true.
+
+Lemma introTF :
+  forall {P : Prop} {b c : bool},
+    reflect P b ->
+    (match c with true => P | false => ~P end) ->
+    b = c.
+Proof.
+  intros P b c Hb.
+  case c; case Hb; intros H1 H2.
+  - reflexivity.
+  - exfalso. now apply H1.
+  - exfalso. now apply H2.
+  - reflexivity.
+Qed.
+
+Lemma eqP' :
+  forall {x y : bool}, reflect (x = y) (x == y).
+Proof.
+  intros x y.
+  now case x; case y; constructor.
+(*
+  now apply ReflectT.
+  now apply ReflectF.
+  now apply ReflectF.
+  now apply ReflectT.
+*)
+Qed.
+
+Goal true == true.
+Proof.
+  now apply (introTF eqP').                 (* apply/eqP *)
+Qed.
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-
-Check @idP.
 
 (* END *)
