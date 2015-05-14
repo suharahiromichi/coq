@@ -89,6 +89,7 @@ Proof.
     now case x; case y.
 Qed.
 
+Fail Check @eq_op bool_eqType true true.
 Fail Check true == true.
 
 (* ここここ *)
@@ -99,6 +100,7 @@ Print Canonical Projections.
 (* bool <- sort ( bool_eqType ) *)
 
 (* bool に対して、eq_op が使用可能になる。 *)
+Check @eq_op bool_eqType true true.
 Check true == true.
 
 Lemma introTF :
