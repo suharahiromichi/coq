@@ -631,8 +631,87 @@ Section SemiRingTheory.
   Qed.
 
 End SemiRingTheory.
-End SemiRing.
 
+(* ************** *)
+(* ***補足******* *)
+(* ************** *)
+(* ** M2 Ring ** *)
+Section M2_Ring.
+
+Instance m2_eq : Equiv (M2 nat) := eq.
+Instance M2_plus_op  : monoid_binop (M2 nat) := (@M2_plus nat plus plus). (* Mat.v *)
+Instance m2_plus : RingPlus (M2 nat) := M2_plus_op.
+Instance m2_zero : RingZero (M2 nat) := Zero2 0%nat. (* Mat.v *)
+Instance m2_mult : RingMult (M2 nat) := @M2_mult_op nat plus mult.
+Instance m2_one : RingOne (M2 nat) := Id2 1%nat 0%nat.
+(*
+Instance m2_one : RingOne (M2 nat).
+unfold RingOne.
+apply Id2.
+apply 1%nat.
+apply 0%nat.
+Defined.
+*)
+
+Instance M2_Commutative : Commutative m2_plus.
+unfold Commutative.
+intros x y.
+unfold m2_plus, M2_plus_op, M2_plus.
+f_equal; admit.
+Qed.
+
+Program Instance M2_EMonoid_plus : EMonoid m2_eq m2_plus m2_zero.
+Next Obligation.
+  admit.
+Qed.
+Next Obligation.
+  admit.
+Qed.
+Next Obligation.
+  admit.
+Qed.
+
+(* m2_one と誤記すると、obligation が出てくる。 *)
+Program Instance M2_ECommutativeMonoid : ECommutativeMonoid m2_eq m2_plus m2_zero.
+(* No Obligation *)
+
+Program Instance M2_EMonoid_mult : EMonoid m2_eq m2_mult m2_one.
+Next Obligation.
+  admit.
+Qed.
+Next Obligation.
+  admit.
+Qed.
+Next Obligation.
+  admit.
+Qed.
+
+Program Instance M2_Distribute : Distribute m2_mult m2_plus.
+Next Obligation.
+Proof.
+  admit.
+Qed.
+Next Obligation.
+Proof.
+  admit.
+Qed.
+
+Program Instance M2_Absb : Absorb m2_mult m2_zero. (* 零元 *)
+Next Obligation.
+Proof.
+  admit.
+Qed.
+
+Program Instance M2_SemiRing : ESemiRing m2_eq m2_plus m2_zero m2_mult m2_one.
+(* No Obligation *)
+
+End M2_Ring.
+(* ** M2 Ring 終わり ** *)
+(* ******************** *)
+(* ***補足 終わり******* *)
+(* ******************** *)
+
+End SemiRing.
 
 (* The following stuff has been written after Matthieu's comments *)
 
