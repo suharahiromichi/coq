@@ -27,8 +27,8 @@ Definition M2_mult (m m':M2) : M2 :=
 Definition M2_plus (m m' : M2) : M2 :=
   @Build_M2 (c00 m + c00 m')
             (c01 m + c01 m')
-            (c10 m * c10 m')
-            (c11 m * c11 m').
+            (c10 m + c10 m')
+            (c11 m + c11 m').
 
 Lemma M2_eq_intros :
   forall m m':M2, c00 m = c00 m' ->
