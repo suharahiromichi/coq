@@ -160,22 +160,22 @@ ESemiRing structure to find proofs regarding the underlying monoids.
   (* ***補足******* *)
   (* ************** *)
   (* ** M2 Ring ** *)
-  Section M2_Ring.
+  Section M2Z_Ring.
 
     (* == *)
     (* = と == が同じ意味になる。 *)
     Instance m2_eq : Equiv (M2 Z) := eq.
     
     (* + *)
-    Instance M2_plus_op : monoid_binop (M2 Z) := (@M2_plus Z Zplus). (* Mat.v *)
-    Instance m2_plus : RingPlus (M2 Z) := M2_plus_op.
+    Instance M2Z_plus_op : monoid_binop (M2 Z) := (@M2_plus Z Zplus). (* Mat.v *)
+    Instance m2_plus : RingPlus (M2 Z) := M2Z_plus_op.
     
     (* 0 *)
     Instance m2_zero : RingZero (M2 Z) := Zero2 0%Z. (* Mat.v *)
     
     (* * *)
-    Instance M2_mult_op  : monoid_binop (M2 Z) := (@M2_mult Z Zplus Zmult). (* Mat.v *)
-    Instance m2_mult : RingMult (M2 Z) := @M2_mult_op.
+    Instance M2Z_mult_op  : monoid_binop (M2 Z) := (@M2_mult Z Zplus Zmult). (* Mat.v *)
+    Instance m2_mult : RingMult (M2 Z) := @M2Z_mult_op.
 
     (* 1 *)
     Instance m2_one : RingOne (M2 Z) := Id2 1%Z 0%Z.
@@ -186,29 +186,29 @@ ESemiRing structure to find proofs regarding the underlying monoids.
     (* --------------------------- *)
     (* Semi Ring の定理を証明する。 *)
     (* --------------------------- *)    
-    Instance M2_Commutative : Commutative m2_plus.
+    Instance M2Z_Commutative : Commutative m2_plus.
     Proof.
       unfold Commutative.
       intros x y.
-      unfold m2_plus, M2_plus_op, M2_plus, equiv, m2_eq.
+      unfold m2_plus, M2Z_plus_op, M2_plus, equiv, m2_eq.
       f_equal; apply Zplus_comm.
     Qed.
     
-    Program Instance M2_EMonoid_plus : EMonoid m2_eq m2_plus m2_zero.
+    Program Instance M2Z_EMonoid_plus : EMonoid m2_eq m2_plus m2_zero.
     Next Obligation.
-      unfold monoid_op, m2_plus, M2_plus_op, M2_plus, equiv, m2_eq.
+      unfold monoid_op, m2_plus, M2Z_plus_op, M2_plus, equiv, m2_eq.
       now simpl; f_equal; apply Zplus_assoc.
     Qed.
     Next Obligation.
       destruct x.                           (* 要素に分ける。 *)
-      unfold monoid_op, m2_plus, M2_plus_op, M2_plus.
+      unfold monoid_op, m2_plus, M2Z_plus_op, M2_plus.
       unfold m2_zero, Zero2.
       unfold equiv, m2_eq.
       now simpl.
     Qed.
     Next Obligation.
       destruct x.                           (* M2の要素に分ける。 *)
-      unfold monoid_op, m2_plus, M2_plus_op, M2_plus.
+      unfold monoid_op, m2_plus, M2Z_plus_op, M2_plus.
       unfold m2_zero, Zero2.
       unfold equiv, m2_eq.
       simpl.
@@ -219,12 +219,12 @@ ESemiRing structure to find proofs regarding the underlying monoids.
       reflexivity.
     Qed.
     
-    Program Instance M2_ECommutativeMonoid : ECommutativeMonoid m2_eq m2_plus m2_zero.
+    Program Instance M2Z_ECommutativeMonoid : ECommutativeMonoid m2_eq m2_plus m2_zero.
     (* No Obligation *)
     
-    Program Instance M2_EMonoid_mult : EMonoid m2_eq m2_mult m2_one.
+    Program Instance M2Z_EMonoid_mult : EMonoid m2_eq m2_mult m2_one.
     Next Obligation.
-      unfold monoid_op, m2_mult, M2_mult_op, M2_mult, equiv, m2_eq.
+      unfold monoid_op, m2_mult, M2Z_mult_op, M2_mult, equiv, m2_eq.
       simpl; f_equal;
       repeat rewrite Z.mul_add_distr_l, Z.mul_add_distr_r;
       repeat rewrite Z.mul_assoc;
@@ -237,7 +237,7 @@ ESemiRing structure to find proofs regarding the underlying monoids.
       reflexivity.
     Qed.
     Next Obligation.
-      unfold monoid_op, m2_mult, M2_mult_op, M2_mult.
+      unfold monoid_op, m2_mult, M2Z_mult_op, M2_mult.
       unfold m2_one, Id2.
       destruct x.
       unfold equiv, m2_eq.
@@ -247,11 +247,11 @@ ESemiRing structure to find proofs regarding the underlying monoids.
       case x; admit.
     Qed.
     
-    Program Instance M2_Distribute : Distribute m2_mult m2_plus.
+    Program Instance M2Z_Distribute : Distribute m2_mult m2_plus.
     Next Obligation.
     Proof.
-      unfold monoid_op, m2_mult, M2_mult_op, M2_mult.
-      unfold m2_plus, M2_plus_op, M2_plus.
+      unfold monoid_op, m2_mult, M2Z_mult_op, M2_mult.
+      unfold m2_plus, M2Z_plus_op, M2_plus.
       unfold equiv, m2_eq.
       simpl; f_equal;
       repeat rewrite Z.mul_add_distr_l;
@@ -264,8 +264,8 @@ ESemiRing structure to find proofs regarding the underlying monoids.
     Qed.
     Next Obligation.
     Proof.
-      unfold monoid_op, m2_mult, M2_mult_op, M2_mult.
-      unfold m2_plus, M2_plus_op, M2_plus.
+      unfold monoid_op, m2_mult, M2Z_mult_op, M2_mult.
+      unfold m2_plus, M2Z_plus_op, M2_plus.
       unfold equiv, m2_eq.
       simpl; f_equal;
       repeat rewrite Z.mul_add_distr_r;
@@ -277,20 +277,31 @@ ESemiRing structure to find proofs regarding the underlying monoids.
       reflexivity.
     Qed.
     
-    Program Instance M2_Absb : Absorb m2_mult m2_zero.
+    Program Instance M2Z_Absb : Absorb m2_mult m2_zero.
     Next Obligation.
     Proof.
-      unfold monoid_op, m2_mult, M2_mult_op, M2_mult.
+      unfold monoid_op, m2_mult, M2Z_mult_op, M2_mult.
       unfold m2_zero, Zero2.
       simpl.
       reflexivity.
     Qed.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, m2_mult, M2Z_mult_op, M2_mult.
+      unfold m2_zero, Zero2.
+      simpl.
+      repeat rewrite <- Zmult_0_r_reverse.
+      reflexivity.
+    Qed.
     
-    Program Instance M2_SemiRing : ESemiRing m2_eq m2_plus m2_zero m2_mult m2_one.
+    Program Instance M2Z_SemiRing : ESemiRing m2_eq m2_plus m2_zero m2_mult m2_one.
     (* No Obligation *)
     
-  End M2_Ring.
+  End M2Z_Ring.
 (* ** M2 Ring 終わり ** *)
+
+
+
 (* ******************** *)
 (* ***補足 終わり******* *)
 (* ******************** *)
