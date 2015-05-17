@@ -12,6 +12,7 @@ Unset Printing Implicit Defensive.
 Set Print All.
 
 Require Import ZArith.                      (* 整数 *)
+Require Import Relations.
 Require Import Mat.                         (* coq_gitcrc_2_Monoid.v 参照 *)
 Require Import Coq.Setoids.Setoid.          (* relation *)
 Require Import Morphisms.                   (* Proper *)
@@ -25,10 +26,10 @@ associate an operational type class to the considered relation:
 
 モノイドを同値関係として考えるとき、operational type class としてまとめることが可能である。
 *)
-Class Equiv A := equiv : relation A.        (* Operational Type Classes *)
+Class Equiv (A : Type) := equiv : relation A. (* Operational Type Classes *)
 Infix "==" := equiv (at level 70) : type_scope.
 
-Class monoid_binop (A:Type) := monoid_op : A -> A -> A.
+Class monoid_binop (A : Type) := monoid_op : A -> A -> A.
 (* Unlike multi-field class types, monoid_op is not a constructor, but a transparent
 constant such that monoid_op f can be δβ-reduced into f.
 
@@ -143,7 +144,40 @@ ESemiRing structure to find proofs regarding the underlying monoids.
    *)
   
   Section SemiRingTheory.
-    Context `{ESemiRing A}.
+    Context `{M : ESemiRing A}.
+    
+    (* テスト *)
+    Check 0 * (1 + 1) : A.
+    Check 0 * (1 + 1) == 0 : Prop.
+    
+    Instance Test_Proper :                  (* `(M : ESemiRing A) *)
+      Proper (equiv ==> equiv ==> equiv) monoid_op.
+    Proof.
+      intros x y Hxy z u Hzu.
+      now rewrite Hxy, Hzu.
+    Qed.
+
+    Instance Test_Proper' :
+      Proper (equiv ==> equiv ==> equiv) ring_plus.
+    Proof.
+      intros x y Hxy z u Hzu.
+      rewrite Hxy.
+      (*
+      rewrite Hzu.
+      reflexivity. *)
+      admit.
+    Qed.
+    
+    Locate "_ + _".
+    Goal forall a b c d : A, a == b -> c == d -> a + c == b + d.
+    intros a b c d H1 H2.
+    rewrite H1.
+    (*
+    rewrite H2.
+    reflexivity.
+     *)
+    admit.
+    Qed.
     
     Definition ringtwo := 1 + 1.
     Lemma ringtwomult : forall x : A, ringtwo * x == x + x.
@@ -159,11 +193,11 @@ ESemiRing structure to find proofs regarding the underlying monoids.
   (* ************** *)
   (* ***補足******* *)
   (* ************** *)
-  (* ** M2 Ring ** *)
+  (* ** M2Z Ring ** *)
+  (* 整数を要素とする2x2行列 *)
   Section M2Z_Ring.
-
+    
     (* == *)
-    (* = と == が同じ意味になる。 *)
     Instance m2z_eq : Equiv (M2 Z) := eq.
     
     (* + *)
@@ -174,15 +208,22 @@ ESemiRing structure to find proofs regarding the underlying monoids.
     Instance m2z_zero : RingZero (M2 Z) := Zero2 0%Z. (* Mat.v *)
     
     (* * *)
-    Instance M2Z_mult_op  : monoid_binop (M2 Z) := (@M2_mult Z Zplus Zmult). (* Mat.v *)
-    Instance m2z_mult : RingMult (M2 Z) := @M2Z_mult_op.
+    Instance M2Z_mult_op : monoid_binop (M2 Z) := (@M2_mult Z Zplus Zmult). (* Mat.v *)
+    Instance m2z_mult : RingMult (M2 Z) := M2Z_mult_op.
 
     (* 1 *)
     Instance m2z_one : RingOne (M2 Z) := Id2 1%Z 0%Z.
     
+    (* テスト *)
     Check 0 * (1 + 1) : M2 Z.
     Check 0 * (1 + 1) == 0 : Prop.
-    
+
+    Goal forall a b : M2 Z, a == b -> b + a == a + b.
+    intros a b H.
+    rewrite H.
+    reflexivity.
+    Qed.
+
     (* --------------------------- *)
     (* Semi Ring の定理を証明する。 *)
     (* --------------------------- *)    
@@ -191,12 +232,13 @@ ESemiRing structure to find proofs regarding the underlying monoids.
       unfold Commutative.
       intros x y.
       unfold m2z_plus, M2Z_plus_op, M2_plus, equiv, m2z_eq.
-      f_equal; apply Zplus_comm.
+      f_equal;
+      apply Zplus_comm.
     Qed.
     
     Program Instance M2Z_EMonoid_plus : EMonoid m2z_eq m2z_plus m2z_zero.
     Next Obligation.
-      unfold monoid_op, m2z_plus, M2Z_plus_op, m2z_plus, equiv, m2z_eq.
+      unfold monoid_op, m2z_plus, M2Z_plus_op, M2_plus, equiv, m2z_eq.
       now simpl; f_equal; apply Zplus_assoc.
     Qed.
     Next Obligation.
@@ -247,7 +289,7 @@ ESemiRing structure to find proofs regarding the underlying monoids.
       case x; admit.
     Qed.
     
-    Program Instance M2Z_Distribute : Distribute m2z_mult m2_plus.
+    Program Instance M2Z_Distribute : Distribute m2z_mult m2z_plus.
     Next Obligation.
     Proof.
       unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
@@ -298,10 +340,151 @@ ESemiRing structure to find proofs regarding the underlying monoids.
     (* No Obligation *)
     
   End M2Z_Ring.
-(* ** M2 Ring 終わり ** *)
+  (* ** M2Z Ring 終わり ** *)
+  
+  (* ** M2A Ring ** *)
+  (* 任意のSemiRringな型を要素とする2x2行列 *)
+  Section M2A_Ring.
+    (* Aは、Generalizable Variables *)
+    Context `{M2A : ESemiRing A}.
+    
+    (* == *)
+    Definition M2_equal (m m' : M2 A) : Prop := eq m m'.
+    Instance m2a_eq : Equiv (M2 A) := M2_equal.
+    
+    (* + *)
+    Instance M2A_plus_op : monoid_binop (M2 A) := (@M2_plus A E_plus).
+    Instance m2a_plus : RingPlus (M2 A) := M2A_plus_op.
 
+    (* 0 *)
+    Instance m2a_zero : RingZero (M2 A) := Zero2 E_zero. (* Mat.v *)
+    
+    (* * *)
+    Instance M2A_mult_op : monoid_binop (M2 A) := (@M2_mult A E_plus E_mult). (* Mat.v *)
+    Instance m2a_mult : RingMult (M2 A) := M2A_mult_op.
+    
+    (* 1 *)
+    Instance m2a_one : RingOne (M2 A) := Id2 E_one E_zero.
+    
+    (* テスト *)
+    Check 0 * (1 + 1) : M2 A.
+    Check 0 * (1 + 1) == 0 : Prop.
 
+    Goal forall a b : M2 A, a == b -> b + a == a + b.
+    intros a b H.
+    rewrite H.
+    reflexivity.
+    Qed.
+    
+    Lemma test x00 x01 x10 x11 y00 y01 y10 y11 :
+      x00 == y00 ->
+      x01 == y01 ->
+      x10 == y10 ->
+      x11 == y11 -> 
+      {| c00 := x00;
+         c01 := x01;
+         c10 := x10;
+         c11 := x11 |} ==
+      {| c00 := y00;
+         c01 := y01;
+         c10 := y10;
+         c11 := y11 |}.
+    Proof.
+      intros H00 H01 H10 H11.
+    Admitted.
+    
+    (* --------------------------- *)
+    (* Semi Ring の定理を証明する。 *)
+    (* --------------------------- *)    
+    Instance M2A_Commutative : Commutative m2a_plus.
+    Proof.
+      unfold Commutative.
+      intros x y.
+      unfold m2a_plus, M2A_plus_op, M2_plus.
+      apply test; apply commutativity.
+    Qed.
+    (* M2 A の場合は、f_equall で要素毎(型A)の「=」に分解すると、先が続かなくなる。 *)
+    
+    Program Instance M2A_EMonoid_plus : EMonoid m2a_eq m2a_plus m2a_zero.
+    Next Obligation.
+      unfold monoid_op, m2a_plus, M2A_plus_op, M2_plus.
+      simpl; apply test; apply E_dot_assoc.
+    Qed.
+    Next Obligation.
+      destruct x.                           (* 要素に分ける。 *)
+      unfold monoid_op, m2a_plus, M2A_plus_op, M2_plus.
+      unfold m2a_zero, Zero2.
+      simpl; apply test; apply E_one_left.
+    Qed.
+    Next Obligation.
+      destruct x.                           (* M2の要素に分ける。 *)
+      unfold monoid_op, m2a_plus, M2A_plus_op, M2_plus.
+      unfold m2a_zero, Zero2.
+      simpl; apply test; apply E_one_right.
+    Qed.
+    
+    Program Instance M2A_ECommutativeMonoid : ECommutativeMonoid m2a_eq m2a_plus m2a_zero.
+    (* No Obligation *)
+    
+    Program Instance M2A_EMonoid_mult : EMonoid m2a_eq m2a_mult m2a_one.
+    Next Obligation.
+      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
+      apply test; simpl.
+      rewrite commutativity.
+      rewrite (@commutativity _ _ _ E_mult).
+      rewrite commutativity.
+      rewrite (@commutativity _ _ _ E_mult).
+    Admitted.
+    Next Obligation.
+      destruct x.
+      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
+      unfold m2a_one, Id2.
+      apply test; simpl.
+      rewrite absorb_l.
+    Admitted.
+    Next Obligation.
+    Admitted.
+    
+    Program Instance M2A_Distribute : Distribute m2a_mult m2a_plus.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, m2a_mult, M2A_mult_op, M2_mult.
+      unfold m2a_plus, M2A_plus_op, M2_plus.
+      apply test; simpl.
+      rewrite distribute_l.
+      (* rewrite distribute_l. *)
+      Admitted.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, m2a_mult, M2A_mult_op, M2_mult.
+      unfold m2a_plus, M2A_plus_op, M2_plus.
+      apply test; simpl.
+      rewrite distribute_r.
+      (* rewrite distribute_l. *)
+      Admitted.
+    
+    Program Instance M2A_Absb : Absorb m2a_mult m2a_zero.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, m2a_mult, M2A_mult_op, M2_mult.
+      unfold m2a_zero, Zero2.
+      apply test; simpl.
+      rewrite absorb_l.
+    Admitted.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, m2a_mult, M2A_mult_op, M2_mult.
+      unfold m2a_zero, Zero2.
+      apply test; simpl.
+      rewrite absorb_r.
+    Admitted.
+    
+    Program Instance M2A_SemiRing : ESemiRing m2a_eq m2a_plus m2a_zero m2a_mult m2a_one.
+    (* No Obligation *)
 
+  End M2A_Ring.
+  (* ** M2A Ring 終わり ** *)
+  
 (* ******************** *)
 (* ***補足 終わり******* *)
 (* ******************** *)
