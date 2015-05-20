@@ -1,6 +1,7 @@
 (**
 Monoid & SemiRing
 2015_5_17
+2015_5_20
 
 @suharahiromichi
 
@@ -19,8 +20,8 @@ Set Implicit Arguments.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-Require Import ZArith.                      (* 整数 *)
-Require Import Mat.                         (* 2x2行列 *)
+Require Import Arith.          (* 自然数 *)
+Require Import Mat.            (* 2x2行列 *)
 (* 同じディレクトリに置いて、coqc Mat.v を実行しておく。 *)
 
 (****************)
@@ -64,7 +65,7 @@ Module SemiRing.
   (* typeclass_instance として 。。。 を導出の過程で透明（δ変換して同じ) と扱う。 *)
   (* 例： R_plus と ring_plus ： 要補足 *)
   
-  Class Distribute {A : Type} (f g: A -> A -> A): Prop :=
+  Class Distribute {A : Type} (f g : A -> A -> A): Prop :=
     {
       distribute_l a b c: f a (g b c) = g (f a b) (f a c);
       distribute_r a b c: f (g a b) c = g (f a c) (f b c)
@@ -73,7 +74,7 @@ Module SemiRing.
   Class Commutative {A B : Type} (m : A -> A -> B): Prop := 
     commutativity x y : m x y = m y x.
   
-  Class Absorb {A : Type} (m: A -> A -> A) (x : A) : Prop := 
+  Class Absorb {A : Type} (m : A -> A -> A) (x : A) : Prop := 
     {
       absorb_l c : m x c = x;
       absorb_r c : m c x = x
@@ -81,8 +82,8 @@ Module SemiRing.
   
   Class CommutativeMonoid {A : Type} (M_dot : monoid_binop A) (M_one : A) :=
     {
-      e_commmonoid_monoid :> Monoid M_dot M_one;
-      e_commmonoid_commutative :> Commutative M_dot
+      commmonoid_monoid :> Monoid M_dot M_one;
+      commmonoid_commutative :> Commutative M_dot
     }.
   
   Class SemiRing (A:Type)
@@ -112,7 +113,7 @@ Module SemiRing.
     Proof.
       intros.
       unfold ringtwo.
-      rewrite distribute_r.                   (* ring_dist の :> が効く。 *)
+      rewrite distribute_r.                 (* ring_dist の :> が効く。 *)
       rewrite (M_one_left x).               (* add_monoid と mul_monoid の :> が効く。 *)
       reflexivity.
     Qed.
@@ -121,140 +122,102 @@ Module SemiRing.
   (***********************)
   (* 具体的な半環を作る。 *)
   (***********************)
-  (* 整数を要素とする2x2行列 *)
-  Section M2Z_Ring.
+  (* 自然数 *)
+  Section NatSemiRing.
     (* + *)
-    Instance M2Z_plus_op : monoid_binop (M2 Z) := M2_plus Zplus. (* Mat.v *)
-    Instance m2z_plus : RingPlus (M2 Z) := M2Z_plus_op.
+    Instance Nat_plus_op : monoid_binop nat := plus.
+    Instance nat_plus : RingPlus nat := Nat_plus_op.
     
     (* 0 *)
-    Instance m2z_zero : RingZero (M2 Z) := Zero2 0%Z. (* Mat.v *)
+    Instance nat_zero : RingZero nat := 0%nat.
     
     (* * *)
-    Instance M2Z_mult_op : monoid_binop (M2 Z) := M2_mult Zplus Zmult. (* Mat.v *)
-    Instance m2z_mult : RingMult (M2 Z) := M2Z_mult_op.
-
+    Instance Nat_mult_op : monoid_binop nat := mult.
+    Instance nat_mult : RingMult nat := Nat_mult_op.
+    
     (* 1 *)
-    Instance m2z_one : RingOne (M2 Z) := Id2 0%Z 1%Z. (* Mat.v *)
+    Instance nat_one : RingOne nat := 1%nat.
     (* Section mat の Vaiables (zero one : A) の順番を守ること。 *)
     
     (* テスト *)
-    Check 0 * (1 + 1) : M2 Z.
+    Check 0 * (1 + 1) : nat.
     
-    Instance M2Z_Commutative : Commutative m2z_plus.
+    Program Instance Nat_Plus_Monoid : @Monoid nat plus 0.
+    Next Obligation.
     Proof.
-      unfold Commutative.
-      intros x y.
-      unfold m2z_plus, M2Z_plus_op, M2_plus.
-      f_equal;
-      apply Zplus_comm;
-      reflexivity.
+      unfold monoid_op.
+      now apply plus_assoc.
     Qed.
     
-    Program Instance M2Z_Monoid_plus : Monoid m2z_plus m2z_zero.
+    Program Instance Nat_Mult_Monoid : @Monoid nat mult 1.
     Next Obligation.
-      unfold monoid_op, m2z_plus, M2Z_plus_op, M2_plus.
-      simpl; f_equal; apply Zplus_assoc;
-      reflexivity.
+    Proof.
+      unfold monoid_op.
+      now apply mult_assoc.
     Qed.
     Next Obligation.
-      destruct x.                           (* 要素に分ける。 *)
-      unfold monoid_op, m2z_plus, M2Z_plus_op, M2_plus.
-      unfold m2z_zero, Zero2.
-      reflexivity.
+    Proof.
+      unfold monoid_op.
+      now apply mult_1_l.
     Qed.
     Next Obligation.
-      destruct x.                           (* 要素に分ける。 *)
-      unfold monoid_op, m2z_plus, M2Z_plus_op, M2_plus.
-      unfold m2z_zero, Zero2.
-      simpl.
-      repeat rewrite Z.add_0_r.
-      reflexivity.
+    Proof.
+      unfold monoid_op.
+      now apply mult_1_r.
     Qed.
+    
+    Program Instance Nat_Commutative : Commutative nat_plus.
+    Next Obligation.
+    Proof.
+      unfold nat_plus, Nat_plus_op.
+      now apply plus_comm.
+    Qed.
+    
+    Program Instance Nat_Monoid_plus : Monoid nat_plus nat_zero.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, nat_plus, Nat_plus_op.
+      now apply plus_assoc.
+    Qed.
+    
+    Program Instance Nat_CommutativeMonoid : CommutativeMonoid nat_plus nat_zero.
+    (* No Obligations *)
+    
+    Program Instance Nat_Monoid_mult : Monoid nat_mult nat_one.
+    Next Obligation.
+      unfold monoid_op, nat_mult, Nat_mult_op.
+      now apply mult_assoc.
+    Qed.
+    Next Obligation.
+      unfold monoid_op, nat_one, nat_mult, Nat_mult_op.
+      now apply mult_1_l.
+    Qed.
+    Next Obligation.
+      unfold monoid_op, nat_one, nat_mult, Nat_mult_op.
+      now apply mult_1_r.
+    Qed.
+    
+    Program Instance Nat_Distribute : Distribute nat_mult nat_plus.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, nat_mult, Nat_mult_op, nat_plus, Nat_plus_op.
+      now apply mult_plus_distr_l.
+    Qed.
+    Next Obligation.
+    Proof.
+      unfold monoid_op, nat_mult, Nat_mult_op, nat_plus, Nat_plus_op.
+      now apply mult_plus_distr_r.
+    Qed.
+    
+    Program Instance Nat_Absorb : Absorb nat_mult nat_zero.
+    (* No Obligations *)
+    
+    Program Instance Nat_SemiRing : SemiRing nat_plus nat_zero nat_mult nat_one.
+    (* No Obligations *)
+  End NatSemiRing.
 
-    Program Instance M2Z_CommutativeMonoid : CommutativeMonoid m2z_plus m2z_zero.
-    (* No Obligation *)
-    
-    Program Instance M2Z_Monoid_mult : Monoid m2z_mult m2z_one.
-    Next Obligation.
-      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
-      simpl; f_equal;
-      repeat rewrite Z.mul_add_distr_l, Z.mul_add_distr_r;
-      repeat rewrite Z.mul_assoc;
-      repeat rewrite Z.mul_assoc;
-      repeat rewrite Z.add_assoc;
-      f_equal;
-      repeat rewrite <- Z.add_assoc;
-      f_equal;
-      rewrite Z.add_comm;
-      reflexivity.
-    Qed.
-    Next Obligation.
-      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
-      unfold m2z_one, Id2.
-      destruct x.
-      repeat rewrite Z.add_0_r.
-      simpl.
-      case c00; case c01; case c10; case c11;
-      reflexivity.
-    Qed.
-    Next Obligation.
-      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
-      unfold m2z_one, Id2.
-      destruct x.
-      repeat rewrite Z.mul_0_r.
-      repeat rewrite Z.add_0_l.
-      repeat rewrite Z.add_0_r.
-      repeat rewrite Z.mul_1_r.
-      simpl.
-      reflexivity.
-    Qed.
-    
-    Program Instance M2Z_Distribute : Distribute m2z_mult m2z_plus.
-    Next Obligation.
-    Proof.
-      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
-      unfold m2z_plus, M2Z_plus_op, M2_plus.
-      simpl; f_equal;
-      repeat rewrite Z.mul_add_distr_l;
-      repeat rewrite Zplus_assoc;
-      f_equal;
-      repeat rewrite <- Zplus_assoc;
-      f_equal;
-      rewrite Z.add_comm;
-      reflexivity.
-    Qed.
-    Next Obligation.
-    Proof.
-      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
-      unfold m2z_plus, M2Z_plus_op, M2_plus.
-      simpl; f_equal;
-      repeat rewrite Z.mul_add_distr_r;
-      repeat rewrite Zplus_assoc;
-      f_equal;
-      repeat rewrite <- Zplus_assoc;
-      f_equal;
-      rewrite Z.add_comm;
-      reflexivity.
-    Qed.
-    
-    Program Instance M2Z_Absb : Absorb m2z_mult m2z_zero.
-    Next Obligation.
-    Proof.
-      unfold monoid_op, m2z_mult, M2Z_mult_op, M2_mult.
-      unfold m2z_zero, Zero2.
-      simpl.
-      repeat rewrite Z.mul_0_r.
-      repeat rewrite Z.add_0_r.
-      reflexivity.
-    Qed.
-    
-    Program Instance M2Z_SemiRing : SemiRing m2z_plus m2z_zero m2z_mult m2z_one.
-    (* No Obligation *)
-  End M2Z_Ring.
-  
   (* 任意の半環な型を要素とする2x2行列 *)
-  Section M2A_Ring.
+  Section M2ASemiRing.
     Context `{M : SemiRing A}.              (* Aは、Generalizable Variable *)
     (* A が、行列の要素の型 *)
     
@@ -275,7 +238,6 @@ Module SemiRing.
     
     (* テスト *)
     Check 0 * (1 + 1) : M2 A.
-    Check 0 * (1 + 1) = 0 : Prop.
     
     Instance M2A_Commutative : Commutative m2a_plus.
     Proof.
@@ -307,7 +269,7 @@ Module SemiRing.
     Qed.
     
     Program Instance M2A_CommutativeMonoid : CommutativeMonoid m2a_plus m2a_zero.
-    (* No Obligation *)
+    (* No Obligations *)
     
     (* 以下、工事中 *)
     Program Instance M2A_Monoid_mult : Monoid m2a_mult m2a_one.
@@ -326,19 +288,89 @@ Module SemiRing.
     Proof.
     Admitted.
     
-    Program Instance M2A_Absb : Absorb m2a_mult m2a_zero.
+    Program Instance M2A_Absorb : Absorb m2a_mult m2a_zero.
     Next Obligation.
     Proof.
-    Admitted.
+      unfold monoid_op, m2a_mult, M2A_mult_op, M2_mult.
+      unfold m2a_plus, M2A_plus_op, M2_plus.
+      unfold m2a_zero, Zero2.
+      simpl.
+      Check @absorb_l A R_mult R_zero.
+      Check @M_one_left A R_plus R_zero.
+      f_equal.
+      
+      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+      
+      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+      
+      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+      
+      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+    Qed.
     Next Obligation.
     Proof.
-    Admitted.
+      unfold monoid_op, m2a_mult, M2A_mult_op, M2_mult.
+      unfold m2a_plus, M2A_plus_op, M2_plus.
+      unfold m2a_zero, Zero2.
+      simpl.
+      Check @absorb_l A R_mult R_zero.
+      Check @M_one_left A R_plus R_zero.
+      f_equal.
+      
+      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+
+      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+
+      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+
+      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      reflexivity.
+      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
+    Qed.
     
     Program Instance M2A_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
-    (* No Obligation *)
+    (* No Obligations *)
+
+  End M2ASemiRing.
+  
+  (* 自然数を要素とする2x2行列 *)
+  Section M2NatSemiRing.
     
-  End M2A_Ring.
-  (* ** M2A Ring 終わり ** *)
+    Check M2A_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
+    Check @M2A_SemiRing nat plus 0%nat mult 1%nat Nat_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
+    Definition M2Nat_SemiRing := @M2A_SemiRing nat plus 0%nat mult 1%nat Nat_SemiRing.
+
+    Check M2Nat_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
+    Print M2Nat_SemiRing.
+  End M2NatSemiRing.
+
 End SemiRing.
+
+(* メモ： *)
+(*
+次のようにして、自然数を要素とする2x2行列を定義することもできる。
+    Instance M2Nat_plus_op : monoid_binop (M2 nat) := M2_plus plus.
+    Instance m2nat_plus : RingPlus (M2 nat) := M2Nat_plus_op.
+    Program Instance M2Nat_Commutative : Commutative m2nat_plus.
+
+しかし、結局
+unfoldして自然数の定理を使う。
+自然数の半環の定理を使う（これは、任意の半環の場合と同じ手間）。
+のどちらかしかない。
+*)
 
 (* END *)
