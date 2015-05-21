@@ -21,8 +21,48 @@ Unset Printing Implicit Defensive.
 Set Print All.
 
 Require Import Arith.          (* 自然数 *)
-Require Import Mat.            (* 2x2行列 *)
-(* 同じディレクトリに置いて、coqc Mat.v を実行しておく。 *)
+
+(* ************* *)
+(* ** 2x2行列 ** *)
+(* ************* *)
+Section mat.                                (* matrices. *)
+  Variables (A:Type)
+            (zero one : A) 
+            (plus mult minus : A -> A -> A)
+            (sym : A -> A).
+  Notation "0" := zero.  Notation "1" := one.
+  Notation "x + y" := (plus x y).  
+  Notation "x * y " := (mult x y).
+  
+  Structure M2 : Type := {c00 : A;  c01 : A;
+                          c10 : A;  c11 : A}.
+  
+  
+  Definition Zero2 : M2 := Build_M2 0 0 0 0.
+  Definition Id2 : M2 := Build_M2 1 0 0 1.
+  
+  Definition M2_mult (m m':M2) : M2 :=
+    Build_M2 (c00 m * c00 m' + c01 m * c10 m')
+             (c00 m * c01 m' + c01 m * c11 m')
+             (c10 m * c00 m' + c11 m * c10 m')
+             (c10 m * c01 m' + c11 m * c11 m').
+  
+  
+  Definition M2_plus (m m' : M2) : M2 :=
+    @Build_M2 (c00 m + c00 m')
+              (c01 m + c01 m')
+              (c10 m + c10 m')
+              (c11 m + c11 m').
+  
+  Lemma M2_eq_intros :                      (* not used *)
+    forall m m':M2, c00 m = c00 m' ->
+                    c01 m = c01 m' ->
+                    c10 m = c10 m' ->
+                    c11 m = c11 m' -> m = m'.
+    destruct m;destruct m';simpl.
+    intros H H1 H2 H3;rewrite H ,H1, H2, H3;trivial.
+  Qed.
+End mat.                                    (* matrices. *)
 
 (****************)
 (*** モノイド ***)
@@ -142,30 +182,6 @@ Module SemiRing.
     (* テスト *)
     Check 0 * (1 + 1) : nat.
     
-    Program Instance Nat_Plus_Monoid : @Monoid nat plus 0.
-    Next Obligation.
-    Proof.
-      unfold monoid_op.
-      now apply plus_assoc.
-    Qed.
-    
-    Program Instance Nat_Mult_Monoid : @Monoid nat mult 1.
-    Next Obligation.
-    Proof.
-      unfold monoid_op.
-      now apply mult_assoc.
-    Qed.
-    Next Obligation.
-    Proof.
-      unfold monoid_op.
-      now apply mult_1_l.
-    Qed.
-    Next Obligation.
-    Proof.
-      unfold monoid_op.
-      now apply mult_1_r.
-    Qed.
-    
     Program Instance Nat_Commutative : Commutative nat_plus.
     Next Obligation.
     Proof.
@@ -239,16 +255,14 @@ Module SemiRing.
     (* テスト *)
     Check 0 * (1 + 1) : M2 A.
     
-    Instance M2A_Commutative : Commutative m2a_plus.
+    Program Instance M2A_Commutative : Commutative m2a_plus.
+    Next Obligation.
     Proof.
-      unfold Commutative.
-      intros x y.
       unfold m2a_plus, M2A_plus_op, M2_plus.
       f_equal; apply (@commutativity A A ring_plus _). (* Hintの無い場合 *)
       Undo.
       f_equal; apply commutativity.         (* Hintがあるなら *)
     Qed.
-    Print M2A_Commutative.
     
     Program Instance M2A_Monoid_plus : Monoid m2a_plus m2a_zero.
     Next Obligation.
@@ -295,25 +309,10 @@ Module SemiRing.
       unfold m2a_plus, M2A_plus_op, M2_plus.
       unfold m2a_zero, Zero2.
       simpl.
-      Check @absorb_l A R_mult R_zero.
-      Check @M_one_left A R_plus R_zero.
-      f_equal.
-      
-      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      f_equal;
+      repeat rewrite (@absorb_l A R_mult R_zero ring_0_mult);
+      rewrite (@M_one_left A R_plus R_zero commmonoid_monoid);
       reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
-      
-      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
-      reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
-      
-      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
-      reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
-      
-      rewrite (@absorb_l A R_mult R_zero), (@absorb_l A R_mult R_zero), (@M_one_left A R_plus R_zero).
-      reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
     Qed.
     Next Obligation.
     Proof.
@@ -321,25 +320,10 @@ Module SemiRing.
       unfold m2a_plus, M2A_plus_op, M2_plus.
       unfold m2a_zero, Zero2.
       simpl.
-      Check @absorb_l A R_mult R_zero.
-      Check @M_one_left A R_plus R_zero.
-      f_equal.
-      
-      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
+      f_equal;
+      repeat rewrite (@absorb_r A R_mult R_zero ring_0_mult);
+      rewrite (@M_one_left A R_plus R_zero commmonoid_monoid);
       reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
-
-      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
-      reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
-
-      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
-      reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
-
-      rewrite (@absorb_r A R_mult R_zero), (@absorb_r A R_mult R_zero), (@M_one_left A R_plus R_zero).
-      reflexivity.
-      apply add_monoid. apply ring_0_mult. apply ring_0_mult.
     Qed.
     
     Program Instance M2A_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
@@ -347,30 +331,37 @@ Module SemiRing.
 
   End M2ASemiRing.
   
-  (* 自然数を要素とする2x2行列 *)
   Section M2NatSemiRing.
+    (* 自然数を要素とする2x2行列 *)
+
+    (* + *)
+    Definition M2nat_plus_op : monoid_binop (M2 nat) := @M2A_plus_op nat Nat_plus_op.
+    Definition m2nat_plus : RingPlus (M2 nat) := @m2a_plus nat nat_plus.
+
+    (* 0 *)
+    Definition m2nat_zero : RingZero (M2 nat) := @m2a_zero nat nat_zero.
+
+    (* * *)
+    Definition M2nat_mult_op : monoid_binop (M2 nat) := @M2A_mult_op nat Nat_plus_op Nat_mult_op.
+    Definition m2nat_mult : RingMult (M2 nat) := @m2a_plus nat nat_mult.
     
-    Check M2A_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
-    Check @M2A_SemiRing nat plus 0%nat mult 1%nat Nat_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
-    Definition M2Nat_SemiRing := @M2A_SemiRing nat plus 0%nat mult 1%nat Nat_SemiRing.
+    (* 1 *)
+    Definition m2nat_one : RingOne (M2 nat) := @m2a_one nat nat_zero nat_one.
+    
+    Instance M2Nat_SemiRing : SemiRing m2nat_plus m2nat_zero m2nat_mult m2nat_one.
+    Admitted.
+    
+    (*
+これはうまくいかない：
 
-    Check M2Nat_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
-    Print M2Nat_SemiRing.
-  End M2NatSemiRing.
-
+    Definition M2Nat_SemiRing : SemiRing m2nat_plus m2nat_zero m2nat_mult m2nat_one :=
+      @M2A_SemiRing nat nat_plus nat_zero nat_mult nat_one Nat_SemiRing.
+    
+    Definition M2M2Nat_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one :=
+      @M2A_SemiRing (M2 nat) m2nat_plus m2nat_zero m2nat_mult m2nat_one M2Nat_SemiRing.
+     *)
+    
+    End M2NatSemiRing.
 End SemiRing.
-
-(* メモ： *)
-(*
-次のようにして、自然数を要素とする2x2行列を定義することもできる。
-    Instance M2Nat_plus_op : monoid_binop (M2 nat) := M2_plus plus.
-    Instance m2nat_plus : RingPlus (M2 nat) := M2Nat_plus_op.
-    Program Instance M2Nat_Commutative : Commutative m2nat_plus.
-
-しかし、結局
-unfoldして自然数の定理を使う。
-自然数の半環の定理を使う（これは、任意の半環の場合と同じ手間）。
-のどちらかしかない。
-*)
 
 (* END *)
