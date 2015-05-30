@@ -21,6 +21,7 @@ Definition axiom T e :=
   forall x y : T, reflect (x = y) (e x y).
 
 Definition rel T := T -> T -> bool.
+Check rel : Type -> Type.
 
 Record mixin_of (T : Type) :=
   EqMixin {                                 (* Mixin *)
@@ -70,7 +71,7 @@ Proof.
   - now apply ReflectF.
 Qed.
 
-Definition eqb (b1 b2:bool) : bool :=
+Definition eqb (b1 b2 : bool) : bool :=
   match b1, b2 with
     | true, true => true
     | true, false => false
@@ -92,6 +93,15 @@ Qed.
 Fail Check @eq_op bool_eqType true true.
 Fail Check true == true.
 
+(* eqb と eq の違い。 *)
+(* すでに [is_true] : bool >-> Sortclass のコアーションが有効なので、 *)
+Check eqb : bool -> bool -> bool.
+Check eqb : bool -> bool -> Prop.
+Check eqb : rel bool.
+Check eq : bool -> bool -> Prop.
+Fail Check eq : bool -> bool -> bool.
+Fail Check le : rel bool.
+
 (* ここここ *)
 Definition bool_eqMixin := EqMixin bool_eqP.
 Definition bool_eqType := @EqType bool bool_eqMixin.
@@ -106,7 +116,9 @@ Check true == true.
 Lemma introTF :
   forall {P : Prop} {b c : bool},
     reflect P b ->
-    (match c with true => P | false => ~P end) ->
+    (match c with
+       | true => P
+       | false => ~P end) ->
     b = c.
 Proof.
   intros P b c Hb.
@@ -138,3 +150,4 @@ Qed.
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 (* END *)
+
