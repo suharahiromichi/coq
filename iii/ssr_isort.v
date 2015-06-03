@@ -8,7 +8,6 @@ LocallySorted や Permutation は SSReflect の相当の補題を使っている
 *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import path.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -19,22 +18,6 @@ Set Print All.
 Check perm_eq (1::2::3::nil) (2::1::3::nil).
 Eval compute in perm_eq (1::2::3::nil) (2::1::3::nil). (* true *)
 Eval compute in perm_eq nil nil.                       (* true *)
-
-(* Sorted, path.v *)
-Check sorted : forall T : eqType, rel T -> seq T -> bool.
-Check leq : nat -> nat -> bool.
-Check leq : nat -> nat -> Prop.
-Check leq : rel nat : Type.
-Check le : nat -> nat -> Prop.
-Fail Check le : nat -> nat -> bool.
-Fail Check le : rel nat.                    (* rel : Type -> Type *)
-
-Check sorted ltn (1::2::3::nil).
-Check sorted leq (1::2::3::nil).
-Eval compute in sorted leq (1::2::3::nil). (* true *)
-Eval compute in sorted leq (3::nil).       (* true *)
-Eval compute in sorted leq nil.            (* true *)
-Eval compute in sorted leq (2::1::3::nil). (* false *)
 
 (* ソート処理の定義 *)
 Fixpoint insert (a : nat)(l : list nat) : list nat :=
@@ -99,33 +82,89 @@ Proof.
     + by apply insert_perm.
 Qed.
 
-Lemma sorted_consn : forall (a b : nat) (l : seq nat),
-                     sorted leq (b :: l) ->
-                     leq a b -> sorted leq (a :: b :: l).
-Admitted.
+Inductive LocallySorted (A : Type) (R : A -> A -> Prop) : list A -> Prop :=
+| LSorted_nil : LocallySorted R nil
+| LSorted_cons1 : forall a : A, LocallySorted R (a :: nil)
+| LSorted_consn : forall (a b : A) (l : list A),
+                    LocallySorted R (b :: l) ->
+                    R a b -> LocallySorted R (a :: b :: l).
 
-Lemma sotred_cons1 : forall (a : nat), sorted leq (a :: nil).
+Check leq : nat -> nat -> bool.
+Check leq : nat -> nat -> Prop.
+Check leq : rel nat : Type.
+Check le : nat -> nat -> Prop.
+Fail Check le : nat -> nat -> bool.
+Fail Check le : rel nat.                    (* rel : Type -> Type *)
+Check LocallySorted leq (1::2::3::nil) : Prop.
+Check LocallySorted le (1::2::3::nil) : Prop.
+
+Lemma leb_complete_conv : forall n m : nat, leq m n = false -> n < m.
 Admitted.
 
 Lemma insert_sorted : forall (a : nat) (l : list nat),
-                        sorted leq l -> sorted leq (insert a l).
+                        LocallySorted leq l -> LocallySorted leq (insert a l).
 Proof.
   move=> a.
-  elim=> [| a0 l IHl H /=].
-  - by [].
+  elim=> [H //= | a0 l IHl H //=].
+  - by apply LSorted_cons1.
   - case Heqb : (leq a a0).                 (* remember *)
-    + apply sorted_consn.
+    + apply LSorted_consn.
       * by apply H.
       * by rewrite Heqb.
-    + admit.                                (* XXXX *)
+    + inversion H.
+      * apply LSorted_consn.
+        apply LSorted_cons1.
+        apply ltnW.
+        apply leb_complete_conv.
+        by [].
+      * subst.
+        simpl.
+        simpl in *.
+
+        elim H' : (leq a b).
+        - apply LSorted_consn.
+          simpl in IHl.
+          subst.
+          rewrite H' in IHl.
+          apply IHl.
+          apply H2.
+          apply ltnW.
+          apply leb_complete_conv.
+          by [].
+        - apply LSorted_consn.
+          rewrite H' in IHl.
+          apply IHl.
+          apply H2.
+          apply H3.
 Qed.
 
-Theorem isort_sorted : forall (l : list nat), sorted leq (insertion_sort l).
+Theorem isort_sorted : forall (l : list nat), LocallySorted leq (insertion_sort l).
 Proof.
   elim=> [| a l H //=].
-  - by [].
+  - by apply LSorted_nil.
   - by apply insert_sorted.
 Qed.
 
 (* END *)
+
+
+(*
+Require Import path.
+
+(* Sorted, path.v *)
+Check sorted : forall T : eqType, rel T -> seq T -> bool.
+Check leq : nat -> nat -> bool.
+Check leq : nat -> nat -> Prop.
+Check leq : rel nat : Type.
+Check le : nat -> nat -> Prop.
+Fail Check le : nat -> nat -> bool.
+Fail Check le : rel nat.                    (* rel : Type -> Type *)
+
+Check sorted ltn (1::2::3::nil).
+Check sorted leq (1::2::3::nil).
+Eval compute in sorted leq (1::2::3::nil). (* true *)
+Eval compute in sorted leq (3::nil).       (* true *)
+Eval compute in sorted leq nil.            (* true *)
+Eval compute in sorted leq (2::1::3::nil). (* false *)
+*)
 
