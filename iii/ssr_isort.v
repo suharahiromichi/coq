@@ -3,7 +3,7 @@
 http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt8.html
 
 をSSReflectに書き直した。
-LocallySorted や Permutation は SSReflect の相当の補題を使っているため、
+Permutation は SSReflect の相当の補題を使っているため、
 証明の詳細は原著と異なることに注意してください。
 *)
 
@@ -82,7 +82,7 @@ Proof.
     + by apply insert_perm.
 Qed.
 
-Inductive LocallySorted (A : Type) (R : A -> A -> Prop) : list A -> Prop :=
+Inductive LocallySorted (A : eqType) (R : rel A) : list A -> Prop :=
 | LSorted_nil : LocallySorted R nil
 | LSorted_cons1 : forall a : A, LocallySorted R (a :: nil)
 | LSorted_consn : forall (a b : A) (l : list A),
@@ -96,7 +96,7 @@ Check le : nat -> nat -> Prop.
 Fail Check le : nat -> nat -> bool.
 Fail Check le : rel nat.                    (* rel : Type -> Type *)
 Check LocallySorted leq (1::2::3::nil) : Prop.
-Check LocallySorted le (1::2::3::nil) : Prop.
+Fail Check LocallySorted le (1::2::3::nil) : Prop.
 
 Lemma leb_complete_conv : forall n m : nat, leq m n = false -> n < m.
 Admitted.
