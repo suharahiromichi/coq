@@ -20,13 +20,13 @@ Eval compute in perm_eq (1::2::3::nil) (2::1::3::nil). (* true *)
 Eval compute in perm_eq nil nil.                       (* true *)
 
 (* ソート処理の定義 *)
-Fixpoint insert (a : nat)(l : list nat) : list nat :=
+Fixpoint insert (a : nat)(l : seq nat) : seq nat :=
   match l with
   | nil => a :: nil
   | x :: xs => if leq a x then a :: l else x :: insert a xs
   end.
 
-Fixpoint insertion_sort (l : list nat) : list nat :=
+Fixpoint insertion_sort (l : seq nat) : seq nat :=
   match l with
   | nil => nil
   | x :: xs => insert x (insertion_sort xs)
@@ -73,7 +73,7 @@ Proof.
       by [].
 Qed.
 
-Theorem isort_permutation : forall (l : list nat), perm_eq l (insertion_sort l).
+Theorem isort_permutation : forall (l : seq nat), perm_eq l (insertion_sort l).
 Proof.
   elim=> [| a l H //=].
   - by [].
@@ -81,72 +81,6 @@ Proof.
     + by rewrite perm_cons.
     + by apply insert_perm.
 Qed.
-
-Inductive LocallySorted (A : eqType) (R : rel A) : list A -> Prop :=
-| LSorted_nil : LocallySorted R nil
-| LSorted_cons1 : forall a : A, LocallySorted R (a :: nil)
-| LSorted_consn : forall (a b : A) (l : list A),
-                    LocallySorted R (b :: l) ->
-                    R a b -> LocallySorted R (a :: b :: l).
-
-Check leq : nat -> nat -> bool.
-Check leq : nat -> nat -> Prop.
-Check leq : rel nat : Type.
-Check le : nat -> nat -> Prop.
-Fail Check le : nat -> nat -> bool.
-Fail Check le : rel nat.                    (* rel : Type -> Type *)
-Check LocallySorted leq (1::2::3::nil) : Prop.
-Fail Check LocallySorted le (1::2::3::nil) : Prop.
-
-Lemma leb_complete_conv : forall n m : nat, leq m n = false -> n < m.
-Admitted.
-
-Lemma insert_sorted : forall (a : nat) (l : list nat),
-                        LocallySorted leq l -> LocallySorted leq (insert a l).
-Proof.
-  move=> a.
-  elim=> [H //= | a0 l IHl H //=].
-  - by apply LSorted_cons1.
-  - case Heqb : (leq a a0).                 (* remember *)
-    + apply LSorted_consn.
-      * by apply H.
-      * by rewrite Heqb.
-    + inversion H.
-      * apply LSorted_consn.
-        apply LSorted_cons1.
-        apply ltnW.
-        apply leb_complete_conv.
-        by [].
-      * subst.
-        simpl.
-        simpl in *.
-
-        elim H' : (leq a b).
-        - apply LSorted_consn.
-          simpl in IHl.
-          subst.
-          rewrite H' in IHl.
-          apply IHl.
-          apply H2.
-          apply ltnW.
-          apply leb_complete_conv.
-          by [].
-        - apply LSorted_consn.
-          rewrite H' in IHl.
-          apply IHl.
-          apply H2.
-          apply H3.
-Qed.
-
-Theorem isort_sorted : forall (l : list nat), LocallySorted leq (insertion_sort l).
-Proof.
-  elim=> [| a l H //=].
-  - by apply LSorted_nil.
-  - by apply insert_sorted.
-Qed.
-
-(* END *)
-
 
 (*
 Require Import path.
@@ -168,3 +102,71 @@ Eval compute in sorted leq nil.            (* true *)
 Eval compute in sorted leq (2::1::3::nil). (* false *)
 *)
 
+Inductive LocallySorted (T : eqType) (R : rel T) : seq T -> Prop :=
+| LSorted_nil : LocallySorted R nil
+| LSorted_cons1 : forall a : T, LocallySorted R (a :: nil)
+| LSorted_consn : forall (a b : T) (l : seq T),
+                    LocallySorted R (b :: l) ->
+                    R a b -> LocallySorted R (a :: b :: l).
+
+Check leq : nat -> nat -> bool.
+Check leq : nat -> nat -> Prop.
+Check leq : rel nat : Type.
+Check le : nat -> nat -> Prop.
+Fail Check le : nat -> nat -> bool.
+Fail Check le : rel nat.                    (* rel : Type -> Type *)
+Check LocallySorted leq (1::2::3::nil) : Prop.
+Fail Check LocallySorted le (1::2::3::nil) : Prop.
+
+Lemma leb_complete_conv : forall n m : nat, leq m n = false -> n < m.
+Proof.
+  move=> n m.
+  move/negbT.
+  by rewrite -ltnNge.
+Qed.
+
+Lemma insert_sorted : forall (a : nat) (l : seq nat),
+                        LocallySorted leq l -> LocallySorted leq (insert a l).
+Proof.
+  move=> a.
+  elim=> [H //= | a0 l IHl H //=].
+  - by apply LSorted_cons1.
+  - case Heqb : (leq a a0).                 (* remember *)
+    + apply LSorted_consn.
+      * by apply H.
+      * by rewrite Heqb.
+    + inversion H.
+      * apply LSorted_consn.
+        apply LSorted_cons1.
+        apply ltnW.
+        apply leb_complete_conv.
+        by [].
+      * subst.
+        simpl.
+        simpl in *.
+        elim H' : (leq a b).
+        - apply LSorted_consn.
+          simpl in IHl.
+          subst.
+          rewrite H' in IHl.
+          apply IHl.
+          apply H2.
+          apply ltnW.
+          apply leb_complete_conv.
+          by [].
+        - apply LSorted_consn.
+          rewrite H' in IHl.
+          apply IHl.
+          apply H2.
+          apply H3.
+Qed.
+
+Theorem isort_sorted : forall (l : seq nat),
+                         LocallySorted leq (insertion_sort l).
+Proof.
+  elim=> [| a l H //=].
+  - by apply LSorted_nil.
+  - by apply insert_sorted.
+Qed.
+
+(* END *)
