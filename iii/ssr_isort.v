@@ -139,26 +139,18 @@ Proof.
       * apply LSorted_consn.
         apply LSorted_cons1.
         apply ltnW.
-        apply leb_complete_conv.
-        by [].
-      * subst.
-        simpl.
-        simpl in *.
+        by apply leb_complete_conv.
+      * subst; simpl; simpl in *.
         elim H' : (leq a b).
         - apply LSorted_consn.
-          simpl in IHl.
-          subst.
           rewrite H' in IHl.
-          apply IHl.
-          apply H2.
-          apply ltnW.
-          apply leb_complete_conv.
-          by [].
+          by apply IHl.                     (* apply H2. *)
+        - apply ltnW.
+          by apply leb_complete_conv.
         - apply LSorted_consn.
           rewrite H' in IHl.
-          apply IHl.
-          apply H2.
-          apply H3.
+          by apply IHl.                     (* apply H2. *)
+        - by [].                            (* apply H3. *)
 Qed.
 
 Theorem isort_sorted : forall (l : seq nat),
