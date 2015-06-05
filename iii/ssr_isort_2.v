@@ -86,17 +86,12 @@ Section isort.
   | LSorted_consn : forall (a b : T) (l : seq T),
                       LocallySorted (b :: l) ->
                       R a b -> LocallySorted (a :: b :: l).
-
-  Lemma lt_le_weak' : forall m n : T, R' m n -> R m n.
+  
+  Lemma complete_conv : forall n m : T, R m n = false -> R n m.
   Proof.
     admit.
   Qed.
-
-  Lemma leb_complete_conv' : forall n m : T, R m n = false -> R' n m.
-  Proof.
-    admit.
-  Qed.
-
+  
   Lemma insert_sorted : forall (a : T) (l : seq T),
                           LocallySorted l -> LocallySorted (insert a l).
   Proof.
@@ -110,17 +105,15 @@ Section isort.
       + inversion H.
         * apply LSorted_consn.
           apply LSorted_cons1.
-          by apply lt_le_weak', leb_complete_conv'.
+          by apply complete_conv.
         * subst; simpl; simpl in *.
           elim H' : (R a b).
-           - apply LSorted_consn.
-             rewrite H' in IHl.
-               by apply IHl.                (* apply H2. *)
-           - by apply lt_le_weak', leb_complete_conv'.
-           - apply LSorted_consn.
-             rewrite H' in IHl.
-               by apply IHl.                (* apply H2. *)
-           - by [].                         (* apply H3. *)
+          - apply LSorted_consn.
+            + by rewrite H' in IHl; apply IHl. (* apply H2. *)
+            + by apply complete_conv.
+          - apply LSorted_consn.
+            + by rewrite H' in IHl; apply IHl. (* apply H2. *)
+            + by [].                           (* apply H3. *)
   Qed.
   
   Theorem isort_sorted : forall (l : seq T),
