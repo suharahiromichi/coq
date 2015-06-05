@@ -87,7 +87,7 @@ Section isort.
                       LocallySorted (b :: l) ->
                       R a b -> LocallySorted (a :: b :: l).
   
-  Lemma complete_conv : forall n m : T, R m n = false -> R n m.
+  Lemma complete_conv : forall n m : T, ~ R m n -> R n m.
   Proof.
     admit.
   Qed.
@@ -105,12 +105,12 @@ Section isort.
       + inversion H.
         * apply LSorted_consn.
           apply LSorted_cons1.
-          by apply complete_conv.
+          by move: Heqb => /negP /complete_conv.
         * subst; simpl; simpl in *.
           elim H' : (R a b).
           - apply LSorted_consn.
             + by rewrite H' in IHl; apply IHl. (* apply H2. *)
-            + by apply complete_conv.
+            + by move: Heqb => /negP /complete_conv.
           - apply LSorted_consn.
             + by rewrite H' in IHl; apply IHl. (* apply H2. *)
             + by [].                           (* apply H3. *)
