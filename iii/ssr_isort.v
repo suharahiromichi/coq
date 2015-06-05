@@ -118,11 +118,12 @@ Fail Check le : rel nat.                    (* rel : Type -> Type *)
 Check LocallySorted leq (1::2::3::nil) : Prop.
 Fail Check LocallySorted le (1::2::3::nil) : Prop.
 
-Lemma leb_complete_conv : forall n m : nat, leq m n = false -> n < m.
+Lemma complete_conv : forall n m : nat, leq m n = false -> leq n m.
 Proof.
   move=> n m.
-  move/negbT.
-  by rewrite -ltnNge.
+  move/negbT.    
+  rewrite -ltnNge => H.
+  by apply ltnW.
 Qed.
 
 Lemma insert_sorted : forall (a : nat) (l : seq nat),
@@ -138,19 +139,15 @@ Proof.
     + inversion H.
       * apply LSorted_consn.
         apply LSorted_cons1.
-        apply ltnW.
-        by apply leb_complete_conv.
+        by apply complete_conv.
       * subst; simpl; simpl in *.
         elim H' : (leq a b).
         - apply LSorted_consn.
-          rewrite H' in IHl.
-          by apply IHl.                     (* apply H2. *)
-        - apply ltnW.
-          by apply leb_complete_conv.
+          + by rewrite H' in IHl; apply IHl. (* apply H2. *)
+          + by apply complete_conv.
         - apply LSorted_consn.
-          rewrite H' in IHl.
-          by apply IHl.                     (* apply H2. *)
-        - by [].                            (* apply H3. *)
+          + by rewrite H' in IHl; apply IHl. (* apply H2. *)
+          + by [].                           (* apply H3. *)
 Qed.
 
 Theorem isort_sorted : forall (l : seq nat),
