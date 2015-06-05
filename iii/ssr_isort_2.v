@@ -19,8 +19,8 @@ Unset Printing Implicit Defensive.
 Set Print All.
 
 Section isort.
-  Variable T : eqType.
-  Variable R : rel T.
+  Variables T : eqType.
+  Variables R R' : rel T.
 
   (* Permutation, seq.v *)
   Check perm_eq (1::2::3::nil) (2::1::3::nil).
@@ -87,6 +87,16 @@ Section isort.
                       LocallySorted (b :: l) ->
                       R a b -> LocallySorted (a :: b :: l).
 
+  Lemma lt_le_weak' : forall m n : T, R' m n -> R m n.
+  Proof.
+    admit.
+  Qed.
+
+  Lemma leb_complete_conv' : forall n m : T, R m n = false -> R' n m.
+  Proof.
+    admit.
+  Qed.
+
   Lemma insert_sorted : forall (a : T) (l : seq T),
                           LocallySorted l -> LocallySorted (insert a l).
   Proof.
@@ -100,13 +110,13 @@ Section isort.
       + inversion H.
         * apply LSorted_consn.
           apply LSorted_cons1.
-          admit.
+          by apply lt_le_weak', leb_complete_conv'.
         * subst; simpl; simpl in *.
           elim H' : (R a b).
            - apply LSorted_consn.
              rewrite H' in IHl.
                by apply IHl.                (* apply H2. *)
-           - admit.
+           - by apply lt_le_weak', leb_complete_conv'.
            - apply LSorted_consn.
              rewrite H' in IHl.
                by apply IHl.                (* apply H2. *)
@@ -155,14 +165,3 @@ Eval compute in sorted leq nil.            (* true *)
 Eval compute in sorted leq (2::1::3::nil). (* false *)
 
 (* END *)
-
-(*
-Lemma leb_complete_conv : forall (T : eqType) (R : rel T) (n m : T),
-                            R m n = false -> R n m.
-Proof.
-  move=> n m.
-  move/negbT.
-  by rewrite -ltnNge.
-Qed.
-*)
-
