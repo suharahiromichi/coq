@@ -98,11 +98,13 @@ Section isort.
       + apply LSorted_consn.
         * by apply H.
         * by rewrite Heqb.
+(*    + elim: l IHl H => [_ _ |b l0 H1 IHl H]. *)
       + inversion H.
         * apply LSorted_consn.
           apply LSorted_cons1.
           by move: Heqb => /negP /complete_conv.
-        * subst; simpl; simpl in *.
+        * rewrite -H1 in IHl, H.            (* subst *)
+          rewrite /= in IHl => /=.          (* simpl in IHl; simpl. *)
           elim H' : (R a b).
           - apply LSorted_consn.
             + by rewrite H' in IHl; apply IHl. (* apply H2. *)
