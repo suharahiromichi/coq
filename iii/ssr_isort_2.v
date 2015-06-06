@@ -21,6 +21,7 @@ Set Print All.
 Section isort.
   Variables T : eqType.
   Variables R R' : rel T.
+  Hypothesis complete_conv : forall n m : T, ~ R m n -> R n m.
 
   (* Permutation, seq.v *)
   Check perm_eq (1::2::3::nil) (2::1::3::nil).
@@ -87,11 +88,6 @@ Section isort.
                       LocallySorted (b :: l) ->
                       R a b -> LocallySorted (a :: b :: l).
   
-  Lemma complete_conv : forall n m : T, ~ R m n -> R n m.
-  Proof.
-    admit.
-  Qed.
-  
   Lemma insert_sorted : forall (a : T) (l : seq T),
                           LocallySorted l -> LocallySorted (insert a l).
   Proof.
@@ -126,6 +122,18 @@ Section isort.
 
 End isort.
 
+Lemma leq_complete_conv : forall n m : nat, ~ (m <= n) -> n <= m.
+Proof.
+  move=> n m /negP.
+  rewrite -ltnNge.
+  by apply ltnW.
+Qed.
+
+Definition nat_isort_sorted := isort_sorted leq_complete_conv.
+Check nat_isort_sorted :
+  forall l : seq nat, LocallySorted leq (insertion_sort leq l).
+
+(* 以下、参考 *)
 Eval compute in insert leq 1 nil.                      (* [:: 1] *)
 Eval compute in insert leq 5 [:: 1; 4; 2; 9; 3].       (* [:: 1; 4; 2; 5; 9; 3] *)
 Eval compute in insertion_sort leq [:: 2; 4; 1; 5; 3]. (* [:: 1; 2; 3; 4; 5] *)
