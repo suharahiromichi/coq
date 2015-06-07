@@ -42,10 +42,9 @@ Section isort.
     end.
 
   (* 証明 *)
-  Lemma perm_iff : forall (m n : seq T),
-                   (forall l, perm_eq m l = perm_eq n l) <-> perm_eq m n.
+  Lemma perm_iff (m n : seq T) :
+    (forall l, perm_eq m l = perm_eq n l) <-> perm_eq m n.
   Proof.
-    move=> m n.
     split=> H.
     - by rewrite H.
     - by apply/perm_eqlP.
@@ -55,10 +54,10 @@ Section isort.
                       perm_eq [:: x, a & l] l' = perm_eq [:: a, x & l] l'.
   Proof.
     move=> l l' x a.
-    apply perm_iff => //.
+    apply/perm_iff : l' => //.              (* l' は、perm_iff の左辺の∀のため。 *)
     rewrite -[[:: x, a & l]]cat1s -[[:: a & l]]cat1s.
     apply/perm_eqlP.
-      by apply (perm_catCA [:: x] [:: a] l).
+      by apply: (perm_catCA [:: x] [:: a] l).
   Qed.
 
   Lemma insert_perm : forall (l : seq T) (x : T),
@@ -66,9 +65,9 @@ Section isort.
   Proof.
     elim=> [_ // | a l H x //=].
     case: (R x a) => [//= |].
-    apply perm_iff => // l'.
+    apply/perm_iff => // l'.
     rewrite perm_swap => //.
-    apply perm_iff => //.
+    apply/perm_iff : l'.
     by rewrite perm_cons.
   Qed.
 
@@ -76,9 +75,10 @@ Section isort.
                                 perm_eq l (insertion_sort l).
   Proof.
     elim=> [// | a l H //=].
-    apply perm_eq_trans with (a :: insertion_sort l).
+    apply: (@perm_eq_trans T (a :: insertion_sort l)).
+(*  apply perm_eq_trans with (y := a :: insertion_sort l). *)
     + by rewrite perm_cons.
-    + by apply insert_perm.
+    + by apply: insert_perm.
   Qed.
 
   Inductive LocallySorted : seq T -> Prop :=
@@ -93,33 +93,33 @@ Section isort.
   Proof.
     move=> a.
     elim=> [H //= | a0 l IHl H //=].
-    - by apply LSorted_cons1.
+    - by apply: LSorted_cons1.
     - case Heqb : (R a a0).                 (* remember *)
-      + apply LSorted_consn.
-        * by apply H.
+      + apply: LSorted_consn.
+        * by [].
         * by rewrite Heqb.
 (*    + elim: l IHl H => [_ _ |b l0 H1 IHl H]. *)
       + inversion H.
-        * apply LSorted_consn.
-          apply LSorted_cons1.
+        * apply: LSorted_consn.
+          apply: LSorted_cons1.
           by move: Heqb => /negP /complete_conv.
         * rewrite -H1 in IHl, H.            (* subst *)
           rewrite /= in IHl => /=.          (* simpl in IHl; simpl. *)
           elim H' : (R a b).
-          - apply LSorted_consn.
-            + by rewrite H' in IHl; apply IHl. (* apply H2. *)
+          - apply: LSorted_consn.
+            + by rewrite H' in IHl; apply: IHl. (* apply H2. *)
             + by move: Heqb => /negP /complete_conv.
-          - apply LSorted_consn.
-            + by rewrite H' in IHl; apply IHl. (* apply H2. *)
-            + by [].                           (* apply H3. *)
+          - apply: LSorted_consn.
+            + by rewrite H' in IHl; apply: IHl. (* apply H2. *)
+            + by [].                            (* apply H3. *)
   Qed.
   
   Theorem isort_sorted : forall (l : seq T),
                            LocallySorted (insertion_sort l).
   Proof.
     elim=> [| a l H //=].
-    - by apply LSorted_nil.
-    - by apply insert_sorted.
+    - by apply: LSorted_nil.
+    - by apply: insert_sorted.
   Qed.
 
 End isort.
@@ -128,7 +128,7 @@ Lemma leq_complete_conv : forall n m : nat, ~ (m <= n) -> n <= m.
 Proof.
   move=> n m /negP.
   rewrite -ltnNge.
-  by apply ltnW.
+  by apply: ltnW.
 Qed.
 
 Definition nat_isort_sorted := isort_sorted leq_complete_conv.
