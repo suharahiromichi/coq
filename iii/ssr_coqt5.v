@@ -25,7 +25,7 @@ Qed.
 
 
 Theorem app_eq_nil :
-  forall (A : Type)(l l':seq A), l ++ l' = nil -> l = nil /\ l' = nil.
+  forall (A : Type) (l l' : seq A), l ++ l' = nil -> l = nil /\ l' = nil.
 Proof.
   move=> A l l' H.
   split.
@@ -74,6 +74,13 @@ Fixpoint removelast (A : Type) (l : seq A) : seq A :=
     | a :: l => a :: removelast l
   end.
 
+Lemma removelast_cons : forall (A : Type) (a : A) (l' : list A), l' <> nil ->
+  removelast (a :: l') = a :: removelast l'.
+Proof.
+  move=> A a l' H.
+  elim: l' H => [//= | a' l] => H0 H1.
+  admit.
+
 Lemma removelast_app : forall (A : Type) (l l' : seq A),
                          l' <> nil -> removelast (l ++ l') = l ++ removelast l'.
 Proof.
@@ -84,12 +91,16 @@ Proof.
   move=> H0 H1.
   - exfalso.
     apply H.
+    Check (@app_eq_nil A l l').
     elim: (@app_eq_nil A l l').
     + by [].
     + by [].
-  - move=> a0 l0 H1 H2 H3.
-    apply: H1.
-    + admit.
+  - move=> a0 l0 IHl Heql0 H1.
+    rewrite 2!cat_cons.
+    rewrite removelast_cons.
+    f_equal.
+    rewrite -Heql0.
+    + by [].
     + admit.
 Qed.
 
