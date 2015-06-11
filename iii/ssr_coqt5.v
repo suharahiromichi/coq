@@ -90,6 +90,13 @@ Qed.
   inversion H0.
 *)
 
+Lemma contra' (S : Type) (a b c d : S) : (a = b -> c = d) -> (c <> d -> a <> b).
+Proof.
+  move=> H.
+  rewrite /not => H0 H1.
+  by apply H0,H,H1.
+Qed.  
+
 Lemma removelast_app : forall (A : Type) (l l' : seq A),
                          l' <> nil -> removelast (l ++ l') = l ++ removelast l'.
 Proof.
@@ -98,10 +105,8 @@ Proof.
   rewrite 2!cat_cons.
   rewrite removelast_cons.
   - by rewrite IHl.
-  - rewrite /not => Hc.
-    apply H.
-    eapply app_is_nil.
-    eapply Hc.
+  - apply: contra' H.                       (* H は generalize *)
+    by apply: app_is_nil.
 Qed.
 
 Inductive InList (A : Type) (a : A) : list A -> Prop :=
