@@ -57,7 +57,7 @@ Proof.
   move=> P Q a.
   rewrite (_: (Q (a * 2)) = (Q (2 * a))).
   (* replace (Q (a * 2)) with (Q (2 * a)). *)
-  Admitted.
+  Admitted.                                 (* OK *)
 
 Goal forall (P : nat -> nat -> Prop) (a b c d : nat),
        P a d -> a = b -> c = d -> P b c.
@@ -74,34 +74,34 @@ Fixpoint removelast (A : Type) (l : seq A) : seq A :=
     | a :: l => a :: removelast l
   end.
 
-Lemma removelast_cons : forall (A : Type) (a : A) (l' : list A), l' <> nil ->
-  removelast (a :: l') = a :: removelast l'.
+Lemma removelast_cons : forall (A : Type) (a : A) (l : list A), l <> nil ->
+  removelast (a :: l) = a :: removelast l.
 Proof.
-  move=> A a l' H.
-  elim: l' H => [//= | a' l] => H0 H1.
-  admit.
+  move=> A a.
+  by elim=> [//= | a' l] => H0 H1.
+Qed.
+
+Lemma app_is_nil (A : Type) (l l' : seq A) : l ++ l' = [::] -> l' = [::].
+Proof.
+  by elim: l.
+Qed.
+(*
+  elim: l => [//= | a l H H0].
+  inversion H0.
+*)
 
 Lemma removelast_app : forall (A : Type) (l l' : seq A),
                          l' <> nil -> removelast (l ++ l') = l ++ removelast l'.
 Proof.
   move=> A l l' H.
-  elim: l => [//= | a l].
-  remember (l ++ l') as l0.
-  elim: l0 Heql0.
-  move=> H0 H1.
-  - exfalso.
+  elim: l => [//= | a l IHl].
+  rewrite 2!cat_cons.
+  rewrite removelast_cons.
+  - by rewrite IHl.
+  - rewrite /not => Hc.
     apply H.
-    Check (@app_eq_nil A l l').
-    elim: (@app_eq_nil A l l').
-    + by [].
-    + by [].
-  - move=> a0 l0 IHl Heql0 H1.
-    rewrite 2!cat_cons.
-    rewrite removelast_cons.
-    f_equal.
-    rewrite -Heql0.
-    + by [].
-    + admit.
+    eapply app_is_nil.
+    eapply Hc.
 Qed.
 
 Inductive InList (A : Type) (a : A) : list A -> Prop :=
