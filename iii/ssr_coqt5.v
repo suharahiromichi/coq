@@ -43,13 +43,17 @@ Qed.
 Goal forall (n m : nat) (f : nat -> nat),
        f n = n -> S (f (f n)) = S m -> n = m.
 Proof.
-  congruence.
+  (* congruence. *)
+  move=>  n m f H H0.
+  case: H0.
+  by rewrite 2!H.
 Qed.
 
 Goal forall (A : Type) (x y : A),
        x :: y :: nil <> x :: nil.
 Proof.
-  congruence.
+  (* congruence. *)
+  by [].
 Qed.
 
 Goal forall (P Q : nat -> Prop) (a : nat), P (a * 2) \/ Q (a * 2).
