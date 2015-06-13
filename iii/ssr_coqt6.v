@@ -42,47 +42,38 @@ Theorem fold_symmetric :
     (forall x y z:A, f x (f y z) = f (f x y) z) ->
     (forall x y:A, f x y = f y x) ->
     forall (a0:A) (l:list A), foldl f a0 l = foldr f a0 l.
-destruct l.
- reflexivity.
-
- simpl.
- generalize a, a0.
- induction l.
-  intros.
-  simpl.
-  apply H0.
-
-  simpl.
-  intros.
-  rewrite H.
-  replace (f (f a3 a2) a1) with (f a3 (f a2 a1)).
-  apply IHl.
-  apply H.
+Proof.
+  destruct l.
+  - reflexivity.
+  - simpl.
+    generalize a, a0.
+    induction l.
+    + intros.
+      simpl.
+      now apply H0.
+    + simpl.
+      intros.
+      rewrite H.
+      replace (f (f a3 a2) a1) with (f a3 (f a2 a1)).
+      * now apply IHl.
+      * now apply H.
 Qed.
-
-
 
 Theorem fold_symmetric' :
   forall (A : Type) (f : A -> A -> A),
-    (forall x y z : A, f x (f y z) = f (f x y) z) ->
-    (forall x y : A, f x y = f y x) ->
-    forall (a0 : A) (l : list A), foldl f a0 l = foldr f a0 l.
+    (forall x y z : A, f x (f y z) = f (f x y) z) -> (* 結合則 *)
+    (forall x y : A, f x y = f y x) ->               (* 交換則 *)
+    forall (a0 : A) (l : seq A), foldl f a0 l = foldr f a0 l.
 Proof.
-  move=> A f H H0 a0.
-  elim.
-  - by [].
-  - simpl.
-    move=> a l.
-    elim: l a0.
-    + intros.
-      simpl.
-      by [].
-    + move=> a1 l IH1 a2 H2.
-      replace (f (f a2 a) a1) with (f a2 (f a a1)).
-      simpl.
-      Check IH1 (f a a1).
-      admit.                                (* XXXXX *)
-      apply H.
+  move=> A f Hassoc Hcomm a0 l.
+  elim: l => [//= | /= a l _].
+  - elim: l a a0 => [a1 a2 /= | /= a1 l IHl a2 a3].
+    + by apply: Hcomm.
+    + rewrite Hassoc.
+      rewrite (_ : f (f a3 a2) a1 = f a3 (f a2 a1)).
+      (* replace (f (f a3 a2) a1) with (f a3 (f a2 a1)). *)
+      * by apply: IHl.
+      * by rewrite Hassoc.
 Qed.
 
 Theorem problem8 : forall (n : nat),
