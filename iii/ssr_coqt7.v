@@ -72,15 +72,27 @@ Defined.
 *)
 
 (* 問10. *)
+
+(* stardard Coq の not_eq_S. と eq_S の両方 *)
+Lemma eq_S_S (n m : nat) : n = m <-> n.+1 = m.+1.
+Proof.
+  split=> H.
+  - by congr (_ .+1).
+  - apply/eqP.
+    rewrite -eqSS.
+    apply/eqP.
+    by apply H.
+Qed.
+
 Goal forall (n m : nat), n = m \/ n <> m.
 Proof.
   elim=> [m | n IHn m].                     (* elim: n *)
   - by elim: m; [left | right].             (* elim: m *)
   - elim: m => [| m _].
     + by right.
-    + elim: (IHn m) => H; [left | right].
-      * by f_equal.
-      * by apply not_eq_S.
+    + elim: (IHn m); [left | right].
+      * by congr (_ .+1).
+      * by move/eq_S_S : H.                 (* move:H; move/eq_S_S *)
 Qed.
 
 (* 問11. *)
