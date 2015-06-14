@@ -12,7 +12,6 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-
 Inductive InList (A : Type) (a : A) : seq A -> Prop :=
   | headIL : forall xs, InList a (a::xs)   (* 1 *)
   | consIL : forall x xs, InList a xs -> InList a (x::xs).   (* 2 *)
@@ -37,7 +36,7 @@ Proof.
           by inversion H3.
 Qed.
 
-Theorem fold_symmetric :
+Theorem fold_symmetric :                    (* standard coq. *)
   forall (A:Type) (f:A -> A -> A),
     (forall x y z:A, f x (f y z) = f (f x y) z) ->
     (forall x y:A, f x y = f y x) ->
@@ -59,14 +58,14 @@ Proof.
       * now apply H.
 Qed.
 
-Theorem fold_symmetric' :
+Theorem fold_symmetric' :                   (* SSReflect *)
   forall (A : Type) (f : A -> A -> A),
     (forall x y z : A, f x (f y z) = f (f x y) z) -> (* 結合則 *)
     (forall x y : A, f x y = f y x) ->               (* 交換則 *)
     forall (a0 : A) (l : seq A), foldl f a0 l = foldr f a0 l.
 Proof.
   move=> A f Hassoc Hcomm a0 l.
-  elim: l => [//= | /= a l _].
+  elim: l => [//= | /= a l _].              (* 前提 : foldl f a0 l = foldr f a0 l を消す。 *)
   - elim: l a a0 => [a1 a2 /= | /= a1 l IHl a2 a3].
     + by apply: Hcomm.
     + rewrite Hassoc.
@@ -107,7 +106,7 @@ Proof.
       by apply: headIL.
     + elim: (IHl H1).
       * left.
-          by apply: consIL.
+        by apply: consIL.
       * right.
         by apply H3.
 Qed.
