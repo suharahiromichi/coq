@@ -156,9 +156,7 @@ Module SemiRing.
     Proof.
       move=> x.
       rewrite distribute_r.                 (* ring_dist の :> が効く。 *)
-      Check M_one_left x.
-      erewrite (M_one_left x).              (* add_monoid と mul_monoid の :> が効く。 *)
-      by [].
+      by erewrite (M_one_left x).           (* add_monoid と mul_monoid の :> が効く。 *)
     Qed.
   End SemiRingTheory.
   
@@ -288,7 +286,8 @@ Module SemiRing.
     Program Instance M2A_CommutativeMonoid : CommutativeMonoid m2a_plus m2a_zero.
     (* No Obligations *)
     
-    Lemma eq_abcd_acbd a b c d : R_plus (R_plus a b) (R_plus c d) = R_plus (R_plus a c) (R_plus b d).
+    Lemma eq_abcd_acbd a b c d :
+      R_plus (R_plus a b) (R_plus c d) = R_plus (R_plus a c) (R_plus b d).
     Proof.
       rewrite -[R_plus (R_plus a b) (R_plus c d)]M_dot_assoc.
       rewrite -[R_plus (R_plus a c) (R_plus b d)]M_dot_assoc.
@@ -300,30 +299,39 @@ Module SemiRing.
     Qed.
     
     Program Instance M2A_Monoid_mult : Monoid m2a_mult m2a_one.
-    Next Obligation.                        (* monoid_op x (monoid_op y z) = monoid_op (monoid_op x y) z *)
+    Next Obligation.
     Proof.
+      (* monoid_op x (monoid_op y z) = monoid_op (monoid_op x y) z *)
       rewrite /monoid_op /m2a_mult /M2A_mult_op /M2_mult /=.
       f_equal;
-      rewrite [(R_mult (_ x) (R_plus (R_mult (_ y) (_ z)) (R_mult (_ y) (_ z))))]distribute_l;
-      rewrite [(R_mult (_ x) (R_plus (R_mult (_ y) (_ z)) (R_mult (_ y) (_ z))))]distribute_l;
-      rewrite [(R_mult (R_plus (R_mult (_ x) (_ y)) (R_mult (_ x) (_ y))) (_ z))]distribute_r;
-      rewrite [(R_mult (R_plus (R_mult (_ x) (_ y)) (R_mult (_ x) (_ y))) (_ z))]distribute_r;
-      rewrite test;
-      by f_equal;
-        rewrite -[(R_mult (R_mult (_ x) (_ y)) (_ z))]M_dot_assoc;
-        rewrite -[(R_mult (R_mult (_ x) (_ y)) (_ z))]M_dot_assoc.
+      rewrite 2![(R_mult (_ x) (R_plus (R_mult (_ y) (_ z)) (R_mult (_ y) (_ z))))]
+              distribute_l;
+      rewrite 2![(R_mult (R_plus (R_mult (_ x) (_ y)) (R_mult (_ x) (_ y))) (_ z))]
+              distribute_r;
+      rewrite eq_abcd_acbd;
+      by f_equal; rewrite -2![(R_mult (R_mult (_ x) (_ y)) (_ z))]M_dot_assoc.
       Qed.
-    Next Obligation.                        (* monoid_op x (monoid_op y z) = monoid_op (monoid_op x y) z  *)
+    Next Obligation.
+    Proof.
+      (* monoid_op m2a_one x = x *)
+      rewrite /monoid_op /m2a_mult /M2A_mult_op /M2_mult /=.
+      rewrite !absorb_l.
+      rewrite 2![R_plus (R_mult R_one (_ x)) R_zero]M_one_right.
+      rewrite 2![R_plus R_zero (R_mult R_one (_ x))]M_one_left.
+      erewrite !absorb_r.
+      Check M2_eq_intros (Build_M2 (c00 x) (c01 x) (c10 x) (c11 x)) x.
+      erewrite (M2_eq_intros (Build_M2 (c00 x) (c01 x) (c10 x) (c11 x)) x) => /=.
     Admitted.
-    Next Obligation.                        (* monoid_op x m2a_one = x *)
+    Next Obligation.
+    (* monoid_op x m2a_one = x *)
     Admitted.
     
     Program Instance M2A_Distribute : Distribute m2a_mult m2a_plus.
-    Next Obligation.                        (* monoid_op x m2a_one = x *)
-    Proof.
+    Next Obligation.
+    (* m2a_mult a (m2a_plus b c) = m2a_plus (m2a_mult a b) (m2a_mult a c) *)
     Admitted.
-    Next Obligation.                        (* m2a_mult (m2a_plus a b) c = m2a_plus (m2a_mult a c) (m2a_mult b c) *)
-    Proof.
+    Next Obligation.
+    (* m2a_mult (m2a_plus a b) c = m2a_plus (m2a_mult a c) (m2a_mult b c) *)
     Admitted.
     
     Program Instance M2A_Absorb : Absorb m2a_mult m2a_zero.
