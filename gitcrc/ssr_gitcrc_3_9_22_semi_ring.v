@@ -26,7 +26,7 @@ Set Print All.
 (* ** 2x2行列 ** *)
 (* ************* *)
 Section mat.                                (* matrices. *)
-  Variables (A:Type)
+  Variables (A : Type)
             (zero one : A) 
             (plus mult minus : A -> A -> A)
             (sym : A -> A).
@@ -323,7 +323,7 @@ Module SemiRing.
       rewrite 4![R_mult R_zero _]absorb_l.
       rewrite 2![R_plus _ R_zero]M_one_right.
       rewrite 2![R_plus R_zero _]M_one_left.
-      by rewrite (M2_eq_intros (Build_M2 _ _ _ _) x).
+      by apply M2_eq_intros.
     Qed.
     Next Obligation.
     Proof.
@@ -333,7 +333,7 @@ Module SemiRing.
       rewrite 4![R_mult _ R_zero]absorb_r.
       rewrite 2![R_plus R_zero _]M_one_left.
       rewrite 2![R_plus _ R_zero]M_one_right.
-      by rewrite (M2_eq_intros (Build_M2 _ _ _ _) x).
+      by apply M2_eq_intros.
     Qed.
     
     Program Instance M2A_Distribute : Distribute m2a_mult m2a_plus.
