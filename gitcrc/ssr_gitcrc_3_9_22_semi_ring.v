@@ -160,7 +160,7 @@ Module SemiRing.
     Proof.
       move=> x.
       rewrite distribute_r.                 (* ring_dist の :> が効く。 *)
-      by erewrite (M_one_left x).           (* add_monoid と mul_monoid の :> が効く。 *)
+      by rewrite [1 * x]M_one_left.         (* add_monoid と mul_monoid の :> が効く。 *)
     Qed.
   End SemiRingTheory.
   
@@ -266,7 +266,9 @@ Module SemiRing.
       rewrite /m2a_plus /M2A_plus_op /M2_plus.
       f_equal; apply: (@commutativity A A ring_plus _). (* Hintの無い場合 *)
       Undo.
-      by f_equal; apply: commutativity.     (* Hintがあるなら *)
+      f_equal; apply: commutativity.        (* Hintがあるなら *)
+      Undo.
+      f_equal; rewrite [R_plus _ _]commutativity; by []. (* Hint が要る。 *)
     Qed.
     
     Program Instance M2A_Monoid_plus : Monoid m2a_plus m2a_zero.
@@ -363,8 +365,8 @@ Module SemiRing.
       rewrite /m2a_plus /M2A_plus_op /M2_plus.
       rewrite /m2a_zero /Zero2 /=.
       by f_equal;
-      repeat rewrite (@absorb_l A R_mult R_zero ring_0_mult);
-      f_equal; erewrite (@M_one_left A R_plus R_zero commmonoid_monoid).
+      rewrite 2![R_mult R_zero _]absorb_l;
+      rewrite [R_plus R_zero R_zero]M_one_left.
     Qed.
     Next Obligation.
     Proof.
@@ -372,8 +374,8 @@ Module SemiRing.
       rewrite /m2a_plus /M2A_plus_op /M2_plus.
       rewrite /m2a_zero /Zero2 /=.
       by f_equal;
-      repeat rewrite (@absorb_r A R_mult R_zero ring_0_mult);
-      f_equal; erewrite (@M_one_left A R_plus R_zero commmonoid_monoid).
+      rewrite 2![R_mult _ R_zero]absorb_r;
+      rewrite [R_plus R_zero R_zero]M_one_left.
     Qed.
     
     Program Instance M2A_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one.
