@@ -310,29 +310,47 @@ Module SemiRing.
               distribute_r;
       rewrite eq_abcd_acbd;
       by f_equal; rewrite -2![(R_mult (R_mult (_ x) (_ y)) (_ z))]M_dot_assoc.
-      Qed.
+    Qed.
     Next Obligation.
     Proof.
       (* monoid_op m2a_one x = x *)
       rewrite /monoid_op /m2a_mult /M2A_mult_op /M2_mult /=.
-      rewrite !absorb_l.
-      rewrite 2![R_plus (R_mult R_one (_ x)) R_zero]M_one_right.
-      rewrite 2![R_plus R_zero (R_mult R_one (_ x))]M_one_left.
-      erewrite !absorb_r.
-      Check M2_eq_intros (Build_M2 (c00 x) (c01 x) (c10 x) (c11 x)) x.
-      erewrite (M2_eq_intros (Build_M2 (c00 x) (c01 x) (c10 x) (c11 x)) x) => /=.
-    Admitted.
+      rewrite 4![R_mult R_one _]M_one_left.
+      rewrite 4![R_mult R_zero _]absorb_l.
+      rewrite 2![R_plus _ R_zero]M_one_right.
+      rewrite 2![R_plus R_zero _]M_one_left.
+      by rewrite (M2_eq_intros (Build_M2 _ _ _ _) x).
+    Qed.
     Next Obligation.
-    (* monoid_op x m2a_one = x *)
-    Admitted.
+    Proof.
+      (* monoid_op x m2a_one = x *)
+      rewrite /monoid_op /m2a_mult /M2A_mult_op /M2_mult /=.
+      rewrite 4![R_mult _ R_one]M_one_right.
+      rewrite 4![R_mult _ R_zero]absorb_r.
+      rewrite 2![R_plus R_zero _]M_one_left.
+      rewrite 2![R_plus _ R_zero]M_one_right.
+      by rewrite (M2_eq_intros (Build_M2 _ _ _ _) x).
+    Qed.
     
     Program Instance M2A_Distribute : Distribute m2a_mult m2a_plus.
     Next Obligation.
-    (* m2a_mult a (m2a_plus b c) = m2a_plus (m2a_mult a b) (m2a_mult a c) *)
-    Admitted.
+    Proof.
+      (* m2a_mult a (m2a_plus b c) = m2a_plus (m2a_mult a b) (m2a_mult a c) *)
+      rewrite /m2a_mult /M2A_mult_op /M2_mult /=.
+      rewrite /m2a_plus /M2A_plus_op /M2_plus /=.
+      f_equal;
+      rewrite 2!distribute_l;
+      by rewrite eq_abcd_acbd.
+    Qed.
     Next Obligation.
-    (* m2a_mult (m2a_plus a b) c = m2a_plus (m2a_mult a c) (m2a_mult b c) *)
-    Admitted.
+    Proof.
+      (* m2a_mult (m2a_plus a b) c = m2a_plus (m2a_mult a c) (m2a_mult b c) *)
+      rewrite /m2a_mult /M2A_mult_op /M2_mult /=.
+      rewrite /m2a_plus /M2A_plus_op /M2_plus /=.
+      f_equal;
+      rewrite 2!distribute_r;
+      by rewrite eq_abcd_acbd.
+    Qed.
     
     Program Instance M2A_Absorb : Absorb m2a_mult m2a_zero.
     Next Obligation.
