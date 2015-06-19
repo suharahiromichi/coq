@@ -162,6 +162,18 @@ Module SemiRing.
       rewrite distribute_r.                 (* ring_dist の :> が効く。 *)
       by rewrite [1 * x]M_one_left.         (* add_monoid と mul_monoid の :> が効く。 *)
     Qed.
+    
+    Lemma eq_abcd_acbd a b c d :            (* 後で使う。 *)
+      (a + b) + (c + d) = (a + c) + (b + d).
+    Proof.
+      rewrite -[(a + b) + (c + d)]M_dot_assoc.
+      rewrite -[(a + c) + (b + d)]M_dot_assoc.
+      rewrite /monoid_op.
+      rewrite [(R_plus b (R_plus c d))]M_dot_assoc.
+      rewrite [(R_plus c (R_plus b d))]M_dot_assoc.
+      rewrite /monoid_op.
+      by rewrite [(R_plus b c)]commutativity.
+    Qed.
   End SemiRingTheory.
   
   (***********************)
@@ -292,18 +304,6 @@ Module SemiRing.
     Program Instance M2A_CommutativeMonoid : CommutativeMonoid m2a_plus m2a_zero.
     (* No Obligations *)
     
-    Lemma eq_abcd_acbd a b c d :
-      R_plus (R_plus a b) (R_plus c d) = R_plus (R_plus a c) (R_plus b d).
-    Proof.
-      rewrite -[R_plus (R_plus a b) (R_plus c d)]M_dot_assoc.
-      rewrite -[R_plus (R_plus a c) (R_plus b d)]M_dot_assoc.
-      rewrite /monoid_op.
-      rewrite [(R_plus b (R_plus c d))]M_dot_assoc.
-      rewrite [(R_plus c (R_plus b d))]M_dot_assoc.
-      rewrite /monoid_op.
-      by rewrite [(R_plus b c)]commutativity.
-    Qed.
-    
     Program Instance M2A_Monoid_mult : Monoid m2a_mult m2a_one.
     Next Obligation.
     Proof.
@@ -314,8 +314,10 @@ Module SemiRing.
               distribute_l;
       rewrite 2![(R_mult (R_plus (R_mult (_ x) (_ y)) (R_mult (_ x) (_ y))) (_ z))]
               distribute_r;
-      rewrite eq_abcd_acbd;
-      by f_equal; rewrite -2![(R_mult (R_mult (_ x) (_ y)) (_ z))]M_dot_assoc.
+      rewrite [R_plus (R_plus _ _) (R_plus _ _)]eq_abcd_acbd;
+      rewrite /ring_plus; f_equal;
+      rewrite -2![(R_mult (R_mult (_ x) (_ y)) (_ z))]M_dot_assoc;
+      by rewrite /monoid_op.
     Qed.
     Next Obligation.
     Proof.
@@ -346,7 +348,7 @@ Module SemiRing.
       rewrite /m2a_plus /M2A_plus_op /M2_plus /=.
       f_equal;
       rewrite 2!distribute_l;
-      by rewrite eq_abcd_acbd.
+      by rewrite [R_plus (R_plus _ _) (R_plus _ _)]eq_abcd_acbd; rewrite /ring_plus.
     Qed.
     Next Obligation.
     Proof.
@@ -355,7 +357,7 @@ Module SemiRing.
       rewrite /m2a_plus /M2A_plus_op /M2_plus /=.
       f_equal;
       rewrite 2!distribute_r;
-      by rewrite eq_abcd_acbd.
+      by rewrite [R_plus (R_plus _ _) (R_plus _ _)]eq_abcd_acbd; rewrite /ring_plus.
     Qed.
     
     Program Instance M2A_Absorb : Absorb m2a_mult m2a_zero.
