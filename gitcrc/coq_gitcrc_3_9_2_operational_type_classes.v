@@ -379,12 +379,11 @@ Class EMonoid (A : Type) (E_eq : Equiv A) (E_dot : monoid_binop A) (E_one : A) :
     E_one_left  : forall x : A, E_one * x == x;
     E_one_right : forall x : A, x * E_one == x
   }.
-Locate Proper.                              (* Constant Coq.Classes.Morphisms.Proper *)
 Locate "_ ==> _".                           (* respectful R R' : signature_scope *)
 
 (* E_rel は、EMonoid _ _ _ _ から Equivalence _ へのコアーションである。
 EMonoid が 同値関係を持つ（Equivalenceから継承する）ことを示す。 *)
-Check (Equivalence equiv).                  (* Prop *)
+Check Equivalence equiv : Prop.
 Print equiv.
 (* fun (A : Type) (Equiv : Equiv A) => Equiv
      : forall A : Type, Equiv A -> relation A *)
@@ -427,12 +426,16 @@ lemmas, already avalable for every EMonoid. i.e.:
 Lemma E_refl' `(M : EMonoid A) : reflexive A E_eq.
 Proof.
   intro.
-  change (equiv x x).
-  apply reflexivity.                        (* E_rel の cersion が効く。xの同値性が判断できるようになるため。 *)
-(* ただし、dot_Proper は影響しない。 *)
+  apply E_rel.                              (* E_rel の cersion はなくてもよい。 EMonoidの定義を直接使う。 *)
+  Undo.
+  apply (@reflexivity A E_eq (Equivalence_Reflexive)). (* E_rel の cersion が要る。 *)
+
+  Undo.
+  change E_eq with equiv.                   (* change (equiv x x) *)
+  apply reflexivity.                        (* E_rel の cersion が要る。 *)
+  Undo.
+  reflexivity.                              (* E_rel の cersion が要る。 *)
 Qed.
-Set Printing Cersions.
-Print E_refl'.
 
 Fixpoint Epower `{M : EMonoid } (a:A) (n:nat):A :=
   match n with
@@ -736,7 +739,6 @@ Unset Printing Implicit.
 
 (* OK, let's remove ZAdd *)
 End Z_additive.
-
 
 Check monoid_binop.
 Check monoid_binop Z.
