@@ -20,7 +20,7 @@ Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 Set Implicit Arguments.
 Unset Printing Implicit Defensive.
-Set Print All.
+(* Set Print All. *)
 
 (* ************* *)
 (* ** 2x2行列 ** *)
@@ -46,17 +46,26 @@ Section mat.                                (* matrices. *)
   Definition Id2 : M2 := Build_M2 1 0 0 1.
   
   Definition M2_mult (m m':M2) : M2 :=
-    Build_M2 (c00 m * c00 m' + c01 m * c10 m')
-             (c00 m * c01 m' + c01 m * c11 m')
-             (c10 m * c00 m' + c11 m * c10 m')
-             (c10 m * c01 m' + c11 m * c11 m').
-  
+(*
+  Build_M2 (c00 m * c00 m' + c01 m * c10 m')
+           (c00 m * c01 m' + c01 m * c11 m')
+           (c10 m * c00 m' + c11 m * c10 m')
+           (c10 m * c01 m' + c11 m * c11 m').
+*)
+    {|
+      c00 := c00 m * c00 m' + c01 m * c10 m';
+      c01 := c00 m * c01 m' + c01 m * c11 m';
+      c10 := c10 m * c00 m' + c11 m * c10 m';
+      c11 := c10 m * c01 m' + c11 m * c11 m'
+    |}.
   
   Definition M2_plus (m m' : M2) : M2 :=
-    @Build_M2 (c00 m + c00 m')
-              (c01 m + c01 m')
-              (c10 m + c10 m')
-              (c11 m + c11 m').
+    {|
+      c00 := c00 m + c00 m';
+      c01 := c01 m + c01 m';
+      c10 := c10 m + c10 m';
+      c11 := c11 m + c11 m'
+    |}.
   
   Lemma M2_eq_intros :
     forall m m' : M2,
@@ -78,9 +87,8 @@ End mat.                                    (* matrices. *)
 Operational Type Classe
 monoid_op はコンストラクタではなく、単に monoid_op f が f に簡約される。
  *)
-Class monoid_binop (A : Type) := monoid_op : A -> A -> A.
-
 Section Monoid.
+  Class monoid_binop (A : Type) := monoid_op : A -> A -> A.
   Local Infix "*" := monoid_op.
   
   Class Monoid (A : Type) (M_dot : monoid_binop A) (M_one : A) :=
@@ -94,7 +102,7 @@ End Monoid.
 (************)
 (*** 半環 ***)
 (************)
-Module SemiRing.
+Section SemiRing.
   Generalizable Variables A B.
   
   Class RingOne A := ring_one : A.            (* Operational Type Classe *)
@@ -149,7 +157,7 @@ Module SemiRing.
   (*** 半環の簡単な補題 ***)
   (***********************)
   Section SemiRingTheory.
-    Context `{M : SemiRing A}.              (* Aは、Generalizable Variable *)
+    Context `{SA : SemiRing A}.             (* Aは、Generalizable Variable *)
     
     (* テスト *)
     Check 0 * (1 + 1) : A.
@@ -163,10 +171,10 @@ Module SemiRing.
       by rewrite [1 * x]M_one_left.         (* add_monoid と mul_monoid の :> が効く。 *)
     Qed.
     
-    Lemma eq_abcd_acbd a b c d :            (* 後で使う。 *)
+    Lemma eq_abcd_acbd (a b c d : A) :      (* 後で使う。 *)
       (a + b) + (c + d) = (a + c) + (b + d).
     Proof.
-      rewrite -[(a + b) + (c + d)]M_dot_assoc.
+      rewrite -[(a + b) + (c + d)]M_dot_assoc. (* hit が有効 *)
       rewrite -[(a + c) + (b + d)]M_dot_assoc.
       rewrite /monoid_op.
       rewrite [(R_plus b (R_plus c d))]M_dot_assoc.
@@ -203,14 +211,14 @@ Module SemiRing.
     Next Obligation.
     Proof.
       rewrite /nat_plus /Nat_plus_op. 
-      by rewrite addnC.
+      by rewrite addnC.                     (* ring でもよい。 *)
     Qed.
     
     Program Instance Nat_Monoid_plus : Monoid nat_plus nat_zero.
     Next Obligation.
     Proof.
       rewrite /monoid_op /nat_plus /Nat_plus_op. 
-      by rewrite addnA.
+      by rewrite addnA.                     (* ring *)
     Qed.
     
     Program Instance Nat_CommutativeMonoid : CommutativeMonoid nat_plus nat_zero.
@@ -219,27 +227,27 @@ Module SemiRing.
     Program Instance Nat_Monoid_mult : Monoid nat_mult nat_one.
     Next Obligation.
       rewrite /monoid_op /nat_mult /Nat_mult_op.
-      by rewrite mulnA.
+      by rewrite mulnA.                     (* ring *)
     Qed.
     Next Obligation.
       rewrite /monoid_op /nat_one /nat_mult /Nat_mult_op.
-      by rewrite mul1n.
+      by rewrite mul1n.                     (* ring *)
     Qed.
     Next Obligation.
       rewrite /monoid_op /nat_one /nat_mult /Nat_mult_op.
-      by rewrite muln1.
+      by rewrite muln1.                     (* ring *)
     Qed.
     
     Program Instance Nat_Distribute : Distribute nat_mult nat_plus.
     Next Obligation.
     Proof.
       rewrite /monoid_op /nat_mult /Nat_mult_op /nat_plus /Nat_plus_op.
-      by rewrite mulnDr.
+      by rewrite mulnDr.                    (* ring *)
     Qed.
     Next Obligation.
     Proof.
       rewrite /monoid_op /nat_mult /Nat_mult_op /nat_plus /Nat_plus_op.
-      by rewrite mulnDl.
+      by rewrite mulnDl.                    (* ring *)
     Qed.
     
     Program Instance Nat_Absorb : Absorb nat_mult nat_zero.
@@ -402,18 +410,64 @@ Module SemiRing.
     (* 1 *)
     Definition m2nat_one : RingOne (M2 nat) := @m2a_one nat nat_zero nat_one.
     
-    Instance M2Nat_SemiRing : SemiRing m2nat_plus m2nat_zero m2nat_mult m2nat_one.
-    Admitted.
+    (* テスト *)
+    Check {| c00 := 0; c01 := 0; c10 := 0; c11 := 0 |} *
+    {| c00 := 1; c01 := 0; c10 := 0; c11 := 1 |} +
+    {| c00 := 1; c01 := 0; c10 := 0; c11 := 1 |} : M2 nat.
     
-    (*
-これはうまくいかない：
+    Program Instance M2Nat_Commutative : Commutative m2nat_plus.
+    Next Obligation.
+    Proof.
+      rewrite /m2nat_plus /m2a_plus /M2A_plus_op /M2_plus /nat_plus /Nat_plus_op /=.
+      apply M2_eq_intros; rewrite /=; ring.
+    Qed.
+    
+    Program Instance M2Nat_Monoid_plus : Monoid m2nat_plus m2nat_zero.
+    Next Obligation.
+    Proof.
+      rewrite /monoid_op /m2nat_plus /m2a_plus /M2A_plus_op /M2_plus /nat_plus /Nat_plus_op /=.
+      apply M2_eq_intros; rewrite /=; ring.
+    Qed.
+    Next Obligation.
+      rewrite /monoid_op /m2nat_zero /m2a_zero /nat_zero /Zero2
+              /m2nat_plus /m2a_plus /M2A_plus_op /M2_plus /nat_plus /Nat_plus_op.
+      apply M2_eq_intros; rewrite /=; ring.
+    Qed.
+    Next Obligation.
+      rewrite /monoid_op /m2nat_zero /m2a_zero /nat_zero /Zero2
+              /m2nat_plus /m2a_plus /M2A_plus_op /M2_plus /nat_plus /Nat_plus_op.
+      apply M2_eq_intros; rewrite /=; ring.
+    Qed.
+    
+    Program Instance M2Nat_SemiRing : SemiRing m2nat_plus m2nat_zero m2nat_mult m2nat_one.
+    Next Obligation.
+    Proof.
+      admit.
+    Qed.
+    Next Obligation.
+    Proof.
+      admit.
+    Qed.
+    Next Obligation.
+    Proof.
+      admit.
+    Qed.
+    Next Obligation.
+    Proof.
+      admit.
+    Qed.
+(*
+    このように、M2Nat_Seiming の証明は、m2nat の要素(nat)に分解すれば、証明できるだろう。
+    しかし、M2A_SemiRing と Nat_Semiring から、M2Nat_Semiring を合成することができないのだろうか。
+
+    これはうまくいかない：
 
     Definition M2Nat_SemiRing : SemiRing m2nat_plus m2nat_zero m2nat_mult m2nat_one :=
       @M2A_SemiRing nat nat_plus nat_zero nat_mult nat_one Nat_SemiRing.
-    
+*)
+    (* これはうまくいくが、型が行列を要素とする行列 *)
     Definition M2M2Nat_SemiRing : SemiRing m2a_plus m2a_zero m2a_mult m2a_one :=
       @M2A_SemiRing (M2 nat) m2nat_plus m2nat_zero m2nat_mult m2nat_one M2Nat_SemiRing.
-     *)
     
     End M2NatSemiRing.
 End SemiRing.
