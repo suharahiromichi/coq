@@ -32,12 +32,14 @@ apply ltn_addr.
 Qed.
 
 Goal False.
-evar (x : nat).
-have : 2 + x = 4 + 5.
-  rewrite /x.
-  apply refl_equal.
-rewrite /= in x *.
-Abort.
+Proof.
+  evar (x : nat).
+  have : 2 + x = 4 + 5.
+  - rewrite /x.
+    by apply refl_equal.
+  - rewrite /= in x *.
+    compute.                                (* XXX *)
+Abort.                                      (* OK *)
 
 Print nat.
 
@@ -157,9 +159,7 @@ Definition shift (c : rgb) : rgb :=
 (* Prove the following: *)
 Lemma exo17 c : shift (shift (shift c)) = c.
 Proof.
-  case: c.
-  - by case.
-  - by case.
+  by case: c; case.
 Qed.
 
 CoInductive rgb_spec : rgb -> bool -> bool -> bool -> Prop := 
@@ -178,10 +178,7 @@ Qed.
 (* same as exo17 but this time using rgbP: *)
 Lemma exo18 c : shift (shift (shift c)) = c.
 Proof.
-  case: c.
-  - by case=> /=.
-  - by case=> /=.
+  by case: c; case.
 Qed.
 
 (* END *)
-
