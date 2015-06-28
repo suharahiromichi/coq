@@ -4,6 +4,8 @@ SSReflect もどきを作ってみる。
 @suharahiromichi
 
 2015_05_13
+
+2015_06_28
  *)
 
 Set Implicit Arguments.
@@ -11,8 +13,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-Notation "~" := not.
-
+(* ******************* *)
+(* 1. SSReflect の準備 *)
+(* ******************* *)
 Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
@@ -46,14 +49,14 @@ Check eqP : eqType -> Type.
 
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
-
 Coercion is_true : bool >-> Sortclass. (* Prop *)
 Print Graph.                           (* コアーション *)
 (* [is_true] : bool >-> Sortclass *)
 
-(* **** *)
-(* bool *)
-(* **** *)
+
+(* ******************** *)
+(* 2. bool に関する定理 *)
+(* ******************** *)
 Lemma iffP : forall (P Q : Prop) (b : bool),
                reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
 Proof.
@@ -121,14 +124,15 @@ Check @eq_op bool_eqType true true.
 Check true == true.
 
 
-(* Viewのための定理 *)
-
+(* ******************* *)
+(* 3. Viewのための定理 *)
+(* ******************* *)
 Lemma introTF :
   forall {P : Prop} {b c : bool},
     reflect P b ->
     (match c with
        | true => P
-       | false => ~P
+       | false => ~ P
      end) ->
     b = c.
 Proof.
@@ -146,7 +150,7 @@ Lemma elimTF :
     b = c ->
     (match c with
        | true => P
-       | false => ~P
+       | false => ~ P
      end).
 Proof.
   intros P b c Hb Hbc.
@@ -170,8 +174,10 @@ Proof.
   now apply (@introTF P b true Hb).
 Qed.
 
-(* Reflectな 定理 *)
 
+(* ********************* *)
+(* 4. Reflectのための定理 *)
+(* ********************* *)
 Lemma eqP' :
   forall {x y : bool}, reflect (x = y) (x == y).
 Proof.
@@ -198,7 +204,5 @@ Proof.
   (* Goal : true = true *)
   reflexivity.                          (* true = true *)
 Qed.
-
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 (* END *)
