@@ -104,8 +104,15 @@ Fail Check le : rel bool.
 
 (* ここここ *)
 Definition bool_eqMixin := EqMixin bool_eqP.
-Definition bool_eqType := @EqType bool bool_eqMixin.
-Canonical Structure bool_eqType.
+Canonical Structure bool_eqType := @EqType bool bool_eqMixin.
+(* Definition bool_eqType := @EqType bool bool_eqMixin. *)
+(* Canonical Structure bool_eqType. *)
+(*
+bool_eqType を EqType... の Canonical Structure としたことで、 
+特に指定せずとも EqType.. の具体例として bool_eqType を使えるようになる。
+bool値どうしの比較を、EqType 上の同値関係 (eq_op, ==) を使って行えるようになる。
+see. http://mathink.net/program/coq_setoid.html
+*)
 Print Canonical Projections.
 (* bool <- sort ( bool_eqType ) *)
 
@@ -113,12 +120,16 @@ Print Canonical Projections.
 Check @eq_op bool_eqType true true.
 Check true == true.
 
+
+(* Viewのための定理 *)
+
 Lemma introTF :
   forall {P : Prop} {b c : bool},
     reflect P b ->
     (match c with
        | true => P
-       | false => ~P end) ->
+       | false => ~P
+     end) ->
     b = c.
 Proof.
   intros P b c Hb.
@@ -128,6 +139,38 @@ Proof.
   - exfalso. now apply H2.
   - reflexivity.
 Qed.
+
+Lemma elimTF :
+  forall {P : Prop} {b c : bool},
+    reflect P b ->
+    b = c ->
+    (match c with
+       | true => P
+       | false => ~P
+     end).
+Proof.
+  intros P b c Hb Hbc.
+  rewrite <- Hbc.
+  now case Hb; intro H; apply H.
+Qed.
+
+Lemma elimT :
+  forall {P : Prop} {b : bool}, reflect P b -> b -> P.
+Proof.
+  intros P b Hb.
+  Check (@elimTF P b true Hb).
+  now apply (@elimTF P b true Hb).
+Qed.
+    
+Lemma introT :
+  forall {P : Prop} {b : bool}, reflect P b -> P -> b.
+Proof.
+  intros P b Hb.
+  Check (@introTF P b true Hb).
+  now apply (@introTF P b true Hb).
+Qed.
+
+(* Reflectな 定理 *)
 
 Lemma eqP' :
   forall {x y : bool}, reflect (x = y) (x == y).
@@ -142,12 +185,20 @@ Proof.
 *)
 Qed.
 
+Check (introT eqP').
+Check (elimT eqP').
+
 Goal true == true.
 Proof.
-  now apply (introTF eqP').                 (* apply/eqP *)
+  apply (introT eqP').                  (* apply/eqP *)
+  (* Goal : true = true *)
+  apply (elimT eqP').                   (* apply/eqP *)
+  (* Goal : true == true *)
+  apply (introT eqP').                  (* apply/eqP *)
+  (* Goal : true = true *)
+  reflexivity.                          (* true = true *)
 Qed.
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 (* END *)
-
