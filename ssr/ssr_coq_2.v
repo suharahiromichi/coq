@@ -106,9 +106,10 @@ Fail Check eq : bool -> bool -> bool.
 Fail Check le : rel bool.
 
 (* ここここ *)
-Definition bool_eqMixin := EqMixin bool_eqP.
-Canonical Structure bool_eqType := @EqType bool bool_eqMixin.
-(* Definition bool_eqType := @EqType bool bool_eqMixin. *)
+Definition bool_eqMixin := EqMixin bool_eqP.            (* @EqMixin bool eqb bool_eqP. *)
+Canonical Structure bool_eqType := EqType bool_eqMixin. (* @EqType bool bool_eqMixin. *)
+(* Defineした後で、Canonical を宣言してもよい： *)
+(* Definition bool_eqType := EqType bool_eqMixin. *)
 (* Canonical Structure bool_eqType. *)
 (*
 bool_eqType を EqType... の Canonical Structure としたことで、 
