@@ -392,3 +392,17 @@ Check ((Prop -> Prop) -> Prop) : Type.
 Check (forall P : nat -> Prop, Prop) : Type.
 
 End product_formation.
+
+(* まとめ *)
+(* Propであるものは、Propである。 *)
+
+(* Propであるものは、Setである。 *)
+(* 依存型で、以下のものはSetである。 *)
+Variable A : Set.                           (* A : Propでもよい。 *)
+Variable B : Set.
+Check (forall x : A, B) : Set.
+Check A -> B : Set.
+
+(* これ以外のものは、Type である *)
+
+(* 以上 *)
