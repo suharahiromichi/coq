@@ -140,6 +140,8 @@ Qed.
 (***********************************
 SSREFLECT : ssrboolのifP ssrbool_example.v
 *)
+Check ifP : forall (A : Type) (b : bool) (vT vF : A),
+       if_spec b vT vF (b = false) b (if b then vT else vF).
 Lemma ifP_example : forall n : nat, odd (if odd n then n else n.+1).
 Proof.
   move=> n.
@@ -147,6 +149,17 @@ Proof.
   - done.
   - move=> Hn.
     rewrite -addn1.
+    rewrite odd_add.
+      by rewrite Hn.
+Qed.
+
+(* ifPを使わない例 *)
+Lemma ifP_example' : forall n : nat, odd (if odd n then n else n.+1).
+Proof.
+  move=> n.
+  case Hn : (odd n).                        (* if の条件を書く *)
+  - done.
+  - rewrite -addn1.
     rewrite odd_add.
       by rewrite Hn.
 Qed.
