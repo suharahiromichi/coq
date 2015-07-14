@@ -93,8 +93,7 @@ Proof.
   Undo.
   apply PQ, Hp.                             (* 続けてapplyする。 *)
   Undo.
-  apply/PQ/Hp.
-(* x == y に対する、 apply/idP/idP とは別の意味。. *)
+  apply/PQ/Hp.                              (* apply/PQ; apply/Hp *)
 Qed.
 
 (***********************************
@@ -103,9 +102,6 @@ SSREFLECT : ssrboolのboolP ssrbool_example.v
 Lemma boolP_example : forall n : nat, n * n - 1 < n ^ n.
 Proof.
   move=> n.
-  case H : (n == 0).
-  (* H : (n == 0) = true と (n == 0) = false になる。 *)
-  Undo 1.
   case: (boolP (n == O)).
   (* スタックトップは、n == 0  *)
   - move/eqP.
@@ -123,6 +119,41 @@ Proof.
         by rewrite subnn.
     + move=> n1.
       have [m Hm] : exists m, n = m.+2.
+      * case: n n0 n1 => //.
+        case=> // n _ _.
+          by exists n.
+      rewrite Hm.
+      rewrite expnS.  
+      rewrite expnS.
+      rewrite mulnA.
+      rewrite subn1.
+      rewrite prednK; last first.
+      * by rewrite muln_gt0.
+      * rewrite leq_pmulr //.
+          by rewrite expn_gt0.
+Qed.
+
+(* boolPを使わない例 *)
+Lemma boolP_example' : forall n : nat, n * n - 1 < n ^ n.
+Proof.
+  move=> n.
+  case n0 : (n == 0).
+  (* n0 : n == 0  *)
+  - move/eqP in n0.
+    rewrite n0.
+    rewrite expn0.
+    rewrite mul0n.
+      by rewrite sub0n.
+  (* n0 : n != 0  *)
+  - case n1 : (n == 1).
+    (* n1 : n == 1  *)
+    + move/eqP in n1.
+      rewrite n1.
+      rewrite expn1.
+      rewrite muln1.
+        by rewrite subnn.
+    (* n1 : n != 1  *)
+    + have [m Hm] : exists m, n = m.+2.
       * case: n n0 n1 => //.
         case=> // n _ _.
           by exists n.
