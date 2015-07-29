@@ -74,6 +74,7 @@ Proof.
   - now apply ReflectF.
 Qed.
 
+(* 決定可能なbool値等式を定義する。 *)
 Definition eqb (b1 b2 : bool) : bool :=
   match b1, b2 with
     | true, true => true
@@ -82,6 +83,7 @@ Definition eqb (b1 b2 : bool) : bool :=
     | false, false => true
   end.
 
+(* bool値等式とLeibniz同値関係の等価性を証明する。 *)
 Lemma bool_eqP : axiom eqb.
 Proof.
   unfold axiom.
