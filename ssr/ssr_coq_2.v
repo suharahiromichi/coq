@@ -6,6 +6,8 @@ SSReflect もどきを作ってみる。
 2015_05_13
 
 2015_06_28
+
+2015_07_29
  *)
 
 Set Implicit Arguments.
@@ -44,8 +46,15 @@ Print Graph.                                (* コアーション *)
 Definition eq_op (T : eqType) := op (m T).
 Check eq_op : forall T : eqType, rel T.
 
-Definition eqP (T : eqType) := axiom (@eq_op T).
-Check eqP : eqType -> Type.
+(* 使えていない *)
+Lemma eqP T : axiom (@eq_op T).
+Proof.
+  unfold axiom.
+  case T.
+  intros sort m.
+  now apply m.
+Qed.
+Check eqP : forall T : eqType, axiom (@eq_op T).
 
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
@@ -53,10 +62,9 @@ Coercion is_true : bool >-> Sortclass. (* Prop *)
 Print Graph.                           (* コアーション *)
 (* [is_true] : bool >-> Sortclass *)
 
-
-(* ******************** *)
-(* 2. bool に関する定理 *)
-(* ******************** *)
+(* ******************* *)
+(* reflect に関する補題 *)
+(* ******************* *)
 Lemma iffP : forall (P Q : Prop) (b : bool),
                reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
 Proof.
@@ -74,6 +82,9 @@ Proof.
   - now apply ReflectF.
 Qed.
 
+(* ******************** *)
+(* 2. bool に関する定理 *)
+(* ******************** *)
 (* 決定可能なbool値等式を定義する。 *)
 Definition eqb (b1 b2 : bool) : bool :=
   match b1, b2 with
@@ -125,6 +136,65 @@ Print Canonical Projections.
 (* bool に対して、eq_op が使用可能になる。 *)
 Check @eq_op bool_eqType true true.
 Check true == true.
+
+
+(* ******************** *)
+(* 2'. nat に関する定理 *)
+(* ******************** *)
+(* 決定可能なbool値等式を定義する。 *)
+Fixpoint eqn m n {struct m} :=
+  match m, n with
+  | 0, 0 => true
+  | S m', S n' => eqn m' n'
+  | _, _ => false
+  end.
+
+(* bool値等式とLeibniz同値関係の等価性を証明する。 *)
+Lemma nat_eqP : axiom eqn.                  (* ssrnat.eqnP *)
+Proof.
+  intros n m.
+  apply (iffP (idP (eqn n m))).
+  (* eqn n m -> n = m *)
+  - generalize dependent m.
+    induction n; intros m.
+    + now destruct m.
+    + destruct m as [|m' IHm'].
+      * now simpl.
+      * simpl. intro H. f_equal.
+        now apply IHn.
+  (* n = m -> eqn n m *)
+  - intros H.
+    rewrite <- H.
+    now elim n.
+Qed.
+
+Fail Check @eq_op nat_eqType 1 1.
+Fail Check 1 == 1.
+
+(* eqn と eq の違い。 *)
+(* すでに [is_true] : bool >-> Sortclass のコアーションが有効なので、 *)
+Check eqn : nat -> nat -> bool.
+Check eqn : nat -> nat -> Prop.
+Check eqn : rel nat.
+Check eq : nat -> nat -> Prop.
+Fail Check eq : nat -> nat -> bool.
+Fail Check le : rel nat.
+
+(* ここここ *)
+Definition nat_eqMixin := EqMixin nat_eqP.              (* @EqMixin nat eqn nat_eqP. *)
+Canonical Structure nat_eqType := EqType nat_eqMixin.   (* @EqType nat nat_eqMixin. *)
+(*
+nat_eqType を EqType... の Canonical Structure としたことで、 
+特に指定せずとも EqType.. の具体例として nat_eqType を使えるようになる。
+nat値どうしの比較を、EqType 上の同値関係 (eq_op, ==) を使って行えるようになる。
+see. http://mathink.net/program/coq_setoid.html
+*)
+Print Canonical Projections.
+(* nat <- sort ( nat_eqType ) *)
+
+(* nat に対して、eq_op が使用可能になる。 *)
+Check @eq_op nat_eqType 1 1.
+Check 1 == 1.
 
 
 (* ******************* *)
@@ -181,11 +251,16 @@ Qed.
 (* ********************* *)
 (* 4. Reflectのための定理 *)
 (* ********************* *)
-Lemma eqP' :
+Lemma bool_eqP' :
   forall {x y : bool}, reflect (x = y) (x == y).
 Proof.
+  now apply (@eqP bool_eqType).
+  Undo 1.
+  now apply bool_eqP.
+(*
   intros x y.
   now case x; case y; constructor.
+*)
 (*
   now apply ReflectT.
   now apply ReflectF.
@@ -194,18 +269,40 @@ Proof.
 *)
 Qed.
 
-Check (introT eqP').
-Check (elimT eqP').
+Check introT bool_eqP' : _ = _ -> _ == _.
+Check elimT bool_eqP' : _ == _ -> _ = _.
 
 Goal true == true.
 Proof.
-  apply (introT eqP').                  (* apply/eqP *)
+  apply (introT bool_eqP').                 (* apply/eqP *)
   (* Goal : true = true *)
-  apply (elimT eqP').                   (* apply/eqP *)
+  apply (elimT bool_eqP').                  (* apply/eqP *)
   (* Goal : true == true *)
-  apply (introT eqP').                  (* apply/eqP *)
+  apply (introT bool_eqP').                 (* apply/eqP *)
   (* Goal : true = true *)
-  reflexivity.                          (* true = true *)
+  reflexivity.                              (* true = true *)
+Qed.
+
+Lemma nat_eqP' :
+  forall {x y : nat}, reflect (x = y) (x == y).
+Proof.
+  now apply (@eqP nat_eqType).
+  Undo 1.
+  now apply nat_eqP.
+Qed.
+
+Check introT nat_eqP' : _ = _ -> _ == _.
+Check elimT nat_eqP' : _ == _ -> _ = _.
+
+Goal 1 == 1.
+Proof.
+  apply (introT nat_eqP').                  (* apply/eqP *)
+  (* Goal : 1 = 1 *)
+  apply (elimT nat_eqP').                   (* apply/eqP *)
+  (* Goal : 1 == 1 *)
+  apply (introT nat_eqP').                  (* apply/eqP *)
+  (* Goal : 1 = 1 *)
+  reflexivity.                              (* 1 = 1 *)
 Qed.
 
 (* END *)
