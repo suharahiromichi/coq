@@ -22,11 +22,12 @@ Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
 
-Definition axiom T e :=
-  forall x y : T, reflect (x = y) (e x y).
-
-Definition rel T := T -> T -> bool.
+Definition rel (T : Type) := T -> T -> bool.
 Check rel : Type -> Type.
+
+Definition axiom (T : Type) (e : rel T) :=
+  forall x y : T, reflect (x = y) (e x y).
+Check axiom : forall T : Type, rel T -> Type.
 
 Record mixin_of (T : Type) :=
   EqMixin {                                 (* Mixin *)
@@ -46,7 +47,6 @@ Print Graph.                                (* コアーション *)
 Definition eq_op (T : eqType) := op (m T).
 Check eq_op : forall T : eqType, rel T.
 
-(* 使えていない *)
 Lemma eqP T : axiom (@eq_op T).
 Proof.
   unfold axiom.
@@ -134,9 +134,8 @@ Print Canonical Projections.
 (* bool <- sort ( bool_eqType ) *)
 
 (* bool に対して、eq_op が使用可能になる。 *)
-Check @eq_op bool_eqType true true.
-Check true == true.
-
+Check @eq_op bool_eqType true true : bool.
+Check true == true : bool.
 
 (* ******************** *)
 (* 2'. nat に関する定理 *)
@@ -193,9 +192,8 @@ Print Canonical Projections.
 (* nat <- sort ( nat_eqType ) *)
 
 (* nat に対して、eq_op が使用可能になる。 *)
-Check @eq_op nat_eqType 1 1.
-Check 1 == 1.
-
+Check @eq_op nat_eqType 1 1 : bool.
+Check 1 == 1 : bool.
 
 (* ******************* *)
 (* 3. Viewのための定理 *)
@@ -272,15 +270,16 @@ Qed.
 Check introT bool_eqP' : _ = _ -> _ == _.
 Check elimT bool_eqP' : _ == _ -> _ = _.
 
-Goal true == true.
+Goal forall x y : bool, x = y -> x == y.
 Proof.
+  move=> x y H.
   apply (introT bool_eqP').                 (* apply/eqP *)
   (* Goal : true = true *)
   apply (elimT bool_eqP').                  (* apply/eqP *)
   (* Goal : true == true *)
   apply (introT bool_eqP').                 (* apply/eqP *)
   (* Goal : true = true *)
-  reflexivity.                              (* true = true *)
+  now apply H.
 Qed.
 
 Lemma nat_eqP' :
@@ -294,15 +293,16 @@ Qed.
 Check introT nat_eqP' : _ = _ -> _ == _.
 Check elimT nat_eqP' : _ == _ -> _ = _.
 
-Goal 1 == 1.
+Goal forall n m : nat, n = m -> n == m.
 Proof.
+  move=> n m H.
   apply (introT nat_eqP').                  (* apply/eqP *)
   (* Goal : 1 = 1 *)
   apply (elimT nat_eqP').                   (* apply/eqP *)
   (* Goal : 1 == 1 *)
   apply (introT nat_eqP').                  (* apply/eqP *)
   (* Goal : 1 = 1 *)
-  reflexivity.                              (* 1 = 1 *)
+  now apply H.
 Qed.
 
 (* END *)
