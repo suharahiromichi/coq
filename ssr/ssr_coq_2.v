@@ -270,15 +270,15 @@ Qed.
 Check introT bool_eqP' : _ = _ -> _ == _.
 Check elimT bool_eqP' : _ == _ -> _ = _.
 
-Goal forall x y : bool, x = y -> x == y.
+Goal forall x y : bool, x == y -> x = y.
 Proof.
-  move=> x y H.
-  apply (introT bool_eqP').                 (* apply/eqP *)
-  (* Goal : true = true *)
+  intros x y H.
   apply (elimT bool_eqP').                  (* apply/eqP *)
   (* Goal : true == true *)
   apply (introT bool_eqP').                 (* apply/eqP *)
   (* Goal : true = true *)
+  apply (elimT bool_eqP').                  (* apply/eqP *)
+  (* Goal : true == true *)
   now apply H.
 Qed.
 
@@ -295,7 +295,7 @@ Check elimT nat_eqP' : _ == _ -> _ = _.
 
 Goal forall n m : nat, n = m -> n == m.
 Proof.
-  move=> n m H.
+  intros n m H.
   apply (introT nat_eqP').                  (* apply/eqP *)
   (* Goal : 1 = 1 *)
   apply (elimT nat_eqP').                   (* apply/eqP *)
