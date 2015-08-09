@@ -118,24 +118,31 @@ Check eq : bool -> bool -> Prop.
 Fail Check eq : bool -> bool -> bool.
 Fail Check le : rel bool.
 
-(* ここここ *)
 Definition bool_eqMixin := EqMixin bool_eqP.            (* @EqMixin bool eqb bool_eqP. *)
-Canonical Structure bool_eqType := EqType bool_eqMixin. (* @EqType bool bool_eqMixin. *)
-(* Defineした後で、Canonical を宣言してもよい： *)
-(* Definition bool_eqType := EqType bool_eqMixin. *)
-(* Canonical Structure bool_eqType. *)
+Definition bool_eqType := EqType bool_eqMixin.          (* @EqType bool bool_eqMixin. *)
+Check @eq_op bool_eqType true true : bool.
+Fail eq_op true true.
+Fail Check true == true : bool.
+
+Canonical Structure bool_eqType.            (* ここここ *)
 (*
 bool_eqType を EqType... の Canonical Structure としたことで、 
 特に指定せずとも EqType.. の具体例として bool_eqType を使えるようになる。
 bool値どうしの比較を、EqType 上の同値関係 (eq_op, ==) を使って行えるようになる。
 see. http://mathink.net/program/coq_setoid.html
+
+つまり、bool に対して、eq_op が使用可能になる。
+ *)
+Check true == true : bool.
+Check eq_op true true : bool.
+
+(*
+まとめて、以下のように書ける。
+Canonical Structure bool_eqType := EqType bool_eqMixin. (* @EqType bool bool_eqMixin. *)
 *)
+
 Print Canonical Projections.
 (* bool <- sort ( bool_eqType ) *)
-
-(* bool に対して、eq_op が使用可能になる。 *)
-Check @eq_op bool_eqType true true : bool.
-Check true == true : bool.
 
 (* ******************** *)
 (* 2'. nat に関する定理 *)
