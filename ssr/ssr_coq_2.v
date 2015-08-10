@@ -31,7 +31,7 @@ Check axiom : forall T : Type, rel T -> Type.
 
 Record mixin_of (T : Type) :=
   EqMixin {                                 (* Mixin *)
-      op : rel T;
+      op : rel T;                           (* T -> T -> bool でもよい。 *)
       a : axiom op
     }.
 
@@ -46,6 +46,7 @@ Print Graph.                                (* コアーション *)
 
 Definition eq_op (T : eqType) := op (m T).
 Check eq_op : forall T : eqType, rel T.
+Check eq_op : forall T : eqType, T -> T -> bool.
 
 Lemma eqP T : axiom (@eq_op T).
 Proof.
