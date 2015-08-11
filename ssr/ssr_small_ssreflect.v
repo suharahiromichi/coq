@@ -103,9 +103,6 @@ Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
 
-Definition axiom (T : Type) (e : T -> T -> bool) :=
-  forall x y : T, reflect (x = y) (e x y).
-
 (**
 Reflect補題を証明する。
 あとでbool値等式がLeibniz同値関係が等価であることの説明に使う。
@@ -142,7 +139,7 @@ Qed.
 Record mixin_of (T : Type) :=
   EqMixin {                                 (* Mixin *)
       op : T -> T -> bool;                  (* rel T でもよい。 *)
-      a : axiom op
+      axiom : forall x y : T, reflect (x = y) (op x y)
     }.
 
 Record eqType :=                            (* type *)
@@ -158,6 +155,16 @@ Definition eq_op (T : eqType) := op (m T).
 Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* eqTypeからTypeへのコアーションを使わない例 *)
 Check eq_op : forall T : eqType, T -> T -> bool.               (* eqTypeからTypeへのコアーションを使う例  *)
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
+
+(**
+eq_op についての補題を証明しておく。
+*)
+Lemma eqP (T : eqType) : forall {x y : T}, reflect (x = y) (eq_op x y).
+Proof.
+  case T.
+  intros sort m.
+  now apply m.
+Qed.
 
 (**
 ## bool型
@@ -177,9 +184,8 @@ Definition eqb (b1 b2 : bool) : bool :=
 (**
 bool値等式とLeibniz同値関係の等価性を証明する。
  *)
-Lemma bool_eqP : axiom eqb.
+Lemma bool_eqP : forall x y, reflect (x = y) (eqb x y).
 Proof.
-  unfold axiom.
   intros x y.
   apply (iffP (idP (eqb x y))).
   - unfold eqb.
@@ -272,7 +278,7 @@ Fixpoint eqn m n {struct m} :=
 (**
 bool値等式とLeibniz同値関係の等価性を証明する。
  *)
-Lemma nat_eqP : axiom eqn.
+Lemma nat_eqP : forall x y, reflect (x = y) (eqn x y).
 Proof.
   intros n m.
   apply (iffP (idP (eqn n m))).
@@ -391,41 +397,26 @@ Qed.
 (**
 boolの場合
 *)
-Lemma bool_eqP' :
-  forall {x y : bool}, reflect (x = y) (x == y).
-Proof.
-  now apply bool_eqP.
-Qed.
-
 Goal forall x y : bool, x == y -> x = y.
 Proof.
   intros x y H.
-  apply (elimT bool_eqP').                  (* apply/eqP *)
+  apply (elimT eqP).                        (* apply/eqP *)
   (* Goal : true == true *)
-  apply (introT bool_eqP').                 (* apply/eqP *)
+  apply (introT eqP).                       (* apply/eqP *)
   (* Goal : true = true *)
-  apply (elimT bool_eqP').                  (* apply/eqP *)
+  apply (elimT eqP).                        (* apply/eqP *)
   (* Goal : true == true *)
   now apply H.
-Qed.
-
-(**
-natの場合
-*)
-Lemma nat_eqP' :
-  forall {x y : nat}, reflect (x = y) (x == y).
-Proof.
-  now apply nat_eqP.
 Qed.
 
 Goal forall n m : nat, n = m -> n == m.
 Proof.
   intros n m H.
-  apply (introT nat_eqP').                  (* apply/eqP *)
+  apply (introT eqP).                       (* apply/eqP *)
   (* Goal : 1 = 1 *)
-  apply (elimT nat_eqP').                   (* apply/eqP *)
+  apply (elimT eqP).                        (* apply/eqP *)
   (* Goal : 1 == 1 *)
-  apply (introT nat_eqP').                  (* apply/eqP *)
+  apply (introT eqP).                       (* apply/eqP *)
   (* Goal : 1 = 1 *)
   now apply H.
 Qed.
