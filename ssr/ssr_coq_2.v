@@ -22,22 +22,24 @@ Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
 
+(*
 Definition rel (T : Type) := T -> T -> bool.
 Check rel : Type -> Type.
+*)
 
-Definition axiom (T : Type) (e : rel T) :=
+Definition axiom (T : Type) (e : T -> T -> bool) := (* e : rel T *)
   forall x y : T, reflect (x = y) (e x y).
-Check axiom : forall T : Type, rel T -> Type.
+Check axiom : forall T : Type, (T -> T -> bool) -> Type.
 
 Record mixin_of (T : Type) :=
   EqMixin {                                 (* Mixin *)
-      op : rel T;                           (* T -> T -> bool でもよい。 *)
+      op : T -> T -> bool;                  (* rel T でもよい。 *)
       a : axiom op
     }.
 
 Record eqType :=                            (* type *)
   EqType {                                  (* Pack *)
-      sort :> Type;
+      sort :> Type;                         (* eqType から Type へのコアーション *)
       m : mixin_of sort
     }.
 
@@ -45,10 +47,11 @@ Print Graph.                                (* コアーション *)
 (* [sort] : type >-> Sortclass *)
 
 Definition eq_op (T : eqType) := op (m T).
-Check eq_op : forall T : eqType, rel T.
-Check eq_op : forall T : eqType, T -> T -> bool.
+Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* コアーションを使わない例 *)
+Check eq_op : forall T : eqType, T -> T -> bool.   (* コアーションを使う例  *)
+(* rel T  *)
 
-Lemma eqP T : axiom (@eq_op T).
+Lemma eqP (T : eqType) : axiom (@eq_op T).
 Proof.
   unfold axiom.
   case T.
@@ -59,8 +62,13 @@ Check eqP : forall T : eqType, axiom (@eq_op T).
 
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
-Coercion is_true : bool >-> Sortclass. (* Prop *)
-Print Graph.                           (* コアーション *)
+Definition is_true (x : bool) : Prop := x = true.
+Check is_true true : Prop.                  (* コアーションを使わない例 *)
+Fail Check true : Prop.                   
+Coercion is_true : bool >-> Sortclass.      (* bool から Prop へのコアーション*)
+Check true : Prop.                          (* コアーションを使う *)
+
+Print Graph.                           (* コアーションの印刷 *)
 (* [is_true] : bool >-> Sortclass *)
 
 (* ******************* *)
@@ -114,15 +122,15 @@ Fail Check true == true.
 (* すでに [is_true] : bool >-> Sortclass のコアーションが有効なので、 *)
 Check eqb : bool -> bool -> bool.
 Check eqb : bool -> bool -> Prop.
-Check eqb : rel bool.
+(* Check eqb : rel bool. *)
 Check eq : bool -> bool -> Prop.
 Fail Check eq : bool -> bool -> bool.
-Fail Check le : rel bool.
+(* Fail Check le : rel bool. *)
 
 Definition bool_eqMixin := EqMixin bool_eqP.            (* @EqMixin bool eqb bool_eqP. *)
 Definition bool_eqType := EqType bool_eqMixin.          (* @EqType bool bool_eqMixin. *)
 Check @eq_op bool_eqType true true : bool.
-Fail eq_op true true.
+Fail Check eq_op true true : bool.
 Fail Check true == true : bool.
 
 Canonical Structure bool_eqType.            (* ここここ *)
@@ -134,8 +142,8 @@ see. http://mathink.net/program/coq_setoid.html
 
 つまり、bool に対して、eq_op が使用可能になる。
  *)
+Check eq_op true true.
 Check true == true : bool.
-Check eq_op true true : bool.
 
 (*
 まとめて、以下のように書ける。
@@ -182,10 +190,10 @@ Fail Check 1 == 1.
 (* すでに [is_true] : bool >-> Sortclass のコアーションが有効なので、 *)
 Check eqn : nat -> nat -> bool.
 Check eqn : nat -> nat -> Prop.
-Check eqn : rel nat.
+(* Check eqn : rel nat. *)
 Check eq : nat -> nat -> Prop.
 Fail Check eq : nat -> nat -> bool.
-Fail Check le : rel nat.
+(* Fail Check le : rel nat. *)
 
 (* ここここ *)
 Definition nat_eqMixin := EqMixin nat_eqP.              (* @EqMixin nat eqn nat_eqP. *)
