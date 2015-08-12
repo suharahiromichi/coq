@@ -238,9 +238,6 @@ Definition bool_eqType := @EqType bool bool_eqMixin.   (* EqType bool_eqMixin �
 
 Fail Check eq_op true true : bool.          (* ！？ *)
 Fail Check true == true : bool.             (* ！？ *)
-(**
-Error: The term "true" has type "bool" while it is expected to have type "sort ?241"
- *)
 
 (**
 eq_op にbool型の値が書けない！？
@@ -257,16 +254,19 @@ Check eq_op : forall T : eqType, sort T -> sort T -> bool.
 *)
 Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
 (**
-``sort bool_eqType`` は bool であるから、後の引数にはbool型の値を書くことができる。
+``sort bool_eqType`` は bool であるから、以降の引数にはbool型の値を書くことができる。
 *)
 Check @eq_op bool_eqType : bool -> bool -> bool.
 Check @eq_op bool_eqType true true : bool.
 (**
-しかし、最初の引数を省略して、以降にtrueを書いた場合、
+しかし、最初の引数``T:=bool_eqType``省略して、以降の引数にtrueを書いた場合、
 bool型から、eqType型の値であるbool_eqTypeを知ることはできないため、これはエラーになる。
 （EqTypeコンストラクタでeqType型の値はいくらでも作れるため、そのすべてチェックするわけにはいかない）
 *)
 Fail Check eq_op true true.
+(**
+Error: The term "true" has type "bool" while it is expected to have type "sort ?241"
+ *)
 
 (**
 そこで、bool_eqTypeをeqType型の値として、
@@ -274,6 +274,7 @@ Fail Check eq_op true true.
 
 bool_eqType がコアーション (``sort bool_eqType``) でboolだとわかるので、
 bool型の値を書いたときに、省略された最初の引数がbool_eqTypeと推論できるようになる。
+
 
 説明（終わり）
 
