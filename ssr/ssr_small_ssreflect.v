@@ -139,9 +139,9 @@ Proof.
 Qed.
 
 (**
-reflect (is_true b) b は、成立する。
+``reflect (is_true b) b`` は、成立する。
 
-なお、単に ``forall b : bool, reflect b b`` と書いてもよい。
+コアーションを使って、``forall b : bool, reflect b b`` と書いてもよい。
 *)
 Lemma idP : forall b : bool, reflect (is_true b) b.
 Proof.
@@ -269,11 +269,11 @@ bool型から、eqType型の値であるbool_eqTypeを知ることはできな�
 Fail Check eq_op true true.
 
 (**
-そこで、bool_eqType (実際はコアーションでbool）をeqType型の値として、
+そこで、bool_eqTypeをeqType型の値として、
 型推論に使うことを知らせる。これをカノニカル・ストラクチャーという。
 
-これにより、bool型の値を書いたときに、
-省略された最初の引数にbool_eqTypeを書いたとみなせるようになる。
+bool_eqType がコアーション (``sort bool_eqType``) でboolだとわかるので、
+bool型の値を書いたときに、省略された最初の引数がbool_eqTypeと推論できるようになる。
 
 説明（終わり）
 
