@@ -269,8 +269,9 @@ Error: The term "true" has type "bool" while it is expected to have type "sort ?
  *)
 
 (**
-そこで、bool_eqTypeをeqType型の値として、
-型推論に使うことを知らせる。これをカノニカル・ストラクチャーという。
+そこで、Canonical Structureコマンドによって、
+bool_eqTypeをeqType型の値として、型推論に使うようにする。
+このときbool_eqTypeはeqTypeのCanonical InstanceまたはCanonicalと呼ぶ。
 
 bool_eqType がコアーション (``sort bool_eqType``) でboolだとわかるので、
 bool型の値を書いたときに、省略された最初の引数がbool_eqTypeと推論できるようになる。
@@ -279,7 +280,7 @@ bool型の値を書いたときに、省略された最初の引数がbool_eqTyp
 説明（終わり）
 
 
-bool_eqType をカノニカル・ストラクチャーにする。
+Canonical Structureコマンドを使って、bool_eqType を eqTypeのCanonical Instanceにする。
 *)
 Canonical Structure bool_eqType.
 Print Canonical Projections.                (* bool <- sort ( bool_eqType ) *)
@@ -352,7 +353,7 @@ Fail Check eq_op 1 1 : bool.
 Fail Check 1 == 1 : bool.
 
 (**
-nat_eqType をカノニカル・ストラクチャーにする。
+Canonical Structureコマンドを使って、nat_eqType を eqTypeのCanonical Instanceにする。
 *)
 Canonical Structure nat_eqType.
 Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
@@ -427,10 +428,10 @@ Qed.
 ## x = y と x == y の相互変換
 
 SSReflectでは、ゴールが``x = y``のとき、``apply/eqP``を実行することで``x == y``に変換される。
-このとき、View Hnitとして、elimT が使われる。すなわち、``apply (elimT eqP)`` である。
+このとき、View Hintとして、elimT が使われる。すなわち、``apply (elimT eqP)`` である。
 
 また、ゴールが``x == y``のとき、おなじく``apply/eqP``を実行することで``x = y``に変換される。
-このとき、View Hnitとして、introT が使われる。すなわち、``apply (introT eqP)`` である。
+このとき、View Hintとして、introT が使われる。すなわち、``apply (introT eqP)`` である。
 *)
 
 (**
@@ -466,15 +467,16 @@ Qed.
 1. 「SSReflectもどき」をつくってみた
 
 2. SSReflect で、Leibniz同値関係 (``x = y``) と bool値等式 (``x == y``) が相互に変換できるのは、
-両者が等価であることが証明されているから (bool_eqTypeやnat_eqType)。
+両者が等価であることが、それぞれの型で、証明されているから (bool_eqTypeやnat_eqType)。
 
-3. 上記を実現するために、コアーションやカノニカル・ストラクチャのメカニズムがある。
+3. 上記を実現するために、Coqのコアーション(coersion)や
+カノニカル・ストラクチャCanonical Structure)を利用する。
 *)
 
 (**
 # 補足
 
-Definitionとカノニカル・ストラクチャーの宣言をまとめて、
+DefinitionとCanonical Structureコマンドをまとめて、
 以下のように書くこともできる。
 
 - ``Canonical Structure bool_eqType := @EqType bool bool_eqMixin.``
