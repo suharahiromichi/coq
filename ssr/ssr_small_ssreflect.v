@@ -9,26 +9,22 @@
 # はじめに
 
 CoqのSSReflect拡張（以下、SSReflect）は、熱心なユーザがいる一方、
-「x = y と x == y の相互で変換は奇妙」として敬遠される場合があります。
-
+「x = y との x == y 奇妙な変換ができるのが判らん」として敬遠される場合があります。
 
 今回は、SSReflectのしくみを理解することを目的に、
 Starndard Coqをもとに「SSReflectもどき」を作ってみます。
 
-
-それを通して、Coqのコアーション(coersion)などの
-説明もしたいと思いますから、
-SSReflectに興味のない人も聴いていただけるとうれしいです。
+それを通して、
+Coqのコアーション(coersion)や、カノニカル・ストラクチャCanonical Structure)の
+説明もしたいと思いますから、SSReflectに興味のない人も聴いていただけるとうれしいです。
 
 
 # 今回のソースの在処
 
 - Markdown版は以下のソースから生成した。
-
 ``https://github.com/suharahiromichi/coq/tree/master/ssr/ssr_small_ssreflect.v``
 
 - 以下の版で動作を確認した。SSReflectおよびMathCompは使わない。
-
 ``8.4pl2``
 
 
@@ -36,20 +32,22 @@ SSReflectに興味のない人も聴いていただけるとうれしいです�
 
 @suharahiromichi
 
+1. ``#ProofCafe`` (＠名古屋、毎週第3土曜 14:30〜)
+
 1. プログラマ
 
-2. 勤務先：アニメ「風たちぬ」のモデルの工場
+2. 勤務先：アニメ「風たちぬ」のモデルになった工場
 
-3. 本来業務：システムインテグレーション（多言語プログラミング、ソースコード変換）
-（品質保証やプログラム検証・証明は担当外）
+3. 本来業務：システムインテグレーション、多言語プログラミング、ソースコード変換
+（但し、品質保証やプログラム検証・証明は担当外）
 
-4. アイコン：ボーイング737（多く売れた飛行機こそ名機）
+4. アイコン：ボーイング737＠セントレア（多く売れた飛行機こそ名機）
 
 # 概要
 
 1. bool型からProp型へのコアーション
 2. Reflect補題の証明
-3. eqTypeの定義、eqType型からType型へのコアーション、eq_op(==)定義
+3. eqTypeの定義、eqType型からType型へのコアーション、eq_op (``==``)定義
 4. bool型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
 5. nat型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
 6. Viewとその補題
@@ -61,43 +59,51 @@ SSReflectに興味のない人も聴いていただけるとうれしいです�
 *)
 Set Implicit Arguments.
 Unset Strict Implicit.
+
 Unset Printing Implicit Defensive.
 Set Print All.
+Set Printing Coercions.
 
 (**
-以上の設定によって、引数の一部を省略することができる。
+最初のふたつで、引数の一部を省略できるようになる。
+引数のどこが省略できるか(implicitになっているか）は、About コマンドで調べられる。
 すべての引数を省略せず指定する場合は、関数などの前に ``@`` をつける。
+
+以降は表示の挙動なので好みで指定する。今回は以下を指定した。
+``Set Printing Coercions``    コアーションを省略せずに表示する。
 *)
 
 (**
 ## bool型からProp型（命題型）へのコアーション
 
 bool型の値をProp型の値として扱えるようにする（埋め込むともいう）。
-「is_true : bool -> Prop」という関数を、表記上、省略することで実現する。
+``is_true : bool -> Prop`` という関数を、表記上、省略することで実現する。
+ここでは、``Set Printing Coercions`` を指定したので、省略してもそれをCoqが補ってくれる。
 *)
 
 (**
 bool型からProp型に変換する関数を定義する。
  *)
 Definition is_true (x : bool) : Prop := x = true.
+Check is_true : bool -> Prop.
 Check true : bool. 
-Check is_true true : Prop.                  (* コアーションを使わない例 *)
-Fail Check true : Prop.                     (* また、is_trueは省けない。 *)
+Check is_true true : Prop.
 
+Fail Check true : Prop.                     (* まだ、is_trueは省けない。 *)
 (**
 bool型からProp型へのコアーションを宣言する。
  *)
 Coercion is_true : bool >-> Sortclass.      (* コアーションの宣言 *)
 Print Graph.                                (* [is_true] : bool >-> Sortclass *)
-
 (**
 すると。。。
  *)
 Check true : Prop.                          (* コアーションが使えるようになる。 *)
 
-(*
+(**
 ## Reflect と Reflect補題
 
+``reflect P b`` は、命題Pとbool値bが等価であることを示す。
 *)
 Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectT :   P -> reflect P true
@@ -109,7 +115,13 @@ Reflect補題を証明する。
 *)
 
 (**
-PとQが同値のとき：
+``P<->Q`` のとき、``reflect P b`` なら ``reflect Q b``。
+
+証明の概要：
+
+- ``reflect P true``  で、``P->Q``   なら、``reflect Q true``
+- ``reflect P false`` で、``~P->~Q`` なら、``reflect Q false``
+- ``P->Q`` だけではだめで、``Q->P`` が必要になる。
 *)
 Lemma iffP : forall (P Q : Prop) (b : bool),
                reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
@@ -121,11 +133,11 @@ Proof.
 Qed.
 
 (**
-reflect b b：
+reflect (is_true b) b は、成立する。
 
-reflect (is_true b) b の is_true が省略されている。
+なお、単に ``forall b : bool, reflect b b`` と書いてもよい。
 *)
-Lemma idP : forall b : bool, reflect b b.
+Lemma idP : forall b : bool, reflect (is_true b) b.
 Proof.
   intros b.
   case b.
@@ -134,30 +146,40 @@ Proof.
 Qed.
 
 (**
-## eqType型を定義する。
+## eqType型
+
+同値関係（等しいことが決定可能な関係）が定義された型を導入する。
 *)
 Record mixin_of (T : Type) :=
-  EqMixin {                                 (* Mixin *)
-      op : T -> T -> bool;                  (* rel T でもよい。 *)
-      axiom : forall x y : T, reflect (x = y) (op x y)
+  EqMixin {
+      op : T -> T -> bool;                         (* opはbool値等式 *)
+      a : forall x y : T, reflect (x = y) (op x y) (* opはLeibniz同値関係と等価であること *)
     }.
 
-Record eqType :=                            (* type *)
-  EqType {                                  (* Pack *)
+Record eqType :=
+  EqType {
       sort :> Type;                         (* eqType型 から Type型 へのコアーション *)
       m : mixin_of sort
     }.
-
-Print Graph.                                (* コアーション *)
-(* [sort] : type >-> Sortclass *)
-
-Definition eq_op (T : eqType) := op (m T).
-Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* eqTypeからTypeへのコアーションを使わない例 *)
-Check eq_op : forall T : eqType, T -> T -> bool.               (* eqTypeからTypeへのコアーションを使う例  *)
-Notation "x == y" := (eq_op x y) (at level 70, no associativity).
+Check sort : eqType -> Type.
+Print Graph.                                (* [sort] : eqType >-> Sortclass *)
 
 (**
-eq_op についての補題を証明しておく。
+実際に使うために、eq_op (``==``) を定義する。
+*)
+Definition eq_op (T : eqType) := op (m T).
+Notation "x == y" := (eq_op x y) (at level 70, no associativity).
+
+Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* コアーションを使わない例 *)
+Check eq_op : forall T : eqType, T -> T -> bool.               (* eqTypeからTypeへのコアーションを使う例  *)
+About eq_op.
+(**
+注意：
+eq_op は3つの引数を取るが、最初の引数Tはimplicitになる。``==`` のときもTは省略される。
+ *)
+
+(**
+補題：eq_op は Leibniz同値関係と等価である。この補題は最後に使う。
 *)
 Lemma eqP (T : eqType) : forall {x y : T}, reflect (x = y) (eq_op x y).
 Proof.
@@ -167,17 +189,17 @@ Proof.
 Qed.
 
 (**
-## bool型
+## bool型の例
 *)
 
 (**
 bool型を引数とする、決定可能なbool値等式を定義する。
  *)
-Definition eqb (b1 b2 : bool) : bool :=
-  match b1, b2 with
-    | true, true => true
-    | true, false => false
-    | false, true => false
+Definition eqb (x y : bool) : bool :=
+  match x, y with
+    | true,  true  => true
+    | true,  false => false
+    | false, true  => false
     | false, false => true
   end.
 
@@ -188,73 +210,82 @@ Lemma bool_eqP : forall x y, reflect (x = y) (eqb x y).
 Proof.
   intros x y.
   apply (iffP (idP (eqb x y))).
-  - unfold eqb.
-    now case x; case y.
-  - unfold eqb.
-    now case x; case y.
+  - now case x; case y.                     (* eqb x y -> x = y *)
+  - now case x; case y.                     (* x = y -> eqb x y *)
 Qed.
 
 (**
 eq と eqb の違い。
  *)
-Check eq : bool -> bool -> Prop.
-Check eqb : bool -> bool -> bool.
-
-Fail Check eq : bool -> bool -> bool. (* これは当然 *)
+Check eq : bool -> bool -> Prop.      (* Leibniz同値関係 *)
+Check eqb : bool -> bool -> bool.     (* bool値等式 *)
 Check eqb : bool -> bool -> Prop.     (* bool型からProp型へのコアーションが有効なため。 *)
 
 (**
 bool_eqTypeを定義する。
 
-bool と eqb と bool_eqP から、コンストラクタ EqMixin と EqType で、
-bool_eqTypeを作る。bool_eqType は、eqType型である。
+コンストラクタ EqMixin と EqType で、bool と eqb と bool_eqP から、
+bool_eqTypeを作る。bool_eqType は eqType型である。
  *)
 
 Definition bool_eqMixin := @EqMixin bool eqb bool_eqP. (* EqMixin bool_eqP でもよい。 *)
 Definition bool_eqType := @EqType bool bool_eqMixin.   (* EqType bool_eqMixin でもよい。 *)
 
-Check true : sort bool_eqType.
-Check true : bool_eqType.
+Fail Check eq_op true true : bool.          (* ！？ *)
+Fail Check true == true : bool.             (* ！？ *)
+
+(**
+eq_op にbool型の値が書けない！？
+
+
+説明：
+
+eq_op (``==``) は、``forall T : eqType, (sort T) -> (sort T) -> bool`` の型を持つ。
+最初の引数は、通常はImplcit Argumentによって省略される。
+*)
+Check eq_op : forall T : eqType, sort T -> sort T -> bool.
+(**
+最初の引数を省略せずに、bool_eqType を書いた場合、
+*)
 Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
+(**
+``sort bool_eqType`` は bool であるから、後の引数にはbool型の値を書くことができる。
+*)
 Check @eq_op bool_eqType : bool -> bool -> bool.
-Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.
 Check @eq_op bool_eqType true true : bool.
-
-Fail Check eq_op true true : bool.
-Fail Check true == true : bool.
-
+(**
+しかし、最初の引数を省略して、以降にtrueを書いた場合、
+bool型から、eqType型の値であるbool_eqTypeを知ることはできないため、これはエラーになる。
+*)
+Fail Check eq_op true true.
 
 (**
-eq_op (==) は、厳密には、``forall T : eqType, (sort T) -> (sort T) -> bool`` の型を持つ。
-ここで、``forall T`` のT型の値を第0引数、``sort T``型の値を第1第2引数と呼ぶ。
-第0引数は、通常はImplcit Argumentによって省略される(``==``なら必ず省略）。
+そこで、bool_eqType (実際はコアーションでbool）が、eqType型の具体例であることを
+知らせる。これをカノニカル・ストラクチャーという。
 
-第0引数Tを省略せずに、bool_eqType を書いた場合、
-``sort T``はboolとなり、第1第2はbool型の値を書くことができる。
-（例：``@eq_op bool_eqType true true``）。
+これにより、bool型の値を書いたときに、
+省略された最初の引数にbool_eqTypeを書いたとみなせるようになる。
 
-しかし、第0引数を省略して、第1第2引数にtrueを書いた場合、
-trueの型であるbool型から、eqType型の値であるbool_eqTypeを連想することはできない。
+説明（終わり）
 
-そこで、bool_eqTypeをeqType型の値として使えるようにすることで、
-第1第2引数にbool型の値を書いたときに、第0引数にbool_eqTypeを書いたとみなせるようになる。
 
-つまり、第0引数が省略できるようになる。
- *)
-
-(**
-bool_eqType をカノニカル宣言する。
-
-これで、eqType型の具体例として bool_eqType型の値を使えるようになる。
+bool_eqType をカノニカル・ストラクチャーにする。
 *)
 Canonical Structure bool_eqType.
 Print Canonical Projections.                (* bool <- sort ( bool_eqType ) *)
 
 (**
-つまり、bool型の値に対して、``==`` が使用可能になる。
+すると。。。
+
+bool型の値に対して、``==`` が使用可能になる。
+（eq_opの最初の引数が省略できるようになる。）
  *)
 Check eq_op true true : bool.
 Check true == true : bool.
+
+(**
+蛇足：コアーションは表記上の省略である。一方、カノニカル・ストラクチャーは型推論のヒントを与える。
+*)
 
 (**
 なお、まとめて以下のように書くこともできる。
@@ -262,7 +293,7 @@ Check true == true : bool.
 *)
 
 (**
-## nat型
+## nat型の例
 *)
 
 (**
@@ -299,7 +330,6 @@ Qed.
 (**
 eq と eqn の違い。
  *)
-
 Check eq : nat -> nat -> Prop.
 Check eqn : nat -> nat -> bool.
 
@@ -307,7 +337,7 @@ Fail Check eq : nat -> nat -> bool.   (* これは当然 *)
 Check eqn : nat -> nat -> Prop.       (* bool型からProp型へのコアーションが有効なため。 *)
 
 (**
-nat_eqType型を定義する。
+nat_eqTypeを定義する。
  *)
 
 Definition nat_eqMixin := @EqMixin nat eqn nat_eqP.   (* EqMixin nat_eqP でもよい。 *)
@@ -317,15 +347,15 @@ Fail Check eq_op 1 1 : bool.
 Fail Check 1 == 1 : bool.
 
 (**
-nat_eqType をカノニカル宣言する。
-
-これで、eqType型の具体例として natl_eqType型の値を使えるようになる。
+nat_eqType をカノニカル・ストラクチャーにする。
 *)
 Canonical Structure nat_eqType.
 Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
 
 (**
-つまり、nat型の値に対して、``==`` が使用可能になる。
+すると。。。
+
+nat型の値に対して、``==`` が使用可能になる。
  *)
 Check eq_op 1 1 : bool.
 Check 1 == 1 : bool.
@@ -338,7 +368,7 @@ Check 1 == 1 : bool.
 (**
 ## View
 
-SSReflectでは、``apply/V`` のVをViewと呼ぶ。View Hintとして登録された、補題が自動的に補われる。
+SSReflectでは、``apply/V`` のVをViewと呼ぶ。View Hintとして登録された補題が自動的に補われる。
 View Hintとして使われることの多い補題に``elimT``と``introT``がある。
 それを証明しておく。
 *)
@@ -392,6 +422,12 @@ Qed.
 
 (**
 ## x = y と x == y の相互変換
+
+SSReflectでは、ゴールが``x = y``のとき、``apply/eqP``を実行することで``x == y``に変換される。
+このとき、View Hnitとして、elimT が使われる。すなわち、``apply (elimT eqP)`` である。
+
+また、ゴールが``x == y``のとき、おなじく``apply/eqP``を実行することで``x = y``に変換される。
+このとき、View Hnitとして、introT が使われる。すなわち、``apply (introT eqP)`` である。
 *)
 
 (**
@@ -422,13 +458,30 @@ Proof.
 Qed.
 
 (**
+# まとめ
+
+1. 「SSReflectもどき」をつくってみた
+
+2. SSReflect で、Leibniz同値関係 (``x = y``) と bool値等式 (``x == y``) が相互に変換できるのは、
+両者が等価であることが証明されているから (bool_eqTypeやnat_eqType)。
+
+3. 上記を実現するために、コアーションやカノニカル・ストラクチャのメカニズムがある。
+*)
+
+(**
 # 参考文献
 
 1. アフェルト レナルド 「定理証明支援系 Coq による形式検証」
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/coq-kyoto2015.pdf
+``https://staff.aist.go.jp/reynald.affeldt/ssrcoq/coq-kyoto2015.pdf``
 
-2. @suharahiromichi 「SSReflectのViewとView Hintについてのメモ」
-http://qiita.com/suharahiromichi/items/02c7f42809f2d20ba11a
+2. Assia Mahboubi, Enrico Tassi, "Canonical Structures for the working Coq user"
+``https://hal.inria.fr/hal-00816703v1/document``
+
+The essence of the Canonical Structures mechanism is to extend the unification algorithm
+of the Coq system with a database of hints. (p.3)
+
+2. @suharahiromichi, 「SSReflectのViewとView Hintについてのメモ」
+``http://qiita.com/suharahiromichi/items/02c7f42809f2d20ba11a``
 *)
 
 (* END *)
