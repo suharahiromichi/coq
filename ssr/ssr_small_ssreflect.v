@@ -70,15 +70,18 @@ Set Printing Coercions.
 すべての引数を省略せず指定する場合は、関数などの前に ``@`` をつける。
 
 以降は表示の挙動なので好みで指定する。今回は以下を指定した。
-``Set Printing Coercions``    コアーションを省略せずに表示する。
+
+- ``Set Printing Coercions``    コアーションを省略せずに表示する。
 *)
 
 (**
 ## bool型からProp型（命題型）へのコアーション
 
 bool型の値をProp型の値として扱えるようにする（埋め込むともいう）。
-``is_true : bool -> Prop`` という関数を、表記上、省略することで実現する。
-ここでは、``Set Printing Coercions`` を指定したので、省略してもそれをCoqが補ってくれる。
+これは、``is_true : bool -> Prop`` という関数を、表記上、省略することで実現する。
+
+今回は、``Set Printing Coercions`` を指定した
+ので、``*goals*``や``*response*``バッファではそれが表示される。
 *)
 
 (**
@@ -99,6 +102,9 @@ Print Graph.                                (* [is_true] : bool >-> Sortclass *)
 すると。。。
  *)
 Check true : Prop.                          (* コアーションが使えるようになる。 *)
+(**
+``*response*``バッファでは、``is_true true : Prop`` と表示される。
+ *)
 
 (**
 ## Reflect と Reflect補題
@@ -110,7 +116,7 @@ Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectF : ~ P -> reflect P false.
 
 (**
-Reflect補題を証明する。
+ふたつのReflect補題を証明しておく。
 あとでbool値等式がLeibniz同値関係が等価であることの説明に使う。
 *)
 
@@ -227,12 +233,14 @@ bool_eqTypeを定義する。
 コンストラクタ EqMixin と EqType で、bool と eqb と bool_eqP から、
 bool_eqTypeを作る。bool_eqType は eqType型である。
  *)
-
 Definition bool_eqMixin := @EqMixin bool eqb bool_eqP. (* EqMixin bool_eqP でもよい。 *)
 Definition bool_eqType := @EqType bool bool_eqMixin.   (* EqType bool_eqMixin でもよい。 *)
 
 Fail Check eq_op true true : bool.          (* ！？ *)
 Fail Check true == true : bool.             (* ！？ *)
+(**
+Error: The term "true" has type "bool" while it is expected to have type "sort ?241"
+ *)
 
 (**
 eq_op にbool型の値が書けない！？
@@ -241,7 +249,7 @@ eq_op にbool型の値が書けない！？
 説明：
 
 eq_op (``==``) は、``forall T : eqType, (sort T) -> (sort T) -> bool`` の型を持つ。
-最初の引数は、通常はImplcit Argumentによって省略される。
+最初の引数Tは、通常はImplcit Argumentによって省略される。
 *)
 Check eq_op : forall T : eqType, sort T -> sort T -> bool.
 (**
@@ -256,12 +264,13 @@ Check @eq_op bool_eqType true true : bool.
 (**
 しかし、最初の引数を省略して、以降にtrueを書いた場合、
 bool型から、eqType型の値であるbool_eqTypeを知ることはできないため、これはエラーになる。
+（EqTypeコンストラクタでeqType型の値はいくらでも作れるため、そのすべてチェックするわけにはいかない）
 *)
 Fail Check eq_op true true.
 
 (**
-そこで、bool_eqType (実際はコアーションでbool）が、eqType型の具体例であることを
-知らせる。これをカノニカル・ストラクチャーという。
+そこで、bool_eqType (実際はコアーションでbool）をeqType型の値として、
+型推論に使うことを知らせる。これをカノニカル・ストラクチャーという。
 
 これにより、bool型の値を書いたときに、
 省略された最初の引数にbool_eqTypeを書いたとみなせるようになる。
@@ -278,18 +287,13 @@ Print Canonical Projections.                (* bool <- sort ( bool_eqType ) *)
 すると。。。
 
 bool型の値に対して、``==`` が使用可能になる。
-（eq_opの最初の引数が省略できるようになる。）
+（eq_opの最初の引数 ``T:=bool_eqType`` が省略できるようになる。）
  *)
 Check eq_op true true : bool.
 Check true == true : bool.
 
 (**
-蛇足：コアーションは表記上の省略である。一方、カノニカル・ストラクチャーは型推論のヒントを与える。
-*)
-
-(**
-なお、まとめて以下のように書くこともできる。
-``Canonical Structure bool_eqType := @EqType bool bool_eqMixin.``
+蛇足：コアーションは表記上の省略である。一方、カノニカル・ストラクチャーは型推論のヒントである。
 *)
 
 (**
@@ -356,19 +360,17 @@ Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
 すると。。。
 
 nat型の値に対して、``==`` が使用可能になる。
+（eq_opの最初の引数 ``T:=nat_eqType`` が省略できるようになる。）
  *)
 Check eq_op 1 1 : bool.
 Check 1 == 1 : bool.
 
 (**
-なお、まとめて以下のように書くこともできる。
-``Canonical Structure nat_eqType := @EqType nat nat_eqMixin.``
-*)
-
-(**
 ## View
 
-SSReflectでは、``apply/V`` のVをViewと呼ぶ。View Hintとして登録された補題が自動的に補われる。
+SSReflectでは、``apply/V`` のVをViewと呼ぶ。
+このように書いたとき、View Hintとして登録された補題が自動的に補われる。
+
 View Hintとして使われることの多い補題に``elimT``と``introT``がある。
 それを証明しておく。
 *)
@@ -466,6 +468,16 @@ Qed.
 両者が等価であることが証明されているから (bool_eqTypeやnat_eqType)。
 
 3. 上記を実現するために、コアーションやカノニカル・ストラクチャのメカニズムがある。
+*)
+
+(**
+# 補足
+
+Definitionとカノニカル・ストラクチャーの宣言をまとめて、
+以下のように書くこともできる。
+
+- ``Canonical Structure bool_eqType := @EqType bool bool_eqMixin.``
+- ``Canonical Structure nat_eqType := @EqType nat nat_eqMixin.``
 *)
 
 (**
