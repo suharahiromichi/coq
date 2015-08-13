@@ -48,6 +48,24 @@ Check [:: 1; 2] : seq_predType nat_eqType : predType nat.
 (**
 たしかに、``simplPredType nat`` と ``seq_predType nat_eqType`` とで切り替えられている。
 
+``ssrbool.v`` にあるmem関数の定義から、
+``simplPredType nat`` ないし ``seq_predType nat_eqType`` の memフィールドに、
+mem関数の第3引数（``[pred m : nat | m > 1]`` ないし ``[:: 1; 2]``) が適用されたの
+ものがmem関数の値になる。
+*)
+
+(**
+``simplPredType nat`` の場合は、memフィールドがpred_of_simplなので、
+*)
+Check pred_of_simpl [pred m : nat | m > 1] : pred nat. (* nat -> bool *)
+
+(**
+``seq_predType nat_eqType`` の場合は、memフィールドがmem_seq（実際のmembership関数）なので、
+*)
+Check mem_seq [:: 1; 2] : pred nat_eqType.  (* nat_eqType -> bool *)
+(* nat_eqTypeからnatへのコアーションが効いている。 *)
+
+(**
 ``[pred m : nat | m > 1] : simplPredType nat`` は納得できるので、
 次に問題になるのは、``[:: 1; 2] : seq_predType nat_eqType`` である。
 *)
