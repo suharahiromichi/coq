@@ -83,14 +83,29 @@ Check @zmadd bool_zmodule false true : bool_zmodule. (* これは、Definition �
 Locate "_ \+ _".
 
 (* Canonical にすることによって、以下が有効になる。 *)
-(* zmodule な型であるべきところに、bool をユニファイできる。 *)
+(*
+補足：2015/08/13
+
+@zmadd の第2引数以降にbool型の値(true, false)を書いた場合に、
+の第1引数 (zmodule型) に、bool_zmoduleをを推論することができる。
+そのため、@zmaddの第1引数が省略できるようになる
+ため、``zmadd false true`` や ``false \+ true`` と書けるようになる。
+
+これを、bool_zmoduleがzmoduleのカノニカル・インスタンスであるという。
+
+zmoduleのインスタンスは無数に作れるので、そのどれが@zmaddの第1引数として推論するべきか判らない。
+一旦、bool_zmoduleが選ばれれば、コアーションで ``carrier bool_zmodule = bool`` を
+第2第3引数にとってもよいと判断できる。
+コアーションは型変換（キャスト）の関数を表記上省略することであり、
+カノニカルは型推論（省略された引数の推論）のためのヒントであるので、両者は別物である。
+*)
+
 Check @zmadd _ false true : bool.           (* ！！多分これが、一番重要！！ *)
 Fail Check @zmadd bool false true : bool.   (* 明示的に指定することは、できない。 *)
 Check zmadd false true : bool.
 Check false \+ true : bool.
 (* carrier によるコアーションは、「zmodule を型とみなす」であるから、これはコアーションではない。 *)
 
-(* zmodule な型であるべきところに、bool_zmodule をユニファイできる。 *)
 Check @zmadd _ false true : bool_zmodule.
 Check zmadd false true : bool_zmodule.
 Check false \+ true : bool_zmodule.
@@ -105,9 +120,6 @@ Proof.
   apply zmaddAC.                            (* これが有効になる。 *)
 (*  *)
 Qed.
-(* ************************************************************************************************ *)
-(* 「Canonical bool_zmodule := ... は、bool を zmodule とみなせる(ユニファイできる）」と覚えればよいか *)
-(* ************************************************************************************************ *)
 
 (**
 5.2 Canonical constructions
