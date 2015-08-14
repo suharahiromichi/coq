@@ -271,22 +271,27 @@ Error: The term "true" has type "bool" while it is expected to have type "sort ?
 
 (**
 そこで、Canonical Structureコマンドによって、
-bool_eqTypeをeqType型の値として、型推論に使うようにする。
+bool_eqTypeをeqType型の値として引数の推論に使うようにする。
 このときbool_eqTypeはeqTypeのCanonical InstanceまたはCanonicalと呼ぶ。
 
-ひとたび、最初の引数が``T:=bool_eqType``であるとなれば、前述の通り、
-``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
+ひとたび、最初の引数が``T:=bool_eqType``であるとなれば、
+前述の通り、``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
 *)
 
 (**
-まとめていうと、最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いた場合、
-（eqTypeのカノニカルインスタンスとしてbool_eqTypeが登録されているので、それが見つけられるので、）
-省略された最初の引数は bool_eqType であると推論され、
-（eq_opの定義から、以降の変数は、``sort bool_eqType`` つまりbool型であるので、）
-bool型の値を書くことが許されるようになる。
+以上を箇条書きにすると：
+1. 最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いた場合において。
+2. eqTypeのカノニカルインスタンスとしてbool_eqTypeが登録されているので、それが見つけられる。
+3. eq_opの最初の引数が``T:=bool_eqType``であるとする。
+4. eq_opの定義から、以降の引数は、``sort bool_eqType``型 であることになる。
+5. ``sort bool_eqType`` は bool である。
+6. 以降の引数にbool型の値を書くことが許されるようになる。
 
-逆にいうと、最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いても、
-（省略された最初の引数は、bool_eqType であると推論できるので）が許されることになる。
+つまり、
+
+bool_eqTypeをカノニカルにすると、
+省略された最初の引数は、bool_eqType であると推論できるので、
+最初の引数を省略したeq_opまたは ``==`` にbool型の値を書いてもよい。
 *)
 
 (**
@@ -295,12 +300,14 @@ sortによるbool_eqTypeとboolの変換が表記上で省略されることに�
 *)
 Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.
 (**
-と見える場合がある。これはカノニカルによる型推論の拡張とは別のこと考えてよい。
+と見える場合がある。これはカノニカルによる引数の推論とは別のこと考えてよい。
 *)
 
 (**
 説明（終わり）
+*)
 
+(**
 Canonical Structureコマンドを使って、bool_eqType を eqTypeのCanonical Instanceにする。
 *)
 Canonical Structure bool_eqType.
@@ -316,7 +323,8 @@ Check eq_op true true : bool.
 Check true == true : bool.
 
 (**
-蛇足：コアーションは表記上の省略である。一方、カノニカル・ストラクチャーは型推論のヒントである。
+蛇足：コアーションは表記上の省略である。
+一方、カノニカル・ストラクチャーは省略された引数を推論するためのヒントである。
 *)
 
 (**
