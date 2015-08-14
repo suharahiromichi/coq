@@ -274,19 +274,21 @@ Error: The term "true" has type "bool" while it is expected to have type "sort ?
 bool_eqTypeをeqType型の値として、型推論に使うようにする。
 このときbool_eqTypeはeqTypeのCanonical InstanceまたはCanonicalと呼ぶ。
 
-ひとたび、最初の引数が``T:=bool_eqType``であるとするなら、
-*)
-Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
-(**
+ひとたび、最初の引数が``T:=bool_eqType``であるとなれば、前述の通り、
 ``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
 *)
-Check @eq_op bool_eqType true true : bool.
 
 (**
-逆にいうと、最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いたとき、
-省略された最初の引数は bool_eqType であると推論できるので、
+まとめていうと、最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いた場合、
+（eqTypeのカノニカルインスタンスとしてbool_eqTypeが登録されているので、それが見つけられるので、）
+省略された最初の引数は bool_eqType であると推論され、
+（eq_opの定義から、以降の変数は、``sort bool_eqType`` つまりbool型であるので、）
 bool型の値を書くことが許されるようになる。
+
+逆にいうと、最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いても、
+（省略された最初の引数は、bool_eqType であると推論できるので）が許されることになる。
 *)
+
 (**
 なお、eqType型からType型へのコアーションによって、
 sortによるbool_eqTypeとboolの変換が表記上で省略されることにより、
