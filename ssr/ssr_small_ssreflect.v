@@ -254,7 +254,8 @@ Check eq_op : forall T : eqType, sort T -> sort T -> bool.
 *)
 Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
 (**
-``sort bool_eqType`` は bool であるから、以降の引数にはbool型の値を書くことができる。
+``sort bool_eqType`` は bool であるから、
+以降の引数にはbool型の値を直接書くことができる。
 *)
 Check @eq_op bool_eqType : bool -> bool -> bool.
 Check @eq_op bool_eqType true true : bool.
@@ -273,12 +274,30 @@ Error: The term "true" has type "bool" while it is expected to have type "sort ?
 bool_eqTypeをeqType型の値として、型推論に使うようにする。
 このときbool_eqTypeはeqTypeのCanonical InstanceまたはCanonicalと呼ぶ。
 
-bool_eqType がコアーション (``sort bool_eqType``) でboolだとわかるので、
-bool型の値を書いたときに、省略された最初の引数がbool_eqTypeと推論できるようになる。
+ひとたび、最初の引数が``T:=bool_eqType``であるとするなら、
+*)
+Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
+(**
+``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
+*)
+Check @eq_op bool_eqType true true : bool.
 
+(**
+逆にいうと、最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いたとき、
+省略された最初の引数は bool_eqType であると推論できるので、
+bool型の値を書くことが許されるようになる。
+*)
+(**
+なお、eqType型からType型へのコアーションによって、
+sortによるbool_eqTypeとboolの変換が表記上で省略されることにより、
+*)
+Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.
+(**
+と見える場合がある。これはカノニカルによる型推論の拡張とは別のこと考えてよい。
+*)
 
+(**
 説明（終わり）
-
 
 Canonical Structureコマンドを使って、bool_eqType を eqTypeのCanonical Instanceにする。
 *)
@@ -289,7 +308,7 @@ Print Canonical Projections.                (* bool <- sort ( bool_eqType ) *)
 すると。。。
 
 bool型の値に対して、``==`` が使用可能になる。
-（eq_opの最初の引数 ``T:=bool_eqType`` が省略できるようになる。）
+（@eq_opの最初の引数 ``T:=bool_eqType`` が省略できるようになる。）
  *)
 Check eq_op true true : bool.
 Check true == true : bool.
