@@ -9,14 +9,15 @@
 # はじめに
 
 CoqのSSReflect拡張（以下、SSReflect）は、熱心なユーザがいる一方、
-「x = y との x == y 奇妙な変換ができるのが判らん」として敬遠される場合があります。
+「x = y との x == y 間で奇妙な変換ができるのが判らない」
+と言われることがあります。
 
 今回は、SSReflectのしくみを理解することを目的に、
 Starndard Coqをもとに「SSReflectもどき」を作ってみます。
 
 それを通して、
-Coqのコアーション(coersion)や、カノニカル・ストラクチャCanonical Structure)の
-説明もしたいと思いますから、SSReflectに興味のない人も聴いていただけるとうれしいです。
+Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Canonical Structure)の
+説明もしたいと思います。
 
 
 # 今回のソースの在処
@@ -28,20 +29,18 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャCano
 ``8.4pl2``
 
 
-# ちょっと自己紹介
+# 自己紹介
 
 @suharahiromichi
 
-1. ``#ProofCafe`` (＠名古屋、毎週第3土曜 14:30〜)
-
 1. プログラマ
 
-2. 勤務先：アニメ「風たちぬ」のモデルになった工場
+1. ProofCafe (＠名古屋、毎月第3土曜14:30〜、``#ProofCafe``)
 
-3. 本来業務：システムインテグレーション、多言語プログラミング、ソースコード変換
-（但し、品質保証やプログラム検証・証明は担当外）
+2. 本来業務：システムインテグレーション（品質保証や検証は担当外）
 
-4. アイコン：ボーイング737＠セントレア（多く売れた飛行機こそ名機）
+3. アイコン：ボーイング737型機＠セントレア
+
 
 # 概要
 
@@ -65,9 +64,10 @@ Set Print All.
 (* Set Printing Coercions. *)
 
 (**
-最初のふたつで引数の一部を省略できるようになる。ただし、
-引数のどこが省略できるか(implicitになっているか）はAbout コマンドで調べられる。
-すべての引数を省略せず指定する場合は、関数などの前に ``@`` をつける。
+最初のふたつで引数の一部を省略できるようになる。
+ただし、今回はこの設定の有無が影響しないように
+関数等の``()``、``{}``や``@``を適切に使い分けている。
+（``{}``は省略できる引数、``@``はそれを省略せず指定することを意味する）
 
 ``Set Printing Coercions`` は、コアーションを省略せずに表示するもの
 であるが、``*goals*``や``*response*``バッファ にしか影響しない。
@@ -127,7 +127,7 @@ Inductive reflect (P : Prop) : bool -> Set :=
 - ``reflect P false`` で、``~P->~Q`` なら、``reflect Q false``
 - ``P->Q`` だけではだめで、``Q->P`` が必要になる。
 *)
-Lemma iffP : forall (P Q : Prop) (b : bool),
+Lemma iffP : forall {P Q : Prop} {b : bool},
                reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
 Proof.
   intros P Q b HPb HPQ HQP.
@@ -170,21 +170,26 @@ Check sort : eqType -> Type.
 (**
 実際に使うために、eq_op (``==``) を定義する。
 *)
-Definition eq_op (T : eqType) := op (m T).
+Definition eq_op {T : eqType} := @op (sort T) (m T).
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
-Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
-About eq_op.
+Check eq_op : (sort _) -> (sort _) -> bool.
 (**
-注意：
-eq_op は3つの引数を取るが、最初の引数Tはimplicitになる。``==`` のときもTは省略される。
+eq_op は3つの引数を取るが、``{}``で囲んだ最初の引数Tはimplicitになる。
+``==`` のときもTは省略される。
+ *)
+
+Check @eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
+(**
+しかし、@eq_opとすると、Tを指定する、またはCheckで見ることができる。
  *)
 
 (**
 eq_op は Leibniz同値関係と等価であるという補題を証明しておく。この補題は最後に使う。
 *)
-Lemma eqP (T : eqType) : forall {x y : sort T}, reflect (x = y) (eq_op x y).
+Lemma eqP : forall {T : eqType} {x y : sort T}, reflect (x = y) (@eq_op T x y).
 Proof.
+  intro T.
   case T.
   intros sort m.
   now apply m.
@@ -243,7 +248,7 @@ eq_op にbool型の値が書けない！？
 
 eq_op (``==``) は、次の型を持つ。
 *)
-Check eq_op : forall T : eqType, sort T -> sort T -> bool.
+Check @eq_op : forall T : eqType, sort T -> sort T -> bool.
 (**
 最初の引数Tは、通常はImplcit Argumentによって省略される。
 
@@ -506,9 +511,11 @@ eqTypeからTypeへのコアーションを有効にできる。
 
 また、eq_op が、
 ``Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.``
-と見える場合がある。しかし、これはカノニカルによる引数の推論とは別のことである。
+と見えるようになる。
 
-今回は、それを強調するために、Eqtypeのsortによるコアーションを指定しないようにした。
+しかし、これはカノニカルによる引数の推論とは全く別のことである。
+今回は、それを強調するために、eqTypeのsortによるコアーションを指定しないようにし、
+sortによるeqTypeからTypeへの変換は、すべて明示的に指定することにした。
 *)
 
 (**
