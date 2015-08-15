@@ -187,7 +187,7 @@ eq_op は3つの引数を取るが、``{}``で囲んだ最初の引数Tはimplic
 
 Check @eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
 (**
-しかし、@eq_opとすると、Tを指定する、またはCheckで見ることができる。
+しかし、``@eq_op``とすると、引数Tを指定したり、Checkで見ることができる。
  *)
 
 (**
@@ -258,9 +258,7 @@ eq_op (``==``) は、次の型を持つ。
 *)
 Check @eq_op : forall T : eqType, sort T -> sort T -> bool.
 (**
-最初の引数Tは、通常はImplcit Argumentによって省略される。
-
-最初の引数を省略せずに、bool_eqType を書いた場合、
+最初の引数を省略せずに、bool_eqType と書いた場合、
 *)
 Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
 (**
@@ -273,22 +271,23 @@ Check @eq_op bool_eqType : bool -> bool -> bool.
 Check @eq_op bool_eqType true true : bool.
 (**
 しかし、最初の引数``T:=bool_eqType``省略して、以降の引数にtrueを書いた場合、
-bool型から、eqType型の値であるbool_eqTypeを知ることはできないため、これはエラーになる。
-
-なぜなら、EqTypeコンストラクタでeqType型の値はいくらでも作れるため、そのすべてチェックするわけにはいかないからだ。
 *)
 Fail Check eq_op true true.
 (**
-Error: The term "true" has type "bool" while it is expected to have type "sort ?241"
+``Error: The term "true" has type "bool" while it is expected to have type "sort ?241"``
+
+最初の引数がbool_eqTypeであることが判らないのでエラーになる。指定していないから判らない。
+eqType型であることは判っても、そのインスタンスをすべてチェックするわけにはいかない
+（インスタンスの一覧表はない）ため。
  *)
 
 (**
 そこで、Canonical Structureコマンドによって、
-bool_eqTypeをeqType型の値として引数の推論に使うようにする。
-このときbool_eqTypeはeqTypeのCanonical InstanceまたはCanonicalと呼ぶ。
+bool_eqTypeをeqType型の値として引数の推論に使うよう、登録する。
+このときbool_eqTypeはeqTypeのCanonical Instanceまたは、単にCanonicalと呼ぶ。
 
-ひとたび、最初の引数が``T:=bool_eqType``であるとなれば、
-前述の通り、``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
+ひとたび、最初の引数が``T:=bool_eqType``であると判れば、
+（省略しないときと同様に）``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
 *)
 
 (**
@@ -534,6 +533,8 @@ DefinitionとCanonical Structureコマンドをまとめて、
 
 - ``Canonical Structure bool_eqType := @EqType bool bool_eqMixin.``
 - ``Canonical Structure nat_eqType := @EqType nat nat_eqMixin.``
+
+SSReflectでは、単にCanonicalである。
 *)
 
 (**
