@@ -50,8 +50,8 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャCano
 3. eqTypeの定義、eqType型からType型へのコアーション、eq_op (``==``)定義
 4. bool型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
 5. nat型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
-6. Viewとその補題
-7. x = y と x == y の相互変換の例
+6. Viewとその補題の証明
+7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
 
 # 説明
 
@@ -62,16 +62,15 @@ Unset Strict Implicit.
 
 Unset Printing Implicit Defensive.
 Set Print All.
-Set Printing Coercions.
+(* Set Printing Coercions. *)
 
 (**
-最初のふたつで、引数の一部を省略できるようになる。
-引数のどこが省略できるか(implicitになっているか）は、About コマンドで調べられる。
+最初のふたつで引数の一部を省略できるようになる。ただし、
+引数のどこが省略できるか(implicitになっているか）はAbout コマンドで調べられる。
 すべての引数を省略せず指定する場合は、関数などの前に ``@`` をつける。
 
-以降は表示の挙動なので好みで指定する。今回は以下を指定した。
-
-- ``Set Printing Coercions``    コアーションを省略せずに表示する。
+``Set Printing Coercions`` は、コアーションを省略せずに表示するもの
+であるが、``*goals*``や``*response*``バッファ にしか影響しない。
 *)
 
 (**
@@ -79,9 +78,6 @@ Set Printing Coercions.
 
 bool型の値をProp型の値として扱えるようにする（埋め込むともいう）。
 これは、``is_true : bool -> Prop`` という関数を、表記上、省略することで実現する。
-
-今回は、``Set Printing Coercions`` を指定した
-ので、``*goals*``や``*response*``バッファではそれが表示される。
 *)
 
 (**
@@ -103,7 +99,9 @@ Print Graph.                                (* [is_true] : bool >-> Sortclass *)
  *)
 Check true : Prop.                          (* コアーションが使えるようになる。 *)
 (**
-``*response*``バッファでは、``is_true true : Prop`` と表示される。
+もし、``Set Printing Coercions`` を指定した
+場合は、`*response*``バッファには省略されたis_trueが補われ
+て、``is_true true : Prop`` と表示される。
  *)
 
 (**
@@ -154,7 +152,7 @@ Qed.
 (**
 ## eqType型
 
-同値関係（等しいことが決定可能な関係）が定義された型を導入する。
+bool値等式が定義された型を導入する。
 *)
 Record mixin_of (T : Type) :=
   EqMixin {
@@ -164,11 +162,10 @@ Record mixin_of (T : Type) :=
 
 Record eqType :=
   EqType {
-      sort :> Type;                         (* eqType型 から Type型 へのコアーション *)
+      sort : Type;                          (* 補足1参照 *)
       m : mixin_of sort
     }.
 Check sort : eqType -> Type.
-Print Graph.                                (* [sort] : eqType >-> Sortclass *)
 
 (**
 実際に使うために、eq_op (``==``) を定義する。
@@ -176,8 +173,7 @@ Print Graph.                                (* [sort] : eqType >-> Sortclass *)
 Definition eq_op (T : eqType) := op (m T).
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
-Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* コアーションを使わない例 *)
-Check eq_op : forall T : eqType, T -> T -> bool.               (* eqTypeからTypeへのコアーションを使う例  *)
+Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
 About eq_op.
 (**
 注意：
@@ -185,9 +181,9 @@ eq_op は3つの引数を取るが、最初の引数Tはimplicitになる。``==
  *)
 
 (**
-補題：eq_op は Leibniz同値関係と等価である。この補題は最後に使う。
+eq_op は Leibniz同値関係と等価であるという補題を証明しておく。この補題は最後に使う。
 *)
-Lemma eqP (T : eqType) : forall {x y : T}, reflect (x = y) (eq_op x y).
+Lemma eqP (T : eqType) : forall {x y : sort T}, reflect (x = y) (eq_op x y).
 Proof.
   case T.
   intros sort m.
@@ -245,24 +241,28 @@ eq_op にbool型の値が書けない！？
 
 説明：
 
-eq_op (``==``) は、``forall T : eqType, (sort T) -> (sort T) -> bool`` の型を持つ。
-最初の引数Tは、通常はImplcit Argumentによって省略される。
+eq_op (``==``) は、次の型を持つ。
 *)
 Check eq_op : forall T : eqType, sort T -> sort T -> bool.
 (**
+最初の引数Tは、通常はImplcit Argumentによって省略される。
+
 最初の引数を省略せずに、bool_eqType を書いた場合、
 *)
 Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
 (**
 ``sort bool_eqType`` は bool であるから、
-以降の引数にはbool型の値を直接書くことができる。
 *)
 Check @eq_op bool_eqType : bool -> bool -> bool.
+(**
+以降の引数にはbool型の値を直接書くことができる。
+*)
 Check @eq_op bool_eqType true true : bool.
 (**
 しかし、最初の引数``T:=bool_eqType``省略して、以降の引数にtrueを書いた場合、
 bool型から、eqType型の値であるbool_eqTypeを知ることはできないため、これはエラーになる。
-（EqTypeコンストラクタでeqType型の値はいくらでも作れるため、そのすべてチェックするわけにはいかない）
+
+なぜなら、EqTypeコンストラクタでeqType型の値はいくらでも作れるため、そのすべてチェックするわけにはいかないからだ。
 *)
 Fail Check eq_op true true.
 (**
@@ -295,36 +295,27 @@ bool_eqTypeをカノニカルにすると、
 *)
 
 (**
-なお、eqType型からType型へのコアーションによって、
-sortによるbool_eqTypeとboolの変換が表記上で省略されることにより、
-*)
-Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.
-(**
-と見える場合がある。これはカノニカルによる引数の推論とは別のこと考えてよい。
-*)
-
-(**
 説明（終わり）
 *)
 
 (**
 Canonical Structureコマンドを使って、bool_eqType を eqTypeのCanonical Instanceにする。
 *)
-Canonical Structure bool_eqType.
+Canonical Structure bool_eqType.            (* 補足2 *)
 Print Canonical Projections.                (* bool <- sort ( bool_eqType ) *)
 
 (**
 すると。。。
 
 bool型の値に対して、``==`` が使用可能になる。
-（@eq_opの最初の引数 ``T:=bool_eqType`` が省略できるようになる。）
+（eq_opの最初の引数 ``T:=bool_eqType`` が省略できるようになる。）
  *)
 Check eq_op true true : bool.
 Check true == true : bool.
 
 (**
-蛇足：コアーションは表記上の省略である。
-一方、カノニカル・ストラクチャーは省略された引数を推論するためのヒントである。
+蛇足：コアーションは、表記上で、型を変換する関数を省略できることである。
+一方、カノニカル・ストラクチャーは、省略された引数を推論するためのヒントを登録することである。
 *)
 
 (**
@@ -365,10 +356,8 @@ Qed.
 (**
 eq と eqn の違い。
  *)
-Check eq : nat -> nat -> Prop.
-Check eqn : nat -> nat -> bool.
-
-Fail Check eq : nat -> nat -> bool.   (* これは当然 *)
+Check eq : nat -> nat -> Prop.        (* Leibniz同値関係 *)
+Check eqn : nat -> nat -> bool.       (* bool値等式 *)
 Check eqn : nat -> nat -> Prop.       (* bool型からProp型へのコアーションが有効なため。 *)
 
 (**
@@ -454,7 +443,7 @@ Proof.
 Qed.
 
 (**
-## x = y と x == y の相互変換
+## Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
 
 SSReflectでは、ゴールが``x = y``のとき、``apply/eqP``を実行することで``x == y``に変換される。
 このとき、View Hintとして、elimT が使われる。すなわち、``apply (elimT eqP)`` である。
@@ -478,6 +467,9 @@ Proof.
   now apply H.
 Qed.
 
+(**
+natの場合
+*)
 Goal forall n m : nat, n = m -> n == m.
 Proof.
   intros n m H.
@@ -503,7 +495,24 @@ Qed.
 *)
 
 (**
-# 補足
+# 補足1
+
+EqType の ``sort : Type`` を ``sort :> Type`` とすることによって、
+eqTypeからTypeへのコアーションを有効にできる。
+``[sort] : eqType >-> Sortclass``
+
+これによって、``Lemma eqP (T : eqType) : forall {x y : sort T},...``
+のsortを省略して、`Lemma eqP (T : eqType) : forall {x y : T},...``と表記できる。
+
+また、eq_op が、
+``Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.``
+と見える場合がある。しかし、これはカノニカルによる引数の推論とは別のことである。
+
+今回は、それを強調するために、Eqtypeのsortによるコアーションを指定しないようにした。
+*)
+
+(**
+# 補足2
 
 DefinitionとCanonical Structureコマンドをまとめて、
 以下のように書くこともできる。
