@@ -9,11 +9,13 @@
 # はじめに
 
 CoqのSSReflect拡張（以下、SSReflect）は、熱心なユーザがいる一方、
-「x = y との x == y 間で奇妙な変換ができるのが判らない」
+「``x = y`` との ``x == y`` との間で勝手な変換ができることが判らない」
 と言われることがあります。
 
 今回は、SSReflectのしくみを理解することを目的に、
-Starndard Coqをもとに「SSReflectもどき」を作ってみます。
+Starndard Coqをもとに「SSReflectもどき」を作り、
+``x = y`` と ``x == y`` の相互変換、つまり、
+Leibniz同値関係とbool値等式のリフレクションができるまでを示します。
 
 それを通して、
 Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Canonical Structure)の
@@ -76,17 +78,17 @@ Set Print All.
 (**
 ## bool型からProp型（命題型）へのコアーション
 
-bool型の値をProp型の値として扱えるようにする（埋め込むともいう）。
-これは、``is_true : bool -> Prop`` という関数を、表記上、省略することで実現する。
-*)
-
-(**
 bool型からProp型に変換する関数を定義する。
  *)
 Definition is_true (x : bool) : Prop := x = true.
 Check is_true : bool -> Prop.
 Check true : bool. 
 Check is_true true : Prop.
+
+(**
+bool型の値をProp型の値として扱えるようにする（埋め込むともいう）。
+これは、``is_true : bool -> Prop`` という関数を、表記上、省略することで実現する。
+*)
 
 Fail Check true : Prop.                     (* まだ、is_trueは省けない。 *)
 (**
@@ -100,7 +102,7 @@ Print Graph.                                (* [is_true] : bool >-> Sortclass *)
 Check true : Prop.                          (* コアーションが使えるようになる。 *)
 (**
 もし、``Set Printing Coercions`` を指定した
-場合は、`*response*``バッファには省略されたis_trueが補われ
+場合は、``*response*``バッファには省略されたis_trueが補われ
 て、``is_true true : Prop`` と表示される。
  *)
 
@@ -119,6 +121,8 @@ Inductive reflect (P : Prop) : bool -> Set :=
 *)
 
 (**
+### 補題 iffP
+
 ``P<->Q`` のとき、``reflect P b`` なら ``reflect Q b``。
 
 証明の概要：
@@ -137,6 +141,8 @@ Proof.
 Qed.
 
 (**
+### 補題 idP
+
 ``reflect (is_true b) b`` は、成立する。
 
 コアーションを使って、``forall b : bool, reflect b b`` と書いてもよい。
@@ -185,6 +191,8 @@ Check @eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
  *)
 
 (**
+### 補題 eqP
+
 eq_op は Leibniz同値関係と等価であるという補題を証明しておく。この補題は最後に使う。
 *)
 Lemma eqP : forall {T : eqType} {x y : sort T}, reflect (x = y) (@eq_op T x y).
@@ -393,8 +401,8 @@ Check 1 == 1 : bool.
 (**
 ## View
 
-SSReflectでは、``apply/V`` のVをViewと呼ぶ。
-このように書いたとき、View Hintとして登録された補題が自動的に補われる。
+SSReflectでは、``apply/V`` と書くことができ、そのVをViewと呼ぶ。
+Viewのみapplyするのではなく、View Hintとして登録された補題が自動的に補われる（場合がある）。
 
 View Hintとして使われることの多い補題に``elimT``と``introT``がある。
 それを証明しておく。
@@ -464,11 +472,11 @@ Goal forall x y : bool, x == y -> x = y.
 Proof.
   intros x y H.
   apply (elimT eqP).                        (* apply/eqP *)
-  (* Goal : true == true *)
+  (* Goal : x == y *)
   apply (introT eqP).                       (* apply/eqP *)
-  (* Goal : true = true *)
+  (* Goal : x = y *)
   apply (elimT eqP).                        (* apply/eqP *)
-  (* Goal : true == true *)
+  (* Goal : x == y *)
   now apply H.
 Qed.
 
@@ -479,11 +487,11 @@ Goal forall n m : nat, n = m -> n == m.
 Proof.
   intros n m H.
   apply (introT eqP).                       (* apply/eqP *)
-  (* Goal : 1 = 1 *)
+  (* Goal : n = m *)
   apply (elimT eqP).                        (* apply/eqP *)
-  (* Goal : 1 == 1 *)
+  (* Goal : n == m *)
   apply (introT eqP).                       (* apply/eqP *)
-  (* Goal : 1 = 1 *)
+  (* Goal : n = m *)
   now apply H.
 Qed.
 
