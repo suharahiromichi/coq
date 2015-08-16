@@ -31,19 +31,6 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 ``8.4pl2``
 
 
-# 自己紹介
-
-@suharahiromichi
-
-1. プログラマ
-
-1. ProofCafe (＠名古屋、毎月第3土曜14:30〜、``#ProofCafe``)
-
-2. 本来業務：システムインテグレーション（品質保証や検証は担当外）
-
-3. アイコン：ボーイング737型機＠セントレア
-
-
 # 概要
 
 1. bool型からProp型へのコアーション
@@ -147,7 +134,7 @@ Qed.
 
 コアーションを使って、``forall b : bool, reflect b b`` と書いてもよい。
 *)
-Lemma idP : forall b : bool, reflect (is_true b) b.
+Lemma idP : forall {b : bool}, reflect (is_true b) b.
 Proof.
   intros b.
   case b.
@@ -221,10 +208,10 @@ Definition eqb (x y : bool) : bool :=
 (**
 bool値等式とLeibniz同値関係の等価性を証明する。
  *)
-Lemma bool_eqP : forall x y, reflect (x = y) (eqb x y).
+Lemma bool_eqP : forall (x y : bool), reflect (x = y) (eqb x y).
 Proof.
   intros x y.
-  apply (iffP (idP (eqb x y))).
+  apply (iffP idP).
   - now case x; case y.                     (* eqb x y -> x = y *)
   - now case x; case y.                     (* x = y -> eqb x y *)
 Qed.
@@ -347,10 +334,10 @@ Fixpoint eqn m n {struct m} :=
 (**
 bool値等式とLeibniz同値関係の等価性を証明する。
  *)
-Lemma nat_eqP : forall x y, reflect (x = y) (eqn x y).
+Lemma nat_eqP : forall (x y : nat), reflect (x = y) (eqn x y).
 Proof.
   intros n m.
-  apply (iffP (idP (eqn n m))).
+  apply (iffP idP).
   (* eqn n m -> n = m *)
   - generalize dependent m.
     induction n; intros m.
