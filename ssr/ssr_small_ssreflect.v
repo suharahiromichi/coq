@@ -35,7 +35,7 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 
 1. bool型からProp型へのコアーション
 2. Reflect補題の証明
-3. eqTypeの定義、eqType型からType型へのコアーション、eq_op (``==``)定義
+3. eqTypeの定義と、eq_op (``==``) の定義
 4. bool型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
 5. nat型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
 6. Viewとその補題の証明
