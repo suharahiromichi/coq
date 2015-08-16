@@ -178,7 +178,7 @@ Fixpoint eqn m n {struct m} :=
 Lemma nat_eqP : axiom eqn.                  (* ssrnat.eqnP *)
 Proof.
   intros n m.
-  apply (iffP (idP (eqn n m))).
+  apply (iffP idP).
   (* eqn n m -> n = m *)
   - generalize dependent m.
     induction n; intros m.
@@ -330,6 +330,8 @@ Proof.
   (* Goal : 1 = 1 *)
   now apply H.
 Qed.
+
+
 End SmallSSR.
 
 (* ここから SSReflect *)
@@ -391,5 +393,42 @@ About EqMixin.                              (* Ssreflect.eqtype.Equality.Exports
 About EqType.                               (* Ssreflect.eqtype.Equality.Exports.EqType *)
 
 End MyBool.
+
+
+(* ******************** *)
+(* B. なぜ == を使うのか *)
+(* ******************** *)
+
+(* == を使うことで、証明が簡単になる例 *)
+Lemma eqn_add2l p m n : (p + m == p + n) = (m == n).
+Proof.
+  by induction p.                           (* ワンライナー *)
+Qed.
+
+Goal forall p m n, (p + m = p + n) -> (m = n).
+Proof.
+  intros p m n.
+  move/eqP => H.
+  apply/eqP.
+    (* ここで、p + m == p + n -> m == n になる。 *)
+  by rewrite -(eqn_add2l p m n).
+Qed.
+
+Goal forall p m n, (p + m = p + n) -> (m = n).
+Proof.
+  intros p m n H.
+  induction p.
+  - now rewrite !add0n in H. 
+  - admit.
+Qed.
+
+
+Lemma eqn_add2l' : forall p m n, (p + m = p + n) = (m = n).
+Proof.
+  intros p m n.
+  induction p.
+  admit.
+  admit.
+Qed.
 
 (* END *)
