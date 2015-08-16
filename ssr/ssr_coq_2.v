@@ -1,5 +1,5 @@
 (**
-SSReflect もどきを作ってみる。
+SSREFLECt もどきを作ってみる。
 
 @suharahiromichi
 
@@ -15,9 +15,23 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-(* ******************* *)
-(* 1. SSReflect の準備 *)
-(* ******************* *)
+Module SmallSSR.
+(* *************** *)
+(* 0. コアーション *)
+(* *************** *)
+Definition is_true (x : bool) : Prop := x = true.
+Check is_true true : Prop.                  (* boolのコアーションを使わない例 *)
+Fail Check true : Prop.                     (* boolのコアーションを使う例。まだエラーになる。 *)
+Coercion is_true : bool >-> Sortclass.      (* bool から Prop へのコアーション*)
+Check true : Prop.                          (* boolのコアーションを使う。 *)
+
+Print Graph.                           (* コアーションの印刷 *)
+(* [is_true] : bool >-> Sortclass *)
+
+
+(* **************** *)
+(* 1. Reflect      *)
+(* **************** *)
 Inductive reflect (P : Prop) : bool -> Set :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
@@ -27,10 +41,34 @@ Definition rel (T : Type) := T -> T -> bool.
 Check rel : Type -> Type.
 *)
 
+(* 変な名前だが、あとで証明する。 *)
 Definition axiom (T : Type) (e : T -> T -> bool) := (* e : rel T *)
   forall x y : T, reflect (x = y) (e x y).
 Check axiom : forall T : Type, (T -> T -> bool) -> Type.
 
+(* ******************* *)
+(* reflect に関する補題 *)
+(* ******************* *)
+Lemma iffP : forall (P Q : Prop) (b : bool),
+               reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
+Proof.
+  intros P Q b HPb HPQ HQP.
+  case HPb; intros HP.
+  - apply ReflectT. auto.
+  - apply ReflectF. auto.
+Qed.
+
+Lemma idP : forall {b : bool}, reflect b b. (* reflect (is_true b) b. *)
+Proof.
+  intros b.
+  case b.
+  - now apply ReflectT.
+  - now apply ReflectF.
+Qed.
+
+(* **************** *)
+(* 1. eqType の準備 *)
+(* ***************** *)
 Record mixin_of (T : Type) :=
   EqMixin {                                 (* Mixin *)
       op : T -> T -> bool;                  (* rel T でもよい。 *)
@@ -47,10 +85,12 @@ Print Graph.                                (* コアーション *)
 (* [sort] : type >-> Sortclass *)
 
 Definition eq_op (T : eqType) := op (m T).
-Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* コアーションを使わない例 *)
-Check eq_op : forall T : eqType, T -> T -> bool.   (* コアーションを使う例  *)
+Check eq_op : forall T : eqType, (sort T) -> (sort T) -> bool. (* eqTypeのコアーションを使わない例 *)
+Check eq_op : forall T : eqType, T -> T -> bool.   (* eqTypeのコアーションを使う例  *)
 (* rel T  *)
+Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 
+(* 補題：使わない *)
 Lemma eqP (T : eqType) : axiom (@eq_op T).
 Proof.
   unfold axiom.
@@ -60,36 +100,6 @@ Proof.
 Qed.
 Check eqP : forall T : eqType, axiom (@eq_op T).
 
-Notation "x == y" := (eq_op x y) (at level 70, no associativity).
-
-Definition is_true (x : bool) : Prop := x = true.
-Check is_true true : Prop.                  (* コアーションを使わない例 *)
-Fail Check true : Prop.                   
-Coercion is_true : bool >-> Sortclass.      (* bool から Prop へのコアーション*)
-Check true : Prop.                          (* コアーションを使う *)
-
-Print Graph.                           (* コアーションの印刷 *)
-(* [is_true] : bool >-> Sortclass *)
-
-(* ******************* *)
-(* reflect に関する補題 *)
-(* ******************* *)
-Lemma iffP : forall (P Q : Prop) (b : bool),
-               reflect P b -> (P -> Q) -> (Q -> P) -> reflect Q b.
-Proof.
-  intros P Q b HPb HPQ HQP.
-  case HPb; intros HP.
-  - apply ReflectT. auto.
-  - apply ReflectF. auto.
-Qed.
-
-Lemma idP : forall b : bool, reflect b b.
-Proof.
-  intros b.
-  case b.
-  - now apply ReflectT.
-  - now apply ReflectF.
-Qed.
 
 (* ******************** *)
 (* 2. bool に関する定理 *)
@@ -108,7 +118,7 @@ Lemma bool_eqP : axiom eqb.
 Proof.
   unfold axiom.
   intros x y.
-  apply (iffP (idP (eqb x y))).
+  apply (iffP idP).                         (* (iffP (@idP (eqb x y))) *)
   - unfold eqb.
     now case x; case y.
   - unfold eqb.
@@ -320,5 +330,66 @@ Proof.
   (* Goal : 1 = 1 *)
   now apply H.
 Qed.
+End SmallSSR.
+
+(* ここから SSReflect *)
+Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq.
+
+(* 
+任意の型XXXに対して、
+SSReflectの機能を使って、同様のことを行う場合は、
+決定可能なbool値等式を定義し、それとLeibniz同値関係の等価性を証明する。
+そして、カノニカル・ストラクチャとして、XXX_eqTypeを定義する。
+ *)
+
+Module MyBool.
+
+Inductive BOOL : Set :=
+| TRUE : BOOL
+| FALSE : BOOL.
+
+(* ******************** *)
+(* A. BOOL に関する定理 *)
+(* ******************** *)
+(* 決定可能なbool値等式を定義する。 *)
+Definition eqB (b1 b2 : BOOL) : bool :=
+  match b1, b2 with
+    | TRUE, TRUE => true
+    | TRUE, FALSE => false
+    | FALSE, TRUE => false
+    | FALSE, FALSE => true
+  end.
+
+(* bool値等式とLeibniz同値関係の等価性を証明する。 *)
+Lemma BOOL_eqP (x y : BOOL) : reflect (x = y) (eqB x y).
+Proof.
+  by apply (iffP idP); case x; case y.
+Qed.
+
+Definition BOOL_eqMixin := EqMixin BOOL_eqP.
+Canonical BOOL_eqType := EqType BOOL BOOL_eqMixin.
+
+Check eq_op TRUE TRUE : bool.
+Check TRUE == TRUE : bool.
+
+Goal forall x y : BOOL, x == y -> x = y.
+Proof.
+  move=> x y H.
+  apply/eqP.
+  (* Goal : x == y *)
+  apply/eqP.
+  (* Goal : x = y *)
+  apply/eqP.
+  (* Goal : x == y *)
+  by apply H.
+Qed.
+
+(* SSReflect の定義を使っている。 *)
+About iffP.                                 (* Ssreflect.ssrbool.iffP *)
+About idP.                                  (* Ssreflect.ssrbool.idP *)
+About EqMixin.                              (* Ssreflect.eqtype.Equality.Exports.EqMixin *)
+About EqType.                               (* Ssreflect.eqtype.Equality.Exports.EqType *)
+
+End MyBool.
 
 (* END *)
