@@ -37,12 +37,12 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 
 # 概要
 
-## 説明
+## 説明の流れ
 
 1. bool型からProp型へのコアーション
 2. Reflect補題の証明
 3. eqTypeの定義と、eq_op (``==``) の定義
-4. 決定可能なbool値等式の定義と、Leibniz同値関係の等価性
+4. 決定可能なbool値等式とLeibniz同値関係の等価性の証明
 5. Viewとその補題の証明
 6. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
 7. 以上をSSReflectの機能を使っておこなう場合
@@ -52,7 +52,7 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 (**
 ## updown型
 
-4.と6.と7.の共通例題として、updown型を使う。
+4.と6.と7.の共通例題として、UP(up),OFF(off),DOWN(dn)の三値をとるupdown型を使う。
 *)
 
 (**
@@ -420,7 +420,87 @@ Proof.
   now apply H.
 Qed.
 
+(**
+# 補足1
+
+EqType の ``sort : Type`` を ``sort :> Type`` とすることによって、
+eqTypeからTypeへのコアーションを有効にできる。
+``[sort] : eqType >-> Sortclass``
+
+これによって、``Lemma eqP (T : eqType) : forall {x y : sort T},...``
+のsortを省略して、`Lemma eqP (T : eqType) : forall {x y : T},...``と表記できる。
+
+また、eq_op が、
+``Check @eq_op updown_eqType : updown_eqType -> updown_eqType -> bool.``
+と見えるようになる。
+
+しかし、これはカノニカルによる引数の推論とは全く別のことである。
+今回は、それを強調するために、eqTypeのsortによるコアーションを指定しないようにし、
+sortによるeqTypeからTypeへの変換は、すべて明示的に指定することにした。
+*)
+
+(**
+# 補足2
+
+DefinitionとCanonical Structureコマンドをまとめて、以下のように書くこともできる。
+
+``Canonical Structure updown_eqType := @EqType updown bool_eqMixin.``
+*)
+
+(**
+# 補足3
+*)
+
+(**
+nat型を引数とする、決定可能なbool値等式を定義する。
+ *)
+Fixpoint eqn m n {struct m} :=
+  match m, n with
+  | 0, 0 => true
+  | S m', S n' => eqn m' n'
+  | _, _ => false
+  end.
+
+(**
+bool値等式とLeibniz同値関係の等価性を証明する。
+ *)
+Lemma nat_eqP : forall (x y : nat), reflect (x = y) (eqn x y).
+Proof.
+  intros n m.
+  apply (iffP idP).
+  (* eqn n m -> n = m *)
+  - generalize dependent m.
+    induction n; intros m.
+    + now destruct m.
+    + destruct m as [|m' IHm'].
+      * now simpl.
+      * simpl. intro H. f_equal.
+        now apply IHn.
+  (* n = m -> eqn n m *)
+  - intros H.
+    rewrite <- H.
+    now elim n.
+Qed.
+
+(**
+nat_eqTypeを定義する。
+ *)
+Definition nat_eqMixin := @EqMixin nat eqn nat_eqP. (* EqMixin nat_eqP でもよい。 *)
+Canonical Structure nat_eqType := @EqType nat nat_eqMixin. (* EqType nat_eqMixin *)
+Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
+
+Check eq_op 1 1 : bool.
+Check 1 == 1 : bool.
+
+(**
+nat型の値に対して、``==`` が使用可能になる。
+（eq_opの最初の引数 ``T:=nat_eqType`` が省略できるようになる。）
+ *)
+Check eq_op 1 1 : bool.
+Check 1 == 1 : bool.
+
 End SmallSSR.                            (* Small SSReflect *)
+
 
 (**
 # SSReflectの機能を使う
@@ -478,33 +558,6 @@ Qed.
 
 3. 上記を実現するために、Coqのコアーション(coersion)や
 カノニカル・ストラクチャ(Canonical Structure)を利用する。
-*)
-
-(**
-# 補足1
-
-EqType の ``sort : Type`` を ``sort :> Type`` とすることによって、
-eqTypeからTypeへのコアーションを有効にできる。
-``[sort] : eqType >-> Sortclass``
-
-これによって、``Lemma eqP (T : eqType) : forall {x y : sort T},...``
-のsortを省略して、`Lemma eqP (T : eqType) : forall {x y : T},...``と表記できる。
-
-また、eq_op が、
-``Check @eq_op updown_eqType : updown_eqType -> updown_eqType -> bool.``
-と見えるようになる。
-
-しかし、これはカノニカルによる引数の推論とは全く別のことである。
-今回は、それを強調するために、eqTypeのsortによるコアーションを指定しないようにし、
-sortによるeqTypeからTypeへの変換は、すべて明示的に指定することにした。
-*)
-
-(**
-# 補足2
-
-DefinitionとCanonical Structureコマンドをまとめて、以下のように書くこともできる。
-
-``Canonical Structure updown_eqType := @EqType updown bool_eqMixin.``
 *)
 
 (**
