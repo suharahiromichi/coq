@@ -402,12 +402,12 @@ End MyBool.
 (* == を使うことで、証明が簡単になる例 *)
 Lemma eqn_add2l p m n : (p + m == p + n) = (m == n).
 Proof.
-  by induction p.                           (* ワンライナー *)
+  by elim: p.                               (* ワンライナー *)
 Qed.
 
 Goal forall p m n, (p + m = p + n) -> (m = n).
 Proof.
-  intros p m n.
+  move=> p m n.
   move/eqP => H.
   apply/eqP.
     (* ここで、p + m == p + n -> m == n になる。 *)
