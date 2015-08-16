@@ -394,6 +394,55 @@ About EqType.                               (* Ssreflect.eqtype.Equality.Exports
 
 End MyBool.
 
+Module UpDown.
+
+Inductive UpDown :=
+| down
+| up.
+
+(* ******************** *)
+(* A. UpDown に関する定理 *)
+(* ******************** *)
+Definition eqUD (b1 b2 : UpDown) : bool :=
+  match b1, b2 with
+    | up, up => true
+    | up, down => false
+    | down, up => false
+    | down, down => true
+  end.
+
+(* bool値等式とLeibniz同値関係の等価性を証明する。 *)
+Lemma updown_eqP (x y : UpDown) : reflect (x = y) (eqUD x y).
+Proof.
+  by apply (iffP idP); case x; case y.
+Qed.
+
+Definition updown_eqMixin := EqMixin updown_eqP.
+Canonical updown_eqType := EqType UpDown updown_eqMixin.
+
+Check eq_op up up : bool.
+Check up == up : bool.
+
+Goal forall x y : UpDown, x == y -> x = y.
+Proof.
+  move=> x y H.
+  apply/eqP.
+  (* Goal : x == y *)
+  apply/eqP.
+  (* Goal : x = y *)
+  apply/eqP.
+  (* Goal : x == y *)
+  by apply H.
+Qed.
+
+(* SSReflect の定義を使っている。 *)
+About iffP.                                 (* Ssreflect.ssrbool.iffP *)
+About idP.                                  (* Ssreflect.ssrbool.idP *)
+About EqMixin.                              (* Ssreflect.eqtype.Equality.Exports.EqMixin *)
+About EqType.                               (* Ssreflect.eqtype.Equality.Exports.EqType *)
+
+End MyBool.
+
 
 (* ******************** *)
 (* B. なぜ == を使うのか *)
