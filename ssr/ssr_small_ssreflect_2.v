@@ -2,6 +2,7 @@
 スモール SSReflect の製作
 ======
 2015/08/11
+2015/08/16
 
 @suharahiromichi
 
@@ -28,22 +29,52 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 # 今回のソースの在処
 
 - Markdown版は以下のソースから生成した。
-``https://github.com/suharahiromichi/coq/tree/master/ssr/ssr_small_ssreflect.v``
+``https://github.com/suharahiromichi/coq/tree/master/ssr/ssr_small_ssreflect_2.v``
 
-- 以下の版で動作を確認した。SSReflectおよびMathCompは使わない。
+- 以下の版で動作を確認した。
 ``8.4pl2``
 
 
 # 概要
 
+## 説明
+
 1. bool型からProp型へのコアーション
 2. Reflect補題の証明
 3. eqTypeの定義と、eq_op (``==``) の定義
-4. bool型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
-5. nat型の値を引数とする決定可能なbool値等式の定義と、Leibniz同値関係の等価性
-6. Viewとその補題の証明
-7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
+4. 決定可能なbool値等式の定義と、Leibniz同値関係の等価性
+5. Viewとその補題の証明
+6. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
+7. 以上をSSReflectの機能を使っておこなう場合
+8. `==``を使うと証明が簡単になる例 (自然数の例）
+*)
 
+(**
+## updown型
+
+4.と6.と7.の共通例題として、updown型を使う。
+*)
+
+(**
+updown型を定義する。
+ *)
+Inductive updown : Set :=
+| up
+| off
+| dn.
+
+(**
+updown型を引数とする、決定可能なbool値等式を定義する。
+*)
+Definition eqUD (x y : updown) : bool :=
+  match x, y with
+    | up,  up  => true
+    | off, off => true
+    | dn,  dn  => true
+    | _,   _   => false
+  end.
+
+(**
 # 説明
 
 ## 準備
@@ -55,6 +86,7 @@ Unset Printing Implicit Defensive.
 Set Print All.
 (* Set Printing Coercions. *)
 
+Module SmallSSR.                            (* Small SSReflect *)
 (**
 最初のふたつで引数の一部を省略できるようになる。
 ただし、今回はこの設定の有無が影響しないように
@@ -148,7 +180,7 @@ Qed.
 (**
 ## eqType型
 
-bool値等式が定義された型を導入する。
+bool値等式が定義され、それと Leibniz同値関係の等価性が証明された型である。
 *)
 Record mixin_of (T : Type) :=
   EqMixin {
@@ -194,52 +226,41 @@ Proof.
 Qed.
 
 (**
-## bool型の例
+## updown型の例
 *)
-
-(**
-bool型を引数とする、決定可能なbool値等式を定義する。
- *)
-Definition eqb (x y : bool) : bool :=
-  match x, y with
-    | true,  true  => true
-    | true,  false => false
-    | false, true  => false
-    | false, false => true
-  end.
 
 (**
 bool値等式とLeibniz同値関係の等価性を証明する。
  *)
-Lemma bool_eqP : forall (x y : bool), reflect (x = y) (eqb x y).
+Lemma updown_eqP : forall (x y : updown), reflect (x = y) (eqUD x y).
 Proof.
   intros x y.
   apply (iffP idP).
-  - now case x; case y.                     (* eqb x y -> x = y *)
-  - now case x; case y.                     (* x = y -> eqb x y *)
+  - now case x; case y.                     (* eqUD x y -> x = y *)
+  - now case x; case y.                     (* x = y -> eqUD x y *)
 Qed.
 
 (**
-eq と eqb の違い。
+eq と eqUD の違い。
  *)
-Check eq : bool -> bool -> Prop.      (* Leibniz同値関係 *)
-Check eqb : bool -> bool -> bool.     (* bool値等式 *)
-Check eqb : bool -> bool -> Prop.     (* bool型からProp型へのコアーションが有効なため。 *)
+Check eq   : updown -> updown -> Prop.    (* Leibniz同値関係 *)
+Check eqUD : updown -> updown -> bool.    (* bool値等式 *)
+Check eqUD : updown -> updown -> Prop.    (* bool型からProp型へのコアーションが有効なため。 *)
 
 (**
-bool_eqTypeを定義する。
+updown_eqTypeを定義する。
 
-コンストラクタ EqMixin と EqType で、bool と eqb と bool_eqP から、
+コンストラクタ EqMixin と EqType で、updown と eqUD と updown_eqP から、
 bool_eqTypeを作る。bool_eqType は eqType型である。
  *)
-Definition bool_eqMixin := @EqMixin bool eqb bool_eqP. (* EqMixin bool_eqP でもよい。 *)
-Definition bool_eqType := @EqType bool bool_eqMixin.   (* EqType bool_eqMixin でもよい。 *)
+Definition updown_eqMixin := @EqMixin updown eqUD updown_eqP.
+Definition updown_eqType  := @EqType updown updown_eqMixin.
 
-Fail Check eq_op true true : bool.          (* ！？ *)
-Fail Check true == true : bool.             (* ！？ *)
+Fail Check eq_op up up : bool.          (* ！？ *)
+Fail Check up == up : bool.             (* ！？ *)
 
 (**
-eq_op にbool型の値が書けない！？
+eq_op にupdown型の値が書けない！？
 
 
 説明：
@@ -248,52 +269,52 @@ eq_op (``==``) は、次の型を持つ。
 *)
 Check @eq_op : forall T : eqType, sort T -> sort T -> bool.
 (**
-最初の引数を省略せずに、bool_eqType と書いた場合、
+最初の引数を省略せずに、updown_eqType と書いた場合、
 *)
-Check @eq_op bool_eqType : (sort bool_eqType) -> (sort bool_eqType) -> bool.
+Check @eq_op updown_eqType : (sort updown_eqType) -> (sort updown_eqType) -> bool.
 (**
-``sort bool_eqType`` は bool であるから、
+``sort updown_eqType`` は updown であるから、
 *)
-Check @eq_op bool_eqType : bool -> bool -> bool.
+Check @eq_op updown_eqType : updown -> updown -> bool.
 (**
-以降の引数にはbool型の値を直接書くことができる。
+以降の引数にはupdown型の値を直接書くことができる。
 *)
-Check @eq_op bool_eqType true true : bool.
+Check @eq_op updown_eqType up up : bool.
 (**
-しかし、最初の引数``T:=bool_eqType``省略して、以降の引数にtrueを書いた場合、
+しかし、最初の引数``T:=updown_eqType``省略して、以降の引数にtrueを書いた場合、
 *)
-Fail Check eq_op true true.
+Fail Check eq_op up up.
 (**
-``Error: The term "true" has type "bool" while it is expected to have type "sort ?241"``
+``Error: The term "up" has type "updown" while it is expected to have type "sort ?241"``
 
-最初の引数がbool_eqTypeであることが判らないのでエラーになる。指定していないから判らない。
+最初の引数がupdown_eqTypeであることが判らないのでエラーになる。指定していないから判らない。
 eqType型であることは判っても、そのインスタンスをすべてチェックするわけにはいかない
 （インスタンスの一覧表はない）ため。
  *)
 
 (**
 そこで、Canonical Structureコマンドによって、
-bool_eqTypeをeqType型の値として引数の推論に使うよう、登録する。
-このときbool_eqTypeはeqTypeのCanonical Instanceまたは、単にCanonicalと呼ぶ。
+updown_eqTypeをeqType型の値として引数の推論に使うよう、登録する。
+このときupdown_eqTypeはeqTypeのCanonical Instanceまたは、単にCanonicalと呼ぶ。
 
-ひとたび、最初の引数が``T:=bool_eqType``であると判れば、
-（省略しないときと同様に）``sort bool_eqType`` は bool なので、以降の引数にbool型の値を書くことができる。
+ひとたび、最初の引数が``T:=updown_eqType``であると判れば、
+（省略しないときと同様に）``sort updown_eqType`` は updown なので、以降の引数にupdown型の値を書くことができる。
 *)
 
 (**
 以上を箇条書きにすると：
-1. 最初の引数を省略したeq_opまたは ``==`` に、bool型の値を書いた場合において。
-2. eqTypeのカノニカルインスタンスとしてbool_eqTypeが登録されているので、それが見つけられる。
-3. eq_opの最初の引数が``T:=bool_eqType``であるとする。
-4. eq_opの定義から、以降の引数は、``sort bool_eqType``型 であることになる。
-5. ``sort bool_eqType`` は bool である。
-6. 以降の引数にbool型の値を書くことが許されるようになる。
+1. 最初の引数を省略したeq_opまたは ``==`` に、updown型の値を書いた場合において。
+2. eqTypeのカノニカルインスタンスとしてupdown_eqTypeが登録されているので、それが見つけられる。
+3. eq_opの最初の引数が``T:=updown_eqType``であるとする。
+4. eq_opの定義から、以降の引数は、``sort updown_eqType``型 であることになる。
+5. ``sort updown_eqType`` は updown である。
+6. 以降の引数にupdown型の値を書くことが許されるようになる。
 
 つまり、
 
-bool_eqTypeをカノニカルにすると、
-省略された最初の引数は、bool_eqType であると推論できるので、
-最初の引数を省略したeq_opまたは ``==`` にbool型の値を書いてもよい。
+updown_eqTypeをカノニカルにすると、
+省略された最初の引数は、updown_eqType であると推論できるので、
+最初の引数を省略したeq_opまたは ``==`` にupdown型の値を書いてもよい。
 *)
 
 (**
@@ -301,91 +322,24 @@ bool_eqTypeをカノニカルにすると、
 *)
 
 (**
-Canonical Structureコマンドを使って、bool_eqType を eqTypeのCanonical Instanceにする。
+Canonical Structureコマンドを使って、updown_eqType を eqTypeのCanonical Instanceにする。
 *)
-Canonical Structure bool_eqType.            (* 補足2 *)
-Print Canonical Projections.                (* bool <- sort ( bool_eqType ) *)
+Canonical Structure updown_eqType.            (* 補足2 *)
+Print Canonical Projections.                  (* updown <- sort ( updown_eqType ) *)
 
 (**
 すると。。。
 
-bool型の値に対して、``==`` が使用可能になる。
-（eq_opの最初の引数 ``T:=bool_eqType`` が省略できるようになる。）
+updown型の値に対して、``==`` が使用可能になる。
+（eq_opの最初の引数 ``T:=updown_eqType`` が省略できるようになる。）
  *)
-Check eq_op true true : bool.
-Check true == true : bool.
+Check eq_op up up : bool.
+Check up == up : bool.
 
 (**
 蛇足：コアーションは、表記上で、型を変換する関数を省略できることである。
 一方、カノニカル・ストラクチャーは、省略された引数を推論するためのヒントを登録することである。
 *)
-
-(**
-## nat型の例
-*)
-
-(**
-nat型を引数とする、決定可能なbool値等式を定義する。
- *)
-Fixpoint eqn m n {struct m} :=
-  match m, n with
-  | 0, 0 => true
-  | S m', S n' => eqn m' n'
-  | _, _ => false
-  end.
-
-(**
-bool値等式とLeibniz同値関係の等価性を証明する。
- *)
-Lemma nat_eqP : forall (x y : nat), reflect (x = y) (eqn x y).
-Proof.
-  intros n m.
-  apply (iffP idP).
-  (* eqn n m -> n = m *)
-  - generalize dependent m.
-    induction n; intros m.
-    + now destruct m.
-    + destruct m as [|m' IHm'].
-      * now simpl.
-      * simpl. intro H. f_equal.
-        now apply IHn.
-  (* n = m -> eqn n m *)
-  - intros H.
-    rewrite <- H.
-    now elim n.
-Qed.
-
-(**
-eq と eqn の違い。
- *)
-Check eq : nat -> nat -> Prop.        (* Leibniz同値関係 *)
-Check eqn : nat -> nat -> bool.       (* bool値等式 *)
-Check eqn : nat -> nat -> Prop.       (* bool型からProp型へのコアーションが有効なため。 *)
-
-(**
-nat_eqTypeを定義する。
- *)
-
-Definition nat_eqMixin := @EqMixin nat eqn nat_eqP.   (* EqMixin nat_eqP でもよい。 *)
-Definition nat_eqType := @EqType nat nat_eqMixin.     (* EqType nat_eqMixin *)
-
-Fail Check eq_op 1 1 : bool.
-Fail Check 1 == 1 : bool.
-
-(**
-Canonical Structureコマンドを使って、nat_eqType を eqTypeのCanonical Instanceにする。
-*)
-Canonical Structure nat_eqType.
-Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
-
-(**
-すると。。。
-
-nat型の値に対して、``==`` が使用可能になる。
-（eq_opの最初の引数 ``T:=nat_eqType`` が省略できるようになる。）
- *)
-Check eq_op 1 1 : bool.
-Check 1 == 1 : bool.
 
 (**
 ## View
@@ -454,10 +408,7 @@ SSReflectでは、ゴールが``x = y``のとき、``apply/eqP``を実行する�
 このとき、View Hintとして、introT が使われる。すなわち、``apply (introT eqP)`` である。
 *)
 
-(**
-boolの場合
-*)
-Goal forall x y : bool, x == y -> x = y.
+Goal forall x y : updown, x == y -> x = y.
 Proof.
   intros x y H.
   apply (elimT eqP).                        (* apply/eqP *)
@@ -469,20 +420,52 @@ Proof.
   now apply H.
 Qed.
 
+End SmallSSR.                            (* Small SSReflect *)
+
 (**
-natの場合
+# SSReflectの機能を使う
+
+## updown型の例
 *)
-Goal forall n m : nat, n = m -> n == m.
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat.
+
+Lemma updown_eqP (x y : updown) : reflect (x = y) (eqUD x y).
 Proof.
-  intros n m H.
-  apply (introT eqP).                       (* apply/eqP *)
-  (* Goal : n = m *)
-  apply (elimT eqP).                        (* apply/eqP *)
-  (* Goal : n == m *)
-  apply (introT eqP).                       (* apply/eqP *)
-  (* Goal : n = m *)
-  now apply H.
+  by apply (iffP idP); case x; case y.
 Qed.
+
+Definition updown_eqMixin := EqMixin updown_eqP.
+Canonical updown_eqType := EqType updown updown_eqMixin.
+
+Goal forall x y : updown, x == y -> x = y.
+Proof.
+  move=> x y H.
+  apply/eqP.                                (* apply (elimT eqP) *)
+  (* Goal : x == y *)
+  apply/eqP.                                (* apply (introT eqP) *)
+  (* Goal : x = y *)
+  apply/eqP.                                (* apply (elimT eqP) *)
+  (* Goal : x == y *)
+  by apply H.
+Qed.
+
+(**
+## 自然数型の例
+*)
+
+Lemma eqn_add2l (p m n : nat) : (p + m == p + n) = (m == n).
+Proof.
+  by elim: p.                           (* ワンライナー *)
+Qed.
+
+Goal forall (p m n : nat), (p + m = p + n) -> (m = n).
+Proof.
+  move=> p m n.
+  move/eqP => H.                            (* H : p + m == p + n *)
+  apply/eqP.                                (* Goal : m == n *)
+  by rewrite -(eqn_add2l p m n).
+Qed.
+
 
 (**
 # まとめ
@@ -490,10 +473,11 @@ Qed.
 1. 「SSReflectもどき」をつくってみた
 
 2. SSReflect で、Leibniz同値関係 (``x = y``) と bool値等式 (``x == y``) が相互に変換できるのは、
-両者が等価であることが、それぞれの型で、証明されているから (bool_eqTypeやnat_eqType)。
+両者が等価であることが、updown型で、証明されているからである。
+（別な型を定義した場合は、別途同様に証明しなければならない）
 
 3. 上記を実現するために、Coqのコアーション(coersion)や
-カノニカル・ストラクチャCanonical Structure)を利用する。
+カノニカル・ストラクチャ(Canonical Structure)を利用する。
 *)
 
 (**
@@ -507,7 +491,7 @@ eqTypeからTypeへのコアーションを有効にできる。
 のsortを省略して、`Lemma eqP (T : eqType) : forall {x y : T},...``と表記できる。
 
 また、eq_op が、
-``Check @eq_op bool_eqType : bool_eqType -> bool_eqType -> bool.``
+``Check @eq_op updown_eqType : updown_eqType -> updown_eqType -> bool.``
 と見えるようになる。
 
 しかし、これはカノニカルによる引数の推論とは全く別のことである。
@@ -518,13 +502,9 @@ sortによるeqTypeからTypeへの変換は、すべて明示的に指定する
 (**
 # 補足2
 
-DefinitionとCanonical Structureコマンドをまとめて、
-以下のように書くこともできる。
+DefinitionとCanonical Structureコマンドをまとめて、以下のように書くこともできる。
 
-- ``Canonical Structure bool_eqType := @EqType bool bool_eqMixin.``
-- ``Canonical Structure nat_eqType := @EqType nat nat_eqMixin.``
-
-SSReflectでは、単にCanonicalである。
+``Canonical Structure updown_eqType := @EqType updown bool_eqMixin.``
 *)
 
 (**
