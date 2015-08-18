@@ -41,7 +41,7 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 
 1. bool型からProp型へのコアーション
 2. Reflect補題の証明
-3. eqTypeの定義と、eq_op (``==``) の定義
+3. eqType型クラスの定義と、eq_op (``==``) の定義
 4. 決定可能なbool値等式とLeibniz同値関係の等価性の証明
 5. Viewとその補題の証明
 6. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
@@ -178,9 +178,9 @@ Proof.
 Qed.
 
 (**
-## eqType型
+## eqType型クラス
 
-bool値等式が定義され、それと Leibniz同値関係の等価性が証明された型である。
+bool値等式が定義され、それと Leibniz同値関係の等価性が証明された型のクラスである。
 *)
 Record mixin_of (T : Type) :=
   EqMixin {
@@ -248,10 +248,9 @@ Check eqUD : updown -> updown -> bool.    (* bool値等式 *)
 Check eqUD : updown -> updown -> Prop.    (* bool型からProp型へのコアーションが有効なため。 *)
 
 (**
-updown_eqTypeを定義する。
+updown_eqType型を定義する。
 
-コンストラクタ EqMixin と EqType で、updown と eqUD と updown_eqP から、
-bool_eqTypeを作る。bool_eqType は eqType型である。
+EqType型クラスからupdown_eqType型を作る。
  *)
 Definition updown_eqMixin := @EqMixin updown eqUD updown_eqP.
 Definition updown_eqType  := @EqType updown updown_eqMixin.
@@ -304,7 +303,7 @@ updown_eqTypeをeqType型の値として引数の推論に使うよう、登録�
 (**
 以上を箇条書きにすると：
 1. 最初の引数を省略したeq_opまたは ``==`` に、updown型の値を書いた場合において。
-2. eqTypeのカノニカルインスタンスとしてupdown_eqTypeが登録されているので、それが見つけられる。
+2. eqType型のカノニカルインスタンスとしてupdown_eqTypeが登録されているので、それが見つけられる。
 3. eq_opの最初の引数が``T:=updown_eqType``であるとする。
 4. eq_opの定義から、以降の引数は、``sort updown_eqType``型 であることになる。
 5. ``sort updown_eqType`` は updown である。
@@ -313,7 +312,7 @@ updown_eqTypeをeqType型の値として引数の推論に使うよう、登録�
 つまり、
 
 updown_eqTypeをカノニカルにすると、
-省略された最初の引数は、updown_eqType であると推論できるので、
+省略された最初の（eqType型の）引数は、updown_eqType であると推論できるので、
 最初の引数を省略したeq_opまたは ``==`` にupdown型の値を書いてもよい。
 *)
 
@@ -483,14 +482,11 @@ Proof.
 Qed.
 
 (**
-nat_eqTypeを定義する。
+nat_eqType型を定義する。
  *)
 Definition nat_eqMixin := @EqMixin nat eqn nat_eqP. (* EqMixin nat_eqP でもよい。 *)
 Canonical Structure nat_eqType := @EqType nat nat_eqMixin. (* EqType nat_eqMixin *)
 Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
-
-Check eq_op 1 1 : bool.
-Check 1 == 1 : bool.
 
 (**
 nat型の値に対して、``==`` が使用可能になる。
@@ -506,6 +502,9 @@ End SmallSSR.                            (* Small SSReflect *)
 # SSReflectの機能を使う
 
 ## updown型の例
+
+スモール SSReflect で定義したupdown_eqType型を本物のSSReflectで定義してみる。
+eqType型クラスは、SSReflectの``eqtype.v``で定義されているものを使う。
 *)
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat.
 
@@ -513,9 +512,14 @@ Lemma updown_eqP (x y : updown) : reflect (x = y) (eqUD x y).
 Proof.
   by apply (iffP idP); case x; case y.
 Qed.
-
 Definition updown_eqMixin := EqMixin updown_eqP.
 Canonical updown_eqType := EqType updown updown_eqMixin.
+
+(**
+SSReflectにおいて、自分で定義した型に対して、
+Leibniz同値関係とbool値等式のリフレクションをするには、
+以上の定義（等価性の証明と、型の定義）だけをすればよい。
+ *)
 
 Goal forall x y : updown, x == y -> x = y.
 Proof.
@@ -530,12 +534,15 @@ Proof.
 Qed.
 
 (**
-## 自然数型の例
+## bool値等式を使うと証明が易しくなる例
+
+最後に、bool値等式を使うと証明が易しくなる例を示す。
+ただし自然数の場合である。
 *)
 
 Lemma eqn_add2l (p m n : nat) : (p + m == p + n) = (m == n).
 Proof.
-  by elim: p.                           (* ワンライナー *)
+  by elim: p.                               (* ワンライナー *)
 Qed.
 
 Goal forall (p m n : nat), (p + m = p + n) -> (m = n).
@@ -552,9 +559,9 @@ Qed.
 
 1. 「SSReflectもどき」をつくってみた
 
-2. SSReflect で、Leibniz同値関係 (``x = y``) と bool値等式 (``x == y``) が相互に変換できるのは、
-両者が等価であることが、updown型で、証明されているからである。
-（別な型を定義した場合は、別途同様に証明しなければならない）
+2. x,yがupdown型のとき、Leibniz同値関係 (``x = y``) 
+と bool値等式 (``x == y``) が相互に変換（リフレクション）できるのは、
+両者が等価であることが、updown_eqType型を作るときに証明されているからである。
 
 3. 上記を実現するために、Coqのコアーション(coersion)や
 カノニカル・ストラクチャ(Canonical Structure)を利用する。
