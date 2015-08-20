@@ -43,10 +43,11 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 2. Reflect補題の証明
 3. eqType型クラスの定義と、eq_op (``==``) の定義
 4. 決定可能なbool値等式とLeibniz同値関係の等価性の証明
-5. Viewとその補題の証明
-6. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
-7. 以上をSSReflectの機能を使っておこなう場合
-8. `==``を使うと証明が簡単になる例 (自然数の例）
+5. eqTypeのインスタンスを定義する。
+6. Viewとその補題の証明
+7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
+8. 以上をSSReflectの機能を使っておこなう場合
+9. `==``を使うと証明が簡単になる例 (自然数の例）
 *)
 
 (**
@@ -302,14 +303,6 @@ updown_eqTypeをeqType型の値として引数の推論に使うよう、登録�
 *)
 
 (**
-以上を箇条書きにすると：
-1. 最初の引数を省略したeq_opまたは ``==`` に、updown型の値を書いた場合において。
-2. eqType型のカノニカルインスタンスとしてupdown_eqTypeが登録されているので、それが見つけられる。
-3. eq_opの最初の引数が``T:=updown_eqType``であるとする。
-4. eq_opの定義から、以降の引数は、``sort updown_eqType``型 であることになる。
-5. ``sort updown_eqType`` は updown である。
-6. 以降の引数にupdown型の値を書くことが許されるようになる。
-
 つまり、
 
 updown_eqTypeをカノニカルにすると、
@@ -515,9 +508,10 @@ Qed.
 
 End SmallSSR.                            (* Small SSReflect *)
 
-
 (**
 # SSReflectの機能を使う
+
+（SSReflectをインストールしていない場合は、ここから最後までをコメントアウトしてください）
 
 ## updown型の例
 
@@ -575,14 +569,13 @@ Qed.
 (**
 # まとめ
 
-1. 「SSReflectもどき」をつくってみた
+1. 「SSReflectもどき」をつくってみた。
 
-2. x,yがupdown型のとき、Leibniz同値関係 (``x = y``) 
-と bool値等式 (``x == y``) が相互に変換（リフレクション）できるのは、
-両者が等価であることが、updown_eqType型を作るときに証明されているからである。
+2. xxx_eqType型を作るときに、Leibniz同値関係(x = y) 
+と、bool値等式(x == y)が等価であることを証明する必要がある。
 
-3. 上記を実現するために、Coqのコアーション(coersion)や
-カノニカル・ストラクチャ(Canonical Structure)を利用する。
+3. 「==」を使うために、
+カノニカル（カノニカル・ストラクチャCanonical Structure)が必要になる。
 *)
 
 (**
