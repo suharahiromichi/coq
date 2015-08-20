@@ -235,6 +235,7 @@ bool値等式とLeibniz同値関係の等価性を証明する。
 Lemma updown_eqP : forall (x y : updown), reflect (x = y) (eqUD x y).
 Proof.
   intros x y.
+  (* apply (iffP idP); now case x; case y. *)
   apply (iffP idP).
   - now case x; case y.                     (* eqUD x y -> x = y *)
   - now case x; case y.                     (* x = y -> eqUD x y *)
@@ -253,7 +254,7 @@ updown_eqType型を定義する。
 EqType型クラスからupdown_eqType型を作る。
  *)
 Definition updown_eqMixin := @EqMixin updown eqUD updown_eqP.
-Definition updown_eqType  := @EqType updown updown_eqMixin.
+Canonical updown_eqType  := @EqType updown updown_eqMixin.
 
 Fail Check eq_op up up : bool.          (* ！？ *)
 Fail Check up == up : bool.             (* ！？ *)
@@ -334,6 +335,10 @@ updown型の値に対して、``==`` が使用可能になる。
  *)
 Check eq_op up up : bool.
 Check up == up : bool.
+
+(* 念のため。 *)
+Check up : updown.
+Check up : sort updown_eqType.
 
 (**
 蛇足：コアーションは、表記上で、型を変換する関数を省略できることである。
@@ -494,6 +499,19 @@ nat型の値に対して、``==`` が使用可能になる。
  *)
 Check eq_op 1 1 : bool.
 Check 1 == 1 : bool.
+
+Lemma eqn_add2l p m n : (p + m == p + n) = (m == n).
+Proof.
+  now induction p.
+Qed.
+
+Goal forall p m n, (p + m = p + n) -> (m = n).
+Proof.
+  intros p m n H.
+  apply (introT eqP) in H.
+  apply (elimT eqP).
+  now rewrite <- (eqn_add2l p m n).
+Qed.
 
 End SmallSSR.                            (* Small SSReflect *)
 
