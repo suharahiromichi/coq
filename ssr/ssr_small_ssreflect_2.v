@@ -39,14 +39,14 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 
 ## 説明の流れ
 
-1. bool型からProp型へのコアーション
-2. Reflect補題の証明
-3. eqType型クラスの定義と、eq_op (``==``) の定義
-4. 決定可能なbool値等式とLeibniz同値関係の等価性の証明
+1. bool型からProp型へのコアーションを定義する。
+2. Reflect補題の証明する。iffP、idP。
+3. eqType型クラスの定義と、eq_op (``==``) の定義、補題eqPの証明をする。
+4. 決定可能なbool値等式とLeibniz同値関係の等価性の証明する。
 5. eqTypeのインスタンスを定義する。
-6. Viewとその補題の証明
+6. Viewとその補題の証明する。elimT、introT。
 7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
-8. 以上をSSReflectの機能を使っておこなう場合
+8. 以上をSSReflectの機能を使っておこなう場合の例
 9. `==``を使うと証明が簡単になる例 (自然数の例）
 *)
 
@@ -231,7 +231,7 @@ Qed.
 *)
 
 (**
-bool値等式とLeibniz同値関係の等価性を証明する。
+### bool値等式とLeibniz同値関係の等価性を証明する。
  *)
 Lemma updown_eqP : forall (x y : updown), reflect (x = y) (eqUD x y).
 Proof.
@@ -250,12 +250,12 @@ Check eqUD : updown -> updown -> bool.    (* bool値等式 *)
 Check eqUD : updown -> updown -> Prop.    (* bool型からProp型へのコアーションが有効なため。 *)
 
 (**
-updown_eqType型を定義する。
+### updown_eqType型を定義する。
 
 EqType型クラスからupdown_eqType型を作る。
  *)
 Definition updown_eqMixin := @EqMixin updown eqUD updown_eqP.
-Canonical updown_eqType  := @EqType updown updown_eqMixin.
+Definition updown_eqType := @EqType updown updown_eqMixin.
 
 Fail Check eq_op up up : bool.          (* ！？ *)
 Fail Check up == up : bool.             (* ！？ *)
@@ -339,7 +339,7 @@ Check up : sort updown_eqType.
 *)
 
 (**
-## View
+## Viewとその補題
 
 SSReflectでは、``apply/V`` と書くことができ、そのVをViewと呼ぶ。
 Viewのみapplyするのではなく、View Hintとして登録された補題が自動的に補われる（場合がある）。
@@ -497,6 +497,7 @@ Lemma eqn_add2l p m n : (p + m == p + n) = (m == n).
 Proof.
   now induction p.
 Qed.
+Print  eqn_add2l.
 
 Goal forall p m n, (p + m = p + n) -> (m = n).
 Proof.
