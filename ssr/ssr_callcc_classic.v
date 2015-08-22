@@ -32,7 +32,8 @@ Unset Strict Implicit.
 (**
 ``call/cc``から排中律を証明する。
  *)
-Goal (forall P, ((P -> False) -> P) -> P) -> forall P, P \/ ~P.
+Goal (forall (P : Prop), ((P -> False) -> P) -> P) ->
+forall (P : Prop), P \/ ~P.
 Proof.
   move=> Callcc P.
   apply: (Callcc (P \/ ~P)).
@@ -46,7 +47,8 @@ Qed.
 (**
 ``call/cc``から二重否定除去を証明する。
  *)
-Goal (forall P, ((P -> False) -> P) -> P) -> forall P, ~ ~ P -> P.
+Goal (forall (P : Prop), ((P -> False) -> P) -> P) ->
+forall (P : Prop), ~ ~ P -> P.
 Proof.
   move=> Callcc P.
   apply: Callcc => H1 H2.
@@ -57,9 +59,23 @@ Proof.
 Qed.
 
 (**
+二重否定除去からcall/cc
+ *)
+Goal (forall (P : Prop), ~ ~ P -> P) ->
+(forall (P : Prop), ((P -> False) -> P) -> P).
+Proof.
+  move=> Pe P H1.
+  apply: (Pe P) => HnP.
+  apply HnP.
+  apply H1 => HP.
+  apply HnP.
+  apply HP.
+Qed.
+
+(**
 ``call/cc``からパースの論理式を証明する。
  *)
-Goal (forall P, ((P -> False) -> P) -> P) ->
+Goal (forall (P : Prop), ((P -> False) -> P) -> P) ->
 forall (P Q : Prop), ((P -> Q) -> P) -> P.
 Proof.
   move=> Callcc P Q H1.
@@ -70,11 +86,12 @@ Proof.
   apply: HP.
 Qed.
 
-(**
-二重否定除去から、``call/cc``を証明できるか？
-
-これはできないのではないか。できないなら、
-「継続と二重否定が等価」だというのはまずいのではないか。
-*)
+(* パースの論理式からcall/cc *)
+Goal (forall (P Q : Prop), ((P -> Q) -> P) -> P) ->
+forall (P : Prop) , ((P -> False) -> P) -> P.
+Proof.
+  move=> Pe P.
+  apply (Pe P False).
+Qed.
 
 (* END *)
