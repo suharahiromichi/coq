@@ -47,7 +47,7 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 6. Viewとその補題の証明する。elimT、introT。
 7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
 8. 以上をSSReflectの機能を使っておこなう場合の例
-9. `==``を使うと証明が簡単になる例 (自然数の例）
+9. ``==``を使うと証明が簡単になる例 (自然数の例）
 *)
 
 (**
@@ -140,7 +140,7 @@ Inductive reflect (P : Prop) : bool -> Set :=
 
 (**
 ふたつのReflect補題を証明しておく。
-あとでbool値等式がLeibniz同値関係が等価であることの説明に使う。
+あとでbool値等式がLeibniz同値関係が等価であることの証明に使う。
 *)
 
 (**
@@ -194,7 +194,6 @@ Record eqType :=
       sort : Type;                          (* 補足1参照 *)
       m : mixin_of sort
     }.
-Check sort : eqType -> Type.
 
 (**
 実際に使うために、eq_op (``==``) を定義する。
