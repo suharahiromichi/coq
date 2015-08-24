@@ -421,13 +421,21 @@ Qed.
 
 EqType の ``sort : Type`` を ``sort :> Type`` とすることによって、
 eqTypeからTypeへのコアーションを有効にできる。
+
 ``[sort] : eqType >-> Sortclass``
 
-これによって、``Lemma eqP (T : eqType) : forall {x y : sort T},...``
-のsortを省略して、`Lemma eqP (T : eqType) : forall {x y : T},...``と表記できる。
+これによって、
 
-また、eq_op が、
+``Lemma eqP (T : eqType) : forall {x y : sort T},...``
+
+のsortを省略して、
+
+``Lemma eqP (T : eqType) : forall {x y : T},...``
+
+と表記できる。また、eq_op が、
+
 ``Check @eq_op updown_eqType : updown_eqType -> updown_eqType -> bool.``
+
 と見えるようになる。
 
 しかし、これはカノニカルによる引数の推論とは全く別のことである。
