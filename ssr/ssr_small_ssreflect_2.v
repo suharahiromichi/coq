@@ -32,7 +32,7 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 ``https://github.com/suharahiromichi/coq/tree/master/ssr/ssr_small_ssreflect_2.v``
 
 - 以下の版で動作を確認した。
-``8.4pl2``
+``8.4pl3``
 
 
 # 概要
@@ -46,14 +46,13 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 5. eqTypeのインスタンスを定義する。
 6. Viewとその補題の証明する。elimT、introT。
 7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
-8. 以上をSSReflectの機能を使っておこなう場合の例
-9. ``==``を使うと証明が簡単になる例 (自然数の例）
 *)
 
 (**
 ## updown型
 
-4.と6.と7.の共通例題として、UP(up),OFF(off),DOWN(dn)の三値をとるupdown型を使う。
+このうち、4.と5.と7.は、等式の両辺の型ごとにおこなう必要がある。
+ここでは、、UP(up),OFF(off),DOWN(dn)の三値をとるupdown型を例とする。
 *)
 
 (**
@@ -251,7 +250,7 @@ Check eqUD : updown -> updown -> Prop.    (* bool型からProp型へのコアー
 (**
 ### updown_eqType型を定義する。
 
-EqType型クラスからupdown_eqType型を作る。
+eqType型クラスからupdown_eqType型を作る。
  *)
 Definition updown_eqMixin := @EqMixin updown eqUD updown_eqP.
 Definition updown_eqType := @EqType updown updown_eqMixin.
@@ -262,8 +261,7 @@ Fail Check up == up : bool.             (* ！？ *)
 (**
 eq_op にupdown型の値が書けない！？
 
-
-説明：
+以下に説明する。
 
 eq_op (``==``) は、次の型を持つ。
 *)
@@ -310,7 +308,7 @@ updown_eqTypeをカノニカルにすると、
 *)
 
 (**
-説明（終わり）
+説明終わり。
 *)
 
 (**
@@ -449,10 +447,18 @@ sortによるeqTypeからTypeへの変換は、すべて明示的に指定する
 DefinitionとCanonical Structureコマンドをまとめて、以下のように書くこともできる。
 
 ``Canonical Structure updown_eqType := @EqType updown bool_eqMixin.``
+
+また、SSReflectの場合は、次のようになる。
+
+``Canonical updown_eqType := @EqType updown bool_eqMixin.``
+
+いずれの場合も、(@を書かないことで）EqTypeの第1引数を省略することができる。
 *)
 
 (**
 # 補足3
+
+updown型の代わりにnat型でおこなうと、以下のようになる。
 *)
 
 (**
@@ -500,12 +506,24 @@ nat型の値に対して、``==`` が使用可能になる。
 Check eq_op 1 1 : bool.
 Check 1 == 1 : bool.
 
+(**
+この補題は、bool値等式なので、
+計算で（つまり、unfold と simpl と rewrite で）証明できる。
+ *)
 Lemma eqn_add2l p m n : (p + m == p + n) = (m == n).
 Proof.
+  induction p as [|p IHp].
+  - simpl. reflexivity.
+  - unfold eq_op in *. simpl in *.
+    rewrite IHp. reflexivity.
+  Restart.
   now induction p.
 Qed.
-Print  eqn_add2l.
 
+(**
+リフレクションで（introTやeqPなどの補題を使う）、
+bool値等式に変換して証明する。
+ *)
 Goal forall p m n, (p + m = p + n) -> (m = n).
 Proof.
   intros p m n H.
@@ -557,7 +575,6 @@ Qed.
 ## bool値等式を使うと証明が易しくなる例
 
 最後に、bool値等式を使うと証明が易しくなる例を示す。
-ただし自然数の場合である。
 *)
 
 Lemma eqn_add2l (p m n : nat) : (p + m == p + n) = (m == n).
@@ -590,16 +607,16 @@ Qed.
 # 参考文献
 
 1. アフェルト レナルド 「定理証明支援系 Coq による形式検証」
-``https://staff.aist.go.jp/reynald.affeldt/ssrcoq/coq-kyoto2015.pdf``
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/coq-kyoto2015.pdf
 
 2. Assia Mahboubi, Enrico Tassi, "Canonical Structures for the working Coq user"
-``https://hal.inria.fr/hal-00816703v1/document``
+https://hal.inria.fr/hal-00816703v1/document
 
 The essence of the Canonical Structures mechanism is to extend the unification algorithm
 of the Coq system with a database of hints. (p.3)
 
 2. @suharahiromichi, 「SSReflectのViewとView Hintについてのメモ」
-``http://qiita.com/suharahiromichi/items/02c7f42809f2d20ba11a``
+http://qiita.com/suharahiromichi/items/02c7f42809f2d20ba11a
 *)
 
 (* END *)
