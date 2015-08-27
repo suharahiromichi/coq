@@ -18,7 +18,7 @@
 CoqのSmall Scale Reflection (SSReflect) 拡張です。
 
 今回は、SSReflectのしくみを理解することを目的に、
-Starndard Coqをもとに「SSReflectもどき」を作り、
+Starndard Coqで「SSReflectもどき」を作り、
 Leibniz同値関係とbool値等式のリフレクションができるまでを示します。
 
 それを通して、
@@ -52,7 +52,7 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 ## updown型
 
 このうち、4.と5.と7.は、等式の両辺の型ごとにおこなう必要がある。
-ここでは、、UP(up),OFF(off),DOWN(dn)の三値をとるupdown型を例とする。
+ここでは、UP(up),OFF(off),DOWN(dn)の三値をとるupdown型を例とする。
 *)
 
 (**
@@ -216,7 +216,8 @@ Check @eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
 
 eq_op は Leibniz同値関係と等価であるという補題を証明しておく。この補題は最後に使う。
 *)
-Lemma eqP : forall {T : eqType} {x y : sort T}, reflect (x = y) (@eq_op T x y).
+Lemma eqP : forall {T : eqType} {x y : sort T},
+              reflect (x = y) (@eq_op T x y).
 Proof.
   intro T.
   case T.
@@ -402,6 +403,7 @@ SSReflectでは、ゴールが``x = y``のとき、``apply/eqP``を実行する�
 このとき、View Hintとして、introT が使われる。すなわち、``apply (introT eqP)`` である。
 *)
 
+(* ゴールに適用する例 *)
 Goal forall x y : updown, x == y -> x = y.
 Proof.
   intros x y H.
@@ -412,6 +414,18 @@ Proof.
   apply (elimT eqP).                        (* apply/eqP *)
   (* Goal : x == y *)
   now apply H.
+Qed.
+
+(* 前提Hに適用する例 *)
+Goal forall x y : updown, x == y -> x = y.
+Proof.
+  intros x y H.
+  Check (elimT eqP H) : x = y.
+  rewrite (elimT eqP H).
+  Undo 1.
+  apply (elimT eqP) in H.
+  rewrite H.
+  reflexivity.
 Qed.
 
 (**
@@ -517,7 +531,7 @@ Proof.
   - unfold eq_op in *. simpl in *.
     rewrite IHp. reflexivity.
   Restart.
-  now induction p.
+  induction p; auto.
 Qed.
 
 (**
@@ -529,7 +543,8 @@ Proof.
   intros p m n H.
   apply (introT eqP) in H.
   apply (elimT eqP).
-  now rewrite <- (eqn_add2l p m n).
+  rewrite <- (eqn_add2l p m n).
+  auto.
 Qed.
 
 End SmallSSR.                            (* Small SSReflect *)
