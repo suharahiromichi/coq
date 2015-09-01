@@ -258,9 +258,10 @@ Section Sample4_5.
     Undo 1.
 
     Check introTF (idP (a || b)).
-    apply/(introTF (idP (a || b))).
+    apply (introTF (idP (a || b))).
+
     Check equivPif (idP (b || a)).
-    apply/(equivPif (idP (b || a))).
+    apply (equivPif (idP (b || a))).
     
     (* 説明のため、冗長に書いています。 *)
     - move/orP=> H; apply/orP; case: H; by [right | left].
