@@ -242,8 +242,7 @@ Tが無矛盾ならは、Comを導けない(T ⊬ Com)。
 Theorem T7_5_13 : Con -> ~ PrT ⌜Con⌝.
 Proof.
   apply: Ax31.
-  have H : Con -> σ by apply L7_5_8.       (* -> だけ使う。 *)
-  move/(L7_4_3 H).
+  move/(L7_4_3 (iffLR L7_5_8)).
   apply: Ax3.
   by apply: T7_5_5_1.
 Qed.
