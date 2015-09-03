@@ -403,7 +403,9 @@ SSReflectでは、ゴールが``x = y``のとき、``apply/eqP``を実行する�
 このとき、View Hintとして、introT が使われる。すなわち、``apply (introT eqP)`` である。
 *)
 
-(* ゴールに適用する例 *)
+(**
+ ゴールに適用する例
+ *)
 Goal forall x y : updown, x == y -> x = y.
 Proof.
   intros x y H.
@@ -416,7 +418,9 @@ Proof.
   now apply H.
 Qed.
 
-(* 前提Hに適用する例 *)
+(**
+ 前提Hに適用する例
+ *)
 Goal forall x y : updown, x == y -> x = y.
 Proof.
   intros x y H.
@@ -426,6 +430,39 @@ Proof.
   apply (elimT eqP) in H.
   rewrite H.
   reflexivity.
+Qed.
+
+(**
+## もう少し複雑な例
+
+「==」の対称性は証明していませんでした。
+これは、Leibniz同値関係を使って証明できる。
+*)
+
+(**
+さらにView補題を証明する。
+*)
+Lemma equivPif :
+  forall {P Q : Prop} {b : bool},
+    reflect P b -> (Q -> P) -> (P -> Q) -> 
+    (match b with
+       | true => Q
+       | false => ~ Q
+     end).
+Proof.
+  intros P Q b Hb.
+  case Hb; auto.
+Qed.
+
+(**
+ゴールの「=」の両辺はboolであることに注意してください。
+ *)
+Goal forall (x y : updown), (x == y) = (y == x).
+Proof.
+  intros x y.
+  apply (introTF eqP).                      (* if y == x then x = y else x <> y *)
+  now apply (equivPif eqP).                 (* x = y -> y = x *)
+                                            (* y = x -> x = y *)
 Qed.
 
 (**
@@ -469,85 +506,8 @@ DefinitionとCanonical Structureコマンドをまとめて、以下のように
 いずれの場合も、(@を書かないことで）EqTypeの第1引数を省略することができる。
 *)
 
-(**
-# 補足3
-
-updown型の代わりにnat型でおこなうと、以下のようになる。
-*)
-
-(**
-nat型を引数とする、決定可能なbool値等式を定義する。
- *)
-Fixpoint eqn m n {struct m} :=
-  match m, n with
-  | 0, 0 => true
-  | S m', S n' => eqn m' n'
-  | _, _ => false
-  end.
-
-(**
-bool値等式とLeibniz同値関係の等価性を証明する。
- *)
-Lemma nat_eqP : forall (x y : nat), reflect (x = y) (eqn x y).
-Proof.
-  intros n m.
-  apply (iffP idP).
-  (* eqn n m -> n = m *)
-  - generalize dependent m.
-    induction n; intros m.
-    + now destruct m.
-    + destruct m as [|m' IHm'].
-      * now simpl.
-      * simpl. intro H. f_equal.
-        now apply IHn.
-  (* n = m -> eqn n m *)
-  - intros H.
-    rewrite <- H.
-    now elim n.
-Qed.
-
-(**
-nat_eqType型を定義する。
- *)
-Definition nat_eqMixin := @EqMixin nat eqn nat_eqP. (* EqMixin nat_eqP でもよい。 *)
-Canonical Structure nat_eqType := @EqType nat nat_eqMixin. (* EqType nat_eqMixin *)
-Print Canonical Projections.                (* nat <- sort ( nat_eqType ) *)
-
-(**
-nat型の値に対して、``==`` が使用可能になる。
-（eq_opの最初の引数 ``T:=nat_eqType`` が省略できるようになる。）
- *)
-Check eq_op 1 1 : bool.
-Check 1 == 1 : bool.
-
-(**
-この補題は、bool値等式なので、
-計算で（つまり、unfold と simpl と rewrite で）証明できる。
- *)
-Lemma eqn_add2l p m n : (p + m == p + n) = (m == n).
-Proof.
-  induction p as [|p IHp].
-  - simpl. reflexivity.
-  - unfold eq_op in *. simpl in *.
-    rewrite IHp. reflexivity.
-  Restart.
-  induction p; auto.
-Qed.
-
-(**
-リフレクションで（introTやeqPなどの補題を使う）、
-bool値等式に変換して証明する。
- *)
-Goal forall p m n, (p + m = p + n) -> (m = n).
-Proof.
-  intros p m n H.
-  apply (introT eqP) in H.
-  apply (elimT eqP).
-  rewrite <- (eqn_add2l p m n).
-  auto.
-Qed.
-
 End SmallSSR.                            (* Small SSReflect *)
+
 
 (**
 # SSReflectの機能を使う
@@ -586,25 +546,11 @@ Proof.
   by apply H.
 Qed.
 
-(**
-## bool値等式を使うと証明が易しくなる例
-
-最後に、bool値等式を使うと証明が易しくなる例を示す。
-*)
-
-Lemma eqn_add2l (p m n : nat) : (p + m == p + n) = (m == n).
+Goal forall (x y : updown), (x == y) = (y == x).
 Proof.
-  by elim: p.                               (* ワンライナー *)
+  move=> x y.
+  by apply/eqP/eqP.
 Qed.
-
-Goal forall (p m n : nat), (p + m = p + n) -> (m = n).
-Proof.
-  move=> p m n.
-  move/eqP => H.                            (* H : p + m == p + n *)
-  apply/eqP.                                (* Goal : m == n *)
-  by rewrite -(eqn_add2l p m n).
-Qed.
-
 
 (**
 # まとめ
@@ -629,6 +575,9 @@ https://hal.inria.fr/hal-00816703v1/document
 
 The essence of the Canonical Structures mechanism is to extend the unification algorithm
 of the Coq system with a database of hints. (p.3)
+
+3. mathink, 「tree@SSReflect」
+http://www.mathink.net/program/ssr_tree.html
 
 2. @suharahiromichi, 「SSReflectのViewとView Hintについてのメモ」
 http://qiita.com/suharahiromichi/items/02c7f42809f2d20ba11a
