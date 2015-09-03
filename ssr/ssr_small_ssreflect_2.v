@@ -454,6 +454,24 @@ Proof.
   case Hb; auto.
 Qed.
 
+Module test.
+Variables (x y : updown).
+Check @introTF (x = y) (x == y) (y == x) eqP :
+  (match y == x with
+    | true => x = y
+    | false => x <> y
+  end) ->
+  (x == y) = (y == x).
+
+Check @equivPif (y = x) (x = y) (y == x) eqP : 
+  (x = y -> y = x) ->
+  (y = x -> x = y) ->
+  (match y == x with
+    | true => x = y
+    | false => x <> y
+   end).
+End test.
+
 (**
 ゴールの「=」の両辺はboolであることに注意してください。
  *)
