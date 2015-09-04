@@ -435,12 +435,13 @@ Qed.
 (**
 ## もう少し複雑な例
 
-「==」の対称性は証明していませんでした。
+「==」の対称性は証明する。
+
 これは、Leibniz同値関係を使って証明できる。
 *)
 
 (**
-さらにView補題を証明する。
+必要なView補題を証明する。
 *)
 Lemma equivPif :
   forall {P Q : Prop} {b : bool},
@@ -475,12 +476,26 @@ End test.
 (**
 ゴールの「=」の両辺はboolであることに注意してください。
  *)
+Lemma ud_eq_sym (x y : updown) : (x == y) = (y == x).
+Proof.
+  apply (introTF eqP).                      (* Goal : if y == x then x = y else x <> y *)
+  now apply (equivPif eqP).                 (* Goal 1 : x = y -> y = x *)
+                                            (* Goal 2 : y = x -> x = y *)
+Qed.
+
+(**
+eqType一般で証明する場合
+*)
+Lemma eq_sym (T : eqType) (x y : sort T) : (x == y) = (y == x).
+Proof.
+  apply (introTF eqP).
+  now apply (equivPif eqP).
+Qed.
+
 Goal forall (x y : updown), (x == y) = (y == x).
 Proof.
   intros x y.
-  apply (introTF eqP).                      (* if y == x then x = y else x <> y *)
-  now apply (equivPif eqP).                 (* x = y -> y = x *)
-                                            (* y = x -> x = y *)
+  apply eq_sym.
 Qed.
 
 (**
@@ -564,10 +579,21 @@ Proof.
   by apply H.
 Qed.
 
+Lemma ud_eq_sym (x y : updown) : (x == y) = (y == x).
+Proof.
+  by apply/eqP/eqP.
+Qed.
+
+(* eqTypeの定義では、補足1のコアーションが有効になるので、sort T としない。 *)
+Lemma eq_sym (T : eqType) (x y : T) : (x == y) = (y == x).
+Proof.
+    by apply/eqP/eqP.
+Qed.
+
 Goal forall (x y : updown), (x == y) = (y == x).
 Proof.
-  move=> x y.
-  by apply/eqP/eqP.
+  intros x y.
+  apply eq_sym.
 Qed.
 
 (**
