@@ -45,7 +45,8 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 4. 決定可能なbool値等式とLeibniz同値関係の等価性の証明する。
 5. eqTypeのインスタンスを定義する。
 6. Viewとその補題の証明する。elimT、introT。
-7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例
+7. Leibniz同値関係とbool値等式のリフレクション（x = y と x == y の相互変換）の例。
+8. 「==」の対称性の証明の例。
 *)
 
 (**
@@ -194,8 +195,13 @@ Record eqType :=
       m : mixin_of sort
     }.
 
+Check @op : forall T : Type, mixin_of T -> T -> T -> bool.
+
 (**
 実際に使うために、eq_op (``==``) を定義する。
+
+レコードのセレクタopに、レコードのインスタンス(m T)を適用する。
+ただし、(sort T)は、mixin_ofの型引数で、T:=(sort T)となる。
 *)
 Definition eq_op {T : eqType} := @op (sort T) (m T).
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
@@ -203,7 +209,7 @@ Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 Check eq_op : (sort _) -> (sort _) -> bool.
 (**
 eq_op は3つの引数を取るが、``{}``で囲んだ最初の引数Tはimplicitになる。
-``==`` のときもTは省略される。
+``==`` のときも最初の引数Tは省略される。
  *)
 
 Check @eq_op : forall (T : eqType), (sort T) -> (sort T) -> bool.
@@ -329,7 +335,7 @@ Check up : sort updown_eqType.
 (**
 蛇足：コアーションは、表記上で、型を変換する関数を省略できることである。
 一方、カノニカル・ストラクチャーは、省略された引数を推論するためのヒントを登録することである。
-*)
+ *)
 
 (**
 ## Viewとその補題
@@ -428,9 +434,7 @@ Proof.
 Qed.
 
 (**
-## もう少し複雑な例
-
-「==」の対称性は証明する。
+## 「==」の対称性の証明
 
 これは、Leibniz同値関係を使って証明できる。
 *)
