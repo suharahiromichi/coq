@@ -206,7 +206,7 @@ eq_op は3つの引数を取るが、``{}``で囲んだ最初の引数Tはimplic
 ``==`` のときもTは省略される。
  *)
 
-Check @eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
+Check @eq_op : forall (T : eqType), (sort T) -> (sort T) -> bool.
 (**
 しかし、``@eq_op``とすると、引数Tを指定したり、Checkで見ることができる。
  *)
@@ -217,7 +217,7 @@ Check @eq_op : forall T : eqType, (sort T) -> (sort T) -> bool.
 eq_op は Leibniz同値関係と等価であるという補題を証明しておく。この補題は最後に使う。
 *)
 Lemma eqP : forall {T : eqType} {x y : sort T},
-              reflect (x = y) (@eq_op T x y).
+              reflect (x = y) (eq_op x y).
 Proof.
   intro T.
   case T.
@@ -303,17 +303,12 @@ updown_eqTypeをeqType型の値として引数の推論に使うよう、登録�
 (**
 つまり、
 
-updown_eqTypeをカノニカルにすると、
+updown_eqTypeをCanonicalにすると、
 省略された最初の（eqType型の）引数は、updown_eqType であると推論できるので、
 最初の引数を省略したeq_opまたは ``==`` にupdown型の値を書いてもよい。
-*)
 
-(**
-説明終わり。
-*)
-
-(**
-Canonical Structureコマンドを使って、updown_eqType を eqTypeのCanonical Instanceにする。
+以上より、実際に、Canonical Structureコマンドを使って、
+updown_eqType を eqTypeのCanonical(Canonical Instance)にする。
 *)
 Canonical Structure updown_eqType.            (* 補足2 *)
 Print Canonical Projections.                  (* updown <- sort ( updown_eqType ) *)
@@ -457,14 +452,14 @@ Qed.
 
 Module test.
 Variables (x y : updown).
-Check @introTF (x = y) (x == y) (y == x) eqP :
+Check introTF eqP :
   (match y == x with
     | true => x = y
     | false => x <> y
   end) ->
   (x == y) = (y == x).
 
-Check @equivPif (y = x) (x = y) (y == x) eqP : 
+Check equivPif eqP : 
   (x = y -> y = x) ->
   (y = x -> x = y) ->
   (match y == x with
@@ -492,6 +487,9 @@ Proof.
   now apply (equivPif eqP).
 Qed.
 
+(**
+カノニカル・ストラクチャが適用されるので、単にapplyすればよい。
+ *)
 Goal forall (x y : updown), (x == y) = (y == x).
 Proof.
   intros x y.
@@ -601,11 +599,13 @@ Qed.
 
 1. 「SSReflectもどき」をつくってみた。
 
-2. xxx_eqType型を作るときに、Leibniz同値関係(x = y) 
+2. eqType型をつかう。
+
+3. そのときに、Leibniz同値関係(x = y) 
 と、bool値等式(x == y)が等価であることを証明する必要がある。
 
 3. 「==」を使うために、
-カノニカル（カノニカル・ストラクチャCanonical Structure)が必要になる。
+カノニカル（カノニカル・ストラクチャCanonical Structure)を使う。
 *)
 
 (**
