@@ -293,9 +293,14 @@ Fail Check eq_op up up.
 ``Error: The term "up" has type "updown" while it is expected to have type "sort ?241"``
 
 最初の引数がupdown_eqTypeであることが判らないのでエラーになる。指定していないから判らない。
-eqType型であることは判っても、そのインスタンスをすべてチェックするわけにはいかない
-（インスタンスの一覧表はない）ため。
+eqType型であることは判っても、そのインスタンスをすべてチェックするわけにはいかないため。
+
+また、sortは、以下の型であり、これも updown_eqType から updown を求めることはできても、
+その逆はできない。
  *)
+Check sort : eqType -> Type.
+Check sort updown_eqType : Type.
+Eval compute in sort updown_eqType.         (* updown *)
 
 (**
 そこで、Canonical Structureコマンドによって、
