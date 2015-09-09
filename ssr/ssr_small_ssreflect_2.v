@@ -90,7 +90,7 @@ Unset Printing Implicit Defensive.
 Set Print All.
 (* Set Printing Coercions. *)
 
-Module SmallSSR.                            (* Small SSReflect *)
+Module SmallSSR.
 (**
 最初のふたつで引数の一部を省略できるようになる。
 ただし、今回はこの設定の有無が影響しないように
@@ -549,13 +549,16 @@ DefinitionとCanonical Structureコマンドをまとめて、以下のように
 いずれの場合も、(@を書かないことで）EqTypeの第1引数を省略することができる。
 *)
 
-End SmallSSR.                            (* Small SSReflect *)
+End SmallSSR.
 
+(**
+ SSReflectをインストールしてある場合は、コメントアウトを外してください。
+ *)
+(*
+Module UseSSR.
 
 (**
 # SSReflectの機能を使う
-
-（SSReflectをインストールしていない場合は、ここから最後までをコメントアウトしてください）
 
 ## updown型の例
 
@@ -594,7 +597,9 @@ Proof.
   by apply/eqP/eqP.
 Qed.
 
-(* eqTypeの定義では、補足1のコアーションが有効になるので、sort T としない。 *)
+(** SSReflectのeqTypeの定義では、
+補足1のコアーションが有効になるので、sort T としない。
+ *)
 Lemma eq_sym (T : eqType) (x y : T) : (x == y) = (y == x).
 Proof.
     by apply/eqP/eqP.
@@ -606,10 +611,13 @@ Proof.
   apply eq_sym.
 Qed.
 
+End UseSSR.
+*)
+
 (**
 # まとめ
 
-1. 「SSReflectもどき」をつくってみた。
+1. リフレクションのしくみをつくってみた。
 
 2. eqType型をつかう。
 
