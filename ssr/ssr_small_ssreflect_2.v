@@ -464,6 +464,10 @@ Proof.
 Qed.
 
 Module test.
+Variables (P Q : Prop) (b c : bool).
+Check introTF : reflect P b -> (if c then P else ~ P) -> b = c.
+Check equivPif : reflect P b -> (Q -> P) -> (P -> Q) -> (if b then Q else ~ Q).
+
 Variables (x y : updown).
 Check introTF eqP :
   (match y == x with
