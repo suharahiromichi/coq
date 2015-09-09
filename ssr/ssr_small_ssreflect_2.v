@@ -32,7 +32,8 @@ Coqのコアーション(coersion)や、カノニカル・ストラクチャ(Can
 # 今回のソースの在処
 
 - Markdown版は以下のソースから生成した。
-``https://github.com/suharahiromichi/coq/tree/master/ssr/ssr_small_ssreflect_2.v``
+
+https://github.com/suharahiromichi/coq/tree/master/ssr/ssr_small_ssreflect_2.v
 
 - 以下の版で動作を確認した。
 ``8.4pl3``
@@ -597,7 +598,8 @@ Proof.
   by apply/eqP/eqP.
 Qed.
 
-(** SSReflectのeqTypeの定義では、
+(**
+SSReflectのeqTypeの定義では、
 補足1のコアーションが有効になるので、sort T としない。
  *)
 Lemma eq_sym (T : eqType) (x y : T) : (x == y) = (y == x).
@@ -631,14 +633,14 @@ End UseSSR.
 (**
 # 参考文献
 
-1. アフェルト レナルド 「定理証明支援系 Coq による形式検証」
+1. アフェルト レナルド, 「定理証明支援系 Coq による形式検証」,
 https://staff.aist.go.jp/reynald.affeldt/ssrcoq/coq-kyoto2015.pdf
 
-2. Assia Mahboubi, Enrico Tassi, "Canonical Structures for the working Coq user"
+2. Assia Mahboubi, Enrico Tassi, "Canonical Structures for the working Coq user",
 https://hal.inria.fr/hal-00816703v1/document
 
-The essence of the Canonical Structures mechanism is to extend the unification algorithm
-of the Coq system with a database of hints. (p.3)
+2. Beta Ziliani, Matthieu Sozeau, "A Unification Algorithm for COQ Featuring Universe Polymorphism and Overloading",
+https://www.mpi-sws.org/~beta/papers/unicoq.pdf
 
 3. mathink, 「tree@SSReflect」
 http://www.mathink.net/program/ssr_tree.html
