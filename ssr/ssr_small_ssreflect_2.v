@@ -231,8 +231,10 @@ Lemma eqP : forall {T : eqType} {x y : sort T},
 Proof.
   intro T.
   case T.
-  intros sort m.
-  now apply m.
+  intros sort m x y.
+  case m.
+  intros op a.
+  apply a.
 Qed.
 
 (**
