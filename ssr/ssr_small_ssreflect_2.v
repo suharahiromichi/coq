@@ -138,7 +138,7 @@ Check true : Prop.                          (* コアーションが使えるよ
 
 ``reflect P b`` は、命題Pとbool値bが等価であることを示す。
 *)
-Inductive reflect (P : Prop) : bool -> Set :=
+Inductive reflect (P : Prop) : bool -> Prop :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
 
@@ -462,28 +462,6 @@ Proof.
   intros P Q b Hb.
   case Hb; auto.
 Qed.
-
-Module test.
-Variables (P Q : Prop) (b c : bool).
-Check introTF : reflect P b -> (if c then P else ~ P) -> b = c.
-Check equivPif : reflect P b -> (Q -> P) -> (P -> Q) -> (if b then Q else ~ Q).
-
-Variables (x y : updown).
-Check introTF eqP :
-  (match y == x with
-    | true => x = y
-    | false => x <> y
-  end) ->
-  (x == y) = (y == x).
-
-Check equivPif eqP : 
-  (x = y -> y = x) ->
-  (y = x -> x = y) ->
-  (match y == x with
-    | true => x = y
-    | false => x <> y
-   end).
-End test.
 
 (**
 ゴールの「=」の両辺はboolであることに注意してください。
