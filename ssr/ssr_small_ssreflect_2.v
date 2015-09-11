@@ -252,10 +252,10 @@ Proof.
   Check @iffP (is_true (eqUD x y))  (x = y) (eqUD x y) (@idP (eqUD x y)).
   apply (iffP idP).
   - case x; case y; auto;                   (* eqUD x y -> x = y *)
-    repeat (intros H; inversion H).
+    (intros H; inversion H).
   - unfold is_true.
     case x; case y; auto;                   (* x = y ->  eqUD x y = true *)
-    repeat (intros H; inversion H).
+    (intros H; inversion H).
 Qed.
 
 (**
