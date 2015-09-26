@@ -7,15 +7,172 @@
 2015/09/24
 *)
 
-Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq.
-Require Import ssralg ssrnum ssrint.
+Require Import ssreflect ssrbool.
+Require Import ssrfun eqtype ssrnat seq.
+Require Import ssralg ssrnum ssrint finset fintype.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-
 Unset Printing Implicit Defensive.
 Set Printing All.
 Set Printing Coercions.
+
+(**
+## PredType のインスタンス
+ *)
+Section Sect1.
+Variable T : Type.
+About pred_of_simpl.
+Check @pred_of_simpl T.
+
+About pred_of_mem.
+Check @pred_of_mem T.
+
+(**
+## ssrbool.v で定義
+ *)
+Check @mkPredType T (pred T) id.
+Compute id [pred n : nat | n < 3] 0.
+Canonical predPredType := @mkPredType T (pred T) id.
+Check predPredType : predType T.
+
+Check @mkPredType T (simpl_pred T) (@pred_of_simpl T).
+Compute pred_of_simpl [pred n : nat | n < 3] 0.
+Canonical simplPredType := @mkPredType T (simpl_pred T) (@pred_of_simpl T).
+Check simplPredType : predType T.
+
+Check @mkPredType T (mem_pred T) (@pred_of_mem T).
+Compute pred_of_mem (mem [:: 0; 1; 2]) 0.
+Canonical memPredType := @mkPredType T (mem_pred T) (@pred_of_mem T).
+Check memPredType : predType T.
+
+(*
+## seq.v で定義
+ *)
+Variable cT : Equality.type.
+
+
+About mem_seq.                              (* シンプルなmember関数 *)
+Check @mem_seq cT.
+Compute mem_seq [:: 0; 1; 2] 0.
+Canonical mem_seq_predType := @mkPredType cT (seq cT) (@mem_seq cT).
+Check mem_seq_predType : predType cT.
+
+About pred_of_eq_seq.                       (* これはなんのためにあるか？ *)
+Check @pred_of_eq_seq cT.
+Compute pred_of_eq_seq [:: 0; 1; 2] 0.      (* mem_seq を呼び出している。 *)
+Canonical seq_predType := @mkPredType cT (seq cT) (@pred_of_eq_seq cT).
+Check seq_predType : predType cT.
+
+End Sect1.
+
+(**
+# mem は、第3引数 （これが \in の右の引数になる) に eqType 型をとる。
+
+そのような型の例：
+ *)
+Section Sect2.
+Check @mem.
+
+(* ssrbool.v の例 *)
+Check [pred n : nat | n < 3] : pred nat.
+Check [pred n : nat | n < 3] : predPredType nat.
+
+Check [pred n : nat | n < 3] : simpl_pred nat.
+Check [pred n : nat | n < 3] : simplPredType nat.
+
+(* seq.v の例 *)
+Check [:: 0; 1; 2] : seq nat.
+Check [:: 0; 1; 2] : seq_predType nat_eqType.
+Check [:: 0; 1; 2] : mem_seq_predType nat_eqType. (* XXX *)
+
+(* finset.v の例 *)
+Check 'I_3 : predArgType.
+Check 'I_3 : pred (ordinal 3).
+Check 'I_3 : predPredType (ordinal 3).
+
+(* vector.v の例 *)
+(* TBD *)
+
+Compute pred nat.                           (* nat -> bool *)
+Compute simpl_pred nat.                     (* simpl_fun nat bool *)
+Compute mem_pred nat.                       (* Mem ...  *)
+
+
+(*
+## 実は mem の結果も memPredType である。
+ *)
+Check mem [pred n : nat | n < 3] : mem_pred nat.
+Check mem [pred n : nat | n < 3] : memPredType nat.
+Check mem [:: 0; 1; 2] : mem_pred nat.
+Check mem [:: 0; 1; 2] : memPredType nat.
+Check mem 'I_3 : mem_pred (ordinal 3).
+Check mem 'I_3 : memPredType (ordinal 3).
+
+End Sect2.
+
+(*
+# \in の定義
+*)
+
+Definition in' :=
+  fun (T : Type)  (S : predType T) (x : T) (A : S) =>
+    (@in_mem T x (@mem T S A)).
+Check in' : forall (T : Type) (S : predType T), T -> S -> bool.
+
+(*
+## mem 単独でなぜ動くか？
+*)
+Check mem [:: 0; 1; 2] : mem_pred nat.
+Print mem_pred.
+Check Mem.
+
+(* 
+二重のコアーションを経て nat -> bool と解釈される。
+ *)
+Check (mem [:: 0; 1; 2]) : mem_pred nat.
+Check (mem [:: 0; 1; 2]) : simpl_pred nat.
+Check (mem [:: 0; 1; 2]) : pred nat.
+Check (mem [:: 0; 1; 2]) : nat -> bool.
+Check (pred_of_mem_pred (mem [:: 0; 1; 2])) : simpl_pred nat.
+Check (pred_of_simpl (pred_of_mem_pred (mem [:: 0; 1; 2]))) : pred nat.
+Check (pred_of_simpl (pred_of_mem_pred (mem [:: 0; 1; 2]))) : nat -> bool.
+
+Compute (mem [:: 0; 1; 2]) 0.
+
+(* 
+## in_mem はなにをしているか (その1 引数の順番の入れ替え)
+ *)
+Unset Printing All.
+Print in_mem.
+(* fun (T : Type) (x : T) => ((nosimpl pred_of_mem) T)^~ x *)
+(* f ^~ x は、xをfの第2引数にわたし、第1引数をopenにしておくこと。 *)
+Check in' 0 [:: 0; 1; 2].
+
+(**
+## in_mem はなにをしているか (その2 型の変換)
+*)
+
+Check @in_mem nat : nat -> mem_pred nat -> bool.
+(*
+引数の順番を、mem_pred nat -> nat -> bool と入れ替えて考えると、
+mem_pred nat 型の関数をもらって、nat -> bool の関数を返すことになる。
+*)
+Check in_mem 0 : mem_pred nat -> bool.
+
+Check in_mem 0 (mem [:: 0; 1; 2]).
+Compute in_mem 0 (mem [:: 0; 1; 2]).
+
+(**
+# Backup
+ *)
+
+(* "\in" の説明のあるパッケージを網羅すること。 *)
+
+Print predType.
+Check mem_seq.
+Compute mem_seq [:: 0; 1; 2] 1.
+Check {mem | @isMem _ _ _ mem }.
 
 (**
 \in の定義はひとつ。つまり、\inというラベルが使いまわされているわけではない。
@@ -127,6 +284,30 @@ Print mem_pred.
 (* mem の引数の順番は、A x で \in とは逆であることに注意。 *)
 (* 第2引数 pT : predType T が、Aの型を決める。 *)
 Check @mem : forall (T : Type) (pT : predType T), pred_sort pT -> mem_pred T.
+
+Check 'I_3 : predArgType.
+Check {set 'I_3 } : predArgType.
+Check mem {set 'I_3 } : mem_pred _.
+Check @mem _ _ {set 'I_3 } : predPredType _.
+Check @mem _ _ {set 'I_3 } : memPredType _.
+Check @mem _ _ {set 'I_3 } : mem_pred _.
+Check @mem _ _ 'I_3 : mem_pred _.
+Check mem 'I_3.
+Check simpl_pred.
+Compute (pred_of_simpl (@SimplFun bool bool xpred0)).
+Compute (fun_of_pred (@SimplFun bool bool xpred0)).
+About PredType.
+Check exist.
+About PredType.
+About mkPredType.   (*  (pT -> T -> bool) を与える。 *)
+(* mkPredType : forall T pT : Type, (pT -> T -> bool) -> predType T *)
+Check pred_of_simpl : forall T : Type, simpl_pred T -> pred T.
+Check mkPredType id.
+Check mkPredType.
+Check mkPredType pred_of_mem.
+Check mkPredType pred_of_simpl.
+
+Print mem_pred.
 
 Check [:: 0; 1; 2] : seq_predType nat_eqType.
 Check [:: 0; 1; 2] : mem_seq_predType nat_eqType.
