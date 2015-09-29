@@ -232,4 +232,48 @@ Locate "[ eta _ ]".                         (* fun x => f x *)
 # predArgType と {: T}
 *)
 
+(**
+# lock と nosimpl
+
+"A Small Scale Reflection Extension for the Coq system" p.53
+*)
+
+Definition addn' n m := locked (plus n m).
+
+Goal forall n m, addn' n m = plus n m.
+Proof.
+  rewrite /=.                               (* 左辺はsimplされない。 *)
+  (* addn' n m = n + m *)
+  unlock addn'.                             (* unfold と同じ効果がおきる。 *)
+  (* n + m = n + m *)
+  done.
+Qed.
+
+
+(**
+nosimpl な関数の例：
+
+ssrbool.v:Definition in_mem T x mp := nosimpl pred_of_mem T mp x.
+ssrnat.v:Definition addn := nosimpl addn_rec.
+ssrnat.v:Definition subn := nosimpl subn_rec.
+ssrnat.v:Definition muln := nosimpl muln_rec.
+ssrnat.v:Definition expn := nosimpl expn_rec.
+ssrnat.v:Definition factorial := nosimpl fact_rec.
+ssrnat.v:Definition double := nosimpl double_rec.
+seq.v:Definition rev T (s : seq T) := nosimpl (catrev s [::]).
+div.v:Definition gcdn := nosimpl gcdn_rec.
+*)
+
+Definition addn'' n m := nosimpl (plus n m).
+Definition addn''' := nosimpl plus.         (* 同じ。 *)
+
+Goal forall n m : nat, addn'' n.+1 m = plus n.+1 m.
+Proof.
+  rewrite /=.                               (* 左辺はsimplされない。 *)
+  (* addn'' n.+1 m = (n + m).+1 *)
+  rewrite /addn'' /=.                       (* 明示的にunfoldすると。 *)
+  (* (n + m).+1 = (n + m).+1 *)
+  done.
+Qed.
+
 (* END *)
