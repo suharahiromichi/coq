@@ -51,32 +51,22 @@ Program Definition bind :
     end.
 Obligation 2.
 Proof.
-  unfold HoareState in *.
-  destruct c1 as [x0 H0].
-  simpl in H0.
-  simpl in Heq_anonymous.
+  elim: c1 Heq_anonymous => x0 H0 /= Heq_anonymous.
   rewrite <- Heq_anonymous in H0.
-  apply p0.
-  now apply H0.
+  by apply/p0/H0.
 Qed.
 Obligation 3.
 Proof.
-  unfold HoareState in *.
-  destruct (c2 x) as [x1 H1].
-  simpl in H1.
-  simpl.
-  destruct x1.
-  exists x.
-  exists s2.
+  elim: (c2 x) => /=.
+  elim=> a' s' H1.
+  exists x s2.
   split.
   (* Q1 s1 x s2 *)
-  - destruct c1 as [x0 H0].
-    simpl in H0.
-    simpl in Heq_anonymous.
+  - elim: c1 Heq_anonymous => x0 /= H0 Heq_anonymous.
     rewrite <- Heq_anonymous in H0.
-    now apply H0.
-  (* Q2 x s2 b0 s0 *)
-  - now apply H1.
+    by apply: H0.
+  (* Q2 x s2 b0 s0 *)    
+  - by apply: H1.
 Qed.
 
 Check bind.
@@ -115,14 +105,11 @@ Fixpoint sequence (x n : nat) : list nat :=
 Lemma SequenceSplit : forall y x z,
                         sequence x (y + z) = sequence x y ++ sequence (x + y) z.
 Proof.
-  induction y; simpl; intros x z.
+  elim=> [| y IHy] x z /=.
   (* y = 0 *)
-  - rewrite add0n. rewrite addn0.
-    reflexivity.
+  - by rewrite add0n addn0.
   (* y = y.+1 *)
-  - rewrite (IHy (x.+1)).
-    rewrite addSn. rewrite addnS.
-    reflexivity.
+  - by rewrite (IHy x.+1 z) addSn addnS.
 Qed.
 
 Program Fixpoint relabel {a : Set} (t : Tree a) {struct t} :
@@ -144,32 +131,25 @@ Locate "`".                            (* proj1_sig *)
 (* ProofCafe 2014_01_25 で教えていただいた証明。 *)
 Proof.
   (* ``let (x0, f) := ` xx in yy`` の xx 部分を場合分けする。 *)
-  case (relabel a l >>= _).
-  simpl.
-  intros tpl H1.
-  destruct tpl as [x0 f].
-  destruct H1 as [t1 H1].
-  destruct H1 as [n2 H1].
-  destruct H1 as [H1 H3].
-  destruct H1 as [H0 H1].
-  destruct H3 as [t2 H3].
-  destruct H3 as [n3 H3].
-  repeat destruct H3.
-  rewrite H4. simpl.
+  case: (relabel a l >>= _) => /=.
+  case=> x' n.
+  case=> t1.
+  case=> n2.
+  case=> [H1 H3].
+  case: H1 => [H0 H1].
+  case: H3 => t2.
+  case=> n3.
+  case=> [H2 H4].
+  case: H2 => [H2 H5].
+  case: H4 => [H3 H4].
+  rewrite H4.
   split.
-  - (* n3 = x + (size t1 + size t2) *)
-    rewrite addnA.                          (* ADD-Nat-Associative law *)
-    rewrite <- H0.
-    destruct H2.
-    now apply H2.
-    
+  - (* n = x + (size t1 + size t2) *)
+    rewrite addnA -H0.
+    by rewrite -H2.
   - (* flatten t1 ++ flatten t2 = sequence x (size t1 + size t2) *)
-    rewrite SequenceSplit.
-    rewrite <- H1.
-    destruct H2.
-    rewrite <- H0.
-    rewrite <- H3.
-    reflexivity.
+    rewrite SequenceSplit /=.
+    by rewrite H1 H5 H0.
 Defined.
 Check relabel.
 
