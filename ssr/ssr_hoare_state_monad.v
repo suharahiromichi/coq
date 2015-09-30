@@ -4,9 +4,7 @@
 (* 後半、HoareState の証明 *)
 (* @suharahiromichi 2014_01_25 *)
 
-Require Import ssreflect ssrbool ssrnat seq eqtype.
-Require Import ssrfun.
-Require Import String.                      (* Error *)
+Require Import ssreflect ssrbool ssrnat seq.
 Require Import Program.                     (* Program *)
 
 Inductive Tree (a : Set) : Set :=
@@ -29,8 +27,7 @@ Definition Pre : Type := s -> Prop.
 Definition Post (a : Set) : Type := s -> a -> s -> Prop.
 
 Program Definition HoareState (pre : Pre) (a : Set) (post : Post a) : Set :=
-  forall (i : {t : s | pre t}),
-    {(x, f) : a * s | post i x f }.
+  forall (i : {t : s | pre t}), {(x, f) : a * s | post i x f }.
 
 Definition top : Pre := fun s => True.
 
@@ -68,7 +65,6 @@ Proof.
   (* Q2 x s2 b0 s0 *)    
   - by apply: H1.
 Qed.
-
 Check bind.
 Infix ">>=" := bind (right associativity, at level 71).
 
@@ -132,24 +128,14 @@ Locate "`".                            (* proj1_sig *)
 Proof.
   (* ``let (x0, f) := ` xx in yy`` の xx 部分を場合分けする。 *)
   case: (relabel a l >>= _) => /=.
-  case=> x' n.
-  case=> t1.
-  case=> n2.
-  case=> [H1 H3].
-  case: H1 => [H0 H1].
-  case: H3 => t2.
-  case=> n3.
-  case=> [H2 H4].
-  case: H2 => [H2 H5].
-  case: H4 => [H3 H4].
-  rewrite H4.
+  case=> x' n [t1] [n2] [[H0 H1] H2].
+  case: H2 => t2 [n3] [[H3 H4] [H5 H6]].
+  rewrite H6.
   split.
-  - (* n = x + (size t1 + size t2) *)
-    rewrite addnA -H0.
-    by rewrite -H2.
-  - (* flatten t1 ++ flatten t2 = sequence x (size t1 + size t2) *)
-    rewrite SequenceSplit /=.
-    by rewrite H1 H5 H0.
+  - (* n = x + size (Node t1 t2) *)
+    by rewrite addnA -H0 -H3.
+  - (* flatten (Node t1 t2) = sequence x (size (Node t1 t2)) *)
+    by rewrite SequenceSplit /= H1 H4 H0.
 Defined.
 Check relabel.
 
