@@ -7,12 +7,13 @@
 Require Import ssreflect ssrbool ssrnat seq.
 Require Import Program.                     (* Program *)
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 Inductive Tree (a : Set) : Set :=
 | Leaf : a -> Tree a
 | Node : Tree a -> Tree a -> Tree a.
-
-Implicit Arguments Leaf [[a]].
-Implicit Arguments Node [[a]].
 
 Fixpoint flatten {a : Set} (t : Tree a) : list a :=
   match t with
@@ -32,14 +33,14 @@ Program Definition HoareState (pre : Pre) (a : Set) (post : Post a) : Set :=
 Definition top : Pre := fun s => True.
 
 Program Definition ret {a : Set} :
-  forall x, HoareState top a (fun i y f => i = f /\ y = x) :=
+  forall x, @HoareState top a (fun i y f => i = f /\ y = x) :=
   fun x s => (x, s).
 
 Program Definition bind :
   forall {a b P1 P2 Q1 Q2},
-    (HoareState P1 a Q1) ->
-    (forall (x : a), HoareState (P2 x) b (Q2 x)) ->
-    HoareState (fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 x s2))
+    (@HoareState P1 a Q1) ->
+    (forall (x : a), @HoareState (P2 x) b (Q2 x)) ->
+    @HoareState (fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 x s2))
                b
                (fun s1 y s3 => exists x, exists s2, Q1 s1 x s2 /\ Q2 x s2 y s3) :=
   fun {a b P1 P2 Q1 Q2} c1 c2 s1 =>
@@ -70,9 +71,9 @@ Infix ">>=" := bind (right associativity, at level 71).
 
 Program Definition bind2 :
   forall {a b P1 P2 Q1 Q2},
-    (HoareState P1 a Q1) ->
-    (HoareState P2 b Q2) ->
-    HoareState (fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 s2))
+    (@HoareState P1 a Q1) ->
+    (@HoareState P2 b Q2) ->
+    @HoareState (fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 s2))
                b
                (fun s1 y s3 => exists x, exists s2, Q1 s1 x s2 /\ Q2 s2 y s3) :=
   fun {a b P1 P2 Q1 Q2} c1 c2 =>
@@ -80,10 +81,10 @@ Program Definition bind2 :
 Check bind2.
 Infix ">>>" := bind2 (right associativity, at level 71).
 
-Program Definition get : HoareState top s (fun i x f => i = f /\ x = i) :=
+Program Definition get : @HoareState top s (fun i x f => i = f /\ x = i) :=
   fun s => (s, s).
 
-Program Definition put (x : s) : HoareState top unit (fun _ _ f => f = x) :=
+Program Definition put (x : s) : @HoareState top unit (fun _ _ f => f = x) :=
   fun _ => (tt, x).
 
 Fixpoint size {a : Set} (t : Tree a) : nat :=
@@ -109,7 +110,7 @@ Proof.
 Qed.
 
 Program Fixpoint relabel {a : Set} (t : Tree a) {struct t} :
-  HoareState top
+  @HoareState top
              (Tree nat)
              (fun i t f => f = i + size t /\ flatten t = sequence i (size t)) :=
     match t with
