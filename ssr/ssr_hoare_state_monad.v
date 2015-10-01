@@ -144,4 +144,52 @@ Check relabel.
 (* coq-8.4pl2 *)
 (* ssreflect-1.4 *)
 
+(* DO 記法 *)
+Delimit Scope monad_scope with monad.
+Open Scope monad_scope.
+
+Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
+Notation "x <- m ; p" :=
+  ((m >>= fun x => p)%monad)
+    (at level 68, right associativity,
+     format "'[' x  <-  '[v' m ']' ; '//' '[' p ']' ']'") : monad_scope.
+(*
+Notation "m ; p" :=
+  ((m >>> p)%monad)
+    (at level 67,
+     right associativity, format "'[' '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
+*)
+Notation "'DO' m 'OD'" := (m) (at level 69, format "DO  '[' m ']'  OD").
+
+Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
+  @HoareState top
+             (Tree nat)
+             (fun i t f => f = i + size t /\ flatten t = sequence i (size t)) :=
+    match t with
+      | Leaf x =>
+        DO
+          n <- get;
+          m <- put (n + 1);
+          ret $ Leaf n
+        OD
+      | Node l r =>
+        DO
+          l' <- relabel' l;
+          r' <- relabel' r;
+          ret $ Node l' r'
+        OD
+    end.
+Obligation 4.
+Proof.
+  case: (relabel' a l >>= _) => /=.
+  case=> x' n [t1] [n2] [[H0 H1] H2].
+  case: H2 => t2 [n3] [[H3 H4] [H5 H6]].
+  rewrite H6.
+  split.
+  - (* n = x + size (Node t1 t2) *)
+    by rewrite addnA -H0 -H3.
+  - (* flatten (Node t1 t2) = sequence x (size (Node t1 t2)) *)
+    by rewrite SequenceSplit /= H1 H4 H0.
+Defined.
+
 (* END *)
