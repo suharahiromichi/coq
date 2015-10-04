@@ -21,11 +21,13 @@ Fixpoint flatten {a : Set} (t : Tree a) : list a :=
     | Node l r => flatten l ++ flatten r
   end.
 
-Definition s := nat.
+Definition s := nat.                        (* 自然数1個を状態として持つ。
+                                             getとputの対象になる。 *)
 
 Definition Pre : Type := s -> Prop.
 
 Definition Post (a : Set) : Type := s -> a -> s -> Prop.
+(* initial state, 返値, final state を意味する。 *)
 
 Program Definition HoareState (pre : Pre) (a : Set) (post : Post a) : Set :=
   forall (i : {t : s | pre t}), {(x, f) : a * s | post i x f }.
@@ -33,8 +35,15 @@ Program Definition HoareState (pre : Pre) (a : Set) (post : Post a) : Set :=
 Definition top : Pre := fun s => True.
 
 Program Definition ret {a : Set} :
-  forall (x : a), @HoareState top a (fun i y f => i = f /\ y = x) :=
+  forall (x : a),
+    @HoareState top a (fun (i : s) (y : a) (f : s) => i = f /\ y = x) :=
   fun x s => (x, s).
+(**
+- i = f は、状態について initial と final がおなじであること。
+- y = x は、返値が、ret の引数と同じであること。
+  を意味する。ただし、
+  返値は、ret の引数の型なので、いろいろな型を取る。
+ *)
 
 Program Definition bind :
   forall {a b P1 P2 Q1 Q2},
@@ -191,5 +200,31 @@ Proof.
   - (* flatten (Node t1 t2) = sequence x (size (Node t1 t2)) *)
     by rewrite SequenceSplit /= H1 H4 H0.
 Defined.
+
+(* もう少し遊んでみる *)
+(* get と put だけからなるプログラム *)
+Check get : HoareState top (fun i x f : s => i = f /\ x = i).
+Check put : forall x : s, HoareState top (fun (i : s) (a : ()) (f : s) => f = x).
+Check get >>= put :
+  @HoareState
+    (fun s1 : s => top s1 /\ _)
+    ()                                      (* put の返値 *)
+    (fun (s1 : s) (y : ()) (s3 : s) => exists x s2 : s, _).
+
+(* 1 という定数を返す。 *)
+Check ret 1 : @HoareState top nat (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1).
+Check ret 1 >>= put :
+  @HoareState
+    (fun s1 : s => top s1 /\ _)
+    ()                                      (* put の返値 *)
+    (fun (s1 : s) (y : ()) (s3 : s) => exists x s2 : s, _).
+
+Check put 1 :
+  @HoareState
+    top
+    ()
+    (fun (_ : s) (_ : ()) (f : s) => f = 1).
+
+Fail Check ret 1 >>= put = put 1.           (* モナド則は成立しない。 *)
 
 (* END *)
