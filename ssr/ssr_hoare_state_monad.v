@@ -24,6 +24,25 @@ Fixpoint flatten {a : Set} (t : Tree a) : list a :=
 Definition s := nat.                        (* 自然数1個を状態として持つ。
                                              getとputの対象になる。 *)
 
+
+Definition State (a : Set) : Type := s -> a * s. (* State Monad、比較のために掲げる。 *)
+(* 
+p.3 最後
+
+instead of accepting any initial state of type s, it requires an initial state that
+satisfies a given precondition. 
+
+型sの任意の状態を受け入れるのではなく、与えられたprecondition(事前条件)を満たすinitail
+stateを必要とする。
+
+
+instead of returning any pair, it guarantees that the resulting pair satisfies a
+postcondition relating the initial state, resulting value, and final state.
+
+任意のペアを返すのではなく、initial stateと返値とfinal stateに関連したpostconditionを満たす
+ことを保証する。
+ *)
+
 Definition Pre : Type := s -> Prop.
 
 Definition Post (a : Set) : Type := s -> a -> s -> Prop.
@@ -44,6 +63,71 @@ Program Definition ret {a : Set} :
   を意味する。ただし、
   返値は、ret の引数の型なので、いろいろな型を取る。
  *)
+
+(**
+p.5
+
+bindの返す型の説明：
+
+So clearly the precondition of the composite computation
+
+composite computation の precondition は明白である。
+
+should be imply the precondition of the first computation c1 — otherwise we could not
+justify running c1 with the initial state s1 .
+
+c1のprecondition P1 が 導出されるべきである。さもなければ、c1がs1で実行できるか判断できない。
+
+
+Furthermore the postcondition of the first computation should imply the precondition of
+the second computation—if this wasn’t the case, we could not give grounds for the call
+to c2 . These considerations lead to the following choice of precondition for the
+composite computation:
+
+c1のpostcondition Q1 は、c2のprecondition P2を導出するべきである。もしそうでないと、c2を呼
+び出す土台が与えられない。
+
+These considerations lead to the following choice of precondition for the composite
+computation:
+
+以上より、composite computation のprecondition は以下のように与える。
+
+``(fun s1 => P1 s1 /\ (forall x s2, Q1 s1 x s2 -> P2 x s2))``
+
+-----
+
+What about the postcondition? Recall that a postcondition is a relation between the
+initial state, resulting value, and the final state. 
+
+We would expect the postcondition of both argument computations to hold after executing
+the composite computation resulting from a call to bind. 
+
+This composite computation, however, cannot refer to the initial state passed to the
+second computation or the results of the first computation: it can only refer to its own
+initial state and results. 
+
+このcomposite computationは、c2に渡されたinitial state や c1 の結果を参照することができない。
+自身のinitial stateと結果だけ参照できる。
+
+To solve this we existentially quantify over the results of the first computation,
+yielding the following postcondition for the bind operation:
+
+これを解決するために、c1の結果を限量化（∃）し、後続のpostconditionに与えることにした。
+
+
+``(fun s1 y s3 => exists x, exists s2, Q1 s1 x s2 /\ Q2 x s2 y s3)``
+
+In words, the postcondition of the composite computation states that there is an
+intermediate state s2 and a value x resulting from the first computation, such that these
+satisfy the postcondition of the first computation Q1.
+
+中間状態s2と c1の結果x があり、それらば、c1のpostcondition Q1 を満たす。
+
+Furthermore, the postcondition of the second computation Q2 relates these intermediate
+results to the final state s3 and the final value y.
+
+c2のpostcondition Q2 は、final state s3 と 最終の値 y を結果とする中間結果に関係する。
+*)
 
 Program Definition bind :
   forall {a b P1 P2 Q1 Q2},
