@@ -33,7 +33,7 @@ Program Definition HoareState (pre : Pre) (a : Set) (post : Post a) : Set :=
 Definition top : Pre := fun s => True.
 
 Program Definition ret {a : Set} :
-  forall x, @HoareState top a (fun i y f => i = f /\ y = x) :=
+  forall (x : a), @HoareState top a (fun i y f => i = f /\ y = x) :=
   fun x s => (x, s).
 
 Program Definition bind :
