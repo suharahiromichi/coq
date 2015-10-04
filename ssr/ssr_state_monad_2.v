@@ -90,7 +90,14 @@ c2 : state X          T X
 Definition get : state s := fun s => (s, s).
 Definition put : s -> state unit := fun s _ => (tt, s).
 
-Check get >>= put.
+Check ret 1 : state s.
+Check get : state s.
+
+(* bind の引数の順番が逆になっている！ *)
+Check @bind state _ s unit put get : state ().
+Check bind put get : state ().
+Check put >>= get : state ().
+Check put >>= (ret 1) : state ().
 
 (* ここまで *)
 
