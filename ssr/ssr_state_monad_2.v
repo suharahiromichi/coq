@@ -17,26 +17,25 @@ Inductive Tree (a : Set) : Set :=
 | Leaf : a -> Tree a
 | Node : Tree a -> Tree a -> Tree a.
 
-Fixpoint relabel' (a : Set) (t : Tree a) (s : nat) : Tree nat * nat
-  :=
-    match t with
-      | Leaf _ =>
-        (Leaf s, 1 + s)
-      | Node l r =>
-        let (l , s ) := relabel' l s in
-        let (r , s ) := relabel' r s in
-        (Node l r , s )
-   end.
+Fixpoint relabel' (a : Set) (t : Tree a) (s : nat) : Tree nat * nat :=
+  match t with
+    | Leaf _ =>
+      (Leaf s, 1 + s)
+    | Node l r =>
+      let (l , s ) := relabel' l s in
+      let (r , s ) := relabel' r s in
+      (Node l r , s )
+  end.
 
 Delimit Scope monad_scope with monad.
 Open Scope monad_scope.
 
-Definition s := nat.
+Definition s := nat.                        (* 状態をひとつの自然数とする。 *)
 
 Class Monad (T : Type -> Type) :=
   {
-    ret : forall {X : Type}, X -> T X;
-    bind : forall {X Y : Type}, T X -> (X  -> T Y) -> T Y
+    ret : forall {a : Type}, a -> T a;
+    bind : forall {a b : Type}, T a -> (a  -> T b) -> T b
   }.
 (* モナド則付きの Monad でも全く同じことができる *)
 Bind Scope monad_scope with Monad.
@@ -49,42 +48,38 @@ Notation "x <- m ; p" := (m >>= fun x => p%monad)
                             format "'[' x  <-  '[' m ']' ; '//' '[' p ']' ']'"): monad_scope.
 
 (*
-Definition State (a : Set) : Type :=
-  s -> a * s.
+Classをつかわずに、直接定義する場合：
+
+Definition State (a : Set) : Type := s -> a * s.
 
 Definition ret {a : Set} : a -> State a := fun x s => (x , s).
 
-Definition bind {a b : Set} : State a -> (a -> State b) -> State b
-  := fun c1 c2 s1 =>
-       let (x , s2 ) := c1 s1 in c2 x s2 .
+Definition bind {a b : Set} : State a -> (a -> State b) -> State b :=
+  fun c1 c2 s1 => let (x , s2 ) := c1 s1 in c2 x s2 .
 *)
 
 Definition state (a : Type) : Type := s -> a * s.
-(*
-CoInductive state (a : Type) : Type :=
-  Sta : s -> state a.
-*)
 
 Check @ret  : forall T : Type -> Type, Monad T ->
-                                       forall X : Type, X -> T X.
+                                       forall a : Type, a -> T a.
 Check @bind : forall T : Type -> Type, Monad T ->
-                                       forall X Y : Type, T X -> (X -> T Y) -> T Y.
+                                       forall a b : Type, T a -> (a -> T b) -> T b.
 Instance State : Monad state :=
   {
-    ret X x := fun (s1 : s)  => (x , s1);    (* state X *)
+    ret a x s1 := (x , s1);                 (* state a *)
 (* ret の引数
-X : Type
-x : X
+a : Type
+x : a
+s1 : s
 *)
-    bind X Y c1 c2 := fun (s1 : s) =>
-                        let (x , s2) := (c1 s1) in (c2 x s2) (* state Y *)
-  (* let (y , s3) := (f x s2) in (y , s3) *)
-
+    bind a b c1 c2 s1 :=
+      let (x , s2) := (c1 s1) in (c2 x s2)  (* state b *)
 (* bind の引数
-X : Type
-Y : Type
-c1 : state X          T X
-c2 : X -> state Y     (X -> T Y)
+a : Type
+b : Type
+c1 : state a          T a
+c2 : a -> state b     (a -> T b)
+s1 : s
 *)
   }.
 
@@ -99,11 +94,8 @@ Check bind get put : state ().
 Check get >>= put : state ().
 Check (ret 1) >>= put : state ().
 
-(* ここまで *)
-
-Definition bind2 {a b : Set} : state a -> state b -> state b
-  := fun p1 p2 =>
-       p1 >>= fun _ => p2.
+Definition bind2 {a b : Set} : state a -> state b -> state b :=
+  fun p1 p2 => p1 >>= fun _ => p2.
 
 Fixpoint relabel {a : Set} (t : Tree a) : state (Tree nat)
   :=
