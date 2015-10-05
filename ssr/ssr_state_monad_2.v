@@ -36,7 +36,7 @@ Definition s := nat.
 Class Monad (T : Type -> Type) :=
   {
     ret : forall {X : Type}, X -> T X;
-    bind : forall {X Y : Type}, (X -> T Y) -> (T X -> T Y)
+    bind : forall {X Y : Type}, T X -> (X  -> T Y) -> T Y
   }.
 (* モナド則付きの Monad でも全く同じことができる *)
 Bind Scope monad_scope with Monad.
@@ -68,7 +68,7 @@ CoInductive state (a : Type) : Type :=
 Check @ret  : forall T : Type -> Type, Monad T ->
                                        forall X : Type, X -> T X.
 Check @bind : forall T : Type -> Type, Monad T ->
-                                       forall X Y : Type, (X -> T Y) -> T X -> T Y.
+                                       forall X Y : Type, T X -> (X -> T Y) -> T Y.
 Instance State : Monad state :=
   {
     ret X x := fun (s1 : s)  => (x , s1);    (* state X *)
@@ -77,13 +77,14 @@ X : Type
 x : X
 *)
     bind X Y c1 c2 := fun (s1 : s) =>
-                        let (x , s2) := (c2 s1) in (c1 x s2) (* state Y *)
-                     (* let (y , s3) := (f x s2) in (y , s3) *)
+                        let (x , s2) := (c1 s1) in (c2 x s2) (* state Y *)
+  (* let (y , s3) := (f x s2) in (y , s3) *)
+
 (* bind の引数
 X : Type
 Y : Type
-c1 : X -> state Y     (X -> T Y)
-c2 : state X          T X
+c1 : state X          T X
+c2 : X -> state Y     (X -> T Y)
 *)
   }.
 
@@ -93,11 +94,10 @@ Definition put : s -> state unit := fun s _ => (tt, s).
 Check ret 1 : state s.
 Check get : state s.
 
-(* bind の引数の順番が逆になっている！ *)
-Check @bind state _ s unit put get : state ().
-Check bind put get : state ().
-Check put >>= get : state ().
-Check put >>= (ret 1) : state ().
+Check @bind state _ s unit get put : state ().
+Check bind get put : state ().
+Check get >>= put : state ().
+Check (ret 1) >>= put : state ().
 
 (* ここまで *)
 
@@ -105,8 +105,7 @@ Definition bind2 {a b : Set} : state a -> state b -> state b
   := fun p1 p2 =>
        p1 >>= fun _ => p2.
 
-
-Fixpoint relabel {a : Set} (t : Tree a) : State (Tree nat)
+Fixpoint relabel {a : Set} (t : Tree a) : state (Tree nat)
   :=
     match t with
       | Leaf _ =>
