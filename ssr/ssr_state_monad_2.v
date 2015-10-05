@@ -11,8 +11,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
-
 Inductive Tree (a : Set) : Set :=
 | Leaf : a -> Tree a
 | Node : Tree a -> Tree a -> Tree a.
@@ -40,13 +38,12 @@ Class Monad (T : Type -> Type) :=
 (* モナド則付きの Monad でも全く同じことができる *)
 Bind Scope monad_scope with Monad.
 
-Infix ">>=" := bind (right associativity, at level 71).
-Notation "m >>> n" := (m >>= (fun _ => n)) (at level 50, left associativity).
-
+Notation "c1 >>= c2" := (bind c1 c2) (at level 50, left associativity).
+Notation "c1 >>> c2" := (c1 >>= (fun _ => c2)) (at level 50, left associativity).
+(* monad_scope *)
 Notation "x <- m ; p" := (m >>= fun x => p%monad)
                            (at level 68, right associativity,
                             format "'[' x  <-  '[' m ']' ; '//' '[' p ']' ']'"): monad_scope.
-
 (*
 Classをつかわずに、直接定義する場合：
 
@@ -86,28 +83,53 @@ s1 : s
 Definition get : state s := fun s => (s, s).
 Definition put : s -> state unit := fun s _ => (tt, s).
 
+Definition bind2 {a b : Set} : state a -> state b -> state b :=
+  fun p1 p2 => p1 >>= fun _ => p2.
+
+Fixpoint relabel'' {a : Set} (t : Tree a) : state (Tree nat) :=
+  match t with
+    | Leaf _ =>
+      get >>=
+          fun n => put (S n) >>>
+                       ret (Leaf n)
+    | Node l r =>
+      relabel'' l >>=
+              fun l => relabel'' r >>=
+                               fun r => ret (Node l r)
+  end.
+
+(* テスト *)
 Check ret 1 : state s.
 Check get : state s.
 
 Check @bind state _ s unit get put : state ().
 Check bind get put : state ().
 Check get >>= put : state ().
-Check (ret 1) >>= put : state ().
+Check x <- get; put x : state ().
+Check ret 1 >>= put : state ().
 
-Definition bind2 {a b : Set} : state a -> state b -> state b :=
-  fun p1 p2 => p1 >>= fun _ => p2.
+Close Scope monad_scope.
 
-Fixpoint relabel {a : Set} (t : Tree a) : state (Tree nat)
-  :=
-    match t with
-      | Leaf _ =>
-        get >>=
-            fun n => put (S n) >>>
-                         ret (Leaf n)
-      | Node l r =>
-        relabel l >>=
-        fun l => relabel r >>=
-                 fun r => ret (Node l r)
-    end.
+Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
+
+Definition Do {X: Type} (m: X) := m.
+Arguments Do {X} (m)%monad.
+Notation "'DO' m 'OD'":= (Do m) (at level 69, format "DO '[' m ']'  OD").
+
+Fixpoint relabel {a : Set} (t : Tree a) : state (Tree nat) :=
+  match t with
+    | Leaf _ =>
+      DO
+        n <- get;
+        _ <- put (n + 1);
+        ret $ Leaf n
+      OD
+    | Node l r =>
+      DO
+        l <- relabel l;
+        r <- relabel r;
+        ret $ Node l r
+      OD
+  end.
 
 (* END *)
