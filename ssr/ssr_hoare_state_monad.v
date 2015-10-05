@@ -238,21 +238,35 @@ Check relabel.
 (* ssreflect-1.4 *)
 
 (* DO 記法 *)
+Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
+
+(*
 Delimit Scope monad_scope with monad.
 Open Scope monad_scope.
 
-Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
-Notation "x <- m ; p" :=
-  ((m >>= fun x => p)%monad)
+Notation "x <- m ; p" := (m >>= fun x => p)%monad
     (at level 68, right associativity,
-     format "'[' x  <-  '[v' m ']' ; '//' '[' p ']' ']'") : monad_scope.
-(*
-Notation "m ; p" :=
-  ((m >>> p)%monad)
-    (at level 67,
-     right associativity, format "'[' '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
+     format "'[' x  <-  '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
+Notation "m ; p" := (m >>= fun x => p)%monad
+    (at level 68, right associativity,
+     format "'[' '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
+
+Close Scope monad_scope.
+Notation "'DO' m 'OD'" := (m)%monad (at level 69, format "DO  '[' m ']'  OD").
 *)
-Notation "'DO' m 'OD'" := (m) (at level 69, format "DO  '[' m ']'  OD").
+
+Notation "'DO' a <- A ; B 'OD'" := (A >>= fun a => B)
+                                     (at level 100, right associativity).
+Notation "'DO' A ; B 'OD'" := (A >>> B)
+                                (at level 100, right associativity).
+Notation "'DO' a <- A ; b <- B ; C 'OD'" := (A >>= fun a => B >>= fun b => C)
+                                              (at level 100, right associativity).
+Notation "'DO' A ; b <- B ; C 'OD'" := (A >>> B >>= fun b => C)
+                                         (at level 100, right associativity).
+Notation "'DO' a <- A ; B ; C 'OD'" := (A >>= fun a => B >>> C)
+                                         (at level 100, right associativity).
+Notation "'DO' A ; B ; C 'OD'" := (A >>> B >>> C)
+                                    (at level 100, right associativity).
 
 Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
   @HoareState top
@@ -262,14 +276,14 @@ Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
       | Leaf x =>
         DO
           n <- get;
-          m <- put (n + 1);
+          put (n + 1);                      (* _ <- put (n + 1) *)
           ret $ Leaf n
         OD
       | Node l r =>
         DO
-          l' <- relabel' l;
-          r' <- relabel' r;
-          ret $ Node l' r'
+          l <- relabel' l;
+          r <- relabel' r;
+          ret $ Node l r
         OD
     end.
 Obligation 4.
