@@ -30,16 +30,27 @@ Open Scope monad_scope.
 
 Definition s := nat.                        (* 状態をひとつの自然数とする。 *)
 
+Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
+Reserved Notation "c1 >>= c2" (at level 42, left associativity).
+Reserved Notation "c1 >> c2" (at level 42, left associativity).
+
 Class Monad (T : Type -> Type) :=
   {
     ret : forall {a : Type}, a -> T a;
     bind : forall {a b : Type}, T a -> (a  -> T b) -> T b
+       where "c1 >>= c2" := (bind c1 c2);
+    monad_1 : forall (a : Type) (x : a) (f : a -> T a),
+                ret x >>= f = f x;
+    monad_2 : forall (a : Type) (m : T a),
+                m >>= ret = m;
+    monad_3 : forall (a : Type) (f g : a -> T a) (m : T a),
+                (m >>= f) >>= g = m >>= fun x => f x >>= g
   }.
-(* モナド則付きの Monad でも全く同じことができる *)
+
+Notation "s1 >>= s2" := (bind s1 s2).
+Notation "s1 >> s2" := (s1 >>= fun _ => s2).
 Bind Scope monad_scope with Monad.
 
-Notation "c1 >>= c2" := (bind c1 c2) (at level 50, left associativity).
-Notation "c1 >>> c2" := (c1 >>= (fun _ => c2)) (at level 50, left associativity).
 (* monad_scope *)
 Notation "x <- m ; p" := (m >>= fun x => p%monad)
                            (at level 68, right associativity,
@@ -61,7 +72,12 @@ Check @ret  : forall T : Type -> Type, Monad T ->
                                        forall a : Type, a -> T a.
 Check @bind : forall T : Type -> Type, Monad T ->
                                        forall a b : Type, T a -> (a -> T b) -> T b.
-Instance State : Monad state :=
+
+Axiom functional_extensionality' :
+  forall {T : Type} {f g : state T},
+    (forall (q : s), f q = g q) -> f = g.
+
+Program Instance State : Monad state :=
   {
     ret a x s1 := (x , s1);                 (* state a *)
 (* ret の引数
@@ -79,6 +95,16 @@ c2 : a -> state b     (a -> T b)
 s1 : s
 *)
   }.
+Obligation 2.
+Proof.
+  apply functional_extensionality'.
+  by move=> q; elim: m.
+Qed.
+Obligation 3.
+Proof.
+  apply functional_extensionality'.
+  by move=> q; elim: m.
+Qed.
 
 Definition get : state s := fun s => (s, s).
 Definition put : s -> state unit := fun s _ => (tt, s).
@@ -90,7 +116,7 @@ Fixpoint relabel'' {a : Set} (t : Tree a) : state (Tree nat) :=
   match t with
     | Leaf _ =>
       get >>=
-          fun n => put (S n) >>>
+          fun n => put (S n) >>
                        ret (Leaf n)
     | Node l r =>
       relabel'' l >>=
@@ -109,8 +135,6 @@ Check x <- get; put x : state ().
 Check ret 1 >>= put : state ().
 
 Close Scope monad_scope.
-
-Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
 
 Definition Do {X: Type} (m: X) := m.
 Arguments Do {X} (m)%monad.
