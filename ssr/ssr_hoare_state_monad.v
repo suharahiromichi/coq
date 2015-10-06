@@ -145,7 +145,7 @@ Proof.
   elim: c1 Heq_anonymous => x0 H0 /= Heq_anonymous.
   rewrite <- Heq_anonymous in H0.
   by apply/p0/H0.
-Qed.
+Defined.
 Obligation 3.
 Proof.
   elim: (c2 x) => /=.
@@ -158,7 +158,7 @@ Proof.
     by apply: H0.
   (* Q2 x s2 b0 s0 *)    
   - by apply: H1.
-Qed.
+Defined.
 Check bind.
 Infix ">>=" := bind (right associativity, at level 71).
 
@@ -200,7 +200,7 @@ Proof.
   - by rewrite add0n addn0.
   (* y = y.+1 *)
   - by rewrite (IHy x.+1 z) addSn addnS.
-Qed.
+Defined.
 
 Program Fixpoint relabel {a : Set} (t : Tree a) {struct t} :
   @HoareState top
@@ -247,7 +247,7 @@ Open Scope monad_scope.
 Notation "x <- m ; p" := (m >>= fun x => p)%monad
     (at level 68, right associativity,
      format "'[' x  <-  '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
-Notation "m ; p" := (m >>= fun x => p)%monad
+Notation "m ; p" := (m >>> p)%monad
     (at level 68, right associativity,
      format "'[' '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
 
@@ -267,6 +267,13 @@ Notation "'DO' a <- A ; B ; C 'OD'" := (A >>= fun a => B >>> C)
                                          (at level 100, right associativity).
 Notation "'DO' A ; B ; C 'OD'" := (A >>> B >>> C)
                                     (at level 100, right associativity).
+Notation "'DO' a <- A ; b <- B ; c <- C ; D 'OD'" := (A >>= fun a => B >>= fun b => C >>= fun c => D)
+                                              (at level 100, right associativity).
+Notation "'DO' a <- A ; b <- B ; c <- C ; d <- D ; E 'OD'" :=
+  (A >>= fun a => B >>= fun b => C >>= fun c => D >>= fun d => E)
+                                              (at level 100, right associativity).
+
+
 
 Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
   @HoareState top
@@ -324,5 +331,21 @@ Check put 1 :
     (fun (_ : s) (_ : ()) (f : s) => f = 1).
 
 Fail Check ret 1 >>= put = put 1.           (* モナド則は成立しない。 *)
+
+(* 自明なプログラムの証明 *)
+Program Definition test0 : @HoareState top nat
+                                       (fun (s1 : s) (y : nat) (s2 : s) => s1 = s2 /\ y = 1) :=
+  DO x <- ret 1; ret x OD.
+Check test0.
+
+Program Definition test1 : @HoareState top nat
+                                       (fun (s1 : s) (y : nat) (s2 : s) => s1 = s2 /\ y = 2) :=
+  DO n <- ret 1; ret n.+1 OD.
+Set Printing Implicit.
+Check test1.
+
+Program Definition test : @HoareState top nat
+                                      (fun (s1 : s) (y : nat) (s2 : s) => y = 2) :=
+  DO n <- ret 1; _ <- put (n + 1); n <- get; ret n OD.
 
 (* END *)
