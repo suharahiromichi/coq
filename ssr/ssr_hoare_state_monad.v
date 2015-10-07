@@ -320,9 +320,16 @@ Check get >>= put :
 Check ret 1 : @HoareState top nat (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1).
 Check ret 1 >>= put :
   @HoareState
-    (fun s1 : s => top s1 /\ _)
-    ()                                      (* put の返値 *)
-    (fun (s1 : s) (y : ()) (s3 : s) => exists x s2 : s, _).
+      (fun s1 : s =>
+       top s1 /\
+       (forall (x : nat) (s2 : s),
+        (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1) s1 x s2 ->
+        (fun _ : s => top) x s2))
+      ()                                    (* put の返値 *)
+      (fun (s1 : s) (y : ()) (s3 : s) =>
+       exists x s2 : s,
+         (fun (i : s) (y0 : nat) (f : s) => i = f /\ y0 = 1) s1 x s2 /\
+         (fun (x0 _ : s) (_ : ()) (f : s) => f = x0) x s2 y s3).
 
 Check put 1 :
   @HoareState
@@ -331,6 +338,28 @@ Check put 1 :
     (fun (_ : s) (_ : ()) (f : s) => f = 1).
 
 Fail Check ret 1 >>= put = put 1.           (* モナド則は成立しない。 *)
+
+(* しかし、両辺の型を交換してみる。 *)
+Program Definition test' : HoareState top (fun (_ : s) (_ : ()) (f : s) => f = 1) :=
+  ret 1 >>= put.
+
+Program Definition test : @HoareState
+      (fun s1 : s =>
+       top s1 /\
+       (forall (x : nat) (s2 : s),
+        (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1) s1 x s2 ->
+        (fun _ : s => top) x s2))
+      ()
+      (fun (s1 : s) (y : ()) (s3 : s) =>
+       exists x s2 : s,
+         (fun (i : s) (y0 : nat) (f : s) => i = f /\ y0 = 1) s1 x s2 /\
+         (fun (x0 _ : s) (_ : ()) (f : s) => f = x0) x s2 y s3) :=
+  put 1.
+Obligation 2.
+Proof.
+  by exists 1 x.
+Defined.
+
 
 (* 自明なプログラムの証明 *)
 Program Definition test0 : @HoareState top nat
