@@ -4,7 +4,7 @@
 (* 後半、HoareState の証明 *)
 (* @suharahiromichi 2014_01_25 *)
 
-Require Import ssreflect ssrbool ssrnat seq.
+Require Import ssreflect ssrbool ssrnat seq ssrfun.
 Require Import Program.                     (* Program *)
 
 Set Implicit Arguments.
@@ -240,21 +240,21 @@ Check relabel.
 (* DO 記法 *)
 Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
 
-(*
 Delimit Scope monad_scope with monad.
 Open Scope monad_scope.
 
 Notation "x <- m ; p" := (m >>= fun x => p)%monad
     (at level 68, right associativity,
      format "'[' x  <-  '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
+(*
 Notation "m ; p" := (m >>> p)%monad
     (at level 68, right associativity,
      format "'[' '[' m ']' ; '//' '[' p ']' ']'") : monad_scope.
-
+*)
 Close Scope monad_scope.
 Notation "'DO' m 'OD'" := (m)%monad (at level 69, format "DO  '[' m ']'  OD").
-*)
 
+(*
 Notation "'DO' a <- A ; B 'OD'" := (A >>= fun a => B)
                                      (at level 100, right associativity).
 Notation "'DO' A ; B 'OD'" := (A >>> B)
@@ -272,8 +272,7 @@ Notation "'DO' a <- A ; b <- B ; c <- C ; D 'OD'" := (A >>= fun a => B >>= fun b
 Notation "'DO' a <- A ; b <- B ; c <- C ; d <- D ; E 'OD'" :=
   (A >>= fun a => B >>= fun b => C >>= fun c => D >>= fun d => E)
                                               (at level 100, right associativity).
-
-
+*)
 
 Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
   @HoareState top
@@ -283,7 +282,7 @@ Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
       | Leaf x =>
         DO
           n <- get;
-          put (n + 1);                      (* _ <- put (n + 1) *)
+          _ <- put (n + 1);                 (* put (n + 1) *)
           ret $ Leaf n
         OD
       | Node l r =>
@@ -360,6 +359,38 @@ Proof.
   by exists 1 x.
 Defined.
 
+Goal forall x,
+       (fun s1 : s =>                       (* ret 1 >>= put のpre条件 *)
+          top s1 /\
+          (forall (x : nat) (s2 : s),
+             (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1) s1 x s2 ->
+             (fun _ : s => top) x s2)) x
+       <->
+       top x.                               (* put 1 の Pre条件 *)
+Proof.
+  move=> /=. split.
+  - case=> H1 H2.
+    by apply: (H2 1 x).
+  - move=> H1.
+    by split.
+Qed.
+
+Goal forall s1 x s2,
+       (fun (s1 : s) (y : ()) (s3 : s) =>   (* ret 1 >>= put のPost条件 *)
+       exists x s2 : s,
+         (fun (i : s) (y0 : nat) (f : s) => i = f /\ y0 = 1) s1 x s2 /\
+         (fun (x0 _ : s) (_ : ()) (f : s) => f = x0) x s2 y s3) s1 x s2
+        <->
+        (fun (_ : s) (_ : ()) (f : s) => f = 1) s1 x s2. (* put 1 の Post条件 *)
+Proof.
+  move=> //=; split.
+  - case=> s'.
+    case=> s''.
+    case=> [] [] [] => H1 H2 H3.
+    by rewrite H3.
+  - move=> H1.
+    by exists s2 s1.
+Qed.
 
 (* 自明なプログラムの証明 *)
 Program Definition test0 : @HoareState top nat
@@ -373,8 +404,8 @@ Program Definition test1 : @HoareState top nat
 Set Printing Implicit.
 Check test1.
 
-Program Definition test : @HoareState top nat
-                                      (fun (s1 : s) (y : nat) (s2 : s) => y = 2) :=
+Program Definition test2 : @HoareState top nat
+                                       (fun (s1 : s) (y : nat) (s2 : s) => y = 2) :=
   DO n <- ret 1; _ <- put (n + 1); n <- get; ret n OD.
 
 (* END *)
