@@ -145,7 +145,7 @@ Proof.
   elim: c1 Heq_anonymous => x0 H0 /= Heq_anonymous.
   rewrite <- Heq_anonymous in H0.
   by apply/p0/H0.
-Defined.
+Qed.
 Obligation 3.
 Proof.
   elim: (c2 x) => /=.
@@ -158,7 +158,7 @@ Proof.
     by apply: H0.
   (* Q2 x s2 b0 s0 *)    
   - by apply: H1.
-Defined.
+Qed.
 Check bind.
 Infix ">>=" := bind (right associativity, at level 71).
 
@@ -200,7 +200,7 @@ Proof.
   - by rewrite add0n addn0.
   (* y = y.+1 *)
   - by rewrite (IHy x.+1 z) addSn addnS.
-Defined.
+Qed.
 
 Program Fixpoint relabel {a : Set} (t : Tree a) {struct t} :
   @HoareState top
@@ -407,5 +407,24 @@ Check test1.
 Program Definition test2 : @HoareState top nat
                                        (fun (s1 : s) (y : nat) (s2 : s) => y = 2) :=
   DO n <- ret 1; _ <- put (n + 1); n <- get; ret n OD.
+
+(* 実行結果を取り出す。 *)
+Definition sample1 := ret 1.
+Check sample1 : @HoareState _ _ _. (* Hoare State 型を返す。 *)
+Variable i : {t : s | top t}.
+Compute sample1 i : {(x, f) : nat * s |
+                     (fun (i : s) (y : nat) (f0 : s) => i = f0 /\ y = 1) (` i) x f}.
+Check let (x, f) := sample1 i in x.
+Compute let (x, f) := sample1 i in let (x', s) := x in x'. (* => 1 *)
+
+
+Definition sample2 := DO ret 1 OD.
+Compute let (x, f) := sample2 i in let (x', s) := x in x'. (* => 1 *)
+
+Definition sample3 := DO x <- ret 1; ret x.+1 OD.
+Check sample3 : @HoareState _ _ _. (* Hoare State 型を返す。 *)
+Variable i' : {t : s | top t /\ (forall (x : nat) (s2 : s), t = s2 /\ x = 1 -> top s2)}.
+Compute sample3 i'.
+Compute let (x, f) := sample3 i' in let (x', s) := x in x'. (* => 2 *)
 
 (* END *)
