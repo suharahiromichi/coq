@@ -427,4 +427,22 @@ Variable i' : {t : s | top t /\ (forall (x : nat) (s2 : s), t = s2 /\ x = 1 -> t
 Compute sample3 i'.
 Compute let (x, f) := sample3 i' in let (x', s) := x in x'. (* => 2 *)
 
+Definition sample4 := DO x <- get; ret x.+1 OD.
+Check sample3 : @HoareState _ _ _. (* Hoare State 型を返す。 *)
+Variable i'' : {t : s | top t /\ (forall (x : nat) (s2 : s), t = s2 /\ x = 1 -> top s2)}.
+Compute sample3 i''.
+Compute let (x, f) := sample3 i' in let (x', s) := x in x'. (* => 2 *)
+
+Definition sample5 := DO n <- ret 2; _ <- put (n + 1); n <- get; ret n OD.
+Variable i''' : {t : s | top t /\
+                         (forall (x : nat) (s2 : s),
+                            t = s2 /\ x = 2 -> (* !!! *)
+                            top s2 /\
+                            (() ->
+                             forall s3 : s,
+                               s3 = x + 1 -> top s3 /\ (forall x1 s4 : s, s3 = s4 /\ x1 = s3 -> top s4)))}.
+Compute sample5 i'''.
+Compute let (x, f) := sample5 i''' in let (x', s) := x in x'. (* => 3 *)
+  
+
 (* END *)
