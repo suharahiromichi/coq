@@ -26,10 +26,10 @@ Unset Printing Implicit Defensive.
 ``Set Printing All.`` を使用してもよい。
  *)
 (* 左記の意味、D:省略時、A:All 設定時 *)
-Unset Printing Implicit.           (* implicitな引数を表示しない。 Dしない。 A:する。*)
-Unset Printing Coercions.          (* コアーションを表示しない     D:しない。 A:する。*)
-Set Printing Notations.            (* Notation を使って表示する。  D:する。  A:しない。*) 
-Unset Printing Universe.           (* 高階のTypeを表示する。       D:しない。 A:-*)
+Unset Printing Implicit.           (* Unset : implicitな引数を表示しない。 D:しない。 A:する。*)
+Unset Printing Coercions.          (* Unset : コアーションを表示しない     D:しない。 A:する。*)
+Set Printing Notations.            (*   Set : Notation を使って表示する。  D:する。  A:しない。*) 
+Unset Printing Universe.           (* Unset : 高階のTypeを表示しない。     D:しない。 A:- *)
 
 (**
 # auto-simplifying predicates
@@ -145,9 +145,6 @@ Qed.
 
 (*
 # mem_pred
-*)
-(**
-## simpl_fun
 
 型コンストラクタ mem_pred
 値コンストラクタ Mem
@@ -229,8 +226,43 @@ Compute Peano.pred (S 0).                   (* 0 *)
 Locate "[ eta _ ]".                         (* fun x => f x *)
 
 (**
-# predArgType と {: T}
+# predArgType と {: T} （使わない）
+
+{: T} は型注釈なので、Printされた式のなかでは、読みとばしてよい。
+
+注意：
+Notation "{ : T }" := (T : predArgType) なので、
+Check {: nat} : predArgType は、{: {: nat}} の意味になる。
 *)
+
+(* あまり使い道はないように見える。
+強いていうなら、eqType から  predType を作るのに使える。
+
+\in や enum の第2引数は、本来は predArgType だが、eqType を使いたい場合もある。
+
+そのためには、pred_of_argType を呼び出す必要がある。
+*)
+Check pred_of_argType : forall T : predArgType, simpl_pred T.
+
+(*
+finType → eqType → Type → predArgType → predPredType と変換されるが、
+このうち、Type → predArgType のところを、明示的に指定できる（？）
+*)
+Print Graph.
+Check bool_finType : predPredType bool.
+Check pred_of_argType (Equality.sort (Finite.eqType bool_finType)) : predPredType bool.
+
+Check {: bool_finType} : predPredType bool.
+
+Check true \in bool_finType.
+Check true \in {: bool_finType}.            (* 使わない。 *)
+
+(* 参考：Canonical には使われていないようだ。 *)
+Check @in_mem bool true
+  (@mem bool (predPredType (Equality.sort (Finite.eqType bool_finType)))
+     (@sort_of_simpl_pred (Equality.sort (Finite.eqType bool_finType))
+        (pred_of_argType
+           {: (Equality.sort (Finite.eqType bool_finType))}))).
 
 (**
 # lock と nosimpl
