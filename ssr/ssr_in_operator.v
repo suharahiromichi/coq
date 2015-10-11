@@ -88,7 +88,19 @@ Section Sect2.
 (* finType のインスタンスも predPredType であるから、書くことができる。  *)
 Check bool_finType : finType.
 Check bool_finType : predPredType bool.
+(* 実際は、pred_of_argType などの壮大なコアーションである。 *)
+(* Set Printing Coercions. *)
+Check sort_of_simpl_pred
+      (pred_of_argType (Equality.sort (Finite.eqType bool_finType)))
+: pred_sort (predPredType bool).
+(* わかりやすい範囲を抜き出すと、
+eqTypeを経由して、finTypeからpredTypeに変換されている。 *)
+Check pred_of_argType : forall T : predArgType, simpl_pred T.
+Check Finite.eqType : finType -> eqType.
+Check pred_of_argType (Finite.eqType bool_finType) :
+  predPredType bool.
 
+Check bool_finType : predPredType bool.
 Goal mem bool_finType true. Proof. done. Qed.
 (**
 mem や \in や、enum に、
