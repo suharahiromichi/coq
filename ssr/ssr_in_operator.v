@@ -85,6 +85,17 @@ memの第3引数にかけそうな型の例：
  *)
 Section Sect2.
 
+(* finType のインスタンスも predPredType であるから、書くことができる。  *)
+Check bool_finType : finType.
+Check bool_finType : predPredType bool.
+
+Goal mem bool_finType true. Proof. done. Qed.
+(**
+mem や \in や、enum に、
+``T : finType`` なる T または、
+``T : finType. P : pred T`` なる P が書ける、というのはこれに由来する。
+ *)
+
 (* ssrbool.v の例 *)
 Check [pred n : nat | n < 3] : pred nat.
 (* ↑コアーション *) 
@@ -93,15 +104,23 @@ Check [pred n : nat | n < 3] : predPredType nat.
 Check [pred n : nat | n < 3] : simpl_pred nat.
 Check [pred n : nat | n < 3] : simplPredType nat.
 
+(* 次が、predType nat でないことに注意 *)
+Check 'I_3 : predPredType (ordinal 3).
+
 (* seq.v の例 *)
 Check [:: 0; 1; 2] : seq nat.
 Check [:: 0; 1; 2] : seq_predType nat_eqType.
 Check [:: 0; 1; 2] : mem_seq_predType nat_eqType. (* XXX *)
 
 (* finset.v の例 *)
+(* 'I_3 === ordinal 3 *)
 Check 'I_3 : predArgType.
-Check 'I_3 : pred (ordinal 3).
-Check 'I_3 : predPredType (ordinal 3).
+Check 'I_3 : pred (ordinal 3).              (* pred 'I_3 === 'I_3 -> bool *)
+Check 'I_3 : predPredType (ordinal 3).      (* predPTedType 'I_3 *)
+
+Definition p0 : 'I_3. Proof. have : 0 < 3 by []. apply Ordinal. Defined.
+Definition p1 : 'I_3. Proof. have : 1 < 3 by []. apply Ordinal. Defined.
+Definition p2 : 'I_3. Proof. have : 2 < 3 by []. apply Ordinal. Defined.
 
 (* vector.v の例 *)
 (* TBD *)
@@ -203,7 +222,6 @@ Definition enum_mem' (T : finType) (mA : mem_pred T) :=
 
 Definition enum' (T : finType) (S : predType T) (A : S) :=
   (@enum_mem' T (@mem T S A)).
-
 
 (**
 # mem_seq の定義
