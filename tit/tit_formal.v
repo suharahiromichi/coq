@@ -2,7 +2,16 @@
 Coqでの形式化された不完全性定理の証明
 ========
 
+ご注意。この資料は、可導性条件から形式化された第一不完全性定理と第二不完全性定理を求めよう
+としたものですが、本文中にも述べているように、可導性条件のひとつに不適切な箇所があります。
+それを理解したうえで、定理証明支援系による形式化の試みのひとつとして、みていただきたいとお
+もいます。
+
+
 2014/12/08 @suharahiromichi
+
+2015/10/11 @suharahiromichi D1についての注意を加筆した。
+
 
 この文章のソースコードは以下にあります。
 
@@ -32,9 +41,11 @@ Unset Printing Implicit Defensive.
 *)
 
 Require Import Coq.Logic.Decidable.
+Check contrapositive :
+  forall A B : Prop, decidable A -> ((A -> False) -> B -> False <-> B -> A).
 Require Import Coq.Logic.Classical.
-Check classic.                              (* forall P : Prop, P \/ ~ P *)
-Check not_not.                              (* forall P : Prop, ~ ~ P -> P *)
+Check classic : forall P : Prop, P \/ ~ P.
+Check not_not : forall P : Prop, decidable P -> ~ ~ P -> P.
 
 (**
 ## 命題論理の公理
@@ -122,18 +133,23 @@ Axiom D3 : forall {φ : Prop}, PrT ⌜φ⌝ -> PrT ⌜(PrT ⌜φ⌝)⌝.
 (**
 注意：D1'について：
 
-- D1 は、正しくは、「T ⊦ φ ならば T ⊦ PrT(⌜φ⌝)」 である。
-D3 は、このD1を形式化したものである。
-- D3は、D1がT上で形式化できる（形式的に証明できる）ことを主張している。
+D1 は、正しくは、「T ⊦ φ ならば T ⊦ PrT(⌜φ⌝)」 である。
+
+- D3 は、このD1を形式化したものである。
+D3は、D1がT上で形式化できる（形式的に証明できる）ことを主張している。
 - φをΣ1論理式に制限したD1'が、定理7.4.4である。
 PrT(⌜φ⌝)は、Σ1論理式なので、定理7.4.4からD3を求めることはできる。
-- D1' があれば D3 は要らなくなるので、この記述は見直します。
+- D1' は定理7.4.4より前提が弱いので、D1'からD3を求めることができてしまう。
+
+
+以上より、D1 に代えて D1' を使うのは適切とはいえない。
+そのため、以下の証明のうち D1' を使う箇所は改める必要がある。
 *)
 
 Lemma L7_4_3 (φ ψ : Prop) : (φ -> ψ) -> PrT ⌜φ⌝ -> PrT ⌜ψ⌝.
 Proof.
   move=> H.
-  by apply: D2; apply: D1'; apply: H.
+  by apply: D2; apply: D1'; apply: H.       (* 注意 *)
 Qed.
 
 Lemma L7_5_3 (φ : Prop) :
