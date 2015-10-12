@@ -254,8 +254,8 @@ Check pred_of_argType (Equality.sort (Finite.eqType bool_finType)) : predPredTyp
 
 Check {: bool_finType} : predPredType bool.
 
-Check true \in bool_finType.
-Check true \in {: bool_finType}.            (* 使わない。 *)
+Compute true \in bool_finType.
+Compute true \in {: bool_finType}.          (* 使わない。 *)
 
 (* 参考：Canonical には使われていないようだ。 *)
 Check @in_mem bool true
@@ -263,6 +263,59 @@ Check @in_mem bool true
      (@sort_of_simpl_pred (Equality.sort (Finite.eqType bool_finType))
         (pred_of_argType
            {: (Equality.sort (Finite.eqType bool_finType))}))).
+
+(* これでもおなじ。 *)
+Set Printing Coercions.
+Set Printing Implicit.
+(* \in の右辺が predPredType である例 *)
+Check true \in sort_of_simpl_pred          (* finType のほうが eqType を経由している。 *)
+                  (pred_of_argType (Equality.sort (Finite.eqType bool_finType))).
+Check true \in sort_of_simpl_pred (pred_of_argType (Equality.sort bool_eqType)).
+
+(* predArgType である例 *)
+Check true \in pred_of_argType (Equality.sort bool_eqType).
+Check true \in {: Equality.sort bool_eqType}. (* ここで {: } が有効に使える。 *)
+
+(* eqType である例 *)
+Check true \in bool_eqType.
+Check true \in (Finite.eqType bool_finType).
+
+(* finType である例 *)
+Check true \in bool_finType.  
+
+Check enum {: bool_eqType}.
+Check enum bool_eqType.
+Check enum bool_finType.
+
+Check 1 \in {: nat_eqType}.
+Check 1 \in nat_eqType.
+Fail Check Compute 1 \in nat_finType.       (* nat_finType はない。 *)
+
+(**
+一方enum の場合は
+ *)
+Fail Check enum {: nat_eqType}.
+Fail Check enum nat_eqType.
+Fail Check enum nat_finType.                (* nat_finType はない。 *)
+
+(* bool がうまくいく理由 *)
+Check mem {: bool_eqType}.
+Check (enum_mem (mem {: bool_eqType})).
+(*
+enum_mem は、mem_pred (Finite.sort T) を引数にとる。
+この文脈では、mem は、mem_pred (Equality.sort bool_eqType) を返すが、
+これは、mem_pred (Equality.sort (Finite.sort bool_finType)) である。
+ゆえに、mem_pred (Finite.sort bool_finType) を渡すことができる。
+ *)
+(* nat がうまくいかない理由 *)
+Check mem {: nat_eqType}.
+Fail Check (enum_mem (mem {: nat_eqType})).
+(*
+enum_mem は、mem_pred (Finite.sort T) を引数にとる。
+この文脈では、mem は、mem_pred (Equality.sort nat_eqType) を返すが、
+これは、mem_pred (Equality.sort (Finite.sort nat_finType)) では *ない* 。
+nat_finType はないから。故にエラーになる。
+ *)
 
 (**
 # lock と nosimpl
