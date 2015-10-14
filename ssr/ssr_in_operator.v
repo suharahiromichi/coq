@@ -211,14 +211,19 @@ Compute in_mem 0 (mem [:: 0; 1; 2]).
 # \in の応用：
 *)
 
-(**
-実行例をつけること。
-*)
-
 Locate "_ =i _".                            (* (eq_mem (mem A) (mem B)) *)
 Locate "_ @^-1: _".                         (* preimset f (mem A) *) (* f −1 (A) *)
 Locate "_ @: _".                            (* imset f (mem A) *) (* f (A) *)
 Locate "_ @2: ( _ , _ )".                   (* imset2 f (mem A) (fun _ =>mem B) *) (* f (A, B) *)
+
+(**
+実行例をつけること。
+*)
+Goal [:: 0; 1; 2] =i [pred n : nat | n < 3].
+Proof.
+  by case=> [|[|[]]].
+Qed.
+  
 
 (**
 # enum
@@ -254,6 +259,7 @@ Compute (xpredU1 0 (mem_seq' [:: 1; 2])) 1. (* (mem_seq' [:: 1; 2]) 1 が成り�
 xpred0 の説明
 *)
 Compute xpred0 0.                           (* つねに false *)
+
 
 (**
 # 参考
