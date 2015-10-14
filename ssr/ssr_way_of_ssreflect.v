@@ -43,7 +43,7 @@ simpl と unfold に対する動作が異なる。
  *)
 
 (**
-通常の関数
+### 通常の関数
  *)
 Definition funA : nat -> nat        := (fun n : nat => n.+1).
 
@@ -63,7 +63,7 @@ Proof.
 Qed.
 
 (**
-simpl_fun
+### simpl_fun
  *)
 Definition funB : simpl_fun nat nat := [fun n : nat => n.+1].
 
@@ -87,7 +87,7 @@ Qed.
  *)
 
 (**
-通常の関数
+### 通常の関数
  *)
 Definition f := fun (n : nat) =>
                   (fix f' (n : nat) := if n is n'.+1 then (f' n').+2 else 0) n.
@@ -105,7 +105,7 @@ Proof.
 Qed.
 
 (**
-simpl_fun
+### simpl_fun
  *)
 Definition g := [fun n : nat =>
                    (fix g' (n : nat) := if n is n'.+1 then (g' n').+2 else 0) n].
@@ -131,25 +131,55 @@ Qed.
 ## simpl_fun
 
 型コンストラクタ simpl_fun
-値コンストラクタ SimpFun
+値コンストラクタ SimplFun
 デストラクタ   fun_of_simpl
 *)
+Check SimplFun (fun n : nat => n .+1) : simpl_fun nat nat.
+Check [fun n : nat => n.+1]           : simpl_fun nat nat.
+Check [fun n : nat => n.+1]           : nat -> nat. (* コアーション *)
+Check fun_of_simpl [fun n => n.+1]    : nat -> nat.
+
+Check fun_of_simpl (SimplFun (fun n : nat => n .+1)) = fun n : nat => n .+1.
+Check fun_of_simpl (SimplFun succn) = succn.
 
 (**
 ## simpl_pred
+
+型コンストラクタ simpl_pred
+値コンストラクタ SimplPred
+デストラクタ   pred_of_simpl
 *)
+Check SimplPred (fun n : nat => n < 3) : simpl_pred nat.
+Check [pred n : nat | n < 3]           : simpl_pred nat.
+Check [pred n : nat | n < 3]           : nat -> bool. (* コアーション *)
+Check pred_of_simpl [pred n : nat | n < 3] : nat -> bool.
 
 (**
-## simpl_red
+## simpl_rel
+
+型コンストラクタ simpl_rel
+値コンストラクタ SimplRel
+デストラクタ   rel_of_simpl_rel
 *)
+Check SimplRel (fun n m : nat => n < m) : simpl_rel nat.
+Check [rel n m : nat | n < m]           : simpl_rel nat.
+Check [rel n m : nat | n < m]           : nat -> nat -> bool. (* コアーション *)
+Check rel_of_simpl_rel [rel n m : nat | n < m] : nat -> nat -> bool.
 
 (*
 # mem_pred
 
 型コンストラクタ mem_pred
 値コンストラクタ Mem
-デストラクタ   pred_of_mem
+デストラクタ   pred_of_mem_pred
 *)
+Check Mem [pred n : nat | n < 3] : mem_pred nat.
+Check Mem [pred n : nat | n < 3] : pred nat. (* コアーション *)
+Check pred_of_mem_pred (Mem [pred n : nat | n < 3]) : simpl_pred nat.
+Check pred_of_simpl (pred_of_mem_pred (Mem [pred n : nat | n < 3])) : pred nat.
+
+Check Mem [pred n : nat | n < 3] : predPredType nat. (* コアーション *)
+Check pred_of_mem (Mem [pred n : nat | n < 3]) : predPredType nat.
 
 (**
 # xpred1 と pred1 とその仲間たち。
@@ -265,8 +295,8 @@ Check @in_mem bool true
            {: (Equality.sort (Finite.eqType bool_finType))}))).
 
 (* これでもおなじ。 *)
-Set Printing Coercions.
-Set Printing Implicit.
+(* Set Printing Coercions. *)
+(* Set Printing Implicit. *)
 (* \in の右辺が predPredType である例 *)
 Check true \in sort_of_simpl_pred          (* finType のほうが eqType を経由している。 *)
                   (pred_of_argType (Equality.sort (Finite.eqType bool_finType))).
