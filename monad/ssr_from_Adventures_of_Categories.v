@@ -60,11 +60,32 @@ Check product S S.
 Check <<S, S>> \o S.
 Check <<S \o S, S \o S>>.
 
-Lemma priduct_dist {X Y Z W : Type} (f : Z -> X) (g : Z -> Y) (h : W -> Z) :
+Lemma product_dist {X Y Z W : Type} (f : Z -> X) (g : Z -> Y) (h : W -> Z) :
   <<f, g>> \o h =1 <<f \o h, g \o h>>.
 Proof.
   done.
 Qed.  
 (* 左分配則はなりたたない。 *)
+
+Lemma unit_law {X : Type} (f : X -> X) : f \o f =1 id.
+Proof.
+  admit.
+Qed.
+
+Lemma P6 {X Y : Type} (f : X * Y -> X) (g : X * Y -> Y) :
+  f \o <<f, g>> =1 f ->
+            g \o <<f, g>> =1 g ->
+                      <<f, g>> =1 id.
+Proof.
+  move=> HX HY x.
+  rewrite /product.
+  rewrite -(HX x).
+  rewrite -(HY x).
+  have H1 :=  product_dist f g <<f, g>> x.
+  rewrite [X in _ = X]/product in H1.
+  rewrite -H1.
+  rewrite (unit_law <<f, g>> x).
+    by [].
+Qed.
 
 (* END *)
