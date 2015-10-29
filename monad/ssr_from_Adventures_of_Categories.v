@@ -67,25 +67,22 @@ Proof.
 Qed.  
 (* 左分配則はなりたたない。 *)
 
-Lemma unit_law {X : Type} (f : X -> X) : f \o f =1 id.
-Proof.
-  admit.
-Qed.
-
-Lemma P6 {X Y : Type} (f : X * Y -> X) (g : X * Y -> Y) :
+(**
+単位律が成り立つことを前提に、
+f・id = id・f = id と id の一意性から、
+f・f = f が成立することを示す。
+*)
+Lemma P6' {X Y : Type} (f : X * Y -> X) (g : X * Y -> Y) :
   f \o <<f, g>> =1 f ->
             g \o <<f, g>> =1 g ->
-                      <<f, g>> =1 id.
+                      <<f, g>> \o <<f, g>> =1 <<f, g>>.
 Proof.
   move=> HX HY x.
-  rewrite /product.
-  rewrite -(HX x).
-  rewrite -(HY x).
-  have H1 :=  product_dist f g <<f, g>> x.
-  rewrite [X in _ = X]/product in H1.
-  rewrite -H1.
-  rewrite (unit_law <<f, g>> x).
-    by [].
+  rewrite (product_dist f g <<f, g>> x).
+  rewrite /product /=.
+  rewrite [f (f x, g x)](HX x).
+  rewrite [g (f x, g x)](HY x).
+  by [].
 Qed.
 
 (* END *)
