@@ -9,10 +9,10 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Unset Printing Implicit. (* Unset: implicitな引数を表示しない。 D:しない。 A:する。*)
+Unset Printing Implicit.  (* Unset: implicitな引数を表示しない。D:しない。 A:する。*)
 Unset Printing Coercions. (* Unset: コアーションを表示しない。  D:しない。 A:する。*)
-Set Printing Notations. (* Set: Notation を使って表示する。     D:する。 A:しない。*) 
-Unset Printing Universe. (* Unset: 高階のTypeを表示しない。     D:しない。 A:- *)
+Set Printing Notations.   (* Set: Notation を使って表示する。   D:する。   A:しない。*) 
+Unset Printing Universe.  (* Unset: 高階のTypeを表示しない。    D:しない。 A:- *)
 
 (**
 命題4 関数fにおいて、以下は同値である。
@@ -67,17 +67,18 @@ Proof.
 Qed.  
 (* 左分配則はなりたたない。 *)
 
-(**
-単位律が成り立つことを前提に、
-f・id = id・f = id と id の一意性から、
-f・f = f が成立することを示す。
-*)
+Lemma id_uniqness {X : Type} (f : X -> X) : f \o f =1 f -> f =1 id.
+Proof.
+  admit.
+Qed.
+
 Lemma P6' {X Y : Type} (f : X * Y -> X) (g : X * Y -> Y) :
   f \o <<f, g>> =1 f ->
             g \o <<f, g>> =1 g ->
-                      <<f, g>> \o <<f, g>> =1 <<f, g>>.
+                      <<f, g>> =1 id.
 Proof.
-  move=> HX HY x.
+  move=> HX HY.
+  apply: id_uniqness => x.
   rewrite (product_dist f g <<f, g>> x).
   rewrite /product /=.
   rewrite [f (f x, g x)](HX x).
