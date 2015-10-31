@@ -67,8 +67,26 @@ Proof.
 Qed.  
 (* 左分配則はなりたたない。 *)
 
+(* 単位元の一意性の証明 *)
+(* f と g が単位元であるとき、f = g である。 *)
+Lemma id_uniqness' {X : Type} (f g : X -> X) :
+  (forall h : X -> X, f \o h =1 h) ->
+  (forall h : X -> X, h \o g =1 h) ->
+  f =1 g.
+Proof.
+  move=> Hf Hg.
+  Check Hf g.                               (* f \o g =1 g *)
+  Check Hg f.                               (* f \o g =1 f *)
+  move=> x.
+  have Hf' := Hf g x.                       (* (f \o g) x = g x *)
+  have Hg' := Hg f x.                       (* (f \o g) x = f x *)
+  by rewrite -Hf' -Hg'.
+Qed.
+                                                             
 Lemma id_uniqness {X : Type} (f : X -> X) : f \o f =1 f -> f =1 id.
 Proof.
+  move=> H.
+  Check @eq_comp X X X f id id id.
   admit.
 Qed.
 
