@@ -1,7 +1,3 @@
-(**
-「圏論の歩き方」から
-*)
-
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 Require Import choice fintype.
 
@@ -68,7 +64,9 @@ Qed.
 (* 左分配則はなりたたない。 *)
 
 (* 単位元の一意性の証明 *)
-(* f と g が単位元であるとき、f = g である。 *)
+(* f と g が単位元であるとき、f = g である。
+   あるいは、左右単位元が同じ、の証明というべきか。
+ *)
 Lemma id_uniqness' {X : Type} (f g : X -> X) :
   (forall h : X -> X, f \o h =1 h) ->
   (forall h : X -> X, h \o g =1 h) ->
@@ -82,26 +80,37 @@ Proof.
   have Hg' := Hg f x.                       (* (f \o g) x = f x *)
   by rewrite -Hf' -Hg'.
 Qed.
-                                                             
-Lemma id_uniqness {X : Type} (f : X -> X) : f \o f =1 f -> f =1 id.
-Proof.
-  move=> H.
-  Check @eq_comp X X X f id id id.
-  admit.
-Qed.
+
+(* mono または 左キャンセル可能であることの定義 *)
+Definition mono {X Y Z: Type} (f : X -> Y) (g h : Z -> X) :=
+  f \o g =1 f \o h -> g =1 h.
 
 Lemma P6' {X Y : Type} (f : X * Y -> X) (g : X * Y -> Y) :
-  f \o <<f, g>> =1 f ->
-            g \o <<f, g>> =1 g ->
-                      <<f, g>> =1 id.
+  mono <<f, g>> <<f, g>> id ->
+            f \o <<f, g>> =1 f ->
+                      g \o <<f, g>> =1 g ->
+                                <<f, g>> =1 id.
 Proof.
-  move=> HX HY.
-  apply: id_uniqness => x.
+  move=> Hmono HX HY.
+  apply: Hmono => x.
   rewrite (product_dist f g <<f, g>> x).
   rewrite /product /=.
   rewrite [f (f x, g x)](HX x).
   rewrite [g (f x, g x)](HY x).
   by [].
 Qed.
+
+(**
+命題10
+Preorder (X, ≦) で圏が定まる。
+反射律(Preorder) <---> 単位律(圏)
+推移律(Preorder) <---> 結合律(圏)
+
+ただし、
+f : y < z として g : x < y とするとき、
+f・g : x < y /\ y < z の意味とする。
+
+ *)
+
 
 (* END *)
