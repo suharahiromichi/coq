@@ -5,14 +5,15 @@
 http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
 
 勉強のために、この表層をSSReflectに移した。
-オリジナルと同様にSetoidClassを使用しているが、
+オリジナルと異なり、Setoid は自分で定義している。
 これをeqTypeに移行することが、次の課題である。
 *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import Relation_Definitions.        (* relation *)
-Require Import Classes.RelationClasses.     (* Equivalence *)
-Require Import Classes.SetoidClass.         (* Setoid *)
+(* Require Import Relation_Definitions.        (* relation *) *)
+(* EquivExt はいらない？ *)
+(* Require Import Classes.RelationClasses.     (* Equivalence *) *)
+(* Require Import Classes.SetoidClass.         (* Setoid *) *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -23,6 +24,11 @@ Reserved Notation "A ~> B" (at level 89, right associativity, only parsing).
 Reserved Notation "f 'o' g" (at level 41, right associativity, only parsing).
  *)
 
+Class Setoid (carrier : Type) :=
+  {
+    equiv : carrier -> carrier -> Prop
+  }.
+(* Coercion carrier : Setoid >-> Sortclass. *)
 Notation "x === z" := (equiv x z) (at level 70).
 
 Section Categories.
@@ -80,7 +86,7 @@ Section Categories.
           commute (mediating f g) proj2 g;
       med_unique : forall (A B X : Obj)
                           (f : Mor X A) (g : Mor X B) (h : Mor X (P A B)),
-          commute h proj1 f -> commute h proj2 g -> h == mediating f g
+          commute h proj1 f -> commute h proj2 g -> h === mediating f g
     }.
 
   Variable P : Obj -> Obj -> Obj.
@@ -99,13 +105,14 @@ End Categories.
 Section Functions.                  (* 集合と関数の世界 *)
   (* Ordinary tuples are products *)
   
+(*
   Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) :=
     {
       Equivalence_Reflexive := @frefl A B;
       Equivalence_Symmetric := @fsym A B;
       Equivalence_Transitive := @ftrans A B
     }.
-
+*)
   Instance EqMor : forall (A B : Type), Setoid (A -> B) := (* Setoid *)
     {
       equiv := @eqfun B A
@@ -126,8 +133,8 @@ Section Functions.                  (* 集合と関数の世界 *)
 
   Instance Prod : Product Func prod Func :=
     {
-      proj1 A B := fst;
-      proj2 A B := snd;
+      proj1 A B := @fst A B;
+      proj2 A B := @snd A B ;
       mediating A B X := fun f g x => (f x, g x)
     }.
   Proof.
@@ -140,4 +147,99 @@ Section Functions.                  (* 集合と関数の世界 *)
   Qed.
 End Functions.
 
-(* 続く *)
+Section Orders.                          (* 半順序の世界 *)
+  (* max of nat is a product *)
+  
+  Theorem ge_n : forall n, (n >= n)%coq_nat.          (* n >= n *)
+  Proof.
+    auto with arith.
+  Qed.
+  
+  Theorem ge_trans' : forall n m p,
+      (m >= p)%coq_nat -> (n >= m)%coq_nat -> (n >= p)%coq_nat.
+  Proof.
+    (* intros n m p. eauto using le_trans. *)
+    admit.
+  Qed.
+  
+  Definition eq_ge n m (p q : ge n m) := True.
+  Check eq_ge.
+  
+(*
+  Instance EquivGe : forall n m, Equivalence (@eq_ge n m).
+  Proof.
+    intros n m. constructor; constructor.
+  Qed. 
+*)  
+  Instance EqGe : forall n m, Setoid (n >= m)%coq_nat := (* Setoid *)
+    {
+      equiv := (@eq_ge n m)
+    }.
+  
+  Instance Order : Category EqGe :=         (* Category *)
+    {
+      idC := ge_n;
+      composeC := ge_trans'
+    }.
+  Proof.
+    simpl. unfold eq_ge. auto.
+    simpl. unfold eq_ge. auto.
+    simpl. unfold eq_ge. auto.
+  Defined.
+  
+  Lemma max_val : forall n m, max n m = n \/ max n m = m.
+  Proof.
+    intros n m.
+    admit.
+(*    destruct (le_or_lt n m);
+      [right|left]; [apply max_r|apply max_l];
+      auto with arith.*)
+  Qed.
+
+
+  Theorem max_med : forall n m x,
+      (n <= x)%coq_nat -> (m <= x)%coq_nat -> (max n m <= x)%coq_nat.
+  Proof.
+    intros n m x.
+    destruct (max_val n m); intuition.
+    admit.
+    admit.
+  Qed.
+  
+  Theorem max_ge1 : forall n m, (max n m >= n)%coq_nat.
+  Proof.
+    intros n m.
+    destruct (max_val n m); intuition.
+  Qed.
+  
+  Theorem max_ge2 : forall n m, (max n m >= m)%coq_nat.
+  Proof.
+    intros n m.
+    destruct (max_val n m); intuition.
+  Qed.
+  
+  Instance Max : Product Order max Order :=
+    {
+      proj1 := max_ge1;
+      proj2 := max_ge2;
+      mediating := max_med
+    }.
+  Proof.
+    unfold commute. simpl. unfold eq_ge. auto.
+    unfold commute. simpl. unfold eq_ge. auto.
+    unfold commute. simpl. unfold eq_ge. auto.
+  Defined.
+  
+  (* an application of parallel (***) *)
+  
+  Theorem parallel_max : forall n m l k,
+      (n >= m)%coq_nat -> (l >= k)%coq_nat -> (max n l >= max m k)%coq_nat.
+  Proof.
+    apply (@parallel nat ge EqGe Order).
+    apply Max.
+  Qed.
+  
+End Orders.
+
+(* モノイド *)
+(* END *)
