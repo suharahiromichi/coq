@@ -99,50 +99,13 @@ End Categories.
 Section Functions.                  (* 集合と関数の世界 *)
   (* Ordinary tuples are products *)
   
-(*  Definition Map A B := A -> B. *)
-  
-(*  Definition eq_ext {A B : Type} (f g : A -> B) := forall x, f x = g x. *)
-  
-  Theorem refl_ext : forall (A B : Type) (f : A -> B), (@eqfun B A) f f.
-  Proof.
-    unfold eqfun. auto.
-  Qed.
-  
-  Theorem symm_ext : forall (A B : Type) (f g :A -> B),
-      eqfun f g -> eqfun g f.
-  Proof.
-    unfold eqfun. auto.
-  Qed.
-  
-  Theorem trans_ext : forall (A B : Type) (f g h : A -> B),
-      eqfun f g -> eqfun g h -> eqfun f h.
-  Proof.
-    unfold eqfun. eauto using eq_trans.
-  Qed.
-  
-  Instance ReflExt : forall (A B : Type), Reflexive (@eqfun A B) :=
-    {
-      reflexivity := (@refl_ext B A)
-    }.
-  
-  Instance SymmExt : forall (A B : Type), Symmetric (@eqfun A B) :=
-    {
-      symmetry := @symm_ext B A
-    }.
-  
-  Instance TransExt : forall (A B : Type), Transitive (@eqfun A B) :=
-    {
-      transitivity := @trans_ext B A
-    }.
-  
   Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) :=
     {
-      Equivalence_Reflexive := @ReflExt A B;
-      Equivalence_Symmetric := @SymmExt A B;
-      Equivalence_Transitive := @TransExt A B
+      Equivalence_Reflexive := @frefl A B;
+      Equivalence_Symmetric := @fsym A B;
+      Equivalence_Transitive := @ftrans A B
     }.
 
-(*  Instance EqMor : forall (A B : Type), Setoid (Map A B) := (* Setoid *) *)
   Instance EqMor : forall (A B : Type), Setoid (A -> B) := (* Setoid *)
     {
       equiv := @eqfun B A
@@ -151,30 +114,30 @@ Section Functions.                  (* 集合と関数の世界 *)
   Instance Func : Category EqMor :=         (* Category *)
     {
       idC A := id;
-      composeC A B C := funcomp tt           (* funcomp *)
+      composeC A B C := funcomp tt          (* compose *)
     }.
   Proof.
-    unfold equiv. red. unfold eqfun. auto.
-    unfold equiv. red. unfold eqfun. auto.
-    unfold equiv. red. unfold eqfun. auto.
+    - by rewrite //=.
+    - by rewrite //=.
+    - by rewrite //=.
   Defined.
 
   Variable P : Type -> Type -> Type.
 
-  Instance Prod : Product _ prod Func :=
+  Instance Prod : Product Func prod Func :=
     {
       proj1 A B := fst;
       proj2 A B := snd;
       mediating A B X := fun f g x => (f x, g x)
     }.
   Proof.
-    unfold commute. simpl. unfold eqfun. auto.
-    unfold commute. simpl. unfold eqfun. auto.
-    unfold commute. simpl. unfold eqfun. unfold funcomp.
-    intros.
-    rewrite <- H. rewrite <- H0.
-    apply surjective_pairing.
+    - by rewrite //=.
+    - by rewrite //=.
+    - rewrite /commute /= /eqfun.
+      move=> A B X f g h H H0 x.
+      rewrite -H -H0.
+      by apply surjective_pairing.
   Qed.
-  
 End Functions.
 
+(* 続く *)
