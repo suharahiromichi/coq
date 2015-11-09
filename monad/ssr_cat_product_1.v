@@ -12,7 +12,7 @@ http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 (* Require Import Relation_Definitions.        (* relation *) *)
 (* EquivExt はいらない？ *)
-(* Require Import Classes.RelationClasses.     (* Equivalence *) *)
+Require Import Classes.RelationClasses.     (* Equivalence *)
 (* Require Import Classes.SetoidClass.         (* Setoid *) *)
 
 Set Implicit Arguments.
@@ -105,14 +105,13 @@ End Categories.
 Section Functions.                  (* 集合と関数の世界 *)
   (* Ordinary tuples are products *)
   
-(*
   Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) :=
     {
       Equivalence_Reflexive := @frefl A B;
       Equivalence_Symmetric := @fsym A B;
       Equivalence_Transitive := @ftrans A B
     }.
-*)
+  
   Instance EqMor : forall (A B : Type), Setoid (A -> B) := (* Setoid *)
     {
       equiv := @eqfun B A
@@ -150,95 +149,114 @@ End Functions.
 Section Orders.                          (* 半順序の世界 *)
   (* max of nat is a product *)
   
-  Theorem ge_n : forall n, (n >= n)%coq_nat.          (* n >= n *)
+  Check leqnn : forall n : nat, n <= n.
+
+  (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
+  Lemma leq_trans' : forall m n p : nat, n <= p -> m <= n -> m <= p.
   Proof.
-    auto with arith.
+    move=> m n p H1 H2.
+    move: H2 H1.
+    by apply: leq_trans.
+  Qed.
+
+  (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
+  Lemma leq_trans'' : forall m n p : nat, p <= n -> n <= m -> p <= m.
+  Proof.
+    move=> m n p H1 H2.
+    move: H1 H2.
+    by apply: leq_trans.
   Qed.
   
-  Theorem ge_trans' : forall n m p,
-      (m >= p)%coq_nat -> (n >= m)%coq_nat -> (n >= p)%coq_nat.
-  Proof.
-    (* intros n m p. eauto using le_trans. *)
-    admit.
-  Qed.
+  Definition eq_leq m n (p q : m <= n) := true.
+  Definition eq_geq m n (p q : m >= n) := true.
   
-  Definition eq_ge n m (p q : ge n m) := True.
-  Check eq_ge.
-  
-(*
-  Instance EquivGe : forall n m, Equivalence (@eq_ge n m).
+  Instance EquivLeq : forall m n, Equivalence (@eq_leq m n).
   Proof.
-    intros n m. constructor; constructor.
+    by [].
   Qed. 
-*)  
-  Instance EqGe : forall n m, Setoid (n >= m)%coq_nat := (* Setoid *)
+  
+  Instance EqGeq : forall m n, Setoid (m >= n) :=
     {
-      equiv := (@eq_ge n m)
+      equiv := (@eq_geq m n)
     }.
   
-  Instance Order : Category EqGe :=         (* Category *)
+  Instance EqLeq : forall m n, Setoid (m <= n) :=
     {
-      idC := ge_n;
-      composeC := ge_trans'
+      equiv := (@eq_leq m n)
+    }.
+  
+  Instance Order' : Category EqGeq :=
+    {
+      idC := leqnn;
+      composeC := leq_trans''
     }.
   Proof.
-    simpl. unfold eq_ge. auto.
-    simpl. unfold eq_ge. auto.
-    simpl. unfold eq_ge. auto.
+    - by [].
+    - by [].
+    - by [].
   Defined.
   
-  Lemma max_val : forall n m, max n m = n \/ max n m = m.
+  Instance Order : Category EqLeq :=
+    {
+      idC := leqnn;
+      composeC := leq_trans'
+    }.
   Proof.
-    intros n m.
-    admit.
-(*    destruct (le_or_lt n m);
-      [right|left]; [apply max_r|apply max_l];
-      auto with arith.*)
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+  
+  Check leq_maxl : forall m n : nat, m <= maxn m n.
+  Check leq_maxr : forall m n : nat, n <= maxn m n.  
+  
+  (* Arith/Lt.v *)
+  Lemma leq_or_lt : forall m n : nat, m <= n \/ n < m.
+  Proof.
+    move=> m n.
+    by pattern m, n; apply nat_double_ind; auto with arith.
   Qed.
-
-
-  Theorem max_med : forall n m x,
-      (n <= x)%coq_nat -> (m <= x)%coq_nat -> (max n m <= x)%coq_nat.
+  
+  Lemma max_val : forall m n, maxn m n = m \/ maxn m n = n.
+  Proof.
+    move=> m n.
+    case: (leq_or_lt m n).
+    - right.
+        by apply/maxn_idPr.
+    - left.
+        apply/maxn_idPl.
+          by auto with arith.
+  Qed.
+  
+  Lemma max_med : forall m n x,
+      m <= x -> n <= x -> maxn m n <= x.
   Proof.
     intros n m x.
-    destruct (max_val n m); intuition.
-    admit.
-    admit.
+    case: (max_val n m); by move=> ->.
   Qed.
-  
-  Theorem max_ge1 : forall n m, (max n m >= n)%coq_nat.
-  Proof.
-    intros n m.
-    destruct (max_val n m); intuition.
-  Qed.
-  
-  Theorem max_ge2 : forall n m, (max n m >= m)%coq_nat.
-  Proof.
-    intros n m.
-    destruct (max_val n m); intuition.
-  Qed.
-  
-  Instance Max : Product Order max Order :=
+
+  Instance Max : Product Order' maxn Order' :=
     {
-      proj1 := max_ge1;
-      proj2 := max_ge2;
+      proj1 := leq_maxl;
+      proj2 := leq_maxr;
       mediating := max_med
     }.
   Proof.
-    unfold commute. simpl. unfold eq_ge. auto.
-    unfold commute. simpl. unfold eq_ge. auto.
-    unfold commute. simpl. unfold eq_ge. auto.
+    - by [].
+    - by [].
+    - by [].
   Defined.
-  
   (* an application of parallel (***) *)
   
-  Theorem parallel_max : forall n m l k,
-      (n >= m)%coq_nat -> (l >= k)%coq_nat -> (max n l >= max m k)%coq_nat.
+  Theorem parallel_max : forall m n p q,
+      m >= n -> p >= q -> maxn m p >= maxn n q.
   Proof.
-    apply (@parallel nat ge EqGe Order).
-    apply Max.
+    move=> m n p q.
+    Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn.
+    Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max n m p q.
+    by apply: (@parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max).
   Qed.
-  
+
 End Orders.
 
 (* モノイド *)
