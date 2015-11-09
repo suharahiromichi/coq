@@ -175,14 +175,27 @@ Section Orders.                          (* 半順序の世界 *)
     by [].
   Qed. 
   
-  Instance EqGeq : forall m n, Setoid (m >= n) :=
-    {
-      equiv := (@eq_geq m n)
-    }.
-  
   Instance EqLeq : forall m n, Setoid (m <= n) :=
     {
       equiv := (@eq_leq m n)
+    }.
+  
+  Instance Order : Category EqLeq :=
+    {
+      idC := leqnn;
+      composeC := leq_trans'
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+
+
+
+  Instance EqGeq : forall m n, Setoid (m >= n) :=
+    {
+      equiv := (@eq_geq m n)
     }.
   
   Instance Order' : Category EqGeq :=
@@ -195,18 +208,8 @@ Section Orders.                          (* 半順序の世界 *)
     - by [].
     - by [].
   Defined.
-  
-  Instance Order : Category EqLeq :=
-    {
-      idC := leqnn;
-      composeC := leq_trans'
-    }.
-  Proof.
-    - by [].
-    - by [].
-    - by [].
-  Defined.
-  
+
+
   Check leq_maxl : forall m n : nat, m <= maxn m n.
   Check leq_maxr : forall m n : nat, n <= maxn m n.  
   
@@ -235,6 +238,28 @@ Section Orders.                          (* 半順序の世界 *)
     case: (max_val n m); by move=> ->.
   Qed.
 
+  Lemma min_med : forall m n x,
+      x <= m -> x <= n -> x <= minn m n.
+  Proof.
+    intros n m x.
+    admit.
+  Qed.  
+
+  Search (minn).
+  Instance Min : Product Order minn Order :=
+    {
+      proj1 := geq_minl;
+      proj2 := geq_minr;
+      mediating := min_med
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+  (* an application of parallel (***) *)
+
+  
   Instance Max : Product Order' maxn Order' :=
     {
       proj1 := leq_maxl;
@@ -253,10 +278,20 @@ Section Orders.                          (* 半順序の世界 *)
   Proof.
     move=> m n p q.
     Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn.
-    Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max n m p q.
-    by apply: (@parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max).
+    Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max m n p q.
+    by apply: (@parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max m n p q).
   Qed.
 
+
+  Theorem parallel_min : forall m n p q,
+      m <= n -> p <= q -> minn m p <= minn n q.
+  Proof.
+    move=> m n p q.
+    Check @parallel nat leq  EqLeq Order minn.
+    Check @parallel nat leq  EqLeq Order minn Min m n p q.
+    by apply: (@parallel nat leq EqLeq Order minn Min m n p q).
+  Qed.  
+  
 End Orders.
 
 (* モノイド *)
