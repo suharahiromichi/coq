@@ -61,8 +61,9 @@ Section Categories.
   Notation "A ~> B" := (Mor A B).           (* 射 *)
   Notation "f 'o' g" := (composeC f g).     (* 射の結合 *)
 *)
-  Variable Cat : Category.
 
+  Variable Cat : Category.
+  
   (* 可換の定義 *)
   Definition commute {A B C : Obj} (f : Mor A B) (g : Mor B C) (h : Mor A C) :=
     composeC g f === h.
@@ -98,11 +99,12 @@ Section Categories.
         (@proj1 P Cat Prod A C, @proj2 P Cat Prod A C) in
     mediating (composeC f p1) (composeC g p2).
   (* parallel = (***) または <f,g> *)
-
 End Categories.
 
-
-Section Functions.                  (* 集合と関数の世界 *)
+(* *********************** *)
+(* 関数の世界、関数 と 直積 *)
+(* *********************** *)
+Section Functions.
   (* Ordinary tuples are products *)
   
   Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) :=
@@ -128,8 +130,6 @@ Section Functions.                  (* 集合と関数の世界 *)
     - by rewrite //=.
   Defined.
 
-  Variable P : Type -> Type -> Type.
-
   Instance Prod : Product Func prod Func :=
     {
       proj1 A B := @fst A B;
@@ -146,70 +146,48 @@ Section Functions.                  (* 集合と関数の世界 *)
   Qed.
 End Functions.
 
-Section Orders.                          (* 半順序の世界 *)
+(* ********************** *)
+(* 半順序の世界、>= と max *)
+(* ********************** *)
+Section Orders.
   (* max of nat is a product *)
+  
+  Definition geq m n := m >= n.
   
   Check leqnn : forall n : nat, n <= n.
 
-  (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
-  Lemma leq_trans' : forall m n p : nat, n <= p -> m <= n -> m <= p.
-  Proof.
-    move=> m n p H1 H2.
-    move: H2 H1.
-    by apply: leq_trans.
-  Qed.
-
-  (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
   Lemma leq_trans'' : forall m n p : nat, p <= n -> n <= m -> p <= m.
   Proof.
     move=> m n p H1 H2.
     move: H1 H2.
     by apply: leq_trans.
   Qed.
+
+  Lemma geq_trans : forall m n p : nat, n >= p -> m >= n -> m >= p.
+  Proof.
+    move=> m n p H1 H2.
+    move: H1 H2.
+    by apply: leq_trans.
+  Qed.
   
-  Definition eq_leq m n (p q : m <= n) := true.
   Definition eq_geq m n (p q : m >= n) := true.
   
-  Instance EquivLeq : forall m n, Equivalence (@eq_leq m n).
-  Proof.
-    by [].
-  Qed. 
-  
-  Instance EqLeq : forall m n, Setoid (m <= n) :=
-    {
-      equiv := (@eq_leq m n)
-    }.
-  
-  Instance Order : Category EqLeq :=
-    {
-      idC := leqnn;
-      composeC := leq_trans'
-    }.
-  Proof.
-    - by [].
-    - by [].
-    - by [].
-  Defined.
-
-
-
   Instance EqGeq : forall m n, Setoid (m >= n) :=
     {
       equiv := (@eq_geq m n)
     }.
   
-  Instance Order' : Category EqGeq :=
+  Instance Order : Category EqGeq :=
     {
       idC := leqnn;
-      composeC := leq_trans''
+      composeC := geq_trans
     }.
   Proof.
     - by [].
     - by [].
     - by [].
   Defined.
-
-
+  
   Check leq_maxl : forall m n : nat, m <= maxn m n.
   Check leq_maxr : forall m n : nat, n <= maxn m n.  
   
@@ -234,33 +212,11 @@ Section Orders.                          (* 半順序の世界 *)
   Lemma max_med : forall m n x,
       m <= x -> n <= x -> maxn m n <= x.
   Proof.
-    intros n m x.
-    case: (max_val n m); by move=> ->.
+    intros m n x.
+    case: (max_val m n); by move=> ->.
   Qed.
-
-  Lemma min_med : forall m n x,
-      x <= m -> x <= n -> x <= minn m n.
-  Proof.
-    intros n m x.
-    admit.
-  Qed.  
-
-  Search (minn).
-  Instance Min : Product Order minn Order :=
-    {
-      proj1 := geq_minl;
-      proj2 := geq_minr;
-      mediating := min_med
-    }.
-  Proof.
-    - by [].
-    - by [].
-    - by [].
-  Defined.
-  (* an application of parallel (***) *)
-
   
-  Instance Max : Product Order' maxn Order' :=
+  Instance Max : Product Order maxn Order :=
     {
       proj1 := leq_maxl;
       proj2 := leq_maxr;
@@ -277,22 +233,100 @@ Section Orders.                          (* 半順序の世界 *)
       m >= n -> p >= q -> maxn m p >= maxn n q.
   Proof.
     move=> m n p q.
-    Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn.
-    Check @parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max m n p q.
-    by apply: (@parallel nat (fun m n=> m >= n)  EqGeq Order' maxn Max m n p q).
+    Check @parallel nat geq EqGeq Order maxn.
+    Check @parallel nat geq EqGeq Order maxn Max m n p q.
+      by apply: (@parallel nat geq EqGeq Order maxn Max m n p q).
   Qed.
+End Orders.
 
+(* ********************** *)
+(* 半順序の世界、<= と min *)
+(* ********************** *)
+Section Orders'.
+  
+  Check leqnn : forall n : nat, n <= n.
 
+  (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
+  Lemma leq_trans' : forall m n p : nat, n <= p -> m <= n -> m <= p.
+  Proof.
+    move=> m n p H1 H2.
+    move: H2 H1.
+      by apply: leq_trans.
+  Qed.
+  
+  Definition eq_leq m n (p q : m <= n) := true.
+  
+  Instance EquivLeq : forall m n, Equivalence (@eq_leq m n).
+  Proof.
+    by [].
+  Qed. 
+  
+  Instance EqLeq : forall m n, Setoid (m <= n) :=
+    {
+      equiv := (@eq_leq m n)
+    }.
+  
+  Instance Order' : Category EqLeq :=
+    {
+      idC := leqnn;
+      composeC := leq_trans'
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+
+  Check geq_minl : forall m n : nat, minn m n <= m.
+  Check geq_minr : forall m n : nat, minn m n <= n.
+  
+  (* Arith/Lt.v *)
+  Lemma geq_or_gt : forall m n : nat, m >= n \/ n > m.
+  Proof.
+    move=> m n.
+      by pattern n, m; apply nat_double_ind; auto with arith.
+  Qed.
+  
+  Lemma min_val : forall m n, minn m n = m \/ minn m n = n.
+  Proof.
+    move=> m n.
+    case: (geq_or_gt m n).
+    - right.
+        by apply/minn_idPr.
+    - left.
+        apply/minn_idPl.
+          by auto with arith.
+  Qed.
+  
+  Lemma min_med : forall m n x,
+      x <= m -> x <= n -> x <= minn m n.
+  Proof.
+    intros m n x.
+    case: (min_val m n); by move=> ->.
+  Qed.  
+  
+  Instance Min : Product Order' minn Order' :=
+    {
+      proj1 := geq_minl;
+      proj2 := geq_minr;
+      mediating := min_med
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+  (* an application of parallel (***) *)
+  
   Theorem parallel_min : forall m n p q,
       m <= n -> p <= q -> minn m p <= minn n q.
   Proof.
     move=> m n p q.
-    Check @parallel nat leq  EqLeq Order minn.
-    Check @parallel nat leq  EqLeq Order minn Min m n p q.
-    by apply: (@parallel nat leq EqLeq Order minn Min m n p q).
+    Check @parallel nat leq  EqLeq Order' minn.
+    Check @parallel nat leq  EqLeq Order' minn Min m n p q.
+    by apply: (@parallel nat leq EqLeq Order' minn Min m n p q).
   Qed.  
-  
-End Orders.
+End Orders'.
 
 (* モノイド *)
 (* END *)
