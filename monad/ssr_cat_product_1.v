@@ -10,10 +10,7 @@ http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
 *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-(* Require Import Relation_Definitions.        (* relation *) *)
-(* EquivExt はいらない？ *)
 Require Import Classes.RelationClasses.     (* Equivalence *)
-(* Require Import Classes.SetoidClass.         (* Setoid *) *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -53,14 +50,8 @@ Section Categories.
                              (f : Mor A B) (g : Mor B C) (h : Mor C D),
           composeC (composeC h g) f === composeC h (composeC g f)
     }.
-  
-   (* == は Setoid で定義された equiv であり、
-   省略された引数は @equiv (A ~> D) (smor A D) *)
-
-(*
-  Notation "A ~> B" := (Mor A B).           (* 射 *)
-  Notation "f 'o' g" := (composeC f g).     (* 射の結合 *)
-*)
+  (* === は Setoid で定義された equiv であり、
+   省略された引数は @equiv (Mor A D) (smor A D) *)
 
   Variable Cat : Category.
   
@@ -79,7 +70,6 @@ Section Categories.
       mediating : forall {A B X : Obj}, Mor X A -> Mor X B -> Mor X (P A B);
       (* mediating = (&&&) *)
       
-      (* Proofs *)
       (* commute CP のCPは、Section Commutativity の Cat に渡される。 *)
       med_commute1 : forall (A B X : Obj) (f : Mor X A) (g : Mor X B),
           commute (mediating f g) proj1 f;
@@ -107,14 +97,14 @@ End Categories.
 Section Functions.
   (* Ordinary tuples are products *)
   
-  Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) :=
+  Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) := (* notu *)
     {
       Equivalence_Reflexive := @frefl A B;
       Equivalence_Symmetric := @fsym A B;
       Equivalence_Transitive := @ftrans A B
     }.
   
-  Instance EqMor : forall (A B : Type), Setoid (A -> B) := (* Setoid *)
+  Instance EqMor : forall (A B : Type), Setoid (A -> B) :=
     {
       equiv := @eqfun B A
     }.
@@ -142,7 +132,7 @@ Section Functions.
     - rewrite /commute /= /eqfun.
       move=> A B X f g h H H0 x.
       rewrite -H -H0.
-      by apply surjective_pairing.
+        by apply surjective_pairing.
   Qed.
 End Functions.
 
@@ -156,21 +146,19 @@ Section Orders.
   
   Check leqnn : forall n : nat, n <= n.
 
-  Lemma leq_trans'' : forall m n p : nat, p <= n -> n <= m -> p <= m.
-  Proof.
-    move=> m n p H1 H2.
-    move: H1 H2.
-    by apply: leq_trans.
-  Qed.
-
   Lemma geq_trans : forall m n p : nat, n >= p -> m >= n -> m >= p.
   Proof.
     move=> m n p H1 H2.
     move: H1 H2.
-    by apply: leq_trans.
+      by apply: leq_trans.
   Qed.
   
   Definition eq_geq m n (p q : m >= n) := true.
+  
+  Instance EquivGeq : forall m n, Equivalence (@eq_geq m n). (* notu *)
+  Proof.
+      by [].
+  Qed. 
   
   Instance EqGeq : forall m n, Setoid (m >= n) :=
     {
@@ -191,29 +179,13 @@ Section Orders.
   Check leq_maxl : forall m n : nat, m <= maxn m n.
   Check leq_maxr : forall m n : nat, n <= maxn m n.  
   
-  (* Arith/Lt.v *)
-  Lemma leq_or_lt : forall m n : nat, m <= n \/ n < m.
-  Proof.
-    move=> m n.
-    by pattern m, n; apply nat_double_ind; auto with arith.
-  Qed.
-  
-  Lemma max_val : forall m n, maxn m n = m \/ maxn m n = n.
-  Proof.
-    move=> m n.
-    case: (leq_or_lt m n).
-    - right.
-        by apply/maxn_idPr.
-    - left.
-        apply/maxn_idPl.
-          by auto with arith.
-  Qed.
-  
   Lemma max_med : forall m n x,
       m <= x -> n <= x -> maxn m n <= x.
   Proof.
-    intros m n x.
-    case: (max_val m n); by move=> ->.
+    move=> m n x H1 H2.
+    rewrite geq_max.
+    apply/andP.
+      by split.
   Qed.
   
   Instance Max : Product Order maxn Order :=
@@ -256,9 +228,9 @@ Section Orders'.
   
   Definition eq_leq m n (p q : m <= n) := true.
   
-  Instance EquivLeq : forall m n, Equivalence (@eq_leq m n).
+  Instance EquivLeq : forall m n, Equivalence (@eq_leq m n). (* notu *)
   Proof.
-    by [].
+      by [].
   Qed. 
   
   Instance EqLeq : forall m n, Setoid (m <= n) :=
@@ -280,29 +252,13 @@ Section Orders'.
   Check geq_minl : forall m n : nat, minn m n <= m.
   Check geq_minr : forall m n : nat, minn m n <= n.
   
-  (* Arith/Lt.v *)
-  Lemma geq_or_gt : forall m n : nat, m >= n \/ n > m.
-  Proof.
-    move=> m n.
-      by pattern n, m; apply nat_double_ind; auto with arith.
-  Qed.
-  
-  Lemma min_val : forall m n, minn m n = m \/ minn m n = n.
-  Proof.
-    move=> m n.
-    case: (geq_or_gt m n).
-    - right.
-        by apply/minn_idPr.
-    - left.
-        apply/minn_idPl.
-          by auto with arith.
-  Qed.
-  
   Lemma min_med : forall m n x,
       x <= m -> x <= n -> x <= minn m n.
   Proof.
-    intros m n x.
-    case: (min_val m n); by move=> ->.
+    move=> m n x H1 H2.
+    rewrite leq_min.
+    apply/andP.
+      by split.
   Qed.  
   
   Instance Min : Product Order' minn Order' :=
@@ -324,9 +280,8 @@ Section Orders'.
     move=> m n p q.
     Check @parallel nat leq  EqLeq Order' minn.
     Check @parallel nat leq  EqLeq Order' minn Min m n p q.
-    by apply: (@parallel nat leq EqLeq Order' minn Min m n p q).
+      by apply: (@parallel nat leq EqLeq Order' minn Min m n p q).
   Qed.  
 End Orders'.
 
-(* モノイド *)
 (* END *)
