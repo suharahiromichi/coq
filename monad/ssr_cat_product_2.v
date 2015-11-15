@@ -54,10 +54,7 @@ Section Categories.
                              (f : Mor A B) (g : Mor B C) (h : Mor C D),
           composeC (composeC h g) f === composeC h (composeC g f)
     }.
-  (* === は Setoid で定義された equiv であり、
-   省略された引数は @equiv (Mor A D) (smor A D) *)
-
-
+  
   Check @Obj : Category -> Type.
   (* Obj が出現する文脈では、CP : Category を省略できない。
      ここで、CPは、ProductをもつCategoryの意味。 *)
