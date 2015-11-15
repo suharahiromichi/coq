@@ -59,8 +59,9 @@ Section Categories.
 
 
   Check @Obj : Category -> Type.
-  (* Obj が出現する文脈では、Cat : Category を省略できない。 *)
-
+  (* Obj が出現する文脈では、CP : Category を省略できない。
+     ここで、CPは、ProductをもつCategoryの意味。 *)
+  
   (* 可換の定義 *)
   Definition commute {CP : Category} {A B C : Obj}
              (f : Mor A B) (g : Mor B C) (h : Mor A C) :=
@@ -87,8 +88,8 @@ Section Categories.
           commute h proj1 f -> commute h proj2 g -> h === mediating f g
     }.
 
-  Definition parallel {CP : Category}
-             {A B C D : Obj} {P : Obj -> Obj -> Obj} {Prod :Product P}
+  Definition parallel {CP : Category} {A B C D : Obj} {P : Obj -> Obj -> Obj}
+             {Prod : Product P}
              (f : Mor A B) (g : Mor C D) : Mor (P A C) (P B D) :=
     let (p1, p2) :=
         (@proj1 CP P Prod A C, @proj2 CP P Prod A C) in
@@ -194,8 +195,8 @@ Section Orders.
       by split.
   Qed.
   
-  (* Instance Max : @Product Max maxn *)
-  Instance Max : Product maxn :=
+  (* Instance Max : Product maxn := *)
+  Instance Max : @Product Order maxn :=
     {
       proj1 := leq_maxl;
       proj2 := leq_maxr;
@@ -269,8 +270,8 @@ Section Orders'.
       by split.
   Qed.  
   
-  (* Instance Min : @Product Order' minn := *)
-  Instance Min : Product minn :=
+  (* Instance Min : Product minn := *)
+  Instance Min : @Product Order' minn :=
     {
       proj1 := geq_minl;
       proj2 := geq_minr;
