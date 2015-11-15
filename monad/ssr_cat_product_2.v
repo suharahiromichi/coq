@@ -103,20 +103,23 @@ End Categories.
 Section Functions.
   (* Ordinary tuples are products *)
   
-  Instance EquivExt : forall (A B : Type), Equivalence (@eqfun A B) := (* notu *)
+  Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) := (* notu *)
     {
       Equivalence_Reflexive := @frefl A B;
       Equivalence_Symmetric := @fsym A B;
       Equivalence_Transitive := @ftrans A B
     }.
   
-  Instance EqMor : forall (A B : Type), Setoid :=
+  Instance EqMor : forall (A B : Set), Setoid :=
     {
+      carrier := A -> B;
       equiv := @eqfun B A
     }.
-
+  
   Instance Func : Category :=               (* Category *)
     {
+      Obj := Set;
+      Mor := EqMor;
       idC A := id;
       composeC A B C := funcomp tt          (* compose *)
     }.
@@ -125,7 +128,7 @@ Section Functions.
     - by rewrite //=.
     - by rewrite //=.
   Defined.
-
+  
   (* Instance Prod : @Product Func prod := *)
   Instance Prod : Product prod :=
     {
@@ -169,11 +172,14 @@ Section Orders.
   
   Instance EqGeq : forall m n, Setoid :=
     {
-      equiv := (@eq_geq m n)
+      carrier := m >= n;
+      equiv := @eq_geq m n
     }.
   
   Instance Order : Category :=
     {
+      Obj := nat;
+      Mor := EqGeq;
       idC := leqnn;
       composeC := geq_trans
     }.
@@ -244,11 +250,14 @@ Section Orders'.
   
   Instance EqLeq : forall m n, Setoid :=
     {
-      equiv := (@eq_leq m n)
+      carrier := m <= n;
+      equiv := @eq_leq m n
     }.
   
   Instance Order' : Category :=
     {
+      Obj := nat;
+      Mor := EqLeq;
       idC := leqnn;
       composeC := leq_trans'
     }.
