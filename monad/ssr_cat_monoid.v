@@ -5,7 +5,7 @@
 http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
 
 これをもとに、モノイドを作る。
-*)
+ *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 (* Require Import Classes.RelationClasses.     (* Equivalence *) *)
@@ -23,7 +23,7 @@ Section Categories.
     }.
   Coercion carrier : Setoid >-> Sortclass.
   Notation "x === z" := (equiv x z) (at level 70).
-
+  
   Class Category :=
     {
       (* 対象の定義 *)
@@ -45,11 +45,11 @@ Section Categories.
       (* 結合律の定義 *)
       associativity : forall (A B C D : Obj)
                              (f : Mor A B) (g : Mor B C) (h : Mor C D),
-          composeC (composeC h g) f === composeC h (composeC g f)
+                        composeC (composeC h g) f === composeC h (composeC g f)
     }.
 End Categories.
 
-Section Monoids.
+Section NatMonoid.
   
   Instance EqNat : forall (A B : unit), Setoid :=
     {
@@ -65,7 +65,7 @@ Section Monoids.
   Check muln : nat -> nat -> nat.
   (* Mor _ _ は Setoid で、carrier によるコアーションのもとで、型は一致する。 *)
   
-  Instance NatMonoid : Category :=          (* Category *)
+  Instance Monoid : Category :=             (* Category *)
     {
       Obj := unit;
       Mor := EqNat;
@@ -81,6 +81,39 @@ Section Monoids.
         by rewrite mulnA.
   Defined.
 
-End Monoids.
+End NatMonoid.
+
+Section ListMonoid.
+  
+    Instance EqList : forall (A B : unit), Setoid :=
+    {
+      carrier := seq nat;
+      equiv := eq
+    }.
+  
+  Check Mor : Obj -> Obj -> Setoid.
+  Check EqList : unit -> unit -> Setoid.
+  (* Obj := unit のもとで型は一致する。 *)
+  
+  Check composeC : Mor _ _ -> Mor _ _ -> Mor _ _.
+  Check @cat nat.                           (* SSReflect は cat!! *)
+  (* Mor _ _ は Setoid で、carrier によるコアーションのもとで、型は一致する。 *)
+  
+  Instance Monoid' (M : Type) : Category := (* Category *)
+    {
+      Obj := unit;
+      Mor := EqList;
+      idC A := [::];
+      composeC A B C := @cat nat            (* compose *)
+    }.
+  Proof.
+    - move=> A B f /=.
+        by [].
+    - move=> A B f /=.
+        by rewrite cats0.
+    - move=> A B C D f g h /=.
+        by rewrite -catA.
+  Defined.
+End ListMonoid.
 
 (* END *)
