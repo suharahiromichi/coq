@@ -54,30 +54,30 @@ End Categories.
 
 Section Monad.
   
-  Instance function (X Y : Type): Setoid :=
-  {
-    carrier := X -> Y;
-    equiv f g := forall x, f x = g x
-  }.
+  Instance EqMor : forall (A B : Set), Setoid :=
+    {
+      carrier := A -> B;
+      equiv := @eqfun B A
+    }.
   
-  Instance Types : Category :=
-  {
-    Obj := Type;
-    Mor X Y := function X Y;
-    idC X x := x;
-    composeC X Y Z g f x := g (f x)
-  }.
+  Instance Func : Category :=               (* Category *)
+    {
+      Obj := Set;
+      Mor := EqMor;
+      idC A := id;
+      composeC A B C := funcomp tt          (* compose *)
+    }.
   Proof.
     - by [].
     - by [].
-    - by [].      
+    - by [].
   Defined.
-  
+
   About option.              (* Coq.Init.Datatypes.option *)
   Check Some : forall A : Type, A -> option A.
   Check @None : forall A : Type, option A.
   
-  Instance Maybe : @Kleisli Types option :=
+  Instance Maybe : @Kleisli Func option :=
     {
       pure X x := Some x;
       bind X Y f m :=
