@@ -3,6 +3,7 @@
 *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+Require Import finset fintype.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -125,5 +126,65 @@ Section Sample2.
     - by [].
   Defined.
 End Sample2.
+
+Section Sample3.
   
+  Check [set x in 'I_2] : {set ordinal_finType 2}.
+  
+  Definition a : 'I_2. Proof. have : 0 < 2 by []. apply Ordinal. Defined.
+  Definition b : 'I_2. Proof. have : 1 < 2 by []. apply Ordinal. Defined.
+
+  Check a \in [set x in 'I_2].
+  Check b \in [set x in 'I_2].
+
+  Check set0 \subset [set x in 'I_2].
+  Check [set a] \subset [set x in 'I_2].
+  Check [set b] \subset [set x in 'I_2].
+  Check [set a; b] \subset [set x in 'I_2].
+
+  Check set0 \in powerset [set x in 'I_2].
+  Check [set a] \in powerset [set x in 'I_2].
+  Check [set b] \in powerset [set x in 'I_2].
+  Check [set a; b] \in powerset [set x in 'I_2].
+  
+  (* *** *)
+  
+  Definition aSet := {set ordinal_finType 2}.
+  Check [set x in 'I_2] : aSet.
+  
+  Definition eq_subset (m n : aSet) (p q : m \subset n) := true.
+  
+  Lemma subset_trans' : forall m n p : aSet,
+                          n \subset p -> m \subset n -> m \subset p.
+  Proof.
+    move=> m n p H1 H2.
+    move: H2 H1.
+      by apply: subset_trans.
+  Qed.
+  
+  Instance EqSubset : forall (m n : aSet), Setoid :=
+    {
+      carrier := m \subset n;
+      equiv := @eq_subset m n
+    }.
+
+  Lemma subnn : forall n : aSet, n \subset n.
+  Proof.
+    done.
+  Qed.
+  
+  Instance Subset : Category :=
+    {
+      Obj := aSet;
+      Mor := EqSubset;
+      idC := subnn;
+      composeC := subset_trans'
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+End Sample3.
+
 (* END *)
