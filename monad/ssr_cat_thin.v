@@ -43,6 +43,8 @@ Section Categories.
     }.
 End Categories.
 
+
+(* 対象がやせている *)
 Section Sample1.
 
   Instance EqNat : forall (A B : unit), Setoid :=
@@ -51,7 +53,7 @@ Section Sample1.
       equiv := eq
     }.
 
-  Instance Preorder : Category :=
+  Instance Add : Category :=
     {
       Obj := unit;
       Mor := EqNat;
@@ -65,6 +67,63 @@ Section Sample1.
       by rewrite addnA.
   Defined.
   
+  Program Instance Mul : Category :=
+    {
+      Obj := unit;
+      Mor := EqNat;
+      idC A := 1;
+      composeC A B C := muln
+    }.
+  Next Obligation.
+  Proof.
+    by rewrite mul1n.
+  Qed.
+  Next Obligation.
+  Proof.
+    by rewrite muln1.
+  Qed.
+  Next Obligation.
+    by rewrite mulnA.
+  Qed.
+
+(*
+ssr_cat_monoid も参照のこと。
+モノイド、リストのcat 
+ *)
 End Sample1.
 
+
+(* 射がやせている *)
+Section Sample2.
+
+  Definition eq_leq m n (p q : m <= n) := true.
+
+  (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
+  Lemma leq_trans' : forall m n p : nat, n <= p -> m <= n -> m <= p.
+  Proof.
+    move=> m n p H1 H2.
+    move: H2 H1.
+      by apply: leq_trans.
+  Qed.
+  
+  Instance EqLeq : forall (m n : nat), Setoid :=
+    {
+      carrier := m <= n;
+      equiv := @eq_leq m n
+    }.
+  
+  Instance SemiOrder : Category :=
+    {
+      Obj := nat;
+      Mor := EqLeq;
+      idC := leqnn;
+      composeC := leq_trans'
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+End Sample2.
+  
 (* END *)
