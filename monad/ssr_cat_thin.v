@@ -149,9 +149,13 @@ Section Sample3.
   
   (* *** *)
   
-  Definition aSet := {set ordinal_finType 2}.
-  Check [set x in 'I_2] : aSet.
+  (* Definition aSet := {set ordinal_finType 2}. *)
+  (* Check [set x in 'I_2] : aSet. *)
   
+  (* より一般的な定義 *)
+  Variable T : finType.
+  Definition aSet := {set T}.
+
   Definition eq_subset (m n : aSet) (p q : m \subset n) := true.
   
   Lemma subset_trans' : forall m n p : aSet,
