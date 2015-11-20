@@ -191,4 +191,41 @@ Section Sample3.
   Defined.
 End Sample3.
 
+Section Sample4.
+  Variable T : Type.
+  Variable R : rel T.
+  
+  Definition eq_rel (m n : T) (p q : R m n) := true.
+  
+  Instance EqRel : forall (m n : T), Setoid :=
+    {
+      carrier := R m n;
+      equiv := @eq_rel m n
+    }.
+
+  Lemma relnn : forall n : T, R n n.
+  Proof.
+    admit.                                  (* XXX *)
+  Qed.
+
+  Lemma rel_trans' : forall m n p : T,
+                       R n p -> R m n -> R m p.
+  Proof.
+    admit.                                  (* XXX *)
+  Qed.
+  
+  Instance Relation : Category :=
+    {
+      Obj := T;
+      Mor := EqRel;
+      idC := relnn;
+      composeC := rel_trans'
+    }.
+  Proof.
+    - by [].
+    - by [].
+    - by [].
+  Defined.
+End Sample4.
+
 (* END *)
