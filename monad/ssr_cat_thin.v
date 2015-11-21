@@ -97,19 +97,42 @@ End Sample1.
 (* 射がやせている *)
 Section Sample2.
 
-  Definition eq_leq m n (p q : m <= n) := true.
+  Definition eq_leq (m n : nat) (p q : (m <= n)%coq_nat) := true.
 
+  Section TEST.
+    Variable m01 : (0 <= 1)%coq_nat.
+    Variable m12 : (1 <= 2)%coq_nat.
+    Check @eq_leq 1 2 m12 m12.
+    Compute @eq_leq 1 2 m12 m12.
+    Fail Check @eq_leq 1 2 m01 m12.
+  End TEST.
+  
+  Section TEST'.
+    Definition eq_leq' (m n : nat) (p q : m <= n) := true.
+    Variable m01' : (0 <= 1).
+    Variable m12' : (1 <= 2).
+    Check @eq_leq' 1 2 m12' m12'.
+    Compute @eq_leq' 1 2 m12' m12'.
+    Check @eq_leq' 1 2 m01' m12'.
+    Compute @eq_leq' 1 2 m01' m12'.         (* true !!! *)
+  End TEST'.
+  
   (* leq_trans とは前提の順番が違うので、作り直しておく。 *)
-  Lemma leq_trans' : forall m n p : nat, n <= p -> m <= n -> m <= p.
+  Lemma leq_trans' : forall m n p : nat,
+                       (n <= p)%coq_nat -> (m <= n)%coq_nat -> (m <= p)%coq_nat.
   Proof.
     move=> m n p H1 H2.
     move: H2 H1.
-      by apply: leq_trans.
+    Search ((_ <= _)%coq_nat).
+    Check Le.le_trans m n p.
+      by apply: Le.le_trans.
   Qed.
+  
+  Check Le.le_refl : forall n : nat, (n <= n)%coq_nat.
   
   Instance EqLeq : forall (m n : nat), Setoid :=
     {
-      carrier := m <= n;
+      carrier := (m <= n)%coq_nat;
       equiv := @eq_leq m n
     }.
   
@@ -117,7 +140,7 @@ Section Sample2.
     {
       Obj := nat;
       Mor := EqLeq;
-      idC := leqnn;
+      idC := Le.le_refl;
       composeC := leq_trans'
     }.
   Proof.
@@ -148,14 +171,19 @@ Section Sample3.
   Check [set a; b] \in powerset [set x in 'I_2].
   
   (* *** *)
+(*
+  Definition aSet := {set ordinal_finType 2}.
+  Check [set x in 'I_2] : aSet.
+
+  Definition eq_subset (m n : aSet) (p q : m \subset n) := true.
+  Variable mo1 : [set a] \subset [set a; b].
+  Variable mo2 : [set a;b] \subset [set a; b].
+  Fail Check @eq_subset [set a] [set a;b] mo1 mo2.
+*)
   
-  (* Definition aSet := {set ordinal_finType 2}. *)
-  (* Check [set x in 'I_2] : aSet. *)
-  
-  (* より一般的な定義 *)
+  (* より一般的な定義を採用する。 *)
   Variable T : finType.
   Definition aSet := {set T}.
-
   Definition eq_subset (m n : aSet) (p q : m \subset n) := true.
   
   Lemma subset_trans' : forall m n p : aSet,
