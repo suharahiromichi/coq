@@ -62,9 +62,8 @@ Section Categories.
   (* 可換の定義 *)
   Definition commute {CP : Category} {A B C : Obj}
              (f : Mor A B) (g : Mor B C) (h : Mor A C) :=
-    composeC g f === h.
+    @composeC CP _ _ _ g f === h.
   
-
   (* 直積 *)
   Class Product {CP : Category} (P : Obj -> Obj -> Obj) :=
     {
@@ -75,16 +74,18 @@ Section Categories.
       mediating : forall {A B X : Obj}, Mor X A -> Mor X B -> Mor X (P A B);
       (* mediating = (&&&) *)
       
-      (* commute CP のCPは、Section Commutativity の Cat に渡される。 *)
+      (* CP は、commute を経由して、composeC に渡される。 *)
       med_commute1 : forall (A B X : Obj) (f : Mor X A) (g : Mor X B),
           commute (mediating f g) proj1 f;
       med_commute2 : forall (A B X : Obj) (f : Mor X A) (g : Mor X B),
           commute (mediating f g) proj2 g;
       med_unique : forall (A B X : Obj)
                           (f : Mor X A) (g : Mor X B) (h : Mor X (P A B)),
-          commute h proj1 f -> commute h proj2 g -> h === mediating f g
+                     @commute CP X (P A B) A h proj1 f ->
+                     @commute CP X (P A B) B h proj2 g ->
+                     h === @mediating A B X f g
     }.
-
+  
   Definition parallel {CP : Category} {A B C D : Obj} {P : Obj -> Obj -> Obj}
              {Prod : Product P}
              (f : Mor A B) (g : Mor C D) : Mor (P A C) (P B D) :=
@@ -145,6 +146,7 @@ End Functions.
 
 (* ********************** *)
 (* 半順序の世界、>= と max *)
+(* >= はProp、つまり (m >= n)%coq_nat にするべき *)
 (* ********************** *)
 Section Orders.
   (* max of nat is a product *)
@@ -225,6 +227,7 @@ End Orders.
 
 (* ********************** *)
 (* 半順序の世界、<= と min *)
+(* >= はProp、つまり (m <= n)%coq_nat にするべき *)
 (* ********************** *)
 Section Orders'.
   
