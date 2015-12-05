@@ -50,8 +50,8 @@ Notation "f \\o g"      := (comp f g).
 
 Generalizable Variables Obj Hom.
 
- (* eqv が、Reflexive と Symmetric と Transitive とを満たす。 *)
- Instance category_eqv_Equiv `(C : Category Obj Hom) (a b : Obj) :
+(* eqv が、Reflexive と Symmetric と Transitive とを満たす。 *)
+Instance category_eqv_Equiv `(C : Category Obj Hom) (a b : Obj) :
   Equivalence (@eqv Obj Hom C a b).
 Proof.
   by apply eqv_equivalence.
@@ -91,6 +91,53 @@ Proof.
   intros.
   do ! rewrite <- associativity.
   reflexivity.
+Defined.
+
+(* **** *)
+(* Sets *)
+(* **** *)
+
+Check @Category Set : (Set → Set → Type) → Type.
+Check (fun (A B : Set) => A -> B) : Set → Set → Set.
+Check @Category Set (fun (A B : Set) => A -> B) : Type.
+
+Program Instance Sets : @Category Set (fun (A B : Set) => A -> B).
+
+
+(* **** *)
+(* P,<  *)
+(* **** *)
+
+Check @Category nat : (nat → nat → Type) → Type.
+Check le : nat → nat → Prop.
+Check @Category nat le.
+
+Program Instance P_LE : @Category nat le.
+Obligation 2.
+Proof.
+(*
+le_trans : forall n m p : nat, m <= n -> n <= p -> m <= p
+ *)
+  Check @Le.le_trans a b c.
+    by apply (@Le.le_trans a b c).
+Defined.
+Obligation 3.
+Proof.
+  rewrite /P_LE_obligation_1.
+  rewrite /P_LE_obligation_2.
+  Check 
+  admit.
+Defined.
+Obligation 4.
+Proof.
+  rewrite /P_LE_obligation_1.
+  rewrite /P_LE_obligation_2.
+  admit.
+Defined.
+Obligation 5.
+Proof.
+  rewrite /P_LE_obligation_2.
+  admit.
 Defined.
 
 (* END *)
