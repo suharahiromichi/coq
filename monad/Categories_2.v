@@ -1,10 +1,24 @@
-(* http://www.megacz.com/berkeley/coq-categories/ *)
 (* Steve Awodey's book on category theory *)
 (******************************************************************************)
 (* Chapter 1.3: Categories                                                    *)
-(***`***************************************************************************)
-(* これをもとに改変。Instance ... Proper を使うようにした。 *)
+(******************************************************************************)
 (* @suharahiromichi *)
+
+(*
+(1) ベースライン
+http://www.megacz.com/berkeley/coq-categories/
+これをもとに改変。Instance ... Proper を使うようにした。
+ *)
+
+(*
+(2) Proper関数の定義
+A Gentle Introduction to Type Classes and Relations in Coq
+*)
+
+(*
+(3) Setoid を使うようにし、Setsと(P,<=)のインスタンスをつくる。
+http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
+ *)
 
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 Require Import finset fintype.
@@ -103,7 +117,6 @@ Defined.
 (* **** *)
 (* Sets *)
 (* **** *)
-
 Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) := (* notu *)
   {
     Equivalence_Reflexive := @frefl A B;
@@ -125,11 +138,15 @@ Program Instance Sets : @Category Set EqMor.
 Obligation 3.
 Proof.
   rewrite /Sets_obligation_2.
-  admit.
+  move=> homab homab' Hhomab hombc hombc' Hhombc.
+  move=> x //=.
+  rewrite Hhomab.
+  rewrite Hhombc.
+    by [].
 Qed.
 
 (* **** *)
-(* P,<  *)
+(* P,<= *)
 (* **** *)
 Open Scope coq_nat_scope.
 Search "_ <= _".
@@ -161,7 +178,8 @@ Obligation 3.
 Proof.
   rewrite /P_LE_obligation_1.
   rewrite /P_LE_obligation_2.
-  admit.
+  move=> homab homab' Hhomab hombc hombc' Hhombc.
+  by rewrite /eq_le.
 Defined.
 Obligation 4.
 Proof.
