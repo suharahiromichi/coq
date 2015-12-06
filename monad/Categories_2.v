@@ -52,8 +52,10 @@ Class Category (Obj : Type) (Hom : Obj -> Obj -> Setoid) :=
   {
     hom := Hom where "a ~> b" := (hom a b);
     ob  := Obj;
-    id   : forall {a : Obj}, a ~> a;
-    comp : forall {a b c : Obj}, a ~> b -> b ~> c -> a ~> c where "f \\o g" := (comp f g);
+    id   : forall {a : Obj}, (a ~> a);
+    comp : forall {a b c : Obj},
+             (a ~> b) -> (b ~> c) -> (a ~> c)
+                                   where "f \\o g" := (comp f g);
     comp_respects   : forall {a b c : Obj},
                         Proper (@eqv (a ~> b) ==> @eqv (b ~>c) ==> @eqv (a ~> c)) comp;
     left_identity   : forall `(f : a ~> b), id \\o f === f;
@@ -114,6 +116,29 @@ Proof.
   reflexivity.
 Defined.
 
+Reserved Notation "x &&& y" (at level 50, left associativity).
+
+(* 直積 *)
+Class Product `{CP : Category Obj} (P : Obj -> Obj -> Obj) :=
+  {
+    proj1 : forall {a b : Obj}, (P a b) ~> a;
+    proj2 : forall {a b : Obj}, (P a b) ~> b;
+    
+    (* 仲介射 *)
+    mediating : forall {a b x : Obj},
+                  (x ~> a) -> (x ~> b) -> (x ~> (P a b))
+                                            where "f &&& g" := (mediating f g);
+    
+    med_commute1 : forall (a b x : Obj) (f : x ~> a) (g : x ~> b),
+                     (f &&& g) \\o proj1 === f;
+    med_commute2 : forall (a b x : Obj) (f : x ~> a) (g : x ~> b),
+                     (f &&& g) \\o proj2 === g;
+    med_unique : forall (a b x : Obj) (f : x ~> a) (g : x ~> b) (h : x ~> (P a b)),
+                   h \\o proj1 === f ->
+                   h \\o proj2 === g ->
+                   h === (f &&& g)
+  }.
+
 (* **** *)
 (* Sets *)
 (* **** *)
@@ -144,6 +169,24 @@ Proof.
   rewrite Hhombc.
     by [].
 Qed.
+
+(*
+Instance Prod : Product prod :=
+  {
+    proj1 A B := @fst A B;
+    proj2 A B := @snd A B ;
+    mediating A B X := fun f g x => (f x, g x)
+  }.
+Proof.
+  - by rewrite //=.
+       - by rewrite //=.
+            - rewrite /commute /= /eqfun.
+    move=> A B X f g h H H0 x.
+    rewrite -H -H0.
+        by apply surjective_pairing.
+  Qed.
+*)
+
 
 (* **** *)
 (* P,<= *)
