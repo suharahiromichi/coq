@@ -56,28 +56,14 @@ Notation "f \\o g"      := (comp f g).
 
 Generalizable Variables Obj Hom.
 
-(*
 (* eqv が、Reflexive と Symmetric と Transitive とを満たす。 *)
-Instance category_eqv_Equiv `(C : Category Obj Hom) (a b : Obj) :
-  Equivalence (@eqv Obj Hom C a b).
-Proof.
-  by apply eqv_equivalence.
-Qed.
-
-(* comp は eqv について固有関数である。 *)
-Instance category_comp_Proper `(C : Category Obj Hom) (a b c : Obj) :
-  Proper (@eqv Obj Hom C a b ==> @eqv Obj Hom C b c ==> @eqv Obj Hom C a c) (comp).
-Proof.
-  by apply comp_respects.
-Qed.
- *)
-
 Instance category_eqv_Equiv `(C : Category Obj) (a b : Obj) :
   Equivalence (@eqv (a ~> b)).
 Proof.
   by apply eqv_equivalence.
 Qed.
 
+(* comp は eqv について固有関数である。 *)
 Instance category_comp_Proper `(C : Category Obj) (a b c : Obj) :
   Proper (@eqv (a ~> b) ==> @eqv (b ~>c) ==> @eqv (a ~> c)) comp.
 Proof.
@@ -156,42 +142,38 @@ Proof.
     by [].
 Qed. 
   
-Instance EqGeq : forall m n, Setoid :=
+Instance EqLe : forall m n, Setoid :=
   {
     carrier := m <= n;
     eqv := @eq_le m n
   }.
 
-Check @Category nat : (nat → nat → Type) → Type.
-Check le : nat → nat → Prop.
-Check @Category nat le.
+Check @Category nat : (nat → nat → Setoid) → Type.
+Check EqLe : nat → nat → Setoid.
+Check @Category nat EqLe.
 
-Program Instance P_LE : @Category nat le.
+Program Instance P_LE : @Category nat EqLe.
 Obligation 2.
 Proof.
-(*
-le_trans : forall n m p : nat, m <= n -> n <= p -> m <= p
- *)
-  Check @Le.le_trans a b c.
     by apply (@Le.le_trans a b c).
 Defined.
 Obligation 3.
 Proof.
   rewrite /P_LE_obligation_1.
   rewrite /P_LE_obligation_2.
-  Check 
   admit.
 Defined.
 Obligation 4.
 Proof.
   rewrite /P_LE_obligation_1.
   rewrite /P_LE_obligation_2.
-  admit.
+  by rewrite /eq_le.
 Defined.
 Obligation 5.
 Proof.
+  rewrite /P_LE_obligation_1.
   rewrite /P_LE_obligation_2.
-  admit.
+  by rewrite /eq_le.
 Defined.
 
 (* END *)
