@@ -118,16 +118,49 @@ Defined.
 (* Sets *)
 (* **** *)
 
-Check @Category Set.
-Check (fun (A B : Set) => A -> B) : Set → Set → Set.
-Check @Category Set (fun (A B : Set) => A -> B) : Type.
+Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) := (* notu *)
+  {
+    Equivalence_Reflexive := @frefl A B;
+    Equivalence_Symmetric := @fsym A B;
+    Equivalence_Transitive := @ftrans A B
+  }.
 
-Program Instance Sets : @Category Set (fun (A B : Set) => A -> B).
+Instance EqMor : forall (A B : Set), Setoid :=
+  {
+    carrier := A -> B;
+    eqv := @eqfun B A
+  }.
+  
+Check @Category Set : (Set → Set → Setoid) → Type.
+Check EqMor : Set -> Set -> Setoid.
+Check @Category Set EqMor : Type.
 
+Program Instance Sets : @Category Set EqMor.
+Obligation 3.
+Proof.
+  rewrite /Sets_obligation_2.
+  admit.
+Qed.
 
 (* **** *)
 (* P,<  *)
 (* **** *)
+Open Scope coq_nat_scope.
+Search "_ <= _".
+Check 0 <= 0 : Prop.
+
+Definition eq_le m n (p q : m <= n) := True.
+  
+Instance EquivGeq : forall m n, Equivalence (@eq_le m n). (* notu *)
+Proof.
+    by [].
+Qed. 
+  
+Instance EqGeq : forall m n, Setoid :=
+  {
+    carrier := m <= n;
+    eqv := @eq_le m n
+  }.
 
 Check @Category nat : (nat → nat → Type) → Type.
 Check le : nat → nat → Prop.
