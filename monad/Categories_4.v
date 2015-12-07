@@ -20,6 +20,10 @@ A Gentle Introduction to Type Classes and Relations in Coq
 http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
  *)
 
+(*
+台集合を型引数にするようにした。
+*)
+
 Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 Require Import finset fintype.
 
