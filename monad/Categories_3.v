@@ -236,5 +236,12 @@ Proof.
   rewrite /P_LE_obligation_2.
   by rewrite /eq_le.
 Defined.
+Obligation 6.
+Proof.
+  rewrite /P_LE_obligation_2.
+  by rewrite /eq_le.
+Defined.
+
+Check P_LE.
 
 (* END *)
