@@ -121,7 +121,7 @@ Defined.
 Reserved Notation "x &&& y" (at level 50, left associativity).
 
 (* 直積 *)
-Class Product `{CP : Category Obj} (Prod : Obj -> Obj -> Obj) : Type :=
+Class Product `{C : Category Obj} (Prod : Obj -> Obj -> Obj) : Type :=
   {
     obj' := Obj;
     proj1 : forall {a b : Obj}, (Prod a b) ~> a;
@@ -142,6 +142,19 @@ Class Product `{CP : Category Obj} (Prod : Obj -> Obj -> Obj) : Type :=
                    h === (f &&& g)
   }.
 Coercion obj': Product >-> Sortclass.
+Notation "x &&& y" := (mediating x y).
+
+Check @proj1 : ∀Obj Hom C Prod _ a b, Prod a b ~> a.
+Check @proj2 : ∀Obj Hom C Prod _ a b, Prod a b ~> b.
+
+Set Printing All.
+Generalizable Variables Prod.
+Definition parallel `{C : Category Obj} {Prod : Obj -> Obj -> Obj} {CP : Product Prod}
+           `(f : a ~> b) `(g : c ~> d) : (Prod a c) ~> (Prod b d) :=
+  let p1 := @proj1 Obj Hom C Prod CP a c in
+  let p2 := @proj2 Obj Hom C Prod CP a c in
+  (f \\o p1) &&& (g \\o p2).
+Notation "f *** g" := (parallel f g).      (* <f,g> *)
 
 (* **** *)
 (* Sets *)
@@ -280,5 +293,19 @@ Obligation 5.
 Defined.
 
 Check P_LE_Prod.
+
+(* an application of parallel (***) *)
+Check @parallel.
+Lemma parallel_min : forall (m n p q : nat),
+      m <= n -> p <= q -> min m p <= min n q.
+Proof.
+  move=> m n p q Hmn Hpq.
+  Check @parallel nat EqLe P_LE min P_LE_Prod m n Hmn p q Hpq.
+    by apply: (@parallel nat EqLe P_LE min P_LE_Prod m n Hmn p q Hpq).
+    Undo 1.
+  Check Hmn *** Hpq.
+    by apply: (Hmn *** Hpq).
+Qed.
+Print parallel_min.
 
 (* END *)
