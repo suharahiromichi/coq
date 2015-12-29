@@ -29,13 +29,17 @@ Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) :=
     fmor                : forall {a b : C1}, a ~> b -> (fobj a) ~> (fobj b);
     fmor_respects       : forall {a b : C1} {f f' : a ~> b},
                             f === f' -> fmor f === fmor f';
+(*
+    これは要らない。
     fmor_respects2      : forall {a b : C1},
                             Proper (@eqv (a ~> b) ==> @eqv (fobj a ~> fobj b)) fmor;
+*)
     fmor_preserves_id   : forall {a : C1}, @fmor a a id === id;
 (* forall a, fmor (id a) === id (fobj a); *)
     fmor_preserves_comp : forall {a b c : C1} {f : a ~> b} {g : b ~> c},
                             (fmor g) \\o (fmor f) === fmor (g \\o f)
   }.
+Print fmor.
 About functor_fobj.
 About fmor.
 About fmor_respects.
@@ -52,11 +56,14 @@ Check fmor.
 
 Notation "F \ f" := (fmor F f)   : category_scope.
 
+(* Classの公理に Proper (eqv ==> eqv) fmor が必要なわけではない。 *)
 Instance functor_fmor_Proper  `(C1 : Category) `(C2 : Category)
          (Fobj : C1 -> C2) (F : Functor Fobj) (a b : C1) :
   Proper (@eqv (a ~> b) ==> @eqv (Fobj a ~> Fobj b)) (@fmor _ _ _ _ _ _ _ _ a b).
 Proof.
-  by apply fmor_respects2.
+  intros x y.                               (* これが肝 *)
+  Check (@fmor_respects _ _ C1 _ _ C2 Fobj F a b x y).
+  by apply (@fmor_respects _ _ C1 _ _ C2 Fobj F a b x y).
 Qed.
 
 Coercion functor_fobj : Functor >-> Funclass.
@@ -71,11 +78,13 @@ Proof.
   Check (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)). (* fmor を与える。 *)
   Check (fun a b f => f).
   apply (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)).
+  (* fmor_respects *)
   - move=> a b f f' H.
     rewrite H.
     reflexivity.
-  - admit.
+  (* fmor_preserves_id *)
   - reflexivity.
+  (* fmor_preserves_comp *)
   - reflexivity.
 Defined.
 
@@ -88,7 +97,6 @@ Definition functor_const `(C : Category) `{D : Category} (d : D) : Functor (fun 
   (* apply Build_Functor with (fmor := fun _ _ _ => (id d)). *)
   apply (@Build_Functor _ _ D _ _ D (fun _ => d) (fun _ _ _ => id)).
   - reflexivity.
-  - admit.
   - reflexivity.
   - move=> a b c _ _.
     by apply left_identity.
@@ -118,9 +126,6 @@ Proof.
   - intros a b f f' H.
     rewrite H.
     reflexivity.
-  - move=> a b.
-    Fail apply fmor_respects2.
-    admit.
   - repeat setoid_rewrite fmor_preserves_id.
     reflexivity.
   - repeat setoid_rewrite fmor_preserves_comp.
