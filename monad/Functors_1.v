@@ -43,6 +43,16 @@ About functor_fobj.
 About fmor.
 About fmor_respects.
 
+Check fmor.
+Check @fmor.
+
+Implicit Arguments fmor [ Obj Hom Obj0 Hom0 C1 C2 fobj a b ].
+Implicit Arguments fmor_respects       [ Obj Hom Obj0 Hom0 C1 C2 fobj a b ].
+Implicit Arguments fmor_preserves_id   [ Obj Hom Obj0 Hom0 C1 C2 fobj     ].
+Implicit Arguments fmor_preserves_comp [ Obj Hom Obj0 Hom0 C1 C2 fobj a b c ].
+
+Check fmor.
+
 Notation "F \ f" := (fmor F f)   : category_scope.
 
 (*
@@ -88,8 +98,6 @@ Definition functor_const `(C : Category) `{D : Category} (d : D) : Functor (fun 
     by apply left_identity.
   Defined.
 
-(* ここまで *)
-
 Generalizable Variables Fobj Gobj.
 
 Locate "_ ○ _".
@@ -102,27 +110,28 @@ Definition functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
   Functor (Gobj ○ Fobj).
 Proof.
   Check fmor.
+  Check @fmor.
   Check fmor G.
   Check (fun a b m => fmor G (fmor F m)).
-                             
-  Check (fun m => @fmor _ _ _ _ _ _ _ _ F m _).
-  Check (fun a b m => (@fmor _ _ _ _ _ _ _ _ G _ (@fmor _ _ _ _ _ _ _ _ F m _))).
   Check (@Build_Functor _ _ _ _ _ _ _).
   Check (@Build_Functor _ _ _ _ _ _ _
-                        (fun a b m => (@fmor _ _ _ _ _ _ _ _ G _ (@fmor _ _ _ _ _ _ _ _ F m _)))).
-  Check (@Build_Functor _ _ _ _ _ _ _ (fun a b m => G \ (F \ m))).
-  
-  apply (Build_Functor _ _ _ _ _ _ _ (fun a b m => G\(F\m)));
+                        (fun a b m => fmor G (fmor F m))).
+    
+  apply (@Build_Functor _ _ _ _ _ _ _
+                        (fun a b m => fmor G (fmor F m))).
+  - admit.
+  - admit.
+  - admit.
+(*
    [ abstract (intros; setoid_rewrite H ; auto; reflexivity)
    | abstract (intros; repeat setoid_rewrite fmor_preserves_id; auto; reflexivity)
    | abstract (intros; repeat setoid_rewrite fmor_preserves_comp; auto; reflexivity)
    ].
+*)
   Defined.
 
 
 Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
-
-
 
 
 (*
@@ -138,18 +147,33 @@ Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
  *)
 
 (* this is like JMEq, but for the particular case of ~~; note it does not require any axioms! *)
-Inductive heq_morphisms `{c:Category}{a b:c}(f:a~>b) : forall {a' b':c}, a'~>b' -> Prop :=
-  | heq_morphisms_intro : forall {f':a~>b}, eqv _ _ f f' -> @heq_morphisms _ _ c a b f a b f'.
-Definition heq_morphisms_refl : forall `{c:Category} a b f,          @heq_morphisms _ _ c a b f a  b  f.
-  intros; apply heq_morphisms_intro; reflexivity.
-  Qed.
-Definition heq_morphisms_symm : forall `{c:Category} a b f a' b' f', @heq_morphisms _ _ c a b f a' b' f' -> @heq_morphisms _ _ c a' b' f' a b f.
+Inductive heq_morphisms `{C : Category} {a b : C} (f : a ~> b) :
+  forall {a' b' : C}, a' ~> b' -> Prop :=
+| heq_morphisms_intro :
+    forall {f' : a ~> b}, eqv f f' -> @heq_morphisms _ _ C a b f a b f'.
+
+Definition heq_morphisms_refl :
+  forall `{C : Category} a b f,
+    @heq_morphisms _ _ C a b f a  b  f.
+Proof.
+  intros.
+  apply heq_morphisms_intro.
+  reflexivity.
+Qed.
+
+Definition heq_morphisms_symm :
+  forall `{C : Category} a b f a' b' f',
+    @heq_morphisms _ _ C a b f a' b' f' -> @heq_morphisms _ _ C a' b' f' a b f.
+Proof.
   refine(fun ob hom c a b f a' b' f' isd =>
-    match isd with
-      | heq_morphisms_intro f''' z => @heq_morphisms_intro _ _ c _ _ f''' f _
-    end); symmetry; auto.
-  Qed.
-Definition heq_morphisms_tran : forall `{C:Category} a b f a' b' f' a'' b'' f'',
+           match isd with
+             | heq_morphisms_intro f''' z => @heq_morphisms_intro _ _ c _ _ f''' f _
+           end).
+  symmetry.
+  auto.
+Qed.
+
+Definition heq_morphisms_tran : forall `{C : Category} a b f a' b' f' a'' b'' f'',
   @heq_morphisms _ _ C a b f a' b' f' ->
   @heq_morphisms _ _ C a' b' f' a'' b'' f'' ->
   @heq_morphisms _ _ C a b f a'' b'' f''.
@@ -158,7 +182,7 @@ Definition heq_morphisms_tran : forall `{C:Category} a b f a' b' f' a'' b'' f'',
   apply heq_morphisms_intro.
   setoid_rewrite <- H0.
   apply H.
-  Qed.
+Qed.
 
 (*
 Add Parametric Relation  (Ob:Type)(Hom:Ob->Ob->Type)(C:Category Ob Hom)(a b:Ob) : (hom a b) (eqv a b)
@@ -171,21 +195,39 @@ Add Parametric Relation  (Ob:Type)(Hom:Ob->Ob->Type)(C:Category Ob Hom)(a b:Ob) 
   auto.
   Defined.
 *)
-Implicit Arguments heq_morphisms [Ob Hom c a b a' b'].
+
+(* Notation "a ~~{ C }~~> b" := (@hom _ _ C a b). *)
+
+Implicit Arguments heq_morphisms [ Obj Hom C a b a' b' ].
 Hint Constructors heq_morphisms.
 
-Definition EqualFunctors `{C1:Category}`{C2:Category}{F1obj}(F1:Functor C1 C2 F1obj){F2obj}(F2:Functor C1 C2 F2obj) :=
-  forall a b (f f':a~~{C1}~~>b), f~~f' -> heq_morphisms (F1 \ f) (F2 \ f').
+Check fmor.
+Check hom.
+Definition EqualFunctors `{C1 : Category} `{C2 : Category}
+           {F1obj} (F1 : Functor F1obj)
+           {F2obj} (F2 : Functor F2obj) :=
+  forall a b (f f' : hom a b),
+    f === f' -> heq_morphisms (fmor F1 f) (fmor F2 f').
+
+(* f f' : a~~{C1}~~>b *)
+
 Notation "f ~~~~ g" := (EqualFunctors f g) (at level 45).
 
-Class IsomorphicCategories `(C:Category)`(D:Category) :=
-{ ic_f_obj    : C -> D
-; ic_g_obj    : D -> C
-; ic_f        : Functor C D ic_f_obj
-; ic_g        : Functor D C ic_g_obj
-; ic_forward  : ic_f >>>> ic_g ~~~~ functor_id C
-; ic_backward : ic_g >>>> ic_f ~~~~ functor_id D
-}.
+Class IsomorphicCategories `(C : Category) `(D : Category) :=
+  {
+    ic_f_obj    : C -> D;
+    ic_g_obj    : D -> C;
+    ic_f        : Functor ic_f_obj;
+    ic_g        : Functor ic_g_obj;
+    
+(*  ic_forward  : ic_f >>>> ic_g ~~~~ functor_id C; *)
+    ic_forward  :
+      @functor_comp _ _ _ _ _ _ _ _ _ _ ic_f _ ic_g ~~~~ functor_id C;
+
+(*  ic_backward : ic_g >>>> ic_f ~~~~ functor_id D  *)
+    ic_backward :
+      @functor_comp _ _ _ _ _ _ _ _ _ _ ic_g _ ic_f ~~~~ functor_id D
+  }.
 
 (* this causes Coq to die: *)
 (* Definition IsomorphicCategories := Isomorphic (CategoryOfCategories). *)
