@@ -27,12 +27,13 @@ Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) :=
   {
     functor_fobj := fobj;
     fmor                : forall {a b : C1}, a ~> b -> (fobj a) ~> (fobj b);
-(*
     fmor_respects       : forall {a b : C1} {f f' : a ~> b},
                             f === f' -> fmor f === fmor f';
-*)
+(*
+(* XXXXXX *)
     fmor_respects      : forall {a b : C1},
                            Proper (@eqv (a ~> b) ==> @eqv (fobj a ~> fobj b)) fmor;
+*)
     fmor_preserves_id   : forall {a : C1}, @fmor a a id === id;
 (* forall a, fmor (id a) === id (fobj a); *)
     fmor_preserves_comp : forall {a b c : C1} {f : a ~> b} {g : b ~> c},
@@ -41,33 +42,17 @@ Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) :=
 About functor_fobj.
 About fmor.
 About fmor_respects.
-(*
-   (* register "fmor" so we can rewrite through it *)
-  Implicit Arguments fmor                [ Ob Hom Ob0 Hom0 c1 c2 fobj a b ].
-  Implicit Arguments fmor_respects       [ Ob Hom Ob0 Hom0 c1 c2 fobj a b ].
-  Implicit Arguments fmor_preserves_id   [ Ob Hom Ob0 Hom0 c1 c2 fobj     ].
-  Implicit Arguments fmor_preserves_comp [ Ob Hom Ob0 Hom0 c1 c2 fobj a b c ].
-*)
 
 Notation "F \ f" := (fmor F f)   : category_scope.
 
+(*
+(* XXXXXX *)
 Instance functor_fmor_Proper  `(C1 : Category) `(C2 : Category)
          (Fobj : C1 -> C2) (F : Functor Fobj) (a b : C1) :
   Proper (@eqv (a ~> b) ==> @eqv (Fobj a ~> Fobj b)) fmor.
 Proof.
   by apply fmor_respects.
 Qed.
-
-(*
-  Add Parametric Morphism `(C1:Category)`(C2:Category)
-    (Fobj:C1->C2)
-    (F:Functor C1 C2 Fobj)
-    (a b:C1)
-  : (@fmor _ _ C1 _ _ C2 Fobj F a b)
-  with signature ((@eqv C1 _ C1 a b) ==> (@eqv C2 _ C2 (Fobj a) (Fobj b)))
- as parametric_morphism_fmor'.
-  intros; apply (@fmor_respects _ _ C1 _ _ C2 Fobj F a b x y); auto.
-  Defined.
 *)
 
 Coercion functor_fobj : Functor >-> Funclass.
@@ -80,14 +65,11 @@ Proof.
   Check (@Build_Functor _ _ C _ _ C).
   Check (@Build_Functor _ _ C _ _ C (fun x => x)). (* fobj を与える。 *)
   Check (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)). (* fmor を与える。 *)
-
+  Check (fun a b f => f).
   apply (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)).
-  - move=> a b.
-    (* Proper (eqv ==> eqv) (λ f : a ~> b, f) *)
-    Check fmor_respects : Proper (eqv ==> eqv) fmor.
-    Check @fmor.
-    Fail apply fmor_respects.
-    admit.
+  - move=> a b f f' H.
+    rewrite H.
+    reflexivity.
   - reflexivity.
   - reflexivity.
 Defined.
@@ -95,30 +77,53 @@ Defined.
 (* the constant functor *)
 Definition functor_const `(C : Category) `{D : Category} (d : D) : Functor (fun _ => d).
   About Build_Functor.
-  Check (@Build_Functor _ _ C _ _ C).
-  Check (@Build_Functor _ _ C _ _ C _).
-  Check @id _.
-  Check (@Build_Functor _ _ C _ _ C (fun _ => d)).
-  apply (@Build_Functor _ _ C _ _ C _ _).
-         (* apply Build_Functor with (fmor := fun _ _ _ => id d). *)
-  intros; reflexivity.
-  intros; reflexivity.
-  intros; auto.
+  Check fun _ _ _ => @id _ d.
+  Check (@Build_Functor _ _ D _ _ D (fun _ => d)). (* fobj を与える。 *)
+  Check (@Build_Functor _ _ D _ _ D (fun _ => d) (fun _ _ _ => id)). (* fmor を与える。 *)
+  (* apply Build_Functor with (fmor := fun _ _ _ => (id d)). *)
+  apply (@Build_Functor _ _ D _ _ D (fun _ => d) (fun _ _ _ => id)).
+  - reflexivity.
+  - reflexivity.
+  - move=> a b c _ _.
+    by apply left_identity.
   Defined.
 
+(* ここまで *)
+
+Generalizable Variables Fobj Gobj.
+
+Locate "_ ○ _".
+Locate "_ \\o _".
+Locate "_ \ _".
+
 (* functors compose *)
-Definition functor_comp
-  `(C1:Category)
-  `(C2:Category)
-  `(C3:Category)
-  `(F:@Functor _ _ C1 _ _ C2 Fobj)`(G:@Functor _ _ C2 _ _ C3 Gobj) : Functor C1 C3 (Gobj ○ Fobj).
-  intros. apply (Build_Functor _ _ _ _ _ _ _ (fun a b m => G\(F\m)));
+Definition functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
+           `(F : @Functor _ _ C1 _ _ C2 Fobj) `(G : @Functor _ _ C2 _ _ C3 Gobj) :
+  Functor (Gobj ○ Fobj).
+Proof.
+  Check fmor.
+  Check fmor G.
+  Check (fun a b m => fmor G (fmor F m)).
+                             
+  Check (fun m => @fmor _ _ _ _ _ _ _ _ F m _).
+  Check (fun a b m => (@fmor _ _ _ _ _ _ _ _ G _ (@fmor _ _ _ _ _ _ _ _ F m _))).
+  Check (@Build_Functor _ _ _ _ _ _ _).
+  Check (@Build_Functor _ _ _ _ _ _ _
+                        (fun a b m => (@fmor _ _ _ _ _ _ _ _ G _ (@fmor _ _ _ _ _ _ _ _ F m _)))).
+  Check (@Build_Functor _ _ _ _ _ _ _ (fun a b m => G \ (F \ m))).
+  
+  apply (Build_Functor _ _ _ _ _ _ _ (fun a b m => G\(F\m)));
    [ abstract (intros; setoid_rewrite H ; auto; reflexivity)
    | abstract (intros; repeat setoid_rewrite fmor_preserves_id; auto; reflexivity)
    | abstract (intros; repeat setoid_rewrite fmor_preserves_comp; auto; reflexivity)
    ].
   Defined.
+
+
 Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
+
+
+
 
 (*
 Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
