@@ -102,7 +102,9 @@ Defined.
 
 (* 定数関手 *)
 (* the constant functor *)
-Definition functor_const `(C : Category) `{D : Category} (d : D) : Functor (fun (x : C) => d).
+Definition functor_const `(C : Category) `{D : Category} (d : D) :
+  Functor (fun (x : C) => d).
+Proof.
   (* 定数関手 : C -> D *)
   Check (fun (x : C) => d).                 (* カテゴリC(の対象)から、カテゴリD(の対象)の写像 *)
   Check (fun (a b : C) (f : a ~> b) => id).  (* カテゴリC(の射)から、カテゴリD(の射)の写像 *)
@@ -159,11 +161,28 @@ Proof.
     reflexivity.
 Defined.
 
-Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
-
 (* みなおし、ここまで。 *)
 
 (*
+Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
+*)
+
+(*
+Generalizable Variables Xobj Yobj Zobj a b.
+
+Arguments functor_comp : clear implicits.
+Check functor_comp.
+Arguments functor_comp {Obj Hom C1 Obj0 Hom0 C2 Obj1 Hom1 C3} Fobj f Gobj g : rename.
+Check functor_comp.
+
+Lemma functor_comp_assoc `{C : Category} `{D : Category} `{E : Category} `{F : Category}
+      `(X : @Functor _ _ C _ _ D Xobj)
+      `(Y : @Functor _ _ D _ _ E Yobj)
+      `(Z : @Functor _ _ E _ _ F Zobj) :
+  forall (a b : C) (f : a ~> b),
+    fmor (functor_comp _ (functor_comp _ X _ Y) _ Z) f ===
+         fmor (functor_comp _ X _ (functor_comp _ Y _ Z)) f.
+      
 Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
   {F1obj}(F1:Functor C' D F1obj)
   {F2obj}(F2:Functor D E F2obj)
@@ -176,6 +195,7 @@ Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
  *)
 
 (* this is like JMEq, but for the particular case of ~~; note it does not require any axioms! *)
+
 Inductive heq_morphisms `{C : Category} {a b : C} (f : a ~> b) :
   forall {a' b' : C}, a' ~> b' -> Prop :=
 | heq_morphisms_intro :
@@ -230,8 +250,6 @@ Add Parametric Relation  (Ob:Type)(Hom:Ob->Ob->Type)(C:Category Ob Hom)(a b:Ob) 
 Implicit Arguments heq_morphisms [ Obj Hom C a b a' b' ].
 Hint Constructors heq_morphisms.
 
-Check fmor.
-Check hom.
 Definition EqualFunctors `{C1 : Category} `{C2 : Category}
            {F1obj} (F1 : Functor F1obj)
            {F2obj} (F2 : Functor F2obj) :=
