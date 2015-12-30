@@ -59,13 +59,13 @@ About fmor.                       (* Set Implicit Arguments の所為で、
                                      fobj は implicit になっている。 *)
 Arguments fmor {Obj Hom Obj0 Hom0 C1 C2} fobj {_ a b} _ : rename.
 Check fmor.                          (* fobj を指定するようにする。 *)
-(*
-Reserved Notation "F \ f" (at level 51, left associativity).
+
 Notation "F \ f" := (fmor F f) : category_scope.
- *)
+Open Scope category_scope.
 
 (* parametric_morphism_fmor *)
 (* これの証明に、Classの公理に Proper (eqv ==> eqv) fmor が必要なわけではない。 *)
+(* また、(@fmor _ _ .... a b) は fmor と略せない。  *)
 Instance functor_fmor_Proper `(C1 : Category) `(C2 : Category)
          (Fobj : C1 -> C2) (F : Functor Fobj) (a b : C1) :
   Proper (@eqv (a ~> b) ==> @eqv (Fobj a ~> Fobj b)) (@fmor _ _ _ _ _ _ _ _ a b).
@@ -143,45 +143,42 @@ Proof.
   Check Gobj \o Fobj.
   
   Check (fun (a b : C1) (m : a ~> b) => fmor F m). (* m は C1の射 *) (* C2の射を返す *)
+  Check (fun (a b : C1) (m : a ~> b) => F \ m).
+  
   Check (fun (a b : C1) (m : a ~> b) => fmor G (fmor F m)). (* C3の射を返す *)
+  Check (fun (a b : C1) (m : a ~> b) => G \ (F \ m)).
   
   Check @Build_Functor _ _ C1 _ _ C3.
   Check @Build_Functor _ _ C1 _ _ C3 (G \o F). (* fobj を与える。 *)
   Check @Build_Functor _ _ C1 _ _ C3 (G \o F)
-        (fun a b m => fmor G (fmor F m)).  (* fmor を与える。 *)
+        (fun a b m => G \ (F \ m)).  (* fmor を与える。 *)
     
-  apply (@Build_Functor _ _ C1 _ _ C3 _ (* fobj (G \o F) を指定するとうまくいかない *)
-                        (fun a b m => fmor G (fmor F m))).
+  apply (@Build_Functor _ _ C1 _ _ C3 (G \o F)
+                        (fun a b m => G \ (F \ m))).
   - move=> a b f f' H.
     rewrite H.
     reflexivity.
   - repeat setoid_rewrite fmor_preserves_id.
     reflexivity.
-  - repeat setoid_rewrite fmor_preserves_comp.
+  - rewrite /=.                             (* G \o F のfuncompを評価する。 *)
+    repeat setoid_rewrite fmor_preserves_comp.
     reflexivity.
 Defined.
 
 (* みなおし、ここまで。 *)
 
-(*
 Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
-*)
+Open Scope category_scope.
 
-(*
 Generalizable Variables Xobj Yobj Zobj a b.
 
-Arguments functor_comp : clear implicits.
-Check functor_comp.
-Arguments functor_comp {Obj Hom C1 Obj0 Hom0 C2 Obj1 Hom1 C3} Fobj f Gobj g : rename.
-Check functor_comp.
-
+(*
 Lemma functor_comp_assoc `{C : Category} `{D : Category} `{E : Category} `{F : Category}
-      `(X : @Functor _ _ C _ _ D Xobj)
-      `(Y : @Functor _ _ D _ _ E Yobj)
-      `(Z : @Functor _ _ E _ _ F Zobj) :
+      `(F1 : @Functor _ _ C _ _ D Xobj)
+      `(F2 : @Functor _ _ D _ _ E Yobj)
+      `(F3 : @Functor _ _ E _ _ F Zobj) :
   forall (a b : C) (f : a ~> b),
-    fmor (functor_comp _ (functor_comp _ X _ Y) _ Z) f ===
-         fmor (functor_comp _ X _ (functor_comp _ Y _ Z)) f.
+    ((F1 >>>> F2) >>>> F3) \ f === (F1 >>>> (F2 >>>> F3)) \ f.
       
 Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
   {F1obj}(F1:Functor C' D F1obj)
@@ -192,7 +189,7 @@ Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
   intros; simpl.
   reflexivity.
   Qed.
- *)
+*)
 
 (* this is like JMEq, but for the particular case of ~~; note it does not require any axioms! *)
 
@@ -245,8 +242,6 @@ Add Parametric Relation  (Ob:Type)(Hom:Ob->Ob->Type)(C:Category Ob Hom)(a b:Ob) 
   Defined.
 *)
 
-(* Notation "a ~~{ C }~~> b" := (@hom _ _ C a b). *)
-
 Implicit Arguments heq_morphisms [ Obj Hom C a b a' b' ].
 Hint Constructors heq_morphisms.
 
@@ -255,7 +250,6 @@ Definition EqualFunctors `{C1 : Category} `{C2 : Category}
            {F2obj} (F2 : Functor F2obj) :=
   forall a b (f f' : hom a b),
     f === f' -> heq_morphisms (fmor F1 f) (fmor F2 f').
-
 (* f f' : a~~{C1}~~>b *)
 
 Notation "f ~~~~ g" := (EqualFunctors f g) (at level 45).
@@ -267,13 +261,8 @@ Class IsomorphicCategories `(C : Category) `(D : Category) :=
     ic_f        : Functor ic_f_obj;
     ic_g        : Functor ic_g_obj;
     
-(*  ic_forward  : ic_f >>>> ic_g ~~~~ functor_id C; *)
-    ic_forward  :
-      @functor_comp _ _ _ _ _ _ _ _ _ _ ic_f _ ic_g ~~~~ functor_id C;
-
-(*  ic_backward : ic_g >>>> ic_f ~~~~ functor_id D  *)
-    ic_backward :
-      @functor_comp _ _ _ _ _ _ _ _ _ _ ic_g _ ic_f ~~~~ functor_id D
+    ic_forward  : ic_f >>>> ic_g ~~~~ functor_id C;
+    ic_backward : ic_g >>>> ic_f ~~~~ functor_id D
   }.
 
 (* this causes Coq to die: *)
