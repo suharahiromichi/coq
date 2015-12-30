@@ -29,54 +29,66 @@ Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) :=
     fmor                : forall {a b : C1}, a ~> b -> (fobj a) ~> (fobj b);
     fmor_respects       : forall {a b : C1} {f f' : a ~> b},
                             f === f' -> fmor f === fmor f';
-(*
-    これは要らない。
-    fmor_respects2      : forall {a b : C1},
-                            Proper (@eqv (a ~> b) ==> @eqv (fobj a ~> fobj b)) fmor;
-*)
     fmor_preserves_id   : forall {a : C1}, @fmor a a id === id;
 (* forall a, fmor (id a) === id (fobj a); *)
     fmor_preserves_comp : forall {a b c : C1} {f : a ~> b} {g : b ~> c},
                             (fmor g) \\o (fmor f) === fmor (g \\o f)
   }.
-Print fmor.
-About functor_fobj.
-About fmor.
-About fmor_respects.
+Coercion functor_fobj : Functor >-> Funclass.
 
-Check fmor.
-Check @fmor.
+Check functor_fobj : ∀Obj Hom C1 Obj0 Hom0 C2 fobj _ _, C2.
+(* ,の前の最後の「_」は、普通の引数で、C1（の対象） *)
+Check @fmor        : ∀Obj Hom C1 Obj0 Hom0 C2 fobj _ a b _, fobj a ~> fobj b.
+(* ,の前の最後の「_」は、普通の引数で、a ~> b の型を持つ。 *)
 
-Implicit Arguments fmor [ Obj Hom Obj0 Hom0 C1 C2 fobj a b ].
-Implicit Arguments fmor_respects       [ Obj Hom Obj0 Hom0 C1 C2 fobj a b ].
-Implicit Arguments fmor_preserves_id   [ Obj Hom Obj0 Hom0 C1 C2 fobj     ].
-Implicit Arguments fmor_preserves_comp [ Obj Hom Obj0 Hom0 C1 C2 fobj a b c ].
+(* fobj と fmor の意味：
+カテゴリ1 C1 = (Obj, Hom)
+カテゴリ2 C2 = (Obj0, Hom0)
 
-Check fmor.
+fobj : C1 -> C2、カテゴリC1（の対象）からC2（の対象）への写像
+ファンクタからのコアーションが効く。
 
-Notation "F \ f" := (fmor F f)   : category_scope.
+fmor : (a ~> b) -> (fobj a ~> fobj b)
+カテゴリC1（の射）からC2（の射）への写像、
+ただし fobj が与えられないと、意味をなさないことに注意！
+ *)
 
-(* Classの公理に Proper (eqv ==> eqv) fmor が必要なわけではない。 *)
-Instance functor_fmor_Proper  `(C1 : Category) `(C2 : Category)
+Check @fmor : ∀Obj Hom C1 Obj0 Hom0 C2 fobj _ a b _, fobj a ~> fobj b.
+Check fmor : _ ~> _ -> _ ~> _.
+About fmor.                       (* Set Implicit Arguments の所為で、
+                                     fobj は implicit になっている。 *)
+Arguments fmor {Obj Hom Obj0 Hom0 C1 C2} fobj {_ a b} _ : rename.
+Check fmor.                          (* fobj を指定するようにする。 *)
+(*
+Reserved Notation "F \ f" (at level 51, left associativity).
+Notation "F \ f" := (fmor F f) : category_scope.
+ *)
+
+(* parametric_morphism_fmor *)
+(* これの証明に、Classの公理に Proper (eqv ==> eqv) fmor が必要なわけではない。 *)
+Instance functor_fmor_Proper `(C1 : Category) `(C2 : Category)
          (Fobj : C1 -> C2) (F : Functor Fobj) (a b : C1) :
   Proper (@eqv (a ~> b) ==> @eqv (Fobj a ~> Fobj b)) (@fmor _ _ _ _ _ _ _ _ a b).
 Proof.
-  intros x y.                               (* これが肝 *)
+  move=> x y.                               (* これが肝 *)
   Check (@fmor_respects _ _ C1 _ _ C2 Fobj F a b x y).
   by apply (@fmor_respects _ _ C1 _ _ C2 Fobj F a b x y).
 Qed.
 
-Coercion functor_fobj : Functor >-> Funclass.
-
+(* 恒等関手 *)
 (* the identity functor *)
-Definition functor_id `(C : Category) : Functor (fun x => x).
+Definition functor_id `(C : Category) : Functor (fun (x : C) => x).
 Proof.
-(*  apply (Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)) *)
+  (* 恒等関手 : C -> C *)
+  Check (fun (x : C) => C).                 (* カテゴリC(の対象)から、カテゴリC(の対象)の写像 *)
+  Check (fun (a b : C) (f : a ~> b) => f).  (* カテゴリC(の射)から、カテゴリC(の射)の写像 *)
+  
+  (* ***** *)
   About Build_Functor.
   Check (@Build_Functor _ _ C _ _ C).
-  Check (@Build_Functor _ _ C _ _ C (fun x => x)). (* fobj を与える。 *)
-  Check (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)). (* fmor を与える。 *)
-  Check (fun a b f => f).
+  Check (@Build_Functor _ _ C _ _ C (fun (x : C) => x)). (* fobj を与える。 *)
+  Check (@Build_Functor _ _ C _ _ C (fun (x : C) => x)
+                        (fun (a b : C) (f : a ~> b) => f)). (* fmor を与える。 *)
   apply (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)).
   (* fmor_respects *)
   - move=> a b f f' H.
@@ -88,59 +100,68 @@ Proof.
   - reflexivity.
 Defined.
 
+(* 定数関手 *)
 (* the constant functor *)
-Definition functor_const `(C : Category) `{D : Category} (d : D) : Functor (fun _ => d).
+Definition functor_const `(C : Category) `{D : Category} (d : D) : Functor (fun (x : C) => d).
+  (* 定数関手 : C -> D *)
+  Check (fun (x : C) => d).                 (* カテゴリC(の対象)から、カテゴリD(の対象)の写像 *)
+  Check (fun (a b : C) (f : a ~> b) => id).  (* カテゴリC(の射)から、カテゴリD(の射)の写像 *)
+  
   About Build_Functor.
-  Check fun _ _ _ => @id _ d.
-  Check (@Build_Functor _ _ D _ _ D (fun _ => d)). (* fobj を与える。 *)
-  Check (@Build_Functor _ _ D _ _ D (fun _ => d) (fun _ _ _ => id)). (* fmor を与える。 *)
-  (* apply Build_Functor with (fmor := fun _ _ _ => (id d)). *)
-  apply (@Build_Functor _ _ D _ _ D (fun _ => d) (fun _ _ _ => id)).
+  Check (@Build_Functor _ _ C _ _ D (fun (x : C) => d)). (* fobj を与える。 *)
+  Check (@Build_Functor _ _ C _ _ D (fun (x : C) => d)
+                        (fun (a b : C) (f : a ~> b) => id)). (* fmor を与える。 *)
+  apply (@Build_Functor _ _ C _ _ D (fun _ => d) (fun _ _ _ => id)).
   - reflexivity.
   - reflexivity.
   - move=> a b c _ _.
     by apply left_identity.
-  Defined.
+Defined.
 
 Generalizable Variables Fobj Gobj.
 
-Locate "_ ○ _".
-Locate "_ \\o _".
-Locate "_ \ _".
+Locate "_ ○ _".                            (* "f ○ g" := fun x => f (g x) *)
+Locate "_ \o _".                            (* SSReflect では、こっちを使う。 *)
+Locate "_ \\o _".                           (* "f \\o g" := comp f g *)
 
+(* 関手の合成 *)
 (* functors compose *)
 Definition functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
            `(F : @Functor _ _ C1 _ _ C2 Fobj) `(G : @Functor _ _ C2 _ _ C3 Gobj) :
-  Functor (Gobj ○ Fobj).
+  Functor (Gobj \o Fobj).
 Proof.
-  Check fmor.
-  Check @fmor.
-  Check fmor G.
-  Check (fun a b m => fmor G (fmor F m)).
-  Check (@Build_Functor _ _ _ _ _ _ _).
-  Check (@Build_Functor _ _ _ _ _ _ _
-                        (fun a b m => fmor G (fmor F m))).
+  Check F : C1 -> C2.              (* C1の対象からC2の対象への写像  *)
+  Check Fobj : C1 -> C2.           (* C1の対象からC2の対象への写像  *)
+  Check fmor F.                    (* C1の射からC2の射への写像 *)
+  Check G : C2 -> C3.              (* C2の対象からC3の対象への写像  *)
+  Check Gobj : C2 -> C3.           (* C2の対象からC3の対象への写像  *)
+  Check fmor G.                    (* C2の射からC3の射への写像 *)
+
+  Check G \o F.
+  Check Gobj \o Fobj.
+  
+  Check (fun (a b : C1) (m : a ~> b) => fmor F m). (* m は C1の射 *) (* C2の射を返す *)
+  Check (fun (a b : C1) (m : a ~> b) => fmor G (fmor F m)). (* C3の射を返す *)
+  
+  Check @Build_Functor _ _ C1 _ _ C3.
+  Check @Build_Functor _ _ C1 _ _ C3 (G \o F). (* fobj を与える。 *)
+  Check @Build_Functor _ _ C1 _ _ C3 (G \o F)
+        (fun a b m => fmor G (fmor F m)).  (* fmor を与える。 *)
     
-  apply (@Build_Functor _ _ _ _ _ _ _
+  apply (@Build_Functor _ _ C1 _ _ C3 _ (* fobj (G \o F) を指定するとうまくいかない *)
                         (fun a b m => fmor G (fmor F m))).
-  - intros a b f f' H.
+  - move=> a b f f' H.
     rewrite H.
     reflexivity.
   - repeat setoid_rewrite fmor_preserves_id.
     reflexivity.
   - repeat setoid_rewrite fmor_preserves_comp.
     reflexivity.
-(*
-   [ abstract (intros; setoid_rewrite H ; auto; reflexivity)
-   | abstract (intros; repeat setoid_rewrite fmor_preserves_id; auto; reflexivity)
-   | abstract (intros; repeat setoid_rewrite fmor_preserves_comp; auto; reflexivity)
-   ].
-*)
-  Defined.
-
+Defined.
 
 Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
 
+(* みなおし、ここまで。 *)
 
 (*
 Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
@@ -164,7 +185,7 @@ Definition heq_morphisms_refl :
   forall `{C : Category} a b f,
     @heq_morphisms _ _ C a b f a  b  f.
 Proof.
-  intros.
+  move=> Obj Hom C a b f.
   apply heq_morphisms_intro.
   reflexivity.
 Qed.
@@ -173,10 +194,10 @@ Definition heq_morphisms_symm :
   forall `{C : Category} a b f a' b' f',
     @heq_morphisms _ _ C a b f a' b' f' -> @heq_morphisms _ _ C a' b' f' a b f.
 Proof.
-  refine(fun ob hom c a b f a' b' f' isd =>
-           match isd with
-             | heq_morphisms_intro f''' z => @heq_morphisms_intro _ _ c _ _ f''' f _
-           end).
+  refine (fun ob hom c a b f a' b' f' isd =>
+            match isd with
+              | heq_morphisms_intro f''' z => @heq_morphisms_intro _ _ c _ _ f''' f _
+            end).
   symmetry.
   auto.
 Qed.
