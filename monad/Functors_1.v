@@ -195,31 +195,39 @@ Lemma functor_comp_assoc `{C':Category}`{D:Category}`{E:Category}`{F:Category}
 
 Inductive heq_morphisms `{C : Category} {a b : C} (f : a ~> b) :
   forall {a' b' : C}, a' ~> b' -> Prop :=
-| heq_morphisms_intro :
-    forall {f' : a ~> b}, eqv f f' -> @heq_morphisms _ _ C a b f a b f'.
+| heq_morphisms_intro {f' : a ~> b} :
+    eqv f f' -> @heq_morphisms _ _ C a b f a b f'.
 
-Definition heq_morphisms_refl :
-  forall `{C : Category} a b f,
-    @heq_morphisms _ _ C a b f a  b  f.
+Definition heq_morphisms_refl `{C : Category} a b f :
+  @heq_morphisms _ _ C a b f a  b  f.
 Proof.
-  move=> Obj Hom C a b f.
   apply heq_morphisms_intro.
   reflexivity.
 Qed.
+Check heq_morphisms_refl.
+Check @heq_morphisms_refl :
+  forall {Obj Hom C} {a b : Obj} {f : a ~> b},
+    heq_morphisms f f.
 
-Definition heq_morphisms_symm :
-  forall `{C : Category} a b f a' b' f',
-    @heq_morphisms _ _ C a b f a' b' f' -> @heq_morphisms _ _ C a' b' f' a b f.
+Definition heq_morphisms_symm `{C : Category} a b f a' b' f' :
+  @heq_morphisms _ _ C a b f a' b' f' -> @heq_morphisms _ _ C a' b' f' a b f.
 Proof.
+  generalize Obj Hom C a b f a' b' f'.
   refine (fun ob hom c a b f a' b' f' isd =>
             match isd with
               | heq_morphisms_intro f''' z => @heq_morphisms_intro _ _ c _ _ f''' f _
             end).
-  symmetry.
-  auto.
+  rewrite z.
+  reflexivity.
 Qed.
+Check heq_morphisms_symm.
+Check @heq_morphisms_symm :
+  forall {Obj Hom C}
+         {a b : Obj} {f : a ~> b}
+         {a' b' : Obj} {f' : a' ~> b'},
+    heq_morphisms f f' -> heq_morphisms f' f.
 
-Definition heq_morphisms_tran : forall `{C : Category} a b f a' b' f' a'' b'' f'',
+Definition heq_morphisms_tran `{C : Category} a b f a' b' f' a'' b'' f'' :
   @heq_morphisms _ _ C a b f a' b' f' ->
   @heq_morphisms _ _ C a' b' f' a'' b'' f'' ->
   @heq_morphisms _ _ C a b f a'' b'' f''.
@@ -229,6 +237,13 @@ Definition heq_morphisms_tran : forall `{C : Category} a b f a' b' f' a'' b'' f'
   setoid_rewrite <- H0.
   apply H.
 Qed.
+Check heq_morphisms_tran.
+Check @heq_morphisms_tran :
+  forall {Obj Hom C}
+         {a b : Obj} {f : a ~> b}
+         {a' b' : Obj} {f' : a' ~> b'}
+         {a'' b'' : Obj} {f'' : a'' ~> b''},
+    heq_morphisms f f' -> heq_morphisms f' f'' -> heq_morphisms f f''.
 
 (*
 Add Parametric Relation  (Ob:Type)(Hom:Ob->Ob->Type)(C:Category Ob Hom)(a b:Ob) : (hom a b) (eqv a b)
