@@ -23,6 +23,8 @@ Require Import Notations.                   (* same dir. *)
 Require Import Categories.                  (* same dir. *)
 Require Import Functors.                    (* same dir. *)
 
+(* 圏Cにおいて、同型射 f : a ~> b が存在するとき、a と b は同型である。 *)
+(* 同型射とは、g \\o f === id かつ f \\o g === id なる f *)
 Class Isomorphism `{C : Category} {a b : C} (f : a ~> b) (g : b ~> a) : Prop :=
   {
     iso_cmp1  : g \\o f === id;             (* id a *)
@@ -30,6 +32,7 @@ Class Isomorphism `{C : Category} {a b : C} (f : a ~> b) (g : b ~> a) : Prop :=
   }.
 (* TO DO: show isos are unique when they exist *)
 
+(* f と g をメンバで定義した版 *)
 Class Isomorphic `{C : Category} (a b : C) :=
   {
     iso_forward  :  a ~> b;
@@ -38,27 +41,25 @@ Class Isomorphic `{C : Category} (a b : C) :=
     iso_comp2    :  iso_forward \\o iso_backward === id  (* id b *)
 (* TO DO: merge this with Isomorphism *)
 }.
+(* 同型射 f は、ひとつの同型(な関係にあるaとb)を与えないと決まらない。
+   Isomorphic a b をexplicitに与えるようにする。 *)
 Check @iso_forward : ∀Obj Hom C a b _, a ~> b.
 Check iso_forward : _ ~> _.
-Arguments iso_forward  {Obj Hom C a b} f : rename.
-Arguments iso_backward {Obj Hom C a b} f : rename.
+Arguments iso_forward  {Obj Hom C a b} i : rename.
+Arguments iso_backward {Obj Hom C a b} i : rename.
 Arguments iso_comp1    {Obj Hom C a b} i : rename.
 Arguments iso_comp2    {Obj Hom C a b} i : rename.
 Check iso_forward _ : _ ~> _.                 (* 最初の _ は、Isomorphic a b *)
 Check iso_forward : Isomorphic _ _ -> _ ~> _. (* _ は、圏Cの対象 a b *)
-
-(*
-Implicit Arguments iso_forward  [ C a b Ob Hom ].
-Implicit Arguments iso_backward [ C a b Ob Hom ].
-Implicit Arguments iso_comp1    [ C a b Ob Hom ].
-Implicit Arguments iso_comp2    [ C a b Ob Hom ].
- *)
 
 Notation "a ≅ b" := (Isomorphic a b) : isomorphism_scope.
 (* the sharp symbol "casts" an isomorphism to the morphism in the forward direction *)
 Notation "# f" := (iso_forward f) : isomorphism_scope.
 Open Scope isomorphism_scope.
 
+
+(* 同型a,bに対して、同型b,aを求めることができる。 *)
+(* aに対してbが同型なら、bに対してaも同型である。 *)
 (* the inverse of an isomorphism is an isomorphism *)
 Definition iso_inv `{C : Category} (a b : C) (iso : Isomorphic a b) : Isomorphic b a.
 Proof.
@@ -69,20 +70,26 @@ Proof.
   - now apply iso_comp1.
 Defined.
 Check @iso_inv : ∀Obj Hom C a b _, b ≅ a.
-Arguments iso_inv  {Obj Hom C a b} f : rename.
+Arguments iso_inv {Obj Hom C a b} f : rename.
 Check iso_inv _ : _ ≅ _.                    (* 最初の _ は a ≅ b *)
 Check iso_inv : _ ≅ _ -> _ ≅ _.             (* _ は、圏Cの対象 a b *)
 Notation "f '⁻¹'" := (iso_inv f) : isomorphism_scope.
 
+(* 同型a,a *)
+(* aとaは同型である。 *)
 (* identity maps are isomorphisms *)
-Definition iso_id `{C : Category} (A : C) : Isomorphic A A.
+Definition iso_id `{C : Category} (a : C) : Isomorphic a a.
 Proof.
-  Check @Build_Isomorphic _ _ C A A id id.
-  apply (@Build_Isomorphic _ _ C A A id id).
+  Check @Build_Isomorphic _ _ C a a id id.
+  apply (@Build_Isomorphic _ _ C a a id id).
   now rewrite left_identity.
   now rewrite left_identity.
 Defined.
+Check @iso_id.
+Arguments iso_id {Obj Hom C a} : rename.
+Check iso_id : _ ≅ _.                       (* _ は、圏Cの対象a *)
 
+(* 同型a,b と 同型b,c なら、同型a,c *)
 (* the composition of two isomorphisms is an isomorphism *)
 Definition iso_comp `{C : Category} {a b c : C}
            (i1 : Isomorphic a b) (i2 : Isomorphic b c) : Isomorphic a c.
