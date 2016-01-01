@@ -66,8 +66,8 @@ Proof.
   Check iso_backward.
   Check @Build_Isomorphic _ _ _ _ _ (iso_backward iso) (iso_forward iso).
   apply (@Build_Isomorphic _ _ _ _ _ (iso_backward iso) (iso_forward iso)).
-  - now apply iso_comp2.
-  - now apply iso_comp1.
+  - by apply iso_comp2.
+  - by apply iso_comp1.
 Defined.
 Check @iso_inv : ∀Obj Hom C a b _, b ≅ a.
 Arguments iso_inv {Obj Hom C a b} f : rename.
@@ -176,7 +176,9 @@ Lemma iso_shift_right' `{C : Category} {a b c : C}
   f \\o #i === g -> f === g \\o #i⁻¹.
 Proof.
   move=> H.
-  rewrite -H associativity iso_comp2 right_identity.
+  rewrite -H.
+  rewrite associativity.                    (* assoc の定義がオリジナルと異なる。 *)
+  rewrite iso_comp2 right_identity.         (* あとは、少し証明が変わる。 *)
   reflexivity.
 Qed.  
 
@@ -198,49 +200,67 @@ Proof.
   reflexivity.
 Qed.  
 
-(* ここまで *)
-
-Lemma isos_forward_equal_then_backward_equal `{C : Category}{a}{b}(i1 i2 : a ≅ b)  :  #i1 ~~ #i2 ->  #i1⁻¹ ~~ #i2⁻¹.
-  intro H.
-  setoid_rewrite <- left_identity at 1.
-  setoid_rewrite <- (iso_comp2 i2).
-  setoid_rewrite associativity.
-  setoid_rewrite <- H.
-  setoid_rewrite iso_comp1.
-  setoid_rewrite right_identity.
+(* 圏Cの対象aとbに対して、a,bの同型（同型射 a ~> b）が同じなら、
+b,aの同型（同型射 b ~> a）も同じである。 *)
+Lemma isos_forward_equal_then_backward_equal `{C : Category} {a b : C}
+      (i1 i2 : Isomorphic a b)  :  #i1 === #i2 ->  #i1⁻¹ === #i2⁻¹.
+Proof.
+  move=> H.
+  rewrite -[#i1 ⁻¹]left_identity.
+  rewrite -(iso_comp1 i2).
+  rewrite associativity.
+  rewrite -H.
+  rewrite (iso_comp2 i1).
+  rewrite right_identity.
+  rewrite /=.
   reflexivity.
-  Qed.
+Qed.
 
-Lemma iso_inv_inv `{C : Category}{a}{b}(i : a ≅ b)  :  #(i⁻¹)⁻¹ ~~ #i.
-  unfold iso_inv; simpl.
+(* 圏Cの対象aとbに対して、a,bの同型（同型射 a ~> b）の逆の逆は同じ *)
+Lemma iso_inv_inv `{C : Category} {a b : C} (i : Isomorphic a b) :
+  #(i⁻¹)⁻¹ === #i.
+Proof.
+  rewrite /iso_inv /=.
   reflexivity.
-  Qed.
+Qed.
 
-(* the next four lemmas are handy for setoid_rewrite; they let you avoid having to get the associativities right *)
-Lemma iso_comp2_right  :  forall `{C : Category}{a b}(i : a≅b) c (g : b~>c), iso_backward i \\o (iso_forward i \\o g) ~~ g.
-  intros.
-  setoid_rewrite <- associativity.
-  setoid_rewrite iso_comp2.
-  apply left_identity.
-  Qed.
+(* the next four lemmas are handy for setoid_rewrite; they let you
+avoid having to get the associativities right *)
 
-Lemma iso_comp2_left  :  forall `{C : Category}{a b}(i : a≅b) c (g : c~>b), (g \\o iso_backward i) \\o iso_forward i ~~ g.
-  intros.
-  setoid_rewrite associativity.
-  setoid_rewrite iso_comp2.
-  apply right_identity.
-  Qed.
+Lemma iso_comp2_right  `{C : Category} {a b c : C} (i : Isomorphic a b)  (g : b ~> c) :
+  g \\o iso_forward i \\o iso_backward i === g.
+Proof.
+  rewrite associativity.
+  rewrite iso_comp2.
+  rewrite right_identity.
+  reflexivity.
+Qed.
 
-Lemma iso_comp1_right  :  forall `{C : Category}{a b}(i : a≅b) c (g : a~>c), iso_forward i \\o (iso_backward i \\o g) ~~ g.
-  intros.
-  setoid_rewrite <- associativity.
-  setoid_rewrite iso_comp1.
-  apply left_identity.
-  Qed.
+Lemma iso_comp2_left `{C : Category} {a b c : C} (i : Isomorphic a b)  (g : c ~> b) :
+  iso_forward i \\o (iso_backward i \\o g)  === g.
+Proof.
+  rewrite -associativity.
+  rewrite iso_comp2.
+  rewrite left_identity.
+  reflexivity.
+Qed.
 
-Lemma iso_comp1_left  :  forall `{C : Category}{a b}(i : a≅b) c (g : c~>a), (g \\o iso_forward i) \\o iso_backward i ~~ g.
-  intros.
-  setoid_rewrite associativity.
-  setoid_rewrite iso_comp1.
-  apply right_identity.
-  Qed.
+Lemma iso_comp1_right `{C : Category} {a b c : C} (i : Isomorphic a b)  (g : a ~> c) :
+  g \\o iso_backward i \\o iso_forward i === g.
+Proof.
+  rewrite associativity.
+  rewrite iso_comp1.
+  rewrite right_identity.
+  reflexivity.
+Qed.
+
+Lemma iso_comp1_left `{C : Category} {a b c : C} (i : Isomorphic a b)  (g : c ~> a) :
+  iso_backward i \\o (iso_forward i \\o g)  === g.
+Proof.
+  rewrite -associativity.
+  rewrite iso_comp1.
+  rewrite left_identity.
+  reflexivity.
+Qed.
+
+(* END *)
