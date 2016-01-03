@@ -73,7 +73,7 @@ Coercion obj : Category >-> Sortclass.
 
 Notation "a ~> b"  := (hom a b).
 Notation "f \\o g" := (comp f g).
-(* Notation "a ~~{ C }~~> b" := (@hom _ _ C a b). *)
+Notation "a ~~{ C }~~> b" := (@hom _ _ C a b) (at level 100).
 
 (* eqv が、Reflexive と Symmetric と Transitive とを満たす。 *)
 Instance category_eqv_Equiv `(C : Category Obj) (a b : Obj) :
