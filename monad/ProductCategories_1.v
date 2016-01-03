@@ -42,12 +42,12 @@ Section ProductCategories.
   Inductive  prod_obj : Type :=
   | pair_obj : C1 -> C2 -> prod_obj.
   
-  Definition fst_obj x :=
+  Definition fst_obj (x : prod_obj) : C1 :=
     match x with
       | pair_obj a _ => a
     end.
   
-  Definition snd_obj x :=
+  Definition snd_obj (x : prod_obj) : C2 :=
     match x with
       | pair_obj _ b => b
     end.
@@ -58,12 +58,58 @@ Section ProductCategories.
       ((snd_obj a) ~~{C2}~~> (snd_obj b)) ->
       prod_mor a b.
   Check prod_mor : prod_obj → prod_obj → Type.
-
+  
+  Definition prod_eqv (a b : prod_obj)
+             (x : prod_mor a b) (y : prod_mor a b) : Prop :=
+    match x with
+      | pair_mor xa xb =>
+        match y with
+          | pair_mor ya yb =>
+            xa === ya /\ xb === yb
+        end
+    end.
+  
+  Program Instance prod_Equiv (a b : prod_obj) : Equivalence (@prod_eqv a b).
+  Obligation 1.                             (* Reflexive *)
+  Proof.
+    rewrite /prod_eqv /Reflexive /=.
+    case=> hfx hsx.
+    split.
+    - reflexivity.
+    - reflexivity.
+  Qed.
+  Obligation 2.                             (* Symmetric *)
+  Proof.
+    rewrite /prod_eqv /Symmetric /=.
+    case=> hfx hsx.
+    case=> hfy hsy.
+    case=> H1 H2.
+    split.
+    - rewrite H1.
+      reflexivity.
+    - rewrite H2.
+      reflexivity.
+  Qed.
+  Obligation 3.                             (* Transitive *)
+  Proof.
+    rewrite /prod_eqv /Transitive /=.
+    case=> hfx hsx.
+    case=> hfy hsy.
+    case=> hfz hsz.
+    case=> H1 H2.
+    case=> H3 H4.
+    split.
+    - rewrite H1 H3.
+      reflexivity.
+    - rewrite H2 H4.
+      reflexivity.
+  Qed.
+  
   (* 射はSetoidでないといけない。 *)
-  Instance PC_mor : forall (a b : prod_obj), Setoid :=
+  Instance PC_mor (a b : prod_obj) : Setoid :=
     {
       carrier := prod_mor a b;
-      eqv := eq
+      eqv := @prod_eqv a b
     }.
   Check PC_mor : prod_obj → prod_obj → Setoid.
   Print PC_mor.
@@ -84,7 +130,7 @@ Section ProductCategories.
   Check PC_mor   : prod_obj → prod_obj → Setoid.
   Check @Category prod_obj PC_mor.
 
-  Program Instance ProductCategpry : @Category prod_obj PC_mor.
+  Program Instance ProductCategory : @Category prod_obj PC_mor.
   Obligation 1.                             (* id *)
   Proof.
     apply pair_mor.
@@ -103,13 +149,38 @@ Section ProductCategories.
                  (g2 : snd_obj b ~~{ C2 }~~> snd_obj c) => (g2 \\o f2));
         by [apply X | apply X0].
   Defined.
-  Obligation 3.                             (* eqv *)
+  Obligation 3.                             (* comp_respects *)
   Proof.
-    rewrite /ProductCategpry_obligation_2 /ProductCategpry_obligation_1 /=.
-    
-  
-    (* ****** *)
+    rewrite /ProductCategory_obligation_2.
+    move=> hbc1 hbc2 Hbc.
+    move=> hab1 hab2 Hab.
+    move: Hbc Hab.
+    rewrite /prod_eqv.
+    case hbc1 => hbc3 hbc4.
+    case hab1 => hab3 hab4.
+    case hbc2 => hbc5 hbc6.
+    case hab2 => hab5 hab6.
+    case=> Hbc35 Hbc46.
+    case=> Hab35 Hab46.
+    split.
+    - rewrite Hbc35 Hab35.
+      reflexivity.
+    - rewrite Hbc46 Hab46.
+      reflexivity.
+  Qed.
+  Obligation 4.                             (* *** *)
+  Proof.
+    case: f => hf hs.
+    split.
+    - rewrite left_identity.
+      reflexivity.
+    - rewrite left_identity.
+      reflexivity.
+  Defined.
 
+  (* ここまで *)
+  
+(*
   Definition ProductCategory : Category prod_obj prod_mor.
     refine
     {| id   := fun (a:prod_obj)  => pair_mor a a (id (fst_obj a)) (id (snd_obj a))
@@ -131,6 +202,7 @@ Section ProductCategories.
       abstract (intros; destruct a; destruct b; destruct c; case f; intros; destruct d; simpl; case g; intros;
                 destruct h; setoid_rewrite associativity; split; reflexivity).
       Defined.
+*)
 End ProductCategories.
 
 Implicit Arguments pair_obj [ Ob1 Hom1 Ob2 Hom2 C1 C2 ].
