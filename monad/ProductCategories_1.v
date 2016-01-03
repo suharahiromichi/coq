@@ -1,32 +1,114 @@
-Generalizable All Variables.
-Require Import Notations.
-Require Import Categories_ch1_3.
-Require Import Functors_ch1_4.
-Require Import Isomorphisms_ch1_5.
-
 (******************************************************************************)
 (* Chapter 1.6.1: Product Categories                                          *)
 (******************************************************************************)
 
+(*
+(0)
+同じディレクトリにある Categories.v と Functor.v を使う。
+
+(1) ベースライン
+http://www.megacz.com/berkeley/coq-categories/
+これをもとに改変。Instance ... Proper を使うようにした。
+ *)
+
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+Require Import finset fintype.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+Require Import Notations.                   (* coq standard libs. *)
+Require Import Categories.                  (* same dir. *)
+Require Import Functors.                    (* same dir. *)
+Require Import Isomorphisms.                (* same dir. *)
+
 Section ProductCategories.
 
-  Context `(C1:Category Ob1 Hom1).
-  Context `(C2:Category Ob2 Hom2).
+  Locate "_ ~~{ _ }~~> _".                  (* Categories.v *)
+  
+(*
+  Context `(C1 : Category Obj1 Hom1).
+  Context `(C2 : Category Obj2 Hom2).
+*)  
+  Context `(C1 : Category).                 (* Obj Hom *)
+  Context `(C2 : Category).                 (* Obj0 Hom0 *)
+  
+  (* trying to use the standard "prod" here causes a universe
+  inconsistency once we get to coqBinoidal; moreover, using a
+  general fully-polymorphic pair type seems to trigger some serious
+  memory leaks in Coq *)
+  
+  Inductive  prod_obj : Type :=
+  | pair_obj : C1 -> C2 -> prod_obj.
+  
+  Definition fst_obj x :=
+    match x with
+      | pair_obj a _ => a
+    end.
+  
+  Definition snd_obj x :=
+    match x with
+      | pair_obj _ b => b
+    end.
 
-  (* trying to use the standard "prod" here causes a universe inconsistency once we get to coqBinoidal;
-   * moreover, using a general fully-polymorphic pair type seems to trigger some serious memory leaks
-   * in Coq *)
-  Inductive  prod_obj : Type := pair_obj : C1 -> C2 -> prod_obj.
-    Definition fst_obj x := match x with pair_obj a _ => a end.
-    Definition snd_obj x := match x with pair_obj _ b => b end.
-
-  Inductive  prod_mor (a b:prod_obj) : Type :=
+  Inductive prod_mor (a b : prod_obj) : Type :=
     pair_mor :
-      ((fst_obj a)~~{C1}~~>(fst_obj b)) ->
-      ((snd_obj a)~~{C2}~~>(snd_obj b)) ->
+      ((fst_obj a) ~~{C1}~~> (fst_obj b)) ->
+      ((snd_obj a) ~~{C2}~~> (snd_obj b)) ->
       prod_mor a b.
-    Definition fst_mor {a b:prod_obj}(x:prod_mor a b) := match x with pair_mor a _ => a end.
-    Definition snd_mor {a b:prod_obj}(x:prod_mor a b) := match x with pair_mor _ b => b end.
+  Check prod_mor : prod_obj → prod_obj → Type.
+
+  (* 射はSetoidでないといけない。 *)
+  Instance PC_mor : forall (a b : prod_obj), Setoid :=
+    {
+      carrier := prod_mor a b;
+      eqv := eq
+    }.
+  Check PC_mor : prod_obj → prod_obj → Setoid.
+  Print PC_mor.
+  
+  Definition fst_mor {a b : prod_obj} (x : prod_mor a b) :=
+    match x with
+      | pair_mor a _ => a
+    end.
+  
+  Definition snd_mor {a b : prod_obj} (x : prod_mor a b) :=
+    match x with
+      | pair_mor _ b => b
+    end.
+
+  Check @Category.
+  Check prod_obj : Type.
+  Check prod_mor : prod_obj → prod_obj → Type.
+  Check PC_mor   : prod_obj → prod_obj → Setoid.
+  Check @Category prod_obj PC_mor.
+
+  Program Instance ProductCategpry : @Category prod_obj PC_mor.
+  Obligation 1.                             (* id *)
+  Proof.
+    apply pair_mor.
+    - apply id.
+    - apply id.
+  Defined.
+  Obligation 2.                             (* comp *)
+  Proof.
+    apply pair_mor.
+    Check (fun (f1 : fst_obj a ~~{ C1 }~~> fst_obj b)
+               (g1 : fst_obj b ~~{ C1 }~~> fst_obj c) => (g1 \\o f1)).
+    - apply (fun (f1 : fst_obj a ~~{ C1 }~~> fst_obj b)
+                 (g1 : fst_obj b ~~{ C1 }~~> fst_obj c) => (g1 \\o f1));
+        by [apply X | apply X0].
+    - apply (fun (f2 : snd_obj a ~~{ C2 }~~> snd_obj b)
+                 (g2 : snd_obj b ~~{ C2 }~~> snd_obj c) => (g2 \\o f2));
+        by [apply X | apply X0].
+  Defined.
+  Obligation 3.                             (* eqv *)
+  Proof.
+    rewrite /ProductCategpry_obligation_2 /ProductCategpry_obligation_1 /=.
+    
+  
+    (* ****** *)
 
   Definition ProductCategory : Category prod_obj prod_mor.
     refine
