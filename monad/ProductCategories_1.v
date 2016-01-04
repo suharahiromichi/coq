@@ -167,8 +167,8 @@ Section ProductCategories.
       reflexivity.
     - rewrite Hgs Hfs.
       reflexivity.
-  Qed.
-  Obligation 4.                             (* *** *)
+  Defined.
+  Obligation 4.                             (* id \\o f === f  *)
   Proof.
     case: f => ff fs.
     split.
@@ -177,32 +177,28 @@ Section ProductCategories.
     - rewrite left_identity.
       reflexivity.
   Defined.
-
-  (* ここまで *)
-  
-(*
-  Definition ProductCategory : Category prod_obj prod_mor.
-    refine
-    {| id   := fun (a:prod_obj)  => pair_mor a a (id (fst_obj a)) (id (snd_obj a))
-     ; comp := fun a b c (f:prod_mor a b) (g:prod_mor b c) =>
-                  match f with pair_mor f1 f2 => match g with pair_mor g1 g2 => pair_mor _ _ (f1>>>g1) (f2>>>g2) end end
-    ; eqv  := fun a b (f:prod_mor a b) (g:prod_mor a b)    => 
-                  match f with pair_mor f1 f2 => match g with pair_mor g1 g2 => (f1~~g1)/\(f2~~g2) end end
-    |}.
-    intros.
-      abstract (apply Build_Equivalence; intros; simpl; intros;
-      [ unfold Reflexive; intros; case x; intros; split; reflexivity
-      | unfold Symmetric; intros; destruct y; destruct x; split; case H; intros; symmetry; auto
-      | unfold Transitive; intros; destruct x; destruct z; destruct y; split; case H; case H0; intros; auto ]).
-      abstract (intros; unfold Proper; simpl; unfold respectful; intros;
-                destruct x0; destruct y0; destruct x; destruct y;
-                case H; intros; case H0; intros; split; auto).
-      abstract (intros; destruct a; destruct b; case f; intros; simpl; setoid_rewrite left_identity; split; reflexivity).
-      abstract (intros; destruct a; destruct b; case f; intros; simpl; setoid_rewrite right_identity; split; symmetry; reflexivity).
-      abstract (intros; destruct a; destruct b; destruct c; case f; intros; destruct d; simpl; case g; intros;
-                destruct h; setoid_rewrite associativity; split; reflexivity).
-      Defined.
-*)
+  Obligation 5.                             (* f \\o id === f  *)
+  Proof.
+    case: f => ff fs.
+    split.
+    - rewrite right_identity.
+      reflexivity.
+    - rewrite right_identity.
+      reflexivity.
+  Defined.
+  Obligation 6.                             (* f \\o g \\o h === f \\o (g \\o h) *)
+  Proof.
+    case: f => ff fs.
+    split.
+    - case: g => gf gs.
+      case: h => hf hs.
+      rewrite associativity.
+      reflexivity.
+    - case: g => gf gs.
+      case: h => hf hs.
+      rewrite associativity.
+      reflexivity.
+  Defined.
 End ProductCategories.
 
 Implicit Arguments pair_obj [ Ob1 Hom1 Ob2 Hom2 C1 C2 ].
