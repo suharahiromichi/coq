@@ -54,18 +54,18 @@ Section ProductCategories.
 
   Inductive prod_mor (a b : prod_obj) : Type :=
     pair_mor :
-      ((fst_obj a) ~~{C1}~~> (fst_obj b)) ->
-      ((snd_obj a) ~~{C2}~~> (snd_obj b)) ->
-      prod_mor a b.
+      ((fst_obj a) ~~{C1}~~> (fst_obj b)) -> (* f1 *)
+      ((snd_obj a) ~~{C2}~~> (snd_obj b)) -> (* f2 *)
+      prod_mor a b.                          (* f *)
   Check prod_mor : prod_obj → prod_obj → Type.
   
   Definition prod_eqv (a b : prod_obj)
-             (x : prod_mor a b) (y : prod_mor a b) : Prop :=
-    match x with
-      | pair_mor xa xb =>
-        match y with
-          | pair_mor ya yb =>
-            xa === ya /\ xb === yb
+             (f : prod_mor a b) (g : prod_mor a b) : Prop :=
+    match f with
+      | pair_mor f1 f2 =>
+        match g with
+          | pair_mor g1 g2 =>
+            f1 === g1 /\ f2 === g2
         end
     end.
   
@@ -73,7 +73,7 @@ Section ProductCategories.
   Obligation 1.                             (* Reflexive *)
   Proof.
     rewrite /prod_eqv /Reflexive /=.
-    case=> hfx hsx.
+    case=> f1 f2.
     split.
     - reflexivity.
     - reflexivity.
@@ -81,8 +81,8 @@ Section ProductCategories.
   Obligation 2.                             (* Symmetric *)
   Proof.
     rewrite /prod_eqv /Symmetric /=.
-    case=> hfx hsx.
-    case=> hfy hsy.
+    case=> f1 f2.
+    case=> g1 g2.
     case=> H1 H2.
     split.
     - rewrite H1.
@@ -93,15 +93,15 @@ Section ProductCategories.
   Obligation 3.                             (* Transitive *)
   Proof.
     rewrite /prod_eqv /Transitive /=.
-    case=> hfx hsx.
-    case=> hfy hsy.
-    case=> hfz hsz.
-    case=> H1 H2.
-    case=> H3 H4.
+    case=> f1 f2.
+    case=> g1 g2.
+    case=> h1 h2.
+    case=> Hfg1 Hfg2.
+    case=> Hgh1 Hgh2.
     split.
-    - rewrite H1 H3.
+    - rewrite Hfg1 Hgh1.
       reflexivity.
-    - rewrite H2 H4.
+    - rewrite Hfg2 Hgh2.
       reflexivity.
   Qed.
   
@@ -114,22 +114,22 @@ Section ProductCategories.
   Check PC_mor : prod_obj → prod_obj → Setoid.
   Print PC_mor.
   
-  Definition fst_mor {a b : prod_obj} (x : prod_mor a b) :=
-    match x with
+  Definition fst_mor {a b : prod_obj} (f : prod_mor a b) :=
+    match f with
       | pair_mor a _ => a
     end.
   
-  Definition snd_mor {a b : prod_obj} (x : prod_mor a b) :=
-    match x with
+  Definition snd_mor {a b : prod_obj} (f : prod_mor a b) :=
+    match f with
       | pair_mor _ b => b
     end.
-
+  
   Check @Category.
   Check prod_obj : Type.
   Check prod_mor : prod_obj → prod_obj → Type.
   Check PC_mor   : prod_obj → prod_obj → Setoid.
   Check @Category prod_obj PC_mor.
-
+  
   Program Instance ProductCategory : @Category prod_obj PC_mor.
   Obligation 1.                             (* id *)
   Proof.
@@ -152,25 +152,25 @@ Section ProductCategories.
   Obligation 3.                             (* comp_respects *)
   Proof.
     rewrite /ProductCategory_obligation_2.
-    move=> hbc1 hbc2 Hbc.
-    move=> hab1 hab2 Hab.
-    move: Hbc Hab.
+    move=> g1 g2 Hg.
+    move=> f1 f2 Hf.
+    move: Hg Hf.
     rewrite /prod_eqv.
-    case hbc1 => hbc3 hbc4.
-    case hab1 => hab3 hab4.
-    case hbc2 => hbc5 hbc6.
-    case hab2 => hab5 hab6.
-    case=> Hbc35 Hbc46.
-    case=> Hab35 Hab46.
+    case g1 => gf1 gs1.
+    case f1 => ff1 fs1.
+    case g2 => gf2 gs2.
+    case f2 => ff2 fs2.
+    case=> Hgf Hgs.
+    case=> Hff Hfs.
     split.
-    - rewrite Hbc35 Hab35.
+    - rewrite Hgf Hff.
       reflexivity.
-    - rewrite Hbc46 Hab46.
+    - rewrite Hgs Hfs.
       reflexivity.
   Qed.
   Obligation 4.                             (* *** *)
   Proof.
-    case: f => hf hs.
+    case: f => ff fs.
     split.
     - rewrite left_identity.
       reflexivity.
