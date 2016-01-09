@@ -77,7 +77,7 @@ Qed.
 
 (* 恒等関手 *)
 (* the identity functor *)
-Definition functor_id `(C : Category) : Functor (fun (x : C) => x).
+Instance functor_id `(C : Category) : Functor (fun (x : C) => x).
 Proof.
   (* 恒等関手 : C -> C *)
   Check (fun (x : C) => C).                 (* カテゴリC(の対象)から、カテゴリC(の対象)の写像 *)
@@ -102,7 +102,7 @@ Defined.
 
 (* 定数関手 *)
 (* the constant functor *)
-Definition functor_const `(C : Category) `{D : Category} (d : D) :
+Instance functor_const `(C : Category) `{D : Category} (d : D) :
   Functor (fun (x : C) => d).
 Proof.
   (* 定数関手 : C -> D *)
@@ -128,7 +128,7 @@ Locate "_ \\o _".                           (* "f \\o g" := comp f g *)
 
 (* 関手の合成 *)
 (* functors compose *)
-Definition functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
+Instance functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
            `(F : @Functor _ _ C1 _ _ C2 Fobj) `(G : @Functor _ _ C2 _ _ C3 Gobj) :
   Functor (Gobj \o Fobj).
 Proof.
@@ -164,8 +164,6 @@ Proof.
     repeat setoid_rewrite fmor_preserves_comp.
     reflexivity.
 Defined.
-
-(* みなおし、ここまで。 *)
 
 Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.
 Open Scope category_scope.
@@ -212,12 +210,9 @@ Check @heq_morphisms_refl :
 Definition heq_morphisms_symm `{C : Category} a b f a' b' f' :
   @heq_morphisms _ _ C a b f a' b' f' -> @heq_morphisms _ _ C a' b' f' a b f.
 Proof.
-  generalize Obj Hom C a b f a' b' f'.
-  refine (fun ob hom c a b f a' b' f' isd =>
-            match isd with
-              | heq_morphisms_intro f''' z => @heq_morphisms_intro _ _ c _ _ f''' f _
-            end).
-  rewrite z.
+  case=> f'' H.
+  apply: heq_morphisms_intro.
+  rewrite H.
   reflexivity.
 Qed.
 Check heq_morphisms_symm.
@@ -231,11 +226,12 @@ Definition heq_morphisms_tran `{C : Category} a b f a' b' f' a'' b'' f'' :
   @heq_morphisms _ _ C a b f a' b' f' ->
   @heq_morphisms _ _ C a' b' f' a'' b'' f'' ->
   @heq_morphisms _ _ C a b f a'' b'' f''.
-  destruct 1.
-  destruct 1.
-  apply heq_morphisms_intro.
-  setoid_rewrite <- H0.
-  apply H.
+Proof.
+  case=> f''' H.
+  case=> f'''' H'.
+  apply: heq_morphisms_intro.
+  rewrite -H'.
+  by apply: H.
 Qed.
 Check heq_morphisms_tran.
 Check @heq_morphisms_tran :
