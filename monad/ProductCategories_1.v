@@ -23,6 +23,7 @@ Require Import Categories.                  (* same dir. *)
 Require Import Functors.                    (* same dir. *)
 Require Import Isomorphisms.                (* same dir. *)
 
+(* 積圏 *)
 Section ProductCategories.
 
   Locate "_ ~~{ _ }~~> _".                  (* Categories.v *)
@@ -201,22 +202,88 @@ Section ProductCategories.
   Defined.
 End ProductCategories.
 
+Notation "C ×× D" := (ProductCategory C D).
+
+(*
 Implicit Arguments pair_obj [ Ob1 Hom1 Ob2 Hom2 C1 C2 ].
 Implicit Arguments pair_mor [ Ob1 Hom1 Ob2 Hom2 C1 C2 ].
-Notation "C ×× D" := (ProductCategory C D).
+ *)
+
+Check @pair_obj : ∀Obj Hom C1 Obj Hom C2 a b, prod_obj C1 C2.
+Check @pair_mor : ∀Obj Hom C1 Obj Hom C2 a b f g, prod_mor a b.
+Check @fst_obj.
+Check @fst_mor.
+Arguments pair_obj {Obj1 Hom1} C1 {Obj2 Hom2} C2 a b : rename.
+Arguments pair_mor {Obj1 Hom1} C1 {Obj2 Hom2} C2 {a b} f g : rename.
+Arguments fst_obj  {Obj1 Hom1} C1 {Obj2 Hom2} C2 D : rename.
+Arguments snd_obj  {Obj1 Hom1} C1 {Obj2 Hom2} C2 D : rename.
+Arguments fst_mor  {Obj1 Hom1} C1 {Obj2 Hom2} C2 a b i : rename.
+Arguments snd_mor  {Obj1 Hom1} C1 {Obj2 Hom2} C2 a b i : rename.
+Check pair_obj _ _ : _ -> _ -> prod_obj _ _.
+Check pair_mor _ _ : _ ~> _ ->  _ ~> _ -> prod_mor _ _.
+Check fst_obj _ _ : prod_obj _ _ -> _.
+Check snd_obj _ _  : prod_obj _ _ -> _.
+Check fst_mor _ _ _ _ : prod_mor _ _ -> _ ~> _.
+
+Check @PC_mor : ∀Obj Hom C1 Obj0 Hom0 C2 _ _, Setoid.
+Arguments PC_mor {Obj1 Hom1} C1 {Obj2 Hom2} C2 f g : rename.
+Check PC_mor _ _ : prod_obj _ _ → prod_obj _ _ → Setoid.
 
 Section ProductCategoryFunctors.
 
-  Context `{C:Category}.
-  Context `{D:Category}.
+  Context `{C : Category}.                  (* Obj Hom C *)
+  Context `{D:Category}.                    (* Obj0 Hom0 D *)
 
-  Definition func_pi1 : Functor (C ×× D) C (fun c => fst_obj _ _ c).
-    refine {| fmor := fun a b (f:prod_mor _ _ a b) => fst_mor _ _ f |}; intros; simpl in *.
-    destruct f; destruct f'; simpl in *; destruct H; auto.
+  Check @Functor.
+  Check @Functor _ _ (C ×× D) Obj Hom C (fun c => fst_obj _ _ c).
+
+  Check @prod_obj Obj Hom C Obj0 Hom0 D.
+  Check prod_obj C D.
+
+  Check @PC_mor Obj Hom C Obj0 Hom0 D.
+  Check PC_mor C D.
+  
+  Check @fst_obj Obj Hom C Obj0 Hom0 D : prod_obj C D → C.
+  Check fst_obj C D : prod_obj C D → C.
+  
+  Check fun (c : prod_obj C D) => @fst_obj Obj Hom C Obj0 Hom0 D c.
+  Check fun (c : prod_obj C D) => fst_obj C D c.
+  
+  Check @Functor (prod_obj C D) (@PC_mor Obj Hom C Obj0 Hom0 D) (C ×× D)
+        Obj Hom C (fun c => fst_obj _ _ c).
+  Check Functor (fun (c : prod_obj C D) => @fst_obj Obj Hom C Obj0 Hom0 D c).
+  Check Functor (fun (c : prod_obj C D) => fst_obj C D c).
+  
+  (* 積圏からもとの圏をとりだす関手 *)
+  Program Instance func_pi1 :
+    @Functor _ _ (C ×× D) _ _ C
+             (fun (c : prod_obj C D) => fst_obj C D c).
+  Obligation 1.
+  (* fst_obj C D a ~~{ C }~~> fst_obj C D b *)
+  Proof.
+    by apply fst_mor.
+  Defined.
+  Obligation 2.
+  (* fst_mor C D a b f === fst_mor C D a b f' *)
+  Proof.
+    rewrite /func_pi1_obligation_1.
+    case: f H => ff fs.
+    case: f' => f'f f's H /=.
+    by case: H.
+  Defined.
+  Obligation 3.
+  (* id === id *)
+  Proof.
     reflexivity.
-    destruct f; destruct g; simpl in *; auto.
-    Defined.
-
+  Defined.
+  Obligation 4.
+  Proof.
+    rewrite /func_pi1_obligation_1.
+    case: f => ff fs.
+    case: g => gf gs.
+    reflexivity.
+  Defined.
+  
   Definition func_pi2 : Functor (C ×× D) D (fun c => snd_obj _ _ c).
     refine {| fmor := fun a b (f:prod_mor _ _ a b) => snd_mor _ _ f |}; intros; simpl in *.
     destruct f; destruct f'; simpl in *; destruct H; auto.
