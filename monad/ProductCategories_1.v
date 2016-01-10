@@ -374,23 +374,66 @@ Section ProductCategoryFunctors.
       reflexivity.
   Defined.
   
-  (* こもまで。 *)
-  
   Context `{E:Category}.
+  
+  (* 積圏の結合律 *)
   Definition cossa : ((C ×× D) ×× E) -> (C ×× (D ×× E)).
-    intros.
-    case X as [a1 a2]; intros.
-    case a1 as [a11 a12]; intros.
-    exact (pair_obj a11 (pair_obj a12 a2)).
-    Defined.
-  Definition cossa_fmor (a:((C ×× D) ×× E)) (b:((C ×× D) ×× E)) (f:a~~{(C ×× D) ×× E}~~>b) : (cossa a)~~{C ×× (D ×× E)}~~>(cossa b).
-    case a  as [ [a11 a12] a2];
-    case b  as [ [b11 b12] b2];
-    case f  as [ [f11 f12] f2];
-    apply pair_mor; auto;
-    apply pair_mor; auto.
-    Defined.
-  Definition func_cossa : Functor ((C ×× D) ×× E) (C ×× (D ×× E)) cossa.
+  Proof.
+    move=> [[HC HD] HE].
+    by [].
+  Defined.
+  
+  Definition cossa_fmor (a : ((C ×× D) ×× E)) (b : ((C ×× D) ×× E))
+             (f : a ~~{(C ×× D) ×× E}~~> b) :
+    (cossa a) ~~{C ×× (D ×× E)}~~> (cossa b).
+  Proof.
+    case: a f => HCxD HE.
+    case: b => GCxD GE.
+    case: HCxD.
+    case: GCxD.
+    move=> HC HD GC GD.
+    case=> fCD fE.
+    case: fCD => fC fD.
+    done.
+  Defined.
+
+  Program Instance func_cossa : Functor ((C ×× D) ×× E) (C ×× (D ×× E)) cossa.
+  Obligation 1.
+  (* prod_mor (cossa a) (cossa b) *)
+  Proof.
+    apply: cossa_fmor.
+    case: a X => HCxD HE.
+    case: b => GCxD GE.
+    case=> fCxD fE.
+    case: fCxD => fC fD.
+    done.
+  Defined.
+  Obligation 2.
+  Proof.
+    case: f H => ff fs.
+    case: f' => f'f f's H /=.
+    case: H => Hf Hs.
+    admit.
+  Defined.
+  Obligation 3.
+      admit.
+  Defined.
+  Obligation 4.
+  Proof.
+    rewrite /func_cossa_obligation_1 /=.
+      admit.
+  Defined.
+  
+  (*
+    Definition func_cossa : Functor ((C ×× D) ×× E) (C ×× (D ×× E)) cossa.
+    refine {| fmor := fun a b f => cossa_fmor a b f |}.
+    abstract (intros;
+              case a  as [ [a11 a12] a2];
+              case b  as [ [b11 b12] b2];
+              case f  as [ [f11 f12] f2];
+              case f' as [ [g11 g12] g2];
+              case H; intro H'; case H';
+              split; [ idtac | split ]; auto).
     refine {| fmor := fun a b f => cossa_fmor a b f |}.
     abstract (intros;
               case a  as [ [a11 a12] a2];
@@ -408,12 +451,15 @@ Section ProductCategoryFunctors.
               case g as [ [g11 g12] g2];
               intros; reflexivity).
     Defined.
+
   Definition func_diagonal : Functor C (C ×× C) (fun c => (pair_obj c c)).
     refine {| fmor := fun a b f => @pair_mor _ _ C _ _ C (pair_obj a a) (pair_obj b b) f f |}.
     abstract (intros; simpl; repeat split; simpl; auto).
     abstract (intros; simpl; repeat split; simpl; auto).
     abstract (intros; simpl; repeat split; simpl; auto).
     Defined.
+*)
+  
 End ProductCategoryFunctors.
 
 Section func_prod.
