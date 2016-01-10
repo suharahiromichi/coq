@@ -213,21 +213,24 @@ Check @pair_obj : ∀Obj Hom C1 Obj Hom C2 a b, prod_obj C1 C2.
 Check @pair_mor : ∀Obj Hom C1 Obj Hom C2 a b f g, prod_mor a b.
 Check @fst_obj.
 Check @fst_mor.
-Arguments pair_obj {Obj1 Hom1} C1 {Obj2 Hom2} C2 a b : rename.
-Arguments pair_mor {Obj1 Hom1} C1 {Obj2 Hom2} C2 {a b} f g : rename.
-Arguments fst_obj  {Obj1 Hom1} C1 {Obj2 Hom2} C2 D : rename.
-Arguments snd_obj  {Obj1 Hom1} C1 {Obj2 Hom2} C2 D : rename.
-Arguments fst_mor  {Obj1 Hom1} C1 {Obj2 Hom2} C2 a b i : rename.
-Arguments snd_mor  {Obj1 Hom1} C1 {Obj2 Hom2} C2 a b i : rename.
-Check pair_obj _ _ : _ -> _ -> prod_obj _ _.
-Check pair_mor _ _ : _ ~> _ ->  _ ~> _ -> prod_mor _ _.
-Check fst_obj _ _ : prod_obj _ _ -> _.
-Check snd_obj _ _  : prod_obj _ _ -> _.
-Check fst_mor _ _ _ _ : prod_mor _ _ -> _ ~> _.
+Arguments pair_obj {Obj1 Hom1 C1 Obj2 Hom2 C2} a b : rename.
+Arguments pair_mor {Obj1 Hom1 C1 Obj2 Hom2 C2 a b} f g : rename.
+Arguments fst_obj  {Obj1 Hom1 C1 Obj2 Hom2 C2} D : rename.
+Arguments snd_obj  {Obj1 Hom1 C1 Obj2 Hom2 C2} D : rename.
+Arguments fst_mor  {Obj1 Hom1 C1 Obj2 Hom2 C2 a b} i : rename.
+Arguments snd_mor  {Obj1 Hom1 C1 Obj2 Hom2 C2 a b} i : rename.
+Check pair_obj : _ -> _ -> prod_obj _ _.    (* 圏の指定は要らない。 *)
+Check pair_mor : _ ~> _ ->  _ ~> _ -> prod_mor _ _.
+Check fst_obj  : prod_obj _ _ -> _.
+Check snd_obj  : prod_obj _ _ -> _.
+Check fst_mor  : prod_mor _ _ -> _ ~> _.
 
 Check @PC_mor : ∀Obj Hom C1 Obj0 Hom0 C2 _ _, Setoid.
-Arguments PC_mor {Obj1 Hom1} C1 {Obj2 Hom2} C2 f g : rename.
-Check PC_mor _ _ : prod_obj _ _ → prod_obj _ _ → Setoid.
+Arguments PC_mor {Obj1 Hom1 C1 Obj2 Hom2 C2} f g : rename.
+Check PC_mor : prod_obj _ _ → prod_obj _ _ → Setoid.
+
+Check @Functor : ∀Obj Hom C1 Obj0 Hom0 C2 _, Type.
+Arguments Functor {Obj Hom} C1 {Obj0 Hom0} C2 i : rename.
 
 Section ProductCategoryFunctors.
 
@@ -235,29 +238,28 @@ Section ProductCategoryFunctors.
   Context `{D:Category}.                    (* Obj0 Hom0 D *)
 
   Check @Functor.
-  Check @Functor _ _ (C ×× D) Obj Hom C (fun c => fst_obj _ _ c).
+  Check @Functor _ _ (C ×× D) Obj Hom C (fun c => fst_obj c).
+  Check Functor (C ×× D) C (fun c => fst_obj c).
 
   Check @prod_obj Obj Hom C Obj0 Hom0 D.
   Check prod_obj C D.
 
   Check @PC_mor Obj Hom C Obj0 Hom0 D.
-  Check PC_mor C D.
+  Check PC_mor.
   
   Check @fst_obj Obj Hom C Obj0 Hom0 D : prod_obj C D → C.
-  Check fst_obj C D : prod_obj C D → C.
+  Check fst_obj : prod_obj C D → C.
   
   Check fun (c : prod_obj C D) => @fst_obj Obj Hom C Obj0 Hom0 D c.
-  Check fun (c : prod_obj C D) => fst_obj C D c.
+  Check fun (c : prod_obj C D) => fst_obj c.
   
   Check @Functor (prod_obj C D) (@PC_mor Obj Hom C Obj0 Hom0 D) (C ×× D)
         Obj Hom C (fun c => fst_obj _ _ c).
-  Check Functor (fun (c : prod_obj C D) => @fst_obj Obj Hom C Obj0 Hom0 D c).
-  Check Functor (fun (c : prod_obj C D) => fst_obj C D c).
+  Check Functor (C ×× D) C (fun (c : prod_obj C D) => @fst_obj Obj Hom C Obj0 Hom0 D c).
   
   (* 積圏からもとの圏をとりだす関手 *)
-  Program Instance func_pi1 :
-    @Functor _ _ (C ×× D) _ _ C
-             (fun (c : prod_obj C D) => fst_obj C D c).
+  Program Instance func_pi1 : Functor (C ×× D) C
+                                      (fun (c : prod_obj C D) => fst_obj c).
   Obligation 1.
   (* fst_obj C D a ~~{ C }~~> fst_obj C D b *)
   Proof.
@@ -284,33 +286,96 @@ Section ProductCategoryFunctors.
     reflexivity.
   Defined.
   
-  Definition func_pi2 : Functor (C ×× D) D (fun c => snd_obj _ _ c).
-    refine {| fmor := fun a b (f:prod_mor _ _ a b) => snd_mor _ _ f |}; intros; simpl in *.
-    destruct f; destruct f'; simpl in *; destruct H; auto.
+  Program Instance func_pi2 : Functor (C ×× D) D
+                                      (fun (c : prod_obj C D) => snd_obj c).
+  Obligation 1.
+  (* snd_obj C D a ~~{ D }~~> snd_obj C D b *)
+  Proof.
+    by apply snd_mor.
+  Defined.
+  Obligation 2.
+  (* snd_mor C D a b f === snd_mor C D a b f' *)
+  Proof.
+    rewrite /func_pi1_obligation_1.
+    case: f H => ff fs.
+    case: f' => f'f f's H /=.
+    by case: H.
+  Defined.
+  Obligation 3.
+  (* id === id *)
+  Proof.
     reflexivity.
-    destruct f; destruct g; simpl in *; auto.
-    Defined.
-
-  Definition llecnac_fmor (I:C) : forall (a b:D)(f:a~~{D}~~>b), (pair_obj I a)~~{C××D}~~>(pair_obj I b).
-    intros; apply pair_mor; [ exact (id I) | auto ].
-    Defined.
-  Definition func_llecnac (I:C) : Functor D (C ×× D) (pair_obj I).
-    refine {| fmor := fun a b f => llecnac_fmor I a b f |}.
-    abstract (intros; simpl; repeat split; simpl; auto).
-    abstract (intros; simpl; repeat split; simpl; auto).
-    abstract (intros; simpl; repeat split; simpl; auto).
-    Defined.
-
-  Definition rlecnac_fmor (I:D) : forall (a b:C)(f:a~~{C}~~>b), (pair_obj a I)~~{C××D}~~>(pair_obj b I).
-    intros; apply pair_mor; [ auto | exact (id I) ].
-    Defined.
-  Definition func_rlecnac (I:D) : Functor C (C ×× D) (fun c => (pair_obj c I)).
-    refine {| fmor := fun a b f => rlecnac_fmor I a b f |}.
-    abstract (intros; simpl; repeat split; simpl; auto).
-    abstract (intros; simpl; repeat split; simpl; auto).
-    abstract (intros; simpl; repeat split; simpl; auto).
-    Defined.
-
+  Defined.
+  Obligation 4.
+  Proof.
+    rewrite /func_pi1_obligation_1.
+    case: f => ff fs.
+    case: g => gf gs.
+    reflexivity.
+  Defined.  
+  
+  Definition llecnac_fmor (I : C) (a b : D) (g : a ~~{D}~~> b) :
+    (pair_obj I a) ~~{C××D}~~> (pair_obj I b).
+  Proof.
+    apply: pair_mor => /=.
+    - by apply: id.
+    - by apply: g.
+  Defined.
+  
+  Program Instance func_llecnac (I : C) : Functor D (C ×× D) (pair_obj I).
+  Obligation 1.
+  (* prod_mor (pair_obj I a) (pair_obj I b) *)
+  Proof.
+    apply: pair_mor;
+      by apply llecnac_fmor.
+  Defined.
+  Obligation 2.
+  Proof.
+    split; [reflexivity | done].
+  Defined.
+  Obligation 3.
+    split; [reflexivity | reflexivity].
+  Defined.
+  Obligation 4.
+  Proof.
+    split.
+    - rewrite left_identity.
+      reflexivity.
+    - reflexivity.
+  Defined.
+  
+  Definition rlecnac_fmor (I : D) (a b : C) (f : a ~~{C}~~> b) :
+    (pair_obj a I) ~~{C××D}~~> (pair_obj b I).
+  Proof.
+    apply: pair_mor => /=.
+    - by apply: f.
+    - by apply: id.
+  Defined.
+  
+  Program Instance func_rlecnac (I : D) : Functor C (C ×× D) (fun c => (pair_obj c I)).
+  Obligation 1.
+  (* prod_mor (pair_obj a I) (pair_obj b I) *)
+  Proof.
+    apply: pair_mor;
+      by apply rlecnac_fmor.
+  Defined.
+  Obligation 2.
+  Proof.
+    split; [done | reflexivity].
+  Defined.
+  Obligation 3.
+    split; [reflexivity | reflexivity].
+  Defined.
+  Obligation 4.
+  Proof.
+    split.
+    - reflexivity.
+    - rewrite right_identity.
+      reflexivity.
+  Defined.
+  
+  (* こもまで。 *)
+  
   Context `{E:Category}.
   Definition cossa : ((C ×× D) ×× E) -> (C ×× (D ×× E)).
     intros.
