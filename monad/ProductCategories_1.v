@@ -261,12 +261,12 @@ Section ProductCategoryFunctors.
   Program Instance func_pi1 : Functor (C ×× D) C
                                       (fun (c : prod_obj C D) => fst_obj c).
   Obligation 1.
-  (* fst_obj C D a ~~{ C }~~> fst_obj C D b *)
+  (* fst_obj a ~~{ C }~~> fst_obj b *)
   Proof.
     by apply fst_mor.
   Defined.
   Obligation 2.
-  (* fst_mor C D a b f === fst_mor C D a b f' *)
+  (* fst_mor f === fst_mor f' *)
   Proof.
     rewrite /func_pi1_obligation_1.
     case: f H => ff fs.
@@ -289,14 +289,14 @@ Section ProductCategoryFunctors.
   Program Instance func_pi2 : Functor (C ×× D) D
                                       (fun (c : prod_obj C D) => snd_obj c).
   Obligation 1.
-  (* snd_obj C D a ~~{ D }~~> snd_obj C D b *)
+  (* snd_obj a ~~{ D }~~> snd_obj b *)
   Proof.
     by apply snd_mor.
   Defined.
   Obligation 2.
-  (* snd_mor C D a b f === snd_mor C D a b f' *)
+  (* snd_mor f === snd_mor f' *)
   Proof.
-    rewrite /func_pi1_obligation_1.
+    rewrite /func_pi2_obligation_1.
     case: f H => ff fs.
     case: f' => f'f f's H /=.
     by case: H.
@@ -308,12 +308,13 @@ Section ProductCategoryFunctors.
   Defined.
   Obligation 4.
   Proof.
-    rewrite /func_pi1_obligation_1.
+    rewrite /func_pi2_obligation_1.
     case: f => ff fs.
     case: g => gf gs.
     reflexivity.
   Defined.  
   
+  (* 積圏の左が恒等射である場合 *)
   Definition llecnac_fmor (I : C) (a b : D) (g : a ~~{D}~~> b) :
     (pair_obj I a) ~~{C××D}~~> (pair_obj I b).
   Proof.
@@ -322,10 +323,11 @@ Section ProductCategoryFunctors.
     - by apply: g.
   Defined.
   
+  (* 圏から左が恒等射である積圏への関手 *)
   Program Instance func_llecnac (I : C) : Functor D (C ×× D) (pair_obj I).
   Obligation 1.
   (* prod_mor (pair_obj I a) (pair_obj I b) *)
-  Proof.
+   Proof.
     apply: pair_mor;
       by apply llecnac_fmor.
   Defined.
@@ -344,6 +346,7 @@ Section ProductCategoryFunctors.
     - reflexivity.
   Defined.
   
+  (* 積圏の右が恒等射である場合 *)
   Definition rlecnac_fmor (I : D) (a b : C) (f : a ~~{C}~~> b) :
     (pair_obj a I) ~~{C××D}~~> (pair_obj b I).
   Proof.
@@ -352,6 +355,7 @@ Section ProductCategoryFunctors.
     - by apply: id.
   Defined.
   
+  (* 圏から右が恒等射である積圏への関手 *)
   Program Instance func_rlecnac (I : D) : Functor C (C ×× D) (fun c => (pair_obj c I)).
   Obligation 1.
   (* prod_mor (pair_obj a I) (pair_obj b I) *)
@@ -374,7 +378,7 @@ Section ProductCategoryFunctors.
       reflexivity.
   Defined.
   
-  Context `{E:Category}.
+  Context `{E : Category}.
   
   (* 積圏の結合律 *)
   Definition cossa : ((C ×× D) ×× E) -> (C ×× (D ×× E)).
@@ -383,6 +387,7 @@ Section ProductCategoryFunctors.
     by [].
   Defined.
   
+  (* 次の定理のための補題 *)
   Definition cossa_fmor (a : ((C ×× D) ×× E)) (b : ((C ×× D) ×× E))
              (f : a ~~{(C ×× D) ×× E}~~> b) :
     (cossa a) ~~{C ×× (D ×× E)}~~> (cossa b).
@@ -397,6 +402,7 @@ Section ProductCategoryFunctors.
     done.
   Defined.
 
+  (* cossa は、関手である。 *)
   Instance func_cossa : Functor ((C ×× D) ×× E) (C ×× (D ×× E)) cossa.
   (* refine {| fmor := fun a b f => cossa_fmor f |}. *)
   apply Build_Functor with (fmor := fun a b f => cossa_fmor f).
@@ -420,6 +426,7 @@ Section ProductCategoryFunctors.
     reflexivity.
   Defined.
   
+  (* 同じ圏の積 C^2 *)
   Program Instance func_diagonal : Functor C (C ×× C) (fun c => (pair_obj c c)).
   Obligation 1.
   (* prod_mor (pair_obj a a) (pair_obj b b) *)
@@ -438,45 +445,83 @@ Section ProductCategoryFunctors.
   Defined.
 End ProductCategoryFunctors.
 
-(* ここまで *)
-
 Section func_prod.
-  Context `{C1:Category}`{C2:Category}`{C3:Category}`{C4:Category}{Fobj1}{Fobj2}(F1:Functor C1 C2 Fobj1)(F2:Functor C3 C4 Fobj2).
+  
+  Context `{C1 : Category} `{C2 : Category} `{C3 : Category} `{C4 : Category}.
+  Variables (Fobj1 : C1 -> C2) (Fobj2 : C3 -> C4).
+  Variables (F1 : Functor C1 C2 Fobj1) (F2 : Functor C3 C4 Fobj2).
 
-  Definition functor_product_fobj a := pair_obj (Fobj1 (fst_obj _ _ a)) (Fobj2 (snd_obj _ _ a)).
+  Definition functor_product_fobj (a : prod_obj C1 C3) :=
+    pair_obj (Fobj1 (fst_obj a)) (Fobj2 (snd_obj a)).  
+  Check functor_product_fobj.
+  Check functor_product_fobj : prod_obj C1 C3 → prod_obj C2 C4.
 
-  Definition functor_product_fmor (a b:(C1 ×× C3))(f:a~~{C1 ×× C3}~~>b)
-     : (functor_product_fobj a)~~{C2 ×× C4}~~>(functor_product_fobj b).
-  destruct a; intros.
-  destruct b; intros.
-  apply pair_mor; simpl;
-  [ apply (fmor F1) | apply (fmor F2) ];
-  case f; intros;
-  auto.
+  Definition functor_product_fmor (a b : (C1 ×× C3)) (f : a ~~{C1 ×× C3}~~> b) :
+    (functor_product_fobj a) ~~{C2 ×× C4}~~> (functor_product_fobj b).
+  Proof.
+    case: a f => HC1 HC3 H.
+    apply: pair_mor => /=.
+    - apply (fmor F1); by case H.
+    - apply (fmor F2); by case H.
   Defined.
-
+  
   Hint Unfold fst_obj.
-  Definition func_prod : Functor (C1 ×× C3) (C2 ×× C4) functor_product_fobj.
-    refine {| fmor := fun a b (f:a~~{C1 ×× C3}~~>b) => functor_product_fmor a b f |}.
-    abstract (intros; destruct a; try destruct b; destruct f; destruct f'; split; destruct H;
-              [ apply (@fmor_respects _ _ _ _ _ _ _ F1 _ _ h  h1)
-              | apply (@fmor_respects _ _ _ _ _ _ _ F2 _ _ h0 h2)
-              ]; auto).
-    abstract (intros; case a; intros; simpl; split; apply fmor_preserves_id).
-    abstract (intros; destruct a; destruct b; destruct c; case f; intros; case g; intros; split; simpl; apply fmor_preserves_comp).
-    Defined.
 
+  Instance func_prod : Functor (C1 ×× C3) (C2 ×× C4) functor_product_fobj.
+  (* refine {| fmor := fun a b (f:a~~{C1 ×× C3}~~>b) => functor_product_fmor f |}. *)
+  apply Build_Functor with (fmor := fun a b (f:a~~{C1 ×× C3}~~>b) => functor_product_fmor f).
+  (* ∀a b f f' _, functor_product_fmor f === functor_product_fmor f' *)
+  - move=> [a1 a2].                         (* case a *)
+    move=> [b1 b2].                         (* case b *)
+    move=> [f1 f2].                         (* case f *)
+    move=> [g1 g2].                         (* case g *)
+    case=> H1 H2.                           (* case H *)
+    split; [rewrite H1 | rewrite H2]; reflexivity.
+
+  (* ∀ a : C1 ×× C3, functor_product_fmor id === id *)
+  - move=> [a1 a2] /=.
+      by split; apply fmor_preserves_id.
+
+  (* ∀a b c f g,
+   functor_product_fmor g \\o functor_product_fmor f ===
+   functor_product_fmor (g \\o *)
+  - move=> [a1 a2].                         (* case a *)
+    move=> [b1 b2].                         (* case b *)
+    move=> [c1 c2].                         (* case c *)
+    case=> f1 f3.                           (* case f *)
+    case=> g1 g3.                           (* csae g *)
+    move=> /=; split; apply fmor_preserves_comp.
+  Defined.
 End func_prod.
+
 Notation "f **** g" := (func_prod f g).
 
-Instance iso_prod `{C:Category}`{D:Category}{a b:C}{c d:D}(ic:a≅b)(id:@Isomorphic _ _ D c d)
-  : @Isomorphic _ _ (C ×× D) (pair_obj a c) (pair_obj b d) :=
-  { iso_forward  := pair_mor (pair_obj a c) (pair_obj b d) (iso_forward ic)  (iso_forward id)
-  ; iso_backward := pair_mor (pair_obj b d) (pair_obj a c) (iso_backward ic) (iso_backward id)
-  }.
-  abstract (simpl; split; apply iso_comp1).
-  abstract (simpl; split; apply iso_comp2).
-  Defined.
+Program Instance iso_prod `{C : Category} `{D : Category} {a b : C} {c d : D}
+         (ic : a ≅ b) (id : @Isomorphic _ _ D c d) :
+  @Isomorphic _ _ (C ×× D) (pair_obj a c) (pair_obj b d).
+Obligation 1.                               (* prod_mor (pair_obj a c) (pair_obj b d) *)
+Proof.
+  apply: pair_mor => /=.
+  - by case: ic.
+  - by case: id.
+Defined.
+Obligation 2.                               (* prod_mor (pair_obj b d) (pair_obj a c) *)
+Proof.
+  apply: pair_mor => /=.
+  - by case: ic.
+  - by case: id.
+Defined.
+Obligation 3.
+Proof.
+   by split; apply iso_comp1.
+Defined.
+Obligation 4.
+Proof.
+   by split; apply iso_comp2.
+Defined.
+
+(* END *)
+
 
 
 
