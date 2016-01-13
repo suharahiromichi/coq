@@ -19,7 +19,7 @@ Check @Category.
 Generalizable Variables Obj Hom a b c d.
 
 Lemma ref_eqv `{C : Category} `(f : a ~> b) `(g : a ~> b) :
-  f === g  -> g === f.
+  f === g -> g === f.
 Proof.
   move=> H.
   rewrite H.
@@ -39,10 +39,11 @@ Defined.
 Obligation 3.
 Proof.
   rewrite /Opposite_obligation_2 /=.
-  Print comp.
-  Set Printing Implicit.
-  Check @comp_respects Obj (fun x y => Hom y x) _.
-  admit.                                    (* XXXXXX *)
+  move=> f g H.
+  move=> f' g' H'.
+  simpl.
+  Check @comp_respects Obj Hom C c b a f' g' H' f g H.
+  by apply (@comp_respects Obj Hom C c b a f' g' H' f g H).
 Defined.
 Obligation 4.
   rewrite /Opposite_obligation_1 /Opposite_obligation_2 /=.
