@@ -77,47 +77,41 @@ Qed.
 
 (* 恒等関手 *)
 (* the identity functor *)
-Instance functor_id `(C : Category) : Functor (fun (x : C) => x).
+Program Instance functor_id `(C : Category) : Functor (fun (x : C) => x) :=
+  {|
+    fmor := fun (a b : C) (f : a ~> b) => f
+  |}.
+Obligation 2.                               (* id === id *)
 Proof.
-  (* 恒等関手 : C -> C *)
   Check (fun (x : C) => C).                 (* カテゴリC(の対象)から、カテゴリC(の対象)の写像 *)
   Check (fun (a b : C) (f : a ~> b) => f).  (* カテゴリC(の射)から、カテゴリC(の射)の写像 *)
-  
-  (* ***** *)
-  About Build_Functor.
-  Check (@Build_Functor _ _ C _ _ C).
-  Check (@Build_Functor _ _ C _ _ C (fun (x : C) => x)). (* fobj を与える。 *)
-  Check (@Build_Functor _ _ C _ _ C (fun (x : C) => x)
-                        (fun (a b : C) (f : a ~> b) => f)). (* fmor を与える。 *)
-  apply (@Build_Functor _ _ C _ _ C (fun x => x) (fun a b f => f)).
-  (* fmor_respects *)
-  - move=> a b f f' H.
-    rewrite H.
-    reflexivity.
-  (* fmor_preserves_id *)
-  - reflexivity.
-  (* fmor_preserves_comp *)
-  - reflexivity.
+  reflexivity.                              (* fmor_preserves_id *)
+Defined.
+Obligation 3.                               (* g \\o f === g \\o f *)
+Proof.
+  reflexivity.                              (* fmor_preserves_comp *)
 Defined.
 
 (* 定数関手 *)
 (* the constant functor *)
-Instance functor_const `(C : Category) `{D : Category} (d : D) :
-  Functor (fun (x : C) => d).
+Program Instance functor_const `(C : Category) `{D : Category} (d : D) :
+  Functor (fun (x : C) => d) :=
+  {|
+    fmor := fun (a b : C) (f : a ~> b) => id
+  |}.
+Obligation 1.
 Proof.
-  (* 定数関手 : C -> D *)
-  Check (fun (x : C) => d).                 (* カテゴリC(の対象)から、カテゴリD(の対象)の写像 *)
-  Check (fun (a b : C) (f : a ~> b) => id).  (* カテゴリC(の射)から、カテゴリD(の射)の写像 *)
-  
-  About Build_Functor.
-  Check (@Build_Functor _ _ C _ _ D (fun (x : C) => d)). (* fobj を与える。 *)
-  Check (@Build_Functor _ _ C _ _ D (fun (x : C) => d)
-                        (fun (a b : C) (f : a ~> b) => id)). (* fmor を与える。 *)
-  apply (@Build_Functor _ _ C _ _ D (fun _ => d) (fun _ _ _ => id)).
-  - reflexivity.
-  - reflexivity.
-  - move=> a b c _ _.
-    by apply left_identity.
+  Check (fun (x : C) => d). (* カテゴリC(の対象)から、カテゴリD(の対象)の写像 *)
+  Check (fun (a b : C) (f : a ~> b) => id). (* カテゴリC(の射)から、カテゴリD(の射)の写像 *)
+  reflexivity.
+Defined.
+Obligation 2.
+Proof.
+  reflexivity.
+Defined.
+Obligation 3.
+Proof.
+  by apply left_identity.
 Defined.
 
 Generalizable Variables Fobj Gobj.
@@ -128,9 +122,13 @@ Locate "_ \\o _".                           (* "f \\o g" := comp f g *)
 
 (* 関手の合成 *)
 (* functors compose *)
-Instance functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
-           `(F : @Functor _ _ C1 _ _ C2 Fobj) `(G : @Functor _ _ C2 _ _ C3 Gobj) :
-  Functor (Gobj \o Fobj).
+Program Instance functor_comp `(C1 : Category) `(C2 : Category) `(C3 : Category)
+        `(F : @Functor _ _ C1 _ _ C2 Fobj) `(G : @Functor _ _ C2 _ _ C3 Gobj) :
+  Functor (Gobj \o Fobj) :=
+  {|
+    fmor := fun a b m => G \ (F \ m)
+  |}.
+Obligation 1.
 Proof.
   Check F : C1 -> C2.              (* C1の対象からC2の対象への写像  *)
   Check Fobj : C1 -> C2.           (* C1の対象からC2の対象への写像  *)
@@ -138,31 +136,18 @@ Proof.
   Check G : C2 -> C3.              (* C2の対象からC3の対象への写像  *)
   Check Gobj : C2 -> C3.           (* C2の対象からC3の対象への写像  *)
   Check fmor G.                    (* C2の射からC3の射への写像 *)
-
-  Check G \o F.
-  Check Gobj \o Fobj.
-  
-  Check (fun (a b : C1) (m : a ~> b) => fmor F m). (* m は C1の射 *) (* C2の射を返す *)
-  Check (fun (a b : C1) (m : a ~> b) => F \ m).
-  
-  Check (fun (a b : C1) (m : a ~> b) => fmor G (fmor F m)). (* C3の射を返す *)
-  Check (fun (a b : C1) (m : a ~> b) => G \ (F \ m)).
-  
-  Check @Build_Functor _ _ C1 _ _ C3.
-  Check @Build_Functor _ _ C1 _ _ C3 (G \o F). (* fobj を与える。 *)
-  Check @Build_Functor _ _ C1 _ _ C3 (G \o F)
-        (fun a b m => G \ (F \ m)).  (* fmor を与える。 *)
-    
-  apply (@Build_Functor _ _ C1 _ _ C3 (G \o F)
-                        (fun a b m => G \ (F \ m))).
-  - move=> a b f f' H.
-    rewrite H.
-    reflexivity.
-  - repeat setoid_rewrite fmor_preserves_id.
-    reflexivity.
-  - rewrite /=.                             (* G \o F のfuncompを評価する。 *)
-    repeat setoid_rewrite fmor_preserves_comp.
-    reflexivity.
+  rewrite H.
+  reflexivity.
+Defined.
+Obligation 2.
+Proof.
+  repeat setoid_rewrite fmor_preserves_id.
+  reflexivity.
+Defined.
+Obligation 3.
+Proof.
+  repeat setoid_rewrite fmor_preserves_comp.
+  reflexivity.
 Defined.
 
 Notation "f >>>> g" := (@functor_comp _ _ _ _ _ _ _ _ _ _ f _ g)   : category_scope.

@@ -403,27 +403,38 @@ Section ProductCategoryFunctors.
   Defined.
 
   (* cossa は、関手である。 *)
-  Instance func_cossa : Functor ((C ×× D) ×× E) (C ×× (D ×× E)) cossa.
-  (* refine {| fmor := fun a b f => cossa_fmor f |}. *)
-  apply Build_Functor with (fmor := fun a b f => cossa_fmor f).
-  (* ∀a b f f' _, cossa_fmor f === cossa_fmor f' *)
-  - move=> [[a11 a12] a2].                  (* case a *)
+  Program Instance func_cossa : Functor ((C ×× D) ×× E) (C ×× (D ×× E)) cossa :=
+    {|
+      fmor := fun a b f => cossa_fmor f
+    |}.
+  Obligation 1.
+  Proof.
+    move: a b f f' H.
+    (* ∀a b f f' _, cossa_fmor f === cossa_fmor f' *)
+    move=> [[a11 a12] a2].                  (* case a *)
     move=> [[b11 b12] b2].                  (* case b *)
     move=> [[f11 f12] f2].                  (* case f *)
     move=> [[g11 g12] g2].                  (* case f' *)
     case; case.
     split; [exact | split; exact].
-  (* ∀ a : (C ×× D) ×× E, cossa_fmor id === id *)
-  - case=> HCxD HE.
+  Defined.
+  Obligation 2.
+  Proof.
+    (* ∀ a : (C ×× D) ×× E, cossa_fmor id === id *)
+    case: a => HCxD HE.
     case: HCxD => HC HD.
     split; [reflexivity | split; reflexivity].
-  (* ∀a b c f g, cossa_fmor g \\o cossa_fmor f === cossa_fmor (g \\o f) *)
-  - move=> [[a11 a12] a2].                  (* case a *)
+  Defined.
+  Obligation 3.
+  Proof.
+    move: a b c f g.
+    (* ∀a b c f g, cossa_fmor g \\o cossa_fmor f === cossa_fmor (g \\o f) *)
+    move=> [[a11 a12] a2].                  (* case a *)
     move=> [[b11 b12] b2].                  (* case b *)
     move=> [[c11 c12] c2].                  (* case c *)
     move=> [[f11 f12] f2].                  (* case f *)
     move=> [[g11 g12] g2].                  (* case g *)
-    reflexivity.
+    rewrite /=; split; [reflexivity | split; reflexivity].
   Defined.
   
   (* 同じ圏の積 C^2 *)
@@ -467,30 +478,39 @@ Section func_prod.
   
   Hint Unfold fst_obj.
 
-  Instance func_prod : Functor (C1 ×× C3) (C2 ×× C4) functor_product_fobj.
-  (* refine {| fmor := fun a b (f:a~~{C1 ×× C3}~~>b) => functor_product_fmor f |}. *)
-  apply Build_Functor with (fmor := fun a b (f:a~~{C1 ×× C3}~~>b) => functor_product_fmor f).
-  (* ∀a b f f' _, functor_product_fmor f === functor_product_fmor f' *)
-  - move=> [a1 a2].                         (* case a *)
+  Program Instance func_prod : Functor (C1 ×× C3) (C2 ×× C4) functor_product_fobj :=
+    {|
+      fmor := fun a b (f:a~~{C1 ×× C3}~~>b) => functor_product_fmor f
+    |}.
+  Obligation 1.
+  Proof.
+    move: a b f f' H.
+    (* ∀a b f f' _, functor_product_fmor f === functor_product_fmor f' *)
+    move=> [a1 a2].                         (* case a *)
     move=> [b1 b2].                         (* case b *)
     move=> [f1 f2].                         (* case f *)
     move=> [g1 g2].                         (* case g *)
     case=> H1 H2.                           (* case H *)
     split; [rewrite H1 | rewrite H2]; reflexivity.
-
+  Defined.
+  Obligation 2.
+  Proof.
   (* ∀ a : C1 ×× C3, functor_product_fmor id === id *)
-  - move=> [a1 a2] /=.
+    case: a => [a1 a2] /=.
       by split; apply fmor_preserves_id.
-
+  Defined.
+  Obligation 3.
+  Proof.
+    move: a b c f g.
   (* ∀a b c f g,
    functor_product_fmor g \\o functor_product_fmor f ===
    functor_product_fmor (g \\o *)
-  - move=> [a1 a2].                         (* case a *)
+    move=> [a1 a2].                         (* case a *)
     move=> [b1 b2].                         (* case b *)
     move=> [c1 c2].                         (* case c *)
     case=> f1 f3.                           (* case f *)
     case=> g1 g3.                           (* csae g *)
-    move=> /=; split; apply fmor_preserves_comp.
+    by move=> /=; split; apply fmor_preserves_comp.
   Defined.
 End func_prod.
 
@@ -521,7 +541,3 @@ Proof.
 Defined.
 
 (* END *)
-
-
-
-
