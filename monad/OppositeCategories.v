@@ -40,58 +40,91 @@ Obligation 3.
 Proof.
   rewrite /Opposite_obligation_2 /=.
   move=> f g H.
-  move=> f' g' H'.
-  simpl.
+  move=> f' g' H' /=.
   Check @comp_respects Obj Hom C c b a f' g' H' f g H.
-  by apply (@comp_respects Obj Hom C c b a f' g' H' f g H).
+    by apply (@comp_respects Obj Hom C c b a f' g' H' f g H).
 Defined.
 Obligation 4.
   rewrite /Opposite_obligation_1 /Opposite_obligation_2 /=.
   Check right_identity.
-  by apply right_identity.
+    by apply right_identity.
 Defined.
 Obligation 5.
   rewrite /Opposite_obligation_1 /Opposite_obligation_2 /=.
-  by apply left_identity.
+    by apply left_identity.
 Defined.
 Obligation 6.
   rewrite /Opposite_obligation_2 /=.
   apply ref_eqv.
-  apply associativity.
+    by apply associativity.
 Defined.
 
 
 (* Notation "dual C" := (Opposite C)  : category_scope. *)
 
+Generalizable Variables C D Fobj.
+
 (* every functor between two categories determines a functor between their opposites *)
-Definition func_op `(F : Functor (c1 := c1) (c2 := c2) (fobj := fobj)) :
-  Functor (Opposite c1) (Opposite c2) fobj.
-  apply (@Build_Functor _ _ (Opposite c1) _ _ (Oppsite c2) fobj (fun a b f => fmor F f)).
-  abstract (intros; apply (@fmor_respects _ _ _ _ _ _ _ F _ _ f f' H)).
-  abstract (intros; apply (@fmor_preserves_id _ _ _ _ _ _ _ F a)).
-  abstract (intros; apply (@fmor_preserves_comp _ _ _ _ _ _ _ F _ _ g _ f)).
-  Defined.
+(* 双対の圏どうしの関手を定義する。 *)
+Program Instance func_op `(F : @Functor _ _ C _ _ D Fobj) :
+  @Functor _ _ (Opposite C) _ _ (Opposite D) Fobj :=
+  {|
+    fmor := (fun a b f => fmor F f)
+  |}.
+Obligation 2.
+Proof.
+  done.
+Defined.
+Obligation 3.
+Proof.
+  done.
+Defined.
 
-(* we could do this by simply showing that (Opposite (Opposite C)) is isomorphic to C, but Coq distinguishes between
- * two categories being *equal* versus merely isomorphic, so it's handy to be able to do this *)
-Definition func_opop `{c1:Category}`{c2:Category}{fobj}(F:Functor (Opposite c1) (Opposite c2) fobj) : Functor c1 c2 fobj.
-  apply (@Build_Functor _ _ c1 _ _ c2 fobj (fun a b f => fmor F f)).
-  abstract (intros; apply (@fmor_respects _ _ _ _ _ _ _ F _ _ f f' H)).
-  abstract (intros; apply (@fmor_preserves_id _ _ _ _ _ _ _ F a)).
-  abstract (intros; apply (@fmor_preserves_comp _ _ _ _ _ _ _ F _ _ g _ f)).
-  Defined.
+(* we could do this by simply showing that (Opposite (Opposite C)) is
+ isomorphic to C, but Coq distinguishes between two categories being
+ *equal* versus merely isomorphic, so it's handy to be able to do
+ this *)
 
-Definition func_op1 `{c1:Category}`{c2:Category}{fobj}(F:Functor (Opposite c1) c2 fobj) : Functor c1 (Opposite c2) fobj.
-  apply (@Build_Functor _ _ c1 _ _ (Opposite c2) fobj (fun a b f => fmor F f)).
-  abstract (intros; apply (@fmor_respects _ _ _ _ _ _ _ F _ _ f f' H)).
-  abstract (intros; apply (@fmor_preserves_id _ _ _ _ _ _ _ F a)).
-  abstract (intros; apply (@fmor_preserves_comp _ _ _ _ _ _ _ F _ _ g _ f)).
-  Defined.
+Program Instance func_opop `(F : @Functor _ _ (Opposite C) _ _ (Opposite D) Fobj) :
+  @Functor _ _ C _ _ D Fobj :=
+  {|
+    fmor := (fun a b f => fmor F f)
+  |}.
+Obligation 2.
+Proof.
+  done.
+Defined.
+Obligation 3.
+Proof.
+  done.
+Defined.
 
-Definition func_op2 `{c1:Category}`{c2:Category}{fobj}(F:Functor c1 (Opposite c2) fobj) : Functor (Opposite c1) c2 fobj.
-  apply (@Build_Functor _ _ (Opposite c1) _ _ c2 fobj (fun a b f => fmor F f)).
-  abstract (intros; apply (@fmor_respects _ _ _ _ _ _ _ F _ _ f f' H)).
-  abstract (intros; apply (@fmor_preserves_id _ _ _ _ _ _ _ F a)).
-  abstract (intros; apply (@fmor_preserves_comp _ _ _ _ _ _ _ F _ _ g _ f)).
-  Defined.
+Program Instance func_op1 `(F : @Functor _ _ (Opposite C) _ _ D Fobj) :
+  @Functor _ _ C _ _ (Opposite D) Fobj :=
+  {|
+    fmor := (fun a b f => fmor F f)
+  |}.
+Obligation 2.
+Proof.
+  done.
+Defined.
+Obligation 3.
+Proof.
+  done.
+Defined.
 
+Program Instance func_op2 `(F : @Functor _ _ C _ _ (Opposite D) Fobj) :
+  @Functor _ _ (Opposite C) _ _ D Fobj :=
+  {|
+    fmor := (fun a b f => fmor F f)
+  |}.
+Obligation 2.
+Proof.
+  done.
+Defined.
+Obligation 3.
+Proof.
+  done.
+Defined.
+
+(* END *)
