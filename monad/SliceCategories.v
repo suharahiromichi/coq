@@ -1,3 +1,10 @@
+Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+Require Import finset fintype.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 Generalizable All Variables.
 Require Import Notations.
 Require Import Categories.
@@ -7,13 +14,31 @@ Require Import Isomorphisms.
 (******************************************************************************)
 (* Chapter 1.6.4: Slice Categories                                            *)
 (******************************************************************************)
-
 Locate "{ _ : _ & _ }".                     (* "{ x : A  & P }" := sigT (fun x : A => P) *)
-Definition MorphismInTo  `{C : Category} (X : C) := { Y : C & Y ~~{C}~~> X }.
-Definition MorphismOutOf `{C : Category} (X : C) := { Y : C & X ~~{C}~~> Y }.
+(* X が 圏Cの対象であるとき、 *)
+(* cod(f) = X である圏Cの射fの集まり *)
+Definition MorphismInTo  `{C : Category} (X : C) := {Y : C & Y ~~{C}~~> X}.
+(* dom(f) = X である圏Cの射fの集まり *)
+Definition MorphismOutOf `{C : Category} (X : C) := {Y : C & X ~~{C}~~> Y}.
 Check @MorphismInTo : ∀ (Obj : Type) (Hom : Obj → Obj → Setoid) (C : Category Hom),
     C → Type.
 Check MorphismInTo _ : Type.                (* 引数は対象 *)
+
+Check projT1 : ∀ (A : Type) (P : A → Type), sigT P → A.
+Check projT2 : ∀ (A : Type) (P : A → Type) (x : sigT P), P (projT1 x).
+
+Section SliceExample.
+  Check Sets.                               (* 圏Sets *)
+  Variable X : Sets.                        (* 圏Setsの対象 *)
+  Variable M : MorphismInTo X.              (* 圏Setsの対象Xをcodとする射、cod(M)=X *)
+  Check projT1 M : Sets.                    (* 圏Setsの対象 *)
+  Check projT2 M : (λ Y : Sets, Y ~~{ Sets }~~> X) (projT1 M).
+  Check projT2 M : (fun (Y : Sets) => (Y ~~{ Sets }~~> X)) (projT1 M).
+  Check projT2 M : ((projT1 M) ~~{ Sets }~~> X).
+  Check projT2 M : ((projT1 M) ~> X).       (* cod(f)=Xなる射 *)
+  
+  Check @id (projT1 M).
+End SliceExample.
 
 Definition TriangleAbove `{C : Category} {X : C} (M1 M2 : MorphismInTo X) :=
    {f : (projT1 M1) ~~{C}~~> (projT1 M2) & (projT2 M2) \\o f === (projT2 M1)}.
@@ -25,68 +50,109 @@ Definition TriangleBelow `{C : Category} {X : C} (M1 M2 : MorphismOutOf X) :=
  *)
 Check TriangleAbove _ _ : Type.
 (*
-TriangleAbove M1 M1 は、
-(projT1 M1) ~~{C}~~> (projT1 M2) のサブタイプ (サブSetoid）で、
-それを f とたときに、
+TriangleAbove M1 M2 は、
+(projT1 M1) ~~{C}~~> (projT1 M2) のサブタイプ で、
+それを f しとたときに、
 (projT2 M2) \\o f === (projT2 M1) を満たすもの。
+
+すなわち、次の可換図を満たす f :
+
+                f
+   projT1(M1) -----> projT1(M2)
+            \       /
+             \     /        
+       M1     \   /     M2
+               V V
+                X
+*)
+
+Check @eqv.
+Definition test : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X),
+    (projT1 M1 = projT1 M2).
+Proof.
+  move=> Obj Hom C X M1 M2.
+  Check projT1 M1 : C.
+  Check projT1 M2 : C.
+  Check projT2 M1 : (λ Y : C, Y ~~{ C }~~> X) (projT1 M1).
+  Check projT2 M2 : (λ Y : C, Y ~~{ C }~~> X) (projT1 M2).
+  Check projT2 M1 : ((projT1 M1) ~~{ C }~~> X).
+  Check projT2 M2 : ((projT1 M2) ~~{ C }~~> X).
+  Check (projT1 M1 = projT1 M2).
+Admitted.
+
+Program Instance EquivSlice : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X),
+    Equivalence (@eq C).
+Print EquivSlice.
+(* 
+Equivalence_Reflexive := eq_Reflexive;
+Equivalence_Symmetric := eq_Symmetric;
+Equivalence_Transitive := eq_Transitive |}
+     : ∀Obj Hom C X _ _, Equivalence eq
  *)
 
-Instance SliceTAbove : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
+Check eqv_equivalence.
+Check EquivSlice.
+Program Instance SliceTAbove : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
   {|
-    carrier := TriangleAbove M1 M2
+    carrier := TriangleAbove M1 M2;
+    eqv := fun _ _ => (projT1 M1 = projT1 M2)
   |}.
+Obligation 1.
+Proof.
+  split.
+  - move=> f /=.
+  (* TriangleAbove M1 M2 -> projT1 M1 = projT1 M2 *)
+    admit.                                  (* XXXXX *)
+  - move=> f g /=.
+    (* projT1 M1 = projT1 M2 → projT1 M1 = projT1 M2 *)
+    case=> ->.
+    reflexivity.
+  - move=> f g h /=.
+    (* projT1 M1 = projT1 M2 → projT1 M1 = projT1 M2 → projT1 M1 = projT1 M2 *)
+    case=> H1 H2.
+    done.
+Defined.
 
-Check projT1.
-Check @id.
+Check @comp : ∀Obj Hom Category a b c _ _, a ~~{ Category }~~> c.
+Check comp _ _ : _ ~~{ _ }~~> _.
 Program Instance SliceOver `(C : Category) (X : C) : @Category (MorphismInTo X) SliceTAbove :=
   {|
-    id   := fun y1        => existT _ (@id _ _ _ _ (projT1 _ y1)) _
+    id  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
+    comp := fun _ _ _ f g => existT _ ((projT1 f) \\o (projT1 g)) _
   |}.
-                                   
-
-
-Obligation 1.                               (* projT2 a \\o id === projT2 a *)
+Obligation 1.                               (* projT1 y1 ~~{ C }~~> projT1 y1 *)
 Proof.
-  rewrite /TriangleAbove.
-  apply: (existT _ id).
+  by apply id.
+Defined.
+Obligation 2.                               (* projT2 y1 \\o id === projT2 y1 *)
+Proof.
+  rewrite /SliceOver_obligation_1.
   rewrite right_identity.
   reflexivity.
 Defined.
-Obligation 2.
+Obligation 3.                               (* projT2 c \\o (projT1 f \\o projT1 g) === projT2 a *)
 Proof.
-  rewrite /TriangleAbove.
-  Check fun f g => existT _ (projT1 g \\o projT1 f) _.
-  apply: (fun _ _ f g => existT _ (projT1 g \\o projT1 f)).
-  - apply Obj.
-  - move=> T. apply Obj.
-  - move=> H H2. apply X.
-  - move=> H H0 H1. apply Obj.
-  - move=> H H0 H1 H2. apply Obj.
-  - apply X.
-  - simpl. apply X.
-  - case X0; case X1.
-    move=> F1 H1 F2 H2.
-    admit.
-  - admit.
-  - admit.
-Defined.
-Obligation 3.
-Proof.
-  rewrite /SliceOver_obligation_1 /SliceOver_obligation_2.
-  admit.
+  move: H H0 H1 f g => a b c f g.
+  case: f => MORbc Hcbc_b.
+  case: g => MORab Hbab_a.
+  simpl.
+  rewrite -associativity.
+  rewrite Hcbc_b Hbab_a.
+  reflexivity.
 Defined.
 Obligation 4.
+Proof.
+  admit.
+Defined.
+Obligation 5.
+Proof.
+  admit.
+Defined.
+Obligation 6.
+  admit.
+Defined.
 
-{ 
-; eqv  := fun a b f g   => eqv    _ _ (projT1 f) (projT1 g)
-; comp := fun _ _ _ f g => existT _   (projT1 f >>> projT1 g) _
-}.
-  Next Obligation.
-    destruct f. destruct g. destruct H0.  destruct H1. simpl in *. setoid_rewrite <- e.  setoid_rewrite <- e0. apply associativity.
-    Defined.
-  Next Obligation.
-    simpl; setoid_rewrite associativity. reflexivity.
-    Defined.
+(* ここまで *)
 
 Instance SliceOverInclusion `{C:Category}(X:C) : Functor (SliceOver C X) C (fun x => projT1 x) :=
   { fmor := fun a b f => projT1 f }.
