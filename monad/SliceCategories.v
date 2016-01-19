@@ -67,18 +67,6 @@ TriangleAbove M1 M2 は、
 *)
 
 Check @eqv.
-Definition test : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X),
-    (projT1 M1 = projT1 M2).
-Proof.
-  move=> Obj Hom C X M1 M2.
-  Check projT1 M1 : C.
-  Check projT1 M2 : C.
-  Check projT2 M1 : (λ Y : C, Y ~~{ C }~~> X) (projT1 M1).
-  Check projT2 M2 : (λ Y : C, Y ~~{ C }~~> X) (projT1 M2).
-  Check projT2 M1 : ((projT1 M1) ~~{ C }~~> X).
-  Check projT2 M2 : ((projT1 M2) ~~{ C }~~> X).
-  Check (projT1 M1 = projT1 M2).
-Admitted.
 
 Program Instance EquivSlice : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X),
     Equivalence (@eq C).
@@ -92,29 +80,42 @@ Equivalence_Transitive := eq_Transitive |}
 
 Check eqv_equivalence.
 Check EquivSlice.
-Program Instance SliceTAbove : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
+
+Program Instance SliceTAbove' : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
   {|
     carrier := TriangleAbove M1 M2;
-    eqv := fun _ _ => (projT1 M1 = projT1 M2)
+    eqv := fun f g => (projT1 f = projT1 g)
   |}.
 Obligation 1.
 Proof.
   split.
-  - move=> f /=.
-  (* TriangleAbove M1 M2 -> projT1 M1 = projT1 M2 *)
-    admit.                                  (* XXXXX *)
-  - move=> f g /=.
-    (* projT1 M1 = projT1 M2 → projT1 M1 = projT1 M2 *)
-    case=> ->.
+  - by case.
+  - by case.
+  - move=> f g h /= Hfg Hgh.
+      by rewrite Hfg Hgh.
+Defined.
+
+Program Instance SliceTAbove : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
+  {|
+    carrier := TriangleAbove M1 M2;
+    eqv := fun f g => (projT1 f === projT1 g)
+  |}.
+Obligation 1.
+Proof.
+  split.
+  - case=> f Hf.
     reflexivity.
-  - move=> f g h /=.
-    (* projT1 M1 = projT1 M2 → projT1 M1 = projT1 M2 → projT1 M1 = projT1 M2 *)
-    case=> H1 H2.
-    done.
+  - move=> f g /= Hfg.
+    rewrite Hfg.
+    reflexivity.
+  - move=> f g h /= Hfg Hgh.
+    rewrite Hfg Hgh.
+    reflexivity.
 Defined.
 
 Check @comp : ∀Obj Hom Category a b c _ _, a ~~{ Category }~~> c.
 Check comp _ _ : _ ~~{ _ }~~> _.
+
 Program Instance SliceOver `(C : Category) (X : C) : @Category (MorphismInTo X) SliceTAbove :=
   {|
     id  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
@@ -142,14 +143,20 @@ Proof.
 Defined.
 Obligation 4.
 Proof.
-  admit.
+  move=> fbc fbc' Hbc fab fab' Hab /=.
+  rewrite Hbc Hab.
+  reflexivity.
 Defined.
 Obligation 5.
 Proof.
-  admit.
+  rewrite /SliceOver_obligation_1.
+  rewrite left_identity.
+  reflexivity.
 Defined.
 Obligation 6.
-  admit.
+  rewrite /SliceOver_obligation_1.
+  rewrite right_identity.
+  reflexivity.
 Defined.
 
 (* ここまで *)
