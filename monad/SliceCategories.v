@@ -154,19 +154,38 @@ Proof.
   reflexivity.
 Defined.
 Obligation 6.
+Proof.
   rewrite /SliceOver_obligation_1.
   rewrite right_identity.
   reflexivity.
 Defined.
+Obligation 7.
+Proof.
+  rewrite associativity.
+  reflexivity.
+Defined.
+  
+
+Check @Functor.
+Check Functor (fun x => projT1 x).
+
+(* スライスからもとの圏をとりだす関手 *)
+Program Instance SliceOverInclusion `{C : Category} (X : C) :
+  @Functor _ _ (SliceOver C X) _ _ C (fun x => projT1 x) :=
+  {|
+    fmor := fun a b f => projT1 f
+  |}.
+Obligation 2.
+Proof.
+  rewrite /SliceOver_obligation_1.
+  reflexivity.
+Defined.
+Obligation 3.
+Proof.
+  reflexivity.
+Defined.
 
 (* ここまで *)
-
-Instance SliceOverInclusion `{C:Category}(X:C) : Functor (SliceOver C X) C (fun x => projT1 x) :=
-  { fmor := fun a b f => projT1 f }.
-  intros; simpl in H; auto.
-  intros. destruct a; simpl; auto.
-  intros. simpl. reflexivity.
-  Defined.
 
 Program Instance SliceUnder `(C:Category)(X:C) : Category (MorphismOutOf X) TriangleBelow :=
 { id   := fun y1        => existT _   (id (projT1 y1)) _
