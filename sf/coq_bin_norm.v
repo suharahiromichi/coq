@@ -4,8 +4,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Open Scope coq_nat_scope.
-
 Inductive bin :=
 | o : bin -> bin
 | i : bin -> bin
@@ -16,8 +14,8 @@ Check (i (i (o z))).
 Fixpoint binnat (b : bin) : nat :=          (* f *)
   match b with
   | z => 0
-  | o b => 2 * (binnat b)
-  | i b => 2 * (binnat b) + 1
+  | o b => (binnat b).*2
+  | i b => (binnat b).*2 + 1
   end.
 
 Compute binnat (o (i (i (o (o z))))).
@@ -55,34 +53,21 @@ Fixpoint normalize (b : bin) : bin :=
 Compute normalize (o (i (i (o (o z))))).
 Compute natbin (binnat (o (i (i (o (o z)))))).
 
-Lemma test' n : n + n.+2 = 2 * n.+1.
-Proof.
-  Search (2 * _).
-  simpl.
-  rewrite NPeano.Nat.add_0_r.
-  by [].
-Qed.
-
 Lemma hodai1 n :
-  natbin (2 * n.+2) = o (natbin n.+2).
+  natbin n.+2.*2 = o (natbin n.+2).
 Proof.
   elim: n.+1.
   - by [].
-  - move=> n' H /=.
-    Search (_ + 0).
-    rewrite NPeano.Nat.add_0_r.
-    rewrite test'.
+  - move=> /= n' H.
     by rewrite H /=.
 Qed.
 
 Lemma hodai2 n :
-  natbin (2 * n.+2 + 1) = i (natbin n.+2).
+  natbin (n.+2.*2 + 1) = i (natbin n.+2).
 Proof.
   elim: n.+1.
   - by [].
-  - move=> n' H /=.
-    rewrite NPeano.Nat.add_0_r.
-    rewrite test'.
+  - move=> /= n' H /=.
     by rewrite H /=.
 Qed.
 
@@ -90,27 +75,24 @@ Qed.
 Goal forall (b : bin),
     natbin (binnat b) = normalize b.
 Proof.
-  induction b.
-  - simpl.
-    rewrite <- IHb.
+  elim.
+  - move=> b IHb /=.
+    rewrite -IHb.
+    case: (binnat b).
+    + by [].
+    + elim.
+      * by [].
+      * move=> n H.
+          by apply hodai1.
+  - move=> b IHb /=.
+    rewrite -IHb.
     case (binnat b).
-    + simpl.
-      reflexivity.
-    + intros n.
-      induction n.
-      * simpl.
-        reflexivity.
-      * by apply hodai1.
-  - simpl.      
-    rewrite <- IHb.
-    case (binnat b).
-    + simpl.
-      reflexivity.
-    + intros n.
-      induction n.
-      * simpl.
-        reflexivity.
-      * by apply hodai2.
-  - simpl.
-    reflexivity.
+    + by [].
+    + elim.
+      * by [].
+      * move=> n H.
+          by apply hodai2.
+  - by [].
 Qed.
+
+(* END *)
