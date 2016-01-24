@@ -54,7 +54,7 @@ Compute normalize (o (i (i (o (o z))))).
 Compute natbin (binnat (o (i (i (o (o z)))))).
 
 Lemma hodai1 n :
-  natbin n.+2.*2 = o (natbin n.+2).
+  natbin n.+1.*2 = o (natbin n.+1).
 Proof.
   elim: n.
   - by [].
@@ -63,7 +63,7 @@ Proof.
 Qed.
 
 Lemma hodai2 n :
-  natbin (n.+2.*2 + 1) = i (natbin n.+2).
+  natbin (n.*2 + 1) = i (natbin n).
 Proof.
   elim: n.
   - by [].
@@ -90,6 +90,38 @@ Proof.
       * by [].
       * move=> n H.
           by apply hodai2.
+  - by [].
+Qed.
+
+(* ******** *)
+(* **別解** *)
+(* ******** *)
+
+Lemma hodai1' n : bininc (natbin n.*2) = (bininc (o (natbin n))).
+Proof.
+  elim: n.
+  - by [].
+  - move=> /= n' H /=.
+    by rewrite H /=.
+Qed.
+
+(* 再帰関数の、関数呼び出しに関する帰納法をできるようにする。
+ * パターンマッチが入れ子になったりしている複雑な再帰関数のときに便利
+ * https://gist.github.com/yoshihiro503/fc51fef8b94c3a42c3ca
+ *)
+Functional Scheme normalize_ind := Induction for normalize Sort Prop.
+Goal forall (b : bin),
+    natbin (binnat b) = normalize b.
+Proof.
+  move=> b.
+  functional induction (normalize b) => /=.
+  (* natbin (binnat b0).*2 = z *)
+  - by rewrite e0 /=.
+  (* natbin (binnat b0).*2 = o (normalize b0) *)
+    by rewrite -IHb0 e0 /= hodai1' /=.
+  (* natbin ((binnat b0).*2 + 1) = i (normalize b0) *)
+  - by rewrite -IHb0 /= hodai2 /=.
+  (* z = z *)
   - by [].
 Qed.
 
