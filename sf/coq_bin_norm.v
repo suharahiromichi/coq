@@ -56,7 +56,7 @@ Compute natbin (binnat (o (i (i (o (o z)))))).
 Lemma hodai1 n :
   natbin n.+2.*2 = o (natbin n.+2).
 Proof.
-  elim: n.+1.
+  elim: n.
   - by [].
   - move=> /= n' H.
     by rewrite H /=.
@@ -65,7 +65,7 @@ Qed.
 Lemma hodai2 n :
   natbin (n.+2.*2 + 1) = i (natbin n.+2).
 Proof.
-  elim: n.+1.
+  elim: n.
   - by [].
   - move=> /= n' H /=.
     by rewrite H /=.
@@ -75,18 +75,16 @@ Qed.
 Goal forall (b : bin),
     natbin (binnat b) = normalize b.
 Proof.
-  elim.
-  - move=> b IHb /=.
-    rewrite -IHb.
+  elim=> [b IHb|b IHb|] /=.
+  - rewrite -IHb.
     case: (binnat b).
     + by [].
     + elim.
       * by [].
       * move=> n H.
           by apply hodai1.
-  - move=> b IHb /=.
-    rewrite -IHb.
-    case (binnat b).
+  - rewrite -IHb.
+    case: (binnat b).
     + by [].
     + elim.
       * by [].
