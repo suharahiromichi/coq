@@ -97,14 +97,6 @@ Qed.
 (* **別解** *)
 (* ******** *)
 
-Lemma hodai1' n : bininc (natbin n.*2) = (bininc (o (natbin n))).
-Proof.
-  elim: n.
-  - by [].
-  - move=> /= n' H /=.
-    by rewrite H /=.
-Qed.
-
 (* 再帰関数の、関数呼び出しに関する帰納法をできるようにする。
  * パターンマッチが入れ子になったりしている複雑な再帰関数のときに便利
  * https://gist.github.com/yoshihiro503/fc51fef8b94c3a42c3ca
@@ -118,9 +110,9 @@ Proof.
   (* natbin (binnat b0).*2 = z *)
   - by rewrite e0 /=.
   (* natbin (binnat b0).*2 = o (normalize b0) *)
-    by rewrite -IHb0 e0 /= hodai1' /=.
+    by rewrite -IHb0 e0 hodai1 /=.
   (* natbin ((binnat b0).*2 + 1) = i (normalize b0) *)
-  - by rewrite -IHb0 /= hodai2 /=.
+  - by rewrite -IHb0 hodai2 /=.
   (* z = z *)
   - by [].
 Qed.
