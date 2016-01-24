@@ -110,7 +110,7 @@ Proof.
   (* natbin (binnat b0).*2 = z *)
   - by rewrite e0 /=.
   (* natbin (binnat b0).*2 = o (normalize b0) *)
-    by rewrite -IHb0 e0 hodai1 /=.
+  - by rewrite -IHb0 e0 hodai1 /=.
   (* natbin ((binnat b0).*2 + 1) = i (normalize b0) *)
   - by rewrite -IHb0 hodai2 /=.
   (* z = z *)
