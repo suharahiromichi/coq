@@ -81,6 +81,10 @@ Equivalence_Transitive := eq_Transitive |}
 Check eqv_equivalence.
 Check EquivSlice.
 
+(* ***** *)
+(* ABOVE *)
+(* ***** *)
+
 Program Instance SliceTAbove' : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
   {|
     carrier := TriangleAbove M1 M2;
@@ -185,26 +189,101 @@ Proof.
   reflexivity.
 Defined.
 
-(* ここまで *)
 
-Program Instance SliceUnder `(C:Category)(X:C) : Category (MorphismOutOf X) TriangleBelow :=
-{ id   := fun y1        => existT _   (id (projT1 y1)) _
-; eqv  := fun a b f g   => eqv    _ _ (projT1 f) (projT1 g)
-; comp := fun _ _ _ f g => existT _   (projT1 f >>> projT1 g) _
-}.
-  Next Obligation.
-    destruct f. destruct g. destruct H0.  destruct H1. simpl in *. setoid_rewrite <- associativity.
-    setoid_rewrit: ∀ (Obj : Type) (Hom : Obj → Obj → Setoid) (C : Category Hom),
-       C → Type: ∀ (Obj : Type) (Hom : Obj → Obj → Setoid) (C : Category Hom),
-       C → Type_e e. auto.
-    Defined.
-  Next Obligation.
-    simpl; setoid_rewrite associativity. reflexivity.
-    Defined.
+(* ***** *)
+(* UNDER *)
+(* ***** *)
 
-Instance SliceUnderInclusion `{C:Category}(X:C) : Functor (SliceUnder C X) C (fun x => projT1 x) :=
-  { fmor := fun a b f => projT1 f }.
-  intros; simpl in H; auto.
-  intros. destruct a; simpl; auto.
-  intros. simpl. reflexivity.
-  Defined.
+Program Instance SliceTUnder :
+  forall `{C : Category} {X : C} (M1 M2 : MorphismOutOf X), Setoid :=
+  {|
+    carrier := TriangleBelow M1 M2;
+    eqv := fun f g => (projT1 f === projT1 g)
+  |}.
+Obligation 1.
+Proof.
+  split.
+  - case=> f Hf.
+    reflexivity.
+  - move=> f g /= Hfg.
+    rewrite Hfg.
+    reflexivity.
+  - move=> f g h /= Hfg Hgh.
+    rewrite Hfg Hgh.
+    reflexivity.
+Defined.
+
+Check @comp : ∀Obj Hom Category a b c _ _, a ~~{ Category }~~> c.
+Check comp _ _ : _ ~~{ _ }~~> _.
+
+Program Instance SliceUnder `(C : Category) (X : C) :
+  @Category (MorphismOutOf X) SliceTUnder :=
+  {|
+    id  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
+    comp := fun _ _ _ f g => existT _ ((projT1 f) \\o (projT1 g)) _
+  |}.
+Obligation 1.                               (* projT1 y1 ~~{ C }~~> projT1 y1 *)
+Proof.
+  by apply id.
+Defined.
+Obligation 2.                               (* projT2 y1 \\o id === projT2 y1 *)
+Proof.
+  rewrite /SliceOver_obligation_1.
+  rewrite left_identity.
+  reflexivity.
+Defined.
+Obligation 3.                               (* projT2 c \\o (projT1 f \\o projT1 g) === projT2 a *)
+Proof.
+  move: H H0 H1 f g => a b c f g.
+  case: f => MORbc Hcbc_b.
+  case: g => MORab Hbab_a.
+  simpl.
+  rewrite associativity.
+  rewrite Hbab_a Hcbc_b.
+  reflexivity.
+Defined.
+Obligation 4.
+Proof.
+  move=> fbc fbc' Hbc fab fab' Hab /=.
+  rewrite Hbc Hab.
+  reflexivity.
+Defined.
+Obligation 5.
+Proof.
+  rewrite /SliceOver_obligation_1.
+  rewrite left_identity.
+  reflexivity.
+Defined.
+Obligation 6.
+Proof.
+  rewrite /SliceOver_obligation_1.
+  rewrite right_identity.
+  reflexivity.
+Defined.
+Obligation 7.
+Proof.
+  rewrite associativity.
+  reflexivity.
+Defined.
+  
+
+Check @Functor.
+Check Functor (fun x => projT1 x).
+
+(* スライスからもとの圏をとりだす関手 *)
+Program Instance SliceUnderInclusion `{C : Category} (X : C) :
+  @Functor _ _ (SliceUnder C X) _ _ C (fun x => projT1 x) :=
+  {|
+    fmor := fun a b f => projT1 f
+  |}.
+Obligation 2.
+Proof.
+  rewrite /SliceOver_obligation_1.
+  reflexivity.
+Defined.
+Obligation 3.
+Proof.
+  reflexivity.
+Defined.
+
+(* END *)
