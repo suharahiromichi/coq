@@ -11,8 +11,7 @@ http://www.megacz.com/berkeley/coq-categories/
 これをもとに改変。Instance ... Proper を使うようにした。
  *)
 
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import finset fintype.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -254,7 +253,7 @@ Section ProductCategoryFunctors.
   Check fun (c : prod_obj C D) => fst_obj c.
   
   Check @Functor (prod_obj C D) (@PC_mor Obj Hom C Obj0 Hom0 D) (C ×× D)
-        Obj Hom C (fun c => fst_obj _ _ c).
+        Obj Hom C (fun c => fst_obj _ c).
   Check Functor (C ×× D) C (fun (c : prod_obj C D) => @fst_obj Obj Hom C Obj0 Hom0 D c).
   
   (* 積圏からもとの圏をとりだす関手 *)

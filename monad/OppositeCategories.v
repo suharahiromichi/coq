@@ -2,8 +2,7 @@
 (* Chapter 1.6.2: Opposite Categories                                         *)
 (******************************************************************************)
 
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import finset fintype.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

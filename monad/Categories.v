@@ -24,16 +24,16 @@ http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
 できるだけ Generalizable を使う。
  *)
 
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import finset fintype.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+From mathcomp Require Import finset fintype.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Require Import Notations.
 Require Import Morphisms.
 Require Import Coq.Setoids.Setoid.
+Require Import Notations.
 
 (*
 Reserved Notation "x ~> y" (at level 51, left associativity).
@@ -269,15 +269,15 @@ Program Instance P_LE_Prod : @Product P_LE EqLe P_LE min.
 Obligation 1.
 Proof.
   Search (min _ _ <= _).
-  by apply Min.le_min_l.
+  by apply PeanoNat.Nat.le_min_l.
 Defined.
 Obligation 2.
-  by apply Min.le_min_r.
+  by apply PeanoNat.Nat.le_min_r.
 Defined.
 Obligation 3.
 Proof.
   Search (_ <= min _ _).
-  by apply Min.min_glb.
+  by apply PeanoNat.Nat.min_glb.
 Defined.
 Obligation 4.
   rewrite /P_LE_obligation_1.

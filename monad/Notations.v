@@ -46,7 +46,7 @@ Reserved Notation "A ⋊ f"                       (at level 40).
 Reserved Notation "- ⋉ A"                       (at level 40).
 Reserved Notation "A ⋊ -"                       (at level 40).
 Reserved Notation "a *** b"                     (at level 40).
-Reserved Notation "a ---> b"                    (at level 11, right associativity).
+(* Reserved Notation "a ---> b"                    (at level 11, right associativity). *)
 Reserved Notation "a <- b"                      (at level 100, only parsing).
 Reserved Notation "a :: b"                      (at level 60, right associativity).
 Reserved Notation "a ++ b"                      (at level 60, right associativity).

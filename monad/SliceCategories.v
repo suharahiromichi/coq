@@ -1,5 +1,4 @@
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import finset fintype.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -85,7 +84,7 @@ Check EquivSlice.
 (* ABOVE *)
 (* ***** *)
 
-Program Instance SliceTAbove' : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
+Program Instance SliceTAbove' `{C : Category} {X : C} (M1 M2 : MorphismInTo X) : Setoid :=
   {|
     carrier := TriangleAbove M1 M2;
     eqv := fun f g => (projT1 f = projT1 g)
@@ -99,7 +98,7 @@ Proof.
       by rewrite Hfg Hgh.
 Defined.
 
-Program Instance SliceTAbove : forall `{C : Category} {X : C} (M1 M2 : MorphismInTo X), Setoid :=
+Program Instance SliceTAbove `{C : Category} {X : C} (M1 M2 : MorphismInTo X) : Setoid :=
   {|
     carrier := TriangleAbove M1 M2;
     eqv := fun f g => (projT1 f === projT1 g)
@@ -194,8 +193,7 @@ Defined.
 (* UNDER *)
 (* ***** *)
 
-Program Instance SliceTUnder :
-  forall `{C : Category} {X : C} (M1 M2 : MorphismOutOf X), Setoid :=
+Program Instance SliceTUnder `{C : Category} {X : C} (M1 M2 : MorphismOutOf X) : Setoid :=
   {|
     carrier := TriangleBelow M1 M2;
     eqv := fun f g => (projT1 f === projT1 g)
