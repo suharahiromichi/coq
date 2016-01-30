@@ -58,9 +58,14 @@ Lemma hodai1 n :
 Proof.
   elim: n.
   - by [].
-  - move=> /= n' H.
+  - move=> /= n' H /=.
     by rewrite H /=.
 Qed.
+(*
+natbin n.*2 = o (natbin n) を証明するには、
+z = o z を認める必要がある。
+つまり、一般的過ぎて証明できない。
+ *)
 
 Lemma hodai2 n :
   natbin (n.*2 + 1) = i (natbin n).
