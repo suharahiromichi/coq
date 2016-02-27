@@ -156,7 +156,7 @@ Proof.
       simpl in H.
       apply eq_cons_tl in H.
       apply eq_snoc in H.
-      * now rewrite H.
+      now rewrite H.
 Qed.
 
 Lemma pal_pal : forall l, palb (length l) l -> pal l.
