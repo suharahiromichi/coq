@@ -4,7 +4,7 @@
 (* 後半、HoareState の証明 *)
 (* @suharahiromichi 2014_01_25 *)
 
-Require Import ssreflect ssrbool ssrnat seq ssrfun.
+From mathcomp Require Import ssreflect ssrbool ssrnat seq ssrfun.
 Require Import Program.                     (* Program *)
 
 Set Implicit Arguments.
@@ -21,11 +21,11 @@ Fixpoint flatten {a : Set} (t : Tree a) : list a :=
     | Node l r => flatten l ++ flatten r
   end.
 
-Definition s := nat.                        (* 自然数1個を状態として持つ。
-                                             getとputの対象になる。 *)
+Section hoare_state_monad.
 
+Variable st : Set.
 
-Definition State (a : Set) : Type := s -> a * s. (* State Monad、比較のために掲げる。 *)
+Definition State (a : Set) : Type := st -> a * st. (* State Monad、比較のために掲げる。 *)
 (* 
 p.3 最後
 
@@ -43,19 +43,19 @@ postcondition relating the initial state, resulting value, and final state.
 ことを保証する。
  *)
 
-Definition Pre : Type := s -> Prop.
+Definition Pre : Type := st -> Prop.
 
-Definition Post (a : Set) : Type := s -> a -> s -> Prop.
+Definition Post (a : Set) : Type := st -> a -> st -> Prop.
 (* initial state, 返値, final state を意味する。 *)
 
 Program Definition HoareState (pre : Pre) (a : Set) (post : Post a) : Set :=
-  forall (i : {t : s | pre t}), {(x, f) : a * s | post i x f }.
+  forall (i : {t : st | pre t}), {(x, f) : a * st | post i x f }.
 
-Definition top : Pre := fun s => True.
+Definition top : Pre := fun st => True.
 
 Program Definition ret {a : Set} :
   forall (x : a),
-    @HoareState top a (fun (i : s) (y : a) (f : s) => i = f /\ y = x) :=
+    @HoareState top a (fun (i : st) (y : a) (f : st) => i = f /\ y = x) :=
   fun x s => (x, s).
 (**
 - i = f は、状態について initial と final がおなじであること。
@@ -150,7 +150,7 @@ Obligation 3.
 Proof.
   elim: (c2 x) => /=.
   elim=> a' s' H1.
-  exists x s2.
+  exists x, s2.
   split.
   (* Q1 s1 x s2 *)
   - elim: c1 Heq_anonymous => x0 /= H0 Heq_anonymous.
@@ -160,7 +160,6 @@ Proof.
   - by apply: H1.
 Qed.
 Check bind.
-Infix ">>=" := bind (right associativity, at level 71).
 
 Program Definition bind2 :
   forall {a b P1 P2 Q1 Q2},
@@ -170,15 +169,19 @@ Program Definition bind2 :
                b
                (fun s1 y s3 => exists x, exists s2, Q1 s1 x s2 /\ Q2 s2 y s3) :=
   fun {a b P1 P2 Q1 Q2} c1 c2 =>
-    c1 >>= fun _ => c2.
+    bind c1 (fun _ => c2).                  (* c1 >>= fun _ => c2. *)
 Check bind2.
-Infix ">>>" := bind2 (right associativity, at level 71).
 
-Program Definition get : @HoareState top s (fun i x f => i = f /\ x = i) :=
+Program Definition get : @HoareState top st (fun i x f => i = f /\ x = i) :=
   fun s => (s, s).
 
-Program Definition put (x : s) : @HoareState top unit (fun _ _ f => f = x) :=
+Program Definition put (x : st) : @HoareState top unit (fun _ _ f => f = x) :=
   fun _ => (tt, x).
+
+End hoare_state_monad.
+
+Infix ">>=" := bind (right associativity, at level 71).
+Infix ">>>" := bind2 (right associativity, at level 71).
 
 Fixpoint size {a : Set} (t : Tree a) : nat :=
   match t with
@@ -203,13 +206,14 @@ Proof.
 Qed.
 
 Program Fixpoint relabel {a : Set} (t : Tree a) {struct t} :
-  @HoareState top
+  @HoareState nat
+              (@top nat)
              (Tree nat)
              (fun i t f => f = i + size t /\ flatten t = sequence i (size t)) :=
     match t with
       | Leaf x =>
-        get >>= fun n =>
-                  put (n + 1) >>>
+        @get nat >>= fun n =>
+                       @put nat (n + 1) >>>
                       ret (Leaf n)
       | Node l r =>
         relabel l >>=
@@ -238,8 +242,9 @@ Check relabel.
 (* ssreflect-1.4 *)
 
 (* DO 記法 *)
+(*
 Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
-
+*)
 Delimit Scope monad_scope with monad.
 Open Scope monad_scope.
 
@@ -267,7 +272,8 @@ Notation "'DO' a <- A ; B ; C 'OD'" := (A >>= fun a => B >>> C)
                                          (at level 100, right associativity).
 Notation "'DO' A ; B ; C 'OD'" := (A >>> B >>> C)
                                     (at level 100, right associativity).
-Notation "'DO' a <- A ; b <- B ; c <- C ; D 'OD'" := (A >>= fun a => B >>= fun b => C >>= fun c => D)
+Notation "'DO' a <- A ; b <- B ; c <- C ; D 'OD'" :=
+ (A >>= fun a => B >>= fun b => C >>= fun c => D)
                                               (at level 100, right associativity).
 Notation "'DO' a <- A ; b <- B ; c <- C ; d <- D ; E 'OD'" :=
   (A >>= fun a => B >>= fun b => C >>= fun c => D >>= fun d => E)
@@ -275,21 +281,22 @@ Notation "'DO' a <- A ; b <- B ; c <- C ; d <- D ; E 'OD'" :=
 *)
 
 Program Fixpoint relabel' {a : Set} (t : Tree a) {struct t} :
-  @HoareState top
+  @HoareState nat
+              (@top nat)
              (Tree nat)
              (fun i t f => f = i + size t /\ flatten t = sequence i (size t)) :=
     match t with
       | Leaf x =>
         DO
-          n <- get;
+          n <- (@get nat);
           _ <- put (n + 1);                 (* put (n + 1) *)
-          ret $ Leaf n
+          ret (Leaf n)
         OD
       | Node l r =>
         DO
           l <- relabel' l;
           r <- relabel' r;
-          ret $ Node l r
+          ret (Node l r)
         OD
     end.
 Obligation 4.
@@ -307,64 +314,85 @@ Defined.
 
 (* もう少し遊んでみる *)
 (* get と put だけからなるプログラム *)
-Check get : HoareState top (fun i x f : s => i = f /\ x = i).
-Check put : forall x : s, HoareState top (fun (i : s) (a : ()) (f : s) => f = x).
-Check get >>= put :
-  @HoareState
-    (fun s1 : s => top s1 /\ _)
+
+Check @get nat :
+  @HoareState nat
+              (@top nat)
+              nat
+              (fun i x f : nat => i = f /\ x = i).
+Check @put nat : forall x : nat,
+                   @HoareState nat
+                               (@top nat)
+                               unit
+                               (fun (i : nat) (a : ()) (f : nat) => f = x).
+Check @get nat >>= @put nat :
+  @HoareState nat
+    (fun s1 : nat => top s1 /\ _)
     ()                                      (* put の返値 *)
-    (fun (s1 : s) (y : ()) (s3 : s) => exists x s2 : s, _).
+    (fun (s1 : nat) (y : ()) (s3 : nat) => exists x s2 : nat, _).
 
 (* 1 という定数を返す。 *)
-Check ret 1 : @HoareState top nat (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1).
-Check ret 1 >>= put :
-  @HoareState
-      (fun s1 : s =>
-       top s1 /\
-       (forall (x : nat) (s2 : s),
-        (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1) s1 x s2 ->
-        (fun _ : s => top) x s2))
-      ()                                    (* put の返値 *)
-      (fun (s1 : s) (y : ()) (s3 : s) =>
-       exists x s2 : s,
-         (fun (i : s) (y0 : nat) (f : s) => i = f /\ y0 = 1) s1 x s2 /\
-         (fun (x0 _ : s) (_ : ()) (f : s) => f = x0) x s2 y s3).
+Check ret 1 : @HoareState nat
+                          (@top nat)
+                          nat
+                          (fun (i : nat) (y : nat) (f : nat) => i = f /\ y = 1).
+Check ret 1 >>= @put nat :
+  @HoareState nat
+              (fun s1 : nat =>
+                 top s1 /\
+                 (forall (x : nat) (s2 : nat),
+                    (fun (i : nat) (y : nat) (f : nat) => i = f /\ y = 1) s1 x s2 ->
+                    (fun _ : nat => (@top nat)) x s2))
+              ()                                    (* put の返値 *)
+      (fun (s1 : nat) (y : ()) (s3 : nat) =>
+       exists x s2 : nat,
+         (fun (i : nat) (y0 : nat) (f : nat) => i = f /\ y0 = 1) s1 x s2 /\
+         (fun (x0 _ : nat) (_ : ()) (f : nat) => f = x0) x s2 y s3).
 
 Check put 1 :
-  @HoareState
-    top
+  @HoareState nat
+    (@top nat)
     ()
-    (fun (_ : s) (_ : ()) (f : s) => f = 1).
+    (fun (_ : nat) (_ : ()) (f : nat) => f = 1).
 
+Check (@ret nat nat 1) >>= (@put nat).
+Check @put nat 1.
+Fail Check (@ret nat nat 1) >>= (@put nat) = (@put nat 1). (* モナド則は成立しない。 *)
 Fail Check ret 1 >>= put = put 1.           (* モナド則は成立しない。 *)
 
 (* しかし、両辺の型を交換してみる。 *)
-Program Definition test' : HoareState top (fun (_ : s) (_ : ()) (f : s) => f = 1) :=
-  ret 1 >>= put.
+Program Definition test' :
+  @HoareState nat
+              (@top nat)
+              ()
+              (fun (_ : nat) (_ : ()) (f : nat) => f = 1) :=
+    ret 1 >>= @put nat.
+(* 証明責務はなし。 *)
 
-Program Definition test : @HoareState
-      (fun s1 : s =>
-       top s1 /\
-       (forall (x : nat) (s2 : s),
-        (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1) s1 x s2 ->
-        (fun _ : s => top) x s2))
-      ()
-      (fun (s1 : s) (y : ()) (s3 : s) =>
-       exists x s2 : s,
-         (fun (i : s) (y0 : nat) (f : s) => i = f /\ y0 = 1) s1 x s2 /\
-         (fun (x0 _ : s) (_ : ()) (f : s) => f = x0) x s2 y s3) :=
+Program Definition test :
+  @HoareState nat
+              (fun s1 : nat =>
+                 (@top nat) s1 /\
+                 (forall (x : nat) (s2 : nat),
+                    (fun (i : nat) (y : nat) (f : nat) => i = f /\ y = 1) s1 x s2 ->
+                    (fun _ : nat => (@top nat)) x s2))
+              unit
+              (fun (s1 : nat) (y : ()) (s3 : nat) =>
+                 exists x s2 : nat,
+                   (fun (i : nat) (y0 : nat) (f : nat) => i = f /\ y0 = 1) s1 x s2 /\
+                   (fun (x0 _ : nat) (_ : ()) (f : nat) => f = x0) x s2 y s3) :=
   put 1.
 Obligation 2.
 Proof.
-  by exists 1 x.
+  by exists 1, x.
 Defined.
 
 Goal forall x,
-       (fun s1 : s =>                       (* ret 1 >>= put のpre条件 *)
+       (fun s1 : nat =>                  (* ret 1 >>= put のpre条件 *)
           top s1 /\
-          (forall (x : nat) (s2 : s),
-             (fun (i : s) (y : nat) (f : s) => i = f /\ y = 1) s1 x s2 ->
-             (fun _ : s => top) x s2)) x
+          (forall (x : nat) (s2 : nat),
+             (fun (i : nat) (y : nat) (f : nat) => i = f /\ y = 1) s1 x s2 ->
+             (fun _ : nat => (@top nat)) x s2)) x
        <->
        top x.                               (* put 1 の Pre条件 *)
 Proof.
@@ -376,12 +404,12 @@ Proof.
 Qed.
 
 Goal forall s1 x s2,
-       (fun (s1 : s) (y : ()) (s3 : s) =>   (* ret 1 >>= put のPost条件 *)
-       exists x s2 : s,
-         (fun (i : s) (y0 : nat) (f : s) => i = f /\ y0 = 1) s1 x s2 /\
-         (fun (x0 _ : s) (_ : ()) (f : s) => f = x0) x s2 y s3) s1 x s2
+       (fun (s1 : nat) (y : ()) (s3 : nat) =>   (* ret 1 >>= put のPost条件 *)
+       exists x s2 : nat,
+         (fun (i : nat) (y0 : nat) (f : nat) => i = f /\ y0 = 1) s1 x s2 /\
+         (fun (x0 _ : nat) (_ : ()) (f : nat) => f = x0) x s2 y s3) s1 x s2
         <->
-        (fun (_ : s) (_ : ()) (f : s) => f = 1) s1 x s2. (* put 1 の Post条件 *)
+        (fun (_ : nat) (_ : ()) (f : nat) => f = 1) s1 x s2. (* put 1 の Post条件 *)
 Proof.
   move=> //=; split.
   - case=> s'.
@@ -389,60 +417,69 @@ Proof.
     case=> [] [] [] => H1 H2 H3.
     by rewrite H3.
   - move=> H1.
-    by exists s2 s1.
+    by exists s2, s1.
 Qed.
 
 (* 自明なプログラムの証明 *)
-Program Definition test0 : @HoareState top nat
-                                       (fun (s1 : s) (y : nat) (s2 : s) => s1 = s2 /\ y = 1) :=
+Program Definition test0 :
+  @HoareState nat
+              (@top nat)
+              nat
+              (fun (s1 : nat) (y : nat) (s2 : nat) => s1 = s2 /\ y = 1) :=
   DO x <- ret 1; ret x OD.
 Check test0.
 
-Program Definition test1 : @HoareState top nat
-                                       (fun (s1 : s) (y : nat) (s2 : s) => s1 = s2 /\ y = 2) :=
+Program Definition test1 :
+  @HoareState nat
+              (@top nat)
+              nat
+              (fun (s1 : nat) (y : nat) (s2 : nat) => s1 = s2 /\ y = 2) :=
   DO n <- ret 1; ret n.+1 OD.
 Set Printing Implicit.
 Check test1.
 
-Program Definition test2 : @HoareState top nat
-                                       (fun (s1 : s) (y : nat) (s2 : s) => y = 2) :=
-  DO n <- ret 1; _ <- put (n + 1); n <- get; ret n OD.
+Program Definition test2 :
+  @HoareState nat
+              (@top nat)
+              nat
+              (fun (s1 : nat) (y : nat) (s2 : nat) => y = 2) :=
+  DO n <- ret 1; _ <- put (n + 1); n <- @get nat; ret n OD.
 
 (* 実行結果を取り出す。 *)
-Definition sample1 := ret 1.
-Check sample1 : @HoareState _ _ _. (* Hoare State 型を返す。 *)
-Variable i : {t : s | top t}.
-Compute sample1 i : {(x, f) : nat * s |
-                     (fun (i : s) (y : nat) (f0 : s) => i = f0 /\ y = 1) (` i) x f}.
+Definition sample1 := @ret nat nat 1.
+Check sample1 : @HoareState _ _ _ _. (* Hoare State 型を返す。 *)
+Variable i : {t : nat | top t}.
+Compute sample1 i : {(x, f) : nat * nat |
+                     (fun (i : nat) (y : nat) (f0 : nat) => i = f0 /\ y = 1) (` i) x f}.
 Check let (x, f) := sample1 i in x.
 Compute let (x, f) := sample1 i in let (x', s) := x in x'. (* => 1 *)
 
 
-Definition sample2 := DO ret 1 OD.
+Definition sample2 := DO (@ret nat nat 1) OD.
 Compute let (x, f) := sample2 i in let (x', s) := x in x'. (* => 1 *)
 
-Definition sample3 := DO x <- ret 1; ret x.+1 OD.
-Check sample3 : @HoareState _ _ _. (* Hoare State 型を返す。 *)
-Variable i' : {t : s | top t /\ (forall (x : nat) (s2 : s), t = s2 /\ x = 1 -> top s2)}.
+Definition sample3 := DO x <- (@ret nat nat) 1; ret x.+1 OD.
+Check sample3 : @HoareState _ _ _ _.      (* Hoare State 型を返す。 *)
+Variable i' : {t : nat | top t /\ (forall (x : nat) (s2 : nat), t = s2 /\ x = 1 -> top s2)}.
 Compute sample3 i'.
 Compute let (x, f) := sample3 i' in let (x', s) := x in x'. (* => 2 *)
 
-Definition sample4 := DO x <- get; ret x.+1 OD.
-Check sample3 : @HoareState _ _ _. (* Hoare State 型を返す。 *)
-Variable i'' : {t : s | top t /\ (forall (x : nat) (s2 : s), t = s2 /\ x = 1 -> top s2)}.
+Definition sample4 := DO x <- @get nat; ret x.+1 OD.
+Check sample3 : @HoareState _ _ _ _.      (* Hoare State 型を返す。 *)
+Variable i'' : {t : nat | top t /\ (forall (x : nat) (s2 : nat), t = s2 /\ x = 1 -> top s2)}.
 Compute sample3 i''.
 Compute let (x, f) := sample3 i' in let (x', s) := x in x'. (* => 2 *)
 
-Definition sample5 := DO n <- ret 2; _ <- put (n + 1); n <- get; ret n OD.
-Variable i''' : {t : s | top t /\
-                         (forall (x : nat) (s2 : s),
+Definition sample5 := DO n <- ret 2; _ <- put (n + 1); n <- @get nat; ret n OD.
+Variable i''' : {t : nat | top t /\
+                         (forall (x : nat) (s2 : nat),
                             t = s2 /\ x = 2 -> (* !!! *)
                             top s2 /\
                             (() ->
-                             forall s3 : s,
-                               s3 = x + 1 -> top s3 /\ (forall x1 s4 : s, s3 = s4 /\ x1 = s3 -> top s4)))}.
+                             forall s3 : nat,
+                               s3 = x + 1 ->
+                               top s3 /\ (forall x1 s4 : nat, s3 = s4 /\ x1 = s3 -> top s4)))}.
 Compute sample5 i'''.
 Compute let (x, f) := sample5 i''' in let (x', s) := x in x'. (* => 3 *)
   
-
 (* END *)
