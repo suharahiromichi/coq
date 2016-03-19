@@ -4,7 +4,7 @@
 (* Monad Class を使って書き直す。 *)
 (* @suharahiromichi 2015_10_04 *)
 
-Require Import ssreflect ssrbool ssrnat seq eqtype.
+From mathcomp Require Import ssreflect ssrbool ssrnat seq eqtype.
 Require Import Program.                     (* Program *)
 
 Set Implicit Arguments.
@@ -28,11 +28,9 @@ Fixpoint relabel' (a : Set) (t : Tree a) (s : nat) : Tree nat * nat :=
 Delimit Scope monad_scope with monad.
 Open Scope monad_scope.
 
-Definition s := nat.                        (* 状態をひとつの自然数とする。 *)
-
 Notation "f $ x" := (f x) (at level 65, right associativity, only parsing).
 Reserved Notation "c1 >>= c2" (at level 42, left associativity).
-Reserved Notation "c1 >> c2" (at level 42, left associativity).
+Reserved Notation "c1 >>> c2" (at level 42, left associativity).
 
 Class Monad (T : Type -> Type) :=
   {
@@ -48,7 +46,7 @@ Class Monad (T : Type -> Type) :=
   }.
 
 Notation "s1 >>= s2" := (bind s1 s2).
-Notation "s1 >> s2" := (s1 >>= fun _ => s2).
+Notation "s1 >>> s2" := (s1 >>= fun _ => s2).
 Bind Scope monad_scope with Monad.
 
 (* monad_scope *)
@@ -66,7 +64,7 @@ Definition bind {a b : Set} : State a -> (a -> State b) -> State b :=
   fun c1 c2 s1 => let (x , s2 ) := c1 s1 in c2 x s2 .
 *)
 
-Definition state (a : Type) : Type := s -> a * s.
+Definition state {st : Set} (a : Type) : Type := st -> a * st.
 
 Check @ret  : forall T : Type -> Type, Monad T ->
                                        forall a : Type, a -> T a.
@@ -74,10 +72,10 @@ Check @bind : forall T : Type -> Type, Monad T ->
                                        forall a b : Type, T a -> (a -> T b) -> T b.
 
 Axiom functional_extensionality' :
-  forall {T : Type} {f g : state T},
-    (forall (q : s), f q = g q) -> f = g.
+  forall {st : Set} {T : Type} {f g : state T},
+    (forall (q : st), f q = g q) -> f = g.
 
-Program Instance State : Monad state :=
+Program Instance State {st : Set} : Monad (@state st) :=
   {
     ret a x s1 := (x , s1);                 (* state a *)
 (* ret の引数
@@ -106,17 +104,17 @@ Proof.
   by move=> q; elim: m.
 Qed.
 
-Definition get : state s := fun s => (s, s).
-Definition put : s -> state unit := fun s _ => (tt, s).
+Definition get {st : Set} : state st := fun s => (s, s).
+Definition put {st : Set} : st -> state unit := fun s _ => (tt, s).
 
-Definition bind2 {a b : Set} : state a -> state b -> state b :=
+Definition bind2 {st : Set} {a b : Set} : @state st a -> state b -> state b :=
   fun p1 p2 => p1 >>= fun _ => p2.
 
 Fixpoint relabel'' {a : Set} (t : Tree a) : state (Tree nat) :=
   match t with
     | Leaf _ =>
       get >>=
-          fun n => put (S n) >>
+          fun n => put (S n) >>>
                        ret (Leaf n)
     | Node l r =>
       relabel'' l >>=
@@ -125,16 +123,15 @@ Fixpoint relabel'' {a : Set} (t : Tree a) : state (Tree nat) :=
   end.
 
 (* テスト *)
-Check ret 1 : state s.
-Check get : state s.
+Check ret 1 : state nat.
+Check get : state nat.
 
-Check @bind state _ s unit get put : state ().
+Check @bind state _ nat unit get put : state ().
 Check bind get put : state ().
 Check get >>= put : state ().
 Check x <- get; put x : state ().
 Check ret 1 >>= put : state ().
 
-Close Scope monad_scope.
 
 Definition Do {X: Type} (m: X) := m.
 Arguments Do {X} (m)%monad.
@@ -155,5 +152,7 @@ Fixpoint relabel {a : Set} (t : Tree a) : state (Tree nat) :=
         ret $ Node l r
       OD
   end.
+
+Close Scope monad_scope.
 
 (* END *)
