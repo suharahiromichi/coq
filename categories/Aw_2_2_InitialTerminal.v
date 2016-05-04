@@ -20,7 +20,7 @@ Class InitialObject `{C : Category} (initial_obj : C) :=
   {
     zero          := initial_obj;
     bottom        : forall a, zero ~> a;
-    bottom_unique : forall `(f : zero ~> a), f === (bottom a)
+    bottom_unique : forall `(f : zero ~> a), f === bottom a
   }.
 Notation "? A" := (bottom A)     : category_scope.
 Notation "0"   := zero           : category_scope.
@@ -31,7 +31,7 @@ Class TerminalObject `{C : Category} (terminal_obj : C) :=
   {
     one         := terminal_obj;
     drop        : forall a,  a ~> one;
-    drop_unique : forall `(f : a ~> one), f === (drop a)
+    drop_unique : forall `(f : a ~> one), f === drop a
   }.
 Notation "! A" := (drop A)       : category_scope.
 Notation "1"   := one            : category_scope.
@@ -40,6 +40,69 @@ Implicit Arguments TerminalObject [[Obj] [Hom]].
 
 About InitialObject.
 About TerminalObject.
+
+Program Instance initial_unique_up_to_iso `{C : Category}
+      {io1 : C} (i1 : InitialObject C io1)
+      {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
+Obligation 1.
+Proof.                                      (* iso_forward *)
+  apply bottom.
+Qed.
+Obligation 2.
+Proof.                                      (* iso_backward *)
+  apply bottom.
+Qed.
+Obligation 3.
+Proof.
+  setoid_rewrite bottom_unique.
+  reflexivity.
+Qed.
+Obligation 4.
+Proof.
+  setoid_rewrite bottom_unique.
+  reflexivity.
+Qed.
+
+Program Instance initial_unique_up_to_iso' `{C : Category}
+      {io1 : C} (i1 : InitialObject C io1)
+      {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
+Obligation 1.
+Proof.                                      (* iso_forward *)
+  Check bottom.
+  Check @bottom.
+  Check (@bottom Obj Hom C zero i1 io2).
+  by apply (@bottom Obj Hom C zero i1 io2).
+Qed.
+Obligation 2.
+Proof.                                      (* iso_backward *)
+  by apply (@bottom Obj Hom C zero i2 io1).
+Qed.
+Obligation 3.
+Proof.
+  Check bottom_unique.
+  Check @bottom_unique.
+  Check (@bottom_unique Obj Hom C zero i1 io1).
+
+  setoid_rewrite (@bottom_unique Obj Hom C zero i1 io1).
+  Undo 1.
+  
+  Check (@bottom_unique Obj Hom C zero i1 io1
+                        (initial_unique_up_to_iso'_obligation_2 i1 i2 \\o
+                         initial_unique_up_to_iso'_obligation_1 i1 i2)).
+  rewrite (@bottom_unique Obj Hom C zero i1 io1
+                        (initial_unique_up_to_iso'_obligation_2 i1 i2 \\o
+                         initial_unique_up_to_iso'_obligation_1 i1 i2)).
+
+  Check (@bottom_unique Obj Hom C zero i1 io1 id).
+  rewrite (@bottom_unique Obj Hom C zero i1 io1 id).
+  reflexivity.
+Qed.
+Obligation 4.
+Proof.
+  setoid_rewrite (@bottom_unique Obj Hom C zero i2 io2).
+  reflexivity.
+Qed.
+
 
 (* initial objects are unique up to iso *)
 (* 始対象は同型を除いて一意 *)
@@ -51,7 +114,6 @@ Proof.
       iso_backward := bottom(InitialObject := i2) io1;
       iso_forward  := bottom(InitialObject := i1) io2
     |}.
-  Check (bottom_unique(InitialObject := i1)).
   - setoid_rewrite (bottom_unique(InitialObject := i1)).
     reflexivity.
   - setoid_rewrite (bottom_unique(InitialObject := i2)).
