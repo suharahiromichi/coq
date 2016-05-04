@@ -28,6 +28,9 @@ Class Epic `{C : Category} {a b : C} (f : a ~> b) : Prop :=
 (* すべての同型は、エピepiである。 *)
 Instance iso_epic `(i : Isomorphic) : Epic #i.
 Proof.
+  Check #i : a ~> b.
+  Check iso_forward i : a ~> b.
+  
   rewrite /Epic => c g1 g2 H.
   rewrite -[g1]right_identity -[g2]right_identity.
   rewrite -iso_comp2 -2!associativity.
