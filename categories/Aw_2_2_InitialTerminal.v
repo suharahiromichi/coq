@@ -41,28 +41,25 @@ Implicit Arguments TerminalObject [[Obj] [Hom]].
 About InitialObject.
 About TerminalObject.
 
-Program Instance initial_unique_up_to_iso `{C : Category}
+(* initial objects are unique up to iso *)
+(* 始対象は同型を除いて一意 *)
+
+(* オリジナルの証明 *)
+Lemma initial_unique_up_to_iso'' `{C : Category}
       {io1 : C} (i1 : InitialObject C io1)
       {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
-Obligation 1.
-Proof.                                      (* iso_forward *)
-  apply bottom.
-Qed.
-Obligation 2.
-Proof.                                      (* iso_backward *)
-  apply bottom.
-Qed.
-Obligation 3.
 Proof.
-  setoid_rewrite bottom_unique.
-  reflexivity.
-Qed.
-Obligation 4.
-Proof.
-  setoid_rewrite bottom_unique.
-  reflexivity.
+  refine {|
+      iso_backward := bottom(InitialObject := i2) io1;
+      iso_forward  := bottom(InitialObject := i1) io2
+    |}.
+  - setoid_rewrite (bottom_unique(InitialObject := i1)).
+    reflexivity.
+  - setoid_rewrite (bottom_unique(InitialObject := i2)).
+    reflexivity.
 Qed.
 
+(* rewriteを使い、省略の無い証明 *)
 Program Instance initial_unique_up_to_iso' `{C : Category}
       {io1 : C} (i1 : InitialObject C io1)
       {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
@@ -82,58 +79,90 @@ Proof.
   Check bottom_unique.
   Check @bottom_unique.
   Check (@bottom_unique Obj Hom C zero i1 io1).
-
-  setoid_rewrite (@bottom_unique Obj Hom C zero i1 io1).
+  setoid_rewrite bottom_unique.
   Undo 1.
   
+  (* 左辺 === bottom io1 *)
   Check (@bottom_unique Obj Hom C zero i1 io1
                         (initial_unique_up_to_iso'_obligation_2 i1 i2 \\o
                          initial_unique_up_to_iso'_obligation_1 i1 i2)).
   rewrite (@bottom_unique Obj Hom C zero i1 io1
                         (initial_unique_up_to_iso'_obligation_2 i1 i2 \\o
                          initial_unique_up_to_iso'_obligation_1 i1 i2)).
-
+  
+  (* 右辺 === bottom io1 *)
   Check (@bottom_unique Obj Hom C zero i1 io1 id).
   rewrite (@bottom_unique Obj Hom C zero i1 io1 id).
   reflexivity.
 Qed.
 Obligation 4.
 Proof.
-  setoid_rewrite (@bottom_unique Obj Hom C zero i2 io2).
+  setoid_rewrite bottom_unique.
+  Undo 1.
+  
+  (* 左辺 === bottom io2 *)
+  rewrite (@bottom_unique Obj Hom C zero i2 io2
+                        (initial_unique_up_to_iso'_obligation_1 i1 i2 \\o
+                         initial_unique_up_to_iso'_obligation_2 i1 i2)).
+  (* 左辺 === bottom io2 *)
+  rewrite (@bottom_unique Obj Hom C zero i2 io2 id).
   reflexivity.
 Qed.
 
-
-(* initial objects are unique up to iso *)
-(* 始対象は同型を除いて一意 *)
-Lemma initial_unique_up_to_iso `{C : Category}
+(* Program を使った証明 *)
+Program Instance initial_unique_up_to_iso `{C : Category}
       {io1 : C} (i1 : InitialObject C io1)
       {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
+Obligation 1.
+Proof.                                      (* iso_forward *)
+    by apply bottom.
+Qed.
+Obligation 2.
+Proof.                                      (* iso_backward *)
+    by apply bottom.
+Qed.
+Obligation 3.
 Proof.
-  refine {|
-      iso_backward := bottom(InitialObject := i2) io1;
-      iso_forward  := bottom(InitialObject := i1) io2
-    |}.
-  - setoid_rewrite (bottom_unique(InitialObject := i1)).
-    reflexivity.
-  - setoid_rewrite (bottom_unique(InitialObject := i2)).
-    reflexivity.
+  rewrite (bottom_unique (initial_unique_up_to_iso_obligation_2 i1 i2 \\o
+                          initial_unique_up_to_iso_obligation_1 i1 i2)).
+  Check (bottom_unique id).
+  rewrite (bottom_unique id).
+  reflexivity.
+Qed.
+Obligation 4.
+Proof.
+  rewrite (bottom_unique (initial_unique_up_to_iso_obligation_1 i1 i2 \\o
+                          initial_unique_up_to_iso_obligation_2 i1 i2)).
+  rewrite (bottom_unique id).
+  reflexivity.
 Qed.
 
 (* terminal objects are unique up to iso *)
 (* 終対象は同型を除いて一意 *)
-Lemma terminal_unique_up_to_iso `{C : Category}
+Program Instance terminal_unique_up_to_iso `{C : Category}
       {to1 : C} (t1 : TerminalObject C to1)
       {to2 : C} (t2 : TerminalObject C to2) : to1 ≅ to2.
+Obligation 1.
 Proof.
-  refine {|
-      iso_backward := drop(TerminalObject := t1) to2;
-      iso_forward  := drop(TerminalObject := t2) to1
-    |}.
-  - setoid_rewrite (drop_unique(TerminalObject := t1)).
-    reflexivity.
-  - setoid_rewrite (drop_unique(TerminalObject := t2)).
-    reflexivity.
+  by apply drop.
+Qed.
+Obligation 2.
+Proof.
+  by apply drop.
+Qed.
+Obligation 3.
+Proof.
+  rewrite (drop_unique (terminal_unique_up_to_iso_obligation_2 t1 t2 \\o
+                        terminal_unique_up_to_iso_obligation_1 t1 t2)).
+  rewrite (drop_unique id).
+  reflexivity.
+Qed.
+Obligation 4.
+Proof.
+  rewrite (drop_unique (terminal_unique_up_to_iso_obligation_1 t1 t2 \\o
+                        terminal_unique_up_to_iso_obligation_2 t1 t2)).
+  rewrite (drop_unique id).
+  reflexivity.
 Qed.
 
 (* END *)
