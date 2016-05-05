@@ -7,7 +7,6 @@ Unset Printing Implicit Defensive.
 (* Generalizable All Variables. *)
 Require Import Aw_0_Notations.
 Require Import Aw_1_3_Categories.
-Require Import Aw_1_4_Functors.
 Require Import Aw_1_5_Isomorphisms.
 
 (******************************************************************************)
@@ -44,11 +43,16 @@ About TerminalObject.
 (* initial objects are unique up to iso *)
 (* 始対象は同型を除いて一意 *)
 
+(* 圏Cの対象io1とio2があり、それぞれ始対象としての性質を満たす。
+このとき、io1とio2は同型である。 *)
+
 (* オリジナルの証明 *)
 Lemma initial_unique_up_to_iso'' `{C : Category}
       {io1 : C} (i1 : InitialObject C io1)
-      {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
+      {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2. (* Isomorphic io1 io2 *)
 Proof.
+  Check io1 : C : Category Hom.             (* 対象 *)
+  Check i1 : InitialObject C io1 : Type.    (* 始対象としての性質 *)
   refine {|
       iso_backward := bottom(InitialObject := i2) io1;
       iso_forward  := bottom(InitialObject := i1) io2
@@ -65,6 +69,7 @@ Program Instance initial_unique_up_to_iso' `{C : Category}
       {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
 Obligation 1.
 Proof.                                      (* iso_forward *)
+  (* io1 ~~{ C }~~> io2 *)
   Check bottom.
   Check @bottom.
   Check (@bottom Obj Hom C zero i1 io2).
@@ -72,6 +77,7 @@ Proof.                                      (* iso_forward *)
 Qed.
 Obligation 2.
 Proof.                                      (* iso_backward *)
+  (* io2 ~~{ C }~~> io1 *)
   by apply (@bottom Obj Hom C zero i2 io1).
 Qed.
 Obligation 3.
@@ -109,7 +115,7 @@ Proof.
   reflexivity.
 Qed.
 
-(* Program を使った証明 *)
+(* 適度に省略した証明 *)
 Program Instance initial_unique_up_to_iso `{C : Category}
       {io1 : C} (i1 : InitialObject C io1)
       {io2 : C} (i2 : InitialObject C io2) : io1 ≅ io2.
@@ -125,7 +131,7 @@ Obligation 3.
 Proof.
   rewrite (bottom_unique (initial_unique_up_to_iso_obligation_2 i1 i2 \\o
                           initial_unique_up_to_iso_obligation_1 i1 i2)).
-  Check (bottom_unique id).
+  Check (bottom_unique id).                 (* Checkの結果は気にしないこと。 *)
   rewrite (bottom_unique id).
   reflexivity.
 Qed.

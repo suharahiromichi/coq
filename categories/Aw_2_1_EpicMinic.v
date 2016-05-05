@@ -7,7 +7,6 @@ Unset Printing Implicit Defensive.
 (* Generalizable All Variables. *)
 Require Import Aw_0_Notations.
 Require Import Aw_1_3_Categories.
-Require Import Aw_1_4_Functors.
 Require Import Aw_1_5_Isomorphisms.
 
 (******************************************************************************)
