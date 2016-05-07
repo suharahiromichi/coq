@@ -7,7 +7,8 @@ OBJS = \
 	Aw_1_6_2_OppositeCategories.vo \
 	Aw_1_6_4_SliceCategories.vo \
 	Aw_2_1_EpicMinic.vo \
-	Aw_2_2_InitialTerminal.vo
+	Aw_2_2_InitialTerminal.vo \
+	Aw_7_4_NaturalTransformations.vo
 
 all:	$(OBJS)
 
