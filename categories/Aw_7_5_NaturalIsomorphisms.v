@@ -1,51 +1,92 @@
-Generalizable All Variables.
-Require Import Notations.
-Require Import Categories_ch1_3.
-Require Import Functors_ch1_4.
-Require Import Isomorphisms_ch1_5.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+(* Generalizable All Variables. *)
+Require Import Aw_0_Notations.
+Require Import Aw_1_3_Categories.
+Require Import Aw_1_4_Functors.
+Require Import Aw_1_5_Isomorphisms.
 
 (*******************************************************************************)
 (* Chapter 7.5: Natural Isomorphisms                                           *)
 (*******************************************************************************)
 
+Generalizable Variable A B.
+
 (* Definition 7.10 *)
-Class NaturalIsomorphism `{C1:Category}`{C2:Category}{Fobj1 Fobj2:C1->C2}(F1:Functor C1 C2 Fobj1)(F2:Functor C1 C2 Fobj2) :=
-{ ni_iso      : forall A, Fobj1 A ≅ Fobj2 A
-; ni_commutes : forall `(f:A~>B), #(ni_iso A) >>> F2 \ f ~~ F1 \ f >>> #(ni_iso B)
-}.
-Implicit Arguments ni_iso      [Ob Hom Ob0 Hom0 C1 C2 Fobj1 Fobj2 F1 F2].
-Implicit Arguments ni_commutes [Ob Hom Ob0 Hom0 C1 C2 Fobj1 Fobj2 F1 F2 A B].
+Class NaturalIsomorphism `{C1 : Category} `{C2 : Category} {Fobj1 Fobj2 : C1 -> C2}
+      (F1 : @Functor C1 _ _ C2 _ _ Fobj1) (F2 : @Functor C1 _ _ C2 _ _ Fobj2) :=
+  {
+    ni_iso      : forall A, Fobj1 A ≅ Fobj2 A;
+    ni_commutes : forall `(f : A ~> B),
+                    F2 \ f \\o #(ni_iso A) === #(ni_iso B) \\o F1 \ f 
+  }.
+Arguments ni_iso {Obj Hom Obj0 Hom0 C1 C2 Fobj1 Fobj2 F1 F2} Ni A : rename.
+Arguments ni_commutes {Obj Hom Obj0 Hom0 C1 C2 Fobj1 Fobj2 F1 F2} Ni A B f : rename.
+Check ni_commutes.
+
 (* FIXME: coerce to NaturalTransformation instead *)
+
 Coercion ni_iso : NaturalIsomorphism >-> Funclass.
 Notation "F <~~~> G" := (@NaturalIsomorphism _ _ _ _ _ _ _ _ F G) : category_scope.
 
 (* same as ni_commutes, but phrased in terms of inverses *)
-Lemma ni_commutes' `(ni:NaturalIsomorphism) : forall `(f:A~>B), F2 \ f >>> #(ni_iso ni B)⁻¹ ~~ #(ni_iso ni A)⁻¹ >>> F1 \ f.
+Lemma ni_commutes' `(ni : NaturalIsomorphism) :
+  forall `(f : A ~> B),
+    #(ni_iso ni B)⁻¹ \\o F2 \ f === F1 \ f \\o #(ni_iso ni A)⁻¹.
+Proof.
   intros.
   apply iso_shift_right'.
-  setoid_rewrite <- associativity.
+  setoid_rewrite associativity.
   symmetry.
   apply iso_shift_left'.
   symmetry.
   apply ni_commutes.
-  Qed.
+Qed.
 
 (* FIXME: Lemma 7.11: natural isos are natural transformations in which every morphism is an iso *)
 
 (* every natural iso is invertible, and that inverse is also a natural iso *)
-Definition ni_inv `(N:NaturalIsomorphism(F1:=F1)(F2:=F2)) : NaturalIsomorphism F2 F1.
-  intros; apply (Build_NaturalIsomorphism _ _ _ _ _ _ _ _ F2 F1 (fun A => iso_inv _ _ (ni_iso N A))).
-  abstract (intros; simpl;
-            set (ni_commutes N f) as qqq;
-            symmetry in qqq;
-            apply iso_shift_left' in qqq;
-            setoid_rewrite qqq;
-            repeat setoid_rewrite <- associativity;
-            setoid_rewrite iso_comp2;
-            setoid_rewrite left_identity;
-            reflexivity).
-  Defined.
 
+Generalizable Variable Fa Fb.
+
+Lemma ni_inv `(N : NaturalIsomorphism (F1 := Fa) (F2 := Fb)) : NaturalIsomorphism Fb Fa.
+  intros; apply (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A => @iso_inv _ _ _ _ _ (ni_iso N A))).
+  intros; simpl.
+  set (ni_commutes N A B f) as qqq.
+  symmetry in qqq.
+  apply iso_shift_left' in qqq.
+  setoid_rewrite qqq.
+  setoid_rewrite associativity.
+  setoid_rewrite associativity.
+  setoid_rewrite iso_comp2.
+  setoid_rewrite right_identity.
+  reflexivity.
+Defined.
+
+Definition ni_inv' `(N : NaturalIsomorphism (F1 := Fa) (F2 := Fb)) : NaturalIsomorphism Fb Fa.
+Proof.
+  Check @Build_NaturalIsomorphism.
+  Check @Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa.
+  Check (fun A => @iso_inv _ _ _ _ _ (ni_iso N A)). (* ∀ A : C1, Fobj2 A ≅ Fobj1 A *)
+  Check (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A => @iso_inv _ _ _ _ _ (ni_iso N A))).
+
+  apply (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A => @iso_inv _ _ _ _ _ (ni_iso N A))).
+  move=> A' B f /=.
+  Check ni_commutes N A' B f.
+  have qqq := ni_commutes N A' B f.
+  symmetry in qqq.
+  apply iso_shift_left' in qqq.  
+  rewrite qqq.
+  rewrite 2!associativity.
+  rewrite [# (N A') \\o iso_backward (N A')]iso_comp2.
+  rewrite right_identity.
+  reflexivity.
+Defined.
+  
 Definition ni_id
   `{C1:Category}`{C2:Category}
   {Fobj}(F:Functor C1 C2 Fobj)
