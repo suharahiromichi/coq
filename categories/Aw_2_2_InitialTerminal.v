@@ -97,8 +97,8 @@ Proof.
                          initial_unique_up_to_iso'_obligation_1 i1 i2)).
   
   (* 右辺 === bottom io1 *)
-  Check (@bottom_unique Obj Hom C zero i1 io1 id).
-  rewrite (@bottom_unique Obj Hom C zero i1 io1 id).
+  Check (@bottom_unique Obj Hom C zero i1 io1 iid).
+  rewrite (@bottom_unique Obj Hom C zero i1 io1 iid).
   reflexivity.
 Qed.
 Obligation 4.
@@ -111,7 +111,7 @@ Proof.
                         (initial_unique_up_to_iso'_obligation_1 i1 i2 \\o
                          initial_unique_up_to_iso'_obligation_2 i1 i2)).
   (* 左辺 === bottom io2 *)
-  rewrite (@bottom_unique Obj Hom C zero i2 io2 id).
+  rewrite (@bottom_unique Obj Hom C zero i2 io2 iid).
   reflexivity.
 Qed.
 
@@ -131,15 +131,15 @@ Obligation 3.
 Proof.
   rewrite (bottom_unique (initial_unique_up_to_iso_obligation_2 i1 i2 \\o
                           initial_unique_up_to_iso_obligation_1 i1 i2)).
-  Check (bottom_unique id).                 (* Checkの結果は気にしないこと。 *)
-  rewrite (bottom_unique id).
+  Check (bottom_unique iid).       (* Checkの結果は気にしないこと。 *)
+  rewrite (bottom_unique iid).
   reflexivity.
 Qed.
 Obligation 4.
 Proof.
   rewrite (bottom_unique (initial_unique_up_to_iso_obligation_1 i1 i2 \\o
                           initial_unique_up_to_iso_obligation_2 i1 i2)).
-  rewrite (bottom_unique id).
+  rewrite (bottom_unique iid).
   reflexivity.
 Qed.
 
@@ -160,14 +160,14 @@ Obligation 3.
 Proof.
   rewrite (drop_unique (terminal_unique_up_to_iso_obligation_2 t1 t2 \\o
                         terminal_unique_up_to_iso_obligation_1 t1 t2)).
-  rewrite (drop_unique id).
+  rewrite (drop_unique iid).
   reflexivity.
 Qed.
 Obligation 4.
 Proof.
   rewrite (drop_unique (terminal_unique_up_to_iso_obligation_1 t1 t2 \\o
                         terminal_unique_up_to_iso_obligation_2 t1 t2)).
-  rewrite (drop_unique id).
+  rewrite (drop_unique iid).
   reflexivity.
 Qed.
 

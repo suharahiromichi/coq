@@ -58,14 +58,14 @@ Class Category `(Hom : Obj -> Obj -> Setoid) : Type :=
   {
     hom := Hom where "a ~> b" := (hom a b);
     obj := Obj;
-    id   : forall {a : Obj}, (a ~> a);
+    iid  : forall {a : Obj}, (a ~> a);
     comp : forall {a b c : Obj},
              (b ~> c) -> (a ~> b) -> (a ~> c)
                                        where "f \\o g" := (comp f g);
     comp_respects   : forall {a b c : Obj},
                         Proper (eqv ==> eqv ==> eqv) (@comp a b c);
-    left_identity   : forall `{f : a ~> b}, id \\o f === f;
-    right_identity  : forall `{f : a ~> b}, f \\o id === f;
+    left_identity   : forall `{f : a ~> b}, iid \\o f === f;
+    right_identity  : forall `{f : a ~> b}, f \\o iid === f;
     associativity   : forall `{f : c ~> d} `{g : b ~> c} `{h : a ~> b},
                         f \\o g \\o h === f \\o (g \\o h)
 }.

@@ -28,8 +28,8 @@ Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) :=
     fmor                : forall {a b : C1}, a ~> b -> (fobj a) ~> (fobj b);
     fmor_respects       : forall {a b : C1} {f f' : a ~> b},
                             f === f' -> fmor f === fmor f';
-    fmor_preserves_id   : forall {a : C1}, @fmor a a id === id;
-(* forall a, fmor (id a) === id (fobj a); *)
+    fmor_preserves_id   : forall {a : C1}, @fmor a a iid === iid;
+(* forall a, fmor (id a) === iid (fobj a); *)
     fmor_preserves_comp : forall {a b c : C1} {f : a ~> b} {g : b ~> c},
                             (fmor g) \\o (fmor f) === fmor (g \\o f)
   }.
@@ -80,7 +80,7 @@ Program Instance functor_id `(C : Category) : Functor (fun (x : C) => x) :=
   {|
     fmor := fun (a b : C) (f : a ~> b) => f
   |}.
-Obligation 2.                               (* id === id *)
+Obligation 2.                               (* iid === iid *)
 Proof.
   Check (fun (x : C) => C).                 (* カテゴリC(の対象)から、カテゴリC(の対象)の写像 *)
   Check (fun (a b : C) (f : a ~> b) => f).  (* カテゴリC(の射)から、カテゴリC(の射)の写像 *)
@@ -96,12 +96,12 @@ Defined.
 Program Instance functor_const `(C : Category) `{D : Category} (d : D) :
   Functor (fun (x : C) => d) :=
   {|
-    fmor := fun (a b : C) (f : a ~> b) => id
+    fmor := fun (a b : C) (f : a ~> b) => iid
   |}.
 Obligation 1.
 Proof.
   Check (fun (x : C) => d). (* カテゴリC(の対象)から、カテゴリD(の対象)の写像 *)
-  Check (fun (a b : C) (f : a ~> b) => id). (* カテゴリC(の射)から、カテゴリD(の射)の写像 *)
+  Check (fun (a b : C) (f : a ~> b) => iid). (* カテゴリC(の射)から、カテゴリD(の射)の写像 *)
   reflexivity.
 Defined.
 Obligation 2.

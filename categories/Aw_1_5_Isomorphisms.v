@@ -23,11 +23,11 @@ Require Import Aw_1_3_Categories.           (* same dir. *)
 Require Import Aw_1_4_Functors.             (* same dir. *)
 
 (* 圏Cにおいて、同型射 f : a ~> b が存在するとき、a と b は同型である。 *)
-(* 同型射とは、g \\o f === id かつ f \\o g === id なる f *)
+(* 同型射とは、g \\o f === iid かつ f \\o g === iid なる f *)
 Class Isomorphism `{C : Category} {a b : C} (f : a ~> b) (g : b ~> a) : Prop :=
   {
-    iso_cmp1  : g \\o f === id;             (* id a *)
-    iso_cmp2  : f \\o g === id              (* id b *)
+    iso_cmp1  : g \\o f === iid;            (* iid a *)
+    iso_cmp2  : f \\o g === iid             (* iid b *)
   }.
 (* TO DO: show isos are unique when they exist *)
 
@@ -36,8 +36,8 @@ Class Isomorphic `{C : Category} (a b : C) :=
   {
     iso_forward  :  a ~> b;
     iso_backward :  b ~> a;
-    iso_comp1    :  iso_backward \\o iso_forward === id; (* id a *)
-    iso_comp2    :  iso_forward \\o iso_backward === id  (* id b *)
+    iso_comp1    :  iso_backward \\o iso_forward === iid; (* iid a *)
+    iso_comp2    :  iso_forward \\o iso_backward === iid  (* iid b *)
 (* TO DO: merge this with Isomorphism *)
 }.
 (* 同型射 f は、ひとつの同型(な関係にあるaとb)を与えないと決まらない。
@@ -79,8 +79,8 @@ Notation "f '⁻¹'" := (iso_inv f) : isomorphism_scope.
 (* identity maps are isomorphisms *)
 Definition iso_id `{C : Category} (a : C) : Isomorphic a a.
 Proof.
-  Check @Build_Isomorphic _ _ C a a id id.
-  apply (@Build_Isomorphic _ _ C a a id id).
+  Check @Build_Isomorphic _ _ C a a iid iid.
+  apply (@Build_Isomorphic _ _ C a a iid iid).
   now rewrite left_identity.
   now rewrite left_identity.
 Defined.
@@ -98,10 +98,10 @@ Proof.
   Check #i2 \\o #i1 : a ~> c.
   Check #i1⁻¹ : b ~> a.                     (* iso_inv (iso_forward i1) *)
   Check #i2⁻¹ : c ~> b.                     (* iso_inv (iso_forward i2) *)
-  Check iso_comp1 i1 : iso_backward i1 \\o #i1 === id.
-  Check iso_comp2 i1 : #i1 \\o iso_backward i1 === id.
-  Check iso_comp1 i2 : iso_backward i2 \\o #i2 === id.
-  Check iso_comp2 i2 : #i2 \\o iso_backward i2 === id.
+  Check iso_comp1 i1 : iso_backward i1 \\o #i1 === iid.
+  Check iso_comp2 i1 : #i1 \\o iso_backward i1 === iid.
+  Check iso_comp1 i2 : iso_backward i2 \\o #i2 === iid.
+  Check iso_comp2 i2 : #i2 \\o iso_backward i2 === iid.
 
   Check (@Build_Isomorphic _ _ C a c (#i2 \\o #i1) (#i1⁻¹ \\o #i2⁻¹)).
   apply (@Build_Isomorphic _ _ C a c (#i2 \\o #i1) (#i1⁻¹ \\o #i2⁻¹)).
@@ -148,11 +148,11 @@ Proof.
   apply (@Build_Isomorphic _ _ _ _ _
                            (F \ (# i))
                            (F \ (iso_backward i))).
-  (* F \ iso_backward i \\o F \ #i === id *)
+  (* F \ iso_backward i \\o F \ #i === iid *)
   - rewrite fmor_preserves_comp.
     rewrite iso_comp1.
     apply fmor_preserves_id.
-  (* F \ #i \\o F \ iso_backward i === id *)
+  (* F \ #i \\o F \ iso_backward i === iid *)
   - rewrite fmor_preserves_comp.
     rewrite iso_comp2.
     apply fmor_preserves_id.

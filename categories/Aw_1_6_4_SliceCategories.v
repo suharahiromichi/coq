@@ -36,7 +36,7 @@ Section SliceExample.
   Check projT2 M : ((projT1 M) ~~{ Sets }~~> X).
   Check projT2 M : ((projT1 M) ~> X).       (* cod(f)=Xなる射 *)
   
-  Check @id (projT1 M).
+  Check @iid (projT1 M).
 End SliceExample.
 
 Definition TriangleAbove `{C : Category} {X : C} (M1 M2 : MorphismInTo X) :=
@@ -121,14 +121,14 @@ Check comp _ _ : _ ~~{ _ }~~> _.
 
 Program Instance SliceOver `(C : Category) (X : C) : @Category (MorphismInTo X) SliceTAbove :=
   {|
-    id  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
+    iid  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
     comp := fun _ _ _ f g => existT _ ((projT1 f) \\o (projT1 g)) _
   |}.
 Obligation 1.                               (* projT1 y1 ~~{ C }~~> projT1 y1 *)
 Proof.
-  by apply id.
+    by apply iid.
 Defined.
-Obligation 2.                               (* projT2 y1 \\o id === projT2 y1 *)
+Obligation 2.                               (* projT2 y1 \\o iid === projT2 y1 *)
 Proof.
   rewrite /SliceOver_obligation_1.
   rewrite right_identity.
@@ -217,14 +217,14 @@ Check comp _ _ : _ ~~{ _ }~~> _.
 Program Instance SliceUnder `(C : Category) (X : C) :
   @Category (MorphismOutOf X) SliceTUnder :=
   {|
-    id  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
+    iid  := fun y1 => existT _ (@id _ _ (projT1 y1)) _;
     comp := fun _ _ _ f g => existT _ ((projT1 f) \\o (projT1 g)) _
   |}.
 Obligation 1.                               (* projT1 y1 ~~{ C }~~> projT1 y1 *)
 Proof.
-  by apply id.
+  by apply iid.
 Defined.
-Obligation 2.                               (* projT2 y1 \\o id === projT2 y1 *)
+Obligation 2.                               (* projT2 y1 \\o iid === projT2 y1 *)
 Proof.
   rewrite /SliceOver_obligation_1.
   rewrite left_identity.

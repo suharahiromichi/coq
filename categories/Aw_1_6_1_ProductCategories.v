@@ -131,11 +131,11 @@ Section ProductCategories.
   Check @Category prod_obj PC_mor.
   
   Program Instance ProductCategory : @Category prod_obj PC_mor.
-  Obligation 1.                             (* id *)
+  Obligation 1.                             (* iid *)
   Proof.
     apply pair_mor.
-    - apply id.
-    - apply id.
+    - apply iid.
+    - apply iid.
   Defined.
   Obligation 2.                             (* comp *)
   Proof.
@@ -168,7 +168,7 @@ Section ProductCategories.
     - rewrite Hgs Hfs.
       reflexivity.
   Defined.
-  Obligation 4.                             (* id \\o f === f  *)
+  Obligation 4.                             (* iid \\o f === f  *)
   Proof.
     case: f => ff fs.
     split.
@@ -177,7 +177,7 @@ Section ProductCategories.
     - rewrite left_identity.
       reflexivity.
   Defined.
-  Obligation 5.                             (* f \\o id === f  *)
+  Obligation 5.                             (* f \\o iid === f  *)
   Proof.
     case: f => ff fs.
     split.
@@ -273,7 +273,7 @@ Section ProductCategoryFunctors.
     by case: H.
   Defined.
   Obligation 3.
-  (* id === id *)
+  (* iid === iid *)
   Proof.
     reflexivity.
   Defined.
@@ -301,7 +301,7 @@ Section ProductCategoryFunctors.
     by case: H.
   Defined.
   Obligation 3.
-  (* id === id *)
+  (* iid === iid *)
   Proof.
     reflexivity.
   Defined.
@@ -318,7 +318,7 @@ Section ProductCategoryFunctors.
     (pair_obj I a) ~~{C××D}~~> (pair_obj I b).
   Proof.
     apply: pair_mor => /=.
-    - by apply: id.
+    - by apply: iid.
     - by apply: g.
   Defined.
   
@@ -351,7 +351,7 @@ Section ProductCategoryFunctors.
   Proof.
     apply: pair_mor => /=.
     - by apply: f.
-    - by apply: id.
+    - by apply: iid.
   Defined.
   
   (* 圏から右が恒等射である積圏への関手 *)
@@ -419,7 +419,7 @@ Section ProductCategoryFunctors.
   Defined.
   Obligation 2.
   Proof.
-    (* ∀ a : (C ×× D) ×× E, cossa_fmor id === id *)
+    (* ∀ a : (C ×× D) ×× E, cossa_fmor iid === iid *)
     case: a => HCxD HE.
     case: HCxD => HC HD.
     split; [reflexivity | split; reflexivity].
@@ -444,7 +444,7 @@ Section ProductCategoryFunctors.
     by apply: pair_mor.
   Defined.
   Obligation 3.
-  (* id === id ∧ id === id *)
+  (* iid === iid ∧ iid === iid *)
   Proof.
     split; reflexivity.
   Defined.
@@ -494,7 +494,7 @@ Section func_prod.
   Defined.
   Obligation 2.
   Proof.
-  (* ∀ a : C1 ×× C3, functor_product_fmor id === id *)
+  (* ∀ a : C1 ×× C3, functor_product_fmor iid === iid *)
     case: a => [a1 a2] /=.
       by split; apply fmor_preserves_id.
   Defined.

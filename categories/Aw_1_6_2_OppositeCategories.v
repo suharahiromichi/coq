@@ -28,7 +28,7 @@ Qed.
 Program Instance Opposite `(C : @Category Obj Hom) : @Category Obj (fun x y => Hom y x).
 Obligation 1.                               (* Hom a a *)
 Proof.
-    by apply: id.
+    by apply: iid.
 Defined.
 Obligation 2.                               (* Hom c a *)
 Proof.
