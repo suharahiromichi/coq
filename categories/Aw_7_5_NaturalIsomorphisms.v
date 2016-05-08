@@ -53,28 +53,14 @@ Qed.
 
 Generalizable Variable Fa Fb.
 
-Lemma ni_inv `(N : NaturalIsomorphism (F1 := Fa) (F2 := Fb)) : NaturalIsomorphism Fb Fa.
-  intros; apply (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A => @iso_inv _ _ _ _ _ (ni_iso N A))).
-  intros; simpl.
-  set (ni_commutes N A B f) as qqq.
-  symmetry in qqq.
-  apply iso_shift_left' in qqq.
-  setoid_rewrite qqq.
-  setoid_rewrite associativity.
-  setoid_rewrite associativity.
-  setoid_rewrite iso_comp2.
-  setoid_rewrite right_identity.
-  reflexivity.
-Defined.
-
-Definition ni_inv' `(N : NaturalIsomorphism (F1 := Fa) (F2 := Fb)) : NaturalIsomorphism Fb Fa.
+Definition ni_inv `(N : NaturalIsomorphism (F1 := Fa) (F2 := Fb)) : NaturalIsomorphism Fb Fa.
 Proof.
   Check @Build_NaturalIsomorphism.
   Check @Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa.
-  Check (fun A => @iso_inv _ _ _ _ _ (ni_iso N A)). (* ∀ A : C1, Fobj2 A ≅ Fobj1 A *)
-  Check (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A => @iso_inv _ _ _ _ _ (ni_iso N A))).
+  Check (fun A : C1 => @iso_inv _ _ _ _ _ (ni_iso N A)). (* ∀ A : C1, Fobj2 A ≅ Fobj1 A *)
+  Check (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A : C1 => @iso_inv _ _ _ _ _ (ni_iso N A))).
 
-  apply (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A => @iso_inv _ _ _ _ _ (ni_iso N A))).
+  apply (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ Fb Fa (fun A : C1 => @iso_inv _ _ _ _ _ (ni_iso N A))).
   move=> A' B f /=.
   Check ni_commutes N A' B f.
   have qqq := ni_commutes N A' B f.
@@ -87,30 +73,39 @@ Proof.
   reflexivity.
 Defined.
   
-Definition ni_id
-  `{C1:Category}`{C2:Category}
-  {Fobj}(F:Functor C1 C2 Fobj)
-  : NaturalIsomorphism F F.
-  intros; apply (Build_NaturalIsomorphism _ _ _ _ _ _ _ _ F F (fun A => iso_id (F A))).
-  abstract (intros; simpl; setoid_rewrite left_identity; setoid_rewrite right_identity; reflexivity).
-  Defined.
+Definition ni_id `{C1 : Category} `{C2 : Category} {Fobj}
+           (F : @Functor C1 _ _ C2 _ _ Fobj) : NaturalIsomorphism F F.
+Proof.
+  Check @Build_NaturalIsomorphism _ _ _ _ _ _ _ _ F F.
+  Check (fun A : C1 => @iso_id _ _ _ (F A)).
+  Check @Build_NaturalIsomorphism _ _ _ _ _ _ _ _ F F (fun A : C1 => @iso_id _ _ _ (F A)).
+
+  apply (@Build_NaturalIsomorphism _ _ _ _ _ _ _ _ F F (fun A : C1 => @iso_id _ _ _ (F A))).
+  move=> A B f /=.
+  rewrite left_identity.
+  rewrite right_identity.
+  reflexivity.
+Defined.
 
 (* two different choices of composition order are naturally isomorphic (strictly, in fact) *)
-Instance ni_associativity
-  `{C1:Category}`{C2:Category}`{C3:Category}`{C4:Category}
-  {Fobj1}(F1:Functor C1 C2 Fobj1)
-  {Fobj2}(F2:Functor C2 C3 Fobj2)
-  {Fobj3}(F3:Functor C3 C4 Fobj3)
-  :
-  ((F1 >>>> F2) >>>> F3) <~~~> (F1 >>>> (F2 >>>> F3)) :=
-  { ni_iso := fun A => iso_id (F3 (F2 (F1 A))) }.
-  abstract (intros;
-            simpl;
-            setoid_rewrite left_identity;
-            setoid_rewrite right_identity;
-            reflexivity).
-  Defined.
+Program Instance ni_associativity `{C1 : Category} `{C2 : Category} `{C3 : Category} `{C4 : Category}
+  {Fobj1} (F1 : @Functor C1 _ _ C2 _ _ Fobj1)
+  {Fobj2} (F2 : @Functor C2 _ _ C3 _ _ Fobj2)
+  {Fobj3} (F3 : @Functor C3 _ _ C4 _ _ Fobj3) : ((F1 >>>> F2) >>>> F3) <~~~> (F1 >>>> (F2 >>>> F3)).
+Obligation 1.
+Proof.
+  Check @iso_id.
+  Check @iso_id _ _ _ (F3 (F2 (F1 A))).
+  by apply (@iso_id _ _ _ (F3 (F2 (F1 A)))).
+Defined.
+Obligation 2.
+Proof.
+  rewrite left_identity.
+  rewrite right_identity.
+  reflexivity.
+Defined.
 
+(*
 Definition ni_comp `{C:Category}`{D:Category}
    {F1Obj}{F1:@Functor _ _ C _ _ D F1Obj}
    {F2Obj}{F2:@Functor _ _ C _ _ D F2Obj}
@@ -129,19 +124,20 @@ Definition ni_comp `{C:Category}`{D:Category}
              setoid_rewrite <- ni_commutes2;
              reflexivity).
    Defined.
+*)
 
-Definition ni_respects1
-  `{A:Category}`{B:Category}
-  {Fobj}(F:Functor A B Fobj)
-  `{C:Category}
-  {G0obj}(G0:Functor B C G0obj)
-  {G1obj}(G1:Functor B C G1obj)
-  : (G0 <~~~> G1) -> ((F >>>> G0) <~~~> (F >>>> G1)).
-  intro phi.
+Definition ni_respects1 `{A : Category} `{B : Category}
+           {Fobj} (F : @Functor A _ _ B _ _ Fobj)
+           `{C : Category}
+           {G0obj} (G0 : @Functor B _ _ C _ _ G0obj)
+           {G1obj} (G1 : @Functor B _ _ C _ _ G1obj) :
+  (G0 <~~~> G1) -> ((F >>>> G0) <~~~> (F >>>> G1)).
+Proof.
+  move=> phi.
   destruct phi as [ phi_niso phi_comm ].
   refine {| ni_iso := (fun a => phi_niso (Fobj a)) |}.
   intros; simpl; apply phi_comm.
-  Defined.
+Defined.
 
 Definition ni_respects2
   `{A:Category}`{B:Category}
@@ -160,12 +156,12 @@ Definition ni_respects2
   Defined.
 
 Definition ni_respects
-  `{A:Category}`{B:Category}
-  {F0obj}(F0:Functor A B F0obj)
-  {F1obj}(F1:Functor A B F1obj)
-  `{C:Category}
-  {G0obj}(G0:Functor B C G0obj)
-  {G1obj}(G1:Functor B C G1obj)
+  `{A : Category} `{B : Category}
+  {F0obj}(F0 : Functor A B F0obj)
+  {F1obj}(F1 : Functor A B F1obj)
+  `{C : Category}
+  {G0obj}(G0 : Functor B C G0obj)
+  {G1obj}(G1 : Functor B C G1obj)
   : (F0 <~~~> F1) -> (G0 <~~~> G1) -> ((F0 >>>> G0) <~~~> (F1 >>>> G1)).
   intro phi.
   intro psi.
@@ -197,12 +193,12 @@ Definition ni_respects
  *)
 
 (* Definition 7.10 *)
-Definition IsomorphicFunctors `{C1:Category}`{C2:Category}{Fobj1 Fobj2:C1->C2}(F1:Functor C1 C2 Fobj1)(F2:Functor C1 C2 Fobj2) :=
+Definition IsomorphicFunctors `{C1 : Category} `{C2 : Category} {Fobj1 Fobj2 : C1->C2}(F1 : Functor C1 C2 Fobj1)(F2 : Functor C1 C2 Fobj2) :=
   exists  ni_iso      : (forall A, Fobj1 A ≅ Fobj2 A),
-                         forall `(f:A~>B), #(ni_iso A) >>> F2 \ f ~~ F1 \ f >>> #(ni_iso B).
+                         forall `(f : A~>B), #(ni_iso A) >>> F2 \ f ~~ F1 \ f >>> #(ni_iso B).
 Notation "F ≃ G" := (@IsomorphicFunctors _ _ _ _ _ _ _ _ F G) : category_scope.
 
-Definition if_id `{C:Category}`{D:Category}{Fobj}(F:Functor C D Fobj) : IsomorphicFunctors F F.
+Definition if_id `{C : Category} `{D : Category} {Fobj}(F : Functor C D Fobj) : IsomorphicFunctors F F.
   exists (fun A => iso_id (F A)).
   abstract (intros;
             simpl;
@@ -214,8 +210,8 @@ Definition if_id `{C:Category}`{D:Category}{Fobj}(F:Functor C D Fobj) : Isomorph
 
 (* every natural iso is invertible, and that inverse is also a natural iso *)
 Definition if_inv
-  `{C1:Category}`{C2:Category}{Fobj1 Fobj2:C1->C2}{F1:Functor C1 C2 Fobj1}{F2:Functor C1 C2 Fobj2}
-   (N:IsomorphicFunctors F1 F2) : IsomorphicFunctors F2 F1.
+  `{C1 : Category} `{C2 : Category} {Fobj1 Fobj2 : C1->C2} {F1 : Functor C1 C2 Fobj1} {F2 : Functor C1 C2 Fobj2}
+   (N : IsomorphicFunctors F1 F2)  :  IsomorphicFunctors F2 F1.
   intros.
     destruct N as [ ni_iso ni_commutes ].
     exists (fun A => iso_inv _ _ (ni_iso A)).
@@ -231,13 +227,13 @@ Definition if_inv
     reflexivity.
   Qed.
 
-Definition if_comp `{C:Category}`{D:Category}
-   {F1Obj}{F1:@Functor _ _ C _ _ D F1Obj}
-   {F2Obj}{F2:@Functor _ _ C _ _ D F2Obj}
-   {F3Obj}{F3:@Functor _ _ C _ _ D F3Obj}
-   (N1:IsomorphicFunctors F1 F2)
-   (N2:IsomorphicFunctors F2 F3)
-   : IsomorphicFunctors F1 F3.
+Definition if_comp `{C : Category} `{D : Category}
+   {F1Obj} {F1 : @Functor _ _ C _ _ D F1Obj}
+   {F2Obj} {F2 : @Functor _ _ C _ _ D F2Obj}
+   {F3Obj} {F3 : @Functor _ _ C _ _ D F3Obj}
+   (N1 : IsomorphicFunctors F1 F2)
+   (N2 : IsomorphicFunctors F2 F3)
+    :  IsomorphicFunctors F1 F3.
    intros.
      destruct N1 as [ ni_iso1 ni_commutes1 ].
      destruct N2 as [ ni_iso2 ni_commutes2 ].
@@ -252,11 +248,11 @@ Definition if_comp `{C:Category}`{D:Category}
 
 (* two different choices of composition order are naturally isomorphic (strictly, in fact) *)
 Definition if_associativity
-  `{C1:Category}`{C2:Category}`{C3:Category}`{C4:Category}
-  {Fobj1}(F1:Functor C1 C2 Fobj1)
-  {Fobj2}(F2:Functor C2 C3 Fobj2)
-  {Fobj3}(F3:Functor C3 C4 Fobj3)
-  :
+  `{C1 : Category} `{C2 : Category} `{C3 : Category} `{C4 : Category}
+  {Fobj1}(F1 : Functor C1 C2 Fobj1)
+  {Fobj2}(F2 : Functor C2 C3 Fobj2)
+  {Fobj3}(F3 : Functor C3 C4 Fobj3)
+   : 
   ((F1 >>>> F2) >>>> F3) ≃ (F1 >>>> (F2 >>>> F3)).
   exists (fun A => iso_id (F3 (F2 (F1 A)))).
   abstract (intros;
@@ -266,7 +262,7 @@ Definition if_associativity
             reflexivity).
   Defined.
 
-Definition if_left_identity `{C1:Category}`{C2:Category} {Fobj1}(F1:Functor C1 C2 Fobj1) : (functor_id _ >>>> F1) ≃ F1.
+Definition if_left_identity `{C1 : Category} `{C2 : Category} {Fobj1}(F1 : Functor C1 C2 Fobj1)  :  (functor_id _ >>>> F1) ≃ F1.
   exists (fun a => iso_id (F1 a)).
   abstract (intros; unfold functor_comp; simpl;
             setoid_rewrite left_identity;
@@ -274,7 +270,7 @@ Definition if_left_identity `{C1:Category}`{C2:Category} {Fobj1}(F1:Functor C1 C
             reflexivity).
   Defined.
 
-Definition if_right_identity `{C1:Category}`{C2:Category} {Fobj1}(F1:Functor C1 C2 Fobj1) : (F1 >>>> functor_id _) ≃ F1.
+Definition if_right_identity `{C1 : Category} `{C2 : Category} {Fobj1}(F1 : Functor C1 C2 Fobj1)  :  (F1 >>>> functor_id _) ≃ F1.
   exists (fun a => iso_id (F1 a)).
   abstract (intros; unfold functor_comp; simpl;
             setoid_rewrite left_identity;
@@ -283,13 +279,13 @@ Definition if_right_identity `{C1:Category}`{C2:Category} {Fobj1}(F1:Functor C1 
   Defined.
 
 Definition if_respects
-  `{A:Category}`{B:Category}
-  {F0obj}(F0:Functor A B F0obj)
-  {F1obj}(F1:Functor A B F1obj)
-  `{C:Category}
-  {G0obj}(G0:Functor B C G0obj)
-  {G1obj}(G1:Functor B C G1obj)
-  : (F0 ≃ F1) -> (G0 ≃ G1) -> ((F0 >>>> G0) ≃ (F1 >>>> G1)).
+  `{A : Category} `{B : Category}
+  {F0obj}(F0 : Functor A B F0obj)
+  {F1obj}(F1 : Functor A B F1obj)
+  `{C : Category}
+  {G0obj}(G0 : Functor B C G0obj)
+  {G1obj}(G1 : Functor B C G1obj)
+   :  (F0 ≃ F1) -> (G0 ≃ G1) -> ((F0 >>>> G0) ≃ (F1 >>>> G1)).
   intro phi.
   intro psi.
   destruct psi as [ psi_niso psi_comm ].
@@ -308,22 +304,22 @@ Definition if_respects
 Section ni_prod_comp.
 Require Import ProductCategories_ch1_6_1.
   Context
-  `{C1:Category}`{C2:Category}
-  `{D1:Category}`{D2:Category}
-   {F1Obj}(F1:@Functor _ _ C1 _ _ D1 F1Obj)
-   {F2Obj}(F2:@Functor _ _ C2 _ _ D2 F2Obj)
-  `{E1:Category}`{E2:Category}
-   {G1Obj}(G1:@Functor _ _ D1 _ _ E1 G1Obj)
-   {G2Obj}(G2:@Functor _ _ D2 _ _ E2 G2Obj).
+  `{C1 : Category} `{C2 : Category}
+  `{D1 : Category} `{D2 : Category}
+   {F1Obj}(F1 : @Functor _ _ C1 _ _ D1 F1Obj)
+   {F2Obj}(F2 : @Functor _ _ C2 _ _ D2 F2Obj)
+  `{E1 : Category} `{E2 : Category}
+   {G1Obj}(G1 : @Functor _ _ D1 _ _ E1 G1Obj)
+   {G2Obj}(G2 : @Functor _ _ D2 _ _ E2 G2Obj).
 
-  Definition ni_prod_comp_iso A : (((F1 >>>> G1) **** (F2 >>>> G2)) A) ≅ (((F1 **** F2) >>>> (G1 **** G2)) A).
+  Definition ni_prod_comp_iso A  :  (((F1 >>>> G1) **** (F2 >>>> G2)) A) ≅ (((F1 **** F2) >>>> (G1 **** G2)) A).
     unfold functor_fobj.
     unfold functor_product_fobj.
     simpl.
     apply iso_id.
     Defined.
 
-  Lemma ni_prod_comp : (F1 >>>> G1) **** (F2 >>>> G2) <~~~> (F1 **** F2) >>>> (G1 **** G2).
+  Lemma ni_prod_comp  :  (F1 >>>> G1) **** (F2 >>>> G2) <~~~> (F1 **** F2) >>>> (G1 **** G2).
     refine {| ni_iso := ni_prod_comp_iso |}.
     intros.
     destruct A.
