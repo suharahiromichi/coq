@@ -22,7 +22,7 @@ Require Import Morphisms.
 Require Import Aw_0_Notations.
 Require Import Aw_1_3_Categories.
 
-Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) :=
+Class Functor `(C1 : Category) `(C2 : Category) (fobj : C1 -> C2) : Type :=
   {
     functor_fobj := fobj;
     fmor                : forall {a b : C1}, a ~> b -> (fobj a) ~> (fobj b);
@@ -249,7 +249,7 @@ Definition EqualFunctors `{C1 : Category} `{C2 : Category}
 
 Notation "f ~~~~ g" := (EqualFunctors f g) (at level 45).
 
-Class IsomorphicCategories `(C : Category) `(D : Category) :=
+Class IsomorphicCategories `(C : Category) `(D : Category) : Type :=
   {
     ic_f_obj    : C -> D;
     ic_g_obj    : D -> C;
