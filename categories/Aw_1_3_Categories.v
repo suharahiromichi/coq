@@ -25,7 +25,6 @@ http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
  *)
 
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-From mathcomp Require Import finset fintype.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -230,6 +229,7 @@ Check @Category nat : (nat → nat → Setoid) → Type.
 Check EqLe : nat → nat → Setoid.
 Check @Category nat EqLe.
 
+
 Program Instance P_LE : @Category nat EqLe.
 Obligation 2.
 Proof.
@@ -265,7 +265,26 @@ Check P_LE.
 Check min : nat -> nat -> nat.
 Check @Product P_LE EqLe P_LE min.
 
-Program Instance P_LE_Prod : @Product P_LE EqLe P_LE min.
+Program Instance P_LE_Prod : @Product P_LE EqLe P_LE min :=
+  {
+    proj1 A B := PeanoNat.Nat.le_min_l A B;
+    proj2 A B := PeanoNat.Nat.le_min_r A B;
+    mediating A B X := PeanoNat.Nat.min_glb A B X
+  }.
+Obligation 1.
+  rewrite /P_LE_obligation_1.
+  rewrite /P_LE_obligation_2.
+  rewrite /P_LE_obligation_3.
+  by rewrite /eq_le.
+Defined.
+Obligation 2.
+  rewrite /P_LE_obligation_1.
+  rewrite /P_LE_obligation_2.
+  rewrite /P_LE_obligation_3.
+  by rewrite /eq_le.
+Defined.
+
+Program Instance P_LE_Prod' : @Product P_LE EqLe P_LE min.
 Obligation 1.
 Proof.
   Search (min _ _ <= _).
