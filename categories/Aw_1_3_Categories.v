@@ -155,10 +155,25 @@ Definition parallel `{C : Category Obj} {Prod : Obj -> Obj -> Obj} {CP : Product
   (f \\o p1) &&& (g \\o p2).
 Notation "f *** g" := (parallel f g).      (* <f,g> *)
 
+
+(* **** *)
+(* Rel  *)
+(* **** *)
+Instance EquivRel : forall (A B C : Set), Equivalence (@eqrel A B C).
+Admitted.
+
+Instance EqRel : forall (A B C : Set), Setoid :=
+  {
+    carrier := C -> B -> A;
+    eqv := @eqrel A B C;
+    eqv_equivalence := @EquivRel A B C
+  }.
+
+
 (* **** *)
 (* Sets *)
 (* **** *)
-Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) := (* notu *)
+Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) :=
   {
     Equivalence_Reflexive := @frefl A B;
     Equivalence_Symmetric := @fsym A B;
@@ -168,7 +183,8 @@ Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) := (* notu *)
 Instance EqMor : forall (A B : Set), Setoid :=
   {
     carrier := A -> B;
-    eqv := @eqfun B A
+    eqv := @eqfun B A;
+    eqv_equivalence := @EquivExt B A
   }.
   
 Check @Category Set : (Set → Set → Setoid) → Type.
@@ -176,7 +192,7 @@ Check @Category Set EqMor : Type.
 Check EqMor : Set -> Set -> Setoid.
 
 Program Instance Sets : @Category Set EqMor.
-Obligation 3.
+Obligation 3.                               (* comp_respects *)
 Proof.
   rewrite /Sets_obligation_2.
   move=> homab homab' Hhomab hombc hombc' Hhombc.
@@ -214,7 +230,7 @@ Check 0 <= 0 : Prop.
 
 Definition eq_le m n (p q : m <= n) := True.
   
-Instance EquivGeq : forall (m n : nat), Equivalence (@eq_le m n). (* notu *)
+Instance EquivGeq : forall (m n : nat), Equivalence (@eq_le m n).
 Proof.
     by [].
 Qed. 
@@ -222,13 +238,23 @@ Qed.
 Instance EqLe : forall (m n : nat), Setoid :=
   {
     carrier := m <= n;
-    eqv := @eq_le m n
+    eqv := @eq_le m n;
+    eqv_equivalence := @EquivGeq m n
   }.
 
 Check @Category nat : (nat → nat → Setoid) → Type.
 Check EqLe : nat → nat → Setoid.
 Check @Category nat EqLe.
 
+(*
+Program Instance P_LE : @Category nat EqLe :=
+  {
+    iid a := Le.le_refl a;
+    comp a b c := Le.le_trans a b c
+  }.
+Obligation 1.
+Proof.
+*)
 
 Program Instance P_LE : @Category nat EqLe.
 Obligation 2.
