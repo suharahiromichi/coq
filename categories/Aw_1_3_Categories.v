@@ -29,7 +29,7 @@ From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
+  
 Require Import Morphisms.
 Require Import Coq.Setoids.Setoid.
 Require Import Aw_0_Notations.
@@ -159,8 +159,27 @@ Notation "f *** g" := (parallel f g).      (* <f,g> *)
 (* **** *)
 (* Rel  *)
 (* **** *)
-Instance EquivRel : forall (A B C : Set), Equivalence (@eqrel A B C).
-Admitted.
+Check rrefl : forall (A B C : Type) (r : C -> B -> A), r =2 r. (* @eqrel A B C r r *)
+
+Lemma rsym (A B C : Type) (r s : C -> B -> A) : r =2 s -> s =2 r.
+Proof.
+  move=> eq_rs x y.
+  by rewrite eq_rs.
+Qed.
+
+Lemma rtrans (A B C : Type) (r s t : C -> B -> A) :
+  r =2 s -> s =2 t -> r =2 t.
+Proof.
+  move=> eq_rs eq_st x y.
+  by rewrite eq_rs eq_st.
+Qed.
+
+Instance EquivRel : forall (A B C : Set), Equivalence (@eqrel A B C) :=
+  {
+    Equivalence_Reflexive := @rrefl A B C;
+    Equivalence_Symmetric := @rsym A B C;
+    Equivalence_Transitive := @rtrans A B C
+  }.
 
 Instance EqRel : forall (A B C : Set), Setoid :=
   {
@@ -169,6 +188,20 @@ Instance EqRel : forall (A B C : Set), Setoid :=
     eqv_equivalence := @EquivRel A B C
   }.
 
+Program Instance Rel (A : Set) (a : A) : @Category Set (EqRel A).
+Obligation 3.                               (* comp_respects *)
+Proof.
+  move=> homab homab' Hhomab hombc hombc' Hhombc.
+  by move=> x y //=.
+Qed.
+Obligation 4.                               (* left_identity *)
+  rewrite /Rel_obligation_2.
+  rewrite /Rel_obligation_1.
+  Admitted.
+Obligation 5.                               (* right_identity *)
+  rewrite /Rel_obligation_2.
+  rewrite /Rel_obligation_1.
+  Admitted.
 
 (* **** *)
 (* Sets *)
