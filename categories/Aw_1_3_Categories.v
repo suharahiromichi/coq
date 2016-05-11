@@ -159,6 +159,7 @@ Notation "f *** g" := (parallel f g).      (* <f,g> *)
 (* **** *)
 (* Rel  *)
 (* **** *)
+
 Check rrefl : forall (A B C : Type) (r : C -> B -> A), r =2 r. (* @eqrel A B C r r *)
 
 Lemma rsym (A B C : Type) (r s : C -> B -> A) : r =2 s -> s =2 r.
@@ -201,7 +202,53 @@ Obligation 4.                               (* left_identity *)
 Obligation 5.                               (* right_identity *)
   rewrite /Rel_obligation_2.
   rewrite /Rel_obligation_1.
+  Admitted.                                 (* idを定義していないため。 *)
+
+(*
+Instance EquivRel : forall (A B : Set), Equivalence (@eqrel (A*B) A B)  :=
+  {
+    Equivalence_Reflexive := @rrefl (A*B) A B;
+    Equivalence_Symmetric := @rsym (A*B) A B;
+    Equivalence_Transitive := @rtrans (A*B) A B
+  }.
+
+Instance EqRel : forall (A B : Set), Setoid :=
+  {
+    carrier := B -> A -> (A*B);
+    eqv := @eqrel (A*B) A B;
+    eqv_equivalence := @EquivRel A B
+  }.
+
+Definition rid {A : Set} (a : A) : (A*A) := (a, a).
+
+Program Instance Rel : @Category Set EqRel.
+Obligation 1.
+Proof.
+  by apply (H, H0).
+Qed.
+Obligation 2.
+Proof.
+  by apply (H2, H1).
+Qed.
+Obligation 3.                               (* comp_respects *)
+Proof.
+  move=> homab homab' Hhomab hombc hombc' Hhombc.
+  move=> x y //=.
   Admitted.
+Obligation 4.                               (* left_identity *)
+Proof.
+  move=> x y //=.
+  Admitted.
+Obligation 5.                               (* right_identity *)
+Proof.
+  move=> x y //=.
+  Admitted.
+Obligation 6.                               (* associativity *)
+Proof.
+  move=> x y //=.
+  Admitted.
+*)
+
 
 (* **** *)
 (* Sets *)
