@@ -25,6 +25,7 @@ http://www.iij-ii.co.jp/lab/techdoc/category/category1.html
  *)
 
 From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+From mathcomp Require Import fintype.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -189,6 +190,7 @@ Instance EqRel : forall (A B C : Set), Setoid :=
     eqv_equivalence := @EquivRel A B C
   }.
 
+(*
 Program Instance Rel (A : Set) (a : A) : @Category Set (EqRel A).
 Obligation 3.                               (* comp_respects *)
 Proof.
@@ -203,52 +205,36 @@ Obligation 5.                               (* right_identity *)
   rewrite /Rel_obligation_2.
   rewrite /Rel_obligation_1.
   Admitted.                                 (* idを定義していないため。 *)
-
-(*
-Instance EquivRel : forall (A B : Set), Equivalence (@eqrel (A*B) A B)  :=
-  {
-    Equivalence_Reflexive := @rrefl (A*B) A B;
-    Equivalence_Symmetric := @rsym (A*B) A B;
-    Equivalence_Transitive := @rtrans (A*B) A B
-  }.
-
-Instance EqRel : forall (A B : Set), Setoid :=
-  {
-    carrier := B -> A -> (A*B);
-    eqv := @eqrel (A*B) A B;
-    eqv_equivalence := @EquivRel A B
-  }.
-
-Definition rid {A : Set} (a : A) : (A*A) := (a, a).
-
-Program Instance Rel : @Category Set EqRel.
-Obligation 1.
-Proof.
-  by apply (H, H0).
-Qed.
-Obligation 2.
-Proof.
-  by apply (H2, H1).
-Qed.
-Obligation 3.                               (* comp_respects *)
-Proof.
-  move=> homab homab' Hhomab hombc hombc' Hhombc.
-  move=> x y //=.
-  Admitted.
-Obligation 4.                               (* left_identity *)
-Proof.
-  move=> x y //=.
-  Admitted.
-Obligation 5.                               (* right_identity *)
-Proof.
-  move=> x y //=.
-  Admitted.
-Obligation 6.                               (* associativity *)
-Proof.
-  move=> x y //=.
-  Admitted.
 *)
 
+Definition rid (A : Set) : (A -> A -> Prop) := @eq A.
+
+Definition rcomp (A B C : Set) :
+  (C -> B -> Prop) -> (B -> A -> Prop) -> (C -> A -> Prop) :=
+  fun (r : C -> B -> Prop)
+      (s : B -> A -> Prop)
+      (z : C) (x : A) => exists (y : B), r z y /\ s y x.
+
+Program Instance Rel : @Category Set (EqRel Prop) :=
+  {
+    iid a := @rid a;
+    comp a b c := @rcomp a b c
+  }.
+Obligation 1.                               (* comp_respects *)
+Proof.
+  move=> homab homab' Hhomab hombc hombc' Hhombc.
+  move=> x y /=.
+  rewrite /rcomp /=.
+Abort.
+Obligation 2.                               (* left_identity *)
+Proof.
+Abort.
+Obligation 3.                               (* right_identity *)
+Proof.
+Abort.
+Obligation 4.                               (* associativity *)
+Proof.
+Abort.
 
 (* **** *)
 (* Sets *)
