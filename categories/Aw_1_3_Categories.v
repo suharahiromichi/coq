@@ -53,7 +53,7 @@ Class Setoid : Type :=
   }.
 Coercion carrier : Setoid >-> Sortclass.
 Notation "x === y" := (eqv x y).
-
+      
 Class Category `(Hom : Obj -> Obj -> Setoid) : Type :=
   {
     hom := Hom where "a ~> b" := (hom a b);
@@ -147,7 +147,7 @@ Notation "x &&& y" := (mediating x y).
 Check @proj1 : ∀Obj Hom C Prod _ a b, Prod a b ~> a.
 Check @proj2 : ∀Obj Hom C Prod _ a b, Prod a b ~> b.
 
-Set Printing All.
+(* Set Printing All. *)
 Generalizable Variables Prod.
 Definition parallel `{C : Category Obj} {Prod : Obj -> Obj -> Obj} {CP : Product Prod}
            `(f : a ~> b) `(g : c ~> d) : (Prod a c) ~> (Prod b d) :=
@@ -186,7 +186,7 @@ Instance EquivRel : forall (A B C : Set), Equivalence (@eqrel A B C) :=
 Instance EqRel : forall (A B C : Set), Setoid :=
   {
     carrier := C -> B -> A;
-    eqv := @eqrel A B C;
+    eqv := @eqrel A B C;                    (* =2 *)
     eqv_equivalence := @EquivRel A B C
   }.
 
@@ -211,10 +211,11 @@ Definition rid (A : Set) : (A -> A -> Prop) := @eq A.
 
 Definition rcomp (A B C : Set) :
   (C -> B -> Prop) -> (B -> A -> Prop) -> (C -> A -> Prop) :=
-  fun (r : C -> B -> Prop)
-      (s : B -> A -> Prop)
-      (z : C) (x : A) => exists (y : B), r z y /\ s y x.
+    fun (r : C -> B -> Prop)
+        (s : B -> A -> Prop)
+        (z : C) (x : A) => exists (y : B), r z y /\ s y x.
 
+(*
 Program Instance Rel : @Category Set (EqRel Prop) :=
   {
     iid a := @rid a;
@@ -223,18 +224,23 @@ Program Instance Rel : @Category Set (EqRel Prop) :=
 Obligation 1.                               (* comp_respects *)
 Proof.
   move=> homab homab' Hhomab hombc hombc' Hhombc.
-  move=> x y /=.
-  rewrite /rcomp /=.
+  move=> z x.
+  rewrite /rcomp.
 Abort.
 Obligation 2.                               (* left_identity *)
 Proof.
+  move=> z x.
+  rewrite /rcomp /rid //=.
 Abort.
 Obligation 3.                               (* right_identity *)
 Proof.
 Abort.
 Obligation 4.                               (* associativity *)
 Proof.
+  move=> z x.
+  rewrite /rcomp /rid //=.
 Abort.
+*)
 
 (* **** *)
 (* Sets *)
@@ -249,7 +255,7 @@ Instance EquivExt : forall (A B : Set), Equivalence (@eqfun A B) :=
 Instance EqMor : forall (A B : Set), Setoid :=
   {
     carrier := A -> B;
-    eqv := @eqfun B A;
+    eqv := @eqfun B A;                      (* =1 *)
     eqv_equivalence := @EquivExt B A
   }.
   
@@ -315,11 +321,9 @@ Check @Category nat EqLe.
 (*
 Program Instance P_LE : @Category nat EqLe :=
   {
-    iid a := Le.le_refl a;
-    comp a b c := Le.le_trans a b c
+    iid a := @Le.le_refl a;
+    comp a b c := @Le.le_trans a b c
   }.
-Obligation 1.
-Proof.
 *)
 
 Program Instance P_LE : @Category nat EqLe.
