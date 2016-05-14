@@ -109,7 +109,8 @@ Section ProductCategories.
   Instance PC_mor (a b : prod_obj) : Setoid :=
     {
       carrier := prod_mor a b;
-      eqv := @prod_eqv a b
+      eqv := @prod_eqv a b;
+      eqv_equivalence := prod_Equiv a b
     }.
   Check PC_mor : prod_obj → prod_obj → Setoid.
   Print PC_mor.
