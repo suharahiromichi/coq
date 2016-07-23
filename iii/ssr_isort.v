@@ -7,7 +7,7 @@ Permutation は SSReflect の相当の補題を使っているため、
 証明の詳細は原著と異なることに注意してください。
 *)
 
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -140,8 +140,8 @@ Proof.
       * apply LSorted_consn.
         apply LSorted_cons1.
         by apply complete_conv.
-      * subst; simpl; simpl in *.
-        elim H' : (leq a b).
+      * subst; simpl in *.
+        case H' : (leq a b).
         - apply LSorted_consn.
           + by rewrite H' in IHl; apply IHl. (* apply H2. *)
           + by apply complete_conv.
