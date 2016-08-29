@@ -136,6 +136,11 @@ Proof.
     by case mul.
 Qed.
 
+Lemma mulm1 {T : Type} (idm : T) (mul : Monoid.law idm) : right_id idm mul.
+Proof.
+    by case mul.
+Qed.
+
 Lemma mulmA {T : Type} (idm : T) (mul : Monoid.law idm) :
   associative mul.
 Proof.
@@ -167,7 +172,7 @@ Proof.
 Qed.
 
 Lemma big_cat_nat {R : Type} (idx : R) (op : Monoid.law idx)
-      (i m n p : nat) (P : pred nat) (F : nat -> R) :
+      (m n p : nat) (P : pred nat) (F : nat -> R) :
   m <= n -> n <= p ->
   \big[op/idx]_(m <= i < p | P i) F i =
   op (\big[op/idx]_(m <= i < n | P i) F i) (\big[op/idx]_(n <= i < p | P i) F i).
@@ -178,7 +183,64 @@ Proof.
   now rewrite subnKC // leq_sub.
 Qed.
 
-Lemma big_nat_recr {R : Type} (idx : R) (op : Monoid.law idx)  (n m : nat) (F : nat -> R) :
+Lemma big_ltn_cond {R : Type} (idx : R) (op : Monoid.law idx)
+      (m n : nat) (P : pred nat) F :
+  m < n -> let x := \big[op/idx]_(m.+1 <= i < n | P i) F i in
+           \big[op/idx]_(m <= i < n | P i) F i = if P m then op (F m) x else x.
+Proof.
+    by case: n => [//|n] le_m_n; rewrite /index_iota subSn // big_cons.
+Qed.
+
+Lemma big_ltn {R : Type} (idx : R) (op : Monoid.law idx)
+      (m n : nat) F :
+  m < n ->
+  \big[op/idx]_(m <= i < n) F i = op (F m) (\big[op/idx]_(m.+1 <= i < n) F i).
+Proof.
+    by move=> lt_mn; apply: big_ltn_cond.
+Qed.
+
+Lemma big_geq {R : Type} (idx : R) (op : Monoid.law idx)
+      (m n : nat) (P : pred nat) F :
+  m >= n -> \big[op/idx]_(m <= i < n | P i) F i = idx.
+Proof.
+Admitted.
+
+Lemma eq_big {I R : Type} (idx : R) (op : Monoid.law idx)
+      r (P1 P2 : pred I) F1 F2 :
+    P1 =1 P2 -> (forall i, P1 i -> F1 i = F2 i) ->
+    \big[op/idx]_(i <- r | P1 i) F1 i = \big[op/idx]_(i <- r | P2 i) F2 i.
+Proof.
+(*    by move/eq_bigl <-; move/eq_bigr->. *)
+Admitted.
+
+Lemma big_addn {R : Type} (idx : R) (op : Monoid.law idx)
+      (m n a : nat) (P : pred nat) F :
+  \big[op/idx]_(m + a <= i < n | P i) F i =
+  \big[op/idx]_(m <= i < n - a | P (i + a)) F (i + a).
+Proof.
+(*
+  rewrite /index_iota -subnDA addnC iota_addl big_map.
+    by apply: eq_big => ? *; rewrite addnC.
+*)
+Admitted.
+
+Lemma big_add1 {R : Type} (idx : R) (op : Monoid.law idx)
+      (m n : nat) (P : pred nat) F :
+  \big[op/idx]_(m.+1 <= i < n | P i) F i =
+  \big[op/idx]_(m <= i < n.-1 | P (i.+1)) F (i.+1).
+Proof.
+    by rewrite -addn1 big_addn subn1; apply: eq_big => ? *; rewrite addn1.
+Qed.
+
+Lemma big_nat1 {R : Type} (idx : R) (op : Monoid.law idx)
+      (n : nat) F :
+  \big[op/idx]_(n <= i < n.+1) F i = F n.
+Proof.
+  by  rewrite big_ltn // big_geq // mulm1.
+Qed.
+
+Lemma big_nat_recr {R : Type} (idx : R) (op : Monoid.law idx)
+      (n m : nat) (F : nat -> R) :
     m <= n ->
     \big[op/idx]_(m <= i < n.+1) F i =
     op (\big[op/idx]_(m <= i < n) F i) (F n).
@@ -187,8 +249,16 @@ Lemma big_nat_recr {R : Type} (idx : R) (op : Monoid.law idx)  (n m : nat) (F : 
     op (bigop idx (index_iota m n) (fun i => BigBody i op true (F i))) (F n).
 *)
 Proof.
-    (* by move=> lemn; rewrite big_ltn // big_add1. Qed. *)
-Admitted.
+  move=> lemn.
+  Check (big_cat_nat idx op m n n.+1 (fun i => true) F).
+  rewrite (big_cat_nat idx op m n n.+1 (fun i => true) F).
+  - Check big_nat1.
+      by rewrite big_nat1.
+  - done.
+  - done.
+Qed.
+
+(* *************** *)
 
 Lemma sum_odd_3 : \sum_(0 <= i < 3.*2 | odd i) i = 3^2.
 Proof.
