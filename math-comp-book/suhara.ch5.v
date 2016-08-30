@@ -131,6 +131,7 @@ Notation "\sum_ ( m <= i < n ) F":=
 Eval compute in \sum_(1 <= i < 5) (i * 2 - 1). (* = 16 : nat *)
 Eval compute in \sum_(1 <= i < 5) i.           (* = 10 : nat *)
 
+(* small-op (\sum_ の addn) はモノイドでなければならない。 *)
 Lemma mul1m {T : Type} (idm : T) (mul : Monoid.law idm) : left_id idm mul.
 Proof.
     by case mul.
@@ -147,6 +148,9 @@ Proof.
     by case mul.
 Qed.
 
+(* *********************** *)
+(* 条件式を個別の項に移す。 *)
+(* *********************** *)
 Lemma big_mkcond {I R : Type} (idx : R) (op : Monoid.law idx)
       (r : seq I) (P : pred I) (F : I -> R) :
   \big[op/idx]_(i <- r | P i) F i =
@@ -156,9 +160,9 @@ Lemma big_mkcond {I R : Type} (idx : R) (op : Monoid.law idx)
   bigop idx r (fun i => @BigBody R I i op true (if P i then F i else idx)).
 *)
 Proof.
-  elim: r => //= i r ->; case P.
-  - done.
-  - by rewrite mul1m.
+  elim: r => //= i r ->.
+  case P => //=.
+  by rewrite mul1m.
 Qed.
 
 Lemma big_cat {I R : Type} (idx : R) (op : Monoid.law idx)
@@ -183,62 +187,30 @@ Proof.
   now rewrite subnKC // leq_sub.
 Qed.
 
-Lemma big_ltn_cond {R : Type} (idx : R) (op : Monoid.law idx)
-      (m n : nat) (P : pred nat) F :
-  m < n -> let x := \big[op/idx]_(m.+1 <= i < n | P i) F i in
-           \big[op/idx]_(m <= i < n | P i) F i = if P m then op (F m) x else x.
-Proof.
-    by case: n => [//|n] le_m_n; rewrite /index_iota subSn // big_cons.
-Qed.
-
 Lemma big_ltn {R : Type} (idx : R) (op : Monoid.law idx)
-      (m n : nat) F :
+      (m n : nat) (F : nat -> R) :
   m < n ->
   \big[op/idx]_(m <= i < n) F i = op (F m) (\big[op/idx]_(m.+1 <= i < n) F i).
 Proof.
-    by move=> lt_mn; apply: big_ltn_cond.
-Qed.
+  Admitted.
 
 Lemma big_geq {R : Type} (idx : R) (op : Monoid.law idx)
-      (m n : nat) (P : pred nat) F :
+      (m n : nat) (P : pred nat) (F : nat -> R) :
   m >= n -> \big[op/idx]_(m <= i < n | P i) F i = idx.
 Proof.
-Admitted.
-
-Lemma eq_big {I R : Type} (idx : R) (op : Monoid.law idx)
-      r (P1 P2 : pred I) F1 F2 :
-    P1 =1 P2 -> (forall i, P1 i -> F1 i = F2 i) ->
-    \big[op/idx]_(i <- r | P1 i) F1 i = \big[op/idx]_(i <- r | P2 i) F2 i.
-Proof.
-(*    by move/eq_bigl <-; move/eq_bigr->. *)
-Admitted.
-
-Lemma big_addn {R : Type} (idx : R) (op : Monoid.law idx)
-      (m n a : nat) (P : pred nat) F :
-  \big[op/idx]_(m + a <= i < n | P i) F i =
-  \big[op/idx]_(m <= i < n - a | P (i + a)) F (i + a).
-Proof.
-(*
-  rewrite /index_iota -subnDA addnC iota_addl big_map.
-    by apply: eq_big => ? *; rewrite addnC.
-*)
-Admitted.
-
-Lemma big_add1 {R : Type} (idx : R) (op : Monoid.law idx)
-      (m n : nat) (P : pred nat) F :
-  \big[op/idx]_(m.+1 <= i < n | P i) F i =
-  \big[op/idx]_(m <= i < n.-1 | P (i.+1)) F (i.+1).
-Proof.
-    by rewrite -addn1 big_addn subn1; apply: eq_big => ? *; rewrite addn1.
+    by move=> ge_m_n; rewrite /index_iota (eqnP ge_m_n).
 Qed.
 
 Lemma big_nat1 {R : Type} (idx : R) (op : Monoid.law idx)
-      (n : nat) F :
+      (n : nat) (F : nat -> R) :
   \big[op/idx]_(n <= i < n.+1) F i = F n.
 Proof.
-  by  rewrite big_ltn // big_geq // mulm1.
+  by rewrite big_ltn // big_geq // mulm1.
 Qed.
 
+(* ********************************* *)
+(* 右側（大きい値）をBigOPの外に出す。 *)
+(* ********************************* *)
 Lemma big_nat_recr {R : Type} (idx : R) (op : Monoid.law idx)
       (n m : nat) (F : nat -> R) :
     m <= n ->
@@ -258,7 +230,9 @@ Proof.
   - done.
 Qed.
 
-(* *************** *)
+(* **** *)
+(* 証明 *)
+(* **** *)
 
 Lemma sum_odd_3 : \sum_(0 <= i < 3.*2 | odd i) i = 3^2.
 Proof.
@@ -277,8 +251,25 @@ Lemma sum_odd n : \sum_(0 <= i < n.*2 | odd i) i = n^2.
 Proof.
   elim: n => [|n IHn].
   - done.
-  - rewrite doubleS big_mkcond 2?big_nat_recr // -big_mkcond /=.
-    rewrite {}IHn odd_double /= addn0 -addnn -!mulnn; ring.
+  - rewrite doubleS.
+    rewrite big_mkcond.
+    rewrite big_nat_recr.
+    rewrite big_nat_recr.
+    rewrite -big_mkcond.
+    rewrite /=.
+    rewrite IHn.
+    rewrite odd_double.
+    rewrite /=.
+    rewrite addn0.
+    rewrite -addnn.
+    rewrite -!mulnn.
+    ring.
+   
+  Restart.
+
+  elim: n => [|n IHn]; first done.
+  rewrite doubleS big_mkcond 2?big_nat_recr // -big_mkcond /=.
+  rewrite {}IHn odd_double /= addn0 -addnn -!mulnn; ring.
 Qed.
 
 (* END *)
