@@ -31,7 +31,6 @@ Module finite.
   Definition axiom (T : eqType) (e : seq T) :=
     forall x : T, count_mem x e = 1.
 
-
   Record mixin_of (T : eqType) :=
     Mixin {
         enum : seq T;
@@ -56,7 +55,7 @@ Inductive mytype : Set :=
 
 Definition eqMytype (x y : mytype) : bool :=
   match x, y with
-    | false,  false  => true
+    | false,  false  => Datatypes.true
   end.
 
 Lemma mytype_eqP : forall (x y : mytype), reflect (x = y) (eqMytype x y).
@@ -82,6 +81,9 @@ Qed.
 
 (* Declare a finType *)
 
+(* any finType is also an eqType (see the parameter of the mixin), and
+that to declare a finType instance one can write: *)
+
 Definition mytype_finMixin := finite.Mixin mytype_eqType myenum mytype_enumP.
 Canonical mytype_finType := finite.Pack mytype_eqType mytype_finMixin.
 Print Canonical Projections.  
@@ -106,7 +108,7 @@ Definition mytype_finMixin' :=
   finite.UniqFinMixin mytype_eqType myenum myenum_uniq.
 
 (* Some theory for finType *)
-Lemma cardT (T : finType) (m : mixin_of T) : #|T| = size (enum T m).
+Lemma cardT (T : finType) : #|T| = size (enum T).
 Proof.
 Admitted.
 
