@@ -20,11 +20,6 @@ types equipped with a finite enumeration.
 *)
 
 (* 本節には例題が無いので、bool の subtype として false だけからなる型を定義する例を使う。 *)
-(* see also.
-   An introduction to small scale reflection in Coq
-   6. Finite objects in SSReflect
-   http://hal.inria.fr/docs/00/55/53/79/PDF/main-rr.pdf
-*)
 
 (* Interface for finite types *)
 Notation count_mem x := (count [pred y | y == x]).
@@ -55,36 +50,63 @@ Module finite.
   Admitted.
 End finite.
 
-Definition myenum := [:: false].
+(* mytype を定義する。 *)
+Inductive mytype : Set :=
+  false : mytype.
 
-Lemma mytype_enumP : finite.axiom bool_eqType myenum.
-Admitted.
+Definition eqMytype (x y : mytype) : bool :=
+  match x, y with
+    | false,  false  => true
+  end.
+
+Lemma mytype_eqP : forall (x y : mytype), reflect (x = y) (eqMytype x y).
+Proof.
+  move=> x y.
+    by apply: (iffP idP); case: x; case: y.
+Qed.
+
+Definition mytype_eqMixin := @EqMixin mytype eqMytype mytype_eqP.
+Canonical mytype_eqType := @EqType mytype mytype_eqMixin.
+Print Canonical Projections.
+(* mytype <- Equality.sort ( mytype_eqType ) *)
+
+Definition myenum : seq mytype := [:: false].
+
+Lemma mytype_enumP : finite.axiom mytype_eqType myenum.
+Proof.
+  rewrite /finite.axiom.
+  by case => //=.
+Qed.
+(* mytype の定義終わり。 *)
+
 
 (* Declare a finType *)
 
-Definition mytype_finMixin := finite.Mixin bool_eqType myenum mytype_enumP.
-Canonical mytype_finType := finite.Pack bool_eqType mytype_finMixin.
+Definition mytype_finMixin := finite.Mixin mytype_eqType myenum mytype_enumP.
+Canonical mytype_finType := finite.Pack mytype_eqType mytype_finMixin.
 Print Canonical Projections.  
 (* 
-bool_eqType <- finite.sort ( mytype_finType )
-mytype_finMixin <- finite.m ( mytype_finType )
+mytype_eqType <- sort ( mytype_finType )
+mytype_finMixin <- m ( mytype_finType )
  *)
 
 (* Declare a finType *)
 
 Lemma myenum_uniq : uniq myenum.
 Proof.
-Admitted.
+  done.
+Qed.
 
-Lemma mem_myenum : forall x, x \in myenum.
+Lemma mem_myenum : forall (x : mytype), x \in myenum.
 Proof.
-Admitted.
+  by case.
+Qed.
 
 Definition mytype_finMixin' :=
-  finite.UniqFinMixin bool_eqType myenum myenum_uniq.
+  finite.UniqFinMixin mytype_eqType myenum myenum_uniq.
 
 (* Some theory for finType *)
-Lemma cardT (T : finType) : #|T| = size (enum T).
+Lemma cardT (T : finType) (m : mixin_of T) : #|T| = size (enum T m).
 Proof.
 Admitted.
 
