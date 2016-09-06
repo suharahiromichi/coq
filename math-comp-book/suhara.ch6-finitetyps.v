@@ -27,7 +27,7 @@ Print count_mem.
 Check count_mem false [:: false].
 Compute (count_mem false [:: false]).       (* 1 : nat *)
 
-Module finite.
+(* Module finite. *)
   Definition axiom (T : eqType) (e : seq T) :=
     forall x : T, count_mem x e = 1.
 
@@ -37,8 +37,8 @@ Module finite.
         a : axiom T enum;
       }.
   
-  Record pack_of :=
-    Pack {
+  Record finType :=
+    FinType {
         sort : eqType;
         m : mixin_of sort
       }.
@@ -47,7 +47,7 @@ Module finite.
     uniq e -> e =i T -> mixin_of T.
   Proof.
   Admitted.
-End finite.
+(* End finite. *)
 
 (* mytype を定義する。 *)
 Inductive mytype : Set :=
@@ -67,30 +67,42 @@ Qed.
 Definition mytype_eqMixin := @EqMixin mytype eqMytype mytype_eqP.
 Canonical mytype_eqType := @EqType mytype mytype_eqMixin.
 Print Canonical Projections.
-(* mytype <- Equality.sort ( mytype_eqType ) *)
+(*
+mytype <- sort ( mytype_eqType )
+c.f.
+bool <- sort ( bool_eqType )
+ *)
+Check mytype_eqType : eqType.
+Check bool_eqType : eqType.
+(* boolの要素を与えると、eqType型の暗黙な変数の値をbool_eqTypeとする *)
 
 Definition myenum : seq mytype := [:: false].
 
-Lemma mytype_enumP : finite.axiom mytype_eqType myenum.
+Lemma mytype_enumP : axiom mytype_eqType myenum.
 Proof.
-  rewrite /finite.axiom.
+  rewrite /axiom.
   by case => //=.
 Qed.
 (* mytype の定義終わり。 *)
 
 
-(* Declare a finType *)
+(* Declare a fintype *)
 
-(* any finType is also an eqType (see the parameter of the mixin), and
-that to declare a finType instance one can write: *)
+(* any fintype is also an eqType (see the parameter of the mixin), and
+that to declare a fintype instance one can write: *)
 
-Definition mytype_finMixin := finite.Mixin mytype_eqType myenum mytype_enumP.
-Canonical mytype_finType := finite.Pack mytype_eqType mytype_finMixin.
+Definition mytype_finMixin := Mixin mytype_eqType myenum mytype_enumP.
+Canonical mytype_finType := FinType mytype_eqType mytype_finMixin.
 Print Canonical Projections.  
 (* 
 mytype_eqType <- sort ( mytype_finType )
-mytype_finMixin <- m ( mytype_finType )
+mytype <- sort ( mytype_eqType )
  *)
+Check false : mytype.
+Check false : mytype_eqType.
+Check mytype_finType : finType.
+(* mytype型の値falseを与えると、
+finType型の暗黙な変数の値をmytype_eqTypeとする。 *)
 
 (* Declare a finType *)
 
@@ -105,9 +117,11 @@ Proof.
 Qed.
 
 Definition mytype_finMixin' :=
-  finite.UniqFinMixin mytype_eqType myenum myenum_uniq.
+  UniqFinMixin mytype_eqType myenum myenum_uniq.
 
 (* Some theory for finType *)
+
+(*
 Lemma cardT (T : finType) : #|T| = size (enum T).
 Proof.
 Admitted.
@@ -115,5 +129,8 @@ Admitted.
 Lemma forallP (T : finType) (P : pred T) : reflect (forall x, P x) [forall x, P x].
 Proof.
 Admitted.
+ *)
 
 (* END *)
+
+
