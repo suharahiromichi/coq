@@ -4,11 +4,11 @@ From mathcomp Require Import all_ssreflect.
 (* 6.4 The ordinal subtype *)
 
 (*
-Section SubTypeKit.
+Section MySubTypeKit.
   Variables (T : Type) (P : pred T).
   
   Structure subType : Type :=
-    SubType {
+    SubTypeKit {
         sub_sort :> Type;                   (* projector *)
         val : sub_sort -> T;                (* constructor *)
         Sub : forall x, P x -> sub_sort;    (* constructor *)
@@ -21,8 +21,8 @@ Section SubTypeKit.
     (SubType _ v _
              (fun K K_S u => let (x, Px) as u return K u := u in K_S x Px)
              (fun x px => erefl x)).
-End SubTypeKit.
- *)
+End MySubTypeKit.
+*)
 Section MyOrdinal.
   Variable n : nat.
 
@@ -37,9 +37,11 @@ Section MyOrdinal.
   Print Canonical Projections.
   (* nat_of_ord <- val ( ordinal_subType ) *)
   
+  (* カノニカルが必要 Canonical ordinal_subType。
+     カノニカルにしないと、"SubEqMixin ?s" has type "Equality.mixin_of ?s"
+     while it is expected to have type "Equality.mixin_of ordinal". *)
   Definition ordinal_eqMixin := Eval hnf in [eqMixin of ordinal by <:].
   
-  (* Canonical ordinal_eqType n := Eval hnf in EqType (ordinal n) (ordinal_eqMixin n). *)
   Canonical ordinal_eqType := Eval hnf in EqType ordinal ordinal_eqMixin.
   Print Canonical Projections.
   (* ordinal <- sort ( ordinal_eqType ) *)
@@ -49,23 +51,24 @@ Section MyOrdinal.
 
   Check @pmap : forall aT rT : Type, (aT -> option rT) -> seq aT -> seq rT.
   (* 要素に関数(この場合は insub : aT -> option rT)を適用して、
-結果の Some x の Some を外し、None なら捨てる。 *)
+     結果の Some x の Some を外し、None なら捨てる。 *)
 
-(* ord_enum n から値を取り出した結果は、自然数の0からn-1までのリストと等しい。 *)
+  (* ord_enum n から値を取り出した結果は、自然数の0からn-1までのリストと等しい。 *)
   Lemma val_ord_enum : map val ord_enum = (iota 0 n).
   Proof.
     rewrite pmap_filter; last exact: insubK.
     by apply/all_filterP; apply/allP=> i; rewrite mem_iota isSome_insub.
   Qed.
 
+  (* Canonical ordinal_eqType が必要。カノニカルにしないと、
+  "ord_enum" has type "seq ordinal" while it is expected to have type "seq ?T". *)
+  
   (* ord_enum n の要素はユニークである。 *)
   Lemma ord_enum_uniq : uniq ord_enum.
   Proof.
       by rewrite pmap_sub_uniq ?iota_uniq.
   Qed.
   
-  Print Canonical Projections.
-
   Lemma ord_inj : injective nat_of_ord.     (* fintype.v から転記 *)
   Proof.
     exact: val_inj.
@@ -87,6 +90,20 @@ Section MyOrdinal.
     Check ltn_ord.
     by apply ltn_ord.
   Qed.
+
+(*
+  Definition ordinal_finMixin :=
+    Eval hnf in UniqFinMixin ord_enum_uniq mem_ord_enum.
+  
+  Canonical ordinal_finType :=
+    Eval hnf in FinType ordinal ordinal_finMixin.
+
+  Lemma tnth_default T n (t : n.-tuple T) : ’I_n -> T.
+  Proof. by rewrite -(size_tuple t); case: (tval t) => [|//] []. Qed.
+  
+  DefinitiontnthTn(t:n.-tupleT)(i:’I_n):T:=
+    nth (tnth_default t i) t i.
+*)
 End MyOrdinal.
   
 (* Definition p1 : 'I_3. Proof. have : 1 < 3 by []. apply Ordinal. Defined. *)
