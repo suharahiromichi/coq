@@ -31,22 +31,36 @@ Section MyOrdinal.
   Print Canonical Projections.
   Coercion nat_of_ord i := let: @Ordinal m _ := i in m. (* i : 'I_n *)
   (* _ は、H : m < n である。 *)
-
+  Print Graph.
+  (* [nat_of_ord] : ordinal >-> nat *)
+  
   Canonical ordinal_subType := [subType for nat_of_ord].
   Print ordinal_subType.
+  (*
+    ordinal_subType = 
+    [subType for nat_of_ord]
+     : subType (T:=nat) (fun x : nat => x < n)
+   *)
   Print Canonical Projections.
   (* nat_of_ord <- val ( ordinal_subType ) *)
   
-  (* カノニカルが必要 Canonical ordinal_subType。
+  (* 次の定義には、カノニカルが必要 Canonical ordinal_subType。
      カノニカルにしないと、"SubEqMixin ?s" has type "Equality.mixin_of ?s"
      while it is expected to have type "Equality.mixin_of ordinal". *)
   Definition ordinal_eqMixin := Eval hnf in [eqMixin of ordinal by <:].
+  Set Printing Coercions.
+  Print ordinal_eqMixin.
+  (*
+ordinal_eqMixin = 
+EqMixin (T:=ordinal) (op:=fun x y : ordinal => nat_of_ord x == nat_of_ord y)
+  (@val_eqP nat_eqType (fun x : nat => x < n) ordinal_subType)
+     : Equality.mixin_of ordinal
+ *)
   
   Canonical ordinal_eqType := Eval hnf in EqType ordinal ordinal_eqMixin.
   Print Canonical Projections.
   (* ordinal <- sort ( ordinal_eqType ) *)
 
-  Notation "''I_' n" := (ordinal n).
   Definition ord_enum : seq ordinal := pmap insub (iota 0 n).
 
   Check @pmap : forall aT rT : Type, (aT -> option rT) -> seq aT -> seq rT.
@@ -60,8 +74,13 @@ Section MyOrdinal.
     by apply/all_filterP; apply/allP=> i; rewrite mem_iota isSome_insub.
   Qed.
 
-  (* Canonical ordinal_eqType が必要。カノニカルにしないと、
+  (* 以下の証明において、Canonical ordinal_eqType が必要。カノニカルにしないと、
   "ord_enum" has type "seq ordinal" while it is expected to have type "seq ?T". *)
+  
+  (* ordinal <- sort ( ordinal_eqType ) *)
+  Check @uniq : forall T : eqType, seq T -> bool.
+  Check ord_enum : seq ordinal.
+  (* ordinal と sort (ordinal_eqType) = eqType のユニファイが可能になる。 *)
   
   (* ord_enum n の要素はユニークである。 *)
   Lemma ord_enum_uniq : uniq ord_enum.
@@ -91,21 +110,8 @@ Section MyOrdinal.
     by apply ltn_ord.
   Qed.
 
-(*
-  Definition ordinal_finMixin :=
-    Eval hnf in UniqFinMixin ord_enum_uniq mem_ord_enum.
-  
-  Canonical ordinal_finType :=
-    Eval hnf in FinType ordinal ordinal_finMixin.
-
-  Lemma tnth_default T n (t : n.-tuple T) : ’I_n -> T.
-  Proof. by rewrite -(size_tuple t); case: (tval t) => [|//] []. Qed.
-  
-  DefinitiontnthTn(t:n.-tupleT)(i:’I_n):T:=
-    nth (tnth_default t i) t i.
-*)
 End MyOrdinal.
-  
+
 (* Definition p1 : 'I_3. Proof. have : 1 < 3 by []. apply Ordinal. Defined. *)
 Definition p1 := Ordinal 3 1 is_true_true.
 
@@ -124,5 +130,55 @@ Goal insub 1 = Some p1.
 Proof.
   by rewrite insubT.
 Qed.
+
+(* *************** *)
+Notation "''I_' n" := (ordinal n).
+(* *************** *)
+
+(* ******* *)
+(* SUBTYPE *)
+(* ******* *)
+
+(*
+  Definition ordinal_finMixin :=
+    Eval hnf in UniqFinMixin ord_enum_uniq mem_ord_enum.
+  
+  Canonical ordinal_finType :=
+    Eval hnf in FinType ordinal ordinal_finMixin.
+
+*)
+
+Lemma tnth_default {T n} (t : n.-tuple T) : 'I_n -> T.
+Proof.
+  rewrite -(size_tuple t).
+  elim: (tval t).
+  - case=> //=.
+  - move=> a l H1 H2.
+    done.
+  Restart.
+    by rewrite -(size_tuple t); case: (tval t) => [|//] [].
+Qed.
+
+
+Check @nth : forall T : Type, T -> seq T -> nat -> T.
+Definition tnth T n (t : n.-tuple T) (i : 'I_n) : T :=
+  nth (tnth_default t i) t i.
+(* nth の最後の引数 nat に、 'I_n を与えている。 *)
+(* nth の最後から二つ目の引数 seq T に、n.tuple T を与えている。 *)
+
+Check tnth : forall (T : Type) (n : nat), n.-tuple T -> 'I_n -> T.
+
+Lemma Hsize : size [::false;true;false] == 3. Proof. done. Qed.
+Check Tuple Hsize.
+Check tnth bool 3 (Tuple Hsize) p1 : bool.
+Eval compute in tnth bool 3 (Tuple Hsize) p1. (* true *)
+
+Check Tuple Hsize : 3.-tuple bool.
+Check @tnth_default bool 3 (Tuple Hsize) p1 : bool.
+Eval compute in @tnth_default bool 3 (Tuple Hsize) p1. (* bool型のなにか *)
+Eval compute in tnth_default (Tuple Hsize) p1.         (* bool型のなにか *)
+Eval compute in @nth bool (tnth_default (Tuple Hsize) p1) (Tuple Hsize) p1. (* true *)
+Eval compute in nth _ (Tuple Hsize) p1. (* true *)
+Eval compute in nth _ (Tuple Hsize) 1. (* true *)
 
 (* END *)
