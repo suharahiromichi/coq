@@ -3,17 +3,52 @@ From mathcomp Require Import perm.
 
 (* Mathcomp の数学体系 --- 有限型まで *)
 
-(* 1. サブタイプの定義 *)
+(* 1. 型（サブタイプ）の定義 *)
 
-Structure tuple_of n T :=
-  Tuple {
+Structure tuple_of' n T :=
+  Tuple' {
       tval' :> seq T;
-      _ : size tval' == n
+      _     : size tval' == n
     }.
-Notation   "n .-tuple T"   := (tuple_of n T)
-   (at level 10, format "n .-tuple T") : type_scope.
+Notation "n .-tuple" := (tuple_of' n)
+  (at level 2, format "n .-tuple") : type_scope.
+Check tval' : forall (n : nat) (T : Type), n.-tuple T -> seq T.
+Canonical tuple_subType' (n : nat) (T : Type) := [subType for tval' n T].
 
-(* 2. eqType の定義 *)
+
+Inductive finfun' (aT : finType) (rT : Type) : Type :=
+  Finfun' of #|aT|.-tuple rT.
+Notation "{ ’ffun’ fT }" := (finfun' fT).
+Definition fgraph' (aT : finType) (rT : Type) (f : finfun' aT rT) :=
+  let: Finfun' t := f in t.
+(* match f with | Finfun' t => t end. *)
+Canonical finfun_subType' (aT : finType) (rT : Type) := [newType for fgraph' aT rT].
+
+
+Inductive set_type' (T : finType) : Type :=
+  FinSet' of {ffun pred T}.
+Notation "{ ’set’ T }" := (set_type' T).
+Definition finfun_of_set' (T : finType) (A : set_type' T) :=
+  let: FinSet' f := A in f.
+(* match A with | FinSet' t => t end. *)
+(*
+Canonical set_subType' (T : finType) (A : set_type' T) := [newType for finfun_of_set' T A].
+ *)
+
+
+Inductive perm_of' (T : finType) : Type :=
+  Perm' (pval' : {ffun T -> T}) & injectiveb pval'.
+Notation "{ ’perm’ T }" := (perm_of' T).
+Definition pval' (T : finType) (p : perm_of' T) :=
+  let : Perm' f _ := p in f.
+(*
+Canonical perm_subType := Eval hnf in [subType for pval].
+ *)
+
+(* 2. subtype kit *)
+
+
+(* 3. eqType の定義 *)
 
 Definition bool_eqMixin' := @EqMixin bool eqb eqbP.
 Canonical  bool_eqType'  := EqType bool bool_eqMixin'.
@@ -40,23 +75,23 @@ Definition ordinal_eqMixin' (n : nat) := [eqMixin of (ordinal n) by <:].
 (* (@val_eqP nat_eqType (fun x : nat => x < n) (ordinal_subType n)) *)
 Canonical  ordinal_eqType'  (n : nat) := EqType (ordinal n) (ordinal_eqMixin' n).
 
-Definition finfun_eqMixin' (aT rT : finType) := [eqMixin of finfun_type aT rT by <:].
+Definition finfun_eqMixin' (aT rT : finType) := [eqMixin of finfun' aT rT by <:].
 (* (@val_eqP (tuple_eqType #|aT| rT) xpredT (finfun_subType aT rT)) *)
 Canonical  finfun_eqType'  (aT rT : finType) := EqType _ (finfun_eqMixin' aT rT).
 
-Definition set_eqMixin'    (T : finType) := [eqMixin of (set_type T) by <:].
+Definition set_eqMixin'    (T : finType) := [eqMixin of (set_type' T) by <:].
 (* (@val_eqP (finfun_of_eqType T bool_eqType) xpredT (set_subType T)) *)
 Canonical  set_eqType'     (T : finType) := EqType (set_type T) (set_eqMixin' T).
 
-Definition perm_eqMixin'   (T : finType) := [eqMixin of (perm_type T) by <:].
+Definition perm_eqMixin'   (T : finType) := [eqMixin of (perm_of' T) by <:].
 (* (@val_eqP (finfun_of_eqType T T)
      (fun x : {ffun T -> T} => injectiveb (aT:=T) (rT:=T) x) 
      (perm_subType T)) *)
-Canonical  perm_eqType'    (T : finType) := EqType (perm_type T) (perm_eqMixin' T).
+Canonical  perm_eqType'    (T : finType) := EqType (perm_of' T) (perm_eqMixin' T).
 
 
 
-(* 3. 有限型の定義 *)
+(* 4. 有限型の定義 *)
 
 (* 有限型の公理 要素が1個づつ から定義する。 *)
 Definition bool_finMixin' := @FinMixin _ [:: true; false] bool_enumP.
