@@ -86,6 +86,28 @@ Canonical  tuple_finType' (n : nat) (T : finType) :=
 (* ********* *)
 (* 4. FinFun *)
 (* ********* *)
+Inductive finfun_type' (aT : finType) (rT : Type) : predArgType :=
+  Finfun' of #|aT|.-TUPLE rT.
+Definition finfun_of' (aT : finType) (rT : Type) of phant (aT -> rT) :=
+  finfun_type'.
+
+Identity Coercion type_of_finfun' : finfun_of >-> finfun_type.
+
+Definition fgraph' (aT : finType) (rT : Type) (f : finfun_type' aT rT) :=
+  let: Finfun' t := f in t.
+Canonical finfun_subType' (aT : finType) (rT : Type) :=
+  [newType for fgraph' aT rT].
+
+Notation "{ 'FFUN' fT }" := (finfun_type' fT).
+(*
+テキストの記載：
+
+The actual definition in the Mathematical Components library is slightly
+more complex to statically check that the domain is finite
+using the tricks ex- plained in 5.11.
+I.e. Coq rejects {ffun nat -> nat} but accepts {ffun ’I_7 -> nat}
+ *)
+(*
 Inductive finfun' (aT : finType) (rT : Type) : Type :=
   Finfun' of #|aT|.-TUPLE rT.
 Notation "{ 'FFUN' fT }" := (finfun' fT).
@@ -95,6 +117,7 @@ Definition fgraph' (aT : finType) (rT : Type) (f : {FFUN aT} rT) :=
 
 Check fgraph' : forall (aT : finType) (rT : Type), { FFUN aT} rT -> #|aT|.-TUPLE rT.
 Canonical  finfun_subType' (aT : finType) (rT : Type) := [newType for fgraph' aT rT].
+*)
 
 Definition finfun_eqMixin' (aT rT : finType) := [eqMixin of {FFUN aT} rT by <:].
 (* (@val_eqP (tuple_eqType #|aT| rT) xpredT (finfun_subType aT rT)) *)
@@ -107,46 +130,43 @@ Canonical  finfun_finType'  (aT rT : finType) :=
 (* ********* *)
 (* 5. FinSet *)
 (* ********* *)
-(*
-Inductive set_type' (T : finType) : predArgType :=
-  FinSet' of {FFUN pred T}.
+Inductive set_type' (T : finType) : Type :=
+  FinSet' of {ffun pred T}.                 (* FFUN XXXX *)
 Notation "{ 'SET' T }" := (set_type' T).
 Definition finfun_of_set' (T : finType) (A : {SET T}) :=
   let: FinSet' f := A in f.
 (* match A with | FinSet' t => t end. *)
-Check finfun_of_set' : forall T : finType, { SET T} -> { FFUN T} (pred T).
-Check finfun_of_set' : forall T : finType, { SET T} -> finfun' T (pred T).
+Check finfun_of_set' : forall T : finType, {SET T} -> {ffun pred T}. (* XXXX *)
 
-Canonical  set_subType' (T : finType) (A : set_type' T) := [newType for finfun_of_set' T A].
+Canonical  set_subType'     (T : finType) (A : {SET T}) := [newType for finfun_of_set' T].
 
-Definition set_eqMixin'    (T : finType) := [eqMixin of {SET T} by <:].
+Definition set_eqMixin'     (T : finType) := [eqMixin of {set T} by <:]. (* SET XXX *)
 (* (@val_eqP (finfun_of_eqType T bool_eqType) xpredT (set_subType T)) *)
-Canonical  set_eqType'     (T : finType) := EqType {SET T} (set_eqMixin' T).
+Canonical  set_eqType'      (T : finType) := EqType {set T} (set_eqMixin' T).
 
 Definition set_finMixin'    (T     : finType) := [finMixin of {set T} by <:].
 Canonical  set_finType'     (T     : finType) :=
   FinType {set T} (set_finMixin' T).
-*)
 
 (* ******* *)
 (* 6. Perm *)
 (* ******* *)
 Inductive perm_of' (T : finType) : Type :=
-  Perm' (pval' : finfun' (T -> T)) & injectiveb pval'.
-(* Notation "{ ’perm’ T }" := (perm_of' T). *)
-Definition pval' (T : finType) (p : perm_of' T) :=
+  Perm' (pval' : {ffun T -> T}) & injectiveb pval'. (* FFUN XXX *)
+Notation "{ 'PERM' T }" := (perm_of' T).
+Definition pval' (T : finType) (p : {PERM T}) :=
   let : Perm' f _ := p in f.
 
 Canonical perm_subType' (T : finType) := [subType for pval' T].
 
-Definition perm_finMixin'   (T     : finType) := [finMixin of perm_of' T by <:].
-Canonical  perm_finType'    (T     : finType) :=
-  FinType {perm T} (perm_finMixin' T).
-
-Definition perm_eqMixin'   (T : finType) := [eqMixin of (perm_of' T) by <:].
+Definition perm_eqMixin'   (T : finType) := [eqMixin of {PERM T} by <:].
 (* (@val_eqP (finfun_of_eqType T T)
       (fun x : {ffun T -> T} => injectiveb (aT:=T) (rT:=T) x) 
       (perm_subType T)) *)
-Canonical  perm_eqType'    (T : finType) := EqType (perm_of' T) (perm_eqMixin' T).
+Canonical  perm_eqType'    (T : finType) := EqType {PERM T} (perm_eqMixin' T).
+
+Definition perm_finMixin'   (T     : finType) := [finMixin of {perm T} by <:]. (* PERM XXXX *)
+Canonical  perm_finType'    (T     : finType) :=
+  FinType {perm T} (perm_finMixin' T).
 
 (* Q.E.D. *)
