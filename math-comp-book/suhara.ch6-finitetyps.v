@@ -116,8 +116,26 @@ Proof.
   by case.
 Qed.
 
+Check UniqFinMixin : forall (T : eqType) (e : seq T), uniq e -> e =i T -> mixin_of T.
+
+Check mytype_eqType : eqType.
+Check myenum : seq mytype.
+Check myenum_uniq : uniq myenum.
+Check mem_myenum : forall x : mytype, x \in myenum.
+Check mem_myenum : myenum =i mytype_eqType. (* e =i T とユニファイできる。 *)
+
 Definition mytype_finMixin' :=
-  UniqFinMixin mytype_eqType myenum myenum_uniq.
+  UniqFinMixin mytype_eqType myenum myenum_uniq mem_myenum.
+
+Unset Printing Implicit.    (* Unset : implicitな引数を表示しない。 D:しない。 A:する。*)
+Set Printing Coercions.   (* Unset : コアーションを表示しない     D:しない。 A:する。*)
+Unset Printing Notations. (*   Set : Notation を使って表示する。  D:する。  A:しない。*) 
+Unset Printing Universe.  (* Unset : 高階のTypeを表示しない。     D:しない。 A:- *)
+Print Graph. (* Print Coercions. *)
+Print Canonical Projections.
+
+Print mytype_finMixin'.
+Check mytype_finMixin' : mixin_of mytype_eqType.
 
 (* Some theory for finType *)
 
@@ -132,5 +150,3 @@ Admitted.
  *)
 
 (* END *)
-
-
