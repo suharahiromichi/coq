@@ -1,5 +1,10 @@
 From mathcomp Require Import all_ssreflect.
 
+Check nat_eqType.
+Print Canonical Projections.
+Compute Equality.sort nat_eqType.           (* nat *)
+Compute Monoid.operator addn_monoid.        (* addn *)
+
 (* 5.8 The generic theory of “big” operators *)
 
 Fixpoint iota m n :=
