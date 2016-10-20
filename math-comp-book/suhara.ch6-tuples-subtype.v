@@ -57,4 +57,20 @@ Check @insubd (seq nat) [pred s | size s == 3] (tuple_subType 3 nat)
       [tuple of [::1;1;1]] [::1;2;3] : 3.-tuple nat.
 Check insubd [tuple of [::1;1;1]] [::1;2;3] : 3.-tuple nat.
 
+
+(* おまけ *)
+
+Lemma H23 : 2 < 3. Proof. done. Qed.
+Check Ordinal H23.
+Check @Ordinal 3 2 is_true_true : 'I_3.
+
+Check tnth [tuple of [::1;2;3]] (@Ordinal 3 2 is_true_true).
+Compute tnth [tuple of [::1;2;3]] (@Ordinal 3 2 is_true_true). (* 3 *)
+
+Check tnth [tuple of [::1;2;3]] (Ordinal H23).
+Compute tnth [tuple of [::1;2;3]] (Ordinal H23). (* 3 *)
+
+Check [tnth [tuple of [::1;2;3]] 2].
+Compute [tnth [tuple of [::1;2;3]] 2].      (* 3 *)
+
 (* END *)
