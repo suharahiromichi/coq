@@ -24,7 +24,9 @@ Prologの証明手順とCoqのautoタクティクについて
 PrologもCoqも「おなじだね」と思えるかどうかは、読んだ方の判断にまかせようとおもいます。
 
 この文書のソースコードは、
+
 https://github.com/suharahiromichi/coq/cs_prolog_logic.v
+
 にあります。
 *)
 
@@ -72,9 +74,9 @@ Prologでは、変数を大文字から、述語を含む定数を小文字か�
 
 
 ```:論理式3
-⊢ [∀x y,(s(x, y))]                       →
-  [∀x y,(q(x, y) ∧ r(x, y) → p(x, y))] →
-  [∃z y,(g(x, y) ∧ h(x, y))]
+  ⊢ [∀x y,(s(x, y))]                       →
+    [∀x y,(q(x, y) ∧ r(x, y) → p(x, y))] →
+    [∃z y,(g(x, y) ∧ h(x, y))]
 ```
 
 
@@ -132,7 +134,7 @@ X=2が得られるまでの実行をトレースしてみましょう。
 ```
          member(X, [1, 2, 3]), X > 1
            ／              ＼
-member(1, [1 | _])        member(X, [_ | [2, 3]) :- member(X, [2, 3])
+  member(1, [1 | _])      member(X, [_ | [2, 3]) :- member(X, [2, 3])
           |                         |
          1 > 1            member(X, [2, 3])
           |                         |
@@ -163,8 +165,8 @@ Inductive から始まる定義で、member述語の型を定義します。Lemm
 
 そして、eauto が自動証明にあたります。
 eauto は、ゴールに対して前提を apply と eapply することで証明を試みます。
-
-eapply は、
+eapply は、applyのとき、未定の変数を未定のまま証明を進めることができるものです。
+ただし、どこかで値が決まらなければなりません。
 
 eauto の引数の4は、自動証明の深さの制限をします。
 この場合は、4より少ない値だと証明できません。
@@ -174,19 +176,13 @@ debug はなくてもよく、ここではeautoの自動証明をトレースし
 
 Show Proof で、証明の根拠（エビデンス）となる関数項が表示されます。
 それをよくよくみると、任意のX (∃ X) に対して、2 が選ばれていることがわかります。
-（わかるかな？）
+（わかるかな？？？？ ex_intro の第二引数の「2」がそれです。）
  *)
 
 From mathcomp Require Import all_ssreflect.
 
 Inductive member : nat -> seq nat -> Prop :=
 | Mem : forall x l, member x l.
-
-(*
-Inductive member : nat -> seq nat -> Prop :=
-| Mem0 : forall x, member x [:: x]
-| Mem1 : forall x y l, member x (y :: l) -> member x l.
- *)
 
 Lemma mem1 : (forall x l, member x (x :: l)) ->
              (forall x y l, member x l -> member x (y :: l)) ->
@@ -433,7 +429,7 @@ End sampl1.
  *)
 
 (**
-4. Prologでは証明できない例 (その2)
+# Prologでは証明できない例 (その2)
 
 ```:Prolog
   p(X, Z) :- p(Y, Z), q(X, Y).                /* (1) */
@@ -490,7 +486,7 @@ Qed.
 End sampl2.
   
 (**
-# memberの例再び
+# ふたたびメンバーシップ述語の例
 
 深さ優先だが、指定された深さで見切りをつけるので、そこそこフェアな検索になる。
 定義あるいは前提の順番に関係なく、P -> Q より P の前提のほうが優先される。
@@ -510,8 +506,7 @@ Lemma mem2 : (forall x y l, member x l -> member x (y :: l)) ->
              (exists x, member x [:: 1; 2; 3] /\ x > 1).
 Proof.
   move=> H1 H2.
-(**
-```
+(*
   Debug: (* debug eauto : *)
   Debug: 1 depth=5
   Debug: 1.1 depth=4 eapply ex_intro
@@ -547,19 +542,40 @@ Proof.
   Debug: 1.1.1.2 depth=2 apply H1
   Debug: 1.1.1.2.1 depth=2 apply H2
   Debug: 1.1.1.2.1.1 depth=2 apply leqnn
-```
 *)
   debug eauto 5.
   Show Proof.
-(**
-```
-(fun (H1 : forall (x y : nat) (l : seq nat), member x l -> member x (y :: l))
-   (H2 : forall (x : nat) (l : seq nat), member x (x :: l)) =>
- ex_intro (fun x : nat => member x [:: 1; 2; 3] /\ 1 < x) 2
-   (conj (H1 2 1 [:: 2; 3] (H2 2 [:: 3])) (leqnn 2)))
-```
+(*
+  (fun (H1 : forall (x y : nat) (l : seq nat), member x l -> member x (y :: l))
+     (H2 : forall (x : nat) (l : seq nat), member x (x :: l)) =>
+   ex_intro (fun x : nat => member x [:: 1; 2; 3] /\ 1 < x) 2
+     (conj (H1 2 1 [:: 2; 3] (H2 2 [:: 3])) (leqnn 2)))
 *)
 Qed.
+
+(**
+# まとめ
+
+Prologの証明手順と、Coqのautoタクティク(eautoタクティク)を比べてみました。
+どちらも、左側深さ優先の証明探索をする意味でおなじ結果になります。
+ただし、Prologがスタックがあふれるまで深く探索するのに対して、
+autoやeautoタクティクは指定された深さで打ちきるので、結果として、
+より公平は証明探索になり、証明できる範囲は広いといえそうです。
+ただし、深さの指定によっては証明できない場合があります。
+
+また、autoやeautoタクティクは
+Prologのように前提の順番ではなく、
+その形で（Q -> P よりも 「->」のない S のほうを優先して）適用するので、
+このことでも、無限の深さへの探索に陥り難しています。
+
+しかし、auto、eauto とも、ここで述べた以上の賢いヒューリスティックスを備えてはいないようです。
+
+
+補足するべきこと：
+
+- 深さの定義、数え方。
+- Prologで証明できない定理の無限バックトラックの例を追加する。
+*)
 
 (**
 # 参考文献
