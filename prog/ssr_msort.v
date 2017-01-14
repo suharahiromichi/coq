@@ -28,12 +28,14 @@ Proof.
   move=> n l l' H.
   by rewrite perm_cons.
 Qed.
-  
-Lemma perm_cons2 :  forall (T : eqType) (n1 n2 : T) (s1 s2 : seq T),
+
+(*
+Lemma perm_cons'2 :  forall (T : eqType) (n1 n2 : T) (s1 s2 : seq T),
     perm_eq [:: n1, n2 & s1] [:: n2, n1 & s2] = perm_eq (n1 :: s1) (n1 :: s2).
 Proof.
-  Admitted.
-  
+Admitted.
+ *)
+
 Lemma perm_iff : forall (m n : seq T),
                    (forall l, perm_eq m l = perm_eq n l) <-> perm_eq m n.
 Proof.
@@ -66,7 +68,7 @@ Proof.
   Search _ perm_eq.
 Admitted.                                   (* XXXX *)
 
-Hint Resolve perm_cons perm_eq_refl perm_eq_sym perm_eq_trans perm_iff perm_swap : perm.
+Hint Resolve perm_cons perm_eq_refl perm_eq_sym perm_eq_trans perm_iff perm_swap perm_swap2 : perm.
 
 (* **** *)
 (* sort *) (* path.v *)
@@ -111,6 +113,7 @@ Proof.
   by move/andP.                             (* path の定義のまま。 *)
 Qed.
 
+(*
 Lemma sorted_cons_inv2 m n l :
   sorted leT [:: m, n & l] -> sorted leT (m :: l).
 Proof.
@@ -131,9 +134,6 @@ Proof.
   by apply: cat_subseq.
 Qed.
 
-Check perm_to_subseq : forall (T : eqType) (s1 s2 : seq T),
-       subseq s1 s2 -> {s3 : seq T | perm_eq s2 (s1 ++ s3)}.
-(*
 Lemma perm__subseq l l' :
   (exists l'', perm_eq (l' ++ l'') l) ->
   (sorted leT l -> sorted leT l') -> subseq l' l.
@@ -161,12 +161,12 @@ Admitted.
 Lemma TEST (x y : T) (x' : seq T) :
   leT x y -> y \in x' -> sorted leT x' -> sorted leT (x :: x').
 Proof.
-Admitted.
+Admitted.                                   (* XXXXX *)
 
 Lemma TEST1 (y : T) (x' l : seq T) :
   perm_eq (y :: l) x' -> y \in x'.
 Proof.
-  Admitted.
+Admitted.                                   (* XXXXX *)
 
 Lemma path_path_sorted_1 (x y : T) (ls1' ls2' x' : seq T) :
   leT x y ->
@@ -193,7 +193,7 @@ Lemma path_path_sorted_2 (x y : T) (ls1' ls2' y' : seq T) :
   (* path leT x ls1' -> path leT y ls2' -> *)
   sorted leT (y :: y').
 Proof.
-Admitted.
+Admitted.                                   (* XXXXX *)
 
 Program Fixpoint merge (ls1 ls2 : seq T)
   {measure (size ls1 + size ls2)} :
@@ -266,8 +266,9 @@ Next Obligation.
       * by []. *)
 Defined.
 
+(* ******************* *)
 (* insert を使う merge *)
-
+(* ******************* *)
 Program Fixpoint insert n l {struct l} : 
   {l' : seq T | perm_eq (n :: l) l' /\
                 (sorted leT l -> sorted leT l') /\ 
@@ -333,35 +334,6 @@ Next Obligation.
     + by [].
 Defined.
 
+(* 証明のないinsertを呼ぶと、ゴールにinsertが残り、証明できない。 *)
+
 (* END *)
-
-(* 
-
-  intuition.
-  - case Hnn' : (leT n n') i => H'.
-    + by [].                                (* apply perm_eq_refl. *)
-    + Check @perm_eq_trans T [:: n', n & l'] [:: n, n' & l'] (n' :: x).
-      rewrite (@perm_eq_trans T [:: n', n & l'] [:: n, n' & l'] (n' :: x)).
-      * by [].
-      * by rewrite perm_cons2.
-      * by rewrite perm_cons.
-  - case Hnn' : (leT n n') i => H'.
-    + by auto with sort.
-    + admit.
-  - case Hnn' : (leT n n') i => H'.
-    + by left.
-    + by right.
-  - case Hnn' : (leT n n') i => H'.
-    + by [].
-    + rewrite (@perm_eq_trans T [:: n', n & l'] [:: n, n' & l'] (n' :: x)).
-      * by [].
-      * by rewrite perm_cons2.
-      * by rewrite perm_cons.
-  - case Hnn' : (leT n n') i => H'.
-    + by auto with sort.
-    + admit.
-  - case Hnn' : (leT n n') i => H'.
-    + by left.
-    + by right.
-Admitted.
- *)
