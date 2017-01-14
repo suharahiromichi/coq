@@ -18,6 +18,15 @@ Set Print All.
 (* ************ *)
 (* 不等号の証明 *)
 (* ************ *)
+(*
+(* lt なら le *)
+(* ltnW でよかった。 *)
+Lemma lt__le n n' : n > n' -> n' <= n.
+Proof.
+  move=> H.
+  rewrite leq_eqVlt.
+  by apply/orP; right.
+Qed.
 
 Lemma b_false__not_b b : b = false -> ~ b.
 Proof.
@@ -39,23 +48,23 @@ Proof.
     + by inversion H'.
 Qed.
 
-(*
 (* 証明途中に出現するもの。 *)
 Lemma test n n' : (n <= n') = false -> n' <= n.
 Proof.
   move=> H.
-  apply ltnW.
+  apply lt__le.
   apply not_le__lt.
   by apply b_false__not_b.
 Qed.
  *)
 
-(* auto で ltnW は見つかるので、それ以外のをまとめる *)
 Lemma le_false_lt n n' : (n <= n') = false -> n' < n.
 Proof.
   move=> H.
-  apply not_le__lt.
-  by apply b_false__not_b.
+  apply/ltP.
+  apply PeanoNat.Nat.nle_gt.
+  apply/leP.
+  by apply negbT.
 Qed.
 
 (* Hint Resolve not_le__lt b_false__not_b : myleq. *)
