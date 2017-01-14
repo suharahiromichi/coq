@@ -3,8 +3,7 @@
 http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt8.html
 
 をSSReflectに書き直した。
-Permutation は SSReflect の相当の補題を使っているため、
-証明の詳細は原著と異なることに注意してください。
+その上で、「Program Fixpoint」を使って定義をした。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -20,35 +19,11 @@ Set Print All.
 (* 不等号の証明 *)
 (* ************ *)
 
-(*
-(* lt なら le *)
-ltnW でよかった。
-Lemma lt__le n n' : n > n' -> n' <= n.
-Proof.
-  move=> H.
-  rewrite leq_eqVlt.
-  by apply/orP; right.
-Qed.
- *)
-
 Lemma b_false__not_b b : b = false -> ~ b.
 Proof.
   Search _ (_ = false).
   by apply/elimF/idP.
 Qed.  
-
-(*
-Lemma test'''' b : ~(b = true) -> ~~b.
-Proof.
-  move=> H.
-  rewrite /not in H.
-  rewrite /negb.
-  case: b H=> H.
-  - exfalso.
-    by apply H.
-  - done.
-Qed.
- *)
 
 (* le の否定が lt になる。 *)
 Lemma not_le__lt n n' : ~ n <= n' <-> n' < n.
@@ -64,6 +39,7 @@ Proof.
     + by inversion H'.
 Qed.
 
+(*
 (* 証明途中に出現するもの。 *)
 Lemma test n n' : (n <= n') = false -> n' <= n.
 Proof.
@@ -72,9 +48,10 @@ Proof.
   apply not_le__lt.
   by apply b_false__not_b.
 Qed.
+ *)
 
 (* auto で ltnW は見つかるので、それ以外のをまとめる *)
-Lemma test' n n' : (n <= n') = false -> n' < n.
+Lemma le_false_lt n n' : (n <= n') = false -> n' < n.
 Proof.
   move=> H.
   apply not_le__lt.
@@ -82,9 +59,7 @@ Proof.
 Qed.
 
 (* Hint Resolve not_le__lt b_false__not_b : myleq. *)
-Hint Resolve test' : myleq.
-
-
+Hint Resolve le_false_lt : myleq.
 
 (* **** *)
 (* 証明 *)
@@ -157,16 +132,6 @@ Inductive LocallySorted (T : eqType) (R : rel T) : seq T -> Prop :=
 
 Hint Constructors LocallySorted : sort.
 Hint Resolve LSorted_nil LSorted_cons1 LSorted_consn : sort.
-
-(*
-Lemma complete_conv : forall n m : nat, leq m n = false -> leq n m.
-Proof.
-  move=> n m.
-  move/negbT.    
-  rewrite -ltnNge => H.
-  by apply ltnW.
-Qed.
- *)
 
 (* Permutation, seq.v *)
 Check perm_eq (1::2::3::nil) (2::1::3::nil).
@@ -241,7 +206,6 @@ Next Obligation.
       * by auto.
 Defined.
 
-
 Program Fixpoint isort l {struct l} :  
   {l' : seq nat | perm_eq l l' /\ LocallySorted leq l'} := 
 match l with 
@@ -277,5 +241,39 @@ Eval compute in proj1_sig (isort [:: 2; 4; 1; 5; 3]).    (* [:: 1; 2; 3; 4; 5] *
 
 Extraction insert.
 Extraction isort.
+
+(* おまけ *)
+Lemma sorted_ind_inv h ls : LocallySorted leq (h :: ls) -> LocallySorted leq ls.
+Proof.
+  move=> H.
+  inversion H.
+  - by auto with sort.
+  - by [].
+Qed.
+
+Hint Resolve sorted_ind_inv : sort.
+
+Program Fixpoint merge (ls1 ls2 : seq nat) :
+  {l' : seq nat | perm_eq (ls1 ++ ls2) l' /\
+                  (LocallySorted leq ls1 /\ LocallySorted leq ls2 ->
+                   LocallySorted leq l')} :=
+  match ls1 with
+  | nil => ls2
+  | h :: ls' => insert h (merge ls' ls2)
+  end.
+Obligations.
+Next Obligation.
+  split.
+  - by [].
+  - by case.
+Defined.
+Next Obligation.
+  remember (insert h x) as s.
+  case H : s => /= {Heqs}; subst.
+  intuition;                          (* ゴールの /\ をsplit する。 *)
+    by eauto with sort.
+Defined.
+
+Print merge.
 
 (* END *)
