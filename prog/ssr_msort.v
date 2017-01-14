@@ -266,13 +266,7 @@ Next Obligation.
       * by []. *)
 Defined.
 
-(* Permutation, seq.v *)
-Check perm_eq (1::2::3::nil) (2::1::3::nil).
-Eval compute in perm_eq (1::2::3::nil) (2::1::3::nil). (* true *)
-Eval compute in perm_eq nil nil.                       (* true *)
-
-
-(* ソート処理の定義 *)
+(* insert を使う merge *)
 
 Program Fixpoint insert n l {struct l} : 
   {l' : seq T | perm_eq (n :: l) l' /\
@@ -302,6 +296,41 @@ Next Obligation.
         ** by apply TEST1 with (l := l').
         ** by [].
       * by auto.
+Defined.
+
+Hint Resolve sorted_cons_inv : sort.
+Hint Resolve perm_cons' : perm.
+
+Program Fixpoint merge' (ls1 ls2 : seq T) :
+  {l' : seq T | perm_eq (ls1 ++ ls2) l' /\
+                (sorted leT ls1 /\ sorted leT ls2 -> sorted leT l')} :=
+  match ls1 with
+  | nil => ls2
+  | h :: ls' => insert h (merge' ls' ls2)
+  end.
+Obligations.
+Next Obligation.
+  split.
+  - by [].
+  - by case.
+Defined.
+Next Obligation.
+  remember (insert h x) as s.
+  case H : s => /= {Heqs}; subst.
+  intuition.                          (* ゴールの /\ をsplit する。 *)
+  - Check @perm_eq_trans T (h :: x) (h :: ls' ++ ls2) _.
+    eapply (@perm_eq_trans T (h :: x) (h :: ls' ++ ls2) _). (* _ は _x_ *)
+    + by rewrite perm_cons.
+    + by [].
+  - apply H1, H2.
+    + by apply path_sorted with (x := h).
+    + by [].
+  - eapply (@perm_eq_trans T (h :: x) (h :: ls' ++ ls2) _). (* _ は _x_ *)
+    + by rewrite perm_cons.
+    + by [].
+  - apply H1, H2.
+    + by apply path_sorted with (x := h).
+    + by [].
 Defined.
 
 (* END *)
