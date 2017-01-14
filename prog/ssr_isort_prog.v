@@ -126,7 +126,7 @@ Proof.
   by apply (perm_catCA [:: x] [:: a] l).
 Qed.
 
-Hint Resolve perm_cons' perm_refl' perm_swap perm_trans' : sort.
+Hint Resolve perm_cons' perm_refl' perm_swap perm_trans' : perm.
 
 (* **** *)
 (* 証明 *)
@@ -139,7 +139,6 @@ Inductive LocallySorted (T : eqType) (R : rel T) : seq T -> Prop :=
                     R a b -> LocallySorted R (a :: b :: l).
 
 
-Hint Constructors LocallySorted : sort.
 Hint Resolve LSorted_nil LSorted_cons1 LSorted_consn : sort.
 
 (* Permutation, seq.v *)
@@ -229,7 +228,7 @@ Defined.
 Next Obligation.
   remember (insert a x).
   case H : s => /= {Heqs}; subst.
-    by intuition; eauto with sort.
+    by intuition; eauto with perm.
     
     Undo 1.
   intuition.
@@ -280,7 +279,7 @@ Next Obligation.
   remember (insert h x) as s.
   case H : s => /= {Heqs}; subst.
   intuition;                          (* ゴールの /\ をsplit する。 *)
-    by eauto with sort.
+    by eauto with sort perm.
 Defined.
 
 Print merge.
