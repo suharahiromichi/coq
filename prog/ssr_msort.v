@@ -59,16 +59,17 @@ Proof.
   by apply (perm_catCA [:: x] [:: a] l).
 Qed.
 
-Lemma perm_swap2 : forall (l l' l'' : seq T),
-                    perm_eq (l ++ l') l'' = perm_eq (l' ++ l) l''.
+Lemma perm_swap_cat : forall (l l' l'' : seq T),
+    perm_eq (l ++ l') l'' = perm_eq (l' ++ l) l''.
 Proof.
+  Search _ cat.
   move=> l l' l''.
   apply perm_iff.
-  Print perm_eql.
-  Search _ perm_eq.
-Admitted.                                   (* XXXX *)
+  by rewrite perm_catC.
+Qed.
 
-Hint Resolve perm_cons perm_eq_refl perm_eq_sym perm_eq_trans perm_iff perm_swap perm_swap2 : perm.
+Hint Resolve perm_cons perm_eq_refl perm_eq_sym perm_eq_trans : perm.
+Hint Rewrite perm_iff perm_swap perm_swap_cat : perm.
 
 (* **** *)
 (* sort *) (* path.v *)
@@ -179,8 +180,7 @@ Proof.
   move => Hxy Hp H1. (* H2 H3. *)
   apply (@TEST x y x').
   - by [].
-  - rewrite perm_swap2 in Hp.
-    Check cat_cons.
+  - rewrite perm_swap_cat in Hp.
     rewrite cat_cons in Hp.
     by apply (@TEST1 y x' (ls2' ++ ls1')).
   - by [].
