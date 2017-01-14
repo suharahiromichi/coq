@@ -6,47 +6,6 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-
-(* ************ *)
-(* 不等号の証明 *)
-(* ************ *)
-
-Lemma b_false__not_b b : b = false -> ~ b.
-Proof.
-  Search _ (_ = false).
-  move/negbT => H.
-    by apply/idP.
-    
-  Restart.
-  by apply/elimF/idP.
-Qed.
-
-(* le の否定が lt になる。 *)
-Lemma not_le__lt n n' : ~ n <= n' <-> n' < n.
-Proof.
-  rewrite /not ltnNge /negb.
-  split => H.
-  - case: (n <= n') H => H.
-    + exfalso.
-        by apply H.
-    + by [].
-  - case: (n <= n') H => H H'.
-    + by inversion H.
-    + by inversion H'.
-Qed.
-
-(* auto で ltnW は見つかるので、それ以外のをまとめる *)
-Lemma test' n n' : (n <= n') = false -> n' < n.
-Proof.
-  move=> H.
-  apply not_le__lt.
-  by apply b_false__not_b.
-Qed.
-
-(* Hint Resolve not_le__lt b_false__not_b : myleq. *)
-Hint Resolve test' : myleq.
-
-
 (* **** *)
 (* perm *) (* seq.v *)
 (* **** *)
@@ -63,6 +22,18 @@ Check perm_eq_trans : forall T : eqType, transitive perm_eq.
 Check perm_cons : forall (T : eqType) (x : T) (s1 s2 : seq T),
     perm_eq (x :: s1) (x :: s2) = perm_eq s1 s2.
 
+Lemma perm_cons' : forall (n : T) (l l' : seq T), 
+    perm_eq l l' -> perm_eq (n :: l) (n :: l').
+Proof.
+  move=> n l l' H.
+  by rewrite perm_cons.
+Qed.
+  
+Lemma perm_cons2 :  forall (T : eqType) (n1 n2 : T) (s1 s2 : seq T),
+    perm_eq [:: n1, n2 & s1] [:: n2, n1 & s2] = perm_eq (n1 :: s1) (n1 :: s2).
+Proof.
+  Admitted.
+  
 Lemma perm_iff : forall (m n : seq T),
                    (forall l, perm_eq m l = perm_eq n l) <-> perm_eq m n.
 Proof.
@@ -103,6 +74,7 @@ Hint Resolve perm_cons perm_eq_refl perm_eq_sym perm_eq_trans perm_iff perm_swap
 
 Variable leT : rel T.
 Hypothesis leT_tr : transitive leT.
+Hypothesis leT_false : forall n n', leT n n' = false -> leT n' n. (* ??? *)
 
 Check sorted leT : seq T -> bool.
 Search _ sorted.
@@ -185,8 +157,6 @@ Lemma perm_app : forall (n : nat) (l'' l l' : seq nat),
     perm_eq l'' (l ++ l') -> perm_eq (n :: l'') (l ++ n :: l').
 Admitted.
  *)
-
-Hint Resolve sorted_nil sorted_cons1 sorted_consn sorted_cons_inv sorted_inv : sort.
 
 Lemma TEST (x y : T) (x' : seq T) :
   leT x y -> y \in x' -> sorted leT x' -> sorted leT (x :: x').
@@ -316,202 +286,53 @@ Program Fixpoint insert n l {struct l} :
     else
       n' :: insert n l'
   end.
-
 Obligations.
 Next Obligation.
-    by auto with sort.
-Defined.
-
-Next Obligation.
-  case Hnn' : (n <= n').
+  case Hnn' : (leT n n').
   - by auto with sort.
   - split.
     + erewrite perm_swap.
-      by apply perm_cons'.
-      (* by eauto with sort. *)
+      by rewrite perm_cons.
     + split.
       * move=> H0.
-        assert (LocallySorted leq l') as H1 by (inversion H0; auto with sort).
-        assert (LocallySorted leq x)  as H2 by auto.
-        elim: x i l0 o H2.
-        ** by auto with sort.
-        ** inversion H0; subst.
-           *** move=> a l _ _ _ Ho H2; rewrite /= in Ho.
-               case: Ho => Ho; subst;
-                             by auto with sort myleq.
-           *** move=> a l' _ _ _ Ho H2; rewrite /= in Ho.
-               case: Ho => Ho; subst;
-                             by auto with sort myleq.
+        have H1 : sorted leT l' by apply: (@sorted_cons_inv n' l').
+        have H2 : sorted leT x by auto.        
+        apply TEST with (y := n).
+        ** by apply leT_false.              (* ??? *)
+        ** by apply TEST1 with (l := l').
+        ** by [].
       * by auto.
 Defined.
 
-(* ************** *)
-(* insertion sort *)
-(* ************** *)
-Fixpoint isort l {struct l} :  
-  {l' : seq nat | perm_eq l l' /\ LocallySorted leq l'} := 
-match l with 
-| nil => nil
-| a::l' => insert a (isort l')
-end.
-
-Next Obligation.
-  by auto with sort.
-Defined.
-
-Next Obligation.
-  remember (insert a x).
-  case H : s => /= {Heqs}; subst.
-    by intuition; eauto with sort.
-    
-    Undo 1.
-  intuition.
-  Check @perm_trans' (a :: l') (a :: x).
-  - apply (@perm_trans' (a :: l') (a :: x)).
-    + by apply perm_cons'.
-    + by apply H.
-  - apply (@perm_trans' (a :: l') (a :: x)).
-    + by apply perm_cons'.
-    + by apply H.
-Defined.
-
-Print isort.
-
-Eval compute in proj1_sig (insert 1 nil).                (* [:: 1] *)
-Eval compute in proj1_sig (insert 5 [:: 1; 4; 2; 9; 3]). (* [:: 1; 4; 2; 5; 9; 3] *)
-Eval compute in proj1_sig (isort [:: 2; 4; 1; 5; 3]).    (* [:: 1; 2; 3; 4; 5] *)
-
-Extraction insert.
-Extraction isort.
-
-(* ********** *)
-(* merge sort *)
-(* ********** *)
-Lemma sorted_inv h ls : LocallySorted leq (h :: ls) -> LocallySorted leq ls.
-Proof.
-  move=> H.
-  inversion H.
-  - by auto with sort.
-  - by [].
-Qed.
-
-Lemma sorted_inv2 : forall a b l, LocallySorted leq [:: a, b & l] -> a <= b.
-Proof.
-  move=> a b l H.
-  by inversion H; subst.
-Qed.
-
-Lemma sorted_inv3 : forall a b l, LocallySorted leq [:: a, b & l] ->
-                                  (a <= b /\ LocallySorted leq (b :: l)).
-Proof.
-  move=> a b l H.
-  split.
-  - by inversion H; subst.
-  - inversion H; subst.
-    inversion H2; subst.
-    + by apply LSorted_cons1.
-    + by [].
-Qed.
-
-Lemma sorted__sorted2 h1 h2 ls :
-  LocallySorted leq [:: h1, h2 & ls] -> LocallySorted leq (h1 :: ls).
-Proof.
-  elim: ls => [H | h3 ls' IHls H].
-  - by apply LSorted_cons1.
-  - elim: ls' IHls H => [H H' | h4 ls'' IHls' H H'].
-    + apply sorted_inv3 in H'.
-      case: H' => [H1 H2].
-      apply sorted_inv3 in H2.
-      case: H2 => [H2 H3].
-      have H13 : h1 <= h3 by apply (leq_trans H1 H2).
-      apply (@LSorted_consn _ leq h1 h3 [::]).
-      * by [].
-      * by [].
-    + apply sorted_inv3 in H'.
-      case: H' => [H1 H2].
-      apply sorted_inv3 in H2.
-      case: H2 => [H2 H3].
-      have H13 : h1 <= h3 by apply (leq_trans H1 H2).
-      apply (@LSorted_consn _ leq h1 h3 _).
-      * by [].
-      * by [].
-Qed.
-
-Lemma sorted__sorted3 h ls ls' ls'' :
-  perm_eq ls (ls' ++ ls'') ->
-  (LocallySorted leq ls -> LocallySorted leq ls') ->
-  LocallySorted leq (h :: ls) ->
-  LocallySorted leq (h :: ls').
-Proof.
-  
-Admitted.
-
-Lemma perm_app : forall (n : nat) (l'' l l' : seq nat),
-    perm_eq l'' (l ++ l') -> perm_eq (n :: l'') (l ++ n :: l').
-Admitted.
-
-Hint Resolve sorted_inv sorted_inv2 sorted__sorted3 : sort.
-
-Program Fixpoint merge (ls1 ls2 : seq nat) :
-  {l' : seq nat | perm_eq (ls1 ++ ls2) l' /\
-                  (LocallySorted leq ls1 /\ LocallySorted leq ls2 ->
-                   LocallySorted leq l')} :=
-  match ls1 with
-  | nil => ls2
-  | h :: ls' => insert h (merge ls' ls2)
-  end.
-Obligations.
-Next Obligation.
-  split.
-  - by [].
-  - by case.
-Defined.
-Next Obligation.
-  remember (insert h x) as s.
-  case H : s => /= {Heqs}; subst.
-  intuition;                          (* ゴールの /\ をsplit する。 *)
-    by eauto with sort.
-Defined.
-
-Program Fixpoint splits (ls : seq nat) :
-  { (ls1,ls2) : seq nat * seq nat |
-    perm_eq ls (ls1 ++ ls2) /\
-    (LocallySorted leq ls -> LocallySorted leq ls1) /\
-    (LocallySorted leq ls -> LocallySorted leq ls2) } :=
-  match ls with
-  | [::] => ([::], [::])
-  | [:: h] => ([:: h], [::])
-  | [:: h1, h2 & ls'] =>
-    let '(ls1, ls2) := splits ls' in (* let の左辺に"'"をつける。バニラCoq *)
-    (h1 :: ls1, h2 :: ls2)
-  end.
-Obligations.
-Next Obligation.
-    by eauto with sort.
-Defined.
-Next Obligation.
-  intuition.
-  Search (_ :: _ ++ _).
-  - apply perm_cons'.
-      by apply perm_app.
-  - by eauto with sort.
-  - by eauto with sort.
-Defined.
-  
-Program Fixpoint msort (ls : seq nat) {measure (size ls)} :
-  {l' : seq nat | perm_eq ls l' /\ LocallySorted leq l'} :=
-  if (size ls) <= 1 then
-    ls
-  else
-    let '(ls1, ls2) := splits ls in (* let の左辺に"'"をつける。バニラCoq *)
-    merge (msort ls1) (msort ls2).
-Obligations.
-Next Obligation.
-  remember (splits ls) as s.
-  case H : s => /= {Heqs}; subst.
-  apply/ltP.
-Admitted.
-
- *)
-
 (* END *)
+
+(* 
+
+  intuition.
+  - case Hnn' : (leT n n') i => H'.
+    + by [].                                (* apply perm_eq_refl. *)
+    + Check @perm_eq_trans T [:: n', n & l'] [:: n, n' & l'] (n' :: x).
+      rewrite (@perm_eq_trans T [:: n', n & l'] [:: n, n' & l'] (n' :: x)).
+      * by [].
+      * by rewrite perm_cons2.
+      * by rewrite perm_cons.
+  - case Hnn' : (leT n n') i => H'.
+    + by auto with sort.
+    + admit.
+  - case Hnn' : (leT n n') i => H'.
+    + by left.
+    + by right.
+  - case Hnn' : (leT n n') i => H'.
+    + by [].
+    + rewrite (@perm_eq_trans T [:: n', n & l'] [:: n, n' & l'] (n' :: x)).
+      * by [].
+      * by rewrite perm_cons2.
+      * by rewrite perm_cons.
+  - case Hnn' : (leT n n') i => H'.
+    + by auto with sort.
+    + admit.
+  - case Hnn' : (leT n n') i => H'.
+    + by left.
+    + by right.
+Admitted.
+ *)
