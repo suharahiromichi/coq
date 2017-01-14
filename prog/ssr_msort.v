@@ -77,7 +77,6 @@ Hint Rewrite perm_iff perm_swap perm_swap_cat : perm.
 
 Variable leT : rel T.
 Hypothesis leT_tr : transitive leT.
-Hypothesis leT_false : forall n n', leT n n' = false -> leT n' n. (* ??? *)
 
 Check sorted leT : seq T -> bool.
 Search _ sorted.
@@ -159,41 +158,22 @@ Lemma perm_app : forall (n : nat) (l'' l l' : seq nat),
 Admitted.
  *)
 
-Lemma TEST (x y : T) (x' : seq T) :
-  leT x y -> y \in x' -> sorted leT x' -> sorted leT (x :: x').
+Lemma sorted__sorted (x : T) (l : seq T) :
+  (forall y, y \in l -> leT x y) -> sorted leT l -> sorted leT (x :: l).
 Proof.
-Admitted.                                   (* XXXXX *)
-
-Lemma TEST1 (y : T) (x' l : seq T) :
-  perm_eq (y :: l) x' -> y \in x'.
-Proof.
-Admitted.                                   (* XXXXX *)
-
-Lemma path_path_sorted_1 (x y : T) (ls1' ls2' x' : seq T) :
-  leT x y ->
-  perm_eq (ls1' ++ y :: ls2') x' ->
-  sorted leT x' ->
-  (* path leT x ls1' -> path leT y ls2' -> *)
-  sorted leT (x :: x').
-Proof.
-  (* x' = merge ls1' (y :: ls2') *)
-  move => Hxy Hp H1. (* H2 H3. *)
-  apply (@TEST x y x').
+  move=> Hxy.
+  Check @path_min_sorted T leT x l.
+  rewrite -(@path_min_sorted T leT x l).
   - by [].
-  - rewrite perm_swap_cat in Hp.
-    rewrite cat_cons in Hp.
-    by apply (@TEST1 y x' (ls2' ++ ls1')).
-  - by [].
+  - (* Goal : {in l, forall y0 : T, leT x y0}, ssrbool.v l.222, l.1571 *)
+    (*             {in A, P1} <-> forall x, x \in A -> Qx.             *)
+    move=> y Hyl.
+    by apply: (Hxy y).
 Qed.
 
-Lemma path_path_sorted_2 (x y : T) (ls1' ls2' y' : seq T) :
-  leT x y = false ->
-  perm_eq (x :: ls1' ++ ls2') y' ->
-  sorted leT y' ->
-  (* path leT x ls1' -> path leT y ls2' -> *)
-  sorted leT (y :: y').
+Lemma TEST (x : T) (x' : seq T) : forall y0 : T, y0 \in x' -> leT x y0.
 Proof.
-Admitted.                                   (* XXXXX *)
+Admitted.
 
 Program Fixpoint merge (ls1 ls2 : seq T)
   {measure (size ls1 + size ls2)} :
@@ -231,10 +211,10 @@ Next Obligation.
     case H : (leT x y); subst.
     + by rewrite perm_cons.
     + rewrite -cat_cons.
-      rewrite perm_swap2.
+      rewrite perm_swap_cat.
       rewrite cat_cons.
       rewrite perm_cons.
-        by rewrite perm_swap2.
+        by rewrite perm_swap_cat.
   - remember (merge ls1' (y :: ls2') _).
     case Hx : s => /= [x' [Hxp Hxs]].
     (* x' は ls1 ++ ls2 = x::ls1' ++ y::ls2' から x を抜いたもの。 *)
@@ -245,25 +225,19 @@ Next Obligation.
     
     case H : (leT x y); subst.
     + move=> H1 H2.
-      apply (@path_path_sorted_1 x y ls1' ls2' x').
-      * by [].
-      * by [].
+      apply sorted__sorted.
+      * by apply TEST.                      (* XXXXX *)
       * apply Hxs.
-        Check (@path_sorted T leT x ls1').
-        ** by apply (@path_sorted T leT x ls1').
-        ** by [].
-(*      * by [].
-      * by []. *)
+        eapply path_sorted.
+        apply H1.
+        by apply H2.
     + move=> H1 H2.
-      apply (@path_path_sorted_2 x y ls1' ls2' y').
-      * by [].
-      * by [].
+      apply sorted__sorted.
+      * by apply TEST.                      (* XXXXX *)
       * apply Hys.
-        ** by [].
-        Check @path_sorted T leT y ls2'.
-        ** by apply (@path_sorted T leT y ls2').
-(*      * by [].
-      * by []. *)
+        apply H1.
+        eapply path_sorted.
+        by apply H2.
 Defined.
 
 (* ******************* *)
@@ -292,9 +266,8 @@ Next Obligation.
       * move=> H0.
         have H1 : sorted leT l' by apply: (@sorted_cons_inv n' l').
         have H2 : sorted leT x by auto.        
-        apply TEST with (y := n).
-        ** by apply leT_false.              (* ??? *)
-        ** by apply TEST1 with (l := l').
+        apply sorted__sorted.
+        ** by apply TEST.                   (* XXXX *)
         ** by [].
       * by auto.
 Defined.
