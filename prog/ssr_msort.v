@@ -59,13 +59,42 @@ Proof.
   by apply (perm_catCA [:: x] [:: a] l).
 Qed.
 
+Check perm_catC : forall (T : eqType) (s1 s2 : seq T), perm_eql (s1 ++ s2) (s2 ++ s1).
+Check perm_cat2l : 
+  forall (T : eqType) (s1 s2 s3 : seq T),
+    perm_eq (s1 ++ s2) (s1 ++ s3) = perm_eq s2 s3.
+Check perm_cat2r :
+  forall (T : eqType) (s1 s2 s3 : seq T),
+    perm_eq (s2 ++ s1) (s3 ++ s1) = perm_eq s2 s3.
+Check perm_catAC :
+  forall (T : eqType) (s1 s2 s3 : seq T),
+    perm_eql ((s1 ++ s2) ++ s3) ((s1 ++ s3) ++ s2).
+Check perm_catCA :
+  forall (T : eqType) (s1 s2 s3 : seq T),
+    perm_eql (s1 ++ s2 ++ s3) (s2 ++ s1 ++ s3).
+Check perm_cons :
+  forall (T : eqType) (x : T) (s1 s2 : seq T),
+    perm_eq (x :: s1) (x :: s2) = perm_eq s1 s2.
+Check perm_rcons :
+  forall (T : eqType) (x : T) (s : seq T), perm_eql (rcons s x) (x :: s).
+
 Lemma perm_swap_cat : forall (l l' l'' : seq T),
     perm_eq (l ++ l') l'' = perm_eq (l' ++ l) l''.
 Proof.
-  Search _ cat.
   move=> l l' l''.
   apply perm_iff.
   by rewrite perm_catC.
+Qed.
+
+(* :: と ++ は左結合で、同じ優先順位である。 *)
+Lemma perm_swap_cons_cat : forall (x : T) (l l' l'' : seq T),
+    perm_eq (x :: l ++ l') l'' = perm_eq (l ++ x :: l') l''.
+Proof.
+  move=> x l l' l''.
+  apply perm_iff.
+  rewrite -[x :: l ++ l']cat1s.
+  rewrite -[x :: l']cat1s.
+  by rewrite -perm_catCA.
 Qed.
 
 Hint Resolve perm_cons perm_eq_refl perm_eq_sym perm_eq_trans : perm.
@@ -113,7 +142,7 @@ Lemma sorted_inv m n l :
 Proof.
   by move/andP.                             (* path の定義のまま。 *)
 Qed.
-
+(*
 Lemma sorted_cons_inv2 m n l :
   sorted leT [:: m, n & l] -> sorted leT (m :: l).
 Proof.
@@ -125,7 +154,7 @@ Proof.
     + by apply: subseq_refl.
     + by apply: subseq_cons.
 Qed.
-(*
+
 Lemma subseq_cons2 (n : T) (l l' : seq T) :
   subseq l l' -> subseq (n :: l) (n :: l').
 Proof.
@@ -171,6 +200,8 @@ Proof.
       by apply: (Hxy y).
 Qed.
 (* 別証明 *)
+(* (forall y0 : T, y0 \in x' -> leT x y0) <-> {in x', forall y : T, leT x y} *)
+(* であることにも。 *)
 Lemma sorted__sorted (x : T) (l : seq T) :
   {in l, forall y : T, leT x y} -> sorted leT l -> sorted leT (x :: l).
 Proof.
@@ -179,10 +210,14 @@ Proof.
   by rewrite path_min_sorted.
 Qed.
 
-(* forall y0 : T, y0 \in x' -> leT x y0. *)
-Lemma TEST (x : T) (x' : seq T) : {in x', forall y : T, leT x y}.
+Lemma sorted__in (n n' : T) (l l' : seq T) :
+  perm_eq (n :: l') l ->
+  (sorted leT l' -> sorted leT l) ->
+(*  head n l = n \/ head n l = head n l' *)
+  leT n' n -> path leT n' l' ->
+  {in l, forall y : T, leT n' y}.
 Proof.
-Admitted.
+Admitted.                                   (* XXX *)
 
 Check path_min_sorted : forall (T : eqType) (leT : rel T) (x : T) (s : seq_predType T),
     {in s, forall y : T, leT x y} -> path leT x s = sorted leT s.
@@ -234,18 +269,28 @@ Next Obligation.
     remember (merge (x :: ls1') ls2' _).
     case Hy : s0 => /= [y' [Hyp Hys]].
     (* y' は ls1 ++ ls2 = x::ls1' ++ y::ls2' から y を抜いたもの。 *)
-    
+
     case H : (leT x y); subst.
     + move=> H1 H2.
       apply sorted__sorted.
-      * by apply TEST.                      (* XXXXX *)
+      * Check (@sorted__in y x x' (ls1' ++ ls2')).
+        apply (@sorted__in y x x' (ls1' ++ ls2')).
+        ** by rewrite perm_swap_cons_cat.
+        ** admit.
+        ** by [].
+        ** admit.
       * apply Hxs.
         eapply path_sorted.
         apply H1.
         by apply H2.
     + move=> H1 H2.
       apply sorted__sorted.
-      * by apply TEST.                      (* XXXXX *)
+      * Check (@sorted__in x y y' (ls1' ++ ls2')).
+        apply (@sorted__in x y y' (ls1' ++ ls2')).
+        ** by [].
+        ** admit.
+        ** by apply leT_false.              (* XXXX *)
+        ** admit.
       * apply Hys.
         apply H1.
         eapply path_sorted.
@@ -277,9 +322,15 @@ Next Obligation.
     + split.
       * move=> H.
         apply sorted__sorted.
-        have H1 : sorted leT l' by apply: (@sorted_cons_inv n' l').
-        have H2 : sorted leT x by auto.        
-        ** by apply TEST.                   (* XXXX *)
+(*
+        have H1 : sorted leT l' by apply: (@sorted_cons_inv n' l'). l', x : seq T
+        have H2 : sorted leT x by auto.
+*)
+        ** apply (@sorted__in n n' x l').
+           *** by apply i.
+           *** by apply i0.
+           *** by apply leT_false.          (* **** *)
+           *** by apply H.
         ** apply i0.
            eapply path_sorted.
              by apply H.
