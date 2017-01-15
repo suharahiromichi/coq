@@ -250,39 +250,6 @@ Eval compute in proj1_sig (isort [:: 2; 4; 1; 5; 3]).    (* [:: 1; 2; 3; 4; 5] *
 Extraction insert.
 Extraction isort.
 
-(* おまけ *)
-Program Fixpoint merge (ls1 ls2 : seq nat)
-  {measure (size ls1 + size ls2)} :
-  {l' : seq nat | perm_eq (ls1 ++ ls2) l' /\
-                        (LocallySorted leq ls1 /\ LocallySorted leq ls2 ->
-                         LocallySorted leq l')} :=
-  (* match (ls1, ls2) とすると、ペアどうしの代入の前提が解けない。 *)
-  (* 「'」をつけてもだめのよう。 *)
-  match ls1 with
-  | [::] => ls2
-  | x :: ls1' => match ls2 with
-                 | [::] => ls1
-                 | y :: ls2' => if x <= y then
-                                  x :: (merge ls1' ls2)
-                                else
-                                  y :: (merge ls1 ls2')
-                 end
-  end.
-Obligations.
-Next Obligation.
-  split.
-  - by [].
-  - by case.
-Defined.
-Next Obligation.
-  intuition.
-  by rewrite cats0.
-Defined.
-Next Obligation.
-  apply/ltP.
-  by rewrite ltn_add2l.
-Defined.
-
 (* ******************* *)
 (* insert を使う merge *)
 (* ******************* *)
@@ -320,6 +287,73 @@ Next Obligation.
   - by debug eauto with sort.
 Defined.
 
-Print merge.
+Print merge'.
+
+
+(* 未了 *)
+(* 補題が足らないので、続きをする場合は *)
+(* 新しくファイルを別にして、sortedなどの補題を充実させる。 *)
+(* 未了 *)
+
+(* *********************** *)
+(* insert を使わない merge *)
+(* *********************** *)
+Program Fixpoint merge (ls1 ls2 : seq nat)
+  {measure (size ls1 + size ls2)} :
+  {l' : seq nat | perm_eq (ls1 ++ ls2) l' /\
+                        (LocallySorted leq ls1 /\ LocallySorted leq ls2 ->
+                         LocallySorted leq l')} :=
+  (* match (ls1, ls2) とすると、ペアどうしの代入の前提が解けない。 *)
+  (* 「'」をつけてもだめのよう。 *)
+  match ls1 with
+  | [::] => ls2
+  | x :: ls1' => match ls2 with
+                 | [::] => ls1
+                 | y :: ls2' => if x <= y then
+                                  x :: (merge ls1' ls2)
+                                else
+                                  y :: (merge ls1 ls2')
+                 end
+  end.
+Obligations.
+Next Obligation.
+  split.
+  - by [].
+  - by case.
+Defined.
+Next Obligation.
+  intuition.
+  by rewrite cats0.
+Defined.
+Next Obligation.
+  apply/ltP.
+  by rewrite ltn_add2l.
+Defined.
+Next Obligation.
+  remember (merge ls1' (y :: ls2') _) as s.
+  case H : s => /= {Heqs}; subst.
+  remember (merge (x :: ls1') ls2' _) as s.
+  case H : s => /= {Heqs}; subst.
+  case H : (x <= y); split.
+Admitted.
+
+Program Fixpoint splits (ls : seq nat) :
+  { (ls1,ls2) : seq nat * seq nat |
+    perm_eq ls (ls1 ++ ls2) /\
+    (LocallySorted leq ls -> LocallySorted leq ls1) /\
+    (LocallySorted leq ls -> LocallySorted leq ls2) } :=
+  match ls with
+  | [::] => ([::], [::])
+  | [:: h] => ([:: h], [::])
+  | [:: h1, h2 & ls'] =>
+    let '(ls1, ls2) := splits ls' in (* let の左辺に"'"をつける。バニラCoq *)
+    (h1 :: ls1, h2 :: ls2)
+  end.
+Obligations.
+Next Obligation.
+  Admitted.
+Next Obligation.
+  Admitted.
+
 
 (* END *)
