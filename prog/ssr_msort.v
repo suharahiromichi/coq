@@ -77,6 +77,7 @@ Hint Rewrite perm_iff perm_swap perm_swap_cat : perm.
 
 Variable leT : rel T.
 Hypothesis leT_tr : transitive leT.
+Hypothesis leT_false : forall x y, leT x y = false -> leT y x. (* ???? *)
 
 Check sorted leT : seq T -> bool.
 Search _ sorted.
@@ -113,7 +114,6 @@ Proof.
   by move/andP.                             (* path の定義のまま。 *)
 Qed.
 
-(*
 Lemma sorted_cons_inv2 m n l :
   sorted leT [:: m, n & l] -> sorted leT (m :: l).
 Proof.
@@ -125,7 +125,7 @@ Proof.
     + by apply: subseq_refl.
     + by apply: subseq_cons.
 Qed.
-
+(*
 Lemma subseq_cons2 (n : T) (l l' : seq T) :
   subseq l l' -> subseq (n :: l) (n :: l').
 Proof.
@@ -158,7 +158,7 @@ Lemma perm_app : forall (n : nat) (l'' l l' : seq nat),
 Admitted.
  *)
 
-Lemma sorted__sorted (x : T) (l : seq T) :
+Lemma sorted__sorted' (x : T) (l : seq T) :
   (forall y, y \in l -> leT x y) -> sorted leT l -> sorted leT (x :: l).
 Proof.
   move=> Hxy.
@@ -168,12 +168,24 @@ Proof.
   - (* Goal : {in l, forall y0 : T, leT x y0}, ssrbool.v l.222, l.1571 *)
     (*             {in A, P1} <-> forall x, x \in A -> Qx.             *)
     move=> y Hyl.
-    by apply: (Hxy y).
+      by apply: (Hxy y).
+Qed.
+(* 別証明 *)
+Lemma sorted__sorted (x : T) (l : seq T) :
+  {in l, forall y : T, leT x y} -> sorted leT l -> sorted leT (x :: l).
+Proof.
+  move=> H Hs.
+  rewrite /sorted.
+  by rewrite path_min_sorted.
 Qed.
 
-Lemma TEST (x : T) (x' : seq T) : forall y0 : T, y0 \in x' -> leT x y0.
+(* forall y0 : T, y0 \in x' -> leT x y0. *)
+Lemma TEST (x : T) (x' : seq T) : {in x', forall y : T, leT x y}.
 Proof.
 Admitted.
+
+Check path_min_sorted : forall (T : eqType) (leT : rel T) (x : T) (s : seq_predType T),
+    {in s, forall y : T, leT x y} -> path leT x s = sorted leT s.
 
 Program Fixpoint merge (ls1 ls2 : seq T)
   {measure (size ls1 + size ls2)} :
@@ -263,12 +275,14 @@ Next Obligation.
     + erewrite perm_swap.
       by rewrite perm_cons.
     + split.
-      * move=> H0.
+      * move=> H.
+        apply sorted__sorted.
         have H1 : sorted leT l' by apply: (@sorted_cons_inv n' l').
         have H2 : sorted leT x by auto.        
-        apply sorted__sorted.
         ** by apply TEST.                   (* XXXX *)
-        ** by [].
+        ** apply i0.
+           eapply path_sorted.
+             by apply H.
       * by auto.
 Defined.
 
