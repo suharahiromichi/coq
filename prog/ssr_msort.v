@@ -59,25 +59,6 @@ Proof.
   by apply (perm_catCA [:: x] [:: a] l).
 Qed.
 
-Check perm_catC : forall (T : eqType) (s1 s2 : seq T), perm_eql (s1 ++ s2) (s2 ++ s1).
-Check perm_cat2l : 
-  forall (T : eqType) (s1 s2 s3 : seq T),
-    perm_eq (s1 ++ s2) (s1 ++ s3) = perm_eq s2 s3.
-Check perm_cat2r :
-  forall (T : eqType) (s1 s2 s3 : seq T),
-    perm_eq (s2 ++ s1) (s3 ++ s1) = perm_eq s2 s3.
-Check perm_catAC :
-  forall (T : eqType) (s1 s2 s3 : seq T),
-    perm_eql ((s1 ++ s2) ++ s3) ((s1 ++ s3) ++ s2).
-Check perm_catCA :
-  forall (T : eqType) (s1 s2 s3 : seq T),
-    perm_eql (s1 ++ s2 ++ s3) (s2 ++ s1 ++ s3).
-Check perm_cons :
-  forall (T : eqType) (x : T) (s1 s2 : seq T),
-    perm_eq (x :: s1) (x :: s2) = perm_eq s1 s2.
-Check perm_rcons :
-  forall (T : eqType) (x : T) (s : seq T), perm_eql (rcons s x) (x :: s).
-
 Lemma perm_swap_cat : forall (l l' l'' : seq T),
     perm_eq (l ++ l') l'' = perm_eq (l' ++ l) l''.
 Proof.
@@ -142,6 +123,15 @@ Lemma sorted_inv m n l :
 Proof.
   by move/andP.                             (* path の定義のまま。 *)
 Qed.
+
+Lemma cat__sorted l l' :
+  sorted leT (l ++ l') -> (sorted leT l /\ sorted leT l').
+Proof.
+  elim: l.
+  - by [].
+  - move=> a l IHl H.
+Admitted.                                   (* XXXX *)
+  
 (*
 Lemma sorted_cons_inv2 m n l :
   sorted leT [:: m, n & l] -> sorted leT (m :: l).
@@ -276,9 +266,12 @@ Next Obligation.
       * Check (@sorted__in y x x' (ls1' ++ ls2')).
         apply (@sorted__in y x x' (ls1' ++ ls2')).
         ** by rewrite perm_swap_cons_cat.
-        ** admit.
+        ** move=> H'.
+           apply cat__sorted in H'.
+           case: H' => H'1 H'2.
+           by apply Hxs.
         ** by [].
-        ** admit.
+        ** admit.                           (* XXXX *)
       * apply Hxs.
         eapply path_sorted.
         apply H1.
@@ -288,9 +281,12 @@ Next Obligation.
       * Check (@sorted__in x y y' (ls1' ++ ls2')).
         apply (@sorted__in x y y' (ls1' ++ ls2')).
         ** by [].
-        ** admit.
-        ** by apply leT_false.              (* XXXX *)
-        ** admit.
+        ** move=> H'.
+           apply cat__sorted in H'.
+           case: H' => H'1 H'2.
+           by apply Hys.
+        ** by apply leT_false.              (* ???? *)
+        ** admit.                           (* XXXX *)
       * apply Hys.
         apply H1.
         eapply path_sorted.
@@ -329,7 +325,7 @@ Next Obligation.
         ** apply (@sorted__in n n' x l').
            *** by apply i.
            *** by apply i0.
-           *** by apply leT_false.          (* **** *)
+           *** by apply leT_false.          (* ????? *)
            *** by apply H.
         ** apply i0.
            eapply path_sorted.
