@@ -188,7 +188,7 @@ Next Obligation.
   - by auto with sort.
   - split.
     + erewrite perm_swap.
-      by apply perm_cons'.
+        by apply perm_cons'.
       (* by eauto with sort. *)
     + split.
       * move=> H0.
@@ -251,6 +251,41 @@ Extraction insert.
 Extraction isort.
 
 (* おまけ *)
+Program Fixpoint merge (ls1 ls2 : seq nat)
+  {measure (size ls1 + size ls2)} :
+  {l' : seq nat | perm_eq (ls1 ++ ls2) l' /\
+                        (LocallySorted leq ls1 /\ LocallySorted leq ls2 ->
+                         LocallySorted leq l')} :=
+  (* match (ls1, ls2) とすると、ペアどうしの代入の前提が解けない。 *)
+  (* 「'」をつけてもだめのよう。 *)
+  match ls1 with
+  | [::] => ls2
+  | x :: ls1' => match ls2 with
+                 | [::] => ls1
+                 | y :: ls2' => if x <= y then
+                                  x :: (merge ls1' ls2)
+                                else
+                                  y :: (merge ls1 ls2')
+                 end
+  end.
+Obligations.
+Next Obligation.
+  split.
+  - by [].
+  - by case.
+Defined.
+Next Obligation.
+  intuition.
+  by rewrite cats0.
+Defined.
+Next Obligation.
+  apply/ltP.
+  by rewrite ltn_add2l.
+Defined.
+
+(* ******************* *)
+(* insert を使う merge *)
+(* ******************* *)
 Lemma sorted_ind_inv h ls : LocallySorted leq (h :: ls) -> LocallySorted leq ls.
 Proof.
   move=> H.
@@ -261,13 +296,13 @@ Qed.
 
 Hint Resolve sorted_ind_inv : sort.
 
-Program Fixpoint merge (ls1 ls2 : seq nat) :
+Program Fixpoint merge' (ls1 ls2 : seq nat) :
   {l' : seq nat | perm_eq (ls1 ++ ls2) l' /\
                   (LocallySorted leq ls1 /\ LocallySorted leq ls2 ->
                    LocallySorted leq l')} :=
   match ls1 with
   | nil => ls2
-  | h :: ls' => insert h (merge ls' ls2)
+  | h :: ls' => insert h (merge' ls' ls2)
   end.
 Obligations.
 Next Obligation.
@@ -278,8 +313,11 @@ Defined.
 Next Obligation.
   remember (insert h x) as s.
   case H : s => /= {Heqs}; subst.
-  intuition;                          (* ゴールの /\ をsplit する。 *)
-    by eauto with sort perm.
+  intuition.                          (* ゴールの /\ をsplit する。 *)
+  - by debug eauto with sort perm.
+  - by debug eauto with sort.
+  - by debug eauto with sort perm.
+  - by debug eauto with sort.
 Defined.
 
 Print merge.
