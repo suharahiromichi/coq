@@ -3,6 +3,11 @@ Require Import Arith.
 Require Import Sorting.Permutation.
 Require Import Sorting.Sorted.
 
+(* 不等号 *)
+(* n m : n < m -> (n <= m) *)
+Hint Resolve lt_le_weak : lt_le.
+
+(* PERM *)
 Check Permutation : forall (A : Type), list A -> list A -> Prop.
 Check perm_nil : forall (A : Type),  Permutation nil nil.
 Check perm_skip : forall (A : Type) (x : A) (l l' : list A),
@@ -11,26 +16,33 @@ Check perm_swap : forall (A : Type) (x y : A) (l : list A),
     Permutation (y :: x :: l) (x :: y :: l).
 Check perm_trans : forall (A : Type) (l l' l'' : list A),
     Permutation l l' -> Permutation l' l'' -> Permutation l l''.
-Hint Resolve perm_nil perm_skip perm_swap perm_trans : perm.
 
+Lemma perm_cons : forall (n : nat) (l l' : list nat), 
+    Permutation l l' -> Permutation (n :: l) (n :: l').
+Proof.
+  intros n l l' H.
+  inversion H; try auto.
+  now apply perm_skip, perm_swap.
+Qed.
+
+Hint Resolve perm_nil perm_skip perm_swap perm_trans perm_cons : perm.
+
+(* SORT *)
 Check LocallySorted : forall A : Type, (A -> A -> Prop) -> list A -> Prop.
 Check LSorted_nil : forall (A : Type) (R : A -> A -> Prop), LocallySorted R nil.
 Check LSorted_cons1 : forall (A : Type) (R : A -> A -> Prop) (a : A),
     LocallySorted R (a :: nil).
 Check LSorted_consn : forall (A : Type) (R : A -> A -> Prop) (a b : A) (l : list A),
     LocallySorted R (b :: l) -> R a b -> LocallySorted R (a :: b :: l).
+
 Hint Resolve LSorted_nil LSorted_cons1 LSorted_consn : sort.
 
-Lemma test'' n n' : n' > n -> (n <= n').
-Proof.
-Admitted.
-
-(* Hint Resolve not_le__lt b_false__not_b : myleq. *)
-Hint Resolve test'' : myleq.
-
+(* **** *)
+(* 証明 *)
+(* **** *)
 Program Fixpoint insert (a : nat) (l : list nat) {struct l} : 
   {l' : list nat | Permutation (a::l) l' /\
-                   (LocallySorted le l -> LocallySorted le l') /\ 
+                   (LocallySorted le l -> LocallySorted le l') /\
                    (hd a l' = a \/ hd a l' = hd a l)} := 
 match l with
 | nil => a :: nil
@@ -61,26 +73,21 @@ Obligation 3.
         ** destruct o; subst.
            *** apply LSorted_consn.
                **** now apply H2.
-               **** now apply test''.
+               **** now apply lt_le_weak.
            *** simpl.
                apply LSorted_consn.
-               now auto.
-               now apply test''.
+               **** now auto.
+               **** now apply lt_le_weak.
         ** destruct o; subst.
            *** apply LSorted_consn.
                **** now apply H2.
-               **** now apply test''.
+               **** now apply lt_le_weak.
            *** simpl.
                apply LSorted_consn.
-               now auto.
-               apply H5.
+               **** now auto.
+               **** now apply H5.
     + auto.
 Defined.
-
-Lemma perm_cons : forall (n : nat) (l l' : list nat), 
-    Permutation l l' -> Permutation (n :: l) (n :: l').
-Proof.
-Admitted.
 
 Program Fixpoint isort l {struct l} :  
   {l' : list nat | Permutation l l' /\ LocallySorted le l'} := 
