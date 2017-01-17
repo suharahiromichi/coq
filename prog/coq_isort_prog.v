@@ -69,24 +69,30 @@ Obligation 3.
       assert (LocallySorted le x0) as H2 by auto.
       destruct x0.
       * now auto with sort.
-      * inversion Hxl'; simpl in o; subst.
-        ** destruct o; subst.
-           *** apply LSorted_consn.
-               **** now apply H2.
-               **** now apply lt_le_weak.
-           *** simpl.
-               apply LSorted_consn.
-               **** now auto.
-               **** now apply lt_le_weak.
-        ** destruct o; subst.
-           *** apply LSorted_consn.
-               **** now apply H2.
-               **** now apply lt_le_weak.
-           *** simpl.
-               apply LSorted_consn.
-               **** now auto.
-               **** now apply H5.
+      * inversion Hxl'; simpl in o; destruct o; subst;
+          now auto with sort lt_le.             (* apply LSorted_consn. *)
     + auto.
+(*      
+      Undo 3.
+      inversion Hxl'; simpl in o; subst.
+      ** destruct o; subst.
+         *** apply LSorted_consn.
+             **** now apply H2.
+             **** now apply lt_le_weak.
+         *** simpl.
+             apply LSorted_consn.
+             **** now auto.
+             **** now apply lt_le_weak.
+      ** destruct o; subst.
+         *** apply LSorted_consn.
+             **** now apply H2.
+             **** now apply lt_le_weak.
+         *** simpl.
+             apply LSorted_consn.
+             **** now auto.
+             **** now apply H5.
+    + auto.
+*)
 Defined.
 
 Program Fixpoint isort l {struct l} :  
@@ -100,20 +106,23 @@ Obligation 1.
 Proof.
   now auto with sort perm.
 Defined.
-
 Obligation 2.
   remember (insert a x).
   destruct s; subst.
   destruct a0; subst.
-  
+  simpl.
   split.
-  - Check @perm_trans nat (a :: l') (a :: x).
+  - eauto with perm.
+  - destruct a0; now auto.
+(*
+    Undo 3.
+    Check @perm_trans nat (a :: l') (a :: x).
     apply (@perm_trans nat (a :: l') (a :: x)).
     * now apply perm_cons.
     * now apply p0.
-  - simpl.
-    destruct a0.
+  - destruct a0.
     now auto.
+*)
 Defined.
 
 (* END *)
