@@ -40,6 +40,47 @@ Hint Resolve LSorted_nil LSorted_cons1 LSorted_consn : sort.
 (* **** *)
 (* 証明 *)
 (* **** *)
+
+Lemma perm__sorted a x x0 l' :
+  a > x ->
+  (hd a x0 = a \/ hd a x0 = hd a l') ->
+  Permutation (a :: l') x0 ->
+  (LocallySorted le l' -> LocallySorted le x0) ->
+  LocallySorted le (x :: l') ->
+  LocallySorted le (x :: x0).
+Proof.
+  intros H o l0 p Hxl'.
+  assert (LocallySorted le l') as H1 by (inversion Hxl'; auto with sort).
+  assert (LocallySorted le x0) as H2 by auto.
+  destruct x0.
+  - now auto with sort.
+  - inversion Hxl'; simpl in o; destruct o; subst;
+      now auto with sort lt_le.             (* apply LSorted_consn. *)
+(*    
+  Restart.
+  intros H o l0 p Hxl'.
+  assert (LocallySorted le l') as H1 by (inversion Hxl'; auto with sort).
+  assert (LocallySorted le x0) as H2 by auto.
+  destruct x0.
+  - now auto with sort.
+  - inversion Hxl'; simpl in o; subst.
+    + destruct o; subst.
+      * apply LSorted_consn.
+        ** now apply H2.
+        ** now apply lt_le_weak.
+      * apply LSorted_consn.
+        ** now auto.
+        ** now apply lt_le_weak.
+    + destruct o; subst.
+      * apply LSorted_consn.
+        ** now apply H2.
+        ** now apply lt_le_weak.
+      * apply LSorted_consn.
+        ** now auto.
+        ** now apply H5.
+*)
+Qed.
+
 Program Fixpoint insert (a : nat) (l : list nat) {struct l} : 
   {l' : list nat | Permutation (a::l) l' /\
                    (LocallySorted le l -> LocallySorted le l') /\
@@ -64,37 +105,10 @@ Obligation 3.
   - rewrite perm_swap.
     now auto with perm.
   - split.
-    + intro Hxl'.
-      assert (LocallySorted le l') as H1 by (inversion Hxl'; auto with sort).
-      assert (LocallySorted le x0) as H2 by auto.
-      destruct x0.
-      * now auto with sort.
-      * inversion Hxl'; simpl in o; destruct o; subst;
-          now auto with sort lt_le.             (* apply LSorted_consn. *)
-    + auto.
-(*      
-      Undo 3.
-      inversion Hxl'; simpl in o; subst.
-      ** destruct o; subst.
-         *** apply LSorted_consn.
-             **** now apply H2.
-             **** now apply lt_le_weak.
-         *** simpl.
-             apply LSorted_consn.
-             **** now auto.
-             **** now apply lt_le_weak.
-      ** destruct o; subst.
-         *** apply LSorted_consn.
-             **** now apply H2.
-             **** now apply lt_le_weak.
-         *** simpl.
-             apply LSorted_consn.
-             **** now auto.
-             **** now apply H5.
-    + auto.
-*)
+    + now apply (perm__sorted a x x0 l' H o p l0).
+    + now auto.
 Defined.
-
+    
 Program Fixpoint isort l {struct l} :  
   {l' : list nat | Permutation l l' /\ LocallySorted le l'} := 
 match l with 
