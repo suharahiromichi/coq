@@ -17,6 +17,17 @@ Check perm_swap : forall (A : Type) (x y : A) (l : list A),
 Check perm_trans : forall (A : Type) (l l' l'' : list A),
     Permutation l l' -> Permutation l' l'' -> Permutation l l''.
 
+(*
+Permutatuin の左から右へrewriteできる。
+see. Instance Permutation_Equivalence A, in Sorting.Permutation.v
+
+Goal forall (l l' l'' : list nat), Permutation l' l'' -> Permutation l l'.
+Proof.
+  intros.
+  rewrite H.
+Admitted.
+ *)
+
 Lemma perm_cons : forall (n : nat) (l l' : list nat), 
     Permutation l l' -> Permutation (n :: l) (n :: l').
 Proof.
@@ -26,6 +37,7 @@ Proof.
 Qed.
 
 Hint Resolve perm_nil perm_skip perm_swap perm_trans perm_cons : perm.
+
 
 (* SORT *)
 Check LocallySorted : forall A : Type, (A -> A -> Prop) -> list A -> Prop.
@@ -102,7 +114,7 @@ Obligation 2.
 Defined.
 Obligation 3.
   split.
-  - rewrite perm_swap.
+  - rewrite perm_swap.                      (* Permutation で rewrite する。 *)
     now auto with perm.
   - split.
     + now apply (perm__sorted a x x0 l' H o p l0).
