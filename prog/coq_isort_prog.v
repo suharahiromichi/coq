@@ -1,3 +1,4 @@
+Require Import Omega.
 Require Import List.
 Require Import Arith.
 Require Import Sorting.Permutation.
@@ -28,6 +29,7 @@ Proof.
 Admitted.
  *)
 
+(*
 (* Permutation_cons とおなじ。 *)
 Lemma perm_cons : forall (n : nat) (l l' : list nat), 
     Permutation l l' -> Permutation (n :: l) (n :: l').
@@ -36,8 +38,9 @@ Proof.
   inversion H; try auto.
   now apply perm_skip, perm_swap.
 Qed.
+ *)
 
-Hint Resolve perm_nil perm_skip perm_swap perm_trans perm_cons : perm.
+Hint Resolve perm_nil perm_skip perm_swap perm_trans Permutation_cons : perm.
 
 
 (* SORT *)
@@ -185,6 +188,98 @@ Next Obligation.
   intuition.                          (* ゴールの /\ をsplit する。 *)
   - now eauto with sort perm.
   - now eauto with sort.
+Defined.
+
+Lemma sorted_cons_inv h ls :
+  LocallySorted le (h :: ls) -> LocallySorted le ls.
+Proof.
+  intro H.
+  inversion H.
+  subst.
+  - now auto with sort.
+  - now auto.
+Qed.
+
+Lemma sorted_cons_inv2 h1 h2 ls :
+  LocallySorted le (h1 :: h2 :: ls) -> LocallySorted le (h1 :: ls).
+Proof.
+  intro H.
+  inversion H.
+  inversion H2.
+  subst.
+  + now auto with sort.
+  + apply LSorted_consn.
+    * now auto.
+    * omega.
+Qed.
+
+Variable subseq : forall (ls' ls : list nat), Prop. (* XXX *)
+
+Search _ Permutation.
+Lemma perm__subseq ls ls' ls'' :
+  Permutation ls (ls' ++ ls'') ->
+  (LocallySorted le ls -> LocallySorted le ls') ->
+  subseq ls' ls.
+Proof.
+Admitted.                                   (* XXXX *)
+
+Lemma subseq__sorted ls ls' :               (* path.v *)
+  subseq ls' ls ->
+  LocallySorted le ls ->
+  LocallySorted le ls'.
+Proof.
+Admitted.                                   (* XXXX *)
+
+Lemma subseq__cons h ls ls' :
+  subseq ls ls' -> subseq (h :: ls) (h :: ls').
+Proof.
+Admitted.                                   (* XXXXX *)
+
+Lemma sorted__sorted3 h ls ls' ls'' :
+  Permutation ls (ls' ++ ls'') ->
+  (LocallySorted le ls -> LocallySorted le ls') ->
+  LocallySorted le (h :: ls) ->
+  LocallySorted le (h :: ls').
+Proof.
+  intros Hp Hs.
+  apply subseq__sorted.
+  apply subseq__cons.
+  now apply (@perm__subseq ls ls' ls'').
+Qed.
+
+Hint Resolve sorted_cons_inv : sort.
+
+Program Fixpoint splits (ls : list nat) :
+  {l' : list nat * list nat |
+   let (ls1, ls2) := l' in
+   Permutation ls (ls1 ++ ls2) /\
+   (LocallySorted le ls -> LocallySorted le ls1) /\
+   (LocallySorted le ls -> LocallySorted le ls2) } :=
+  match ls with
+  | nil => (nil, nil)
+  | h :: nil => (h :: nil, nil)
+  | h1 :: h2 :: ls' =>
+    let '(ls1, ls2) := splits ls' in (* let の左辺に"'"をつける。バニラCoq *)
+    (h1 :: ls1, h2 :: ls2)
+  end.
+Obligations.
+Next Obligation.
+  split.
+  - now auto.
+  - now auto with sort.
+Defined.
+Next Obligation.
+  intuition.
+  - rewrite p.
+    apply Permutation_cons.
+    + reflexivity.
+    + Search _ Permutation (_ :: _ ++ _) (_ ++ _ :: _).
+      now apply Permutation_middle.
+  - apply sorted_cons_inv2 in H.
+    eapply sorted__sorted3; now eauto.
+  - apply sorted_cons_inv in H.
+    rewrite Permutation_app_comm in p.
+    eapply sorted__sorted3; now eauto.
 Defined.
 
 (* END *)
