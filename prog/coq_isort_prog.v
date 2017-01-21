@@ -28,6 +28,7 @@ Proof.
 Admitted.
  *)
 
+(* Permutation_cons とおなじ。 *)
 Lemma perm_cons : forall (n : nat) (l l' : list nat), 
     Permutation l l' -> Permutation (n :: l) (n :: l').
 Proof.
@@ -123,10 +124,10 @@ Defined.
     
 Program Fixpoint isort l {struct l} :  
   {l' : list nat | Permutation l l' /\ LocallySorted le l'} := 
-match l with 
-| nil => nil
-| a :: l' => insert a (isort l')
-end.
+  match l with 
+  | nil => nil
+  | a :: l' => insert a (isort l')
+  end.
 Obligations.
 Obligation 1.
 Proof.
@@ -149,6 +150,41 @@ Obligation 2.
   - destruct a0.
     now auto.
 *)
+Defined.
+
+
+Lemma sorted_ind_inv h ls : LocallySorted le (h :: ls) -> LocallySorted le ls.
+Proof.
+  intro H.
+  inversion H.
+  - now auto with sort.
+  - now auto.
+Qed.
+
+Hint Resolve sorted_ind_inv : sort.
+
+Program Fixpoint merge (ls1 ls2 : list nat) :
+  {l' : list nat | Permutation (ls1 ++ ls2) l' /\
+                  (LocallySorted le ls1 /\ LocallySorted le ls2 ->
+                   LocallySorted le l')} :=
+  match ls1 with
+  | nil => ls2
+  | h :: ls' => insert h (merge ls' ls2)
+  end.
+Obligations.
+Next Obligation.
+  split.
+  - now auto.
+  - intro H.
+    now destruct H.
+Defined.
+Next Obligation.
+  remember (insert h x) as s.
+  destruct s as [x0 [p0 [l0 o]]].
+  subst; simpl.
+  intuition.                          (* ゴールの /\ をsplit する。 *)
+  - now eauto with sort perm.
+  - now eauto with sort.
 Defined.
 
 (* END *)
