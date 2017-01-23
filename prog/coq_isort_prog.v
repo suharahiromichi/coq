@@ -3,6 +3,7 @@ Require Import List.
 Require Import Arith.
 Require Import Sorting.Permutation.
 Require Import Sorting.Sorted.
+Require Import Program.Wf.
 
 (* 不等号 *)
 (* n m : n < m -> (n <= m) *)
@@ -282,4 +283,70 @@ Next Obligation.
     eapply sorted__sorted3; now eauto.
 Defined.
 
+Lemma split_wf1 : forall ls,
+    2 <= length ls ->length (fst (proj1_sig (splits ls))) < length ls.
+Proof.
+Admitted.                                   (* CPDT *)
+  
+Lemma split_wf2 : forall ls,
+    2 <= length ls -> length (snd (proj1_sig (splits ls))) < length ls.
+Proof.
+Admitted.                                   (* CPDT *)
+
+Lemma split_app : forall ls1 ls2 ls,
+    (ls1, ls2) = proj1_sig (splits ls) -> Permutation (ls1 ++ ls2) ls.
+Proof.
+Admitted.                                   (* XXXX *)
+
+Lemma length_lt2__sorted : forall ls,
+    length ls < 2 -> LocallySorted le ls.
+Proof.
+Admitted.                                   (* XXXX *)
+
+Program Fixpoint msort (ls : list nat) {measure (length ls)} :
+  {l' : list nat | Permutation ls l' /\ LocallySorted le l'} :=
+  if le_lt_dec 2 (length ls) then
+    let '(ls1, ls2) := splits ls in (* let の左辺に"'"をつける。バニラCoq *)
+    merge (msort ls1) (msort ls2)
+  else
+    ls.
+Next Obligation.
+  apply split_wf1 in H.
+  unfold fst in H.
+  simpl in H.
+  remember (splits ls) as s.
+  destruct s as [ll H1].
+  simpl in *. subst.
+  now exact H.
+Defined.
+Next Obligation.
+  apply split_wf2 in H.
+  unfold snd in H.
+  simpl in H.
+  remember (splits ls) as s.
+  destruct s as [ll H1].
+  simpl in *. subst.
+  now exact H.
+Defined.
+Next Obligation.
+  remember (merge _ _) as s.
+  destruct s as [ls' [Hp Hs]]; simpl in *; subst.
+  destruct Heqs.
+  remember (msort _) as s.
+  destruct s as [l1 [Hp1 Hs1]]; simpl in *; subst.
+  remember (msort _) as s.
+  destruct s as [l2 [Hp2 Hs2]]; simpl in *; subst.
+  split.
+  - apply split_app in Heq_anonymous.
+    now rewrite <- Hp, <- Hp1, <- Hp2, Heq_anonymous.
+  - now auto.
+Defined.
+Next Obligation.
+  split.
+  - now auto.
+  - now apply length_lt2__sorted.
+Defined.
+
 (* END *)
+
+                    
