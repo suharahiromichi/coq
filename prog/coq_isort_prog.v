@@ -296,7 +296,13 @@ Admitted.                                   (* CPDT *)
 Lemma split_app : forall ls1 ls2 ls,
     (ls1, ls2) = proj1_sig (splits ls) -> Permutation (ls1 ++ ls2) ls.
 Proof.
-Admitted.                                   (* XXXX *)
+  intros ls1 ls2 ls.
+  remember (splits ls) as s.
+  destruct s as [[ll l2] H]; simpl in *.
+  intros H1.
+  inversion H1; subst.
+  now destruct H.
+Qed.
 
 Lemma length_lt2__sorted : forall ls,
     length ls < 2 -> LocallySorted le ls.
@@ -347,6 +353,8 @@ Next Obligation.
   - now apply length_lt2__sorted.
 Defined.
 
-(* END *)
+Compute proj1_sig (msort (3 :: 2 :: 4 :: 1 :: nil)).
 
-                    
+Extraction msort.
+
+(* END *)
