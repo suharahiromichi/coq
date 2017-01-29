@@ -51,12 +51,22 @@ Section Sublist.
   Proof.
   Admitted.                               (* mathcomp seq.v *)
   
-  Program Fixpoint filter (l : list A) : {l' | Sublist l' l} :=
+
+  Program Fixpoint filter (l : list A) :
+    {l' | Sublist l' l /\ Forall (fun x => f x = true) l'} :=
+    (* さらに、l' が最大の長さのものであることを示す必要がある。 *)
     match l with
     | nil => nil
     | x :: l => if f x then x :: (filter l) else filter l
     end.
-  (* Obligation なし *)
+  Obligation 2.
+  Proof.
+    split.
+    - now auto.
+    - apply Forall_cons.
+      + admit.                              (*  f x = true *)
+      + now auto.
+  Defined.
   
   (* filter の結果は Sublist である。 *)
   Lemma filter__sublist (l : list A) :
