@@ -31,13 +31,31 @@ Section Sublist.
   
   Hint Constructors Sublist.
   
+  (* Sublist なら長さが減る。 *)
+  Lemma sublist__length (l l' : list A) :
+    Sublist l' l -> length l' <= length l.
+  Proof.
+    intro H.
+    induction H; subst; simpl in *; try auto.
+    omega.
+  Qed.
+  
   Program Fixpoint filter (l : list A) : {l' | Sublist l' l} :=
     match l with
     | nil => nil
     | x :: l => if f x then x :: (filter l) else filter l
     end.
   (* Obligation なし *)
-
+  
+  (* filter の結果は Sublist である。 *)
+  Lemma filter__sublist (l : list A) :
+    Sublist (proj1_sig (filter l)) l.
+  Proof.
+    induction l; subst; simpl in *.
+    - now auto.
+    - destruct (f a); simpl; now auto.
+  Qed.
+  
 End Sublist.
 
 (* Arith.Bool_nat で定義されている。 *)
@@ -48,4 +66,6 @@ Compute proj1_sig (filter nat
                           (fun x => (proj1_sig (nat_noteq_bool x 2)))
                           (1 :: 2 :: 3 :: nil)).
   
+Extraction filter.
+
 (* END *)
