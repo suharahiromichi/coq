@@ -25,7 +25,7 @@ Section Sublist.
 
   (* Sublist l' l <==> l' ⊆ l *)
   Inductive Sublist : list A -> list A -> Prop :=
-  | SL_nil : Sublist nil nil
+  | SL_nil l : Sublist nil l
   | SL_skip x l' l : Sublist l' l -> Sublist l' (x :: l)
   | SL_cons x l' l : Sublist l' l -> Sublist (x :: l') (x :: l).
   
@@ -36,9 +36,20 @@ Section Sublist.
     Sublist l' l -> length l' <= length l.
   Proof.
     intro H.
-    induction H; subst; simpl in *; try auto.
-    omega.
+    induction H; subst; simpl in *; try auto; omega.
   Qed.
+  
+  (* *** *)
+  Lemma sublist_ref (l : list A) :
+    Sublist l l.
+  Proof.
+    induction l as [|x l' IHl]; now auto.
+  Qed.
+  
+  Lemma sublist_trans (l l' l'' : list A) :
+    Sublist l'' l' -> Sublist l' l -> Sublist l'' l.
+  Proof.
+  Admitted.                               (* mathcomp seq.v *)
   
   Program Fixpoint filter (l : list A) : {l' | Sublist l' l} :=
     match l with
