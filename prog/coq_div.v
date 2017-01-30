@@ -60,7 +60,7 @@ Defined.
 Program Fixpoint div2' (n : nat) :
   { x : nat | n = 2 * x \/ n = 2 * x + 1 } :=
   match n with
-  | S (S p) => S (div2 p)
+  | S (S p) => S (div2' p)
   | _ => O
   end.
 Obligation 1.
