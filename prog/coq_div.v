@@ -8,6 +8,27 @@ Require Import Program.
 
 Set Implicit Arguments.
 
+Program Definition id (n : nat) : { x : nat | x = n } :=
+  if dec (leb n 0) then
+    0
+  else
+    S (pred n).
+Obligation 1.
+Proof.                                      (* n <= 0 -> n = 0 *)
+  destruct n.
+  - now auto.                               (* n = 0 *)
+  - now inversion H.                        (* n >= 1 矛盾 *)
+
+  Restart.
+  destruct n; now auto.
+Defined.
+Obligation 2.
+Proof.
+  destruct n; now auto.
+Defined.
+
+
+(* DIV2 *)
 Program Fixpoint div2 (n : nat) {measure n} :
   { x : nat | n = 2 * x \/ n = 2 * x + 1 } :=
   match n with
