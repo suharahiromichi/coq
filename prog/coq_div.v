@@ -20,11 +20,11 @@ Proof.                                      (* n <= 0 -> n = 0 *)
   - now inversion H.                        (* n >= 1 矛盾 *)
 
   Restart.
-  destruct n; now auto.
+  now destruct n.
 Defined.
 Obligation 2.
 Proof.
-  destruct n; now auto.
+  now destruct n.
 Defined.
 
 
