@@ -84,21 +84,60 @@ Proof.
   induction (H n); auto.
 Defined.
 
-(* Even *)
+(* 証明なし *)
+Fixpoint div2'' (n : nat) : nat :=
+  match n with
+  | S (S p) => S (div2'' p)
+  | _ => O
+  end.
 
-Lemma even_2 x : even (x * 2).
+(* **** *)
+(* Even *)
+(* **** *)
+Lemma even_2' x : even (x * 2).
 Proof.
-Admitted.
+  apply even_mult_r.
+  now apply even_S, odd_S, even_O.
+Qed.
+
+Lemma x_x__2x x : x + x = x * 2.
+Proof.
+  omega.
+Qed.
+  
+Lemma even_2 x : even (x + x).
+Proof.
+  rewrite x_x__2x.
+  now apply even_2'.
+Qed.
+
+Hint Resolve even_2'.
+
+Lemma odd_2_1 x : odd (x + x + 1).
+Proof.
+  apply odd_plus_r.
+  - now apply even_2.
+  - now apply odd_S, even_O.
+Qed.
 
 Lemma odd_2 x : odd (x + x) -> False.
 Proof.
-Admitted.
+  apply not_even_and_odd.
+  now apply even_2.
+Qed.
+
+Lemma not_odd_and_even n : odd n -> even n -> False.
+Proof.
+  intros Ho He.
+  generalize He Ho.
+  now apply not_even_and_odd.
+Qed.
 
 Lemma even_2_1 x : even (x + x + 1) -> False.
 Proof.
-Admitted.
-
-Hint Resolve even_2.
+  apply not_odd_and_even.
+  now apply odd_2_1.
+Qed.
 
 Program Definition div2_2 (n : nat) :
   { m : nat | even m } :=
