@@ -139,19 +139,19 @@ Proof.
   now apply odd_2_1.
 Qed.
 
-Program Definition div2_2 (n : nat) :
+Program Definition div2_2' (n : nat) :
   { m : nat | even m } :=
   div2 n * 2.
 (* Obligation なし。 *)
 
-Program Definition div2_2' (n : nat) :
+Program Definition div2_2 (n : nat) :
   { m : nat | (even n -> n = m) /\ (odd n -> n - 1 = m) } :=
   div2 n * 2.
 Obligation 1.
 Proof.
   remember (div2 _).
   remember (_ * 2).
-  destruct s as [m H].
+  destruct s as [m H].                      (* 証明のないdiv2'' だと s が出てこない。 *)
   destruct H as [H1 | H2]; simpl in *.
   - split.
     + omega.
@@ -169,6 +169,10 @@ Proof.
     + omega.
 Defined.
 
+Eval compute in  ` (div2_2 4).              (* 4 *)
+Eval compute in  ` (div2_2 5).              (* 4 *)
+
+(* 次にやること。 *)
 (* div2 の末尾再帰版をつくる。 *)
 
 (* END *)
