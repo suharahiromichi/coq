@@ -33,6 +33,14 @@ Section List.
 
 End List.
 
+Definition data : { l : list nat | l <> [] }.
+Proof.
+  now exists [1; 2].
+Defined.
+
+Compute ` (hd data).                        (* 1 *)
+Compute ` (tl data).                        (* [2] *)
+
 Extraction hd.                        (** val hd : 'a1 list -> 'a1 **)
 (*
 let hd = function
