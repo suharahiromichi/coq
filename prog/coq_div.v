@@ -94,50 +94,47 @@ Fixpoint div2'' (n : nat) : nat :=
 (* **** *)
 (* Even *)
 (* **** *)
-Lemma even_2' x : even (x * 2).
-Proof.
-  apply even_mult_r.
-  now apply even_S, odd_S, even_O.
-Qed.
-
-Lemma x_x__2x x : x + x = x * 2.
-Proof.
-  omega.
-Qed.
-  
-Lemma even_2 x : even (x + x).
-Proof.
-  rewrite x_x__2x.
-  now apply even_2'.
-Qed.
-
-Hint Resolve even_2'.
-
-Lemma odd_2_1 x : odd (x + x + 1).
-Proof.
-  apply odd_plus_r.
-  - now apply even_2.
-  - now apply odd_S, even_O.
-Qed.
-
-Lemma odd_2 x : odd (x + x) -> False.
-Proof.
-  apply not_even_and_odd.
-  now apply even_2.
-Qed.
+(* Hint Constructos even odd with arith *)
 
 Lemma not_odd_and_even n : odd n -> even n -> False.
 Proof.
+  induction n.
+  - now intros Ho He.
+  - intros Ho He.
+    inversion Ho.
+    inversion He.
+    now auto.
+    
+  Restart.
   intros Ho He.
   generalize He Ho.
   now apply not_even_and_odd.
 Qed.
 
-Lemma even_2_1 x : even (x + x + 1) -> False.
+Lemma not_odd_2 x : odd (x + x) -> False.
+Proof.
+  apply not_even_and_odd.
+  cutrewrite (x + x = 2 * x).
+  - now apply even_mult_l; auto with arith.
+  - omega.
+Qed.
+
+Lemma not_even_2_1 x : even (x + x + 1) -> False.
 Proof.
   apply not_odd_and_even.
-  now apply odd_2_1.
+  apply odd_plus_r.
+  - cutrewrite (x + x = 2 * x).
+    + now apply even_mult_l; auto with arith.
+    + omega.
+  - now auto with arith.
 Qed.
+
+Lemma even_2 x : even (x * 2).
+Proof.
+  apply even_mult_r.
+  now auto with arith.
+Qed.
+Hint Resolve even_2.
 
 Program Definition div2_2' (n : nat) :
   { m : nat | even m } :=
@@ -159,13 +156,13 @@ Proof.
       rewrite <- plus_n_O in H1.
       intro H.
       rewrite H1 in H.
-      now apply odd_2 in H.
+      now apply not_odd_2 in H.
   - split.
     + clear Heqs.
       rewrite <- plus_n_O in H2.
       intro H.
       rewrite H2 in H.
-      now apply even_2_1 in H.
+      now apply not_even_2_1 in H.
     + omega.
 Defined.
 
