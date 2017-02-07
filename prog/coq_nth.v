@@ -70,11 +70,13 @@ Extraction safe_nth.
 (* 応用 *)
 (* **** *)
 
+Check proj1_sig.
+Locate "` _".
+
 Definition sorted' (al : list nat) :=       (* := での定義！ *)
-  forall (i j : nat)
-         (Hi : {n : nat | n < length al})
-         (Hj : {n : nat | n < length al}),
-    i < j < length al ->
+  forall (Hi : {i : nat | i < length al})
+         (Hj : {j : nat | j < length al}),
+    `Hi < `Hj ->
     safe_nth nat al Hi <= safe_nth nat al Hj.
 
 Goal sorted' [1;2;3].
@@ -83,9 +85,10 @@ Proof.
   intros.
   case Hi as [xn Hn].
   case Hj as [xm Hm].
-  simpl.
+  simpl in *.
   (* 
    Goal : 
+   xn < xm ->   
    safe_nth nat [1; 2; 3] (exist (fun n : nat => n < 3) xn Hn) <=
    safe_nth nat [1; 2; 3] (exist (fun n : nat => n < 3) xm Hm)
    *)
@@ -98,7 +101,8 @@ Goal sorted''' [1;2;3].
 Proof.
   unfold sorted'''.
   intros.
-  (* Goal : nth i [1; 2; 3] 0 <= nth j [1; 2; 3] 0 *)
+  simpl in H.
+  (* Goal : i < j < 3 -> nth i [1; 2; 3] 0 <= nth j [1; 2; 3] 0 *)
   Admitted.
 
 (* END *)
