@@ -52,9 +52,11 @@ Section Nth.
     rewrite len__S_len in H.
     omega.
   Defined.
+
 End Nth.
 
 Definition ll := [1;2;3].
+
 Definition n_of_ll : { n : nat | n < length ll}.
 Proof.
   exists 2.
@@ -76,7 +78,7 @@ Locate "` _".
 Definition sorted' (al : list nat) :=       (* := での定義！ *)
   forall (Hi : {i : nat | i < length al})
          (Hj : {j : nat | j < length al}),
-    `Hi < `Hj ->
+    `Hi < `Hj < length al ->
     safe_nth nat al Hi <= safe_nth nat al Hj.
 
 Goal sorted' [1;2;3].
@@ -88,11 +90,12 @@ Proof.
   simpl in *.
   (* 
    Goal : 
-   xn < xm ->   
+   xn < xm < 3 ->   
    safe_nth nat [1; 2; 3] (exist (fun n : nat => n < 3) xn Hn) <=
    safe_nth nat [1; 2; 3] (exist (fun n : nat => n < 3) xm Hm)
    *)
   Admitted.
+
 
 Definition sorted''' (al: list nat) :=
   forall i j, i < j < length al -> nth i al 0 <= nth j al 0.
@@ -104,5 +107,30 @@ Proof.
   simpl in H.
   (* Goal : i < j < 3 -> nth i [1; 2; 3] 0 <= nth j [1; 2; 3] 0 *)
   Admitted.
+
+
+Goal forall (al : list nat)
+            (Hi : {i : nat | i < length al})
+            (Hj : {i : nat | i < length al}),
+    `Hi = `Hj ->
+    safe_nth nat al Hi = safe_nth nat al Hj.
+Proof.
+  intros al Hi Hj H.
+  case Hi as [i Hi].
+  case Hj as [j Hj].
+  simpl in H.                               (* i = j *)
+(*
+  remember (exist _ _ Hi) as Hi'.
+  remember (exist _ _ Hj) as Hj'.
+*)
+  Check subset_eq_compat _ (fun i : nat => i < length al) i j Hi Hj :
+    i = j ->
+    exist (fun i : nat => i < length al) i Hi =
+    exist (fun i : nat => i < length al) j Hj.
+  
+  rewrite (subset_eq_compat _ (fun i : nat => i < length al) i j Hi Hj).
+  - reflexivity.
+  - now trivial.
+Qed.
 
 (* END *)
