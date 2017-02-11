@@ -123,6 +123,8 @@ Proof.
   remember (exist _ _ Hi) as Hi'.
   remember (exist _ _ Hj) as Hj'.
 *)
+  Search _ exist.
+  
   Check subset_eq_compat _ (fun i : nat => i < length al) i j Hi Hj :
     i = j ->
     exist (fun i : nat => i < length al) i Hi =
@@ -132,5 +134,31 @@ Proof.
   - reflexivity.
   - now trivial.
 Qed.
+
+Lemma rev_safe_nth :
+  forall (A : Type) (l : list A) n
+         (Hn : {i : nat | i < length (rev l)})
+         (Hm : {i : nat | i < length l}),
+    `Hn = n ->
+    `Hm = (length l - S (`Hn)) ->
+    safe_nth A (rev l) Hn = safe_nth A l Hm.
+Proof.
+  intros A l n Hn Hm H.
+  case Hn as [n' Hn].
+  case Hm as [m' Hm].
+  simpl.
+  induction l.
+  - intros.
+    now inversion H.
+  - intros.
+    simpl in H.
+    simpl (rev (a :: l)).
+    subst.
+    simpl (length (a :: l) - S n).
+    simpl in *.
+    inversion Hn.
+    (* H0 から、n = length l *)
+Admitted.
+
 
 (* END *)
