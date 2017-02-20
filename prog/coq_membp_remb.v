@@ -65,8 +65,12 @@ Proof.
   - case x.
     + now simpl.
     + now simpl.
-Qed.
 
+  Restart.
+  intros xs.
+  induction xs as [|x xs IHxs]; try auto.
+  now case x.
+Qed.
 
 (**
 memb?/remb は定理としては自明ですが、trueが含まれないことをチェックする関数membpによって、
@@ -175,6 +179,11 @@ Proof.
     + case x' as [x' | y']; simpl in *.
       * now rewrite <- IHxs'IHxs.
       * now rewrite IHxs'IHxs.
+
+  Restart.
+  intros xs.
+  split; induction xs as [|x xs IHxs]; auto; case x; auto.
+  now case x; simpl; [rewrite <- IHxs | rewrite IHxs].
 Qed.
 
 (**
