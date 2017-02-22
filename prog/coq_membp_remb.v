@@ -122,6 +122,22 @@ remb' を「Program」コマンドの外から実行するときは、proj1_sig 
 
 Compute ` (remb' (true :: false :: true :: nil)). (* [false] *)
 
+Extraction remb'.
+(**
+生成されたコードには、rembp は含まれていない。
+
+``
+val remb' : bool list -> bool list
+
+let rec remb' = function
+| Nil -> Nil
+| Cons (b, xs') ->
+  (match b with
+   | True -> remb' xs'
+   | False -> Cons (False, (remb' xs')))
+``
+*)
+
 (**
 これからは、The Little Prover の範囲を越える事項ですが、
 remb' の定義を「リストからtrueを除去する関数」の証明付き定義と考えると問題があります。
@@ -201,5 +217,21 @@ Program Fixpoint remb'' (xs : list bool) :
   end.
 
 Compute ` (remb'' (true :: false :: true :: nil)). (* [false] *)
+
+Extraction remb''.
+(**
+生成されたコードには、count_occ は含まれていない。
+
+``
+val remb'' : bool list -> bool list
+
+let rec remb'' = function
+| Nil -> Nil
+| Cons (b, xs') ->
+  (match b with
+   | True -> remb'' xs'
+   | False -> Cons (False, (remb'' xs')))
+``
+ *)
 
 (* END *)
