@@ -1,5 +1,5 @@
 (**
-The Little Prover の第6章にある memb?/remb 定理をCoqで解いてみる。
+The Little Prover (TLP) の第6章にある memb?/remb 定理をCoqで解いてみる。
  *)
 
 Require Import Bool.
@@ -57,8 +57,11 @@ memb?/remb に対応する membp_remb は、文字通りの定義です。
 なお、帰納法の仮定IHxsは、ふたつめとみっつめのnowでトリビアルとされています。
  *)
 
-Lemma membp_remb : forall (xs : list bool), ~ membp (remb xs).
+Definition membp_remb (xs : list bool) := ~ membp (remb xs).
+  
+Goal forall (xs : list bool), membp_remb xs.
 Proof.
+  unfold membp_remb.
   intros xs.
   induction xs as [|x xs IHxs].
   - now simpl.
@@ -67,6 +70,7 @@ Proof.
     + now simpl.
 
   Restart.
+  unfold membp_remb.
   intros xs.
   induction xs as [|x xs IHxs]; try auto.
   now case x.
@@ -139,7 +143,7 @@ let rec remb' = function
 *)
 
 (**
-これからは、The Little Prover の範囲を越える事項ですが、
+これからは、TLP の範囲を越える事項ですが、
 remb' の定義を「リストからtrueを除去する関数」の証明付き定義と考えると問題があります。
 
 membp はtrueの有無しかチェックしていませんから、
@@ -233,5 +237,56 @@ let rec remb'' = function
    | False -> Cons (False, (remb'' xs')))
 ``
  *)
+
+(** 帰納法の公理 *)
+
+(**
+以下は、証明するべきものではなく、リストの型定義にもとづく「公理」です。
+ *)
+
+Check list_ind : forall (A : Type) (P : list A -> Prop),
+    P [] ->
+    (forall (a : A) (l : list A), P l -> P (a :: l)) ->
+    forall l : list A, P l.
+
+Check list_ind membp_remb :
+  membp_remb [] ->
+  (forall (a : bool) (l : list bool), membp_remb l -> membp_remb (a :: l)) ->
+  forall l : list bool, membp_remb l.
+
+(**
+この公理を使うとすると。
+
+``forall l : list bool, membp_remb l``
+
+を証明するには、
+
+``membp_remb []``
+
+と
+
+``(forall (a : bool) (l : list bool), membp_remb l -> membp_remb (a :: l))``
+
+とを証明する必要があります。後者は、TLPでは、l は nil でないことを条件に、
+
+``(forall (l : list bool), membp_remb (tl l0) -> membp_remb l)``
+
+となっています。おなじですね。
+ *)
+
+(**
+実際の証明は、以下の通りです。
+ *)
+
+Goal forall xs, membp_remb xs.
+Proof.
+  intros xs.
+  apply (list_ind membp_remb).              (* 公理を適用する。 *)
+  - now simpl.
+  - intros x l.
+    case x.
+    + now simpl.
+    + now simpl.
+Qed.
 
 (* END *)
