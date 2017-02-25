@@ -4,8 +4,10 @@ The Little Prover (TLP) の第6章にある memb?/remb 定理をCoqで解いて�
 
 Require Import Bool.
 Require Import List.
-Require Import Program.                     (* ` *)
+Require Import Program.
 Set Implicit Arguments.
+
+(** * はじめに *)
 
 (**
 これは、リニアなリストの要素から、文字 '?' を削除する関数 remb と、
@@ -29,9 +31,11 @@ Fixpoint membp (xs : list bool) : Prop :=
   | false :: xs' =>  membp xs'
   end.
 
-Compute membp (true :: false :: true :: nil).         (* True *)
-Compute membp (false :: false :: false :: nil).       (* False *)
-Compute membp nil.                                    (* False *)
+Compute membp (true :: false :: true :: nil).         (** ==> [True] *)
+
+Compute membp (false :: false :: false :: nil).       (** ==> [False] *)
+
+Compute membp nil.                                    (** ==> [False] *)
 
 (**
 ついで、remb のリストからtrueを削除する関数を定義します。
@@ -46,7 +50,9 @@ Fixpoint remb (xs : list bool) : list bool :=
   | false :: xs' => false :: remb xs'
   end.
 
-Compute remb (true :: false :: true :: nil).         (* [false] *)
+Compute remb (true :: false :: true :: nil).         (** ==> [[false]] *)
+
+(** * memb?/remb の証明 *)
 
 (**
 memb?/remb に対応する membp_remb は、文字通りの定義です。
@@ -85,8 +91,10 @@ Coqにはそれをサポートする「Program」コマンドがあります。
 これを使って remb を再定義してみましょう。
 
 remb' の値は、単なる list bool ではなく、
-``{ys : list bool | ~ membp ys}``
-すなわち、``~ membp ys`` を満たす ``ys`` の集合の要素、となります。
+[{ys : list bool | ~ membp ys}]
+すなわち、
+[~ membp ys] を満たす [ys] の集合の要素、
+となります。
 
 これだと、最初に想定した型と違うので困ると思うかもしれませんが、
 「Program」コマンドの中では、そのサブタイプ・コアーションの機能によって、
@@ -108,14 +116,14 @@ Program Fixpoint remb' (xs : list bool) : {ys : list bool | ~ membp ys} :=
 (**
 *response* ウインドウに
 
-``
+[[
 Solving obligations automatically...
 remb'_obligation_1 is defined
 remb'_obligation_2 is defined
 No more obligations remaining
 remb' is defined
 remb' is recursively defined (decreasing on 1st argument)
-``
+]]
 
 と表示されたはずですが、これは自動的に証明が終わったことを意味します。
  *)
@@ -124,13 +132,13 @@ remb' is recursively defined (decreasing on 1st argument)
 remb' を「Program」コマンドの外から実行するときは、proj1_sig で値を取り出す必要があります。
 *)
 
-Compute ` (remb' (true :: false :: true :: nil)). (* [false] *)
+Compute ` (remb' (true :: false :: true :: nil)). (** ==> [[false]] *)
 
 Extraction remb'.
 (**
 生成されたコードには、rembp は含まれていない。
 
-``
+[[
 val remb' : bool list -> bool list
 
 let rec remb' = function
@@ -139,8 +147,10 @@ let rec remb' = function
   (match b with
    | True -> remb' xs'
    | False -> Cons (False, (remb' xs')))
-``
+]]
 *)
+
+(** * 証明駆動開発 *)
 
 (**
 これからは、TLP の範囲を越える事項ですが、
@@ -172,8 +182,9 @@ Fixpoint count_occ (l : list bool) (x : bool) : nat :=
     end
   end.
 
-Compute count_occ (true :: false :: true :: nil) true. (* 2 *)
-Compute count_occ (true :: false :: true :: nil) false. (* 1 *)
+Compute count_occ (true :: false :: true :: nil) true. (** ==> [2] *)
+
+Compute count_occ (true :: false :: true :: nil) false. (** ==> [1] *)
 
 
 (**
@@ -220,13 +231,14 @@ Program Fixpoint remb'' (xs : list bool) :
   | true :: xs' => remb'' xs'
   end.
 
-Compute ` (remb'' (true :: false :: true :: nil)). (* [false] *)
+Compute ` (remb'' (true :: false :: true :: nil)). (** ==> [[false]] *)
 
 Extraction remb''.
-(**
-生成されたコードには、count_occ は含まれていない。
 
-``
+(**
+生成されたコードには、count_occ は含まれていません。
+
+[[
 val remb'' : bool list -> bool list
 
 let rec remb'' = function
@@ -235,12 +247,14 @@ let rec remb'' = function
   (match b with
    | True -> remb'' xs'
    | False -> Cons (False, (remb'' xs')))
-``
+]]
  *)
 
-(** 帰納法の公理 *)
+(** * 帰納法の公理 *)
 
 (**
+TLPにもどって、帰納法による証明について考えてみましょう。
+
 以下は、証明するべきものではなく、リストの型定義にもとづく「公理」です。
  *)
 
@@ -255,21 +269,21 @@ Check list_ind membp_remb :
   forall l : list bool, membp_remb l.
 
 (**
-この公理を使うとすると。
+この公理を使うなら、
 
-``forall l : list bool, membp_remb l``
+[forall l : list bool, membp_remb l]
 
 を証明するには、
 
-``membp_remb []``
+[membp_remb []]
 
 と
 
-``(forall (a : bool) (l : list bool), membp_remb l -> membp_remb (a :: l))``
+[(forall (a : bool) (l : list bool), membp_remb l -> membp_remb (a :: l))]
 
 とを証明する必要があります。後者は、TLPでは、l は nil でないことを条件に、
 
-``(forall (l : list bool), membp_remb (tl l0) -> membp_remb l)``
+[(forall (l : list bool), membp_remb (tl l) -> membp_remb l)]
 
 となっています。おなじですね。
  *)
