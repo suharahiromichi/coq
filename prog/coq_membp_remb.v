@@ -269,7 +269,7 @@ Check list_ind : forall (A : Type) (P : list A -> Prop),
 
 (**
 これを membp_remb に適用すると次を得ます。
-繰り替えしますが、これは証明するべきものではなく、「公理」です。
+繰り返しますが、これは証明するべきものではなく、「公理」です。
  *)
 
 Check list_ind membp_remb :
@@ -288,27 +288,18 @@ Check list_ind membp_remb :
 
 と
 
-[(forall (a : bool) (l : list bool), membp_remb l -> membp_remb (a :: l))]
+[forall (a : bool) (l : list bool), membp_remb l -> membp_remb (a :: l)]
 
-とを証明する必要があります。後者は、TLPでは、l は nil でないことを条件に、
+とを証明すればよいことになります。後者は、TLPでは、l は nil でないことを条件に、
+[(cdr l)] をとっていて、つまり、
 
-[(forall (l : list bool), membp_remb (tl l) -> membp_remb l)]
+[forall (l : list bool), membp_remb (tl l) -> membp_remb l]
 
 となっています。おなじですね。
  *)
 
 (**
 実際の証明は、以下の通りです。
-
-最初の証明では、
-
-[induction xs] というタクティクを使いましたが、
-
-この公理を
-
-[apply (list_ind membp_remb)]
-
-として、適用することと同じです。
  *)
 
 Goal forall xs, membp_remb xs.
@@ -321,5 +312,17 @@ Proof.
     + now simpl.
     + now simpl.
 Qed.
+
+(**
+最初の証明では、
+
+[induction xs] というタクティクを使いましたが、
+
+この公理を
+
+[apply (list_ind membp_remb)]
+
+として、適用することと同じです。
+ *)
 
 (* END *)
