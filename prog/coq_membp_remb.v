@@ -1,5 +1,5 @@
 (**
-The Little Prover (TLP) の第6章にある memb?/remb 定理をCoqで解いてみる。
+The Little Prover の memb?/remb をCoqで解いてみる
  *)
 
 Require Import Bool.
@@ -10,6 +10,7 @@ Set Implicit Arguments.
 (** * はじめに *)
 
 (**
+The Little Prover (TLP) の第6章では、memb?/remb という定理が扱われています。
 これは、リニアなリストの要素から、文字 '?' を削除する関数 remb と、
 これは、リニアなリストの要素に、文字 '?' が含まれるかを判定する関数 memb? が
 定義されているとき、
@@ -57,13 +58,14 @@ Compute remb (true :: false :: true :: nil).         (** ==> [[false]] *)
 (**
 memb?/remb に対応する membp_remb は、文字通りの定義です。
 結果は偽であるため、「~」がついています。
-
-以下に、membp_remb を証明します。線形リスト xs に対する帰納法と、
-要素 x に対する場合分けだけで証明されています。
-なお、帰納法の仮定IHxsは、ふたつめとみっつめのnowでトリビアルとされています。
  *)
 
 Definition membp_remb (xs : list bool) := ~ membp (remb xs).
+
+(** 以下に、membp_remb を証明します。線形リスト xs に対する帰納法と、
+要素 x に対する場合分けだけで証明されています。
+なお、帰納法の仮定IHxsは、ふたつめとみっつめのnowでトリビアルに使われます。
+ *)
   
 Goal forall (xs : list bool), membp_remb xs.
 Proof.
@@ -130,6 +132,8 @@ remb' is recursively defined (decreasing on 1st argument)
 
 (**
 remb' を「Program」コマンドの外から実行するときは、proj1_sig で値を取り出す必要があります。
+
+これは、[`] という演算子として定義されています。
 *)
 
 Compute ` (remb' (true :: false :: true :: nil)). (** ==> [[false]] *)
@@ -193,7 +197,6 @@ Compute count_occ (true :: false :: true :: nil) false. (** ==> [1] *)
 また let ... in は普通の意味で、ys は構文的な意味しかもちません。
 *)
 
-
 Goal forall (xs : list bool),
     let ys := remb xs in
     count_occ ys true = 0 /\  count_occ xs false = count_occ ys false.
@@ -254,14 +257,20 @@ let rec remb'' = function
 
 (**
 TLPにもどって、帰納法による証明について考えてみましょう。
-
-以下は、証明するべきものではなく、リストの型定義にもとづく「公理」です。
+TLPでは、（例によって、天から降ってきた）「inductive claim」を証明しています。
+これの導きかたは第6章の最後に記載されていますが、Coqの場合は、
+リストの型定義にもとづく「公理」を使います。
  *)
 
 Check list_ind : forall (A : Type) (P : list A -> Prop),
     P [] ->
     (forall (a : A) (l : list A), P l -> P (a :: l)) ->
     forall l : list A, P l.
+
+(**
+これを membp_remb に適用すると次を得ます。
+繰り替えしますが、これは証明するべきものではなく、「公理」です。
+ *)
 
 Check list_ind membp_remb :
   membp_remb [] ->
@@ -290,15 +299,25 @@ Check list_ind membp_remb :
 
 (**
 実際の証明は、以下の通りです。
+
+最初の証明では、
+
+[induction xs] というタクティクを使いましたが、
+
+この公理を
+
+[apply (list_ind membp_remb)]
+
+として、適用することと同じです。
  *)
 
 Goal forall xs, membp_remb xs.
 Proof.
   intros xs.
-  apply (list_ind membp_remb).              (* 公理を適用する。 *)
+  apply (list_ind membp_remb).
   - now simpl.
-  - intros x l.
-    case x.
+  - intros x' xs' IHxs.
+    case x'.
     + now simpl.
     + now simpl.
 Qed.
