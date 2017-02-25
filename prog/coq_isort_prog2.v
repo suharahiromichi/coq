@@ -10,8 +10,9 @@
 プログラムの定義や検証の方法は以下のサイトに基づいていますから、併読してください。
 ただし、証明そのものは少し違うところがあります。
 
-#<a href="http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt8.html">#
+#<a href="http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt8.html">
 プログラミング Coq 証明駆動開発入門(1)
+</a>#
 *)
 
 Require Import List.
@@ -61,9 +62,6 @@ Obligation 3.
 Proof.
   split.
   - rewrite perm_swap.
-    
-    (** Permutation で rewrite する。 *)
-    
     now auto with perm.
   - split.
     + intros Hxl'.
@@ -73,13 +71,31 @@ Proof.
       * now auto with sort.
       * inversion Hxl'; simpl in o; destruct o; subst;
           now auto with sort lt_le.
-        
-    (** apply LSorted_consn と apply lt_le が実行される。 *)
-        
     + now auto.
 Defined.
+        
+(**
+rewrite では、通常の [=] ではなく、
+Permutation に対する rewrite が行われていることに注意してください。
 
-(** OCaml のコード *)
+それができるのは、Import している [Sorting/Permutation.v] のなかで、
+[Instance Permutation_Equivalence] が定義されているからですが、
+このあたりについては、
+
+#<a href="http://www.labri.fr/perso/casteran/CoqArt/TypeClassesTut/typeclassestut.pdf">
+A Gentle Introduction to Type Classes and Relations in Coq
+</a>#
+
+を参照してください。
+ *)
+
+(**
+また、[auto with sort lt_le] では、
+[apply LSorted_consn] と [apply lt_le] が実行されています。
+ *)
+
+
+(** OCaml のコードを生成してみます。 *)
 
 Extraction insert.
 (**
@@ -120,7 +136,7 @@ Proof.
   - destruct a0; now auto.
 Defined.
 
-(** OCaml のコード *)
+(** OCaml のコードを生成してみます。 *)
 
 Extraction isort.
 (**
