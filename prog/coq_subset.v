@@ -18,11 +18,11 @@ Coqの「Program」コマンドを使って、
 そこで使う サブセットタイプ (Subset Type) について説明します。
 
 ソースコードは
-#<a "https://github.com/suharahiromichi/coq/blob/master/prog/coq_subset.v">ここ</a>#
+#<a href="https://github.com/suharahiromichi/coq/blob/master/prog/coq_subset.v">ここ</a>#
 にあります。
 
 また、
-#<a "http://adam.chlipala.net/cpdt/"> CPDT </a># の 6.1節も参考になります。
+#<a href="http://adam.chlipala.net/cpdt/"> CPDT </a># の 6.1節も参考になります。
 *)
 
 (** * 概説 *)
@@ -101,17 +101,21 @@ Compute ` (succsucc 3).                     (** ==> 5 *)
 
 Locate "{ _ : _ | _ }".
 (**
-は、[sig] の構文糖です。x は P の中に出現する変数です。
+は、型コンストラクタ [sig] の構文糖です。
+コンストラクトするのは Set でなく Type であることを忘れないでください。
 
- [ "{ x : A  |  P }" := sig (fun x => P)]
+[ "{ x : A  |  P }" := sig (fun x => P)]
+
+x は P の中に出現する変数です。
  *)
 
 Print sig.
 (**
-[
+[[
 Inductive sig (A : Type) (P : A -> Prop) : Type :=
     exist : forall x : A, P x -> {x : A | P x}
-]
+]]
+
 また、[sig] は、[exist] を値コンストラクタとする、サブタイプ型です。
  *)
 
@@ -144,7 +148,17 @@ Qed.
 
 Definition three := exist (fun x => 1 <= x) 3 three_ge_1.
 
-Check three : {x : nat | 1 <= x}.
+Check three : {x : nat | 1 <= x} : Type.
+
+(**
+同じことですが、Proof モードを使用して定義することもできます。
+*)
+
+Definition three' : {x : nat | 1 <= x}.
+Proof.
+  exists 3.
+  omega.
+Defined.
 
 (**
 これから、witness を取り出すには [proj1_sig] というセレクタを使います。
@@ -158,7 +172,101 @@ Check proj1_sig : forall (A : Type) (P : A -> Prop), {x : A | P x} -> A.
 
 Compute ` three.                            (** ==> 3 *)
 
+Compute ` three'.                           (** ==> 3 *)
+
 
 (** * 「Program」コマンド *)
+
+
+
+
+(** * もっとも簡単な例  *)
+
+(**
+自然数から自然数の ident関数 [id] の値の型は、 その引数が [n] であるとき、
+[{x | x = n}] となります。
+
+これを使って id 関数を定義すると次のようになります。
+値のサブタイプ型の部分で、引数を参照することができるわけです。
+*)
+
+Program Fixpoint id (n : nat) : {x | x = n} := n.
+
+Compute ` (id 3).                           (** ==> 3 *)
+
+
+(** * もうひとつの例  *)
+
+(**
+#<a href="https://coq.inria.fr/refman/Reference-Manual027.html">
+Coq Reference Manual Chapter 24"</a>#
+にある例です。
+
+自然数を 2 で割る関数を考えます。引数が [n] のとき、値 [x] は
+
+[n = 2 * x] または [n = 2 * x + 1] となります。
+
+値のサブタイプ型は、
+
+[{x : nat | n = 2 * x \/ n = 2 * x + 1}]
+
+となります。これを使って関数を定義すると次のようになります。
+*)
+
+Program Fixpoint div2 (n : nat) : 
+  { x : nat | n = 2 * x \/ n = 2 * x + 1 } :=
+  match n with
+    | S (S p) => S (div2 p)
+    | _ => 0
+  end.
+Next Obligation.
+Proof.
+  (**
+[[
+p = x + (x + 0) \/ p = x + (x + 0) + 1 ->
+S (S p) = S (x + S (x + 0)) \/ S (S p) = S (x + S (x + 0) + 1)
+]]
+   *)
+  case o; intro H.
+  - left.
+    rewrite H.
+    now auto.
+  - right.
+    rewrite H.
+    rewrite plus_0_r.
+    pattern (x + S x); rewrite plus_comm.
+    rewrite plus_Sn_m.
+    now auto.
+Defined.
+Next Obligation.
+  (**
+[[
+p + 2 <> n -> n = 0 \/ n = 1
+]]
+   *)
+  destruct n ; simpl in * ; intuition.
+  destruct n ; simpl in * ; intuition.
+  elim (H n) ; auto.
+Qed.
+
+Compute ` (div2 4).                         (** ==> 2 *)
+
+Compute ` (div2 5).                         (** ==> 2 *)
+
+Extraction div2.
+(**
+これから生成される OCaml のコードはつぎのようになります。
+
+[[
+val div2 : nat -> nat
+
+let rec div2 = function
+| O -> O
+| S n0 ->
+  (match n0 with
+   | O -> O
+   | S p -> S (div2 p))
+]]
+*)
 
 (* END *)
