@@ -177,8 +177,24 @@ Compute ` three'.                           (** ==> 3 *)
 
 (** * 「Program」コマンド *)
 
+(**
+最初の succ の例にもどってみましょう。
 
+値がサブセット型のとき、普通に Definition すると
+[[
+Definition succ'' (x : nat) : {y : nat | 1 <= y} := x + 1.
 
+Error:
+In environment
+x : nat
+The term "x + 1" has type "nat" while it is expected to have type
+ "{y : nat | 1 <= y}".
+]]
+
+というエラーになります。
+このままでは、値 x + 1 はサブタイプ型ではないからです。
+この型変換（コアーション）をやってくてるのが「Program」コマンドです。
+*)
 
 (** * もっとも簡単な例  *)
 
@@ -187,7 +203,7 @@ Compute ` three'.                           (** ==> 3 *)
 [{x | x = n}] となります。
 
 これを使って id 関数を定義すると次のようになります。
-値のサブタイプ型の部分で、引数を参照することができるわけです。
+値のサブタイプ型の部分では、このように引数を参照することができます。
 *)
 
 Program Fixpoint id (n : nat) : {x | x = n} := n.
