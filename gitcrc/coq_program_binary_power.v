@@ -1,50 +1,17 @@
-(* 
-Program Definition ident : { x : Type | P x } := term. の形式の定義について。
+(**
+#<a href="http://www.labri.fr/perso/casteran/CoqArt/TypeClassesTut/typeclassestut.pdf">
+A Gentle Introduction to Type Classes and Relations in Coq
+</a>#
 
-https://coq.inria.fr/distrib/current/refman/Reference-Manual026.html
- *)
+にある例で、そこではモノイドの説明として整数で定義していますが、
+ここでは簡単に自然数で定義するものとします。
+*)
 
 Set Implicit Arguments.
 Require Import Arith.
 Require Import Div2.
-Require Import Recdef.                      (* Fixpoint *)
-Require Import Program.                     (* destruct_call, on_call, etc... *)
-
-(* P x = (x = n) *)
-Program Fixpoint id' (n : nat) : {x | x = n} := n.
-
-
-(* http://mattam.org/repos/coq/fingertrees/src/examples.v *)
-(* P x = (n = 2 * x \/ n = 2 * x + 1) *)
-Program Fixpoint div2' (n : nat) : 
-  { x : nat | n = 2 * x \/ n = 2 * x + 1 } :=
-  match n with
-    | S (S p) => S (div2' p)
-    | x => 0
-  end.
-
-Next Obligation.
-Proof.
-  case o; intro H.
-  - left.
-    rewrite H.
-    now auto.
-  - right.
-    rewrite H.
-    rewrite plus_0_r.
-    pattern (x + S x); rewrite plus_comm.
-    rewrite plus_Sn_m.
-    now auto.
-Defined.
-
-Next Obligation.
-  (* n が自然数のとき、 *)
-  (* forall p : nat, p + 2 <> n -> n = 0 \/ n = 1 *)
-  destruct n ; simpl in * ; intuition.
-  destruct n ; simpl in * ; intuition.
-  elim (H n) ; auto.
-Qed.
-Print id'.
+(** destruct_call, on_call, etc... *)
+Require Import Program.
 
 (*
 仕様となるpower関数
@@ -55,64 +22,19 @@ Fixpoint power (x : nat) (n : nat) : nat :=
     | S p => x * (power x p)
   end.
 
-(*
-Function コマンド
-{order} である measure は f n の形式。
-http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt7.html
- *)
-Function binary_power_mult' (acc : nat) (x : nat) (n : nat) {measure id n} : nat :=
-  match n with
-    | 0 => acc
-    | _ =>
-      match (Even.even_odd_dec n) with
-        | left _ =>
-          binary_power_mult' acc (x * x) (div2 n)
-        | right _ =>
-          binary_power_mult' (acc * x) (x * x) (div2 n)
-      end
-  end.
-Proof.
-  - intros. unfold id.
-    apply lt_div2. now auto with arith.
-  - intros. unfold id.
-    apply lt_div2. now auto with arith.
-Defined.
-Print binary_power_mult'.
-
-(* 
-Program コマンド、Functionと互換の形式
- *)
-Program Fixpoint binary_power_mult'' (acc : nat) (x : nat) (n : nat) {measure n} : nat :=
-  match n with
-    | 0 => acc
-    | _ =>
-      match (Even.even_odd_dec n) with
-        | left _ =>
-          binary_power_mult'' acc (x * x) (div2 n)
-        | right _ =>
-          binary_power_mult'' (acc * x) (x * x) (div2 n)
-      end
-  end.
-Next Obligation.                            (* Obligation 1 *)
-  apply lt_div2. now auto with arith.
-Defined.
-Next Obligation.                            (* Obligation 1 *)
-  apply lt_div2. now auto with arith.
-Defined.
 
 (* 
 Program コマンド、{x | P x} の形式
 P a = (a = acc * power x n) である。
  *)
 
+
+
+
+
 (*
 binary_power_mult と power の一致の証明が求められるので、補題を用意しておく。
  *)
-Lemma double_2x x : x + x = double x.
-Proof.
-  now unfold double.
-Qed.
-
 Lemma power_S : forall x n, x * power x n = power x (S n).
 Proof.
   intros; simpl.
@@ -199,7 +121,8 @@ Next Obligation.
 Defined.
 Next Obligation.
   unfold binary_power_mult_func_obligation_2.
-  destruct_call binary_power_mult.          (* see Program.v *)
+  (** see Program.v *)
+  destruct_call binary_power_mult.
   rewrite e. simpl.
   apply power_even_n.
   now auto.
@@ -228,3 +151,52 @@ http://d.hatena.ne.jp/airobo/20120813/1344837154
 許されていないので，uncurry化した nat * nat -> nat 型の関数を一度定義した後に curry化してや
 る必要があります．
 *)
+
+
+(*
+Function コマンド
+{order} である measure は f n の形式。
+http://www.iij-ii.co.jp/lab/techdoc/coqt/coqt7.html
+ *)
+Require Import Recdef.
+
+Function binary_power_mult' (acc : nat) (x : nat) (n : nat) {measure id n} : nat :=
+  match n with
+    | 0 => acc
+    | _ =>
+      match (Even.even_odd_dec n) with
+        | left _ =>
+          binary_power_mult' acc (x * x) (div2 n)
+        | right _ =>
+          binary_power_mult' (acc * x) (x * x) (div2 n)
+      end
+  end.
+Proof.
+  - intros. unfold id.
+    apply lt_div2. now auto with arith.
+  - intros. unfold id.
+    apply lt_div2. now auto with arith.
+Defined.
+Print binary_power_mult'.
+
+(* 
+Program コマンド、Functionと互換の形式
+ *)
+Program Fixpoint binary_power_mult'' (acc : nat) (x : nat) (n : nat) {measure n} : nat :=
+  match n with
+    | 0 => acc
+    | _ =>
+      match (Even.even_odd_dec n) with
+        | left _ =>
+          binary_power_mult'' acc (x * x) (div2 n)
+        | right _ =>
+          binary_power_mult'' (acc * x) (x * x) (div2 n)
+      end
+  end.
+Next Obligation.                            (* Obligation 1 *)
+  apply lt_div2. now auto with arith.
+Defined.
+Next Obligation.                            (* Obligation 1 *)
+  apply lt_div2. now auto with arith.
+Defined.
+
