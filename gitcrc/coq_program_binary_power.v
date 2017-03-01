@@ -1,9 +1,28 @@
 (**
+power(累乗)関数の例
+*)
+
+(**
 #<a href="http://www.labri.fr/perso/casteran/CoqArt/TypeClassesTut/typeclassestut.pdf">
 A Gentle Introduction to Type Classes and Relations in Coq
 </a>#
 
-にある例で、そこではモノイドの説明として整数で定義していますが、
+にある累乗を計算する関数の例です。
+
+2種類の累乗の定義 [power] と [binary_power_mult] が同じであるという定理 
+[binary_power_mult_ok] を証明しています。
+
+[power] は、冪指数による再帰を使った単純なもので、
+[binary_power_mult] は、冪指数を2分割して計算するものです。
+
+[power] が O(n) のオーダー であるのに対して、
+[binary_power_mult] O(log2(n)) のオーダーです。
+
+ここでは、[power] を累乗の仕様と考えて、
+より効率的であるが読みにくい [binary_power_mult] の検証をおこなうと考えます。
+（p.3)
+
+なお、オリジナルの文献で、はモノイドの説明として整数で定義していますが、
 ここでは簡単に自然数で定義するものとします。
 *)
 
@@ -13,28 +32,20 @@ Require Import Div2.
 (** destruct_call, on_call, etc... *)
 Require Import Program.
 
-(*
+(**
 仕様となるpower関数
 *)
+
 Fixpoint power (x : nat) (n : nat) : nat :=
   match n  with
     | 0 => 1
     | S p => x * (power x p)
   end.
 
+(**
+補題
+*)
 
-(* 
-Program コマンド、{x | P x} の形式
-P a = (a = acc * power x n) である。
- *)
-
-
-
-
-
-(*
-binary_power_mult と power の一致の証明が求められるので、補題を用意しておく。
- *)
 Lemma power_S : forall x n, x * power x n = power x (S n).
 Proof.
   intros; simpl.
@@ -62,8 +73,11 @@ Proof.
     now rewrite mult_assoc.
 Qed.
 
-(* binary_power_mult_ok を参考に *)
-(* nが偶数の場合 *)
+(**
+binary_power_mult_ok を参考に
+
+nが偶数の場合  *)
+
 Lemma power_even_n acc x n :
   Even.even n -> acc * power (x * x) (div2 n) = acc * power x n.
 Proof.
@@ -78,7 +92,9 @@ Proof.
       now auto.
 Qed.
 
-(* nが奇数の場合 *)
+(**
+ nが奇数の場合 *)
+
 Lemma power_odd_n acc x n :
   Even.odd n -> acc * x * power (x * x) (div2 n) = acc * power x n.
 Proof.
@@ -96,6 +112,10 @@ Proof.
     + generalize (odd_double _ o); intro H.
       now auto.
 Qed.
+
+(**
+[P a = (a = acc * power x n)] を証明します。
+ *)
 
 Program Fixpoint binary_power_mult (acc : nat) (x : nat) (n : nat) {measure n} :
   {a : nat | a = acc * power x n} :=
@@ -140,18 +160,8 @@ Next Obligation.
   now auto.
 Defined.
 
-(* END *)
-
-(**
-http://d.hatena.ne.jp/airobo/20120813/1344837154
-
-私が便利だと思っているのは Program Fixpoint です．何が便利かというと，（coercion の自動挿入
-も嬉しいのですが，）induction の measure として，複数の引数が使えることです．例えば，nat
--> nat -> nat 型の再帰関数を定義しようとしたときに，Function の measure関数は一引数関数しか
-許されていないので，uncurry化した nat * nat -> nat 型の関数を一度定義した後に curry化してや
-る必要があります．
-*)
-
+(*
+以下は予備
 
 (*
 Function コマンド
@@ -200,3 +210,6 @@ Next Obligation.                            (* Obligation 1 *)
   apply lt_div2. now auto with arith.
 Defined.
 
+ *)
+
+(* END *)
