@@ -8,8 +8,7 @@ A Gentle Introduction to Type Classes and Relations in Coq
 </a>#
 
 にある累乗を計算する関数の例です。
-
-2種類の累乗の定義 [power] と [binary_power_mult] が同じであるという定理 
+そこでは、2種類の累乗の定義 [power] と [binary_power_mult] が同じであるという定理 
 [binary_power_mult_ok] を証明しています。
 
 [power] は、冪指数による再帰を使った単純なもので、
@@ -18,12 +17,15 @@ A Gentle Introduction to Type Classes and Relations in Coq
 [power] が O(n) のオーダー であるのに対して、
 [binary_power_mult] O(log2(n)) のオーダーです。
 
-ここでは、[power] を累乗の仕様と考えて、
-より効率的であるが読みにくい [binary_power_mult] の検証をおこなうと考えます。
-（p.3)
+ここで、[power] を累乗の仕様と考えて、
+より効率的であるが読みにくい [binary_power_mult] の検証をおこなうと考えます（p.3)。
 
 なお、オリジナルの文献で、はモノイドの説明として整数で定義していますが、
 ここでは簡単に自然数で定義するものとします。
+
+このソースコードは、
+#<a href="https://github.com/suharahiromichi/coq/blob/master/gitcrc/coq_program_binary_power.v">ここ</a>#
+にあります。
 *)
 
 Set Implicit Arguments.
@@ -129,12 +131,12 @@ Program Fixpoint binary_power_mult (acc : nat) (x : nat) (n : nat) {measure n} :
           binary_power_mult (acc * x) (x * x) (div2 n)
       end
   end.
-(* 0 *)
+(** n が 0 の場合 *)
 Next Obligation.
   rewrite mult_1_r.
   now auto.
 Defined.
-(* 偶数 *)
+(** n が 偶数の場合 *)
 Next Obligation.
   apply lt_div2.
   now auto with arith.
@@ -143,22 +145,33 @@ Next Obligation.
   unfold binary_power_mult_func_obligation_2.
   (** see Program.v *)
   destruct_call binary_power_mult.
-  rewrite e. simpl.
+  rewrite e; simpl.
   apply power_even_n.
   now auto.
 Defined.
-(* 奇数 *)
+(** n が 奇数の場合 *)
 Next Obligation.
   apply lt_div2.
   now auto with arith.
 Defined.
 Next Obligation.
   unfold binary_power_mult_func_obligation_4.
+  (** see Program.v *)
   destruct_call binary_power_mult.
-  rewrite e. simpl.
+  rewrite e; simpl.
   apply power_odd_n.
   now auto.
 Defined.
+
+Definition binary_power (x : nat) (n : nat) :=
+  binary_power_mult 1 x n.
+  
+
+(** 実行してみます。 *)
+
+Compute power 5 3.                          (** ==> 125 *)
+
+Compute ` (binary_power 5 3).               (** ==> 125 *)
 
 (*
 以下は予備
