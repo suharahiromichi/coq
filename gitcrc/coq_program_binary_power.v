@@ -13,13 +13,12 @@ A Gentle Introduction to Type Classes and Relations in Coq
 
 [power] は、冪指数による再帰を使った単純なもので、
 [binary_power_mult] は、冪指数を2分割して計算するものです。
-
 [power] が O(n) のオーダー であるのに対して、
 [binary_power_mult] O(log2(n)) のオーダーです。
 
 ここで、[power] を累乗の仕様と考えて、
 より効率的であるが読みにくい [binary_power_mult] の検証をおこなうと考えます（p.3)。
-
+#<br>#
 なお、オリジナルの文献で、はモノイドの説明として整数で定義していますが、
 ここでは簡単に自然数で定義するものとします。
 
@@ -76,9 +75,10 @@ Proof.
 Qed.
 
 (**
-binary_power_mult_ok を参考に
-
-nが偶数の場合  *)
+以下の補題は、binary_power_mult_ok を参考にしています。
+#<br>#
+nが偶数の場合。
+ *)
 
 Lemma power_even_n acc x n :
   Even.even n -> acc * power (x * x) (div2 n) = acc * power x n.
@@ -95,7 +95,8 @@ Proof.
 Qed.
 
 (**
- nが奇数の場合 *)
+ nが奇数の場合
+ *)
 
 Lemma power_odd_n acc x n :
   Even.odd n -> acc * x * power (x * x) (div2 n) = acc * power x n.
@@ -116,7 +117,13 @@ Proof.
 Qed.
 
 (**
-[P a = (a = acc * power x n)] を証明します。
+関数の定義からわかるように、
+[binary_power_mult acc x n = acc * power x n]
+が成り立ちます。
+
+そこで、サブセット型は
+[{a : nat | a = acc * power x n}]
+となります。
  *)
 
 Program Fixpoint binary_power_mult (acc : nat) (x : nat) (n : nat) {measure n} :
@@ -163,6 +170,9 @@ Next Obligation.
   now auto.
 Defined.
 
+(**
+power(累乗)関数のかたちに整えます。
+*)
 Definition binary_power (x : nat) (n : nat) :=
   binary_power_mult 1 x n.
   
