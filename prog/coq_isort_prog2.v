@@ -17,7 +17,7 @@
 
 (**
 ソースコードは、
-#<a href="https://github.com/suharahiromichi/coq/blob/master/prog/coq_isort_prov2.v">
+#<a href="https://github.com/suharahiromichi/coq/blob/master/prog/coq_isort_prog2.v">
 ここ
 </a>
 にあります。
