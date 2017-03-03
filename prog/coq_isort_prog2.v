@@ -15,6 +15,14 @@
 </a>#
 *)
 
+(**
+ソースコードは、
+#<a href="https://github.com/suharahiromichi/coq/blob/master/prog/coq_isort_prov2.v">
+ここ
+</a>
+にあります。
+ *)
+
 Require Import List.
 Require Import Arith.
 Require Import Sorting.Permutation.

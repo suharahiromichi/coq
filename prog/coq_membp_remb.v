@@ -21,6 +21,14 @@ Coqの場合は、false と true からなる bool型のリストとし、もじ
   *)
 
 (**
+ソースコードは、
+#<a href="https://github.com/suharahiromichi/coq/blob/master/prog/coq_membp_remb.v">
+ここ
+</a>
+にあります。
+ *)
+
+(**
 まず、membp (memb? に対応する) のリストにtrueが含まれていることを判定する関数を定義ましす。
 リストの先頭から見ていき true が含まれていたらそこで True を返します。
 *)
