@@ -133,6 +133,8 @@ Proof.
   - now trivial.
 Defined.
 
+Compute ` (remb' (0 :: 1 :: 0 :: nil)).     (** ==> [[1]] *)
+
 Extraction remb'.
 (**
 生成されたコードには、rembp は含まれていない。
@@ -165,11 +167,14 @@ remb の厳密な定義は、(1)に加えて(2)も満たさないといけませ
 (2) 結果のリストがもとのリストのサブリストであること。
  *)
 
+(** サブリストを定義します。  *)
+
 Section Sublist.
   Variable A : Type.
   Variable f : A -> bool.
 
-  (* Sublist l' l <==> l' ⊆ l *)
+  (** Sublist l' l <==> l' ⊆ l *)
+  
   Inductive Sublist : list A -> list A -> Prop :=
   | SL_nil l : Sublist nil l
   | SL_skip x l' l : Sublist l' l -> Sublist l' (x :: l)
@@ -193,15 +198,14 @@ Proof.
   split.
   - apply le_membp_remb.
   - induction xs as [| x' xs' IHxs]; simpl.
-    + now auto.                             (* SL_nil *)
+    + now auto.                             (** SL_nil を使う。 *)
     + case x' as [|x''].
-      * now auto.                           (* SL_Skip *)
-      * now auto.                           (* SL_cons *)
+      * now auto.                           (** SL_Skip を使う。 *)
+      * now auto.                           (** SL_cons を使う。 *)
 Qed.
 
 (**
 「Program」コマンドでの定義に条件を追加します。
-今回も自動証明できました。
 *)
 
 Program Fixpoint remb'' (xs : list nat) :
@@ -222,6 +226,8 @@ Proof.
     + now trivial.
   -  now auto.                             (* SL_nil *)
 Defined.
+
+Compute ` (remb'' (0 :: 1 :: 0 :: nil)).    (** ==> [[1]] *)
 
 Extraction remb''.
 
