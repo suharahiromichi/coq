@@ -126,8 +126,7 @@ Program Fixpoint remb' (xs : list nat) : {ys : list nat | ~ membp ys} :=
 Obligation 2.
 Proof.
   case x as [| x']; simpl.
-  - generalize (H xs').
-    intro H'.
+  - generalize (H xs'); intro H'.
     exfalso.
     now apply H'.
   - now trivial.
@@ -219,12 +218,11 @@ Obligation 3.
 Proof.
   split.
   - case x as [| x']; simpl.
-    + generalize (H xs').
-      intro H'.
+    + generalize (H xs'); intro H'.
       exfalso.
       now apply H'.
     + now trivial.
-  -  now auto.                             (* SL_nil *)
+  - now auto.                               (** SL_cons を使う。 *)
 Defined.
 
 Compute ` (remb'' (0 :: 1 :: 0 :: nil)).    (** ==> [[1]] *)
