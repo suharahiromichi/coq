@@ -295,9 +295,9 @@ Proof.
   apply (list_ind membp_remb).
   - now simpl.
   - intros x' xs' IHxs.
-    case x'.
-    + now simpl.
-    + now simpl.
+    case x'; simpl.
+    + now trivial.
+    + now trivial.
 Qed.
 
 (**
