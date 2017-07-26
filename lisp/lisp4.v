@@ -75,6 +75,7 @@ Fixpoint eqStar (x y : star) : bool :=
   | _ => false
   end.
 
+
 Lemma star_eqP_1 : forall (x y : star), eqStar x y -> x = y.
 Proof.
 Admitted.
@@ -134,7 +135,7 @@ Definition COND (q a e : star) : star :=
   if q == 'NIL then e else a.
 
 Definition EQUAL (x y : star) : star :=
-  if (eqStar x y) then 'T else 'NIL.
+  if x == y then 'T else 'NIL.
 
 (*
 Definition COND (q a e : star) : star :=
@@ -261,7 +262,41 @@ Proof.
   - admit.
 Admitted.
 
+
+
 Lemma cons_car_cdr (x : star) :
+  ~ ATOM x -> (CONS (CAR x) (CDR x)) = x.
+Proof.
+  intros Hn.
+  case Hc: x; rewrite /CONS => /=.
+  - by rewrite Hc in Hn.                    (* 前提の矛盾 *)
+  - by [].
+Qed.
+
+(* ****** *)
+(* SAMPLE *)
+(* ****** *)
+
+Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a))) (CAR a))).
+Proof.
+  move=> a.
+  rewrite {1}/COND.
+  case Hc : (ATOM (CAR a) == 'NIL).
+  Check @cons_car_cdr (CAR a).
+  rewrite (@cons_car_cdr (CAR a)).
+  + Check equal_same (CAR a).
+    by apply (equal_same (CAR a)).
+  + move/eqP in Hc.
+    rewrite Hc.
+    rewrite /is_not_nil.
+    simpl.
+    done.
+  + done.
+Qed.
+
+
+
+Lemma cons_car_cdr' (x : star) :
   ATOM x = 'NIL -> (CONS (CAR x) (CDR x)) = x.
 Proof.
   intros Hn.
@@ -274,33 +309,20 @@ Qed.
 (* SAMPLE *)
 (* ****** *)
 
-Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a)))
-                                              (CAR a))).
-Proof.
-  move=> a.
-  rewrite {1}/COND.
-  case Hc : (ATOM (CAR a) == 'NIL).
-  Check @cons_car_cdr (CAR a).
-  rewrite (@cons_car_cdr (CAR a)).
-  + Check equal_same (CAR a).
-    by apply (equal_same (CAR a)).
-  + by move/eqP in Hc.
-  + done.
-Qed.
-
-
 Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a))) (CAR a))).
 Proof.
   move=> a.
   rewrite {1}/COND.
   case Hc : (ATOM (CAR a) == 'NIL).
-  - Check @cons_car_cdr (CAR a).
-    rewrite (@cons_car_cdr (CAR a)).
-    + Check equal_same (CAR a).
+  - Check @cons_car_cdr' (CAR a).
+    rewrite (@cons_car_cdr' (CAR a)).
+    + Check equal_same (CAR a).             (* 定理の本体分 *)
         by apply (equal_same (CAR a)).
-  - by move/eqP in Hc.
-  - done.
+    + by move/eqP in Hc.                    (* 定理の条件部分 *)
+  - done.                                   (* A節 *)
 Qed.
+
+
 
 Goal forall x,  x = 'NIL -> COND x 'T 'T = 'T.
 Proof.
