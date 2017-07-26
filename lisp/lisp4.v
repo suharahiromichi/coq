@@ -50,12 +50,12 @@ Lemma literal_eqP : forall (x y : literal), reflect (x = y) (eqLit x y).
 Proof.
   move=> x y.
   apply (iffP idP).
-  - admit.
+  - case: x; case: y; rewrite /eqLit => x y; move/eqP => H;
+    by [rewrite H| | |rewrite H].
   - move=> H; rewrite H.
-    case: y H => n H1.
+    case: y H => n H1;
     by rewrite /eqLit.
-    by rewrite /eqLit.
-Admitted.
+Qed.
 Definition literal_eqMixin := @EqMixin literal eqLit literal_eqP.
 Canonical literal_eqType := @EqType literal literal_eqMixin.
 
@@ -75,16 +75,21 @@ Fixpoint eqStar (x y : star) : bool :=
   | _ => false
   end.
 
+Lemma star_eqP_1 : forall (x y : star), eqStar x y -> x = y.
+Proof.
+Admitted.
+
+Lemma star_eqP_2 : forall (x y : star), x = y -> eqStar x y.
+Proof.
+Admitted.
+
 Lemma star_eqP : forall (x y : star), reflect (x = y) (eqStar x y).
 Proof.
   move=> x y.
   apply (iffP idP).
-  - admit.
-  - move=> H; rewrite H.
-    case: y H => l.
-    + by move=> y; rewrite /eqStar.
-    + move=> y H. simpl.
-Admitted.
+  + by apply star_eqP_1.
+  + by apply star_eqP_2.
+Qed.
 Definition star_eqMixin := @EqMixin star eqStar star_eqP.
 Canonical star_eqType := @EqType star star_eqMixin.
 
@@ -112,12 +117,6 @@ Definition ATOM (x : star) : star :=
   | S_CONS _ _ => 'NIL
   end.
 
-Definition COND (q a e : star) : star :=
-  if (eqStar q 'NIL) then e else a.
-
-Definition EQUAL (x y : star) : star :=
-  if (eqStar x y) then 'T else 'NIL.
-
 (* **** *)
 
 (* 否定が扱えるように、一旦boolを経由する。 *)
@@ -131,7 +130,23 @@ Check (ATOM (CONS 'T 'T)) : star.
 Check (ATOM (CONS 'T 'T)) : Prop.
 Check ~ (ATOM (CONS 'T 'T)) : Prop.
 
-(* **** *)
+Definition COND (q a e : star) : star :=
+  if q == 'NIL then e else a.
+
+Definition EQUAL (x y : star) : star :=
+  if (eqStar x y) then 'T else 'NIL.
+
+(*
+Definition COND (q a e : star) : star :=
+  if q then e else a.
+
+Definition EQUAL (x y : star) : star :=
+  if x == y then 'T else 'NIL.
+*)
+
+(* *********** *)
+(* J-Bobの定理 *)
+(* *********** *)
 
 Lemma atom_cons (x y : star) :
   ATOM (CONS x y) = 'NIL.
@@ -197,6 +212,8 @@ Qed.
 Lemma if_true (x y : star) :
   COND 'T x y = x.
 Proof.
+  rewrite /COND.
+  simpl.
   done.
 Qed.
 
@@ -241,7 +258,7 @@ Proof.
   rewrite /COND.
   case Hc : (eqStar x 'NIL).
   - admit.
-  - done.
+  - admit.
 Admitted.
 
 Lemma cons_car_cdr (x : star) :
@@ -253,7 +270,37 @@ Proof.
   - by [].
 Qed.
 
-(* **** *)
+(* ****** *)
+(* SAMPLE *)
+(* ****** *)
+
+Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a)))
+                                              (CAR a))).
+Proof.
+  move=> a.
+  rewrite {1}/COND.
+  case Hc : (ATOM (CAR a) == 'NIL).
+  Check @cons_car_cdr (CAR a).
+  rewrite (@cons_car_cdr (CAR a)).
+  + Check equal_same (CAR a).
+    by apply (equal_same (CAR a)).
+  + by move/eqP in Hc.
+  + done.
+Qed.
+
+
+Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a))) (CAR a))).
+Proof.
+  move=> a.
+  rewrite {1}/COND.
+  case Hc : (ATOM (CAR a) == 'NIL).
+  - Check @cons_car_cdr (CAR a).
+    rewrite (@cons_car_cdr (CAR a)).
+    + Check equal_same (CAR a).
+        by apply (equal_same (CAR a)).
+  - by move/eqP in Hc.
+  - done.
+Qed.
 
 Goal forall x,  x = 'NIL -> COND x 'T 'T = 'T.
 Proof.
