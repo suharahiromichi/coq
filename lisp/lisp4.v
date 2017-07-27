@@ -77,8 +77,7 @@ Fixpoint eqStar (x y : star) : bool :=
 
 Lemma eqCons x y x' y' : (x = x' /\ y = y') -> S_CONS x y = S_CONS x' y'.
 Proof.
-  move=> H.
-  case: H => Hx Hy.
+  case=> Hx Hy.
   by rewrite Hx Hy.
 Qed.
 
@@ -87,19 +86,19 @@ Proof.
   elim.
   - move=> a.
     elim=> b.
-    + move/eqP=> H. by rewrite H.           (* ATOM どうし *)
+    + move/eqP=> H.                         (* ATOM どうし *)
+        by rewrite H.  
     + done.                                 (* ATOM と CONS *)
-  - move=> x IHx y IHy y' IH.
-    elim: y' IH.
+  - move=> x Hx y Hy.
+    elim.
     + done.                                 (* CONS と ATOM *)
-    + move=> x' H1 x'' H2 H3.
-      simpl in H3.
-      move/andP in H3.
-      case: H3=> H31 H32.
-      apply eqCons.
+    + move=> x' IHx y' IHy.                 (* CONS と CONS *)
+      move/andP.
+      case=> Hxx' Hyy'.
+      apply: eqCons.
       split.
-      * by apply (IHx x').
-      * by apply (IHy x'').
+      * by apply: (Hx x').
+      * by apply: (Hy y').
 Qed.
 
 Lemma star_eqP_2 : forall (x y : star), x = y -> eqStar x y.
@@ -147,6 +146,7 @@ Definition ATOM (x : star) : star :=
 
 (* **** *)
 
+(* S-EXPを論理式(Prop)に埋め込むためのコアーションを定義する。 *)
 (* 否定が扱えるように、一旦boolを経由する。 *)
 Coercion is_not_nil (x : star) : bool := ~~ eqStar x 'NIL.
 
@@ -251,6 +251,18 @@ Proof.
   done.
 Qed.
 
+Lemma if_nest_E' (x y z : star) :
+  ~ x  -> (COND x y z) = z.
+Proof.
+  move=> H.
+  rewrite /COND.
+  case Hc : (x == 'NIL).
+  - done.
+  - move/eqP in Hc.
+    move/eqP in H.
+    admit.
+Admitted.
+
 Lemma if_nest_E (x y z : star) :
   x = 'NIL -> COND x y z = z.
 Proof.
@@ -280,47 +292,18 @@ Proof.
 Qed.
 
 Lemma if_nest_A (x y z : star) :
-  x <> 'NIL -> COND x y z = y.
+  x -> (COND x y z) = y.
 Proof.
   move=> H.
   rewrite /COND.
-  case Hc : (eqStar x 'NIL).
-  - admit.
-  - admit.
-Admitted.
-
-
-
-Lemma cons_car_cdr (x : star) :
-  ~ ATOM x -> (CONS (CAR x) (CDR x)) = x.
-Proof.
-  intros Hn.
-  case Hc: x; rewrite /CONS => /=.
-  - by rewrite Hc in Hn.                    (* 前提の矛盾 *)
-  - by [].
-Qed.
-
-(* ****** *)
-(* SAMPLE *)
-(* ****** *)
-
-Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a))) (CAR a))).
-Proof.
-  move=> a.
-  rewrite {1}/COND.
-  case Hc : (ATOM (CAR a) == 'NIL).
-  - Check @cons_car_cdr (CAR a).
-    rewrite (@cons_car_cdr (CAR a)).
-    + Check equal_same (CAR a).
-        by rewrite  (equal_same (CAR a)).
-    + move/eqP in Hc.
-      rewrite Hc.
-        by rewrite /is_not_nil /=.
+  case Hc : (x == 'NIL).
+  - move/eqP in Hc.
+    move/eqP in H.
+    done.
   - done.
 Qed.
 
-
-Lemma cons_car_cdr' (x : star) :
+Lemma cons_car_cdr (x : star) :
   ATOM x = 'NIL -> (CONS (CAR x) (CDR x)) = x.
 Proof.
   intros Hn.
@@ -333,13 +316,14 @@ Qed.
 (* SAMPLE *)
 (* ****** *)
 
+(* cons_car_cdr を使う例。 *)
 Goal forall a, (COND (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a))) (CAR a))).
 Proof.
   move=> a.
   rewrite {1}/COND.
   case Hc : (ATOM (CAR a) == 'NIL).
-  - Check @cons_car_cdr' (CAR a).
-    rewrite (@cons_car_cdr' (CAR a)).
+  - Check @cons_car_cdr (CAR a).
+    rewrite (@cons_car_cdr (CAR a)).
     + Check equal_same (CAR a).             (* 定理の本体分 *)
         by apply (equal_same (CAR a)).
     + by move/eqP in Hc.                    (* 定理の条件部分 *)
@@ -347,14 +331,29 @@ Proof.
 Qed.
 
 
-
-Goal forall x,  x = 'NIL -> COND x 'T 'T = 'T.
+(* cons_car_cdr を使う例。 *)
+Lemma cons_car_cdr' (x : star) :
+  ~ (ATOM x) -> (CONS (CAR x) (CDR x)) = x.
 Proof.
-  intros.
-  Check if_nest_E.                          (* 条件付き書き換えの使い方。 *)
-  rewrite if_nest_E.
-  + done.
-  + done.
+  intros Hn.
+  case Hc: x; rewrite /CONS => /=.
+  - by rewrite Hc in Hn.                    (* 前提の矛盾 *)
+  - by [].
 Qed.
+
+Definition COND' (q a e : star) : star :=
+  if q then a else e.
+
+Goal forall a, (COND' (ATOM (CAR a)) 'T (EQUAL (CONS (CAR (CAR a)) (CDR (CAR a))) (CAR a))).
+Proof.
+  move=> a.
+  rewrite {1}/COND'.
+  case Hc : (is_not_nil (ATOM (CAR a))).
+  - done.                                   (* A節 *)
+  - rewrite (@cons_car_cdr (CAR a)).
+    + by rewrite  (equal_same (CAR a)).     (* 定理の本体分 *)
+    + by move/eqP in Hc.                    (* 定理の条件部分 *)
+Qed.
+
 
 (* END *)
