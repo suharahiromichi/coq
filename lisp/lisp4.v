@@ -75,14 +75,41 @@ Fixpoint eqStar (x y : star) : bool :=
   | _ => false
   end.
 
+Lemma eqCons x y x' y' : (x = x' /\ y = y') -> S_CONS x y = S_CONS x' y'.
+Proof.
+  move=> H.
+  case: H => Hx Hy.
+  by rewrite Hx Hy.
+Qed.
 
 Lemma star_eqP_1 : forall (x y : star), eqStar x y -> x = y.
 Proof.
-Admitted.
+  elim.
+  - move=> a.
+    elim=> b.
+    + move/eqP=> H. by rewrite H.           (* ATOM どうし *)
+    + done.                                 (* ATOM と CONS *)
+  - move=> x IHx y IHy y' IH.
+    elim: y' IH.
+    + done.                                 (* CONS と ATOM *)
+    + move=> x' H1 x'' H2 H3.
+      simpl in H3.
+      move/andP in H3.
+      case: H3=> H31 H32.
+      apply eqCons.
+      split.
+      * by apply (IHx x').
+      * by apply (IHy x'').
+Qed.
 
 Lemma star_eqP_2 : forall (x y : star), x = y -> eqStar x y.
 Proof.
-Admitted.
+  move=> x y H; rewrite -H {H}.
+  elim: x.
+  - by move=> a /=.
+  - move=> x Hx y' Hy /=.
+    by apply/andP; split.
+Qed.
 
 Lemma star_eqP : forall (x y : star), reflect (x = y) (eqStar x y).
 Proof.
@@ -282,18 +309,15 @@ Proof.
   move=> a.
   rewrite {1}/COND.
   case Hc : (ATOM (CAR a) == 'NIL).
-  Check @cons_car_cdr (CAR a).
-  rewrite (@cons_car_cdr (CAR a)).
-  + Check equal_same (CAR a).
-    by apply (equal_same (CAR a)).
-  + move/eqP in Hc.
-    rewrite Hc.
-    rewrite /is_not_nil.
-    simpl.
-    done.
-  + done.
+  - Check @cons_car_cdr (CAR a).
+    rewrite (@cons_car_cdr (CAR a)).
+    + Check equal_same (CAR a).
+        by rewrite  (equal_same (CAR a)).
+    + move/eqP in Hc.
+      rewrite Hc.
+        by rewrite /is_not_nil /=.
+  - done.
 Qed.
-
 
 
 Lemma cons_car_cdr' (x : star) :
