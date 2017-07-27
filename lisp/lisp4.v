@@ -164,20 +164,12 @@ Definition COND (q a e : star) : star :=
 Definition EQUAL (x y : star) : star :=
   if x == y then 'T else 'NIL.
 
-(*
-Definition COND (q a e : star) : star :=
-  if q then e else a.
-
-Definition EQUAL (x y : star) : star :=
-  if x == y then 'T else 'NIL.
-*)
-
 (* *********** *)
 (* J-Bobの定理 *)
 (* *********** *)
 
 Lemma atom_cons (x y : star) :
-  ATOM (CONS x y) = 'NIL.
+  (ATOM (CONS x y)) = 'NIL.
 Proof.
   done.
 Qed.
@@ -189,40 +181,46 @@ Proof.
 Qed.
 
 Lemma cdr_cons (x y : star) :
-  CDR (CONS x y) = y.
+  (CDR (CONS x y)) = y.
 Proof.
   done.
+Qed.
+
+Lemma refl_eqStar (x : star) : (x == x).
+Proof.
+  by apply/eqP.
+Qed.
+
+Lemma symm_eqStar (x y : star) : (x == y) = (y == x).
+Proof.
+  by apply/idP/idP; move/eqP=> H; rewrite H.
 Qed.
 
 Lemma equal_same (x : star) :
   EQUAL x x.
 Proof.
-  elim: x => a.
-  - rewrite /EQUAL //=.
-    case: a.
-    + move=> n; rewrite /eqLit //=.
-      case Hc : (n == n).
-(*
-      * done.
-      * admit.
-    + move=> s; rewrite /eqLit //=.
-      case Hc : (eqSym s s).
-      * done.
-      * admit.
-    + move=> H1 y H2.
-      rewrite /EQUAL /=.
-      case Hc : (eqStar a a && eqStar y y).
-      * done.
-      * admit.
-*)
-Admitted.
+  elim: x.
+  - move=> a.
+    rewrite /EQUAL //=.
+    case Hc : (S_ATOM a == S_ATOM a).
+    + done.
+    + by move/eqP in Hc.
+  - move=> x Hxx y Hyy.
+    rewrite /EQUAL //=.
+    case Hc : (S_CONS x y == S_CONS x y).
+    + done.
+    + by move/eqP in Hc.
+  Restart.
+  rewrite /EQUAL.
+  by rewrite refl_eqStar.
+Qed.
 
 Lemma equal_swap (x y : star) :
   EQUAL x y = EQUAL y x.
 Proof.
   rewrite /EQUAL.
-  admit.
-Admitted.
+  by rewrite symm_eqStar.
+Qed.
 
 Lemma if_same (x y : star) :
   COND x y y = y.
@@ -238,7 +236,7 @@ Proof.
 Qed.
 
 Lemma if_true (x y : star) :
-  COND 'T x y = x.
+  (COND 'T x y) = x.
 Proof.
   rewrite /COND.
   simpl.
@@ -246,25 +244,13 @@ Proof.
 Qed.
 
 Lemma if_false (x y : star) :
-  COND 'NIL x y = y.
+  (COND 'NIL x y) = y.
 Proof.
   done.
 Qed.
 
-Lemma if_nest_E' (x y z : star) :
-  ~ x  -> (COND x y z) = z.
-Proof.
-  move=> H.
-  rewrite /COND.
-  case Hc : (x == 'NIL).
-  - done.
-  - move/eqP in Hc.
-    move/eqP in H.
-    admit.
-Admitted.
-
 Lemma if_nest_E (x y z : star) :
-  x = 'NIL -> COND x y z = z.
+  x = 'NIL -> (COND x y z) = z.
 Proof.
   move=> H.
   by rewrite H.
@@ -304,7 +290,7 @@ Proof.
 Qed.
 
 Lemma cons_car_cdr (x : star) :
-  ATOM x = 'NIL -> (CONS (CAR x) (CDR x)) = x.
+  (ATOM x) = 'NIL -> (CONS (CAR x) (CDR x)) = x.
 Proof.
   intros Hn.
   case Hc: x; rewrite /CONS => /=.
@@ -331,7 +317,10 @@ Proof.
 Qed.
 
 
-(* cons_car_cdr を使う例。 *)
+(* おまけ。 *)
+(* 条件にS式を埋め込む例。 *)
+
+(* cons_car_cdr' を使う例。 *)
 Lemma cons_car_cdr' (x : star) :
   ~ (ATOM x) -> (CONS (CAR x) (CDR x)) = x.
 Proof.
@@ -354,6 +343,19 @@ Proof.
     + by rewrite  (equal_same (CAR a)).     (* 定理の本体分 *)
     + by move/eqP in Hc.                    (* 定理の条件部分 *)
 Qed.
+
+
+Lemma if_nest_E' (x y z : star) :
+  ~ x  -> (COND x y z) = z.
+Proof.
+  move=> H.
+  rewrite /COND.
+  case Hc : (x == 'NIL).
+  - done.
+  - move/eqP in Hc.
+    move/eqP in H.
+    admit.
+Admitted.
 
 
 (* END *)
