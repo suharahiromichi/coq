@@ -197,7 +197,7 @@ Proof.
 Qed.
 
 Lemma equal_same (x : star) :
-  EQUAL x x.
+  (EQUAL x x).
 Proof.
   elim: x.
   - move=> a.
@@ -216,14 +216,14 @@ Proof.
 Qed.
 
 Lemma equal_swap (x y : star) :
-  EQUAL x y = EQUAL y x.
+  (EQUAL x y) = (EQUAL y x).
 Proof.
   rewrite /EQUAL.
   by rewrite symm_eqStar.
 Qed.
 
 Lemma if_same (x y : star) :
-  COND x y y = y.
+  (COND x y y) = y.
 Proof.
   case: x.
   - case.
@@ -357,5 +357,22 @@ Proof.
     admit.
 Admitted.
 
+(* 本当はこの形で、定理を証明したい。 *)
+Lemma if_nest_E'' (x y z : star) :
+  (COND x 'T (EQUAL (COND x y z) z)).
+Proof.
+  rewrite {1}/COND.
+  case Hc : (x == 'NIL).
+  - rewrite /EQUAL.
+    case Hd : (COND x y z == z).
+    + done.
+    + move/eqP in Hc.
+      rewrite Hc in Hd.
+      rewrite /COND in Hd.
+      simpl in Hd.
+      move/eqP in Hd.
+      done.
+  -  done.
+Qed.
 
 (* END *)
