@@ -156,8 +156,8 @@ Lemma star_eqP : forall (x y : star), reflect (x = y) (eqStar x y).
 Proof.
   move=> x y.
   apply (iffP idP).
-  + by apply star_eqP_1.
-  + by apply star_eqP_2.
+  - by apply star_eqP_1.
+  - by apply star_eqP_2.
 Qed.
 Definition star_eqMixin := @EqMixin star eqStar star_eqP.
 Canonical star_eqType := @EqType star star_eqMixin.
@@ -232,9 +232,9 @@ _IFやEQUALを分解するためのタクティクを定義する。
 
 (* Set Printing Coercions. *)
 
-Ltac find_if :=
+Ltac case_if :=
   match goal with
-  | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X
+  | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X; try done
   end.
 
 (**
@@ -263,82 +263,72 @@ Theorem equal_same (x : star) :
   (EQUAL x x).
 Proof.
 (*
-  elim: x => [a | x Hxx y Hyy]; rewrite /EQUAL; find_if. (* move: Hq => Hq. *)
-  + done.
-  + by move/eqP in Hq.
-  + done.
-  + by move/eqP in Hq.
+  elim: x => [a | x Hxx y Hyy]; rewrite /EQUAL; case_if. (* move: Hq => Hq. *)
+  - by move/eqP in Hq.
+  - by move/eqP in Hq.
   Restart.
 *)
   rewrite /EQUAL.
-  by rewrite refl_eqStar.
+    by rewrite refl_eqStar.
 Qed.
 
-Lemma equal_swap' (x y : star) :
+Lemma l_equal_swap (x y : star) :
   (EQUAL x y) = (EQUAL y x).
 Proof.
   rewrite /EQUAL.
-  by rewrite {1}symm_eqStar.
+    by rewrite {1}symm_eqStar.
 Qed.
                           
 Theorem equal_swap (x y : star) :
   (EQUAL (EQUAL x y) (EQUAL y x)).
 Proof.
-  rewrite [(EQUAL y x)]equal_swap'.
-  by rewrite equal_same.
+  rewrite [(EQUAL y x)]l_equal_swap.
+    by rewrite equal_same.
 Qed.
 
 Theorem equal_if (x y : star) :
   (_IF (EQUAL x y) (EQUAL x y) 'T).
 Proof.
-  rewrite /_IF; find_if; move: Hq => Hc.
-  - done.
-  - move/eqP in Hc.
-    rewrite /EQUAL; find_if; move: Hq => Hd.
-    + done.
-    + rewrite /EQUAL in Hc.
-      by rewrite Hd in Hc.
+  rewrite /_IF; case_if; move: Hq => Hc.
+  move/eqP in Hc.
+  rewrite /EQUAL; case_if; move: Hq => Hd.
+  rewrite /EQUAL in Hc.
+    by rewrite Hd in Hc.
 Qed.
 
 Theorem if_true (x y : star) :
   (EQUAL (_IF 'T x y) x).
 Proof.
-  rewrite /EQUAL; find_if.
-  - done.
-  - rewrite /_IF /= in Hq.
+  rewrite /EQUAL; case_if.
+  rewrite /_IF /= in Hq.
     by move/eqP in Hq.
 Qed.
 
 Theorem if_false (x y : star) :
   (EQUAL (_IF 'NIL x y) y).
 Proof.
-  rewrite /EQUAL; find_if.
-  - done.
-  - rewrite /_IF /=; move/eqP in Hq.
-    done.
+  rewrite /EQUAL; case_if.
+    by rewrite /_IF /=; move/eqP in Hq.
 Qed.
 
-Lemma if_same' (x y : star) :
+Lemma l_if_same (x y : star) :
   (_IF x y y) = y.
 Proof.
   case: x.
   - case.
     + done.                                 (* NAT *)
-    + case.
-      * done.                               (* SYM *)
-      * done.
-      * done.
+    + case; done.                           (* SYM *)
   - done.                                   (* CONS *)
 Qed.
 
 Theorem if_same (x y : star) :
   (EQUAL (_IF x y y) y).
 Proof.
-  rewrite if_same'.
+  rewrite l_if_same.
     by rewrite equal_same.
 Qed.
 
-Lemma if_nest_A' (x y z : star) :
+Lemma l_if_nest_A (x y z : star) :
   x <> 'NIL -> (_IF x y z) = y.
 Proof.
 Admitted.                                   (* XXXXX *)
@@ -360,7 +350,7 @@ Proof.
         by move/eqP in Hd.
 Qed.
 
-Lemma if_nest_E' (x y z : star) :
+Lemma l_if_nest_E (x y z : star) :
   x = 'NIL -> (_IF x y z) = z.
 Proof.
   move=> H.
@@ -370,14 +360,13 @@ Qed.
 Theorem if_nest_E (x y z : star) :
   (_IF x 'T (EQUAL (_IF x y z) z)).
 Proof.
-  rewrite {1}/_IF; find_if.
-  - rewrite if_nest_E'.
-    + by rewrite equal_same.
-    + by apply/eqP; rewrite Hq.
-  - done.
+  rewrite {1}/_IF; case_if.
+  rewrite l_if_nest_E.
+  - by rewrite equal_same.
+  - by apply/eqP; rewrite Hq.
 Qed.
 
-Lemma cons_car_cdr' (x : star) :
+Lemma l_cons_car_cdr (x : star) :
   (ATOM x) = 'NIL -> (CONS (CAR x) (CDR x)) = x.
 Proof.
   intros Hn.
@@ -389,12 +378,11 @@ Qed.
 Theorem cons_car_cdr (x : star) :
   (_IF (ATOM x) 'T (EQUAL (CONS (CAR x) (CDR x)) x)).
 Proof.
-  rewrite /_IF; find_if.
-  - rewrite cons_car_cdr'.
-    + by rewrite equal_same.
-    + apply/eqP.
-        by rewrite Hq.
-  - done.
+  rewrite /_IF; case_if.
+  rewrite l_cons_car_cdr.
+  - by rewrite equal_same.
+  - apply/eqP.
+      by rewrite Hq.
 Qed.
 
 (* END *)
