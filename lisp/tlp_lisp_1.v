@@ -91,7 +91,7 @@ Definition eqLit (a b : literal) : bool :=
 Lemma literal_eqP : forall (x y : literal), reflect (x = y) (eqLit x y).
 Proof.
   move=> x y.
-  apply (iffP idP).
+  apply: (iffP idP).
   - case: x; case: y; rewrite /eqLit => x y; move/eqP => H;
     by [rewrite H| | |rewrite H].
   - move=> H; rewrite H.
@@ -155,9 +155,9 @@ Qed.
 Lemma star_eqP : forall (x y : star), reflect (x = y) (eqStar x y).
 Proof.
   move=> x y.
-  apply (iffP idP).
-  - by apply star_eqP_1.
-  - by apply star_eqP_2.
+  apply: (iffP idP).
+  - by apply: star_eqP_1.
+  - by apply: star_eqP_2.
 Qed.
 Definition star_eqMixin := @EqMixin star eqStar star_eqP.
 Canonical star_eqType := @EqType star star_eqMixin.
@@ -329,30 +329,29 @@ Proof.
 Qed.
 
 Lemma l_if_nest_A (x y z : star) :
-  x <> 'NIL -> (_IF x y z) = y.
+  x != 'NIL -> (_IF x y z) = y.
 Proof.
-Admitted.                                   (* XXXXX *)
+  rewrite /_IF.
+  by case Hc : (x == 'NIL) => Hd.
+Qed.
 
 Theorem if_nest_A (x y z : star) :
   (_IF x (EQUAL (_IF x y z) y) 'T).
 Proof.
-  rewrite {1}/_IF.
-  case Hc : (x == 'NIL).
-  - done.
-  - rewrite /EQUAL.
-    case Hd : (_IF x y z == y).
-    + done.
-    + rewrite /_IF in Hd.
-      case He : (x == 'NIL).
-      * rewrite {Hd}.
-        by rewrite Hc in He.
-      * rewrite Hc in Hd.
-        by move/eqP in Hd.
+  rewrite /_IF; case_if.
+  by rewrite equal_same.
 Qed.
 
 Lemma l_if_nest_E (x y z : star) :
   x = 'NIL -> (_IF x y z) = z.
 Proof.
+(*
+  rewrite /_IF.
+  case Hc : (x == 'NIL) => Hd.
+  done.
+    by rewrite Hd in Hc.
+  Restart.
+*)
   move=> H.
   by rewrite H.
 Qed.
@@ -360,10 +359,15 @@ Qed.
 Theorem if_nest_E (x y z : star) :
   (_IF x 'T (EQUAL (_IF x y z) z)).
 Proof.
+(*  
   rewrite {1}/_IF; case_if.
   rewrite l_if_nest_E.
   - by rewrite equal_same.
   - by apply/eqP; rewrite Hq.
+  Restart.
+ *)
+  rewrite /_IF; case_if.
+    by rewrite equal_same.
 Qed.
 
 Lemma l_cons_car_cdr (x : star) :
