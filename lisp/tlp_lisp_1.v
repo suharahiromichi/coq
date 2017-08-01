@@ -87,7 +87,7 @@ Definition eqSym (s t : symbol) : bool :=
 Lemma symbol_eqP : forall (x y : symbol), reflect (x = y) (eqSym x y).
 Proof.
   move=> x y.
-    by apply (iffP idP); case x; case y.
+    by apply: (iffP idP); case x; case y.
 Qed.
 Definition symbol_eqMixin := @EqMixin symbol eqSym symbol_eqP.
 Canonical symbol_eqType := @EqType symbol symbol_eqMixin.
@@ -128,13 +128,32 @@ Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
 
 「Star型は、アトム、または、Star型のふたつ要素を連結(Cons)したもの」
 と再帰的に定義できます。これがinductiveなデータ型です。
-
-Star型についてもリフレクションできるようにします。
 *)
 
 Inductive star : Type :=
 | S_ATOM (a : atomic)
 | S_CONS (x y : star).
+
+(**
+Coqはinductiveなデータ型に対して、inductionできるようになります。
+そのために、star_ind という公理が自動的に定義されます。
+これは、TLPの第7賞で説明されている "star induction" と同じものです。
+
+Coqによる証明でも、この公理を直接使用することはなく、
+star型のデータに対して、
+inductionタクティクまたはelimタクティクを使用すると、
+この公理が適用されます。
+ *)
+
+Check star_ind  : forall P : star -> Prop,
+    (forall a : atomic, P (S_ATOM a)) ->
+    (forall x : star, P x -> forall y : star, P y -> P (S_CONS x y)) ->
+    forall s : star, P s.
+
+(**
+Star型についても、booleanの等号を定義して、論理式の等号にリフレク
+ションできるようにします。
+*)
 
 Fixpoint eqStar (x y : star) : bool :=
   match (x, y) with
@@ -193,7 +212,7 @@ Canonical star_eqType := @EqType star star_eqMixin.
 Star型のboolの等式について、反射律と対称律が成立することを証明ておきます。
 リフレクションを使用してPropの等式に変換することで、簡単に証明できます。
 
-この補題は、あとで使用します。
+この補題はあとで使用します。
  *)
 
 Lemma refl_eqStar (x : star) : (x == x).
@@ -206,22 +225,6 @@ Proof.
   by apply/idP/idP; move/eqP=> H; rewrite H.
 Qed.
 
-
-(**
-Coqはinductiveなデータ型に対して、inductionできるようになります。
-そのために、star_ind という公理が自動的に定義されます。
-これは、TLPの第7賞で説明されている "star induction" と同じものです。
-
-Coqによる証明でも、この公理を直接使用することはなく、
-star型のデータに対して、
-inductionタクティクまたはelimタクティクを使用すると、
-この公理が適用されます。
- *)
-
-Check star_ind  : forall P : star -> Prop,
-    (forall a : atomic, P (S_ATOM a)) ->
-    (forall x : star, P x -> forall y : star, P y -> P (S_CONS x y)) ->
-    forall s : star, P s.
 
 (**
 シンボルをS式の中に書くときに簡単になるような略記法を導入します。
@@ -259,6 +262,11 @@ Definition ATOM (x : star) : star :=
   | S_CONS _ _ => 'NIL
   end.
 
+(**
+IFとEQUALは、booleanの等式で判定します。
+
+「IF」というラベルが使えないようなので、「_IF」とします。
+ *)
 Definition _IF (q a e : star) : star :=
   if q == 'NIL then e else a.
 
@@ -268,11 +276,16 @@ Definition EQUAL (x y : star) : star :=
 (**
 # 埋め込み
 
-S-EXPを論理式(Prop)に埋め込むためのコアーションを定義する。
-否定が扱えるように、一旦boolを経由する。
+S式を論理式(Prop)に埋め込めるようにします。このとき、Lispの真偽の定義から、
+
+「'NILでないS式」 iff 「真」
+
+としなければいけません。
+実際には、S式からbooleanの等式 (x != 'NIL) へのコアーションを定義します。
+これは、一旦boolを経由することで、論理式(Prop)の否定も扱えるようにするためです。
 *)
              
-Coercion is_not_nil (x : star) : bool := ~~ eqStar x 'NIL.
+Coercion is_not_nil (x : star) : bool := x != 'NIL. (* ~~ eqStar x 'NIL *)
 
 Check (ATOM 'T) : star.
 Check (ATOM 'T) : Prop.
@@ -285,8 +298,8 @@ Check ~ (ATOM (CONS 'T 'T)) : Prop.
 (**
 # タクティク
 
-_IFやEQUALを分解するためのタクティクを定義する。
-このなかではコアーションが機能しないことに注意すること。
+_IFやEQUALを分解するためのタクティクを定義します。
+このなかではコアーションが機能しないことに注意してください。
 *)
 
 (* Set Printing Coercions. *)
