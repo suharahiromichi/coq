@@ -8,14 +8,14 @@
 
 # はじめに
 
-Coqユーザ（と胸を張れるほどではありませんが）が、
-「The Little Prover」（以下 TLP）を読んで、
+「The Little Prover」（以下 TLP）[1] を読んで、
 Coqの上でそれを実現しようとした話です。
 
-TLPで証明しているプログラムをGallinaに移植して証明することは簡単です[1]。
+TLPで証明しているプログラムをGallinaに移植して証明することは簡単です[2]。
 
 しかし、これからやろうとするのは、
 TLPの対象言語であるLispの「意味」をCoqで実現しようと思います。
+
 それによって、
 
 1. Coqはinductiveに定義したデータ型はinductionができることを原理としています。
@@ -29,12 +29,12 @@ TLPの対象言語であるLispの「意味」をCoqで実現しようと思い�
    これをLispのプログラムをCoqの論理式に埋め込むことで実現します。
 
 3. TPLの証明は、(EQUAL A B) による書き換えで進みますが、
-   Coqの書き換えはモノイドに対しておこないます。
-   これを実現したい。
+   Coqの書き換えはモノイドに対しておこないます。T.B.D.
 
 今回は、上記の1と2について実現した結果をまとめます。
+CoqのMathcomp/SSReflect拡張を使用しているので、
+それについては[3]と[4]を参照してください。
  *)
-
 
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
@@ -46,21 +46,40 @@ Set Print All.
 
 (**
 # S式の定義
+
+S式をInductiveなデータ型として定義します。ここでは、
+S式にことをTLPにあわせて Star型と呼ぶことにします。
 *)
 
 (**
-Symbol
+##Symbol
+
+Lispではもちろん任意の文字列を(quoteすることで)シンボルとして使用できますが、
+ここでは、T, NIL, FOO, BAR, BAZ と ? に限定することにします。
+もちろん、本節の定義に追加するこで、シンボルを増やすことができます。
+
+シンボルどうしのbooleanの等式を定義したうえで、それが、
+論理式(ライプニッツの等式、Propの等式)と同値であることを証明することで、
+boolとPropの間での行き来ができるようになります。
+つまり、「==」と「=」の両方を使うことができるようになります。
+これをリフレクションといいます[4]。
  *)
 
 Inductive symbol : Type :=
 | SYM_T
 | SYM_NIL
+| SYM_FOO
+| SYM_BAR
+| SYM_BAZ
 | SYM_QUESTION_MARK.
 
 Definition eqSym (s t : symbol) : bool :=
   match (s, t) with
   | (SYM_T, SYM_T) => true
   | (SYM_NIL, SYM_NIL) => true
+  | (SYM_FOO, SYM_FOO) => true
+  | (SYM_BAR, SYM_BAR) => true
+  | (SYM_BAZ, SYM_BAZ) => true
   | (SYM_QUESTION_MARK, SYM_QUESTION_MARK) => true
   | _ => false
   end.
@@ -74,44 +93,52 @@ Definition symbol_eqMixin := @EqMixin symbol eqSym symbol_eqP.
 Canonical symbol_eqType := @EqType symbol symbol_eqMixin.
 
 (**
-Literal
+##Atomic
+
+アトムとしては、シンボルの他に自然数もとれるようにします。
+アトムについてもリフレクションできるようにします。
  *)
 
-Inductive literal : Type :=
-| LIT_NAT (n : nat)
-| LIT_SYM (s : symbol).
+Inductive atomic : Type :=
+| ATOM_NAT (n : nat)
+| ATOM_SYM (s : symbol).
 
-Definition eqLit (a b : literal) : bool :=
+Definition eqAtom (a b : atomic) : bool :=
   match (a, b) with
-  | (LIT_NAT n, LIT_NAT m) => n == m
-  | (LIT_SYM s, LIT_SYM t) => s == t        (* eqSym *)
+  | (ATOM_NAT n, ATOM_NAT m) => n == m
+  | (ATOM_SYM s, ATOM_SYM t) => s == t      (* eqSym *)
   | _ => false
   end.
 
-Lemma literal_eqP : forall (x y : literal), reflect (x = y) (eqLit x y).
+Lemma atomic_eqP : forall (x y : atomic), reflect (x = y) (eqAtom x y).
 Proof.
   move=> x y.
   apply: (iffP idP).
-  - case: x; case: y; rewrite /eqLit => x y; move/eqP => H;
+  - case: x; case: y; rewrite /eqAtom => x y; move/eqP => H;
     by [rewrite H| | |rewrite H].
   - move=> H; rewrite H.
     case: y H => n H1;
-    by rewrite /eqLit.
+    by rewrite /eqAtom.
 Qed.
-Definition literal_eqMixin := @EqMixin literal eqLit literal_eqP.
-Canonical literal_eqType := @EqType literal literal_eqMixin.
+Definition atomic_eqMixin := @EqMixin atomic eqAtom atomic_eqP.
+Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
 
 (**
-Star (S-EXP)
+##Star (S-EXP)
+
+「Star型は、アトム、または、Star型のふたつ要素を連結(Cons)したもの」
+と再帰的に定義できます。これがinductiveなデータ型です。
+
+Star型についてもリフレクションできるようにします。
 *)
 
 Inductive star : Type :=
-| S_ATOM (a : literal)
+| S_ATOM (a : atomic)
 | S_CONS (x y : star).
 
 Fixpoint eqStar (x y : star) : bool :=
   match (x, y) with
-  | (S_ATOM a, S_ATOM b) => a == b          (* eqLit *)
+  | (S_ATOM a, S_ATOM b) => a == b          (* eqAtom *)
   | (S_CONS x1 y1, S_CONS x2 y2) =>
     eqStar x1 x2 && eqStar y1 y2
   | _ => false
@@ -162,9 +189,12 @@ Qed.
 Definition star_eqMixin := @EqMixin star eqStar star_eqP.
 Canonical star_eqType := @EqType star star_eqMixin.
 
-Notation "'T" := (S_ATOM (LIT_SYM SYM_T)).
-Notation "'NIL" := (S_ATOM (LIT_SYM SYM_NIL)).
-Notation "'?" := (S_ATOM (LIT_SYM SYM_QUESTION_MARK)).
+(**
+Star型のboolの等式について、反射律と対称律が成立することを証明ておきます。
+リフレクションを使用してPropの等式に変換することで、簡単に証明できます。
+
+この補題は、あとで使用します。
+ *)
 
 Lemma refl_eqStar (x : star) : (x == x).
 Proof.
@@ -175,6 +205,35 @@ Lemma symm_eqStar (x y : star) : (x == y) = (y == x).
 Proof.
   by apply/idP/idP; move/eqP=> H; rewrite H.
 Qed.
+
+
+(**
+Coqはinductiveなデータ型に対して、inductionできるようになります。
+そのために、star_ind という公理が自動的に定義されます。
+これは、TLPの第7賞で説明されている "star induction" と同じものです。
+
+Coqによる証明でも、この公理を直接使用することはなく、
+star型のデータに対して、
+inductionタクティクまたはelimタクティクを使用すると、
+この公理が適用されます。
+ *)
+
+Check star_ind  : forall P : star -> Prop,
+    (forall a : atomic, P (S_ATOM a)) ->
+    (forall x : star, P x -> forall y : star, P y -> P (S_CONS x y)) ->
+    forall s : star, P s.
+
+(**
+シンボルをS式の中に書くときに簡単になるような略記法を導入します。
+「'」は記法の一部ですが、quoted literal のように見えます。
+ *)
+
+Notation "'T" := (S_ATOM (ATOM_SYM SYM_T)).
+Notation "'NIL" := (S_ATOM (ATOM_SYM SYM_NIL)).
+Notation "'FOO" := (S_ATOM (ATOM_SYM SYM_FOO)).
+Notation "'BAR" := (S_ATOM (ATOM_SYM SYM_BAR)).
+Notation "'BAZ" := (S_ATOM (ATOM_SYM SYM_BAZ)).
+Notation "'?" := (S_ATOM (ATOM_SYM SYM_QUESTION_MARK)).
 
 (**
 # 組込関数の定義
@@ -238,7 +297,7 @@ Ltac case_if :=
   end.
 
 (**
-# J-Bobの「公理」を証明する。
+# J-Bobの「公理」の証明
 *)
 
 Theorem atom_cons (x y : star) :
@@ -263,7 +322,7 @@ Theorem equal_same (x : star) :
   (EQUAL x x).
 Proof.
 (*
-  elim: x => [a | x Hxx y Hyy]; rewrite /EQUAL; case_if. (* move: Hq => Hq. *)
+  elim: x => [a | x Hxx y Hyy]; rewrite /EQUAL; case_if.
   - by move/eqP in Hq.
   - by move/eqP in Hq.
   Restart.
@@ -388,5 +447,25 @@ Proof.
   - apply/eqP.
       by rewrite Hq.
 Qed.
+
+(**
+# 参考文献
+
+[1] Daniel P. Friedman, Carl Eastlund, "The Little Prover", MIT Press, 2015.
+
+https://mitpress.mit.edu/books/little-prover
+
+[2] 「The Little Prover の memb?/remb をCoqで解いてみる（サブリスト改訂版）」
+
+https://github.com/suharahiromichi/coq/blob/master/prog/coq_membp_remb_3.v
+
+[3] Mathematical Components resources
+
+http://ssr.msr-inria.inria.fr/
+
+[4] 「リフレクションのしくみをつくる」
+
+http://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
+ *)
 
 (* END *)
