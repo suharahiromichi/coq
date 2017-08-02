@@ -239,6 +239,19 @@ Notation "'BAZ" := (S_ATOM (ATOM_SYM SYM_BAZ)).
 Notation "'?" := (S_ATOM (ATOM_SYM SYM_QUESTION_MARK)).
 
 (**
+自然数については、（S式の）アトムとの相互変換をする関数を用意します。
+ *)
+
+Definition s2n (x : star) : nat :=
+  match x with
+  | S_ATOM (ATOM_NAT n) => n
+  | _ => 0
+  end.
+
+Definition n2s (n : nat) : star :=
+  S_ATOM (ATOM_NAT n).
+
+(**
 # 組込関数の定義
 *)
 
@@ -282,15 +295,6 @@ Fixpoint s_size (x : star) : nat :=
 Definition SIZE (x : star) : star :=
   S_ATOM (ATOM_NAT (s_size x)).
 Eval compute in SIZE (S_CONS 'T (S_CONS 'T 'T)). (* S_ATOM (ATOM_NAT 2) *)
-
-Definition s2n (x : star) : nat :=
-  match x with
-  | S_ATOM (ATOM_NAT n) => n
-  | _ => 0
-  end.
-
-Definition n2s (n : nat) : star :=
-  S_ATOM (ATOM_NAT n).
 
 Definition LT (x y : star) : star :=
   if s2n x < s2n y then 'T else 'NIL.
@@ -530,7 +534,7 @@ Proof.
 Qed.
 
 Theorem size_car (x : star) :
-  (_IF (ATOM x) 'T (LT (SIZE (CAR x)) (SIZE x))).
+  (_IF (ATOM x) 'T (EQUAL (LT (SIZE (CAR x)) (SIZE x)) 'T)).
 Proof.
   rewrite /_IF; case_if.
   rewrite /LT /= l_size_car.
@@ -539,7 +543,7 @@ Proof.
 Qed.
 
 Theorem size_cdr (x : star) :
-  (_IF (ATOM x) 'T (LT (SIZE (CDR x)) (SIZE x))).
+  (_IF (ATOM x) 'T (EQUAL (LT (SIZE (CDR x)) (SIZE x)) 'T)).
 Proof.
   rewrite /_IF; case_if.
   rewrite /LT /= l_size_cdr.
