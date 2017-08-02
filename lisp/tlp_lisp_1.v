@@ -1,7 +1,7 @@
 (**
 「The Little Prover」のCoqでの実現
 ======
-2017/07/28
+2017/08/02
 
 @suharahiromichi
 
@@ -273,6 +273,34 @@ Definition _IF (q a e : star) : star :=
 Definition EQUAL (x y : star) : star :=
   if x == y then 'T else 'NIL.
 
+Fixpoint s_size (x : star) : nat :=
+  match x with
+  | S_CONS a b => s_size a + s_size b + 1
+  | _ => 0
+  end.
+
+Definition SIZE (x : star) : star :=
+  S_ATOM (ATOM_NAT (s_size x)).
+Eval compute in SIZE (S_CONS 'T (S_CONS 'T 'T)). (* S_ATOM (ATOM_NAT 2) *)
+
+Definition s2n (x : star) : nat :=
+  match x with
+  | S_ATOM (ATOM_NAT n) => n
+  | _ => 0
+  end.
+
+Definition n2s (n : nat) : star :=
+  S_ATOM (ATOM_NAT n).
+
+Definition LT (x y : star) : star :=
+  if s2n x < s2n y then 'T else 'NIL.
+Eval compute in LT (n2s 2) (n2s 3).         (* 'T *)
+
+Definition PLUS (x y : star) : star :=
+  n2s (s2n x + s2n y).
+Eval compute in PLUS (n2s 2) (n2s 3).       (* S_ATOM (ATOM_NAT 5) *)
+
+
 (**
 # 埋め込み
 
@@ -460,6 +488,65 @@ Proof.
   - apply/eqP.
       by rewrite Hq.
 Qed.
+
+Lemma l_size_plus_1 (x y : star) (n m : nat) :
+  s_size x = n -> s_size y = m -> s_size (CONS x y) = n + m + 1.
+Proof.
+  move=> Hx Hy /=.
+  by rewrite Hx Hy.
+Qed.
+
+Lemma l_size_plus_2 (x : star) (n m l : nat) :
+  ATOM x = 'NIL -> s_size (CAR x) = n ->
+  s_size (CDR x) = m -> s_size x = n + m + 1.
+Proof.
+  move=> Ha Hx Hy /=.
+  Check @l_size_plus_1 (CAR x) (CDR x) n m.
+  rewrite -(@l_size_plus_1 (CAR x) (CDR x) n m).
+  - by rewrite l_cons_car_cdr.
+  - by [].
+  - by [].
+Qed.
+
+Lemma l_size_car (x : star) :
+  ATOM x = 'NIL -> s_size (CAR x) < s_size x.
+Proof.
+  elim: x.
+  - by move=> a Hc /=.
+  - move=> x Hx y Hy Hc /=.
+      (* s_size x < s_size x + s_size y + 1 *)
+      by rewrite addn1 ltnS leq_addr.
+Qed.
+
+Lemma l_size_cdr (x : star) :
+  ATOM x = 'NIL -> s_size (CDR x) < s_size x.
+Proof.
+  elim: x.
+  - by move=> a Hc /=.
+  - move=> x Hx y Hy Hc /=.
+    (* s_size y < s_size x + s_size y + 1 *)
+    rewrite [s_size x + s_size y]addnC.
+      by rewrite addn1 ltnS leq_addr.
+Qed.
+
+Theorem size_car (x : star) :
+  (_IF (ATOM x) 'T (LT (SIZE (CAR x)) (SIZE x))).
+Proof.
+  rewrite /_IF; case_if.
+  rewrite /LT /= l_size_car.
+  - by [].
+  - by apply/eqP.
+Qed.
+
+Theorem size_cdr (x : star) :
+  (_IF (ATOM x) 'T (LT (SIZE (CDR x)) (SIZE x))).
+Proof.
+  rewrite /_IF; case_if.
+  rewrite /LT /= l_size_cdr.
+  - by [].
+  - by apply/eqP.
+Qed.
+
 
 (**
 # 参考文献
