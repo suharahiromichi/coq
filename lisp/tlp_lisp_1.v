@@ -31,9 +31,10 @@ TLPの対象言語であるLispの「意味」をCoqで実現しようと思い�
 3. TPLの証明は、(EQUAL A B) による書き換えで進みますが、
    Coqの書き換えはモノイドに対しておこないます。T.B.D.
 
+
 今回は、上記の1と2について実現した結果をまとめます。
 CoqのMathcomp/SSReflect拡張を使用しているので、
-それについては[3]と[4]を参照してください。
+それについては[3]を参照してください。
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -310,7 +311,7 @@ Eval compute in PLUS (n2s 2) (n2s 3).       (* S_ATOM (ATOM_NAT 5) *)
 
 S式を論理式(Prop)に埋め込めるようにします。このとき、Lispの真偽の定義から、
 
-「'NILでないS式」 iff 「真」
+「真」 iff 「'NILでないS式」
 
 としなければいけません。
 実際には、S式からbooleanの等式 (x != 'NIL) へのコアーションを定義します。
@@ -345,24 +346,6 @@ Ltac case_if :=
 # J-Bobの「公理」の証明
 *)
 
-Theorem atom_cons (x y : star) :
-  (ATOM (CONS x y)) = 'NIL.
-Proof.
-  done.
-Qed.
-
-Theorem car_cons (x y : star) :
-  CAR (CONS x y) = x.
-Proof.
-  done.
-Qed.
-
-Theorem cdr_cons (x y : star) :
-  (CDR (CONS x y)) = y.
-Proof.
-  done.
-Qed.
-
 Theorem equal_same (x : star) :
   (EQUAL x x).
 Proof.
@@ -374,6 +357,42 @@ Proof.
 *)
   rewrite /EQUAL.
     by rewrite refl_eqStar.
+Qed.
+
+Lemma l_atom_cons (x y : star) :
+  (ATOM (CONS x y)) = 'NIL.
+Proof.
+  done.
+Qed.
+
+Lemma atom_cons (x y : star) :
+  (EQUAL (ATOM (CONS x y)) 'NIL).
+Proof.
+  by rewrite l_atom_cons.
+Qed.
+
+Lemma l_car_cons (x y : star) :
+  CAR (CONS x y) = x.
+Proof.
+  done.
+Qed.
+
+Theorem car_cons (x y : star) :
+  (EQUAL (CAR (CONS x y)) x).
+Proof.
+  by rewrite l_car_cons equal_same.
+Qed.
+
+Lemma l_cdr_cons (x y : star) :
+  (CDR (CONS x y)) = y.
+Proof.
+  done.
+Qed.
+
+Theorem cdr_cons (x y : star) :
+  (EQUAL (CDR (CONS x y)) y).
+Proof.
+  by rewrite l_cdr_cons equal_same.
 Qed.
 
 Lemma l_equal_swap (x y : star) :
