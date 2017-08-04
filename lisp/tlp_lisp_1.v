@@ -365,7 +365,7 @@ Proof.
   done.
 Qed.
 
-Lemma atom_cons (x y : star) :
+Theorem atom_cons (x y : star) :
   (EQUAL (ATOM (CONS x y)) 'NIL).
 Proof.
   by rewrite l_atom_cons.
@@ -569,6 +569,45 @@ Proof.
   - by [].
   - by apply/eqP.
 Qed.
+
+
+(**
+# 「公理」を書換規則として使う
+ *)
+
+(**
+## IFとEQUALの補題
+ *)
+
+Lemma ifAP (q x y : star) : (_IF q (EQUAL x y) 'T) -> (q -> x = y).
+Proof.
+  rewrite /_IF /EQUAL => H Hq.
+  case Hxy : (x == y); case Hqq : (q == 'NIL).
+  - by apply/eqP; rewrite Hxy.
+  - by apply/eqP; rewrite Hxy.
+  - by move/eqP in Hqq; rewrite Hqq in Hq.
+  - by rewrite Hqq Hxy in H.
+Qed.
+
+Lemma ifEP (q x y : star) : (_IF q 'T (EQUAL x y)) -> (~q -> x = y).
+Proof.
+  rewrite /_IF /EQUAL => H Hq.
+  case Hxy : (x == y); case Hqq : (q == 'NIL).
+  - by apply/eqP; rewrite Hxy.
+  - by apply/eqP; rewrite Hxy.
+  - by rewrite Hqq Hxy in H.
+  - rewrite /is_not_nil in Hq.
+    move/negP in Hq.
+    move/negP/negP in Hqq.
+    by rewrite Hqq in Hq.
+Qed.
+
+(**
+## 書き換えの例
+ *)
+
+Check ifAP (if_nest_A _ _ _).
+Check ifEP (size_cdr _).
 
 
 (**
