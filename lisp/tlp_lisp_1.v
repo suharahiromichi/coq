@@ -344,7 +344,7 @@ Qed.
 二重否定を解消するために便利な補題です。
 *)
 
-Lemma not_not_nil__nil_P q : ~~ (q != 'NIL) = (q == 'NIL).
+Lemma not_not_nil__nil_E q : ~~ (q != 'NIL) = (q == 'NIL).
 Proof.
   by case Hc : (q == 'NIL).
 Qed.
@@ -377,12 +377,10 @@ Proof.
     + by move/eqP in Hqq; rewrite Hqq in Hq.
     + by rewrite Hqq Hxy in H.
   - move=> H.
-    rewrite /_IF; case_if; move: Hq => Hc.
-    rewrite /EQUAL; case_if.
-    move/negP/negP in Hc.
-    move/negP in Hq.
+    rewrite /_IF; case_if; move: Hq. move/negP/negP => Hnot_nil_q.
+    rewrite /EQUAL; case_if; move: Hq. move/negP => Hx_y.
     exfalso.
-    apply Hq.
+    apply Hx_y.
     apply/eqP.
     apply H.
     by rewrite /is_not_nil.
@@ -401,17 +399,23 @@ Proof.
       move/negP/negP in Hqq.
         by rewrite Hqq in Hq.
   - move=> H.
-    rewrite /_IF; case_if; move: Hq => Hc.
-    rewrite /EQUAL; case_if.
-    move/negP/negP in Hc.
-    move/negP in Hq.
+    rewrite /_IF; case_if; move: Hq. move/negP/negP => Hq_nil.
+    rewrite /EQUAL; case_if; move: Hq. move/negP => Hnot_x_y.
     exfalso.
-    apply Hq.
+    apply Hnot_x_y.
     apply/eqP.
     apply H.
     apply/negP.
-    move/eqP in Hc.
-    by rewrite Hc.
+    move/eqP in Hq_nil.
+    by rewrite Hq_nil.
+Qed.
+
+Lemma not_q__q_nil_P (q : star) : ~ q <-> q = 'NIL.
+Proof.
+  split.
+  - rewrite /is_not_nil => /negP.
+    by rewrite not_not_nil__nil_E => /eqP.
+  - by move=> Hq; rewrite Hq.
 Qed.
 
 (**
@@ -535,6 +539,9 @@ Theorem if_nest_A (x y z : star) :
 Proof.
   rewrite /_IF; case_if.
   by rewrite equal_same.
+  Restart.
+  apply/ifAP => Hq.
+  by rewrite l_if_nest_A.
 Qed.
 
 Lemma l_if_nest_E (x y z : star) :
@@ -562,7 +569,12 @@ Proof.
   Restart.
  *)
   rewrite /_IF; case_if.
-    by rewrite equal_same.
+  by rewrite equal_same.
+  Restart.
+  apply/ifEP => Hq.
+  rewrite l_if_nest_E.
+  - done.
+  - by apply/not_q__q_nil_P.
 Qed.
 
 Lemma l_cons_car_cdr (x : star) :
@@ -585,10 +597,7 @@ Proof.
   Restart.
   apply/ifEP => Hq.
   apply l_cons_car_cdr.
-  rewrite /is_not_nil in Hq.
-  move/negP in Hq.
-  rewrite not_not_nil__nil_P in Hq.
-    by apply/eqP.
+  by apply/not_q__q_nil_P.
 Qed.
 
 Lemma l_size_plus_1 (x y : star) (n m : nat) :
@@ -642,10 +651,7 @@ Proof.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_car.
   - by [].
-  - rewrite /is_not_nil in Hq.
-    move/negP in Hq.
-    rewrite not_not_nil__nil_P in Hq.
-      by apply/eqP.
+  - by apply/not_q__q_nil_P.
 Qed.
 
 Theorem size_cdr (x : star) :
@@ -659,12 +665,8 @@ Proof.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_cdr.
   - by [].
-  - rewrite /is_not_nil in Hq.
-    move/negP in Hq.
-    rewrite not_not_nil__nil_P in Hq.
-      by apply/eqP.
+  - by apply/not_q__q_nil_P.
 Qed.
-
 
 (**
 # 「公理」を書換規則として使う
