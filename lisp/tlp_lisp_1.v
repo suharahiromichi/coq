@@ -329,6 +329,27 @@ Check (ATOM (CONS 'T 'T)) : Prop.
 Check ~ (ATOM (CONS 'T 'T)) : Prop.
 
 (**
+のちの証明で便利なように、'NILに関する補題を証明しておきます。
+
+
+「_ != _」は「~~(_ = _)」の略記なので、次は当然なりたちます。が、証明のときの忘れがちです。
+ *)
+
+Lemma not_nil_P q : ~~ (q == 'NIL) = q.
+Proof.
+  done.
+Qed.
+
+(**
+二重否定を解消するために便利な補題です。
+*)
+
+Lemma not_not_nil__nil_P q : ~~ (q != 'NIL) = (q == 'NIL).
+Proof.
+  by case Hc : (q == 'NIL).
+Qed.
+
+(**
 # タクティク
 
 _IFやEQUALを分解するためのタクティクを定義します。
@@ -341,6 +362,57 @@ Ltac case_if :=
   match goal with
   | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X; try done
   end.
+
+(**
+# IFとEQUALの補題
+ *)
+
+Lemma ifAP (q x y : star) : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
+Proof.
+  split.
+  - rewrite /_IF /EQUAL => H Hq.
+    case Hxy : (x == y); case Hqq : (q == 'NIL).
+    + by apply/eqP; rewrite Hxy.
+    + by apply/eqP; rewrite Hxy.
+    + by move/eqP in Hqq; rewrite Hqq in Hq.
+    + by rewrite Hqq Hxy in H.
+  - move=> H.
+    rewrite /_IF; case_if; move: Hq => Hc.
+    rewrite /EQUAL; case_if.
+    move/negP/negP in Hc.
+    move/negP in Hq.
+    exfalso.
+    apply Hq.
+    apply/eqP.
+    apply H.
+    by rewrite /is_not_nil.
+Qed.
+
+Lemma ifEP (q x y : star) : (_IF q 'T (EQUAL x y)) <-> (~q -> x = y).
+Proof.
+  split.
+  - rewrite /_IF /EQUAL => H Hq.
+    case Hxy : (x == y); case Hqq : (q == 'NIL).
+    + by apply/eqP; rewrite Hxy.
+    + by apply/eqP; rewrite Hxy.
+    + by rewrite Hqq Hxy in H.
+    + rewrite /is_not_nil in Hq.
+      move/negP in Hq.
+      move/negP/negP in Hqq.
+        by rewrite Hqq in Hq.
+  - move=> H.
+    rewrite /_IF; case_if; move: Hq => Hc.
+    rewrite /EQUAL; case_if.
+    move/negP/negP in Hc.
+    move/negP in Hq.
+    exfalso.
+    apply Hq.
+    apply/eqP.
+    apply H.
+    apply/negP.
+    move/eqP in Hc.
+    by rewrite Hc.
+Qed.
 
 (**
 # J-Bobの「公理」の証明
@@ -510,6 +582,13 @@ Proof.
   - by rewrite equal_same.
   - apply/eqP.
       by rewrite Hq.
+  Restart.
+  apply/ifEP => Hq.
+  apply l_cons_car_cdr.
+  rewrite /is_not_nil in Hq.
+  move/negP in Hq.
+  rewrite not_not_nil__nil_P in Hq.
+    by apply/eqP.
 Qed.
 
 Lemma l_size_plus_1 (x y : star) (n m : nat) :
@@ -559,6 +638,14 @@ Proof.
   rewrite /LT /= l_size_car.
   - by [].
   - by apply/eqP.
+  Restart.
+  apply/ifEP => Hq.
+  rewrite /LT /= l_size_car.
+  - by [].
+  - rewrite /is_not_nil in Hq.
+    move/negP in Hq.
+    rewrite not_not_nil__nil_P in Hq.
+      by apply/eqP.
 Qed.
 
 Theorem size_cdr (x : star) :
@@ -568,39 +655,20 @@ Proof.
   rewrite /LT /= l_size_cdr.
   - by [].
   - by apply/eqP.
+  Restart.
+  apply/ifEP => Hq.
+  rewrite /LT /= l_size_cdr.
+  - by [].
+  - rewrite /is_not_nil in Hq.
+    move/negP in Hq.
+    rewrite not_not_nil__nil_P in Hq.
+      by apply/eqP.
 Qed.
 
 
 (**
 # 「公理」を書換規則として使う
  *)
-
-(**
-## IFとEQUALの補題
- *)
-
-Lemma ifAP (q x y : star) : (_IF q (EQUAL x y) 'T) -> (q -> x = y).
-Proof.
-  rewrite /_IF /EQUAL => H Hq.
-  case Hxy : (x == y); case Hqq : (q == 'NIL).
-  - by apply/eqP; rewrite Hxy.
-  - by apply/eqP; rewrite Hxy.
-  - by move/eqP in Hqq; rewrite Hqq in Hq.
-  - by rewrite Hqq Hxy in H.
-Qed.
-
-Lemma ifEP (q x y : star) : (_IF q 'T (EQUAL x y)) -> (~q -> x = y).
-Proof.
-  rewrite /_IF /EQUAL => H Hq.
-  case Hxy : (x == y); case Hqq : (q == 'NIL).
-  - by apply/eqP; rewrite Hxy.
-  - by apply/eqP; rewrite Hxy.
-  - by rewrite Hqq Hxy in H.
-  - rewrite /is_not_nil in Hq.
-    move/negP in Hq.
-    move/negP/negP in Hqq.
-    by rewrite Hqq in Hq.
-Qed.
 
 (**
 ## 書き換えの例
