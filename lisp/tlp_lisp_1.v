@@ -45,6 +45,8 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
+Section TLP.
+  
 (**
 # S式の定義
 
@@ -125,7 +127,7 @@ Definition atomic_eqMixin := @EqMixin atomic eqAtom atomic_eqP.
 Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
 
 (**
-##Star (S-EXP)
+##Star型 (S-EXP)
 
 「Star型は、アトム、または、Star型のふたつ要素を連結(Cons)したもの」
 と再帰的に定義できます。これがinductiveなデータ型です。
@@ -329,10 +331,19 @@ Check (ATOM (CONS 'T 'T)) : Prop.
 Check ~ (ATOM (CONS 'T 'T)) : Prop.
 
 (**
+Set Printing Coercions.
+を使うと、コアーションがどのように使われているか分かります。
+*)
+
+Check is_true (is_not_nil (ATOM 'T)) : Prop.
+Check ~ is_true (is_not_nil (ATOM 'T)) : Prop.
+
+(**
 のちの証明で便利なように、'NILに関する補題を証明しておきます。
 
 
-「_ != _」は「~~(_ = _)」の略記なので、次は当然なりたちます。が、証明のときの忘れがちです。
+「_ != _」は「~~(_ = _)」の略記なので、次はis_not_nil と同じことです。
+が、証明のときの忘れがちです。
  *)
 
 Lemma not_nil_P q : ~~ (q == 'NIL) = q.
@@ -346,7 +357,7 @@ Qed.
 
 Lemma not_not_nil__nil_E q : ~~ (q != 'NIL) = (q == 'NIL).
 Proof.
-  by case Hc : (q == 'NIL).
+  by case: (q == 'NIL).
 Qed.
 
 (**
@@ -356,8 +367,6 @@ _IFやEQUALを分解するためのタクティクを定義します。
 このなかではコアーションが機能しないことに注意してください。
 *)
 
-(* Set Printing Coercions. *)
-
 Ltac case_if :=
   match goal with
   | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X; try done
@@ -365,9 +374,13 @@ Ltac case_if :=
 
 (**
 # IFとEQUALの補題
+
+TPLの定理は、(IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T) のかたちをしているので、
+それをCoqの条件付きのequalと同値であることを証明しておきます。
+TPLの定理の証明や、その定理を使うときに使用します。
  *)
 
-Lemma ifAP (q x y : star) : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
+Lemma ifAP {q x y : star} : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
 Proof.
   split.
   - rewrite /_IF /EQUAL => H Hq.
@@ -386,7 +399,7 @@ Proof.
     by rewrite /is_not_nil.
 Qed.
 
-Lemma ifEP (q x y : star) : (_IF q 'T (EQUAL x y)) <-> (~q -> x = y).
+Lemma ifEP {q x y : star} : (_IF q 'T (EQUAL x y)) <-> (~q -> x = y).
 Proof.
   split.
   - rewrite /_IF /EQUAL => H Hq.
@@ -410,7 +423,7 @@ Proof.
     by rewrite Hq_nil.
 Qed.
 
-Lemma not_q__q_nil_P (q : star) : ~ q <-> q = 'NIL.
+Lemma not_q__q_nil_P (q : star) : ~q <-> q = 'NIL.
 Proof.
   split.
   - rewrite /is_not_nil => /negP.
@@ -676,8 +689,8 @@ Qed.
 ## 書き換えの例
  *)
 
-Check ifAP (if_nest_A _ _ _).
-Check ifEP (size_cdr _).
+Check iffLR ifAP (if_nest_A _ _ _).
+Check iffLR ifEP (size_cdr _).
 
 
 (**
@@ -699,5 +712,7 @@ http://ssr.msr-inria.inria.fr/
 
 http://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
  *)
+
+End TLP.
 
 (* END *)
