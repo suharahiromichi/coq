@@ -28,7 +28,7 @@ TLPの対象言語であるLispの「意味」をCoqで実現しようと思い�
    Coqは論理式（Prop型）でなければ証明できないので、
    これをLispのプログラムをCoqの論理式に埋め込むことで実現します。
 
-3. TPLの証明は、(EQUAL A B) による書き換えで進みますが、
+3. TLPの証明は、(EQUAL A B) による書き換えで進みますが、
    Coqの書き換えはモノイドに対しておこないます。T.B.D.
 
 
@@ -342,17 +342,17 @@ Check ~ is_true (is_not_nil (ATOM 'T)) : Prop.
 のちの証明で便利なように、'NILに関する補題を証明しておきます。
 
 
-「_ != _」は「~~(_ = _)」の略記なので、次はis_not_nil と同じことです。
-が、証明のときの忘れがちです。
+``_ != _`` は ``~~(_ = _)`` の略記なので、次はis_not_nil と同じことです。
+が、忘れがちなので定義しておきます。
  *)
 
-Lemma not_nil_P q : ~~ (q == 'NIL) = q.
+Lemma not_nil_E q : ~~ (q == 'NIL) = q.
 Proof.
   done.
 Qed.
 
 (**
-二重否定を解消するために便利な補題です。
+二重否定を解消するための補題です。
 *)
 
 Lemma not_not_nil__nil_E q : ~~ (q != 'NIL) = (q == 'NIL).
@@ -375,9 +375,9 @@ Ltac case_if :=
 (**
 # IFとEQUALの補題
 
-TPLの定理は、(IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T) のかたちをしているので、
+TLPの定理は、(IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T) のかたちをしているので、
 それをCoqの条件付きのequalと同値であることを証明しておきます。
-TPLの定理の証明や、その定理を使うときに使用します。
+TLPの定理の証明や、その定理を使うときに使用します。
  *)
 
 Lemma ifAP {q x y : star} : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
@@ -692,6 +692,7 @@ Qed.
 Check iffLR ifAP (if_nest_A _ _ _).
 Check iffLR ifEP (size_cdr _).
 
+End TLP.
 
 (**
 # 参考文献
@@ -712,7 +713,5 @@ http://ssr.msr-inria.inria.fr/
 
 http://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
  *)
-
-End TLP.
 
 (* END *)
