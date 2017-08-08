@@ -210,16 +210,16 @@ Qed.
 「'」は記法の一部ですが、quoted literal のように見えます。
  *)
 
+Definition s_quote (s : string) : star :=
+  (S_ATOM (ATOM_SYM s)).
+Notation "\' s" := (S_ATOM (ATOM_SYM s)) (at level 60).
+
 Notation "'T" := (S_ATOM (ATOM_SYM "T")).
 Notation "'NIL" := (S_ATOM (ATOM_SYM "NIL")).
 Notation "'FOO" := (S_ATOM (ATOM_SYM "FOO")).
 Notation "'BAR" := (S_ATOM (ATOM_SYM "BAR")).
 Notation "'BAZ" := (S_ATOM (ATOM_SYM "BAZ")).
 Notation "'?" := (S_ATOM (ATOM_SYM "?")).
-
-Definition s_quote (s : string) : star :=
-  (S_ATOM (ATOM_SYM s)).
-Notation "\' s" := (S_ATOM (ATOM_SYM s)) (at level 60).
 
 Check 'NIL : star.
 Check \'"aaa" : star.
@@ -514,15 +514,14 @@ Qed.
 Lemma l_if_same (x y : star) :
   (_IF x y y) = y.
 Proof.
-Admitted.                                   (* XXXXX *)
-(*
   case: x.
   - case.
     + done.                                 (* NAT *)
-    + case; done.                           (* SYM *)
+    + rewrite /_IF => s.
+      by case Hc : (\' s == 'NIL).          (* SYM *)
   - done.                                   (* CONS *)
 Qed.
-*)
+
 
 Theorem if_same (x y : star) :
   (EQUAL (_IF x y y) y).
