@@ -370,28 +370,44 @@ TLPの定理は、(IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T) のか�
 TLPの定理の証明や、その定理を使うときに使用します。
  *)
 
+(*
+    「case: eqP」を使う例：
+    前提を move/eqP で戻してやらないといけない。
+*)     
+
 Lemma ifAP {q x y : star} : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
 Proof.
   split.
+(*
   - rewrite /_IF /EQUAL => H Hq.
     case Hxy : (x == y); case Hqq : (q == 'NIL).
     + by apply/eqP; rewrite Hxy.
     + by apply/eqP; rewrite Hxy.
     + by move/eqP in Hqq; rewrite Hqq in Hq.
     + by rewrite Hqq Hxy in H.
+ *)
+  - rewrite /_IF /EQUAL.
+    case: eqP => Hq_nil.
+    + move=> _ Hq.
+      exfalso.
+      rewrite /is_not_nil in Hq.
+      move/negP in Hq.
+      move/eqP in Hq_nil.
+      done.
+    + case: eqP => Hxy H Hq.
+      * by [].
+      * by [].
   - move=> H.
-(*
-    「case: eqP」を使う例：
-    前提を move/eqP で戻してやらないといけない。
-*)     
     rewrite /_IF; case: eqP; move/eqP; try done.
     move=> Hnot_nil_q.
     rewrite /EQUAL; case: eqP; move/eqP/negP; try done.
     move=> Hx_y.
+(*
+
     Undo 4.
-    
     rewrite /_IF; case_if; move: Hq. move/negP/negP => Hnot_nil_q.
     rewrite /EQUAL; case_if; move: Hq. move/negP => Hx_y.
+*)
     exfalso.
     apply Hx_y.
     apply/eqP.
@@ -402,6 +418,28 @@ Qed.
 Lemma ifEP {q x y : star} : (_IF q 'T (EQUAL x y)) <-> (~q -> x = y).
 Proof.
   split.
+(*
+   - rewrite /_IF /EQUAL => H Hq.
+    case Hxy : (x == y); case Hqq : (q == 'NIL).
+    + by apply/eqP; rewrite Hxy.
+    + by apply/eqP; rewrite Hxy.
+    + by rewrite Hqq Hxy in H.
+    + rewrite /is_not_nil in Hq.
+      move/negP in Hq.
+      move/negP/negP in Hqq.
+        by rewrite Hqq in Hq.
+*)
+  - rewrite /_IF /EQUAL.
+    case: eqP => Hq_nil.
+    case: eqP => Hxy H Hq.
+    + by [].
+    + by [].
+    + move=> _ Hnq.
+      exfalso.
+      apply Hnq; rewrite /is_not_nil.
+      by move/eqP in Hq_nil.
+
+(*
   - rewrite /_IF /EQUAL => H Hq.
     case Hxy : (x == y); case Hqq : (q == 'NIL).
     + by apply/eqP; rewrite Hxy.
@@ -411,6 +449,7 @@ Proof.
       move/negP in Hq.
       move/negP/negP in Hqq.
         by rewrite Hqq in Hq.
+*)
   - move=> H.
     rewrite /_IF; case: eqP; move/eqP; try done.
     move=> Hnot_nil_q.
@@ -624,7 +663,7 @@ Qed.
 Lemma l_cons_car_cdr (x : star) :
   (ATOM x) = 'NIL -> (CONS (CAR x) (CDR x)) = x.
 Proof.
-  intros Hn.
+  move=> Hn.
   case Hc: x; rewrite /CONS => /=.
   - by rewrite Hc in Hn.                    (* 前提の矛盾 *)
   - by [].
