@@ -355,6 +355,8 @@ _IFやEQUALを分解するためのタクティクを定義します。
 このなかではコアーションが機能しないことに注意してください。
 *)
 
+(** ほとんどの場合、case: eqP で置き換えることができる。  *)
+
 Ltac case_if :=
   match goal with
   | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X; try done
@@ -378,6 +380,16 @@ Proof.
     + by move/eqP in Hqq; rewrite Hqq in Hq.
     + by rewrite Hqq Hxy in H.
   - move=> H.
+(*
+    「case: eqP」を使う例：
+    前提を move/eqP で戻してやらないといけない。
+*)     
+    rewrite /_IF; case: eqP; move/eqP; try done.
+    move=> Hnot_nil_q.
+    rewrite /EQUAL; case: eqP; move/eqP/negP; try done.
+    move=> Hx_y.
+    Undo 4.
+    
     rewrite /_IF; case_if; move: Hq. move/negP/negP => Hnot_nil_q.
     rewrite /EQUAL; case_if; move: Hq. move/negP => Hx_y.
     exfalso.
@@ -400,8 +412,14 @@ Proof.
       move/negP/negP in Hqq.
         by rewrite Hqq in Hq.
   - move=> H.
-    rewrite /_IF; case_if; move: Hq. move/negP/negP => Hq_nil.
-    rewrite /EQUAL; case_if; move: Hq. move/negP => Hnot_x_y.
+    rewrite /_IF; case: eqP; move/eqP; try done.
+    move=> Hnot_nil_q.
+    rewrite /EQUAL; case: eqP; move/eqP/negP; try done.
+    move=> Hx_y.
+    Undo 4.
+
+    rewrite /_IF; case_if; move: Hq; move/negP/negP => Hq_nil.
+    rewrite /EQUAL; case_if; move: Hq; move/negP => Hnot_x_y.
     exfalso.
     apply Hnot_x_y.
     apply/eqP.
@@ -489,7 +507,10 @@ Qed.
 Theorem equal_if (x y : star) :
   (_IF (EQUAL x y) (EQUAL x y) 'T).
 Proof.
-  rewrite /_IF; case_if; move: Hq => Hc.
+  by rewrite /_IF; case: eqP; move/eqP => Hc.
+  Restart.
+  
+  rewrite /_IF; case_if; move: Hq => Hc; try done.
   move/eqP in Hc.
   rewrite /EQUAL; case_if; move: Hq => Hd.
   rewrite /EQUAL in Hc.
@@ -499,6 +520,9 @@ Qed.
 Theorem if_true (x y : star) :
   (EQUAL (_IF 'T x y) x).
 Proof.
+  by rewrite /EQUAL; case: eqP.
+  
+  Restart.
   rewrite /EQUAL; case_if.
   rewrite /_IF /= in Hq.
     by move/eqP in Hq.
@@ -507,6 +531,9 @@ Qed.
 Theorem if_false (x y : star) :
   (EQUAL (_IF 'NIL x y) y).
 Proof.
+    by rewrite /EQUAL; case: eqP.
+    
+  Restart.
   rewrite /EQUAL; case_if.
     by rewrite /_IF /=; move/eqP in Hq.
 Qed.
@@ -519,6 +546,8 @@ Proof.
     + done.                                 (* NAT *)
     + rewrite /_IF => s.
       by case Hc : (\' s == 'NIL).          (* SYM *)
+      Undo 1.
+      by case: eqP.
   - done.                                   (* CONS *)
 Qed.
 
@@ -535,13 +564,20 @@ Lemma l_if_nest_A (x y z : star) :
 Proof.
   rewrite /_IF.
   by case Hc : (x == 'NIL) => Hd.
+  Undo 1.
+  by case: eqP.
 Qed.
 
 Theorem if_nest_A (x y z : star) :
   (_IF x (EQUAL (_IF x y z) y) 'T).
 Proof.
+  rewrite /_IF; case: eqP; try done.
+  by rewrite equal_same.
+  
+  Restart.
   rewrite /_IF; case_if.
   by rewrite equal_same.
+  
   Restart.
   apply/ifAP => Hq.
   by rewrite l_if_nest_A.
@@ -571,8 +607,13 @@ Proof.
   - by apply/eqP; rewrite Hq.
   Restart.
  *)
+  rewrite /_IF; case: eqP; try done.
+  by rewrite equal_same.
+  
+  Restart.
   rewrite /_IF; case_if.
   by rewrite equal_same.
+  
   Restart.
   apply/ifEP => Hq.
   rewrite l_if_nest_E.
@@ -597,6 +638,7 @@ Proof.
   - by rewrite equal_same.
   - apply/eqP.
       by rewrite Hq.
+      
   Restart.
   apply/ifEP => Hq.
   apply l_cons_car_cdr.
@@ -650,6 +692,7 @@ Proof.
   rewrite /LT /= l_size_car.
   - by [].
   - by apply/eqP.
+
   Restart.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_car.
@@ -664,6 +707,7 @@ Proof.
   rewrite /LT /= l_size_cdr.
   - by [].
   - by apply/eqP.
+    
   Restart.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_cdr.
