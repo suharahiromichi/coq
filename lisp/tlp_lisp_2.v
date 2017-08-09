@@ -5,7 +5,7 @@
 
 
 2017/08/07 シンボルをstringを使うようにした。
-
+2017/08/09 case: eqP を使うようにした。
 
 
 @suharahiromichi
@@ -723,8 +723,13 @@ Qed.
 ## 書き換えの例
  *)
 
-Check iffLR ifAP (if_nest_A _ _ _).
-Check iffLR ifEP (size_cdr _).
+Section TLP_REWRITE_TEST.
+  Variables x y z : star.
+
+  Check iffLR ifAP (if_nest_A x y z) : x -> (_IF x y z) = y.
+  Check iffLR ifEP (size_cdr x)      : ~ ATOM x -> (LT (SIZE (CDR x)) (SIZE x)) = 'T.
+
+End TLP_REWRITE_TEST.
 
 End TLP.
 
