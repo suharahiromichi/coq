@@ -348,14 +348,22 @@ Proof.
   by case: (q == 'NIL).
 Qed.
 
+Lemma not_q__q_nil_P (q : star) : ~q <-> q = 'NIL.
+Proof.
+  split.
+  - rewrite /is_not_nil => /negP.
+    by rewrite not_not_nil__nil_E => /eqP.
+  - by move=> Hq; rewrite Hq.
+Qed.
+
 (**
-# タクティク
+# タクティク (不使用)
 
 _IFやEQUALを分解するためのタクティクを定義します。
 このなかではコアーションが機能しないことに注意してください。
-*)
 
-(** ほとんどの場合、case: eqP で置き換えることができる。  *)
+ほとんどの場合、case: eqP で置き換えることができるので、使用していない。
+*)
 
 Ltac case_if :=
   match goal with
@@ -370,22 +378,9 @@ TLPの定理は、(IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T) のか�
 TLPの定理の証明や、その定理を使うときに使用します。
  *)
 
-(*
-    「case: eqP」を使う例：
-    前提を move/eqP で戻してやらないといけない。
-*)     
-
 Lemma ifAP {q x y : star} : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
 Proof.
   split.
-(*
-  - rewrite /_IF /EQUAL => H Hq.
-    case Hxy : (x == y); case Hqq : (q == 'NIL).
-    + by apply/eqP; rewrite Hxy.
-    + by apply/eqP; rewrite Hxy.
-    + by move/eqP in Hqq; rewrite Hqq in Hq.
-    + by rewrite Hqq Hxy in H.
- *)
   - rewrite /_IF /EQUAL.
     case: eqP => Hq_nil.
     + move=> _ Hq.
@@ -398,37 +393,31 @@ Proof.
       * by [].
       * by [].
   - move=> H.
-    rewrite /_IF; case: eqP; move/eqP; try done.
-    move=> Hnot_nil_q.
-    rewrite /EQUAL; case: eqP; move/eqP/negP; try done.
-    move=> Hx_y.
-(*
+    rewrite /_IF; case: eqP => //; move/eqP => Hnot_nil_q. (* q != NIL *)
+    rewrite /EQUAL; case: eqP => //; move/eqP/negP => Hx_y. (* ~ (x == y) *)
 
-    Undo 4.
-    rewrite /_IF; case_if; move: Hq. move/negP/negP => Hnot_nil_q.
-    rewrite /EQUAL; case_if; move: Hq. move/negP => Hx_y.
-*)
+    (**
+x <> y
+------------------------------- move/eqP
+x != y ≡ ~~(x == y)
+------------------------------- move/negP
+~ (x == y)
+------------------------------- move/eqP
+(x == y) != true
+------------------------------- move/negP
+~ ((x == y) = true)
+     *)
+
     exfalso.
-    apply Hx_y.
+    apply: Hx_y.
     apply/eqP.
-    apply H.
+    apply: H.
     by rewrite /is_not_nil.
 Qed.
 
 Lemma ifEP {q x y : star} : (_IF q 'T (EQUAL x y)) <-> (~q -> x = y).
 Proof.
   split.
-(*
-   - rewrite /_IF /EQUAL => H Hq.
-    case Hxy : (x == y); case Hqq : (q == 'NIL).
-    + by apply/eqP; rewrite Hxy.
-    + by apply/eqP; rewrite Hxy.
-    + by rewrite Hqq Hxy in H.
-    + rewrite /is_not_nil in Hq.
-      move/negP in Hq.
-      move/negP/negP in Hqq.
-        by rewrite Hqq in Hq.
-*)
   - rewrite /_IF /EQUAL.
     case: eqP => Hq_nil.
     case: eqP => Hxy H Hq.
@@ -438,42 +427,17 @@ Proof.
       exfalso.
       apply Hnq; rewrite /is_not_nil.
       by move/eqP in Hq_nil.
-
-(*
-  - rewrite /_IF /EQUAL => H Hq.
-    case Hxy : (x == y); case Hqq : (q == 'NIL).
-    + by apply/eqP; rewrite Hxy.
-    + by apply/eqP; rewrite Hxy.
-    + by rewrite Hqq Hxy in H.
-    + rewrite /is_not_nil in Hq.
-      move/negP in Hq.
-      move/negP/negP in Hqq.
-        by rewrite Hqq in Hq.
-*)
+      
   - move=> H.
-    rewrite /_IF; case: eqP; move/eqP; try done.
-    move=> Hnot_nil_q.
-    rewrite /EQUAL; case: eqP; move/eqP/negP; try done.
-    move=> Hx_y.
-    Undo 4.
-
-    rewrite /_IF; case_if; move: Hq; move/negP/negP => Hq_nil.
-    rewrite /EQUAL; case_if; move: Hq; move/negP => Hnot_x_y.
+    rewrite /_IF; case: eqP; move/eqP => // Hq_nil. (* q == NIL  *)
+    rewrite /EQUAL; case: eqP; move/eqP/negP => // => Hnot_x_y. (* ~(x == y) *)
     exfalso.
     apply Hnot_x_y.
     apply/eqP.
     apply H.
     apply/negP.
-    move/eqP in Hq_nil.
-    by rewrite Hq_nil.
-Qed.
-
-Lemma not_q__q_nil_P (q : star) : ~q <-> q = 'NIL.
-Proof.
-  split.
-  - rewrite /is_not_nil => /negP.
-    by rewrite not_not_nil__nil_E => /eqP.
-  - by move=> Hq; rewrite Hq.
+    move/eqP in Hq_nil.                     (* q = NIL *)
+      by rewrite Hq_nil.
 Qed.
 
 (**
@@ -483,30 +447,12 @@ Qed.
 Theorem equal_same (x : star) :
   (EQUAL x x).
 Proof.
-(*
-  elim: x => [a | x Hxx y Hyy]; rewrite /EQUAL; case_if.
-  - by move/eqP in Hq.
-  - by move/eqP in Hq.
-  Restart.
-*)
   rewrite /EQUAL.
     by rewrite refl_eqStar.
 Qed.
 
-Lemma l_atom_cons (x y : star) :
-  (ATOM (CONS x y)) = 'NIL.
-Proof.
-  done.
-Qed.
-
 Theorem atom_cons (x y : star) :
   (EQUAL (ATOM (CONS x y)) 'NIL).
-Proof.
-  by rewrite l_atom_cons.
-Qed.
-
-Lemma l_car_cons (x y : star) :
-  CAR (CONS x y) = x.
 Proof.
   done.
 Qed.
@@ -514,67 +460,41 @@ Qed.
 Theorem car_cons (x y : star) :
   (EQUAL (CAR (CONS x y)) x).
 Proof.
-  by rewrite l_car_cons equal_same.
-Qed.
-
-Lemma l_cdr_cons (x y : star) :
-  (CDR (CONS x y)) = y.
-Proof.
-  done.
+  rewrite /EQUAL.
+  by case: eqP.
 Qed.
 
 Theorem cdr_cons (x y : star) :
   (EQUAL (CDR (CONS x y)) y).
 Proof.
-  by rewrite l_cdr_cons equal_same.
+  rewrite /EQUAL.
+  by case: eqP.
 Qed.
 
-Lemma l_equal_swap (x y : star) :
-  (EQUAL x y) = (EQUAL y x).
-Proof.
-  rewrite /EQUAL.
-    by rewrite {1}symm_eqStar.
-Qed.
-                          
 Theorem equal_swap (x y : star) :
   (EQUAL (EQUAL x y) (EQUAL y x)).
 Proof.
-  rewrite [(EQUAL y x)]l_equal_swap.
+  rewrite {2}/EQUAL {2}/EQUAL.
+  rewrite {1}symm_eqStar.
     by rewrite equal_same.
 Qed.
 
 Theorem equal_if (x y : star) :
   (_IF (EQUAL x y) (EQUAL x y) 'T).
 Proof.
-  by rewrite /_IF; case: eqP; move/eqP => Hc.
-  Restart.
-  
-  rewrite /_IF; case_if; move: Hq => Hc; try done.
-  move/eqP in Hc.
-  rewrite /EQUAL; case_if; move: Hq => Hd.
-  rewrite /EQUAL in Hc.
-    by rewrite Hd in Hc.
+    by rewrite /_IF; case: eqP; move/eqP.
 Qed.
 
 Theorem if_true (x y : star) :
   (EQUAL (_IF 'T x y) x).
 Proof.
-  by rewrite /EQUAL; case: eqP.
-  
-  Restart.
-  rewrite /EQUAL; case_if.
-  rewrite /_IF /= in Hq.
-    by move/eqP in Hq.
+    by rewrite /EQUAL; case: eqP.
 Qed.
 
 Theorem if_false (x y : star) :
   (EQUAL (_IF 'NIL x y) y).
 Proof.
     by rewrite /EQUAL; case: eqP.
-    
-  Restart.
-  rewrite /EQUAL; case_if.
-    by rewrite /_IF /=; move/eqP in Hq.
 Qed.
 
 Lemma l_if_same (x y : star) :
@@ -584,12 +504,9 @@ Proof.
   - case.
     + done.                                 (* NAT *)
     + rewrite /_IF => s.
-      by case Hc : (\' s == 'NIL).          (* SYM *)
-      Undo 1.
-      by case: eqP.
+        by case: eqP.                       (* SYM *)
   - done.                                   (* CONS *)
 Qed.
-
 
 Theorem if_same (x y : star) :
   (EQUAL (_IF x y y) y).
@@ -598,66 +515,18 @@ Proof.
     by rewrite equal_same.
 Qed.
 
-Lemma l_if_nest_A (x y z : star) :
-  x != 'NIL -> (_IF x y z) = y.
-Proof.
-  rewrite /_IF.
-  by case Hc : (x == 'NIL) => Hd.
-  Undo 1.
-  by case: eqP.
-Qed.
-
 Theorem if_nest_A (x y z : star) :
   (_IF x (EQUAL (_IF x y z) y) 'T).
 Proof.
   rewrite /_IF; case: eqP; try done.
   by rewrite equal_same.
-  
-  Restart.
-  rewrite /_IF; case_if.
-  by rewrite equal_same.
-  
-  Restart.
-  apply/ifAP => Hq.
-  by rewrite l_if_nest_A.
-Qed.
-
-Lemma l_if_nest_E (x y z : star) :
-  x = 'NIL -> (_IF x y z) = z.
-Proof.
-(*
-  rewrite /_IF.
-  case Hc : (x == 'NIL) => Hd.
-  done.
-    by rewrite Hd in Hc.
-  Restart.
-*)
-  move=> H.
-  by rewrite H.
 Qed.
 
 Theorem if_nest_E (x y z : star) :
   (_IF x 'T (EQUAL (_IF x y z) z)).
 Proof.
-(*  
-  rewrite {1}/_IF; case_if.
-  rewrite l_if_nest_E.
-  - by rewrite equal_same.
-  - by apply/eqP; rewrite Hq.
-  Restart.
- *)
   rewrite /_IF; case: eqP; try done.
   by rewrite equal_same.
-  
-  Restart.
-  rewrite /_IF; case_if.
-  by rewrite equal_same.
-  
-  Restart.
-  apply/ifEP => Hq.
-  rewrite l_if_nest_E.
-  - done.
-  - by apply/not_q__q_nil_P.
 Qed.
 
 Lemma l_cons_car_cdr (x : star) :
@@ -677,30 +546,6 @@ Proof.
   - by rewrite equal_same.
   - apply/eqP.
       by rewrite Hq.
-      
-  Restart.
-  apply/ifEP => Hq.
-  apply l_cons_car_cdr.
-  by apply/not_q__q_nil_P.
-Qed.
-
-Lemma l_size_plus_1 (x y : star) (n m : nat) :
-  s_size x = n -> s_size y = m -> s_size (CONS x y) = n + m + 1.
-Proof.
-  move=> Hx Hy /=.
-  by rewrite Hx Hy.
-Qed.
-
-Lemma l_size_plus_2 (x : star) (n m l : nat) :
-  ATOM x = 'NIL -> s_size (CAR x) = n ->
-  s_size (CDR x) = m -> s_size x = n + m + 1.
-Proof.
-  move=> Ha Hx Hy /=.
-  Check @l_size_plus_1 (CAR x) (CDR x) n m.
-  rewrite -(@l_size_plus_1 (CAR x) (CDR x) n m).
-  - by rewrite l_cons_car_cdr.
-  - by [].
-  - by [].
 Qed.
 
 Lemma l_size_car (x : star) :
@@ -727,12 +572,6 @@ Qed.
 Theorem size_car (x : star) :
   (_IF (ATOM x) 'T (EQUAL (LT (SIZE (CAR x)) (SIZE x)) 'T)).
 Proof.
-  rewrite /_IF; case_if.
-  rewrite /LT /= l_size_car.
-  - by [].
-  - by apply/eqP.
-
-  Restart.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_car.
   - by [].
@@ -742,12 +581,6 @@ Qed.
 Theorem size_cdr (x : star) :
   (_IF (ATOM x) 'T (EQUAL (LT (SIZE (CDR x)) (SIZE x)) 'T)).
 Proof.
-  rewrite /_IF; case_if.
-  rewrite /LT /= l_size_cdr.
-  - by [].
-  - by apply/eqP.
-    
-  Restart.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_cdr.
   - by [].
