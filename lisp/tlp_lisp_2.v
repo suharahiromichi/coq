@@ -357,7 +357,9 @@ Proof.
 Qed.
 
 (**
-# タクティク (不使用)
+# タクティク
+
+## case_if (不使用)
 
 _IFやEQUALを分解するためのタクティクを定義します。
 このなかではコアーションが機能しないことに注意してください。
@@ -369,6 +371,24 @@ Ltac case_if :=
   match goal with
   | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X; try done
   end.
+
+(**
+## 矛盾 (その1)
+
+前提に q = NIL と q <> NIL がある場合に、矛盾を導く。
+*)
+
+Ltac contra_nil :=
+  exfalso;
+  repeat match goal with
+       | [ H : ?q = 'NIL |- _ ] => move/eqP in H  (* q == NIL *)
+       | [ H : ?q <> 'NIL |- _ ] => move/eqP in H (* q != NIL *)
+       | [ H : is_true (is_not_nil ?q) |- _ ] =>
+         rewrite /is_not_nil in H; move/negP in H (* ~ (q == NIL) *)
+       | [ H : ~ is_true (is_not_nil ?q) |- _ ] =>
+         rewrite /is_not_nil in H           (*  ~ (q != NIL) *)
+       | _ => done
+       end.
 
 (**
 # IFとEQUALの補題
@@ -384,11 +404,15 @@ Proof.
   - rewrite /_IF /EQUAL.
     case: eqP => Hq_nil.
     + move=> _ Hq.
+(*
       exfalso.
       rewrite /is_not_nil in Hq.
       move/negP in Hq.
       move/eqP in Hq_nil.
       done.
+*)
+      contra_nil.
+      
     + case: eqP => Hxy H Hq.
       * by [].
       * by [].
@@ -424,10 +448,14 @@ Proof.
     + by [].
     + by [].
     + move=> _ Hnq.
+(*
       exfalso.
-      apply Hnq; rewrite /is_not_nil.
-      by move/eqP in Hq_nil.
-      
+      rewrite /is_not_nil in Hnq.
+      move/eqP in Hq_nil.
+      done.
+*)      
+      contra_nil.
+
   - move=> H.
     rewrite /_IF; case: eqP; move/eqP => // Hq_nil. (* q == NIL  *)
     rewrite /EQUAL; case: eqP; move/eqP/negP => // => Hnot_x_y. (* ~(x == y) *)
@@ -435,6 +463,10 @@ Proof.
     apply Hnot_x_y.
     apply/eqP.
     apply H.
+(*    
+    move=> H'.
+    contra_nil.
+*)
     apply/negP.
     move/eqP in Hq_nil.                     (* q = NIL *)
       by rewrite Hq_nil.
