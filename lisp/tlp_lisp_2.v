@@ -6,7 +6,7 @@
 
 2017/08/07 シンボルをstringを使うようにした。
 2017/08/09 case: eqP を使うようにした。
-
+2017/08/11 prove_nil タクティクを完成した。
 
 @suharahiromichi
 
@@ -33,11 +33,7 @@ TLPの対象言語であるLispの「意味」をCoqで実現しようと思い�
    Coqは論理式（Prop型）でなければ証明できないので、
    これをLispのプログラムをCoqの論理式に埋め込むことで実現します。
 
-3. TLPの証明は、(EQUAL A B) による書き換えで進みますが、
-   Coqの書き換えはモノイドに対しておこないます。T.B.D.
 
-
-今回は、上記の1と2について実現した結果をまとめます。
 CoqのMathcomp/SSReflect拡張を使用しているので、
 それについては[3]を参照してください。
  *)
@@ -377,47 +373,19 @@ _IFやEQUALを分解するためのタクティクを定義します。
 
 Ltac case_if :=
   match goal with
-  | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X; try done
+  | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X //
   end.
 
 (**
-## 矛盾 (その1)
+## prove_nil
 
-前提に q = NIL と q <> NIL がある場合に、矛盾を導く。
-*)
+ゴールおよび前提の NIL に関する命題を q=NIL または q<>NIL に変換するものです。
+前提とゴールが同じでなくても、
+前提に q=NILとq<>NILの両方があるなら、矛盾からdoneで証明が終わることができます。
 
-(*
-Ltac contra_nil :=
-  exfalso;
-  repeat match goal with
-       | [ H : ?q = 'NIL |- _ ] => move/eqP in H  (* q == NIL *)
-       | [ H : ?q <> 'NIL |- _ ] => move/eqP in H (* q != NIL *)
-       | [ H : is_true (is_not_nil ?q) |- _ ] =>
-         rewrite /is_not_nil in H; move/negP in H (* ~ (q == NIL) *)
-       | [ H : ~ is_true (is_not_nil ?q) |- _ ] =>
-         rewrite /is_not_nil in H           (*  ~ (q != NIL) *)
-       | _ => done
-       end.
+なお、~~(q==NIL) は q!=NIL と同じなので、条件としてあらわれません。
  *)
 
-(*
-Section Eq_Nil.
-
-  Variable q : star.
-  
-  Lemma q_ne_nil_P : q != 'NIL -> q <> 'NIL. Proof. by move/eqP. Qed. (* ~~(q == 'NIL) *)
-  Lemma q_P        : q         -> q <> 'NIL. Proof. rewrite /is_not_nil. by move/eqP. Qed.
-  
-  Lemma q_eq_nil_P : q == 'NIL -> q = 'NIL. Proof. by move/eqP. Qed.
-  Lemma not_q_P    : ~ q      -> q = 'NIL.
-  Proof. rewrite /is_not_nil => /negP. by rewrite not_not_nil__nil_E => /eqP. Qed.
-End Eq_Nil.
-*)
-
-(**
-ゴールおよび前提を q=NIL または q<>NIL に変換する。
-前提に q=NILとq<>NILの両方があるなら、矛盾からdoneで証明が終わる。
- *)
 Ltac prove_nil :=
   repeat match goal with
          | [ H : is_true (?q != 'NIL)      |- _ ] => move/eqP            in H
@@ -433,6 +401,7 @@ Ltac prove_nil :=
          | [ |- ~ is_true (is_not_nil ?q)       ] => apply/not_q__q_nil_E
 
          end.
+
 (**
 # IFとEQUALの補題
 
@@ -455,19 +424,6 @@ Proof.
   - move=> H.
     rewrite /_IF; case: eqP => // Hnot_nil_q. (* q <> NIL *)
     rewrite /EQUAL; case: eqP => // => Hx_y.  (* x <> y) *)
-
-    (**
-x <> y
-------------------------------- move/eqP
-x != y ≡ ~~(x == y)
-------------------------------- move/negP
-~ (x == y)
-------------------------------- move/eqP
-(x == y) != true
-------------------------------- move/negP
-~ ((x == y) = true)
-     *)
-
     exfalso.
     apply: Hx_y.
     apply: H.
@@ -562,7 +518,7 @@ Proof.
   - case.
     + done.                                 (* NAT *)
     + rewrite /_IF => s.
-        by case: eqP.                       (* SYM *)
+      by case: eqP.                         (* SYM *)
   - done.                                   (* CONS *)
 Qed.
 
@@ -576,14 +532,14 @@ Qed.
 Theorem if_nest_A (x y z : star) :
   (_IF x (EQUAL (_IF x y z) y) 'T).
 Proof.
-  rewrite /_IF; case: eqP; try done.
+  rewrite /_IF; case: eqP => //.
   by rewrite equal_same.
 Qed.
 
 Theorem if_nest_E (x y z : star) :
   (_IF x 'T (EQUAL (_IF x y z) z)).
 Proof.
-  rewrite /_IF; case: eqP; try done.
+  rewrite /_IF; case: eqP => //.
   by rewrite equal_same.
 Qed.
 
@@ -591,26 +547,23 @@ Lemma l_cons_car_cdr (x : star) :
   (ATOM x) = 'NIL -> (CONS (CAR x) (CDR x)) = x.
 Proof.
   move=> Hn.
-  case Hc: x; rewrite /CONS => /=.
-  - by rewrite Hc in Hn.                    (* 前提の矛盾 *)
-  - by [].
+  case Hc: x; rewrite /CONS => //.
+  by rewrite Hc in Hn.                      (* 前提の矛盾 *)
 Qed.
 
 Theorem cons_car_cdr (x : star) :
   (_IF (ATOM x) 'T (EQUAL (CONS (CAR x) (CDR x)) x)).
 Proof.
-  rewrite /_IF; case_if.
-  rewrite l_cons_car_cdr.
-  - by rewrite equal_same.
-  - apply/eqP.
-      by rewrite Hq.
+  rewrite /_IF; case: eqP => Hq //.
+  rewrite l_cons_car_cdr //.
+  by rewrite equal_same.
 Qed.
 
 Lemma l_size_car (x : star) :
   ATOM x = 'NIL -> s_size (CAR x) < s_size x.
 Proof.
   elim: x.
-  - by move=> a Hc /=.
+  - by move=> a Hc //.
   - move=> x Hx y Hy Hc /=.
       (* s_size x < s_size x + s_size y + 1 *)
       by rewrite addn1 ltnS leq_addr.
@@ -620,11 +573,11 @@ Lemma l_size_cdr (x : star) :
   ATOM x = 'NIL -> s_size (CDR x) < s_size x.
 Proof.
   elim: x.
-  - by move=> a Hc /=.
+  - by move=> a Hc //.
   - move=> x Hx y Hy Hc /=.
     (* s_size y < s_size x + s_size y + 1 *)
     rewrite [s_size x + s_size y]addnC.
-      by rewrite addn1 ltnS leq_addr.
+    by rewrite addn1 ltnS leq_addr.
 Qed.
 
 Theorem size_car (x : star) :
