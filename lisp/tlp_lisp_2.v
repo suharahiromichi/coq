@@ -348,12 +348,20 @@ Proof.
   by case: (q == 'NIL).
 Qed.
 
-Lemma not_q__q_nil_P (q : star) : ~q <-> q = 'NIL.
+Lemma not_q__q_nil_E (q : star) : ~q <-> q = 'NIL.
 Proof.
   split.
   - rewrite /is_not_nil => /negP.
     by rewrite not_not_nil__nil_E => /eqP.
   - by move=> Hq; rewrite Hq.
+Qed.
+
+Lemma q__q_not_nil_E (q : star) : q <-> q <> 'NIL.
+Proof.
+  rewrite /is_not_nil.
+  split.
+  - move=> H. by apply/eqP.
+  - by move/eqP.
 Qed.
 
 (**
@@ -378,6 +386,7 @@ Ltac case_if :=
 前提に q = NIL と q <> NIL がある場合に、矛盾を導く。
 *)
 
+(*
 Ltac contra_nil :=
   exfalso;
   repeat match goal with
@@ -389,7 +398,41 @@ Ltac contra_nil :=
          rewrite /is_not_nil in H           (*  ~ (q != NIL) *)
        | _ => done
        end.
+ *)
 
+(*
+Section Eq_Nil.
+
+  Variable q : star.
+  
+  Lemma q_ne_nil_P : q != 'NIL -> q <> 'NIL. Proof. by move/eqP. Qed. (* ~~(q == 'NIL) *)
+  Lemma q_P        : q         -> q <> 'NIL. Proof. rewrite /is_not_nil. by move/eqP. Qed.
+  
+  Lemma q_eq_nil_P : q == 'NIL -> q = 'NIL. Proof. by move/eqP. Qed.
+  Lemma not_q_P    : ~ q      -> q = 'NIL.
+  Proof. rewrite /is_not_nil => /negP. by rewrite not_not_nil__nil_E => /eqP. Qed.
+End Eq_Nil.
+*)
+
+(**
+ゴールおよび前提を q=NIL または q<>NIL に変換する。
+前提に q=NILとq<>NILの両方があるなら、矛盾からdoneで証明が終わる。
+ *)
+Ltac prove_nil :=
+  repeat match goal with
+         | [ H : is_true (?q != 'NIL)      |- _ ] => move/eqP            in H
+         | [ H : is_true (is_not_nil ?q)   |- _ ] => move/q__q_not_nil_E in H
+
+         | [ H : is_true (?q == 'NIL)      |- _ ] => move/eqP            in H
+         | [ H : ~ is_true (is_not_nil ?q) |- _ ] => move/not_q__q_nil_E in H
+
+         | [ |- is_true (?q != 'NIL)            ] => apply/eqP
+         | [ |- is_true (is_not_nil ?q)         ] => apply/q__q_not_nil_E
+
+         | [ |- is_true (?q == 'NIL)            ] => apply/eqP
+         | [ |- ~ is_true (is_not_nil ?q)       ] => apply/not_q__q_nil_E
+
+         end.
 (**
 # IFとEQUALの補題
 
@@ -404,21 +447,14 @@ Proof.
   - rewrite /_IF /EQUAL.
     case: eqP => Hq_nil.
     + move=> _ Hq.
-(*
-      exfalso.
-      rewrite /is_not_nil in Hq.
-      move/negP in Hq.
-      move/eqP in Hq_nil.
-      done.
-*)
-      contra_nil.
+      by prove_nil.
       
     + case: eqP => Hxy H Hq.
       * by [].
       * by [].
   - move=> H.
-    rewrite /_IF; case: eqP => //; move/eqP => Hnot_nil_q. (* q != NIL *)
-    rewrite /EQUAL; case: eqP => //; move/eqP/negP => Hx_y. (* ~ (x == y) *)
+    rewrite /_IF; case: eqP => // Hnot_nil_q. (* q <> NIL *)
+    rewrite /EQUAL; case: eqP => // => Hx_y.  (* x <> y) *)
 
     (**
 x <> y
@@ -434,9 +470,8 @@ x != y ≡ ~~(x == y)
 
     exfalso.
     apply: Hx_y.
-    apply/eqP.
     apply: H.
-    by rewrite /is_not_nil.
+    by prove_nil.
 Qed.
 
 Lemma ifEP {q x y : star} : (_IF q 'T (EQUAL x y)) <-> (~q -> x = y).
@@ -448,29 +483,20 @@ Proof.
     + by [].
     + by [].
     + move=> _ Hnq.
-(*
-      exfalso.
-      rewrite /is_not_nil in Hnq.
-      move/eqP in Hq_nil.
-      done.
-*)      
-      contra_nil.
-
+      by prove_nil.
+      
   - move=> H.
-    rewrite /_IF; case: eqP; move/eqP => // Hq_nil. (* q == NIL  *)
-    rewrite /EQUAL; case: eqP; move/eqP/negP => // => Hnot_x_y. (* ~(x == y) *)
+    rewrite /_IF; case: eqP => // Hq_nil.        (* q = NIL  *)
+    rewrite /EQUAL; case: eqP => // => Hnot_x_y. (* x <> y) *)
     exfalso.
-    apply Hnot_x_y.
-    apply/eqP.
-    apply H.
-(*    
-    move=> H'.
-    contra_nil.
-*)
-    apply/negP.
-    move/eqP in Hq_nil.                     (* q = NIL *)
-      by rewrite Hq_nil.
+    apply: Hnot_x_y.
+    apply: H.
+    by prove_nil.
 Qed.
+
+(*
+    Set Printing Coercions.
+ *)
 
 (**
 # J-Bobの「公理」の証明
@@ -607,7 +633,7 @@ Proof.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_car.
   - by [].
-  - by apply/not_q__q_nil_P.
+  - by apply/not_q__q_nil_E.
 Qed.
 
 Theorem size_cdr (x : star) :
@@ -616,7 +642,7 @@ Proof.
   apply/ifEP => Hq.
   rewrite /LT /= l_size_cdr.
   - by [].
-  - by apply/not_q__q_nil_P.
+  - by apply/not_q__q_nil_E.
 Qed.
 
 (**
