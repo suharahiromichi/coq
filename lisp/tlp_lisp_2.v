@@ -373,7 +373,7 @@ _IFやEQUALを分解するためのタクティクを定義します。
 
 Ltac case_if :=
   match goal with
-  | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X //
+  | [ |- is_true (is_not_nil (if ?X then _ else _)) ] => case Hq : X => //
   end.
 
 (**
@@ -417,15 +417,13 @@ Proof.
     case: eqP => Hq_nil.
     + move=> _ Hq.
       by prove_nil.
+    + case: eqP => //=.
       
-    + case: eqP => Hxy H Hq.
-      * by [].
-      * by [].
   - move=> H.
-    rewrite /_IF; case: eqP => // Hnot_nil_q. (* q <> NIL *)
-    rewrite /EQUAL; case: eqP => // => Hx_y.  (* x <> y) *)
+    rewrite /_IF; case: eqP => // Hnot_nil_q.   (* q <> NIL *)
+    rewrite /EQUAL; case: eqP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
-    apply: Hx_y.
+    apply: Hx_ne_y.
     apply: H.
     by prove_nil.
 Qed.
@@ -435,17 +433,15 @@ Proof.
   split.
   - rewrite /_IF /EQUAL.
     case: eqP => Hq_nil.
-    case: eqP => Hxy H Hq.
-    + by [].
-    + by [].
+    + case: eqP => //=.
     + move=> _ Hnq.
       by prove_nil.
-      
+    
   - move=> H.
-    rewrite /_IF; case: eqP => // Hq_nil.        (* q = NIL  *)
-    rewrite /EQUAL; case: eqP => // => Hnot_x_y. (* x <> y) *)
+    rewrite /_IF; case: eqP => // Hq_nil.       (* q = NIL  *)
+    rewrite /EQUAL; case: eqP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
-    apply: Hnot_x_y.
+    apply: Hx_ne_y.
     apply: H.
     by prove_nil.
 Qed.
@@ -565,8 +561,8 @@ Proof.
   elim: x.
   - by move=> a Hc //.
   - move=> x Hx y Hy Hc /=.
-      (* s_size x < s_size x + s_size y + 1 *)
-      by rewrite addn1 ltnS leq_addr.
+    (* s_size x < s_size x + s_size y + 1 *)
+    by rewrite addn1 ltnS leq_addr.
 Qed.
 
 Lemma l_size_cdr (x : star) :
