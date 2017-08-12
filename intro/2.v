@@ -28,6 +28,17 @@ Qed.
 Require Import ZArith.
 Open Scope Z.
 
+(* Scope については、以下を参照のこと。
+
+   Coq RM
+   Chapter 12  Syntax extensions and interpretation scopes
+   12.2  Interpretation scopes
+
+   https://coq.inria.fr/refman/Reference-Manual014.html
+
+   省略時解釈は、core_scope, type_scope, nat_scope の順番である。
+ *)
+
 Goal forall x y z : Z, x * (y * z) = x * y * z.
 Proof.
   intros.
