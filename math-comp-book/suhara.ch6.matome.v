@@ -4,7 +4,7 @@ Mathcomp で理解するべきなのは、Propとbooleanのリフレクション
 
 (eqP) eqType では、 == と =
 (forallP) finType では、[forall x, P] と (forall x, P)
-(funP) finFun では、=1 と = (関数どうしの等しさ)
+(ffunP) finFun では、=1 と = (関数どうしの等しさ)
 (setP) finSet では、=i と = (集合どうしの等しさ)
 (permP) perm では、集合とおなじ。本文に記載なし。
 
