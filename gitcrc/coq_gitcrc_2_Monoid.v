@@ -106,17 +106,18 @@ autamatically generalized and become explicit arguments of the lemma as we are u
 *)
 (* `{} は、引数を{}で囲むのときと同様に implicit argument になる。 *)
 
-Fixpoint power `{Monoid A dot one} (a : A) (n : nat) :=
+Fixpoint power `{Monoid A dot one} (a : A) (n : nat) := (* 「`」 でコンテキスト *)
   match n with
     | 0%nat => one
     | S p => dot a (power a p)
   end.
 Check power.                                (* 無意味 *)
-About power.
 Check power : nat -> nat -> nat.
+Check power : Z -> nat -> Z.
+About power.
 
 Section binary_power. 
-  Context `{M : Monoid A dot one}.
+  Context `{M : Monoid A dot one}.          (* コンテキスト *)
 (**
 Coq Reference Manual から
 19.4  Sections and contexts
@@ -142,7 +143,9 @@ it accepts any binding context as argument.
     end.
   Obligations.
   Next Obligation.                          (* Obligation 1 *)
-    set (M' := M); apply lt_div2; auto with arith.
+    set (M' := M); apply lt_div2.
+    apply neq_0_lt in H.
+    apply H.
     Defined.
   Next Obligation.                          (* Obligation 2 と 3 *)
     set (M' := M); apply lt_div2; auto with arith.
@@ -166,9 +169,9 @@ it accepts any binding context as argument.
     end.
   Proof.
     unfold binary_power_mult at 1.
-    on_call binary_power_mult_func 
-            ltac : (fun c => 
-                      unfold_sub @binary_power_mult_func c;
+    on_call binary_power_mult_func
+            ltac:(fun c => 
+                    unfold_sub @binary_power_mult_func c;
                     fold binary_power_mult_func).
     simpl. destruct n; reflexivity.
   Qed.
@@ -215,9 +218,10 @@ Section M2_def.
   Notation "x * y" := (mult x y).
   Variable rth : ring_theory zero one plus mult minus sym (@eq A).
   (* セクションの外で、M2_Monoid を使うためには、rth に値を与えないといけない。 *)
-  (* ring タクティクで、ring_theory のセレクタが使える。 *)
-  Add Ring Aring : rth.
+
   Print ring_theory.
+  (* ring タクティクで、ここで見えるring_theory のセレクタが使えるようになる。 *)
+  Add Ring Aring : rth.                     (* for ring. *)
   
 (**
 M2_Monoidは、以下のモノイドである。
@@ -231,11 +235,11 @@ c11 := plus (mult (c10 m) (c01 m')) (mult (c11 m) (c11 m'))
 c00 := one; c01 := zero; c10 := zero; c11 := one
 *)
 
-  Check M2_mult : forall A : Type, (A -> A -> A) -> (A -> A -> A) -> M2 A -> M2 A -> M2 A.
+  Check @M2_mult A : (A -> A -> A) -> (A -> A -> A) -> M2 A -> M2 A -> M2 A.
   (* (plus : A -> A -> A) (mult : A -> A -> A) *)
   Check M2_mult plus mult : M2 A -> M2 A -> M2 A. (* dot *)
   
-  Check Id2     : forall A : Type, A -> A -> M2 A. (* (zero : A) (one : A) *)
+  Check @Id2 A : A -> A -> M2 A. (* (zero : A) (one : A) *)
   Check Id2 0 1 : M2 A.                            (* one *)
   
   Global Instance M2_Monoid : Monoid (M2_mult plus mult) (Id2 0 1).
@@ -262,21 +266,24 @@ Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
 Print Zth.
 Check M2_Monoid Zth : Monoid _ _.
 Check M2_Monoid Zth : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
-Check @M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
+Check @M2_Monoid Z 0%Z 1%Z Zplus Zmult Zminus Z.opp Zth :
+  Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
 (* これは、M2Z と等しい *)
 
 Instance M2Z' : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) := M2_Monoid Zth.
-(* テキストの方法に記載されたのは、
-Instance M2Z : Monoid _ _ := M2_Monoid Zth. *)
+(* テキストの方法に記載されたのは、 *)
+Instance M2Z : Monoid _ _ := M2_Monoid Zth.
 
 (* Zthを使わずに、自力で証明する場合 *)
-Instance M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) : Prop.
+(*
+Instance M2Z'' : Monoid (M2_mult Z.add Z.mul) (Id2 0 1) : Prop.
 Proof.
   split.
   - intros x y z.                           (* M2_mult の結合則 *)
     apply M2_eq_intros; simpl; ring.
     
   - intros x.                               (* M2_mult の左単位元 *)
+    Check M2_eq_intros.
     apply M2_eq_intros; unfold M2_mult; simpl.
     case (c00 x); [ring | reflexivity | reflexivity].
     case (c01 x); [ring | reflexivity | reflexivity].
@@ -286,7 +293,7 @@ Proof.
   - intros x.                               (* M2_mult の右単位元 *)
     apply M2_eq_intros; unfold M2_mult; simpl; ring.
 Qed.
-
+*)
 Check M2Z : Monoid (M2_mult Z.add Z.mul) (Id2 0 1).
 Check ZMult : Monoid Z.mul 1.                (* 比較 *)
 
@@ -420,10 +427,13 @@ About binary_power_ok.
 Check binary_power_ok 2 20.
 
 Let Mfib := Build_M2 1 1 1 0.
-Check binary_power_ok Mfib 56.
 
-Check binary_power_ok (Build_M2 1 1 1 0) 40.
-Eval vm_compute in power 2 5.
+Check binary_power_ok Mfib 56 : binary_power Mfib 56 = power Mfib 56.
+Check binary_power_ok (Build_M2 1 1 1 0) 40 :
+  binary_power {| c00 := 1; c01 := 1; c10 := 1; c11 := 0 |} 40 =
+  power {| c00 := 1; c01 := 1; c10 := 1; c11 := 0 |} 40.
+
+Eval vm_compute in power 2 5.               (* 35 *)
 
 (** 可換モノイド、アーベルモノイド *)
 (** モノイド M に可換則を追加して得られる。 *)
