@@ -417,7 +417,7 @@ Proof.
     case: eqP => Hq_nil.
     + move=> _ Hq.
       by prove_nil.
-    + case: eqP => //=.
+    + by case: eqP.
       
   - move=> H.
     rewrite /_IF; case: eqP => // Hnot_nil_q.   (* q <> NIL *)
@@ -433,7 +433,7 @@ Proof.
   split.
   - rewrite /_IF /EQUAL.
     case: eqP => Hq_nil.
-    + case: eqP => //=.
+    + by case: eqP.
     + move=> _ Hnq.
       by prove_nil.
     
