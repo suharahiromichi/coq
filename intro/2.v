@@ -9,19 +9,32 @@ Require Import Arith.
 Goal forall x y z : nat, x * (y * z) = x * y * z.
 Proof.
   intros.
-  now rewrite mult_assoc.
+  now rewrite mult_assoc.                   (* Notation *)
+  Undo 1.
+  Search (_ * (_ * _)).
+  now rewrite Nat.mul_assoc.
+  Undo 1.
+  ring.
 Qed.
 
 Goal forall x : nat, 1 * x = x.
 Proof.
   intros.
-  now rewrite mult_1_l.
+  now rewrite mult_1_l.                     (* Notation *)
+  Undo 1.
+  now rewrite Nat.mul_1_l.
+  Undo 1.
+  ring.
 Qed.
 
 Goal forall x : nat, x * 1 = x.
 Proof.
   intros.
-  now rewrite mult_1_r.  
+  now rewrite mult_1_r.                     (* Notation *)
+  Undo 1.
+  now rewrite Nat.mul_1_r.
+  Undo 1.
+  ring.
 Qed.
 
 (* 整数 *)
@@ -36,24 +49,32 @@ Open Scope Z.
 
    https://coq.inria.fr/refman/Reference-Manual014.html
 
+   主なコマンドは、Bind Scope, Open Scope, Close Scoep.
    省略時解釈は、core_scope, type_scope, nat_scope の順番である。
  *)
 
 Goal forall x y z : Z, x * (y * z) = x * y * z.
 Proof.
   intros.
+  Search (_ * (_ * _)).
+  now rewrite Z.mul_assoc.
+  Undo 1.
   ring.
 Qed.
   
 Goal forall x : Z, 1 * x = x.
 Proof.
   intros.
+  now rewrite Z.mul_1_l.
+  Undo 1.
   ring.
 Qed.
 
 Goal forall x : Z, x * 1 = x.
 Proof.
   intros.
+  now rewrite Z.mul_1_r.
+  Undo 1.
   ring.
 Qed.
 
