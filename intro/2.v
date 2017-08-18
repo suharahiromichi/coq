@@ -9,9 +9,10 @@ Require Import Arith.
 Goal forall x y z : nat, x * (y * z) = x * y * z.
 Proof.
   intros.
+  Search (_ * (_ * _)).
+  (* Search では Notation は見つからない。 *)
   now rewrite mult_assoc.                   (* Notation *)
   Undo 1.
-  Search (_ * (_ * _)).
   now rewrite Nat.mul_assoc.
   Undo 1.
   ring.
@@ -56,15 +57,19 @@ Open Scope Z.
 Goal forall x y z : Z, x * (y * z) = x * y * z.
 Proof.
   intros.
-  Search (_ * (_ * _)).
+  now rewrite Zmult_assoc.                  (* Notation *)
+  Undo 1.
+  Search (_ * (_ * _)).                     (* Scope はSearchに影響するよう。 *)
   now rewrite Z.mul_assoc.
   Undo 1.
   ring.
 Qed.
-  
+
 Goal forall x : Z, 1 * x = x.
 Proof.
   intros.
+  now rewrite Zmult_1_l.                    (* Notation *)
+  Undo 1.
   now rewrite Z.mul_1_l.
   Undo 1.
   ring.
@@ -73,6 +78,8 @@ Qed.
 Goal forall x : Z, x * 1 = x.
 Proof.
   intros.
+  now rewrite Zmult_1_r.                    (* Notation *)
+  Undo 1.
   now rewrite Z.mul_1_r.
   Undo 1.
   ring.
