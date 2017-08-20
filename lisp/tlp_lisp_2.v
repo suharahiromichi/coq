@@ -140,8 +140,7 @@ Fixpoint eqStar (x y : star) : bool :=
 
 Lemma eqCons x y x' y' : (x = x' /\ y = y') -> S_CONS x y = S_CONS x' y'.
 Proof.
-  case=> Hx Hy.
-  by rewrite Hx Hy.
+  by case=> -> ->.
 Qed.
 
 Lemma star_eqP_1 : forall (x y : star), eqStar x y -> x = y.
@@ -166,7 +165,7 @@ Qed.
 
 Lemma star_eqP_2 : forall (x y : star), x = y -> eqStar x y.
 Proof.
-  move=> x y H; rewrite -H {H}.
+  move=> x y <-.
   elim: x.
   - by move=> a /=.
   - move=> x Hx y' Hy /=.
@@ -349,7 +348,7 @@ Proof.
   split.
   - rewrite /is_not_nil => /negP.
     by rewrite not_not_nil__nil_E => /eqP.
-  - by move=> Hq; rewrite Hq.
+  - by move=> ->.
 Qed.
 
 Lemma q__q_not_nil_E (q : star) : q <-> q <> 'NIL.
@@ -368,7 +367,7 @@ Qed.
 _IFやEQUALを分解するためのタクティクを定義します。
 このなかではコアーションが機能しないことに注意してください。
 
-ほとんどの場合、case: eqP で置き換えることができるので、使用していない。
+ほとんどの場合、case: eqP または case: ifP で置き換えることができるので、使用していない。
 *)
 
 Ltac case_if :=
