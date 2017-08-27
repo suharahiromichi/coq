@@ -39,6 +39,17 @@ Proof.
     by rewrite map_rev revK size_map.
 Qed.
 
+(* 追加 *)
+Example seq_on_tuple_val n (t : n.-tuple nat) :
+  (rev [ seq x | x <- rev t]) = t.
+Proof.
+  rewrite map_rev.                          (* t の rev を外に出す。 *)
+  rewrite revK.                             (* 二重のrevを消す。 *)
+    (* [seq x | x <- t] = t *)
+  by rewrite map_id.                        (* seq.v *)
+Qed.  
+(* 追加 END *)
+  
 (* Unification debugging toolkit *)
 Notation "X (*...*)" :=
   (let x := X in let y := _ in x)
