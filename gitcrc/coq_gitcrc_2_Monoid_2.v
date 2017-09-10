@@ -25,10 +25,10 @@ Class Monoid {A : Type} (dot : A -> A -> A) (one : A) : Type :=
     one_right : forall x, dot x one = x
   }.
 
-(* ************** *)
-(* 自然数 (N,*,1) *)
-(* ************** *)
-Program Instance Mult : Monoid mult 1.
+(* **************** *)
+(* 自然数 (nat,*,1) *)
+(* **************** *)
+Program Instance Mult : Monoid mult 1%nat.
 Obligation 1.                               (* x * (y * z) = x * y * z *)
 Proof.
   ring.
@@ -91,7 +91,7 @@ Section M2_def.
              (c10 m * c01 m' + c11 m * c11 m').
  
   Lemma M2_eq_intros : forall a b c d a' b' c' d',
-      a=a' -> b=b' -> c=c' -> d=d' ->
+      a = a' -> b = b' -> c = c' -> d = d' ->
       Build_M2 a b c d = Build_M2 a' b' c' d'.
   Proof. 
     intros; now f_equal.
@@ -120,22 +120,29 @@ End M2_def.
 (* ************* *)
 (* 自然数2x2行列 *)
 (* ************* *)
-Open Scope nat_scope.
-Check Nth : semi_ring_theory 0%N 1%N N.add N.mul eq.
-(* https://coq.inria.fr/library/Coq.setoid_ring.InitialRing.html で定義 *)
-(* ./plugins/setoid_ring/InitialRing.v *)
+Lemma nat_sth : semi_ring_theory 0%nat 1%nat plus mult (@eq nat).
+Proof.
+  split.
+  - exact plus_0_l.
+  - exact plus_comm.
+  - exact plus_assoc.
+  - exact mult_1_l.
+  - exact mult_0_l.
+  - exact mult_comm.
+  - exact mult_assoc.
+  - exact mult_plus_distr_r.
+Qed.
 
-Instance M2N : Monoid _ _ := M2_Monoid Nth.
+Instance M2nat : Monoid _ _ := M2_Monoid nat_sth.
 
 (* *********** *)
 (* 整数2x2行列 *)
 (* *********** *)
-Open Scope Z_scope.
 Check Zth : ring_theory 0 1 Z.add Z.mul Z.sub Z.opp eq.
 (* https://coq.inria.fr/library/Coq.setoid_ring.InitialRing.html で定義 *)
 (* ./plugins/setoid_ring/InitialRing.v *)
 
-Lemma Sth : semi_ring_theory 0 1 Z.add Z.mul eq.
+Lemma Z_sth : semi_ring_theory 0 1 Z.add Z.mul eq.
 Proof.
   split.
   - exact Z.add_0_l.
@@ -148,7 +155,7 @@ Proof.
   - exact Z.mul_add_distr_r.
 Qed.
 
-Instance M2Z : Monoid _ _ := M2_Monoid Sth.
+Instance M2Z : Monoid _ _ := M2_Monoid Z_sth.
 
 
 (***************)
@@ -195,7 +202,7 @@ Section binary_power.
  *)
 
   Import WfExtensionality.
-  Lemma binary_power_mult_equation (acc x:A)(n:nat) :
+  Lemma binary_power_mult_equation (acc x : A) (n : nat) :
     binary_power_mult acc x n =
     match n with
       | 0%nat => acc
@@ -213,14 +220,20 @@ Section binary_power.
                     fold binary_power_mult_func).
     simpl. destruct n; reflexivity.
   Qed.
+  
+  Definition binary_power x n := binary_power_mult one x n.
+  
 End binary_power.
 
-Definition binary_power `{Monoid A dot one} x n :=
-  binary_power_mult one x n.
+Check binary_power : Z -> nat -> Z.
+Check binary_power : nat -> nat -> nat.
+Check binary_power : M2 Z -> nat -> M2 Z.
+Check binary_power : M2 nat -> nat -> M2 nat.
 
 (****************)
 (* 整数のベキ乗 *)
 (****************)
+Compute binary_power 2 5.
 Compute binary_power 2 100.
 (* = 1267650600228229401496703205376 : Z *)
 
@@ -338,7 +351,7 @@ Section About_power.
   Qed.
   
   Lemma binary_power_ok :
-    forall (x:A) (n:nat), binary_power x n = x ** n.
+    forall (x : A) (n : nat), binary_power x n = x ** n.
   Proof.
     intros n x; unfold binary_power; rewrite binary_power_mult_ok;
     monoid_simpl; auto.
