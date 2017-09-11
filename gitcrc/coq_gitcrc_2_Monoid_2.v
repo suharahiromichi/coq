@@ -4,6 +4,8 @@ A Gentle Introduction to Type Classes and Relations in Coq
 の抜萃をもとに説明のための修正を加えました。
 
 @suharahiromichi
+
+2017_09_10
 *)
 
 Set Implicit Arguments.
@@ -41,7 +43,7 @@ Qed.
 (* ************ *)
 (* 整数 (Z,*,1) *)
 (* ************ *)
-Open Scope Z_scope.
+Open Scope Z_scope.                         (* 以降、自然数は 1%nat のように。 *)
 
 Program Instance ZMult : Monoid Zmult 1.
 Obligation 1.                               (* x * (y * z) = x * y * z *)
@@ -62,11 +64,12 @@ Section M2_def.
   
   Variable (A : Type).
   Variable (zero one : A).
-  Variable (plus mult minus : A -> A -> A).
-  Variable (sym : A -> A).
+  Variable (plus mult : A -> A -> A).
   
   (*
   (* ring タクティクのために ring_theory を使う場合。 *)
+  Variable (minus : A -> A -> A).
+  Variable (sym : A -> A).
   Variable rth : ring_theory zero one plus mult minus sym (@eq A).
   Add Ring Aring : rth.
    *)
@@ -84,7 +87,7 @@ Section M2_def.
   
   Definition Id2 : M2 := Build_M2 1 0 0 1.
   
-  Definition M2_mult (m m':M2) : M2 :=
+  Definition M2_mult (m m' : M2) : M2 :=
     Build_M2 (c00 m * c00 m' + c01 m * c10 m')
              (c00 m * c01 m' + c01 m * c11 m')
              (c10 m * c00 m' + c11 m * c10 m')
@@ -115,7 +118,12 @@ Section M2_def.
     destruct x; simpl;
     unfold M2_mult; apply M2_eq_intros; simpl; ring.
   Qed.
+
+  Check M2_Monoid : Monoid M2_mult Id2.
 End M2_def.
+Check M2_Monoid : forall (A : Type) (zero one : A) (plus mult : A -> A -> A),
+    semi_ring_theory zero one plus mult eq ->
+    Monoid (M2_mult plus mult) (Id2 zero one).
 
 (* ************* *)
 (* 自然数2x2行列 *)
@@ -134,6 +142,8 @@ Proof.
 Qed.
 
 Instance M2nat : Monoid _ _ := M2_Monoid nat_sth.
+Check Monoid (M2_mult plus mult) (Id2 0%nat 1%nat). (* 左辺 *)
+Check @M2_Monoid nat 0%nat 1%nat plus mult nat_sth. (* 右辺 *)
 
 (* *********** *)
 (* 整数2x2行列 *)
@@ -156,7 +166,8 @@ Proof.
 Qed.
 
 Instance M2Z : Monoid _ _ := M2_Monoid Z_sth.
-
+Check Monoid (M2_mult Z.add Z.mul) (Id2 0 1). (* 左辺 *)
+Check @M2_Monoid Z 0 1 Z.add Z.mul Z_sth.     (* 右辺 *)
 
 (***************)
 (* ベキ乗の定義 *)
@@ -233,7 +244,8 @@ Check binary_power : M2 nat -> nat -> M2 nat.
 (****************)
 (* 整数のベキ乗 *)
 (****************)
-Compute binary_power 2 5.
+Compute binary_power 2%nat 5.               (* = 32%nat : nat *)
+Compute binary_power 2 5.                   (* = 32 : Z *)
 Compute binary_power 2 100.
 (* = 1267650600228229401496703205376 : Z *)
 
