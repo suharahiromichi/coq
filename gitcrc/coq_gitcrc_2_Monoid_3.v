@@ -190,9 +190,9 @@ Section binary_power.
 
   Ltac monoid_simpl := repeat monoid_rw.
 
-  Local Infix "*" := dot.
-  Local Infix "**" := power (at level 30, no associativity).
-  (* "+" はnat のplusである。power : A -> nat -> A だから。 *)
+  Local Infix "*" := dot.                   (* A -> A -> A *)
+  Local Infix "**" := power (at level 30, no associativity). (* A -> nat -> A *)
+  Local Infix "+" := plus.                  (* nat -> nat -> nat *)
   
   Lemma power_x_plus : forall (x : A) (n p : nat), x ** (n + p) = x ** n * x ** p.
   Proof.
@@ -244,8 +244,6 @@ Section binary_power.
     factorize; simpl; trivial.
   Qed.
   
-  Notation "x + y" := (plus x y).           (* nat -> nat -> nat *)
-  
   (** nが偶数の場合 *)
   Lemma power_even_n (acc x : A) (n : nat) :
     Even.even n -> acc * ((x * x) ** (div2 n)) = acc * (x ** n).
@@ -270,19 +268,16 @@ Section binary_power.
     destruct n.
     - now inversion o.
     - pattern (S n) at 3; replace (S n) with (S (div2 (S n) + div2 (S n))).
-(*
-      + rewrite mult_assoc.
-        rewrite <- mult_assoc.
-        rewrite <- power_x_plus.
-        rewrite <- mult_assoc.
-        rewrite power_S.
-        now auto.
-*)
-      + admit.
+      + rewrite <- power_x_plus.
+        rewrite <- dot_assoc.
+        now rewrite power_S.
       + generalize (odd_double _ o); intro H.
         now auto.
-  Admitted.
+  Qed.
   
+  (* **** *)
+  (* 本題 *)
+  (* **** *)
   Program Fixpoint binary_power_mult (acc : A) (x : A) (n : nat) {measure n} :
     {a : A | a = acc * x ** n} :=
     match n with
@@ -322,7 +317,7 @@ Section binary_power.
   Defined.
   
   (** power(累乗)関数のかたちに整えます。 *)
-  
+  (* このとき、proj1_sig で witness を取り出す。 *)
   Definition binary_power (x : A) (n : nat) :=
     ` (binary_power_mult one x n).          (* proj1_sig 「` 」の次にスペースが要る。 *)
 End binary_power.
@@ -382,7 +377,7 @@ Qed.
 (*************************************)
 Section Power_of_dot.
   Context `{M : Monoid A} {AM : Abelian_Monoid M}.
- 
+  
   Theorem power_of_mult :
     forall n x y, power (dot x y)  n =  dot (power x n) (power y n). 
   Proof.
