@@ -244,97 +244,54 @@ Section binary_power.
     factorize; simpl; trivial.
   Qed.
   
-(* ***** 削除されるべき ****)
-  Program Fixpoint binary_power_mult2 (acc : A) (x : A) (n : nat) {measure n} : A :=
-    (* Implicit generalization によって、
-       (A:Type) (dot:A->A->A) (one:A) (M: @Monoid A dot one)
-       が省かれている。 *)
-    (* acc * (x ** n) *) 
-    let M' := M in
-    match n with
-      | 0%nat => acc
-      | _ => if  Even.even_odd_dec n
-             then
-               binary_power_mult2  acc (dot x x) (div2 n)
-             else
-               binary_power_mult2  (dot acc  x) (dot  x  x) (div2 n)
-    end.
-  Obligations.
-  Next Obligation.                          (* Obligation 1 *)
-    set (M' := M); apply lt_div2.
-    apply neq_0_lt in H.
-    apply H.
-    Defined.
-  Next Obligation.                          (* Obligation 2 と 3 *)
-    set (M' := M); apply lt_div2; auto with arith.
-    Defined.
-  (*
-  証明を1行にまとめると、以下になる。Next Obligation も要らないので、注意。
-  Solve Obligations using program_simpl; set (M' := M); apply lt_div2; auto with arith.
- *)
-
-  Import WfExtensionality.
-  Lemma binary_power_mult_equation (acc x : A) (n : nat) :
-    binary_power_mult2 acc x n =
-    match n with
-      | 0%nat => acc
-      | _ => if Even.even_odd_dec n
-             then
-               binary_power_mult2 acc (dot x x) (div2 n)
-             else
-               binary_power_mult2 (dot acc  x) (dot  x  x) (div2 n)
-    end.
-  Proof.
- Admitted.
+  Notation "x + y" := (plus x y).           (* nat -> nat -> nat *)
   
-  Definition binary_power' x n := binary_power_mult2 one x n.
-
-  Lemma binary_power_mult_ok :
-    forall n a x,  binary_power_mult2 a x n = a * x ** n.
+  (** nが偶数の場合 *)
+  Lemma power_even_n (acc x : A) (n : nat) :
+    Even.even n -> acc * ((x * x) ** (div2 n)) = acc * (x ** n).
   Proof.
-    intro n; pattern n;apply lt_wf_ind.
-    clear n; intros n Hn.
-    (* forall a x : A, binary_power_mult2 a x n = a * x ** n *)
+    intro e.
+    rewrite power_of_square.
     destruct n.
-    - intros; simpl; monoid_simpl; trivial.
-    - intros; rewrite binary_power_mult_equation. 
-      destruct (Even.even_odd_dec (S n)).
-      (* binary_power_mult2 a (x * x) (Nat.div2 (S n)) = a * x ** S n *)
-      + rewrite Hn.
-        rewrite power_of_square; factorize.
-        pattern (S n) at 3; replace (S n) with (div2 (S n) + div2 (S n))%nat; auto.
-        generalize (even_double _ e); simpl; auto. 
-        apply lt_div2; auto with arith.
-      (* binary_power_mult2 (a * x) (x * x) (Nat.div2 (S n)) = a * x ** S n *)
-      + rewrite Hn. 
-        rewrite power_of_square; factorize.
-        pattern (S n) at 3; replace (S n) with (S (div2 (S n) + div2 (S n)))%nat; auto.
-        rewrite <- dot_assoc; factorize;auto.
-        generalize (odd_double _ o); intro H; auto.
-        apply lt_div2; auto with arith.
+    - simpl. now rewrite <- one_right, dot_assoc.
+    - pattern (S n) at 3; replace (S n) with (Nat.div2 (S n) + Nat.div2 (S n)).
+    + rewrite <- power_x_plus.
+      now auto.
+    + generalize (even_double _ e); intro H.
+      now auto.
   Qed.
   
-  Lemma binary_power_ok :
-    forall (x : A) (n : nat), binary_power' x n = x ** n.
+  (** nが奇数の場合 *)
+  Lemma power_odd_n (acc x : A) (n : nat) :
+    Even.odd n -> acc * x * power (x * x) (div2 n) = acc * power x n.
   Proof.
-    intros n x; unfold binary_power'; rewrite binary_power_mult_ok;
-    monoid_simpl; auto.
-  Qed.
-  About binary_power_ok.
-(* ***** ここまで削除されるべき ****)
+    intros o.
+    rewrite power_of_square.
+    destruct n.
+    - now inversion o.
+    - pattern (S n) at 3; replace (S n) with (S (div2 (S n) + div2 (S n))).
+(*
+      + rewrite mult_assoc.
+        rewrite <- mult_assoc.
+        rewrite <- power_x_plus.
+        rewrite <- mult_assoc.
+        rewrite power_S.
+        now auto.
+*)
+      + admit.
+      + generalize (odd_double _ o); intro H.
+        now auto.
+  Admitted.
   
   Program Fixpoint binary_power_mult (acc : A) (x : A) (n : nat) {measure n} :
     {a : A | a = acc * x ** n} :=
-  match n with
-    | 0%nat => acc
-    | _ =>
-      match (Even.even_odd_dec n) with
-        | left _ =>
-          binary_power_mult acc (x * x) (div2 n)
-        | right _ =>
-          binary_power_mult (acc * x) (x * x) (div2 n)
-      end
-  end.
+    match n with
+      | 0%nat => acc
+      | _ => if Even.even_odd_dec n then
+               binary_power_mult acc (x * x) (div2 n)
+             else
+               binary_power_mult (acc * x) (x * x) (div2 n)
+    end.
   Next Obligation.
   Proof.                                    (* acc = acc * one *)
     now rewrite one_right.
@@ -346,8 +303,11 @@ Section binary_power.
   Defined.
   Next Obligation.
   Proof.
-    (* binary_power_mult (acc * x) (x * x) (Nat.div2 n) = acc * x ** n *)
-  Admitted.
+    destruct_call binary_power_mult.        (* see. Program.v *)
+    simpl.
+    rewrite e.
+    now apply power_even_n.
+  Defined.
   Next Obligation.
   Proof.                                    (* (Nat.div2 n < n)%nat *)
     apply neq_0_lt in H.
@@ -355,17 +315,18 @@ Section binary_power.
   Defined.
   Next Obligation.
   Proof.
-    (* *** *)
-  Admitted.
-  
+    destruct_call binary_power_mult.        (* see. Program.v *)
+    simpl.
+    rewrite e.
+    now apply power_odd_n.
+  Defined.
   
   (** power(累乗)関数のかたちに整えます。 *)
-  Definition binary_power (x : A) (n : nat) :=
-    binary_power_mult one x n.
   
+  Definition binary_power (x : A) (n : nat) :=
+    ` (binary_power_mult one x n).          (* proj1_sig 「` 」の次にスペースが要る。 *)
 End binary_power.
 
-(*
 Check binary_power : Z -> nat -> Z.
 Check binary_power : nat -> nat -> nat.
 Check binary_power : M2 Z -> nat -> M2 Z.
@@ -395,7 +356,6 @@ Compute binary_power (Build_M2 1 1 1 0) 40.
 Definition fibonacci (n : nat) :=
   c00 (power (Build_M2 1 1 1 0) n).
 Compute fibonacci 20.                       (* = 10946 : Z *)
- *)
 
 (* ****************************** *)
 (** 可換モノイド、アーベルモノイド *)
