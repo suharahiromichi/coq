@@ -261,7 +261,7 @@ Section binary_power.
   
   (** nが奇数の場合 *)
   Lemma power_odd_n (acc x : A) (n : nat) :
-    Even.odd n -> acc * x * power (x * x) (div2 n) = acc * power x n.
+    Even.odd n -> acc * x * ((x * x) ** (div2 n)) = acc * (x ** n).
   Proof.
     intros o.
     rewrite power_of_square.
@@ -298,8 +298,10 @@ Section binary_power.
   Defined.
   Next Obligation.
   Proof.
-    destruct_call binary_power_mult.        (* see. Program.v *)
-    simpl.
+    destruct_call binary_power_mult.
+    (* ` (proj1_sig) は等式全体に掛かる *)
+    (* destruct_call は Program/Tactics.v で定義。 *)
+    unfold proj1_sig.                       (* simpl *)
     rewrite e.
     now apply power_even_n.
   Defined.
@@ -310,7 +312,7 @@ Section binary_power.
   Defined.
   Next Obligation.
   Proof.
-    destruct_call binary_power_mult.        (* see. Program.v *)
+    destruct_call binary_power_mult.
     simpl.
     rewrite e.
     now apply power_odd_n.
