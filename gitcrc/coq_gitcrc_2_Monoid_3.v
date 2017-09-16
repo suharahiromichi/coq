@@ -128,6 +128,7 @@ Check M2_Monoid : forall (A : Type) (zero one : A) (plus mult : A -> A -> A),
 (* ************* *)
 (* 自然数2x2行列 *)
 (* ************* *)
+Check semi_ring_theory.
 Lemma nat_sth : semi_ring_theory 0%nat 1%nat plus mult (@eq nat).
 Proof.
   split.
@@ -253,10 +254,10 @@ Section binary_power.
     destruct n.
     - simpl. now rewrite <- one_right, dot_assoc.
     - pattern (S n) at 3; replace (S n) with (Nat.div2 (S n) + Nat.div2 (S n)).
-    + rewrite <- power_x_plus.
-      now auto.
-    + generalize (even_double _ e); intro H.
-      now auto.
+      + rewrite <- power_x_plus.
+        now auto.
+      + generalize (even_double _ e); intro H.
+        now auto.
   Qed.
   
   (** nが奇数の場合 *)
@@ -287,30 +288,39 @@ Section binary_power.
              else
                binary_power_mult (acc * x) (x * x) (div2 n)
     end.
-  Next Obligation.
+  Obligations.
+  Obligation 1.
   Proof.                                    (* acc = acc * one *)
     now rewrite one_right.
   Defined.
-  Next Obligation.
-  Proof.                                    (* (Nat.div2 n < n)%nat *)
+  Obligation 2.                         (* 偶数のときの停止性の条件 *)
+  Proof.
+    (* Even.even n -> div2 n < n *)
+    Check neq_0_lt.
+    Check lt_div2.
     apply neq_0_lt in H.
     now apply lt_div2.
   Defined.
-  Next Obligation.
+  Obligation 3.                          (* 偶数のときに仕様を満たすか？ *)
   Proof.
+    (* ` (proj1_sig) は等式左辺に掛かる *)
     destruct_call binary_power_mult.
-    (* ` (proj1_sig) は等式全体に掛かる *)
+    Undo 1.
+    let rec tac t := (destruct t) in on_call binary_power_mult tac.
     (* destruct_call は Program/Tactics.v で定義。 *)
+    
+    (* ` (proj1_sig) は等式全体に掛かる *)
     unfold proj1_sig.                       (* simpl *)
     rewrite e.
     now apply power_even_n.
   Defined.
-  Next Obligation.
-  Proof.                                    (* (Nat.div2 n < n)%nat *)
+  Obligation 4.                         (* 奇数のときの停止性の条件 *)
+  Proof.
+    (* odd n -> div2 n < n *)
     apply neq_0_lt in H.
     now apply lt_div2.
   Defined.
-  Next Obligation.
+  Obligation 5.                     (* 奇数のときに仕様を満たすか？ *)
   Proof.
     destruct_call binary_power_mult.
     simpl.
@@ -322,6 +332,7 @@ Section binary_power.
   (* このとき、proj1_sig で witness を取り出す。 *)
   Definition binary_power (x : A) (n : nat) :=
     ` (binary_power_mult one x n).          (* proj1_sig 「` 」の次にスペースが要る。 *)
+  
 End binary_power.
 
 Check binary_power : Z -> nat -> Z.
