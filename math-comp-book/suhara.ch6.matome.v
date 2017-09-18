@@ -4,17 +4,17 @@ Mathcomp では、型をつぎのように構成している。
 (eqType) ライプニッツのeqとブールのeqのリフレクションできる型。eqMixin
 
 (choiceType) choice opereator (find) が存在すること。
-
 (countType) countable n番め要素が(あれば)一意に決まること。
 
 (finType) 型の要素の列挙(enum)が、eqTypeの意味でユニークである型。finMixin
-(Tuple) サイズの決まったseqだが、finType である。choiceType, countType でもある。
-(finfun) 定義域(引数)がTupleである関数
-(finset) 要素かどうか決める関数がfinfunである集合
+(Tuple) サイズの決まったseq。
+(finfun) ファントムタイプによって finType -> Type の関数に見えるが、
+実際はタプルであり、fintypeの全要素の個数のサイズのタプル。
+(finset) 特性関数（要素かどうか決める関数）がfinfunである集合
 
+fintypeを要素とするtupleはfintypeなので、コドメインがfintypeであるfinfunは、fintypeである。
 
 Mathcomp で理解するべきなのは、Propとbooleanのリフレクションである。
-
 (eqP) eqType では、 == と =
 (allP) seq では、(∀x, x \in s -> a x) と (all a s).
 (forallP) finType では、[forall x, P] と (forall x, P)
@@ -266,7 +266,8 @@ Inductive perm_of' (T : finType) : Type :=
 Notation "{ 'PERM' T }" := (perm_of' T).
 Definition pval' (T : finType) (p : {PERM T}) :=
   let : Perm' f _ := p in f.
-
+Check pval' : forall T : finType, { PERM T} -> {ffun T -> T}.
+                                                   
 Canonical perm_subType' (T : finType) := [subType for pval' T].
 
 Definition perm_eqMixin'   (T : finType) := [eqMixin of {PERM T} by <:].
