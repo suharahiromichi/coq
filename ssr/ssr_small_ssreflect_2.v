@@ -336,6 +336,16 @@ Canonical Structure updown_eqType.            (* 補足2 *)
 Print Canonical Projections.                  (* updown <- sort ( updown_eqType ) *)
 
 (**
+補足説明
+ *)
+Check @eq_op updown_eqType : sort updown_eqType -> sort updown_eqType -> bool.
+(**
+sort updown_eqType のところに updown 型が直接書け、
+そのとき、型引数 updown_eqType は省略して @eq_op updown_eqType は eq_op と書ける。
+*)
+
+
+(**
 すると。。。
 
 updown型の値に対して、``==`` が使用可能になる。
