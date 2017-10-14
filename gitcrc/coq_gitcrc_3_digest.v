@@ -84,7 +84,7 @@ Qed.
 (* Cons and app are Proper functions w.r.t. route_equiv *)
 Lemma route_cons : forall r r' d, r =r= r' -> d::r =r= d::r'.
 Proof. 
-  intros r r' d H P;
+  intros r r' d H P.
   destruct d; simpl;
   rewrite H; reflexivity.                   (* move r _ = move r' _ *)
 Qed.
@@ -92,8 +92,12 @@ Qed.
 (* 問題番号は、PDFテキストではなく、サンプルソースにあわせている。 *)
 Example Ex1 : East::North::West::South::East::nil =r= East::nil.
 Proof.
-  intro P; destruct P; simpl.
-  unfold route_equiv, translate; simpl; f_equal; ring.
+  intro P.
+  unfold move, translate.
+  simpl.
+  f_equal.
+  - ring.
+  - ring.
 Qed.
 
 (**
@@ -152,10 +156,14 @@ Locate "_ ==> _".
 
 (*
 What we really need is to tell to 
-the rewrite tactic how to use route_cons                     rewriteタクティクが、route_consをどのように使うか、
-for using an equivalence r =r= r'                            r =r= r' を使うために、
-for replacing r with r' in a term of the form cons d r       cons d r の中の r を r' で置き換えるために、
-for proving directly the equivalence cons d r =r= cons d r'. cons d r =r= cons d r' を直接証明するために。
+the rewrite tactic how to use route_cons
+(rewriteタクティクが、route_consをどのように使うか、)
+for using an equivalence r =r= r'
+(r =r= r' を使うために、)
+for replacing r with r' in a term of the form cons d r
+(cons d r の中の r を r' で置き換えるために、)
+for proving directly the equivalence cons d r =r= cons d r'.
+(cons d r =r= cons d r' を直接証明するために。)
 
 「rewriteタクティクが、cons d r =r= cons d r' を直接証明するために、
 cons d r の中の r を r' で置き換えるために、r =r= r' を使うために、route_consをどう使うか。」
@@ -172,6 +180,12 @@ Proof.
   intros r r' H.
   apply route_cons.
   assumption.
+
+  Restart.
+  intros r r' H.
+  rewrite (route_cons r r').                (* Leibniz equality *)
+  - reflexivity.
+  - assumption.
 Qed.
 
 (**
@@ -211,10 +225,13 @@ Qed.
 
 Example Ex3 : forall r, North::East::South::West::r =r= r.
 Proof.
-  intros r P;
-    destruct P; simpl.
-  unfold route_equiv, translate; simpl;
-    do 2 f_equal; ring.
+  intros r P.
+  destruct P; simpl.
+  unfold move, translate; simpl.
+  f_equal.
+  f_equal.
+  - ring.
+  - ring.
 Qed.
 
 Example Ex4 : forall r r', r =r= r' -> North::East::South::West::r =r= r'.
@@ -255,7 +272,7 @@ Qed.
 おまけ
 *)
 (***************************************************************)
-(* move は、route_equi と (Leibniz) eq に対して Propperである。 *)
+(* move は、route_equiv と (Leibniz) eq に対して Propperである。 *)
 (***************************************************************)
 Instance move_Proper :
   Proper (route_equiv ==> @eq Point ==> @eq Point) move . 
