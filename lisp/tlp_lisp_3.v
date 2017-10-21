@@ -7,13 +7,14 @@
 2017/08/07 シンボルをstringを使うようにした。
 2017/08/09 case: eqP を使うようにした。
 2017/08/11 prove_nil タクティクを完成した。
+2017/10/21 「定理証明手習い」発刊記念。
 
 @suharahiromichi
 
 この文書のソースコードは以下にあります。
 
 
-https://github.com/suharahiromichi/coq/blob/master/lisp/tlp_lisp_2.v
+https://github.com/suharahiromichi/coq/blob/master/lisp/tlp_lisp_3.v
 
 
 # はじめに
@@ -41,6 +42,7 @@ TLPの対象言語であるLispの「意味」をCoqで実現しようと思い�
 
 CoqのMathcomp/SSReflect拡張を使用しているので、
 それについては[3]を参照してください。
+また、見ただけでは解らないようなタクティカル（"by case=> -> ->" など) の使用は避けています。
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -95,7 +97,7 @@ Proof.
   move=> x y.
   apply: (iffP idP).
   - case: x; case: y; rewrite /eqAtom => x y; move/eqP => H;
-    by [rewrite H| | |rewrite H].
+    by [rewrite H | | | rewrite H].
   - move=> H; rewrite H.
     case: y H => n H1;
     by rewrite /eqAtom.
@@ -208,7 +210,8 @@ Qed.
 
 (**
 シンボルをS式の中に書くときに簡単になるような略記法を導入します。
-「'」は記法の一部ですが、quoted literal のように見えます。
+「'T」などと書くことができるので、quoted literal のように見えますが、
+「'」は記法(notation)の一部であることに注意してください。
  *)
 
 Definition s_quote (s : string) : star :=
@@ -410,22 +413,29 @@ Ltac prove_nil :=
 (**
 # IFとEQUALの補題
 
-TLPの定理は、(IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T) のかたちをしているので、
-それをCoqの条件付きのequalと同値であることを証明しておきます。
-TLPの定理の証明や、その定理を使うときに使用します。
+TLPの定理は、(EQUAL X Y) または (IF Q 'T (EQUAL X Y)) または (IF Q (EQUAL X Y) 'T)
+のかたちをしているので、
+それをCoqの等式と同値であることを証明しておきます。
+これらは、TLPの定理の証明や、その定理を使うときに使用します。
  *)
+
+Lemma equal_eq {x y : star} : (EQUAL x y) -> x = y.
+Proof.
+  rewrite /EQUAL.
+    by case: eqP.
+Qed.
 
 Lemma ifAP {q x y : star} : (_IF q (EQUAL x y) 'T) <-> (q -> x = y).
 Proof.
   split.
   - rewrite /_IF /EQUAL.
-    case: ifP => Hq_nil.
+    case: eqP => Hq_nil.
     + move=> _ Hq.
       by prove_nil.
-    + case: ifP; move/eqP; by prove_nil.
+    + by case: eqP.
       
   - move=> H.
-    rewrite /_IF; case: ifP => // Hnot_nil_q.   (* q <> NIL *)
+    rewrite /_IF; case: eqP => // Hnot_nil_q.   (* q <> NIL *)
     rewrite /EQUAL; case: ifP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
     
@@ -462,6 +472,8 @@ Qed.
 
 (**
 # J-Bobの「公理」の証明
+
+ここまでに用意した道具を使って、証明をおこないます。
 *)
 
 Theorem equal_same (x : star) :
@@ -606,19 +618,58 @@ Qed.
 
 (**
 # 「公理」を書換規則として使う
+
+TLPでは、以上の「公理」を問題プログラムの 書換 に使用します。
+Coqの場合、書換 は、X = Y または Q -> (X = Y) のかたちでなければなりません。
+後者の場合、書換えにともなって、新しいゴールとしてQが追加されます。
+
+## 「公理」の書換への変換
+
+EQUALのかたちをした「公理」を等式に変換するには、equal_eq を使います。
  *)
+Section TLP_REWRITE_CHECK.
+  
+  Variables q x y : star.
+
+  Section TLP_REWRITE_CHECK_0.
+    
+    Variable e : (EQUAL x y).
+    Check equal_eq e : x = y.
+  End TLP_REWRITE_CHECK_0.
 
 (**
-## 書き換えの例
+_IF式かたちをした「公理」を等式に変換するには、
+(iffLR ifAP) または (iffLR ifEP) を使います。
  *)
-
-Section TLP_REWRITE_TEST.
+  Section TLP_REWRITE_CHECK_1.
+    (** (_IF Q (EQUAL X Y) 'T) の場合。 *)
+    
+    Variable ifa : (_IF q (EQUAL x y) 'T).
+    Check iffLR ifAP ifa : q -> x = y.
+    
+  End TLP_REWRITE_CHECK_1.
+  
+  Section TLP_REWRITE_CHECK_2.
+    (** (_IF Q 'T (EQUAL X Y)) の場合。 *)
+    
+    Variable ife : (_IF q 'T (EQUAL x y)).
+    Check iffLR ifEP ife : ~ q -> x = y.
+    
+  End TLP_REWRITE_CHECK_2.
+End TLP_REWRITE_CHECK.
+  
+(**
+## 書換の例
+ *)
+Section TLP_REWRITE_SAMPLE.
+  
   Variables x y z : star.
-
+  
+  Check equal_eq (equal_same x)      : x = x.
   Check iffLR ifAP (if_nest_A x y z) : x -> (_IF x y z) = y.
   Check iffLR ifEP (size_cdr x)      : ~ ATOM x -> (LT (SIZE (CDR x)) (SIZE x)) = 'T.
-
-End TLP_REWRITE_TEST.
+  
+End TLP_REWRITE_SAMPLE.
 
 End TLP.
 
@@ -638,9 +689,11 @@ https://www.lambdanote.com/collections/littleprover
 
 https://github.com/suharahiromichi/coq/blob/master/prog/coq_membp_remb_3.v
 
+
 [3] Mathematical Components resources
 
 http://ssr.msr-inria.inria.fr/
+
 
 [4] 「リフレクションのしくみをつくる」
 
