@@ -1,5 +1,9 @@
+Require Import mathcomp.ssreflect.ssreflect.
+From mathcomp Require Import ssrbool ssrfun eqtype ssrnat div seq choice fintype.
+From mathcomp Require Import finfun bigop finset.
+
 (**
-\in 二項演算子 の右側が命題でもリストでもよいという不思議を調べてみる。
+\in 二項演算子 の右側が命題でも、リストでも、集合でもよいという不思議を調べてみる。
 
 @suharahiromichi
 
@@ -7,65 +11,137 @@
 2015/09/24
 *)
 
-Require Import ssreflect ssrbool.
-Require Import ssrfun eqtype ssrnat seq.
-Require Import ssralg ssrnum ssrint finset fintype.
-
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Printing All. *)
 
 (**
-## PredType のインスタンス
+# PredType (collective 述語)
  *)
-Section Sect1.
+Section SectPred.
 Variable T : Type.
-About pred_of_simpl.
-Check @pred_of_simpl T.
-
-About pred_of_mem.
-Check @pred_of_mem T.
-
-
 
 (**
 ## ssrbool.v で定義
  *)
-Check @mkPredType T (pred T) id.
-Compute id [pred n : nat | n < 3] 0.
+About pred_of_simpl.
+Check @pred_of_simpl T : simpl_pred T -> pred T.
+
+(* ********************************************* *)
+About pred_of_mem.
+Check @pred_of_mem T : mem_pred T -> predPredType T.
+(* ********************************************* *)
+
+(**
+## 素朴な使用例
+*)
+Compute id [pred n : nat | n < 3] 0.        (* true : bool *)
+Compute pred_of_simpl [pred n : nat | n < 3] 0. (* true : bool *)
+
+(* ********************************************* *)
+Compute pred_of_mem (mem [:: 0; 1; 2]) 0.   (* true : bool *)
+(* ********************************************* *)
+
+(**
+## カノニカル
+*)
+Check @mkPredType T (pred T) id : predType T.
 Canonical predPredType := @mkPredType T (pred T) id.
 Check predPredType : predType T.
 
-Check @mkPredType T (simpl_pred T) (@pred_of_simpl T).
-Compute pred_of_simpl [pred n : nat | n < 3] 0.
+Check @mkPredType T (simpl_pred T) (@pred_of_simpl T) : predType T.
 Canonical simplPredType := @mkPredType T (simpl_pred T) (@pred_of_simpl T).
 Check simplPredType : predType T.
 
-Check @mkPredType T (mem_pred T) (@pred_of_mem T).
-Compute pred_of_mem (mem [:: 0; 1; 2]) 0.
+(* ********************************************* *)
+Check @mkPredType T (mem_pred T) (@pred_of_mem T) : predType T.
 Canonical memPredType := @mkPredType T (mem_pred T) (@pred_of_mem T).
 Check memPredType : predType T.
+(* ********************************************* *)
 
-(*
-## seq.v で定義
+(**
+## \in の利用
+*)
+Compute 0 \in [pred n : nat | n < 3].       (* true : bool *)
+
+End SectPred.
+
+(**
+# seq
  *)
+Section SectSeq.
 Variable cT : Equality.type.
 
-
+(**
+## seq.v で定義
+ *)
 About mem_seq.                              (* シンプルなmember関数 *)
-Check @mem_seq cT.
-Compute mem_seq [:: 0; 1; 2] 0.
+Check @mem_seq cT : seq cT -> cT -> bool.
+
+About pred_of_eq_seq.                       (* これはなんのためにあるか？ *)
+Check @pred_of_eq_seq cT : eqseq_class cT -> ssrbool.predPredType cT.
+
+(**
+## 素朴な使用例
+*)
+Compute mem_seq [:: 0; 1; 2] 0.             (* true : bool *)
+Compute pred_of_eq_seq [:: 0; 1; 2] 0.      (* mem_seq を呼び出している。 *)
+(**
+## カノニカル
+ *)
+Check mem_seq_predType : forall T : eqType, predType T.
 Canonical mem_seq_predType := @mkPredType cT (seq cT) (@mem_seq cT).
 Check mem_seq_predType : predType cT.
 
-About pred_of_eq_seq.                       (* これはなんのためにあるか？ *)
-Check @pred_of_eq_seq cT.
-Compute pred_of_eq_seq [:: 0; 1; 2] 0.      (* mem_seq を呼び出している。 *)
+Check seq_predType : forall T : eqType, predType T.
 Canonical seq_predType := @mkPredType cT (seq cT) (@pred_of_eq_seq cT).
 Check seq_predType : predType cT.
 
-End Sect1.
+(**
+## \in の利用
+*)
+Compute 0 \in [:: 0; 1; 2].                 (* true : bool *)
+
+End SectSeq.
+
+(**
+# finType 有限型
+ *)
+Section SectFinType.
+Variable i : 'I_3.
+  
+Compute pred_of_simpl 'I_3 i.               (* true : bool *)
+
+End SectFinType.
+
+(**
+# finset 有限集合
+ *)
+Section SectSet.
+
+(**
+## finset.v で定義
+ *)
+About pred_of_set.
+Check pred_of_set : forall T : finType,
+    set_type T -> fin_pred_sort (ssrbool.predPredType T).
+
+(**
+## 素朴な使用例
+*)
+Variable i : 'I_3.
+
+Compute pred_of_set [set n | n in 'I_3] i.
+Compute pred_of_set [set i] i.
+
+(**
+## \in の利用
+*)
+Compute i \in [set n | n in 'I_3].
+Compute i \in [set i].
+
+End SectSet.
 
 (**
 # mem の型
@@ -124,7 +200,7 @@ Check [:: 0; 1; 2] : seq nat.
 Check [:: 0; 1; 2] : seq_predType nat_eqType.
 Check [:: 0; 1; 2] : mem_seq_predType nat_eqType. (* XXX *)
 
-(* finset.v の例 *)
+(* fintype.v の例 *)
 (* 'I_3 === ordinal 3 *)
 Check 'I_3 : predArgType.
 Check 'I_3 : pred (ordinal 3).              (* pred 'I_3 === 'I_3 -> bool *)
@@ -134,8 +210,15 @@ Definition p0 : 'I_3. Proof. have : 0 < 3 by []. apply Ordinal. Defined.
 Definition p1 : 'I_3. Proof. have : 1 < 3 by []. apply Ordinal. Defined.
 Definition p2 : 'I_3. Proof. have : 2 < 3 by []. apply Ordinal. Defined.
 
-(* vector.v の例 *)
-(* TBD *)
+(* finset.v の例 *)
+Check [set p0] : {set ordinal_finType 3}.
+Check [set p0] : set_predType (ordinal_finType 3).
+Check [set p0] : set_of_eqType (ordinal_finType 3). (* 直接関係ない？ *)
+Check [set p0] : set_of_finType (ordinal_finType 3). (* 直接関係ない？ *)
+
+(* ***** *)
+(* ***** *)
+(* ***** *)
 
 Compute pred nat.                           (* nat -> bool *)
 Compute simpl_pred nat.                     (* simpl_fun nat bool *)
