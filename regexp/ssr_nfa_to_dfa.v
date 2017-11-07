@@ -83,7 +83,7 @@ Section PowersetConstruction.
 
 Variable A : nfa.
 
-Definition nfa_to_dfa :=
+Definition nfa_to_dfa : dfa :=
   {|
     dfa_s := [set nfa_s A];
     dfa_fin X := [exists x: A, (x \in X) && nfa_fin A x];
@@ -156,10 +156,12 @@ Section Embed.
 
 Variable A : dfa.
 
-Definition dfa_to_nfa : nfa := {|
+Definition dfa_to_nfa : nfa :=
+  {|
   nfa_s := dfa_s A;
   nfa_fin := dfa_fin A;
-  nfa_trans x a y := y == dfa_trans x a |}.
+  nfa_trans x b y := y == dfa_trans x b
+  |}.
 
 Lemma dfa_to_nfa_correct : dfa_lang A =i nfa_lang dfa_to_nfa.
 Proof.
@@ -173,30 +175,46 @@ Qed.
 End Embed.
 
 
+(** sample NFA *)
 
-(* sample DFA & NFA *)
-
-Definition dfa_char (a : char) :=
+Definition nfa_char (a : char) : nfa :=
   {|
-    dfa_s := false ;
-    dfa_fin := id ;
-    dfa_trans x b := if a == b then ~~ x else x
-  |}.
-
-Definition nfa_char a :=
-  {|
-    nfa_s := false ;
-    nfa_fin := id ;
+    nfa_state := bool_finType;
+    nfa_s := false;
+    nfa_fin := id;
     nfa_trans x b y := [&& (b == a),  ~~ x & y]
   |}.
 Print nfa_char.
 
-Lemma nfa_char_correct a : nfa_lang (nfa_char a) =1 pred1 [:: a].
+Lemma nfa_char_correct (a : char) : nfa_lang (nfa_char a) =1 pred1 [:: a].
 Proof.
  move => [|b w] => //.
  apply/existsP/eqP => [[x] /andP [/and3P [/eqP -> _ Hx]] |[-> ->]].
  - case: w => //= c w /existsP [y] /=. by rewrite Hx andbF.
  - exists true. by rewrite /= eqxx.
+Qed.
+
+
+(** sample NFA を DFA に変換する。 *)
+
+Definition dfa_char' (a : char) : dfa := nfa_to_dfa (nfa_char a).
+
+(** 変換した DFA と等価なDFAと、その証明。 *)
+
+Definition dfa_char (a : char) : dfa :=
+  {|
+    dfa_state := set_of_finType bool_finType;
+    dfa_s := [set false];
+    dfa_fin X := [exists x, (x \in X) && x];
+    dfa_trans X b :=
+      \bigcup_(x | x \in X) [set y | nfa_trans (nfa_char a) x b y]
+  |}.
+
+Goal dfa_char' =1 dfa_char.
+Proof.
+  move=> a.
+  rewrite /dfa_char' /nfa_to_dfa /dfa_char.
+    by f_equal.
 Qed.
 
 (* END *)
