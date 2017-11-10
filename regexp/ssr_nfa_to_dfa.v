@@ -203,7 +203,7 @@ Definition dfa_char' (a : char) : dfa := nfa_to_dfa (nfa_char a).
 
 Definition dfa_char (a : char) : dfa :=
   {|
-    dfa_state := set_of_finType bool_finType;
+    dfa_state := set_of_finType bool_finType; (* 省いてもよい。 *)
     dfa_s := [set false];
     dfa_fin X := [exists x, (x \in X) && x];
     dfa_trans X b :=
@@ -216,5 +216,70 @@ Proof.
   rewrite /dfa_char' /nfa_to_dfa /dfa_char.
     by f_equal.
 Qed.
+
+(**
+NOTE:
+set_of_finType bool_finType とはなにか？
+
+復習：
+(1) bool_finType は finType のカノニカルなサブタイプである。
+ *)
+Check bool_finType : finType.
+
+(**
+(2) コアーション [Finite.sort] : Finite.type >-> Sortclass
+によって、bool_finType は bool 型に埋め込むことができる。
+ *)
+(* Set Printing Coercions. *)
+Check true : bool_finType.
+Check true : Finite.sort bool_finType.
+
+(**
+同様に、
+(1) set_of_finType bool_finType は finType のカノニカルなサブタイプである。
+ *)
+Check set_of_finType bool_finType : finType.
+(**
+(2) コアーションによって {set bool_finType} に埋め込むことができる。
+ *)
+Check [set true] : set_of_finType bool_finType. (* set_of_finType の定義から *)
+Check [set true] : Finite.Pack (Finite.class (set_finType bool_finType)) {set bool_finType}.
+Check [set true] : set_finType bool_finType.
+Check [set true] : {set Finite.sort bool_finType}.
+Check [set true] : {set bool_finType}.
+
+Print Graph.
+Set Printing Coercions.
+
+(* 型引数は、finType型 *)
+Check [set true] : set_of_eqType bool_finType.
+Check [set true] : set_of_choiceType bool_finType.
+Check [set true] : set_of_countType bool_finType.
+Check [set true] : set_of_finType bool_finType.
+
+(* 型引数に制限がある。 *)
+Check [set true] : {set Equality.sort bool_eqType}.
+Check [set true] : {set Equality.sort bool_choiceType}.
+Check [set true] : {set Equality.sort bool_countType}.
+Check [set true] : {set Equality.sort bool_finType}.
+Check [set true] : {set bool_eqType}.
+
+Fail Check [set true] : {set Choice.sort bool_eqType}.
+Check [set true] : {set Choice.sort bool_choiceType}.
+Check [set true] : {set Choice.sort bool_countType}.
+Check [set true] : {set Choice.sort bool_finType}.
+Check [set true] : {set bool_choiceType}.
+
+Fail Check [set true] : {set Countable.sort bool_eqType}.
+Fail Check [set true] : {set Countable.sort bool_choiceType}.
+Fail Check [set true] : {set Countable.sort bool_countype}.
+Check [set true] : {set Countable.sort bool_finType}.
+Check [set true] : {set bool_countType}.
+
+Fail Check [set true] : {set Finite.sort bool_eqType}.
+Fail Check [set true] : {set Finite.sort bool_choiceType}.
+Fail Check [set true] : {set Finite.sort bool_countType}.
+Check [set true] : {set Finite.sort bool_finType}.
+Check [set true] : {set bool_finType}.
 
 (* END *)
