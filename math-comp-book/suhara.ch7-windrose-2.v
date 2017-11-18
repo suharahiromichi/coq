@@ -6,7 +6,7 @@ From mathcomp Require Import all_ssreflect.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-Set Printing Coercions.                     (* *** *)
+(* Set Printing Coercions.                     (* *** *) *)
 
 Inductive windrose : predArgType := N | S | E | W.
 Check N \in windrose.
@@ -80,10 +80,26 @@ Canonical windrose_choiceType := ChoiceType windrose windrose_choiceMixin.
 Definition windrose_countMixin := CanCountMixin can_wo4.
 Canonical windrose_countType := CountType windrose windrose_countMixin.
 
+Definition windrose_finMixin := CanFinMixin can_wo4.
+
+(* pcan_enumP は証明されているが、can_enumP はないので証明する。 *)
+Lemma can_enumP : forall (eT : countType) (fT : finType)
+         (f : Countable.sort eT -> Finite.sort fT)
+         (g : Finite.sort fT -> Countable.sort eT),
+    cancel f g -> Finite.axiom (undup (map g (Finite.enum fT))).
+Proof.
+  move=> eT fT f g.
+  move=> fK x; rewrite count_uniq_mem ?undup_uniq // mem_undup.
+  by rewrite -[x]fK map_f //.
+Qed.
+
 Lemma windrose_enumP : Finite.axiom (undup (map o2w (Finite.enum (ordinal_finType 4)))).
 Proof.
-  Admitted.                                 (* XXXX *)
-Definition windrose_finMixin := FinMixin windrose_enumP.
+  Check can_enumP.
+  apply can_enumP with (f:=w2o).
+  by apply can_wo4.
+Qed.
+Definition windrose_finMixin' := FinMixin windrose_enumP.
 
 (* Definition windrose_finMixin := CanFinMixin can_wo4. *)
 Canonical windrose_finType := FinType windrose windrose_finMixin.
@@ -105,18 +121,16 @@ Check @inj_eqAxiom
 
 Print Finite.axiom.
 (* 一般に cancel なら Finite.axiom が成り立つという定理 *)
-Check pcan_enumP : forall (eT : countType)  (* windrose *)
-                          (fT : finType)    (* 'I_4 *)
-                          (f : eT -> fT) (* w2o : windrose -> 'I_4. *)
-                          (g : fT -> option eT), (* o2w' : 'I_4 -> option windrose. *)
-    pcancel f g -> Finite.axiom (T:=eT) (undup (pmap g (Finite.enum fT))).
-(*
-Check @pcan_enumP
+Check can_enumP : forall (eT : countType)  (* windrose *)
+                         (fT : finType)    (* 'I_4 *)
+                         (f : eT -> fT)  (* w2o : windrose -> 'I_4. *)
+                         (g : fT -> eT), (* o2w' : 'I_4 -> windrose. *)
+    cancel f g -> Finite.axiom (T:=eT) (undup (map g (Finite.enum fT))).
+Check @can_enumP
       windrose_countType
       (ordinal_finType 4)
       w2o
       o2w.
-*)
 
 (* その他の補題 *)
 Check can_pcan : forall (rT aT : Type) (f : aT -> rT) (g : rT -> aT),
@@ -141,4 +155,9 @@ Qed.
 (* END *)
 
 (* 主役は w2o か o2w か *)
-(* cancel -> pcancel を使う *)
+
+(*
+(* pcancel w2o o2w であることを証明する。 *)
+Definition pcan_wo4 := can_pcan can_wo4.
+Definition o2w' o : option windrose := Some (o2w o).
+ *)
