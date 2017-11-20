@@ -161,6 +161,12 @@ Ltac route_eq_tac := rewrite route_equiv_equivb; reflexivity.
 (** another proof of Ex1, using computation  *)
 Example Ex1' : East::North::West::South::East::nil =r= East::nil.
 Proof.
+  rewrite route_equiv_equivb.
+  unfold route_eqb, Point_eqb, Zeq_bool.
+  simpl.                                    (* true = true *)
+  reflexivity.
+  
+  Restart.
   route_eq_tac.
 Qed.
 
