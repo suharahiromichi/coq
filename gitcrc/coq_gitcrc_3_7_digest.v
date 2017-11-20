@@ -29,8 +29,8 @@ Open Scope Z_scope.
 Require Import Relations.
 Require Import Setoid.
 
-Require Import coq_gitcrc_3_digest.
-(*************************************************************
+(* Require Import coq_gitcrc_3_digest. *)
+(*************************************************************)
 (**
 3.2 Data Type and Definitions
  *)
@@ -84,7 +84,7 @@ Proof.
   induction r as [|d s IHs]; simpl;
   [auto | destruct d; intros;rewrite IHs;auto].
 Qed.
-*************************************************************)
+(*************************************************************)
 
 (**
 3.7 Deciding Route Equivalence
@@ -176,10 +176,10 @@ SSReflectの上で、Morphisms を使うのは難しそうなので、
 ******************
 *)
 Section SSR.
-  Require Import ssreflect ssrbool.
+  From mathcomp Require Import all_ssreflect.
   
   Lemma route_equivP (r r' : route) :
-    reflect (route_equiv r r') (route_eqb r r').
+    reflect (r =r= r') (route_eqb r r').
   Proof.
     apply: (@iffP (route_eqb r r')).
     - by apply: idP.
