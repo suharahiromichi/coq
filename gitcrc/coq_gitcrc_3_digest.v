@@ -22,6 +22,8 @@ Require Import Bool.
 Open Scope Z_scope.
 Require Import Relations.
 Require Import Setoid.
+(* 参考 *)
+Require Import Permutation.
 
 (**
 3.2 Data Type and Definitions
@@ -130,12 +132,40 @@ Proof.
    apply route_equiv_trans].
 Qed.
 
+Print Reflexive. (* Classで定義されているが、中身があるのでrecordではない。 *)
+(*
+fun (A : Type) (R : relation A) => forall x : A, R x x
+: forall A : Type, relation A -> Prop.
+ *)
+Print Equivalence_Reflexive.
+About Equivalence_Reflexive.
+(* Reflexive の引数 R : releation A が generalized されている。 *)
+(* ただし、これらは上のInstanceの定義がなくても成立する。 *)
+Check Equivalence_Reflexive : Reflexive eq.
+Check Equivalence_Reflexive : Reflexive route_equiv.
+Check Equivalence_Reflexive : Reflexive PeanoNat.Nat.eqf. (* Permutation *)
+
+(*
+Add Parametric Relation (x1 : T1) …(xn : Tk) : (A t1 …tn) (Aeq t′1 …t′m)
+ [reflexivity proved by refl]
+ [symmetry proved by sym]
+ [transitivity proved by trans]
+ as id.
+is equivalent to an instance declaration:
+
+Instance (x1 : T1) …(xn : Tk) => id : @Equivalence (A t1 …tn) (Aeq t′1 …t′m) :=
+ [Equivalence_Reflexive := refl]
+ [Equivalence_Symmetric := sym]
+ [Equivalence_Transitive := trans].
+*)
+
 (**
 ここでできること
-・○ =r= ○ の reflexivity。
+・○ =r= ○ の reflexivity, symmetry, transitivity タクティクを使う。
  *)
 Goal forall r, r =r= r.
 Proof. 
+  symmetry.
   reflexivity.
 Qed.
 
