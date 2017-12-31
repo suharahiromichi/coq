@@ -214,14 +214,16 @@ Lemma bexp_eval_true : forall b st,
   beval st b = true -> (bassn b) st.
 Proof.
   intros b st Hbe.
-  unfold bassn. assumption.  Qed.
+  unfold bassn. assumption.
+Qed.
 
 Lemma bexp_eval_false : forall b st,
   beval st b = false -> ~ ((bassn b) st).
 Proof.
   intros b st Hbe contra.
   unfold bassn in contra.
-  rewrite -> contra in Hbe. inversion Hbe.  Qed.
+  rewrite -> contra in Hbe. inversion Hbe.
+Qed.
 
 (** いよいよ条件分岐についてのホーア証明規則を形式化し、正しいことを証明できます。*)
 
@@ -771,17 +773,19 @@ Lemma negb_not_true_iff : forall b, negb b <> true <-> b = true.
 Proof.
   intros b.
   split.
-  intros H.
-  destruct b.
-  Case "b = true".
-    reflexivity.
-  Case "b = false".
-    apply ex_falso_quodlibet.
-    apply H. unfold negb. reflexivity.
-  intros H.
-  rewrite H. simpl.
-  unfold not.
-  intros. inversion H0.
+  - intros H.
+    destruct b.
+    + Case "b = true".
+      reflexivity.
+    + Case "b = false".
+      apply ex_falso_quodlibet.
+      apply H. unfold negb.
+      reflexivity.
+  - intros H.
+    rewrite H. simpl.
+    unfold not.
+    intros.
+    now inversion H0.
 Qed.
 
 (* ####################################################### *)
@@ -801,7 +805,8 @@ Lemma eq_comm : forall A : Type, forall a b : A,
   a = b -> b = a.
 Proof.
   intros A a b H.
-  rewrite <- H. reflexivity.
+  rewrite <- H.
+  reflexivity.
 Qed.
 
 Lemma max0r : forall a,
@@ -820,49 +825,50 @@ Proof.
   remember (ble_nat a b) as ab.
   remember (ble_nat b c) as bc.
   remember (ble_nat a c) as ac.
-
+  
   destruct ab.
-  destruct bc.
-  destruct ac.
-  (* a ≦ b /\ b ≦ c /\ a ≦ c *)
-  rewrite <- Heqac. rewrite <- Heqbc. reflexivity.
+  - destruct bc.
+    + destruct ac.
 
-  (* a ≦ b /\ b ≦ c /\ a > c *)
-  rewrite <- Heqac. rewrite <- Heqbc.
-  apply eq_comm in Heqab. apply ble_nat_true in Heqab.
-  apply eq_comm in Heqbc. apply ble_nat_true in Heqbc.
-  apply eq_comm in Heqac. apply ble_nat_false in Heqac.
-  omega.
+      (* a ≦ b /\ b ≦ c /\ a ≦ c *)
+      * rewrite <- Heqac. rewrite <- Heqbc. reflexivity.
 
-  destruct ac.
-  (* a ≦ b /\ b > c /\ a ≦ c *)
-  rewrite <- Heqab. rewrite <- Heqbc. reflexivity.
+      (* a ≦ b /\ b ≦ c /\ a > c *)
+      * rewrite <- Heqac. rewrite <- Heqbc.
+        apply eq_comm in Heqab. apply ble_nat_true in Heqab.
+        apply eq_comm in Heqbc. apply ble_nat_true in Heqbc.
+        apply eq_comm in Heqac. apply ble_nat_false in Heqac.
+        omega.
 
-  (* a ≦ b /\ b > c /\ a > c *)
-  rewrite <- Heqab. rewrite <- Heqbc. reflexivity.
+    + destruct ac.
+      (* a ≦ b /\ b > c /\ a ≦ c *)
+      * rewrite <- Heqab. rewrite <- Heqbc. reflexivity.
+        
+      (* a ≦ b /\ b > c /\ a > c *)
+      * rewrite <- Heqab. rewrite <- Heqbc. reflexivity.
+      
+  - destruct bc.
+    + destruct ac.
+      (* a > b /\ b ≦ c /\ a ≦ c *)
+      * rewrite <- Heqac. reflexivity.
 
-  destruct bc.
-  destruct ac.
-  (* a > b /\ b ≦ c /\ a ≦ c *)
-  rewrite <- Heqac. reflexivity.
+      (* a > b /\ b ≦ c /\ a > c *)
+      * rewrite <- Heqac. reflexivity.
 
-  (* a > b /\ b ≦ c /\ a > c *)
-  rewrite <- Heqac. reflexivity.
-
-  destruct ac.
-  (* a > b /\ b > c /\ a ≦ c *)
-  rewrite <- Heqab.
-  apply eq_comm in Heqab. apply ble_nat_false in Heqab.
-  apply eq_comm in Heqbc. apply ble_nat_false in Heqbc.
-  apply eq_comm in Heqac. apply ble_nat_true in Heqac.
-(*
+    + destruct ac.
+      (* a > b /\ b > c /\ a ≦ c *)
+      * rewrite <- Heqab.
+        apply eq_comm in Heqab. apply ble_nat_false in Heqab.
+        apply eq_comm in Heqbc. apply ble_nat_false in Heqbc.
+        apply eq_comm in Heqac. apply ble_nat_true in Heqac.
+        (*
   apply ex_falso_quodlibet.
   apply Heqab.
-*)
-  omega.
-
-  (* a > b /\ b > c /\ a > c *)
-  rewrite <- Heqab. rewrite <- Heqac. reflexivity.
+         *)
+        omega.
+        
+      (* a > b /\ b > c /\ a > c *)
+      * rewrite <- Heqab. rewrite <- Heqac. reflexivity.
 Qed.
 
 Lemma max_hdtl_equation : forall l,
@@ -870,8 +876,8 @@ Lemma max_hdtl_equation : forall l,
 Proof.
   intros l.
   induction l; simpl.
-  apply max0r.
-  reflexivity.
+  - now apply max0r.
+  - reflexivity.
 Qed.
 
 Lemma max_nil : 
@@ -925,7 +931,6 @@ Qed.
 (* 
  * リストについての補題
  *)
-
 Definition bcons  {A : Type} (l : list A) : bool :=
   match l with
     | [] => false
@@ -937,10 +942,10 @@ Lemma bcons_false__nil : forall (A : Type) (l : list A),
 Proof.
   intros A l H.
   destruct l as [| a' l'].
-  Case "[]".
-  reflexivity.
-  Case "a' :: l'".
-  inversion H.
+  - Case "[]".
+    reflexivity.
+  - Case "a' :: l'".
+    now inversion H.
 Qed.
 
 Lemma nil__bcons_false : forall (A : Type) (l : list A),
@@ -948,11 +953,12 @@ Lemma nil__bcons_false : forall (A : Type) (l : list A),
 Proof.
   intros A l H.
   destruct l as [| a' l'].
-  Case "[]".
-  simpl.
-  reflexivity.
-  Case "a' :: l'".
-  simpl. inversion H.
+  - Case "[]".
+    simpl.
+    reflexivity.
+  - Case "a' :: l'".
+    simpl.
+    now inversion H.
 Qed.
 
 Lemma bcons_true__not_nil : forall (A : Type) (l : list A),
@@ -961,8 +967,9 @@ Proof.
   intros A l H.
   intro Contra.
   apply nil__bcons_false in Contra.
-  apply not_true_iff_false in H. apply H.
-  apply Contra.
+  apply not_true_iff_false in H.
+  - apply H.
+  - apply Contra.
 Qed.
 
 Lemma not_nil__bcons_true : forall (A : Type) (l : list A),
@@ -972,7 +979,8 @@ Proof.
   apply not_false_is_true. unfold not.
   intro Contra.
   apply bcons_false__nil in Contra.         (* 対偶を使う。 *)
-  apply H. apply Contra.
+  apply H.
+  - apply Contra.
 Qed.
 
 
@@ -1040,53 +1048,46 @@ Proof.
   verify.
   
   (* 帰結(2) *)
-  rewrite H. rewrite H0. unfold max.
-  simpl. reflexivity.
-
+  - rewrite H. rewrite H0. unfold max.
+    simpl.
+    reflexivity.
+    
   (* isCons X = true -> X <> [] *)
-  apply bcons_true__not_nil.
-  apply H0.
-
+  - now apply bcons_true__not_nil.
+    
   (* isCons X <> true -> X = [] *)
-  apply bcons_false__nil.
-  apply not_true_iff_false in H0.
-  apply H0.
-
+  - apply bcons_false__nil.
+    now apply not_true_iff_false in H0.
+    
   (* 帰結(3) *)
-  rewrite <- max_assoc.
-  rewrite max_hdtl_equation.
-  apply H.
-
+  - rewrite <- max_assoc.
+    now rewrite max_hdtl_equation.
+    
   (* ble_nat Y (head X) = true -> Y <= head X *)
-  apply ble_nat_true__le.
-  apply H0.
-  
+  - now apply ble_nat_true__le.
+    
   (* ble_nat Y (head X) <> true -> head X < asnat Y *)
-  apply ble_nat_false__gt.
-  apply not_true_iff_false in H0.
-  apply H0.
-
+  - apply ble_nat_false__gt.
+    now apply not_true_iff_false in H0.
+    
   (* 帰結(4) *)
-  unfold max in H at 2.
-  erewrite le__ble_nat_true in H.
-  apply H. apply H0.
+  - unfold max in H at 2.
+    now erewrite le__ble_nat_true in H.
   
   (* 帰結(5) *)
-  unfold max in H at 2.  
-  erewrite gt__ble_nat_false in H.
-  apply H. apply H0.
+  - unfold max in H at 2.  
+    now erewrite gt__ble_nat_false in H.
   
   (* 帰結(6) *)
-  remember (aslist (st X)) as x'.
-  destruct x'.
-  (* X = [] のとき *)
-  rewrite max_nil in H. rewrite max0r in H.
-  apply H.
-  (* X = n :: x' のとき *)
-  rewrite H0 in H.
-  simpl in H.
-  rewrite max0r in H.
-  apply H.
+  - remember (aslist (st X)) as x'.
+    destruct x'.
+    (* X = [] のとき *)
+    + rewrite max_nil in H.
+      now rewrite max0r in H.
+      (* X = n :: x' のとき *)
+    + rewrite H0 in H.
+      simpl in H.
+      now rewrite max0r in H.
 Qed.
 
 (* [] *)
