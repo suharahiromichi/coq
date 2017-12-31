@@ -8,7 +8,7 @@ WHILEの終了条件をWHILEの後に持ち出せないないので、使い勝�
 実際の証明は、WHILE条件の<~~の証明責務はなくなる分、オリジナルよりも減る。
 *)
 
-Require Export ImpList_J.                   (* BIsNullを追加した版 *)
+Require Export ImpList_J.                   (* IsNull を使わないオリジナル版 *)
 
 (** ** 表明 *)
 Definition Assertion := state -> Prop.
@@ -926,14 +926,14 @@ Qed.
  * リストについての補題
  *)
 
-Definition bnull {A : Type} (l : list A) : bool :=
+Definition bcons  {A : Type} (l : list A) : bool :=
   match l with
-    | [] => true
-    |  _ :: _ => false
+    | [] => false
+    |  _ :: _ => true
   end.
 
-Lemma bnull_true__nil : forall (A : Type) (l : list A),
-                          bnull l = true -> l = [].
+Lemma bcons_false__nil : forall (A : Type) (l : list A),
+    bcons l = false -> l = [].
 Proof.
   intros A l H.
   destruct l as [| a' l'].
@@ -943,8 +943,8 @@ Proof.
   inversion H.
 Qed.
 
-Lemma nil__bnull_true : forall (A : Type) (l : list A),
-                          l = [] -> bnull l = true.
+Lemma nil__bcons_false : forall (A : Type) (l : list A),
+    l = [] -> bcons l = false.
 Proof.
   intros A l H.
   destruct l as [| a' l'].
@@ -955,25 +955,26 @@ Proof.
   simpl. inversion H.
 Qed.
 
-Lemma bnull_false__not_nil : forall (A : Type) (l : list A),
-                               bnull l = false -> l <> [].
+Lemma bcons_true__not_nil : forall (A : Type) (l : list A),
+    bcons l = true-> l <> [].
 Proof.
   intros A l H.
   intro Contra.
-  apply nil__bnull_true in Contra.
+  apply nil__bcons_false in Contra.
   apply not_true_iff_false in H. apply H.
   apply Contra.
 Qed.
 
-Lemma not_nil__bnull_false : forall (A : Type) (l : list A),
-                          l <> [] -> bnull l = false.
+Lemma not_nil__bcons_true : forall (A : Type) (l : list A),
+    l <> [] -> bcons l = true.
 Proof.
   intros A l H.
-  apply not_true_is_false. unfold not.
+  apply not_false_is_true. unfold not.
   intro Contra.
-  apply bnull_true__nil in Contra.          (* 対偶を使う。 *)
+  apply bcons_false__nil in Contra.         (* 対偶を使う。 *)
   apply H. apply Contra.
 Qed.
+
 
 (* ####################################################### *)
 
@@ -988,7 +989,7 @@ Definition maximum_com_dec (l : list nat) : dcom :=
     ==>                                     (* 帰結(2) *)
     {{ fun st =>                            (* ループ不変式 *)
          max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }};
-    WHILE (BNot (BIsNull (AId X))) DO
+    WHILE (BIsCons (AId X)) DO
     {{ fun st =>                            (* ループ不変式かつループ実行条件 *)
          max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
          aslist (st X) <> [] }}
@@ -1042,14 +1043,13 @@ Proof.
   rewrite H. rewrite H0. unfold max.
   simpl. reflexivity.
 
-  (* negb (isNull X) = true -> X <> [] *)
-  apply negb_true_iff in H0.
-  apply bnull_false__not_nil.
+  (* isCons X = true -> X <> [] *)
+  apply bcons_true__not_nil.
   apply H0.
 
-  (* negb (isNull X) <> true -> X = [] *)
-  apply bnull_true__nil.
-  apply negb_not_true_iff in H0.
+  (* isCons X <> true -> X = [] *)
+  apply bcons_false__nil.
+  apply not_true_iff_false in H0.
   apply H0.
 
   (* 帰結(3) *)
