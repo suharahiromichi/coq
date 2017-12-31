@@ -890,7 +890,7 @@ Qed.
  * 不等号についての補題
  *)
 Lemma ble_nat_true__le : forall x y : nat,
-                          ble_nat x y = true -> x <= y.
+    ble_nat x y = true -> x <= y.
 Proof.
   intros x y H.
   apply ble_nat_true.                       (* おなじもの。 *)
@@ -898,7 +898,7 @@ Proof.
 Qed.
 
 Lemma ble_nat_false__gt : forall x y : nat,
-                            ble_nat x y = false -> x > y.
+    ble_nat x y = false -> x > y.
 Proof.
   intros x y H.
   apply ble_nat_false in H.
@@ -907,7 +907,7 @@ Proof.
 Qed.
 
 Lemma le__ble_nat_true : forall x y : nat,
-                           x <= y -> ble_nat x y = true.
+    x <= y -> ble_nat x y = true.
 Proof.
   intros x y H.
   apply not_false_iff_true. unfold not.
@@ -918,7 +918,7 @@ Proof.
 Qed.
 
 Lemma gt__ble_nat_false : forall x y : nat,
-                            x > y -> ble_nat x y = false.
+    x > y -> ble_nat x y = false.
 Proof.
   intros x y H.
   apply not_true_is_false. unfold not.
@@ -980,7 +980,7 @@ Proof.
   intro Contra.
   apply bcons_false__nil in Contra.         (* 対偶を使う。 *)
   apply H.
-  - apply Contra.
+  apply Contra.
 Qed.
 
 
@@ -1092,5 +1092,99 @@ Qed.
 
 (* [] *)
 
+(* 帰結の=>の右を抜いた。証明自体が簡単になっているわけではない。
+なお、帰結(6)の=>右をとると、結論がなくなるので残してある。*)
+Definition maximum_com_dec' (l : list nat) : dcom :=
+  (
+    {{ fun st => aslist (st X) = l }}       (* 初期値 *)
+    Y ::= ANum 0
+    {{ fun st => aslist (st X) = l /\ asnat (st Y) = 0 }};
+    WHILE (BIsCons (AId X)) DO
+    {{ fun st =>                            (* ループ不変式かつループ実行条件 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
+         aslist (st X) <> [] }}
+    IFB (BLe (AId Y) (AHead (AId X))) THEN
+    {{ fun st =>                            (* THEN条件 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
+         asnat (st Y) <= head (aslist (st X)) }}
+    Y ::= AHead (AId X)
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    ELSE
+    {{ fun st =>                            (* ELSE条件 *)
+         max (max (asnat (st Y)) (head (aslist (st X)))) (maximum (tail (aslist (st X)))) = maximum l /\
+         head (aslist (st X)) < asnat (st Y) }}
+      SKIP
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    FI;
+    {{ fun st =>
+         max (asnat (st Y)) (maximum (tail (aslist (st X)))) = maximum l }}
+    X ::= ATail (AId X)
+    {{ fun st =>                            (* ループ不変式 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l }}
+    END
+    {{ fun st =>                            (* ループ不変式かつループ終了条件 *)
+         max (asnat (st Y)) (maximum (aslist (st X))) = maximum l /\
+         aslist (st X) = [] }}
+    ==>                                      (* 帰結(6) *)
+    {{ fun st => asnat (st Y) = maximum l }} (* 結果 *)
+    ) % dcom.
+
+(* 証明は前と同じ。 *)
+Theorem maximum_com_dec'_correct : forall l,
+  dec_correct (maximum_com_dec' l).
+Proof.
+  intros l.
+  verify.
+  
+  (* 帰結(2) *)
+  - rewrite H. rewrite H0. unfold max.
+    simpl.
+    reflexivity.
+    
+  (* isCons X = true -> X <> [] *)
+  - now apply bcons_true__not_nil.
+    
+  (* isCons X <> true -> X = [] *)
+  - apply bcons_false__nil.
+    now apply not_true_iff_false in H0.
+    
+  (* 帰結(3) *)
+  - rewrite <- max_assoc.
+    now rewrite max_hdtl_equation.
+    
+  (* ble_nat Y (head X) = true -> Y <= head X *)
+  - now apply ble_nat_true__le.
+    
+  (* 帰結(3)、もういちど *)
+  - rewrite <- max_assoc.
+    now rewrite max_hdtl_equation.
+
+  (* ble_nat Y (head X) <> true -> head X < asnat Y *)
+  - apply ble_nat_false__gt.
+    now apply not_true_iff_false in H0.
+    
+  (* 帰結(4) *)
+  - unfold max in H at 2.
+    now erewrite le__ble_nat_true in H.
+    
+  (* 帰結(5) *)
+  - unfold max in H at 2.  
+    now erewrite gt__ble_nat_false in H.
+    
+  (* 帰結(6) *)
+  - remember (aslist (st X)) as x'.
+    destruct x'.
+    (* X = [] のとき *)
+    + rewrite max_nil in H.
+      now rewrite max0r in H.
+    (* X = n :: x' のとき *)
+    + rewrite H0 in H.
+      simpl in H.
+      now rewrite max0r in H.
+Qed.
+
+(* [] *)
 
 (* END *)
