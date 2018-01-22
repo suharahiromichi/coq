@@ -2,7 +2,7 @@
 (* Smallstep.v *)
 
 (*
-これは、ProofCafe の Software Fundations, Vol.2 Programming Language Foundations の
+これは、ProofCafe の Software Foundations, Vol.2 Programming Language Foundations の
 勉強会のサポートページです。復習などに利用しててください。
 
 本ファイルの実行は、本ファイルを pfl ディレクトリの中に混ぜて置くか、
@@ -26,44 +26,88 @@ Require Import Smallstep.
 
 (* ProofCafe #72 2018/01/20 *)
 
+(** * A Toy Language *)
+
+Module PF_SimpleArith1.
+Import SimpleArith1.
+
 (* tm 型のコンストラクタ *)
 Check C : nat -> tm.
 Check P : tm -> tm -> tm.
 
-(* tm 型の例 *)
-Check P (P (C 1) (C 2)) (C 3) : tm.      (* tm 型として正しい。 *)
-Fail Check P (P (C 1))  : tm.            (* tm 型として正しくない。 *)
+(* tm の例 *)
+Check (P (P (C 1) (P (C 2) (C 3)))
+         (P (C 11) (P (C 12) (C 13)))) : tm. (* tm 型として正しい。 *)
+
+Definition test := (P (P (C 1) (P (C 2) (C 3)))
+                      (P (C 11) (P (C 12) (C 13)))).
 
 (* big-step *)
-Check evalF (P (P (C 1) (C 2)) (C 3)) : nat.
-
-Compute evalF (P (P (C 1) (C 2)) (C 3)).    (* = 6 : nat *)
-
+Print evalF.                                (* evalF の定義 *)
+Check evalF test : nat.
+Compute evalF test.    (* = 42 : nat *)
 
 (* small-step *)
-Check P (P (C 1) (C 2)) (C 3) ==> P (C 3) (C 3) : Prop.
 
-Compute P (P (C 1) (C 2)) (C 3) ==> P (C 3) (C 3).
+(* 導入された公理 *)
+Check ST_PlusConstConst :
+  forall n1 n2, (P (C n1) (C n2) ==> C (n1 + n2)).
+Check ST_Plus1 :
+  forall t1 t1' t2, (t1 ==> t1') -> (P t1 t2 ==> P t1' t2).
+Check ST_Plus2 :
+  forall (n1 : nat) (t2 t2' : tm),
+    t2 ==> t2' -> P (C n1) t2 ==> P (C n1) t2'.
 
-Goal P (P (C 1) (C 2)) (C 3) ==> P (C 3) (C 3).
-Proof.                                      (* 証明してみる。 *)
-  (* goal : P (P (C 1) (C 2)) (C 3) ==> P (C 3) (C 3) *)
+Check test ==> (P (P (C 1) (C 5))
+                  (P (C 11) (P (C 12) (C 13)))).
+
+Compute test ==> (P (P (C 1) (C 5))
+                  (P (C 11) (P (C 12) (C 13)))).
+
+
+(*
+Small-stepのひとつのステップでやっていること：
+
+「==>」の左辺の、最も左（で最も深いところ）にある 「P (C n1) (C n2)」を探す。
+これを 「C (n1 + n2)」 に書き換えたものを「==>」の右辺とする。
+*)
+
+Goal test ==> (P (P (C 1) (C 5))
+                 (P (C 11) (P (C 12) (C 13)))).
+Proof.
   constructor.
-  (* goal : P (C 1) (C 2) ==> C 3 *)
   constructor.
-  (* No more subgoals. *)
-  Show Proof. (* 「証明」を出力する。 *)
-  (* (ST_Plus1 (P (C 1) (C 2)) (C 3) (C 3) (ST_PlusConstConst 1 2)) *)
+  constructor.
+  Show Proof.
+
+  Restart.
+  apply ST_Plus1.
+  apply ST_Plus2.
+  apply ST_PlusConstConst.
 Qed.
 
-
-(* small-step うまくいかない例 *)
-Check P (P (C 1) (C 2)) (C 3) ==> C 6 : Prop.
-
-Goal P (P (C 1) (C 2)) (C 3) ==> C 6.
-Proof.                                    (* 証明してみる。 *)
-  Fail constructor.                       (* 証明できない。big-step になっているから。 *)
-  admit.
+(*
+以下はうまくいかない例：
+ *)
+(*
+最も左でなければならない。
+ *)
+Goal test ==> (P (P (C 1) (P (C 2) (C 3)))
+                 (P (C 11) (C 25))).
+Proof.
+  admit.                                    (* OK. *)
 Admitted.
+
+(*
+2回分はできない。
+ *)
+Goal test ==> (P (C 6)
+                 (P (C 11) (P (C 12) (C 13)))).
+Proof.
+  constructor.
+  admit.                                    (* OK. *)
+Admitted.
+
+End PF_SimpleArith1.
 
 (* END *)
