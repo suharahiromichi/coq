@@ -26,6 +26,7 @@ Require Import Smallstep.
 
 (* ProofCafe #72 2018/01/20 *)
 
+(* ################################################################# *)
 (** * A Toy Language *)
 
 Module PF_SimpleArith1.
@@ -109,5 +110,124 @@ Proof.
 Admitted.
 
 End PF_SimpleArith1.
+
+(* ProofCafe #73 2018/02/17 予定 *)
+
+(* ################################################################# *)
+(** * Relations *)
+
+Module PF_SimpleArith2.
+Import PF_SimpleArith1.
+Import SimpleArith1.
+
+(* 二項関係 R が決定的である、という命題 *)
+Check @deterministic : forall X : Type, relation X -> Prop.
+
+(*
+二項関係が決定的 <-> 二項関係は部分関数 partial function である。 
+なぜなら、 R x y が決定的ならxに対してyが唯一決まるので関数っぽいけれども、
+任意のxに対してyが決まるとは限らないので、部分関数である。
+
+なお、任意のxに対してyが決まる全域関数は、部分関数の一種である。
+*)
+
+Theorem step_deterministic : deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  induction Hy1; intros y2 Hy2;
+    inversion Hy2; try now subst.
+  - now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
+  - now rewrite <- (IHHy1 t2'0).      (* generalize dependent y2. *)
+Qed.
+
+Theorem step_deterministic' : deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  induction Hy1; intros y2 Hy2.
+  - inversion Hy2.
+    + reflexivity.
+    + now subst.
+    + now subst.
+  - inversion Hy2.
+    + now subst.
+    + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
+    + now subst.
+  - inversion Hy2.
+    + now subst.
+    + now subst.
+    + now rewrite <- (IHHy1 t2'0).      (* generalize dependent y2. *)
+Qed.
+
+Theorem step_deterministic'' : deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  
+  induction Hy1; intros y2 Hy2.
+  (*
+  Hy1 : x ==> y1 をコンストラクタで場合分けしたものが、Hy2 である。
+
+  ST_PlusConstConst の場合：
+    Hy2 : P (C n1) (C n2) ==> y2
+    x = P (C n1 n2) なので、
+    ゴールは C (n1 + n2) = y2 である。
+
+  ST_Plus1 の場合：
+    Hy2 : P t1 t2 ==> y2
+    x = P t1 t2 なので、
+    ゴールは P t1' t2 = y2
+
+  ST_Plus2 の場合 :
+    Hy2 : P v1 t2 ==> y2
+    x = P v1 t2 なので、
+    ゴールは P v1 t2' = y2
+ *)
+  
+(*
+   Hy2 : P (C n1) (C n2) ==> y2
+  ============================
+   C (n1 + n2) = y2
+*)
+  (* Hy2 にコンストラクタを逆に適用する。 *)
+  - inversion Hy2; subst.
+    (*  ST_PlusConstConst の場合、
+       Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
+       y2 = C (n1 + n2),
+       Goal : C (n1 + n2) = C (n1 + n2)
+     *)
+    + reflexivity.
+    (* ST_Plus1 の場合、
+       Hy2 : P (C n1) (C n2) ==> P t1' (C n2)、
+       これはコンストラクトできない（矛盾） *)
+    + now inversion Hy2.                    (* 矛盾は inversion で消す！ *)
+    (* ST_Plus2 の場合、
+       Hy2 : P (C n1) (C n2) ==> P (C n1) t2'、
+       これはコンストラクトできない（矛盾） *)
+    + now inversion Hy2.
+      
+  (* Hy2 にコンストラクタを逆に適用する。 *)
+  - inversion Hy2; subst.
+    (*  ST_PlusConstConst の場合、
+       Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
+       y2 = C (n1 + n2),
+       Goal : P t1' (C n2) = C (n1 + n2)
+     *)
+    + now inversion Hy2.                    (* 矛盾は inversion で消す！ *)
+    (* ST_Plus1 の場合、
+       Hy2 : P (C n1) (C n2) ==> P t1' (C n2)、
+       これはコンストラクトできない（矛盾） *)
+    + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
+    (* ST_Plus2 の場合、
+       Hy2 : P (C n1) (C n2) ==> P (C n1) t2'、
+       これはコンストラクトできない（矛盾） *)
+      Admitted.
+ *)
+
+End PF_SimpleArith2.
 
 (* END *)
