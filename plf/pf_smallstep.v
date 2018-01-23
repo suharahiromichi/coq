@@ -168,9 +168,10 @@ Proof.
   intros x y1 y2 Hy1 Hy2.
   generalize dependent y2.
   
-  induction Hy1; intros y2 Hy2.
+  induction Hy1 as [|t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2.
   (*
   Hy1 : x ==> y1 をコンストラクタで場合分けしたものが、Hy2 である。
+  
 
   ST_PlusConstConst の場合：
     Hy2 : P (C n1) (C n2) ==> y2
@@ -193,8 +194,7 @@ Proof.
   ============================
    C (n1 + n2) = y2
 *)
-  (* Hy2 にコンストラクタを逆に適用する。 *)
-  - inversion Hy2; subst.
+  - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
     (*  ST_PlusConstConst の場合、
        Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
        y2 = C (n1 + n2),
@@ -210,24 +210,78 @@ Proof.
        これはコンストラクトできない（矛盾） *)
     + now inversion Hy2.
       
-  (* Hy2 にコンストラクタを逆に適用する。 *)
-  - inversion Hy2; subst.
+  - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
     (*  ST_PlusConstConst の場合、
-       Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
-       y2 = C (n1 + n2),
-       Goal : P t1' (C n2) = C (n1 + n2)
-     *)
+        H1 : C n1 ==> t1'
+        これはコンストラクトできない（矛盾） *)
     + now inversion Hy2.                    (* 矛盾は inversion で消す！ *)
     (* ST_Plus1 の場合、
-       Hy2 : P (C n1) (C n2) ==> P t1' (C n2)、
-       これはコンストラクトできない（矛盾） *)
+       IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
+       Goal : P t1' t2 = P t1'0 t2
+    *)
     + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
     (* ST_Plus2 の場合、
-       Hy2 : P (C n1) (C n2) ==> P (C n1) t2'、
+       H1 : C n1 ==> t1'
        これはコンストラクトできない（矛盾） *)
-      Admitted.
- *)
+    + now inversion H1.                    (* 矛盾は inversion で消す！ *)
+
+  - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
+    (*  ST_PlusConstConst の場合、
+       H1 : C n2 ==> t2
+       これはコンストラクトできない（矛盾） *)
+    + now inversion H1.                    (* 矛盾は inversion で消す！ *)
+    (* ST_Plus1 の場合、
+       H3 : C n ==> t1'0
+       これはコンストラクトできない（矛盾） *)
+    + now inversion H3.                    (* 矛盾は inversion で消す！ *)
+    (* ST_Plus2 の場合、
+       IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
+       Goal : P (C n) t2 = P (C n) t2'
+     *)
+    + now rewrite <- (IHHy1 t2').       (* generalize dependent y2. *)
+Qed.          
 
 End PF_SimpleArith2.
 
+(* ================================================================= *)
+(** ** Values *)
+
+(* redo_determinism のヒント：
+   value はひとつだけだが、コンストラクタ v_const を持つ。
+   それが前提にあるならば、場合分けをする必要がある。
+*)
+
+(* ================================================================= *)
+(** ** Strong Progress and Normal Forms *)
+
+Variable n : nat.
+Check nat_ind.
+
+
+Theorem strong_progress : forall t : tm,
+  value t \/ (exists t', t ==> t').
+Proof.
+  induction t.                      (* p t を証明したい命題とし、tで帰納する。 *)
+  - left.                           (* 帰納の底 p (C n) *)
+    now apply v_const.
+  - right.              (* 帰納の途中 : p t1 -> p t2 -> p (P t1 t2) *)
+    destruct IHt1 as [H11 | H12].         (* 選言を場合分けする。 *)
+    (* IHt1 の左側 *)
+    + destruct IHt2 as [H21 | H22].       (* 選言を場合分けする。 *)
+      (* IHt2 の左側 *)
+      * destruct H11 as [n1 H11'].        (* value を場合分けする。 *)
+        destruct H21 as [n2 H21'].        (* value を場合分けする。 *)
+        exists (C (n1 + n2)).
+        now apply ST_PlusConstConst.
+      (* IHt2 の右側 *)
+      * destruct H22 as [t' H22'].       (* exists を場合分けする。 *)
+        exists (P t1 t').
+        now apply ST_Plus2.
+    (* IHt1 の右側 *)
+    + destruct H12 as [t' H12'].         (* exists を場合分けする。 *)
+      exists (P t' t2).
+      now apply ST_Plus1.
+Qed.
+
 (* END *)
+
