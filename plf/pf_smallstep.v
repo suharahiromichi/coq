@@ -131,37 +131,6 @@ Check @deterministic : forall X : Type, relation X -> Prop.
 なお、任意のxに対してyが決まる全域関数は、部分関数の一種である。
 *)
 
-Theorem step_deterministic : deterministic step.
-Proof.
-  unfold deterministic.
-  intros x y1 y2 Hy1 Hy2.
-  generalize dependent y2.
-  induction Hy1; intros y2 Hy2;
-    inversion Hy2; try now subst.
-  - now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
-  - now rewrite <- (IHHy1 t2'0).      (* generalize dependent y2. *)
-Qed.
-
-Theorem step_deterministic' : deterministic step.
-Proof.
-  unfold deterministic.
-  intros x y1 y2 Hy1 Hy2.
-  generalize dependent y2.
-  induction Hy1; intros y2 Hy2.
-  - inversion Hy2.
-    + reflexivity.
-    + now subst.
-    + now subst.
-  - inversion Hy2.
-    + now subst.
-    + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
-    + now subst.
-  - inversion Hy2.
-    + now subst.
-    + now subst.
-    + now rewrite <- (IHHy1 t2'0).      (* generalize dependent y2. *)
-Qed.
-
 Theorem step_deterministic'' : deterministic step.
 Proof.
   unfold deterministic.
@@ -204,17 +173,17 @@ Proof.
     (* ST_Plus1 の場合、
        Hy2 : P (C n1) (C n2) ==> P t1' (C n2)、
        これはコンストラクトできない（矛盾） *)
-    + now inversion Hy2.                    (* 矛盾は inversion で消す！ *)
+    + now inversion H2.                (* 矛盾は inversion で消す！ *)
     (* ST_Plus2 の場合、
        Hy2 : P (C n1) (C n2) ==> P (C n1) t2'、
        これはコンストラクトできない（矛盾） *)
-    + now inversion Hy2.
+    + now inversion H2.                (* 矛盾は inversion で消す！ *)
       
   - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
     (*  ST_PlusConstConst の場合、
         H1 : C n1 ==> t1'
         これはコンストラクトできない（矛盾） *)
-    + now inversion Hy2.                    (* 矛盾は inversion で消す！ *)
+    + now inversion H1.                (* 矛盾は inversion で消す！ *)
     (* ST_Plus1 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P t1' t2 = P t1'0 t2
@@ -240,6 +209,37 @@ Proof.
      *)
     + now rewrite <- (IHHy1 t2').       (* generalize dependent y2. *)
 Qed.          
+
+Theorem step_deterministic' : deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  induction Hy1; intros y2 Hy2.
+  - inversion Hy2; subst.
+    + reflexivity.
+    + easy.
+    + easy.
+  - inversion Hy2; subst.
+    + easy.
+    + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
+    + easy.
+  - inversion Hy2; subst.
+    + easy.
+    + easy.
+    + now rewrite <- (IHHy1 t2'0).      (* generalize dependent y2. *)
+Qed.
+
+Theorem step_deterministic : deterministic step.
+Proof.
+  unfold deterministic.
+  intros x y1 y2 Hy1 Hy2.
+  generalize dependent y2.
+  induction Hy1; intros y2 Hy2;
+    inversion Hy2; subst; try easy.
+  - now rewrite <- (IHHy1 t1'0).
+  - now rewrite <- (IHHy1 t2'0).
+Qed.
 
 End PF_SimpleArith2.
 
@@ -293,7 +293,7 @@ fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
 Lemma value_is_nf : forall v,
   value v -> normal_form step v.
 Proof.
-  unfold normal_form. (* ゴールがDefineされた項の場合 *)
+  unfold normal_form. (* ゴールがDefineされたデータ型の場合 *)
   intros v H.         (* ゴールに ∀や->がある場合。ただし、やりすぎに注意 *)
   destruct H.         (* 前提がデータ型のとき、帰納的でないなら場合分けする。 *)
   intro contra.       (* ゴールが否定のとき。引数の無い intros ではだめ。 *)
@@ -304,7 +304,7 @@ Qed.
 (* inversion が矛盾を生成することを補足すること。 *)
 
 Lemma l_strong_progress__nf_is_value : forall t,
-    value t \/ (exists t', t ==> t') -> normal_form step t -> value t.
+    (value t \/ (exists t', t ==> t')) -> normal_form step t -> value t.
 Proof.
   unfold normal_form.
   intros t G H.
@@ -312,7 +312,8 @@ Proof.
   (* 左側 *)
   + easy.                   (* 前提がゴールと同じ。 *) (* apply H0. *)
   (* 右側 *)
-  + easy. (* 矛盾した前提があるとき。 *) (* exfalso. apply H. assumption. *) 
+  + easy.                         (* 矛盾した前提があるとき。 *)
+    (* exfalso. apply H. assumption. *) 
 Qed.
 
 Lemma nf_is_value : forall t,
