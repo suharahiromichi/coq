@@ -254,17 +254,14 @@ End PF_SimpleArith2.
 (* ================================================================= *)
 (** ** Strong Progress and Normal Forms *)
 
-Variable n : nat.
-Check nat_ind.
-
-
+(* 強進行性 *)
 Theorem strong_progress : forall t : tm,
-  value t \/ (exists t', t ==> t').
+    value t \/ (exists t', t ==> t').
 Proof.
-  induction t.                      (* p t を証明したい命題とし、tで帰納する。 *)
-  - left.                           (* 帰納の底 p (C n) *)
+  induction t.                      (* q t を証明したい命題とし、tで帰納する。 *)
+  - left.                           (* 帰納の底 q (C n) *)
     now apply v_const.
-  - right.              (* 帰納の途中 : p t1 -> p t2 -> p (P t1 t2) *)
+  - right.              (* 帰納の途中 : q t1 -> q t2 -> q (P t1 t2) *)
     destruct IHt1 as [H11 | H12].         (* 選言を場合分けする。 *)
     (* IHt1 の左側 *)
     + destruct IHt2 as [H21 | H22].       (* 選言を場合分けする。 *)
@@ -283,5 +280,66 @@ Proof.
       now apply ST_Plus1.
 Qed.
 
+(* 正規形 *)
+Print normal_form.
+(*                                        not
+fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
+     : forall X : Type, relation X -> X -> Prop
+ *)
+
+(* R には step（==>）を渡すなら、
+正規形 t は、t ==> t' なる t'が存在しない（もうstepできない）。 *)
+
+Lemma value_is_nf : forall v,
+  value v -> normal_form step v.
+Proof.
+  unfold normal_form. (* ゴールがDefineされた項の場合 *)
+  intros v H.         (* ゴールに ∀や->がある場合。ただし、やりすぎに注意 *)
+  destruct H.         (* 前提がデータ型のとき、帰納的でないなら場合分けする。 *)
+  intro contra.       (* ゴールが否定のとき。引数の無い intros ではだめ。 *)
+  destruct contra.    (* 前提が exists のとき *)
+  easy.               (* 前提が矛盾（コンストラクトできない）場合 *) (* inversion H. *)
+Qed.
+
+(* inversion が矛盾を生成することを補足すること。 *)
+
+Lemma l_strong_progress__nf_is_value : forall t,
+    value t \/ (exists t', t ==> t') -> normal_form step t -> value t.
+Proof.
+  unfold normal_form.
+  intros t G H.
+  destruct G.              (* 前提が \/ のとき、左右で場合分けする。 *)
+  (* 左側 *)
+  + easy.                   (* 前提がゴールと同じ。 *) (* apply H0. *)
+  (* 右側 *)
+  + easy. (* 矛盾した前提があるとき。 *) (* exfalso. apply H. assumption. *) 
+Qed.
+
+Lemma nf_is_value : forall t,
+    normal_form step t -> value t.
+Proof.
+  intros t.
+  apply l_strong_progress__nf_is_value.
+  apply strong_progress.
+Qed.
+
+Corollary nf_same_as_value : forall t,
+  normal_form step t <-> value t.
+Proof.
+  split.                                    (* ゴールが <-> のとき *)
+  - now apply nf_is_value.
+  - now apply value_is_nf.
+Qed.
+
 (* END *)
+
+(*
+まじかんと さんのページから：
+
+証明事例集: 前提が……のとき
+https://magicant.github.io/programmingmemo/coq/byhyp.html
+
+証明事例集: ゴールが……のとき
+https://magicant.github.io/programmingmemo/coq/bygoal.html
+ *)
 
