@@ -131,6 +131,8 @@ Check @deterministic : forall X : Type, relation X -> Prop.
 なお、任意のxに対してyが決まる全域関数は、部分関数の一種である。
 *)
 
+(* inversion を使う典型的な証明 *)
+
 Theorem step_deterministic'' : deterministic step.
 Proof.
   unfold deterministic.
@@ -164,18 +166,18 @@ Proof.
    C (n1 + n2) = y2
 *)
   - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
-    (*  ST_PlusConstConst の場合、
+    (* ST_PlusConstConst の場合、
        Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
        y2 = C (n1 + n2),
        Goal : C (n1 + n2) = C (n1 + n2)
      *)
     + reflexivity.
     (* ST_Plus1 の場合、
-       Hy2 : P (C n1) (C n2) ==> P t1' (C n2)、
+       H2 : C n1 ==> t1'
        これはコンストラクトできない（矛盾） *)
     + now inversion H2.                (* 矛盾は inversion で消す！ *)
     (* ST_Plus2 の場合、
-       Hy2 : P (C n1) (C n2) ==> P (C n1) t2'、
+       H2 : C n2 ==> t2'
        これはコンストラクトできない（矛盾） *)
     + now inversion H2.                (* 矛盾は inversion で消す！ *)
       
@@ -209,6 +211,7 @@ Proof.
      *)
     + now rewrite <- (IHHy1 t2').       (* generalize dependent y2. *)
 Qed.          
+
 
 Theorem step_deterministic' : deterministic step.
 Proof.
@@ -293,15 +296,13 @@ fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
 Lemma value_is_nf : forall v,
   value v -> normal_form step v.
 Proof.
-  unfold normal_form. (* ゴールがDefineされたデータ型の場合 *)
+  unfold normal_form. (* ゴールが Define されたものの場合 *)
   intros v H.         (* ゴールに ∀や->がある場合。ただし、やりすぎに注意 *)
   destruct H.         (* 前提がデータ型のとき、帰納的でないなら場合分けする。 *)
   intro contra.       (* ゴールが否定のとき。引数の無い intros ではだめ。 *)
   destruct contra.    (* 前提が exists のとき *)
   easy.               (* 前提が矛盾（コンストラクトできない）場合 *) (* inversion H. *)
 Qed.
-
-(* inversion が矛盾を生成することを補足すること。 *)
 
 Lemma l_strong_progress__nf_is_value : forall t,
     (value t \/ (exists t', t ==> t')) -> normal_form step t -> value t.
@@ -332,7 +333,31 @@ Proof.
   - now apply value_is_nf.
 Qed.
 
+(*
+なぜこれが興味深いのでしょう？ 2つの理由があります:
+
+なぜならvalue(値)は構文的概念です。つまり項の形を見ることで定義されま
+す。一方normal_form(正規形)は意味論的なものです。 つまり項がどのように
+ステップを進むかによって定義されます。 この2つの概念が一致することは自
+明ではないのです!
+
+実際、正規形と値の概念が一致「しない」言語はたくさん存在します。
+*)
+             
 (* END *)
+
+(*
+Home The Coq Proof Assistant Chapter 8  Tactics
+
+8.8.5  easy
+
+This tactic tries to solve the current goal by a number of standard closing steps.
+In particular, it tries to close the current goal using the closing tactics trivial, reflexivity, symmetry, contradiction and inversion of hypothesis. (略)
+
+Variant:
+now tactic
+Run tactic followed by easy. This is a notation for tactic; easy.
+ *)
 
 (*
 まじかんと さんのページから：
