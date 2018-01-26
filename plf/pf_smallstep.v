@@ -175,41 +175,45 @@ Proof.
     (* ST_Plus1 の場合、
        H2 : C n1 ==> t1'
        これはコンストラクトできない（矛盾） *)
-    + now inversion H2.                (* 矛盾は inversion で消す！ *)
+    + inversion H2.                    (* 矛盾は inversion で消す！ *)
     (* ST_Plus2 の場合、
        H2 : C n2 ==> t2'
        これはコンストラクトできない（矛盾） *)
-    + now inversion H2.                (* 矛盾は inversion で消す！ *)
+    + inversion H2.                    (* 矛盾は inversion で消す！ *)
       
   - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
     (*  ST_PlusConstConst の場合、
         H1 : C n1 ==> t1'
         これはコンストラクトできない（矛盾） *)
-    + now inversion H1.                (* 矛盾は inversion で消す！ *)
+    + inversion H1.                    (* 矛盾は inversion で消す！ *)
     (* ST_Plus1 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P t1' t2 = P t1'0 t2
     *)
-    + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
+    + rewrite <- (IHHy1 t1'0).          (* generalize dependent y2. *)
+      * reflexivity.
+      * apply H3.
     (* ST_Plus2 の場合、
        H1 : C n1 ==> t1'
        これはコンストラクトできない（矛盾） *)
-    + now inversion H1.                    (* 矛盾は inversion で消す！ *)
-
+    + inversion H1.                    (* 矛盾は inversion で消す！ *)
+      
   - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
     (*  ST_PlusConstConst の場合、
        H1 : C n2 ==> t2
        これはコンストラクトできない（矛盾） *)
-    + now inversion H1.                    (* 矛盾は inversion で消す！ *)
+    + inversion H1.                    (* 矛盾は inversion で消す！ *)
     (* ST_Plus1 の場合、
        H3 : C n ==> t1'0
        これはコンストラクトできない（矛盾） *)
-    + now inversion H3.                    (* 矛盾は inversion で消す！ *)
+    + inversion H3.                    (* 矛盾は inversion で消す！ *)
     (* ST_Plus2 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P (C n) t2 = P (C n) t2'
      *)
-    + now rewrite <- (IHHy1 t2').       (* generalize dependent y2. *)
+    + rewrite <- (IHHy1 t2').           (* generalize dependent y2. *)
+      * reflexivity.
+      * apply H3.
 Qed.          
 
 
@@ -343,8 +347,30 @@ Qed.
 
 実際、正規形と値の概念が一致「しない」言語はたくさん存在します。
 *)
-             
-(* END *)
+
+(* 参考 *)
+
+(*
+inversion について：
+
+http://proofcafe.org/sf/Poly_J.html#lab114
+https://softwarefoundations.cis.upenn.edu/lf-current/Tactics.html#lab136
+
+tmyma さんのページ
+http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-of.html
+ *)
+
+(*
+定石集：
+
+まじかんと さんのページから
+
+証明事例集: 前提が……のとき
+https://magicant.github.io/programmingmemo/coq/byhyp.html
+
+証明事例集: ゴールが……のとき
+https://magicant.github.io/programmingmemo/coq/bygoal.html
+ *)
 
 (*
 Home The Coq Proof Assistant Chapter 8  Tactics
@@ -359,13 +385,4 @@ now tactic
 Run tactic followed by easy. This is a notation for tactic; easy.
  *)
 
-(*
-まじかんと さんのページから：
-
-証明事例集: 前提が……のとき
-https://magicant.github.io/programmingmemo/coq/byhyp.html
-
-証明事例集: ゴールが……のとき
-https://magicant.github.io/programmingmemo/coq/bygoal.html
- *)
-
+(* END *)
