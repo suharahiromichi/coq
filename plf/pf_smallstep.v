@@ -356,9 +356,29 @@ inversion について：
 http://proofcafe.org/sf/Poly_J.html#lab114
 https://softwarefoundations.cis.upenn.edu/lf-current/Tactics.html#lab136
 
-tmyma さんのページ
+tmiya さんのページ
 http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-of.html
  *)
+
+(* step_deterministic は step に対して inversion を行っている。 *)
+(* 以下は、 tm に対して inversion を行う例である。 *)
+
+Goal forall n1 n2 n3 n4, P (C n1) (C n2) = P (C n3) (C n4) -> n1 = n3 /\ n2 = n4.
+Proof.
+  intros n1 n2 n3 n4 H.
+  inversion H.
+  (* Hにおけるコンストラクタの単射性から、前提に等式が追加される。 *)
+  split.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+Goal forall n1 n2 n3, P (C n1) (C n2) = C n3 -> False.
+Proof.
+  intros n1 n2 n3 H.
+  (* コンストラクタの単射性から、Hは矛盾なので、ゴールの証明が終了する。 *)
+  inversion H.
+Qed.
 
 (*
 定石集：
