@@ -49,7 +49,7 @@ Check evalF test : nat.
 Compute evalF test.    (* = 42 : nat *)
 
 (* small-step *)
-
+We are not actually go
 (* 導入された公理 *)
 Check ST_PlusConstConst :
   forall n1 n2, (P (C n1) (C n2) ==> C (n1 + n2)).
@@ -71,6 +71,13 @@ Small-stepのひとつのステップでやっていること：
 
 「==>」の左辺の、最も左（で最も深いところ）にある 「P (C n1) (C n2)」を探す。
 これを 「C (n1 + n2)」 に書き換えたものを「==>」の右辺とする。
+
+読み方：stepの定義は、「->」 を逆向きみ見ていく。
+左側優先深さ優先で検索し(ST_Plus1)、
+P の第一引数が定数(C n1)になったら、第二引数を見ていって(PT_Plus2)、
+両方の引数が定数になったら、定数に書き換える(ST_PlusConstConst)。
+
+比較：Concurrent Imp の PAR c1 with c2 END。
 *)
 
 Goal test ==> (P (P (C 1) (C 5))
