@@ -51,7 +51,7 @@ Check P : tm -> tm -> tm.
 (** tm の例 *)
 (* 1 + (2 + 3)) + (11 + (12 + 13)) *)
 Definition sample := (P (P (C 1) (P (C 2) (C 3)))
-                      (P (C 11) (P (C 12) (C 13)))) : tm.
+                        (P (C 11) (P (C 12) (C 13)))) : tm.
 
 (** * big-step evaluator *)
 Check evalF : tm -> nat.                    (* 関数 *)
@@ -135,21 +135,31 @@ Concurrent Imp の PAR c1 with c2 END の定義と比較してみてください
 以下はうまくいかない例：
  *)
 (**
-最も左でなければならない。
- *)
-Goal sample ==> (P (P (C 1) (P (C 2) (C 3)))
-                   (P (C 11) (C 25))).
-Proof.
-  admit.                                    (* OK. *)
-Admitted.
-
-(**
 2回分はできない。
  *)
 Goal sample ==> (P (C 6)
                    (P (C 11) (P (C 12) (C 13)))).
 Proof.
   constructor.
+  admit.                                    (* OK. *)
+Admitted.
+
+(** 前の例の結果を使って、2回に分ければできる。  *)
+Goal (P (P (C 1) (C 5))
+        (P (C 11) (P (C 12) (C 13))))       (* 前の例の結果 *)
+     ==>
+     (P (C 6)
+        (P (C 11) (P (C 12) (C 13)))).
+  constructor.
+  constructor.
+Qed.
+
+(**
+最も左でなければならない。
+ *)
+Goal sample ==> (P (P (C 1) (P (C 2) (C 3)))
+                   (P (C 11) (C 25))).
+Proof.
   admit.                                    (* OK. *)
 Admitted.
 
@@ -167,22 +177,46 @@ End PF_SimpleArith1.
 (** ProofCafe ##73 2018/02/17 予定 *)
 (** * Relations *)
 
+(** 概要：
+
+1. Relations（二項関係）
+stepが決定的な二項関係であることの証明、inversionタクティクを使う。
+
+2. Values（値）
+
+3. Strong Progress and Normal Form
+stepが強進行性（正規形がある）ことの証明、Coqの定石タクティクを使う。
+ *)
+
 Module PF_SimpleArith2.
 Import PF_SimpleArith1.
 Import SimpleArith1.
 
-(** 二項関係 R が決定的である、という命題 *)
+(** * 二項関係 *)
+
+(** 二項関係 R が決定的であるという命題 *)
 Check @deterministic : forall X : Type, relation X -> Prop.
+(** ここで、relation tm に step が渡される。 *)
+
+Print deterministic.
+(** = 
+fun (X : Type) (R : relation X) =>
+forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2 *)
 
 (**
-二項関係が決定的 <-> 二項関係は部分関数 partial function である。 
-なぜなら、 R x y が決定的ならxに対してyが唯一決まるので関数っぽいけれども、
+補足説明：
+
+二項関係が決定的である。 <-> 二項関係は部分関数 partial function である。 
+
+R x y が決定的ならxに対してyが唯一決まるので関数っぽいけれども、
 任意のxに対してyが決まるとは限らないので、部分関数である。
 
 なお、任意のxに対してyが決まる全域関数は、部分関数の一種である。
 *)
 
-(** inversion を使う典型的な証明 *)
+(** ** step が決定的であることの証明 *)
+
+(** inversion を使う典型的な証明。オリジナルと同内容である。 *)
 
 Theorem step_deterministic'' : deterministic step.
 Proof.
@@ -190,6 +224,7 @@ Proof.
   intros x y1 y2 Hy1 Hy2.
   generalize dependent y2.
   
+  (** 0. Hy1 にコンストラクタを逆に適用する。 *)
   induction Hy1 as [|t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2.
   (**
   Hy1 : x ==> y1 をコンストラクタで場合分けしたものが、Hy2 である。
@@ -212,62 +247,83 @@ Proof.
  *)
   
 (**
+[[
    Hy2 : P (C n1) (C n2) ==> y2
   ============================
    C (n1 + n2) = y2
+]]
 *)
-  - inversion Hy2; subst.   (** Hy2 にコンストラクタを逆に適用する。 *)
-    (** ST_PlusConstConst の場合、
+  (** 1. Hy2 にコンストラクタを逆に適用する。 *)
+  - inversion Hy2; subst.
+    
+    (** 1.1 ST_PlusConstConst の場合、
        Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
        y2 = C (n1 + n2),
        Goal : C (n1 + n2) = C (n1 + n2)
      *)
     + reflexivity.
-    (** ST_Plus1 の場合、
-       H2 : C n1 ==> t1'
-       これはコンストラクトできない（矛盾） *)
-    + inversion H2.                    (** 矛盾は inversion で消す！ *)
-    (** ST_Plus2 の場合、
-       H2 : C n2 ==> t2'
-       これはコンストラクトできない（矛盾） *)
-    + inversion H2.                    (** 矛盾は inversion で消す！ *)
       
-  - inversion Hy2; subst.   (** Hy2 にコンストラクタを逆に適用する。 *)
-    (**  ST_PlusConstConst の場合、
+    (** 1.2 ST_Plus1 の場合、
+       H2 : C n1 ==> t1'
+       これはコンストラクトできない（矛盾）。
+       矛盾は inversion で消す！ *)
+    + inversion H2.
+      
+    (** 1.3 ST_Plus2 の場合、
+       H2 : C n2 ==> t2'
+       これはコンストラクトできない（矛盾）。
+       矛盾は inversion で消す！ *)
+    + inversion H2.
+      
+  (** 2. Hy2 にコンストラクタを逆に適用する。 *)
+  - inversion Hy2; subst.
+    
+    (** 2.1 ST_PlusConstConst の場合、
         H1 : C n1 ==> t1'
-        これはコンストラクトできない（矛盾） *)
-    + inversion H1.                    (** 矛盾は inversion で消す！ *)
-    (** ST_Plus1 の場合、
+        これはコンストラクトできない（矛盾）。 *)
+    (** 矛盾は inversion で消す！ *)
+    + inversion H1.
+      
+    (** 2.2 ST_Plus1 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P t1' t2 = P t1'0 t2
     *)
-    + rewrite <- (IHHy1 t1'0).          (** generalize dependent y2. *)
+    (** generalize dependent y2 したのを活用する。 *)
+    + rewrite <- (IHHy1 t1'0).
       * reflexivity.
       * apply H3.
-    (** ST_Plus2 の場合、
+    (** 2.3 ST_Plus2 の場合、
        H1 : C n1 ==> t1'
-       これはコンストラクトできない（矛盾） *)
-    + inversion H1.                    (** 矛盾は inversion で消す！ *)
+       これはコンストラクトできない（矛盾）。 *)
+    (** 矛盾は inversion で消す！ *)
+    + inversion H1.
       
-  - inversion Hy2; subst.   (** Hy2 にコンストラクタを逆に適用する。 *)
-    (**  ST_PlusConstConst の場合、
+  (** 3. Hy2 にコンストラクタを逆に適用する。 *)
+  - inversion Hy2; subst.
+    
+    (** 3.1 ST_PlusConstConst の場合、
        H1 : C n2 ==> t2
-       これはコンストラクトできない（矛盾） *)
-    + inversion H1.                    (** 矛盾は inversion で消す！ *)
-    (** ST_Plus1 の場合、
+       これはコンストラクトできない（矛盾）。 *)
+    (** 矛盾は inversion で消す！ *)
+    + inversion H1.
+      
+    (** 3.2 ST_Plus1 の場合、
        H3 : C n ==> t1'0
-       これはコンストラクトできない（矛盾） *)
-    + inversion H3.                    (** 矛盾は inversion で消す！ *)
-    (** ST_Plus2 の場合、
+       これはコンストラクトできない（矛盾）。 *)
+    (** 矛盾は inversion で消す！ *)
+    + inversion H3.
+      
+    (** 3.3 ST_Plus2 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P (C n) t2 = P (C n) t2'
      *)
-    + rewrite <- (IHHy1 t2').           (** generalize dependent y2. *)
+    (** generalize dependent y2 したのを活用する。 *)
+    + rewrite <- (IHHy1 t2').
       * reflexivity.
       * apply H3.
 Qed.          
 
-
+(** now と easy を使う。 *)
 Theorem step_deterministic' : deterministic step.
 Proof.
   unfold deterministic.
@@ -280,12 +336,12 @@ Proof.
     + easy.
   - inversion Hy2; subst.
     + easy.
-    + now rewrite <- (IHHy1 t1'0).      (** generalize dependent y2. *)
+    + now rewrite <- (IHHy1 t1'0).
     + easy.
   - inversion Hy2; subst.
     + easy.
     + easy.
-    + now rewrite <- (IHHy1 t2'0).      (** generalize dependent y2. *)
+    + now rewrite <- (IHHy1 t2'0).
 Qed.
 
 Theorem step_deterministic : deterministic step.
@@ -301,16 +357,14 @@ Qed.
 
 End PF_SimpleArith2.
 
-(** ================================================================= *)
-(** ** Values *)
+(** * Values *)
 
 (** redo_determinism のヒント：
    value はひとつだけだが、コンストラクタ v_const を持つ。
    それが前提にあるならば、場合分けをする必要がある。
 *)
 
-(** ================================================================= *)
-(** ** Strong Progress and Normal Forms *)
+(** * Strong Progress and Normal Forms *)
 
 (** 強進行性 *)
 Theorem strong_progress : forall t : tm,
