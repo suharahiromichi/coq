@@ -323,7 +323,9 @@ Proof.
       * apply H3.
 Qed.          
 
-(** now と easy を使う。 *)
+(** now と easy を使う例。 *)
+(** Home The Coq Proof Assistant Chapter 8 Tactics 8.8.5 easy *)
+(** https://coq.inria.fr/refman/tactics.html#hevea_tactic166 *)
 Theorem step_deterministic' : deterministic step.
 Proof.
   unfold deterministic.
@@ -344,6 +346,7 @@ Proof.
     + now rewrite <- (IHHy1 t2'0).
 Qed.
 
+(** さらに短くした例。 *)
 Theorem step_deterministic : deterministic step.
 Proof.
   unfold deterministic.
@@ -357,16 +360,85 @@ Qed.
 
 End PF_SimpleArith2.
 
+(** ** inversion について *)
+
+(**
+- http://proofcafe.org/sf/Poly_J.html#lab114
+- https://softwarefoundations.cis.upenn.edu/lf-current/Tactics.html#lab136
+
+「任意のコンストラクタは単射であること、また、コンストラクタどうしは互いに素であること。」
+ *)
+
+(** step_deterministic は step に対して inversion を行っている。 *)
+(** 以下は、 tm に対して inversion を行う例である。 *)
+
+Goal forall n1 n2 n3 n4, P (C n1) (C n2) = P (C n3) (C n4) -> n1 = n3 /\ n2 = n4.
+Proof.
+  intros n1 n2 n3 n4 H.
+  inversion H.
+  (** Hにおけるコンストラクタの単射性から、前提に等式が追加される。 *)
+  split.
+  - reflexivity.
+  - reflexivity.
+Qed.
+
+Goal forall n1 n2 n3, P (C n1) (C n2) = C n3 -> False.
+Proof.
+  intros n1 n2 n3 H.
+  (** コンストラクタの単射性から、Hは矛盾なので、ゴールの証明が終了する。 *)
+  inversion H.
+Qed.
+
+(** おまけ。 *)
+(** 順番が前後するが、λx.(x x) に型がつかないことを言うには、
+型が有限性から、xの型 T1 -> T2 が T1 にひとしくないことを使う。
+より一般的に、(Inductiveで定義された）コンストラクタの有限性を証明できないだろうか。
+*)
+(** 参考： TAPL 解答 9.3.2 *)
+Goal forall tm1 tm2, P tm1 tm2 = tm1 -> False.
+Proof.
+  intros tm1 tm2 H.
+  induction tm1.
+  - easy.
+  - inversion H.
+    rewrite H1 in *.
+    easy.
+Qed.
+
+
 (** * Values *)
 
-(** redo_determinism のヒント：
+(** Exercise: redo_determinism のヒント：
    value はひとつだけだが、コンストラクタ v_const を持つ。
    それが前提にあるならば、場合分けをする必要がある。
 *)
 
 (** * Strong Progress and Normal Forms *)
+(**
+概要：
 
-(** 強進行性 *)
+(1) step (==>) が強進行性を満たすとの証明。strong_progress
+
+(2) tが正規形であるとは、t ==> t' なる t'が存在しない（もうstepできない）ことをいう。
+
+(3) 値なら正規形である。value_is_nf
+
+(4) 正規形なら値である。nf_is_value
+
+(5) (3)(4)より、値と正規形は同じである。
+*)
+
+(** ** step(==>)が強進行性であることの証明 *)
+
+(** 任意の項 t は、値であるか、別の項 t' にstepできる。
+これを「強」進行性とよぶのは、型を考慮する場合(Types.v)、
+型の付かない項は値でないがstepできない、ということと区別するため。
+ *)
+
+(** オリジナルは、あいかわらずinversionだけで解いているが、inversionを使わなくても証明できる。
+inversionを使うことの是非については議論しないが、ここでは、Coqの定石の説明する。
+ *)
+
 Theorem strong_progress : forall t : tm,
     value t \/ (exists t', t ==> t').
 Proof.
@@ -392,7 +464,7 @@ Proof.
       now apply ST_Plus1.
 Qed.
 
-(** 正規形 *)
+(** ** 正規形 *)
 Print normal_form.
 (**                                        not
 fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
@@ -400,8 +472,9 @@ fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
  *)
 
 (** R には step（==>）を渡すなら、
-正規形 t は、t ==> t' なる t'が存在しない（もうstepできない）。 *)
+tが正規形であるとは、t ==> t' なる t'が存在しない（もうstepできない）ことをいう。 *)
 
+(** ** 値なら正規形であることの証明 *)
 Lemma value_is_nf : forall v,
   value v -> normal_form step v.
 Proof.
@@ -413,6 +486,8 @@ Proof.
   easy.               (** 前提が矛盾（コンストラクトできない）場合 *) (** inversion H. *)
 Qed.
 
+(** ** 正規形なら値であることの証明 *)
+(** オリジナルは、assert を使っているが、わかりやすく補題として外に出した。  *)
 Lemma l_strong_progress__nf_is_value : forall t,
     (value t \/ (exists t', t ==> t')) -> normal_form step t -> value t.
 Proof.
@@ -434,6 +509,7 @@ Proof.
   apply strong_progress.
 Qed.
 
+(** ** 値と正規形は同じである。 *)
 Corollary nf_same_as_value : forall t,
   normal_form step t <-> value t.
 Proof.
@@ -443,7 +519,7 @@ Proof.
 Qed.
 
 (**
-なぜこれが興味深いのでしょう？ 2つの理由があります:
+なぜ、値と正規形が同じあることが興味深いのでしょう？ 2つの理由があります:
 
 なぜならvalue(値)は構文的概念です。つまり項の形を見ることで定義されま
 す。一方normal_form(正規形)は意味論的なものです。 つまり項がどのように
@@ -453,73 +529,20 @@ Qed.
 実際、正規形と値の概念が一致「しない」言語はたくさん存在します。
 *)
 
-(** 参考 *)
-
-(**
-inversion について：
-
-http://proofcafe.org/sf/Poly_J.html#lab114
-https://softwarefoundations.cis.upenn.edu/lf-current/Tactics.html#lab136
-
-tmiya さんのページ
-http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-of.html
- *)
-
-(** step_deterministic は step に対して inversion を行っている。 *)
-(** 以下は、 tm に対して inversion を行う例である。 *)
-
-Goal forall n1 n2 n3 n4, P (C n1) (C n2) = P (C n3) (C n4) -> n1 = n3 /\ n2 = n4.
-Proof.
-  intros n1 n2 n3 n4 H.
-  inversion H.
-  (** Hにおけるコンストラクタの単射性から、前提に等式が追加される。 *)
-  split.
-  - reflexivity.
-  - reflexivity.
-Qed.
-
-Goal forall n1 n2 n3, P (C n1) (C n2) = C n3 -> False.
-Proof.
-  intros n1 n2 n3 H.
-  (** コンストラクタの単射性から、Hは矛盾なので、ゴールの証明が終了する。 *)
-  inversion H.
-Qed.
-
-(** おまけ。 *)
-(** 参考： TAPL 解答 9.3.2 *)
-Goal forall tm1 tm2, P tm1 tm2 = tm2 -> False.
-Proof.
-  intros tm1 tm2 H.
-  induction tm2.
-  - easy.
-  - inversion H.
-    rewrite H1 in *.
-    easy.
-Qed.
-
 (**
 定石集：
 
-まじかんと さんのページから
+まじかんと さんのページから：
 
 証明事例集: 前提が……のとき
 https://magicant.github.io/programmingmemo/coq/byhyp.html
 
 証明事例集: ゴールが……のとき
 https://magicant.github.io/programmingmemo/coq/bygoal.html
- *)
 
-(**
-Home The Coq Proof Assistant Chapter 8  Tactics
-
-8.8.5  easy
-
-This tactic tries to solve the current goal by a number of standard closing steps.
-In particular, it tries to close the current goal using the closing tactics trivial, reflexivity, symmetry, contradiction and inversion of hypothesis. (略)
-
-Variant:
-now tactic
-Run tactic followed by easy. This is a notation for tactic; easy.
+tmiyaさんんページから：
+http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-apply-1-of-25.html
+http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-of.html
  *)
 
 (** END *)
