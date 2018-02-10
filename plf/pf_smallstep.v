@@ -1,18 +1,20 @@
-(* ProofCafe SF/PLF Support Page *)
-(* Smallstep.v *)
+(** ProofCafe SF/PLF Support Page *)
+(** Smallstep.v *)
 
-(*
-これは、ProofCafe の Software Foundations, Vol.2 Programming Language Foundations の
-勉強会のサポートページです。復習などに利用しててください。
+(**
+これは、「Software Foundations, Vol.2 Programming Language Foundations」 の
+勉強会（ProofCafe）のサポートページです。復習などに利用しててください。
 
 本ファイルの実行は、本ファイルを pfl ディレクトリの中に混ぜて置くか、
 pfl のオリジナルの適当なファイルの適当な場所にcopy&pasteすることで可能です。
  *)
 
-(* ご注意：
+(** ご注意：
 
 1. 実際の勉強会は、本ファイルではなく、オリジナルのファイルを直接編集・実行しておこないます。
+
 2. 本ファイルには、演習問題の答えは含まれません。
+
 *)
 
 Require Import Coq.Arith.Arith.
@@ -24,33 +26,68 @@ Require Import Maps.
 Require Import Imp. 
 Require Import Smallstep.
 
-(* ProofCafe #72 2018/01/20 *)
-
 (* ################################################################# *)
+(** ProofCafe ##72 2018/01/20 *)
 (** * A Toy Language *)
+
+(** 概要：
+
+1. 定数と加算だけあるおもちゃの言語を定義する。この項をtmとする。
+
+2. big-step style の評価器(evaluator)の定義。evalF。
+
+3. big-step style の評価関係(evaluation releation)。eval (\\)
+
+4. small-step style の評価関係(evaluation releation)。step (==>)
+ *)
 
 Module PF_SimpleArith1.
 Import SimpleArith1.
 
-(* tm 型のコンストラクタ *)
+(** * おもちゃの言語のコンストラクタ *)
 Check C : nat -> tm.
 Check P : tm -> tm -> tm.
 
-(* tm の例 *)
-Check (P (P (C 1) (P (C 2) (C 3)))
-         (P (C 11) (P (C 12) (C 13)))) : tm. (* tm 型として正しい。 *)
+(** tm の例 *)
+(* 1 + (2 + 3)) + (11 + (12 + 13)) *)
+Definition sample := (P (P (C 1) (P (C 2) (C 3)))
+                      (P (C 11) (P (C 12) (C 13)))) : tm.
 
-Definition test := (P (P (C 1) (P (C 2) (C 3)))
-                      (P (C 11) (P (C 12) (C 13)))).
+(** * big-step evaluator *)
+Check evalF : tm -> nat.                    (* 関数 *)
 
-(* big-step *)
-Print evalF.                                (* evalF の定義 *)
-Check evalF test : nat.
-Compute evalF test.    (* = 42 : nat *)
+(** 例 *)
+Compute evalF sample.                       (* = 42 : nat *)
 
-(* small-step *)
-We are not actually go
-(* 導入された公理 *)
+(** * big-step evaluation relation *)
+Check eval : tm -> nat -> Prop.
+
+(** 導入した公理 *)
+Check E_Const : forall n : nat, C n \\ n.
+Check E_Plus : forall (t1 t2 : tm) (n1 n2 : nat),
+    t1 \\ n1 -> t2 \\ n2 -> P t1 t2 \\ (n1 + n2).
+
+(** 例 *)
+Goal sample \\ 42.
+Proof.
+  unfold sample.
+  apply E_Plus with (n1 := 6) (n2 := 36).
+  - apply E_Plus with (n1 := 1) (n2 := 5).
+    + now apply E_Const.
+    + apply E_Plus with (n1 := 2) (n2 := 3).
+      * now apply E_Const.
+      * now apply E_Const.
+  - apply E_Plus with (n1 := 11) (n2 := 25).
+    + now apply E_Const.
+    + apply E_Plus with (n1 := 12) (n2 := 13).
+      * now apply E_Const.
+      * now apply E_Const.
+Qed.
+
+(** * small-step evaluation relation *)
+Check step : tm -> tm -> Prop.
+
+(** 導入した公理 *)
 Check ST_PlusConstConst :
   forall n1 n2, (P (C n1) (C n2) ==> C (n1 + n2)).
 Check ST_Plus1 :
@@ -59,29 +96,9 @@ Check ST_Plus2 :
   forall (n1 : nat) (t2 t2' : tm),
     t2 ==> t2' -> P (C n1) t2 ==> P (C n1) t2'.
 
-Check test ==> (P (P (C 1) (C 5))
-                  (P (C 11) (P (C 12) (C 13)))).
-
-Compute test ==> (P (P (C 1) (C 5))
-                  (P (C 11) (P (C 12) (C 13)))).
-
-
-(*
-Small-stepのひとつのステップでやっていること：
-
-「==>」の左辺の、最も左（で最も深いところ）にある 「P (C n1) (C n2)」を探す。
-これを 「C (n1 + n2)」 に書き換えたものを「==>」の右辺とする。
-
-読み方：stepの定義は、「->」 を逆向きみ見ていく。
-左側優先深さ優先で検索し(ST_Plus1)、
-P の第一引数が定数(C n1)になったら、第二引数を見ていって(PT_Plus2)、
-両方の引数が定数になったら、定数に書き換える(ST_PlusConstConst)。
-
-比較：Concurrent Imp の PAR c1 with c2 END。
-*)
-
-Goal test ==> (P (P (C 1) (C 5))
-                 (P (C 11) (P (C 12) (C 13)))).
+(** 例 *)
+Goal sample ==> (P (P (C 1) (C 5))
+                   (P (C 11) (P (C 12) (C 13)))).
 Proof.
   constructor.
   constructor.
@@ -94,43 +111,70 @@ Proof.
   apply ST_PlusConstConst.
 Qed.
 
-(*
+(** 補足説明：
+
+Small-stepのひとつのステップでやっていること：
+
+- 「==>」の左辺の、最も左（で最も深いところ）にある 「P (C n1) (C n2)」を探す。
+- これを 「C (n1 + n2)」 に書き換えたものを「==>」の右辺とする。
+
+
+stepの定義の読み方：
+
+stepの定義は、「->」 を逆向きみ見ていく。
+- 左側優先深さ優先で検索し(ST_Plus1)、
+- P の第一引数が定数(C n1)になったら、第二引数を見ていって(PT_Plus2)、
+- 両方の引数が定数になったら、定数に書き換える(ST_PlusConstConst)。
+
+
+余力があれば、本章の終わりにある、 
+Concurrent Imp の PAR c1 with c2 END の定義と比較してみてください。
+*)
+
+(**
 以下はうまくいかない例：
  *)
-(*
+(**
 最も左でなければならない。
  *)
-Goal test ==> (P (P (C 1) (P (C 2) (C 3)))
-                 (P (C 11) (C 25))).
+Goal sample ==> (P (P (C 1) (P (C 2) (C 3)))
+                   (P (C 11) (C 25))).
 Proof.
   admit.                                    (* OK. *)
 Admitted.
 
-(*
+(**
 2回分はできない。
  *)
-Goal test ==> (P (C 6)
-                 (P (C 11) (P (C 12) (C 13)))).
+Goal sample ==> (P (C 6)
+                   (P (C 11) (P (C 12) (C 13)))).
 Proof.
   constructor.
   admit.                                    (* OK. *)
 Admitted.
 
+(**
+当然、できない。
+*)
+Goal sample ==> (C 42).
+Proof.
+  admit.                                    (* OK. *)
+Admitted.
+  
 End PF_SimpleArith1.
 
-(* ProofCafe #73 2018/02/17 予定 *)
-
 (* ################################################################# *)
+(** ProofCafe ##73 2018/02/17 予定 *)
 (** * Relations *)
 
 Module PF_SimpleArith2.
 Import PF_SimpleArith1.
 Import SimpleArith1.
 
-(* 二項関係 R が決定的である、という命題 *)
+(** 二項関係 R が決定的である、という命題 *)
 Check @deterministic : forall X : Type, relation X -> Prop.
 
-(*
+(**
 二項関係が決定的 <-> 二項関係は部分関数 partial function である。 
 なぜなら、 R x y が決定的ならxに対してyが唯一決まるので関数っぽいけれども、
 任意のxに対してyが決まるとは限らないので、部分関数である。
@@ -138,7 +182,7 @@ Check @deterministic : forall X : Type, relation X -> Prop.
 なお、任意のxに対してyが決まる全域関数は、部分関数の一種である。
 *)
 
-(* inversion を使う典型的な証明 *)
+(** inversion を使う典型的な証明 *)
 
 Theorem step_deterministic'' : deterministic step.
 Proof.
@@ -147,7 +191,7 @@ Proof.
   generalize dependent y2.
   
   induction Hy1 as [|t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2.
-  (*
+  (**
   Hy1 : x ==> y1 をコンストラクタで場合分けしたものが、Hy2 である。
   
 
@@ -167,58 +211,58 @@ Proof.
     ゴールは P v1 t2' = y2
  *)
   
-(*
+(**
    Hy2 : P (C n1) (C n2) ==> y2
   ============================
    C (n1 + n2) = y2
 *)
-  - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
-    (* ST_PlusConstConst の場合、
+  - inversion Hy2; subst.   (** Hy2 にコンストラクタを逆に適用する。 *)
+    (** ST_PlusConstConst の場合、
        Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
        y2 = C (n1 + n2),
        Goal : C (n1 + n2) = C (n1 + n2)
      *)
     + reflexivity.
-    (* ST_Plus1 の場合、
+    (** ST_Plus1 の場合、
        H2 : C n1 ==> t1'
        これはコンストラクトできない（矛盾） *)
-    + inversion H2.                    (* 矛盾は inversion で消す！ *)
-    (* ST_Plus2 の場合、
+    + inversion H2.                    (** 矛盾は inversion で消す！ *)
+    (** ST_Plus2 の場合、
        H2 : C n2 ==> t2'
        これはコンストラクトできない（矛盾） *)
-    + inversion H2.                    (* 矛盾は inversion で消す！ *)
+    + inversion H2.                    (** 矛盾は inversion で消す！ *)
       
-  - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
-    (*  ST_PlusConstConst の場合、
+  - inversion Hy2; subst.   (** Hy2 にコンストラクタを逆に適用する。 *)
+    (**  ST_PlusConstConst の場合、
         H1 : C n1 ==> t1'
         これはコンストラクトできない（矛盾） *)
-    + inversion H1.                    (* 矛盾は inversion で消す！ *)
-    (* ST_Plus1 の場合、
+    + inversion H1.                    (** 矛盾は inversion で消す！ *)
+    (** ST_Plus1 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P t1' t2 = P t1'0 t2
     *)
-    + rewrite <- (IHHy1 t1'0).          (* generalize dependent y2. *)
+    + rewrite <- (IHHy1 t1'0).          (** generalize dependent y2. *)
       * reflexivity.
       * apply H3.
-    (* ST_Plus2 の場合、
+    (** ST_Plus2 の場合、
        H1 : C n1 ==> t1'
        これはコンストラクトできない（矛盾） *)
-    + inversion H1.                    (* 矛盾は inversion で消す！ *)
+    + inversion H1.                    (** 矛盾は inversion で消す！ *)
       
-  - inversion Hy2; subst.   (* Hy2 にコンストラクタを逆に適用する。 *)
-    (*  ST_PlusConstConst の場合、
+  - inversion Hy2; subst.   (** Hy2 にコンストラクタを逆に適用する。 *)
+    (**  ST_PlusConstConst の場合、
        H1 : C n2 ==> t2
        これはコンストラクトできない（矛盾） *)
-    + inversion H1.                    (* 矛盾は inversion で消す！ *)
-    (* ST_Plus1 の場合、
+    + inversion H1.                    (** 矛盾は inversion で消す！ *)
+    (** ST_Plus1 の場合、
        H3 : C n ==> t1'0
        これはコンストラクトできない（矛盾） *)
-    + inversion H3.                    (* 矛盾は inversion で消す！ *)
-    (* ST_Plus2 の場合、
+    + inversion H3.                    (** 矛盾は inversion で消す！ *)
+    (** ST_Plus2 の場合、
        IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2、帰納法
        Goal : P (C n) t2 = P (C n) t2'
      *)
-    + rewrite <- (IHHy1 t2').           (* generalize dependent y2. *)
+    + rewrite <- (IHHy1 t2').           (** generalize dependent y2. *)
       * reflexivity.
       * apply H3.
 Qed.          
@@ -236,12 +280,12 @@ Proof.
     + easy.
   - inversion Hy2; subst.
     + easy.
-    + now rewrite <- (IHHy1 t1'0).      (* generalize dependent y2. *)
+    + now rewrite <- (IHHy1 t1'0).      (** generalize dependent y2. *)
     + easy.
   - inversion Hy2; subst.
     + easy.
     + easy.
-    + now rewrite <- (IHHy1 t2'0).      (* generalize dependent y2. *)
+    + now rewrite <- (IHHy1 t2'0).      (** generalize dependent y2. *)
 Qed.
 
 Theorem step_deterministic : deterministic step.
@@ -257,62 +301,62 @@ Qed.
 
 End PF_SimpleArith2.
 
-(* ================================================================= *)
+(** ================================================================= *)
 (** ** Values *)
 
-(* redo_determinism のヒント：
+(** redo_determinism のヒント：
    value はひとつだけだが、コンストラクタ v_const を持つ。
    それが前提にあるならば、場合分けをする必要がある。
 *)
 
-(* ================================================================= *)
+(** ================================================================= *)
 (** ** Strong Progress and Normal Forms *)
 
-(* 強進行性 *)
+(** 強進行性 *)
 Theorem strong_progress : forall t : tm,
     value t \/ (exists t', t ==> t').
 Proof.
-  induction t.                      (* q t を証明したい命題とし、tで帰納する。 *)
-  - left.                           (* 帰納の底 q (C n) *)
+  induction t.                      (** q t を証明したい命題とし、tで帰納する。 *)
+  - left.                           (** 帰納の底 q (C n) *)
     now apply v_const.
-  - right.              (* 帰納の途中 : q t1 -> q t2 -> q (P t1 t2) *)
-    destruct IHt1 as [H11 | H12].         (* 選言を場合分けする。 *)
-    (* IHt1 の左側 *)
-    + destruct IHt2 as [H21 | H22].       (* 選言を場合分けする。 *)
-      (* IHt2 の左側 *)
-      * destruct H11 as [n1 H11'].        (* value を場合分けする。 *)
-        destruct H21 as [n2 H21'].        (* value を場合分けする。 *)
+  - right.              (** 帰納の途中 : q t1 -> q t2 -> q (P t1 t2) *)
+    destruct IHt1 as [H11 | H12].         (** 選言を場合分けする。 *)
+    (** IHt1 の左側 *)
+    + destruct IHt2 as [H21 | H22].       (** 選言を場合分けする。 *)
+      (** IHt2 の左側 *)
+      * destruct H11 as [n1 H11'].        (** value を場合分けする。 *)
+        destruct H21 as [n2 H21'].        (** value を場合分けする。 *)
         exists (C (n1 + n2)).
         now apply ST_PlusConstConst.
-      (* IHt2 の右側 *)
-      * destruct H22 as [t' H22'].       (* exists を場合分けする。 *)
+      (** IHt2 の右側 *)
+      * destruct H22 as [t' H22'].       (** exists を場合分けする。 *)
         exists (P t1 t').
         now apply ST_Plus2.
-    (* IHt1 の右側 *)
-    + destruct H12 as [t' H12'].         (* exists を場合分けする。 *)
+    (** IHt1 の右側 *)
+    + destruct H12 as [t' H12'].         (** exists を場合分けする。 *)
       exists (P t' t2).
       now apply ST_Plus1.
 Qed.
 
-(* 正規形 *)
+(** 正規形 *)
 Print normal_form.
-(*                                        not
+(**                                        not
 fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
      : forall X : Type, relation X -> X -> Prop
  *)
 
-(* R には step（==>）を渡すなら、
+(** R には step（==>）を渡すなら、
 正規形 t は、t ==> t' なる t'が存在しない（もうstepできない）。 *)
 
 Lemma value_is_nf : forall v,
   value v -> normal_form step v.
 Proof.
-  unfold normal_form. (* ゴールが Define されたものの場合 *)
-  intros v H.         (* ゴールに ∀や->がある場合。ただし、やりすぎに注意 *)
-  destruct H.         (* 前提がデータ型のとき、帰納的でないなら場合分けする。 *)
-  intro contra.       (* ゴールが否定のとき。引数の無い intros ではだめ。 *)
-  destruct contra.    (* 前提が exists のとき *)
-  easy.               (* 前提が矛盾（コンストラクトできない）場合 *) (* inversion H. *)
+  unfold normal_form. (** ゴールが Define されたものの場合 *)
+  intros v H.         (** ゴールに ∀や->がある場合。ただし、やりすぎに注意 *)
+  destruct H.         (** 前提がデータ型のとき、帰納的でないなら場合分けする。 *)
+  intro contra.       (** ゴールが否定のとき。引数の無い intros ではだめ。 *)
+  destruct contra.    (** 前提が exists のとき *)
+  easy.               (** 前提が矛盾（コンストラクトできない）場合 *) (** inversion H. *)
 Qed.
 
 Lemma l_strong_progress__nf_is_value : forall t,
@@ -320,12 +364,12 @@ Lemma l_strong_progress__nf_is_value : forall t,
 Proof.
   unfold normal_form.
   intros t G H.
-  destruct G.              (* 前提が \/ のとき、左右で場合分けする。 *)
-  (* 左側 *)
-  + easy.                   (* 前提がゴールと同じ。 *) (* apply H0. *)
-  (* 右側 *)
-  + easy.                         (* 矛盾した前提があるとき。 *)
-    (* exfalso. apply H. assumption. *) 
+  destruct G.              (** 前提が \/ のとき、左右で場合分けする。 *)
+  (** 左側 *)
+  + easy.                   (** 前提がゴールと同じ。 *) (** apply H0. *)
+  (** 右側 *)
+  + easy.                         (** 矛盾した前提があるとき。 *)
+    (** exfalso. apply H. assumption. *) 
 Qed.
 
 Lemma nf_is_value : forall t,
@@ -339,12 +383,12 @@ Qed.
 Corollary nf_same_as_value : forall t,
   normal_form step t <-> value t.
 Proof.
-  split.                                    (* ゴールが <-> のとき *)
+  split.                                    (** ゴールが <-> のとき *)
   - now apply nf_is_value.
   - now apply value_is_nf.
 Qed.
 
-(*
+(**
 なぜこれが興味深いのでしょう？ 2つの理由があります:
 
 なぜならvalue(値)は構文的概念です。つまり項の形を見ることで定義されま
@@ -355,9 +399,9 @@ Qed.
 実際、正規形と値の概念が一致「しない」言語はたくさん存在します。
 *)
 
-(* 参考 *)
+(** 参考 *)
 
-(*
+(**
 inversion について：
 
 http://proofcafe.org/sf/Poly_J.html#lab114
@@ -367,14 +411,14 @@ tmiya さんのページ
 http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-of.html
  *)
 
-(* step_deterministic は step に対して inversion を行っている。 *)
-(* 以下は、 tm に対して inversion を行う例である。 *)
+(** step_deterministic は step に対して inversion を行っている。 *)
+(** 以下は、 tm に対して inversion を行う例である。 *)
 
 Goal forall n1 n2 n3 n4, P (C n1) (C n2) = P (C n3) (C n4) -> n1 = n3 /\ n2 = n4.
 Proof.
   intros n1 n2 n3 n4 H.
   inversion H.
-  (* Hにおけるコンストラクタの単射性から、前提に等式が追加される。 *)
+  (** Hにおけるコンストラクタの単射性から、前提に等式が追加される。 *)
   split.
   - reflexivity.
   - reflexivity.
@@ -383,11 +427,23 @@ Qed.
 Goal forall n1 n2 n3, P (C n1) (C n2) = C n3 -> False.
 Proof.
   intros n1 n2 n3 H.
-  (* コンストラクタの単射性から、Hは矛盾なので、ゴールの証明が終了する。 *)
+  (** コンストラクタの単射性から、Hは矛盾なので、ゴールの証明が終了する。 *)
   inversion H.
 Qed.
 
-(*
+(** おまけ。 *)
+(** 参考： TAPL 解答 9.3.2 *)
+Goal forall tm1 tm2, P tm1 tm2 = tm2 -> False.
+Proof.
+  intros tm1 tm2 H.
+  induction tm2.
+  - easy.
+  - inversion H.
+    rewrite H1 in *.
+    easy.
+Qed.
+
+(**
 定石集：
 
 まじかんと さんのページから
@@ -399,7 +455,7 @@ https://magicant.github.io/programmingmemo/coq/byhyp.html
 https://magicant.github.io/programmingmemo/coq/bygoal.html
  *)
 
-(*
+(**
 Home The Coq Proof Assistant Chapter 8  Tactics
 
 8.8.5  easy
@@ -412,4 +468,4 @@ now tactic
 Run tactic followed by easy. This is a notation for tactic; easy.
  *)
 
-(* END *)
+(** END *)
