@@ -409,8 +409,8 @@ Qed.
 Goal forall n1 n2 n3, P (C n1) (C n2) = C n3 -> False.
 Proof.
   intros n1 n2 n3 H.
-  (** コンストラクタの単射性から、Hは矛盾なので、ゴールの証明が終了する。 *)
   inversion H.
+  (** コンストラクタは互いに素なので、Hは矛盾であり、ゴールの証明が終了する。 *)
 Qed.
 
 (** おまけ。 *)
