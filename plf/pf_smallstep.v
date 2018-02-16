@@ -222,10 +222,19 @@ Theorem step_deterministic'' : deterministic step.
 Proof.
   unfold deterministic.
   intros x y1 y2 Hy1 Hy2.
-  generalize dependent y2.
-  
+(**
+[[
+  Hy1 : x ==> y1
+  Hy2 : x ==> y2
+  ============================
+   y1 = y2
+]]
+*)
   (** 0. Hy1 にコンストラクタを逆に適用する。 *)
-  induction Hy1 as [|t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2'.
+  inversion Hy1 as [n1 n2 H1 H2 | t1 t1' t2 H1 IHHy1 H2 |n t1' t2 H1 IHHy1 H2].
+  Undo 1.
+  generalize dependent y2.
+  induction Hy1 as [n1 n2 | t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2'.
   (**
   ST_PlusConstConst の場合：
     Hy2' : P (C n1) (C n2) ==> y2
