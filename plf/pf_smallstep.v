@@ -94,7 +94,7 @@ Check ST_Plus1 :
   forall t1 t1' t2, (t1 ==> t1') -> (P t1 t2 ==> P t1' t2).
 Check ST_Plus2 :
   forall (n1 : nat) (t2 t2' : tm),
-    t2 ==> t2' -> P (C n1) t2 ==> P (C n1) t2'.
+    (t2 ==> t2') -> P (C n1) t2 ==> P (C n1) t2'.
 
 (** 例 *)
 Goal sample ==> (P (P (C 1) (C 5))
@@ -225,39 +225,36 @@ Proof.
   generalize dependent y2.
   
   (** 0. Hy1 にコンストラクタを逆に適用する。 *)
-  induction Hy1 as [|t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2.
+  induction Hy1 as [|t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2'.
   (**
-  Hy1 : x ==> y1 をコンストラクタで場合分けしたものが、Hy2 である。
-  
-
   ST_PlusConstConst の場合：
-    Hy2 : P (C n1) (C n2) ==> y2
-    x = P (C n1 n2) なので、
+    Hy2' : P (C n1) (C n2) ==> y2
+    x = P (C n1) (C n2) なので、
     ゴールは C (n1 + n2) = y2 である。
 
   ST_Plus1 の場合：
-    Hy2 : P t1 t2 ==> y2
+    Hy2' : P t1 t2 ==> y2
     x = P t1 t2 なので、
     ゴールは P t1' t2 = y2
 
   ST_Plus2 の場合 :
-    Hy2 : P v1 t2 ==> y2
-    x = P v1 t2 なので、
-    ゴールは P v1 t2' = y2
+    P (C n) t1' ==> y2
+    x = P (C n) t1' なので、
+    ゴールは P (C n) t2 = y2
  *)
-  
+
 (**
 [[
-   Hy2 : P (C n1) (C n2) ==> y2
+   Hy2' : P (C n1) (C n2) ==> y2
   ============================
    C (n1 + n2) = y2
 ]]
 *)
-  (** 1. Hy2 にコンストラクタを逆に適用する。 *)
-  - inversion Hy2; subst.
+  (** 1. Hy2' にコンストラクタを逆に適用する。 *)
+  - inversion Hy2'; subst.
     
     (** 1.1 ST_PlusConstConst の場合、
-       Hy2 : P (C n1) (C n2) ==> C (n1 + n2)
+       Hy2' : P (C n1) (C n2) ==> C (n1 + n2)
        y2 = C (n1 + n2),
        Goal : C (n1 + n2) = C (n1 + n2)
      *)
@@ -274,9 +271,18 @@ Proof.
        これはコンストラクトできない（矛盾）。
        矛盾は inversion で消す！ *)
     + inversion H2.
-      
-  (** 2. Hy2 にコンストラクタを逆に適用する。 *)
-  - inversion Hy2; subst.
+
+(**
+[[
+   H1 : t1 ==> t1'
+   IHHy1 : forall y2 : tm, t1 ==> y2 -> t1' = y2
+   Hy2' : P t1 t2 ==> y2
+  ============================
+   P t1' t2 = y2
+]]
+*)
+  (** 2. Hy2' にコンストラクタを逆に適用する。 *)
+  - inversion Hy2'; subst.
     
     (** 2.1 ST_PlusConstConst の場合、
         H1 : C n1 ==> t1'
@@ -298,8 +304,17 @@ Proof.
     (** 矛盾は inversion で消す！ *)
     + inversion H1.
       
-  (** 3. Hy2 にコンストラクタを逆に適用する。 *)
-  - inversion Hy2; subst.
+(**
+[[
+   H1 : t1' ==> t2
+   IHHy1 : forall y2 : tm, t1' ==> y2 -> t2 = y2
+   Hy2' : P (C n) t1' ==> y2
+  ============================
+   P (C n) t2 = y2
+]]
+*)
+  (** 3. Hy2' にコンストラクタを逆に適用する。 *)
+  - inversion Hy2'; subst.
     
     (** 3.1 ST_PlusConstConst の場合、
        H1 : C n2 ==> t2
