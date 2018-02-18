@@ -35,10 +35,13 @@ Require Import Smallstep.
 1. 定数と加算だけあるおもちゃの言語を定義する。この項をtmとする。
 
 2. big-step style の評価器(evaluator)の定義。evalF。
+ evalF tm の実行結果が n 。
 
-3. big-step style の評価関係(evaluation releation)。eval (\\)
+3. big-step style の評価関係(evaluation releation)。eval
+ 論理式 (tm \\ n) 。
 
-4. small-step style の評価関係(evaluation releation)。step (==>)
+4. small-step style の評価関係(evaluation releation)。step
+ 論理式 (tm1 ==> tm2) 。
  *)
 
 Module PF_SimpleArith1.
@@ -110,6 +113,18 @@ Proof.
   apply ST_Plus2.
   apply ST_PlusConstConst.
 Qed.
+
+Goal (P (P (C 1) (C 2)) (C 3)) ==> (P (C 3) (C 3)).
+Proof.
+  constructor.
+  constructor.
+  Show Proof.
+
+  Restart.
+  apply ST_Plus1.
+  apply ST_PlusConstConst.
+Qed.
+
 
 (** 補足説明：
 
@@ -413,6 +428,7 @@ Proof.
   (** コンストラクタは互いに素なので、Hは矛盾であり、ゴールの証明が終了する。 *)
 Qed.
 
+(*
 (** おまけ。 *)
 (** 順番が前後するが、λx.(x x) に型がつかないことを言うには、
 型が有限性から、xの型 T1 -> T2 が T1 にひとしくないことを使う。
@@ -428,11 +444,21 @@ Proof.
     rewrite H1 in *.
     easy.
 Qed.
-
+*)
 
 (** * Values *)
 
-(** Exercise: redo_determinism のヒント：
+(** 導入した公理 *)
+Check v_const : forall n : nat, value (C n).
+
+(** (C 3) は value であることが証明できる。 *)
+Goal value (C 3).
+Proof.
+  apply v_const.
+Qed.
+
+(** Exercise: redo_determinism を解いてみましょう！！！
+   ヒント：
    value はひとつだけだが、コンストラクタ v_const を持つ。
    それが前提にあるならば、場合分けをする必要がある。
 *)
@@ -441,15 +467,22 @@ Qed.
 (**
 概要：
 
-(1) step (==>) が強進行性を満たすとの証明。strong_progress
+(1) step (==>) が強進行性を満たす。strong_progress
+    ∀t, value t ∨ (∃ t', t ==> t').
+任意のtmであるtは、値（すなわち C n）であるか、別のtmにステップできる。
 
-(2) tが正規形であるとは、t ==> t' なる t'が存在しない（もうstepできない）ことをいう。
+(2) tが(stepの)正規形である (normal_form step t) とは、
+    ~(∃t', t ==> t')
+すなわち、 t ==> t' なる t'が存在しない（もうstepできない）ことをいう。
 
 (3) 値なら正規形である。value_is_nf
+    ∀t, value t -> ~(∃t', t ==> t').
 
 (4) 正規形なら値である。nf_is_value
+    ∀t, ~(∃t', t ==> t') -> value t.
 
 (5) (3)(4)より、値と正規形は同じである。
+    ∀t, value t <-> ~(∃t', t ==> t').
 *)
 
 (** ** step(==>)が強進行性であることの証明 *)
