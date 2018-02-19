@@ -38,10 +38,10 @@ Require Import Smallstep.
  evalF tm の実行結果が n 。
 
 3. big-step style の評価関係(evaluation releation)。eval
- 論理式 (tm \\ n) 。
+ 論理式 (tm \\ n) 。 tm (項) と自然数(結果 )との関係である。
 
 4. small-step style の評価関係(evaluation releation)。step
- 論理式 (tm1 ==> tm2) 。
+ 論理式 (tm1 ==> tm2) 。 tm (項) どうしの関係であることに留意する。
  *)
 
 Module PF_SimpleArith1.
@@ -88,7 +88,7 @@ Proof.
 Qed.
 
 (** * small-step evaluation relation *)
-Check step : tm -> tm -> Prop.
+Check step : tm -> tm -> Prop.              (* tm1 ==> tm2 *)
 
 (** 導入した公理 *)
 Check ST_PlusConstConst :
@@ -245,8 +245,8 @@ Proof.
    y1 = y2
 ]]
 *)
-  (** 0. Hy1 にコンストラクタを逆に適用する。 *)
-  inversion Hy1 as [n1 n2 H1 H2 | t1 t1' t2 H1 IHHy1 H2 |n t1' t2 H1 IHHy1 H2].
+  (** 0. Hy1 のコンストラクタで再帰的に場合分けする。 *)
+  induction Hy1 as [n1 n2 H1 H2 | t1 t1' t2 H1 IHHy1 H2 |n t1' t2 H1 IHHy1 H2].
   Undo 1.
   generalize dependent y2.
   induction Hy1 as [n1 n2 | t1 t1' t2 H1 IHHy1 |n t1' t2 H1 IHHy1]; intros y2 Hy2'.
@@ -446,6 +446,7 @@ Proof.
 Qed.
 *)
 
+(* ================================================================= *)
 (** * Values *)
 
 (** 導入した公理 *)
@@ -463,6 +464,8 @@ Qed.
    それが前提にあるならば、場合分けをする必要がある。
 *)
 
+(* ================================================================= *)
+(** ProofCafe ##74 2018/02/17 *)
 (** * Strong Progress and Normal Forms *)
 (**
 概要：
@@ -601,5 +604,83 @@ tmiyaさんんページから：
 http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-apply-1-of-25.html
 http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-of.html
  *)
+
+(* ################################################################# *)
+(** * Multi-Step Reduction *)
+(** 概要：
+マルチステップ簡約(multi-step reduction)関係 ⇒* は1ステップ関係 ⇒の反射推移閉包です。
+マルチステップ簡約(multi-step reduction)関係 (tm1 ==>* tm2) は、
+step関係 (tm1 ==> tm2) の反射推移閉包です。
+
+*)
+
+Check step : tm -> tm -> Prop.
+Check step : relation tm.
+Check multi step : tm -> tm -> Prop.        (* tm1 ==>* tm2 *)
+Check multi step : relation tm.             (* tm1 ==>* tm2 *)
+
+(** 導入される公理 *)
+Check multi_refl step : forall x : tm, x ==>* x.
+Check multi_step step : forall x y z : tm, x ==> y -> y ==>* z -> x ==>* z.
+
+(** lf/Rel.v では、clos_refl_trans_1n として定義されている。 *)
+
+(** 前出の ==> ではだめだった例を証明する。 *)
+
+Definition sample := (P (P (C 1) (P (C 2) (C 3)))
+                        (P (C 11) (P (C 12) (C 13)))) : tm.
+
+Goal sample ==>* (P (C 6)
+                   (P (C 11) (P (C 12) (C 13)))).
+Proof.
+  apply multi_step with (y:=(P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))))).
+  - (* sample ==> P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) *)
+    constructor.
+    constructor.
+    constructor.
+    constructor.
+  - apply multi_step with (y:=(P (C 6) (P (C 11) (P (C 12) (C 13))))).
+    + (* P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) ==>
+         P (C 6) (P (C 11) (P (C 12) (C 13))) *)
+      constructor.
+      constructor.
+    + apply multi_refl.
+Qed.
+
+(* ================================================================= *)
+(** ** Normal Forms Again *)
+(** 概要：
+
+tが0以上のステップでt'に簡約され、
+t'が正規形(normal form、前出、もうこれ以上stepできない形)のとき、
+「t'はtの正規形である」と言います。
+
+(1) 正規形はユニークである。
+t'はtの正規形であることをいう二項関係(normal_form_of)は決定的である。
+normal_forms_unique (deterministic normal_form_of)
+
+Definition normal_form_of (t t' : tm) := t ==>* t' /\ ~(∃t'', t' ==> t'')
+
+∀x y1 y2. normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2
+
+normal_form step (fun t ==> ~ exists t', step t t') は全域関数である。
+つまり、どんなtについても、これ以上stepできるかどうかを判定できる。
+
+
+(2) stepは正規化性を持つ。
+つまり、 任意のtに対して、あるt'があって、tからステップを進めるとt'に到達し、
+かつt'は正規形である、が成立する。 
+（任意のtは、0以上のステップで、正規形に到達できる）
+
+step_normalizing
+    ∀t, ∃t', t ==>* t' /\ ~(∃t'', t' ==> t'')
+*)
+
+
+(* ================================================================= *)
+(** ** Equivalence of Big-Step and Small-Step *)
+(** 概要：
+
+*)
 
 (** END *)
