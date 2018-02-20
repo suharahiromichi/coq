@@ -670,16 +670,27 @@ Print normal_form_of.
 つまり、二項関係(normal_form_of)は決定的である。
 
 [[
-normal_forms_unique (deterministic normal_form_of) :
+deterministic normal_form_of :
   ∀x y1 y2. normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2
 ]]
 *)
+
+(** suhara 補題として、==> の正規型なら、stepしないことを証明しておきます。  *)
+(** [step_normal_form x] と [x ==> y] は矛盾 *)
+Lemma nf__not_step : forall (x y : tm), normal_form step x -> ~ x ==> y.
+Proof.
+  unfold step_normal_form, normal_form.
+  intros x y H1 H2.
+  apply H1.
+  now exists y.
+Qed.
 
 Goal deterministic normal_form_of.
 Proof.
   unfold deterministic.
   (* forall x y1 y2 : tm, normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2 *)
   unfold normal_form_of.
+  unfold step_normal_form.                  (* normal_form step *)
   intros x y1 y2 P1 P2.
   inversion P1 as [P11 P12]; clear P1.
   inversion P2 as [P21 P22]; clear P2.
@@ -693,8 +704,7 @@ Proof.
   - apply IHP11.
     + apply P12.
     + inversion Hy2; subst.
-      * exfalso. apply P2.
-        now exists y.                 (* P2 と Hy2 は矛盾、補足参照 *)
+      * now apply (nf__not_step y2 y) in P2.  (* P2 と Hy2 は矛盾、補足参照 *)
       * now rewrite (step_deterministic x y y0). (* H と H0 から y = y0 *)
     + easy.                                      (* apply P2 *)
 Qed.
@@ -731,11 +741,11 @@ Proof.
     + apply multi_trans with (P (C n1) t2).
       * now apply multistep_congr_1.
       * apply multi_trans with (P (C n1) (C n2)).
-        apply multistep_congr_2.
-        apply v_const.
-        apply H21.
-        apply multi_R.
-        apply ST_PlusConstConst.
+        ** apply multistep_congr_2.
+           *** apply v_const.
+           *** apply H21.
+        ** apply multi_R.
+           apply ST_PlusConstConst.
     + rewrite nf_same_as_value.
       now apply v_const.
 Qed.
