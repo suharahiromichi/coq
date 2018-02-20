@@ -189,7 +189,7 @@ Admitted.
 End PF_SimpleArith1.
 
 (* ################################################################# *)
-(** ProofCafe ##73 2018/02/17 予定 *)
+(** ProofCafe ##73 2018/02/17 *)
 (** * Relations *)
 
 (** 概要：
@@ -465,7 +465,7 @@ Qed.
 *)
 
 (* ================================================================= *)
-(** ProofCafe ##74 2018/02/17 *)
+(** ProofCafe ##74 2018/03/17 *)
 (** * Strong Progress and Normal Forms *)
 (**
 概要：
@@ -655,27 +655,90 @@ tが0以上のステップでt'に簡約され、
 t'が正規形(normal form、前出、もうこれ以上stepできない形)のとき、
 「t'はtの正規形である」と言います。
 
+これを二項関係 [normal_form_of t t'] で定義する。
+
+normal_form_of は全域関数である。
+つまり、任意の項tに対して正規形t'が決まる。
+すでに、tが正規形の場合は [normal_form_of t t] となる。
+ *)
+
+Print normal_form_of.
+(** [fun (t t' : tm) => t ==>* t' /\ ~(∃t'', t' ==> t'')] *)
+
+(**
 (1) 正規形はユニークである。
-t'はtの正規形であることをいう二項関係(normal_form_of)は決定的である。
-normal_forms_unique (deterministic normal_form_of)
+つまり、二項関係(normal_form_of)は決定的である。
 
-Definition normal_form_of (t t' : tm) := t ==>* t' /\ ~(∃t'', t' ==> t'')
-
-∀x y1 y2. normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2
-
-normal_form step (fun t ==> ~ exists t', step t t') は全域関数である。
-つまり、どんなtについても、これ以上stepできるかどうかを判定できる。
-
-
-(2) stepは正規化性を持つ。
-つまり、 任意のtに対して、あるt'があって、tからステップを進めるとt'に到達し、
-かつt'は正規形である、が成立する。 
-（任意のtは、0以上のステップで、正規形に到達できる）
-
-step_normalizing
-    ∀t, ∃t', t ==>* t' /\ ~(∃t'', t' ==> t'')
+[[
+normal_forms_unique (deterministic normal_form_of) :
+  ∀x y1 y2. normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2
+]]
 *)
 
+Goal deterministic normal_form_of.
+Proof.
+  unfold deterministic.
+  (* forall x y1 y2 : tm, normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2 *)
+  unfold normal_form_of.
+  intros x y1 y2 P1 P2.
+  inversion P1 as [P11 P12]; clear P1.
+  inversion P2 as [P21 P22]; clear P2.
+  generalize dependent y2.
+  
+  induction P11 as [x|x y z H]; intros y2 Hy2 P2.
+  - inversion Hy2.
+    + reflexivity.
+    + induction P12.
+      now exists y.
+  - apply IHP11.
+    + apply P12.
+    + inversion Hy2; subst.
+      * exfalso. apply P2.
+        now exists y.                 (* P2 と Hy2 は矛盾、補足参照 *)
+      * now rewrite (step_deterministic x y y0). (* H と H0 から y = y0 *)
+    + easy.                                      (* apply P2 *)
+Qed.
+
+(**
+(2) stepは正規化性を持つ（任意のtは、0以上のステップで、正規形に到達できる）。
+つまり、任意のtに対して、あるt'があって、tからステップを進めるとt'に到達し、
+かつt'は正規形である。 
+
+[[
+step_normalizing :
+    ∀t, ∃t', t ==>* t' /\ ~(∃t'', t' ==> t'')
+]]
+*)
+
+Lemma step_normalizing : forall t, exists t', normal_form_of t t'.
+Proof.
+  induction t.
+  - exists (C n).
+    split.
+      + now apply multi_refl.
+      + rewrite nf_same_as_value.
+        now apply v_const.
+  - destruct IHt1 as [t1' [H11 H12]].
+    destruct IHt2 as [t2' [H21 H22]].
+    rewrite nf_same_as_value in H12.
+    rewrite nf_same_as_value in H22.
+    inversion H12 as [n1 H].
+    inversion H22 as [n2 H'].
+    rewrite <- H in H11.
+    rewrite <- H' in H21.
+    exists (C (n1 + n2)).
+    split.
+    + apply multi_trans with (P (C n1) t2).
+      * now apply multistep_congr_1.
+      * apply multi_trans with (P (C n1) (C n2)).
+        apply multistep_congr_2.
+        apply v_const.
+        apply H21.
+        apply multi_R.
+        apply ST_PlusConstConst.
+    + rewrite nf_same_as_value.
+      now apply v_const.
+Qed.
 
 (* ================================================================= *)
 (** ** Equivalence of Big-Step and Small-Step *)
