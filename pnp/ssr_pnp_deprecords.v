@@ -9,7 +9,7 @@
 7 Encoding Mathematical Structures
  *)
 Module DepRecords.
-  Require Import ssreflect ssrbool ssrnat ssrfun.
+  From mathcomp Require Import ssreflect ssrbool ssrnat ssrfun.
   
   Set Implicit Arguments.
   Unset Strict Implicit.
@@ -19,6 +19,7 @@ Module DepRecords.
 7.1 Encoding partial commutative monoids
 
 ひとつめのモジュール、可換モノイド。
+(mathcompの命名法では、pcmType)
  *)
   Module PCMDef. 
 
@@ -78,7 +79,8 @@ Aのインスタンスは任意のB要素（Fフィールドを経由して参�
 
 ``Coercion is_true : bool >-> Sortclass. (* Prop *)``
  *)
-Check type.
+      Check type.
+      
       Variable cT: pack_type.
       Definition pcm_struct : mixin_of cT := (* Coercion cT *)
         let: Pack _ c := cT return mixin_of cT in c.
@@ -100,6 +102,8 @@ Exports の宣言
       Coercion type : pack_type >-> Sortclass.
 
 (**
+7.2 Properties of partial commutative monoids
+
 可換則や結合則を証明しておく。これらはexportされる。
 *)      
       Section PCMLemmas.
@@ -115,7 +119,7 @@ Exports の宣言
             by case: U x y z => tp [v j z Cj Aj *]; apply: Aj. 
         Qed.
 (**
-Exercices 1
+Exercices 7.1
 *)
         Lemma joinAC (x y z : U) : x \+ y \+ z = x \+ z \+ y.
         Proof.
@@ -165,7 +169,7 @@ Exercices 1
           by apply H3.
         Qed.
 (**
-End of Exercices 1
+End of Exercices 7.1
  *)
       End PCMLemmas.
     End Exports.
@@ -178,7 +182,8 @@ End of Exercices 1
 (**
 7.3 Implementing inheritance hierarchies
 
-ふたつめのモジュール、簡約可能モノイド。
+ふたつめのモジュール、簡約可換モノイド。
+(mathcompの命名法では、cancelPcmType)
  *)
   Module CancelPCM.
 (**
@@ -187,7 +192,7 @@ Mixin -- PCMに簡約法則を追加する。
     Record mixin_of (U : pcm) :=
       Mixin
         {
-          _ : forall a b c: U, valid (a \+ b) -> a \+ b = a \+ c -> b = c
+          _ : forall a b c : U, valid (a \+ b) -> a \+ b = a \+ c -> b = c
         }.
 
 (**
@@ -222,7 +227,7 @@ Exports の宣言
   End CancelPCM. 
   Export CancelPCM.Exports.                 (* Exportsをexportする。 *)
 (**
-ふたつめのモジュール、簡約可能モノイドの終了。
+ふたつめのモジュール、簡約可換モノイドの終了。
  *)
   
   Lemma cancelC (U: cancel_pcm) (x y z : U) :
@@ -233,6 +238,9 @@ Exports の宣言
 
 (**
 7.4 Instantiation and canonical structures
+
+簡約モノイドを整数についてインスタンスを作る。
+(mathcompの命名法では、nat_pcmType)
  *)
   Definition natPCMMixin := 
     PCMMixin
@@ -259,17 +267,18 @@ natPCM を Canonical にすると、add_perm の nat を natPCM として扱え�
       by rewrite [c \+ b]joinC.
   Qed.
   
+(** 可換簡約モノイドを整数についてインスタンスを作る。
+(mathcompの命名法では、nat_cancelPcmType) *)
 (**
 簡約規則を証明しておく。
  *)
-  Lemma cancelNat : forall a b c:
-                             nat, true -> a + b = a + c -> b = c.
+  Lemma cancelNat : forall a b c : nat, true -> a + b = a + c -> b = c.
   Proof.
     move=> a b c; elim: a => // n /(_ is_true_true) Hn _ H.
       by apply: Hn; rewrite !addSn in H; move/eq_add_S: H.
   Qed.
   
-(**
+  (**
 natPCM が Canonicalでないと、cancelNat が使用できない。
 natPCM を Canonical にすると、cancelNat の nat を natPCM として扱える。
  *)
@@ -307,6 +316,15 @@ natPCM <- CancelPCM.pcmT ( cancelNatPCM )
     Qed.
   End PCMExamples.
 
+(** 
+Exercise 7.2 Partially-ordered sets
+(see. ssr_pnp_poset.v)
+*)
+  
+(**
+Exercise 7.3 Canonical instances of partially ordered sets
+*)
+
 (**
 7.4.2 Types with decidable equalities
  *)
@@ -342,18 +360,6 @@ Exports の宣言
   End Equality.
   Export Equality.Exports.       (* 他に習って、Exportsをexportする。 *)
   
-(**
-Exercices 2
- *)
-
-(** 
-Exercise 7.2 Partially-ordered sets
-(see. ssr_pnp_poset.v)
-*)
-
-(**
-Exercise 7.3 Canonical instances of partially ordered sets
-*)
 End DepRecords.
 
 (* END *)
