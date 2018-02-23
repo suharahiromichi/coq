@@ -491,8 +491,8 @@ Qed.
 (** ** step(==>)が強進行性であることの証明 *)
 
 (** 任意の項 t は、値であるか、別の項 t' にstepできる。
-これを「強」進行性とよぶのは、型を考慮する場合(Types.v)、
-型の付かない項は値でないがstepできない、ということと区別するため。
+「強」進行性とは、stepに戦略が無くても正規形が得られることをいう。
+うまく選ばないと正規形が得られない場合は、単に「進行性」と呼ぶ。
  *)
 
 (** オリジナルは、あいかわらずinversionだけで解いているが、inversionを使わなくても証明できる。
@@ -684,6 +684,25 @@ Proof.
   apply H1.
   now exists y.
 Qed.
+
+(* *************** *)
+Lemma test : forall (x : tm), value x -> forall (y : tm), ~ x ==> y.
+Proof.
+  intro x.
+  intros H.
+  inversion H; subst.
+  intros y.
+  now intro Contra.
+Qed.
+Lemma nf__not_step' : forall (x y : tm), normal_form step x -> ~ x ==> y.
+Proof.
+  intros.
+  apply test.
+  now apply nf_is_value.
+Qed.
+(* *************** *)
+
+(** また、step の決定性 step_deterministic も使用します。  *)
 
 Goal deterministic normal_form_of.
 Proof.
