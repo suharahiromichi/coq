@@ -45,11 +45,11 @@ Module DepRecords.
  *)
   Structure pcmType : Type :=
     PcmType {
-        sort : Type;
+        sort :> Type;
         m : pcmMixin sort
       }.
-  Local Coercion sort : pcmType >-> Sortclass.
-  Print Graph.                       (* [sort] : type >-> Sortclass *)
+(*  Coercion sort : pcmType >-> Sortclass. *)
+  Print Graph.                       (* [sort] : pcmType >-> Sortclass *)
   
   Definition valid_op {T : pcmType} := @valid (sort T) (m T).
   Notation Valid := valid_op.
@@ -149,10 +149,10 @@ Mixin -- PCMに簡約法則を追加する。
   
   Structure cancelPcmType : Type :=
     CancelPcmType {
-        sort2 : pcmType;
+        sort2 :> pcmType;
         m2 : cancelPcmMixin sort2
       }.
-  Coercion sort2 : cancelPcmType >-> pcmType.
+  (* Coercion sort2 : cancelPcmType >-> pcmType. *)
   Print Graph.                       (* [sort2] : cancelPcmType >-> pcmType *)
 (**
 可換則を証明しておく。
@@ -227,7 +227,6 @@ nat_pcmType <- sort2 ( nat_cancelPcmType )
 nat_cancelPcmMixin <- m2 ( nat_cancelPcmType )
 が追加される。
  *)
-
   
   Section PCMExamples.
     Variables a b c : nat.
