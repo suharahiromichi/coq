@@ -50,7 +50,7 @@ Mixinの定義
 (**
 Packの定義
 *)
-    Section Packing.
+    Section ClassDef.
       Structure type : Type :=
         Pack {
             sort : Type;
@@ -77,15 +77,19 @@ Aのインスタンスは任意のB要素（Fフィールドを経由して参�
 
 ``Coercion is_true : bool >-> Sortclass. (* Prop *)``
  *)
-      Check type.
-      
+      Variable T : Type.
       Variable cT : type.
+      
       Definition class : mixin_of cT := (* Coercion cT *)
         let: Pack _ c := cT return mixin_of cT in c.
+      
+      Definition pack c := @Pack T c.
+      Definition clone := fun c & cT -> T & phant_id (pack c) cT => pack c.
+      
       Definition valid := valid_op class.
       Definition join := join_op class.
       Definition unit := unit_op class.
-    End Packing.
+    End ClassDef.
 
 (**
 Exports の宣言
@@ -95,7 +99,8 @@ Exports の宣言
       Notation pcmType := type.
       Notation PcmMixin := Mixin.
       Notation PcmType T m := (@Pack T m).
-      Notation "x \+ y" := (join x y) (at level 43, left associativity). (* join_opではない。 *)
+      Notation "x \+ y" := (join x y) (at level 43, left associativity).
+      (* join_opではない。 *)
       Notation valid := valid.
       Notation Unit := unit.
       Coercion sort : type >-> Sortclass.
@@ -141,7 +146,7 @@ Exercices 7.1
           case: U x y => tp [v j z Cj Aj H1 H2 H3 x y] => H.
           by apply: (H2 x y).
         Qed.
-
+        
         Lemma validR (x y : U) : valid (x \+ y) -> valid y.
         Proof.
           case: U x y => tp [v j z Cj Aj H1 H2 H3 x y].
@@ -240,7 +245,6 @@ Exports の宣言
 7.4 Instantiation and canonical structures
 
 簡約モノイドを整数についてインスタンスを作る。
-(mathcompの命名法では、nat_pcmType)
  *)
   Definition nat_pcmMixin := 
     PcmMixin
@@ -353,9 +357,6 @@ Exports の宣言
       Notation eqType := type.
       Notation EqMixin := Mixin.
       Notation EqType T m := (@Pack T m).     (* "@"が必要。 *)
-
-      Definition eq_op {T : eqType} := op.
-      Notation "x == y" := (eq_op x y) (at level 70, no associativity).
     End Exports.
 
   End Equality.
