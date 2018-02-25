@@ -57,12 +57,13 @@ Packの定義
             _ : mixin_of sort
           }.
       Local Coercion sort : type >-> Sortclass.
+      Print Graph.                          (* [sort] : type >-> Sortclass *)
 (**
 packのインスタンスは任意のsortの要素
 （typeフィールドを経由して参照される、型Typeのこと）
 にコアーションされる。コアーションのために
 
-``type :  pack_type -> Type``
+``sort :  type -> Type``
 
 が挿入される。原文：
 
@@ -202,7 +203,7 @@ Mixin -- PCMに簡約法則を追加する。
 (**
 Packing -- Struture pack_type ... の定義は前のモジュールと同じ。
 
-Section Packing. と End Packing. の有無は関係なく、
+Section ClassDef. と End ClassDef. の有無は関係なく、
 Variableなどの宣言の必要に応じて、Section にすればよい。
  *)
     Structure type : Type :=
@@ -257,15 +258,15 @@ Exports の宣言
   Canonical nat_pcmType := PcmType nat nat_pcmMixin.
   Print Canonical Projections.
 (**
-nat <- PCMDef.type ( natPCM )
+nat <- PCM.sort ( nat_pcmType )
 が追加される。typeはCoercionであることに注意！
  *)
 
 (**
-natPCM が Canonical でないと、add_perm の定義がエラーになる。
-natPCM を Canonical にすると、add_perm の nat を natPCM として扱える。
+nat_pcmType が Canonical でないと、nat_add_perm の定義がエラーになる。
+nat_pcmType を Canonical にすると、nat_add_perm の nat を nat_pcmType として扱える。
  *)
-  Lemma add_perm (a b c : nat) : a \+ (b \+ c) = a \+ (c \+ b).
+  Lemma nat_add_perm (a b c : nat) : a \+ (b \+ c) = a \+ (c \+ b).
   Proof.
       by rewrite [c \+ b]joinC.
   Qed.
@@ -281,8 +282,8 @@ natPCM を Canonical にすると、add_perm の nat を natPCM として扱え�
   Qed.
   
   (**
-natPCM が Canonicalでないと、cancelNat が使用できない。
-natPCM を Canonical にすると、cancelNat の nat を natPCM として扱える。
+nat_pcmType が Canonical でないと、nat_cancelP が使用できない。
+nat_pcmType を Canonical にすると、nat_cancelP の nat を nat_pcmType として扱える。
  *)
   Definition nat_cancelPcmMixin :=
     CancelPcmMixin
@@ -291,8 +292,8 @@ natPCM を Canonical にすると、cancelNat の nat を natPCM として扱え
   Canonical nat_cancelPcmType := CancelPcmType nat_pcmType nat_cancelPcmMixin.
   Print Canonical Projections.
 (**
-natPCM <- CancelPCM.pcmT ( cancelNatPCM )
-が追加される。pcmTはCoercionであることに注意！
+nat_pcmType <- CancelPCM.sort ( nat_cancelPcmType )
+が追加される。sortはCoercionであることに注意！
  *)
   
   Section PCMExamples.
@@ -310,7 +311,7 @@ natPCM <- CancelPCM.pcmT ( cancelNatPCM )
       by rewrite [c \+ _]joinC; apply: cancel.
     Qed.
     
-    Lemma addn_join (x y : nat) : x + y = x \+ y. 
+    Lemma nat_add_join (x y : nat) : x + y = x \+ y. 
     Proof.
         by [].
     Qed.
