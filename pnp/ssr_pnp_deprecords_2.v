@@ -27,18 +27,18 @@ Mixinの定義
 *)
     Record mixin_of (T : Type) :=
       Mixin {
-          valid_op : T -> bool;
-          join_op : T -> T -> T;
-          unit_op : T;
-          _ : commutative join_op;
-          _ : associative join_op;
-          _ : left_id unit_op join_op;
-          _ : forall x y, valid_op (join_op x y) -> valid_op x; 
-          _ : valid_op unit_op 
+          valid : T -> bool;
+          join : T -> T -> T;
+          unit : T;
+          _ : commutative join;
+          _ : associative join;
+          _ : left_id unit join;
+          _ : forall x y, valid (join x y) -> valid x; 
+          _ : valid unit 
         }.
     Notation class_of := mixin_of (only parsing). (* not used *)
     
-    Lemma r_unit T (m : mixin_of T) (t : T) : (join_op m t (unit_op m)) = t.
+    Lemma r_unit T (m : mixin_of T) (t : T) : (join m t (unit m)) = t.
     Proof.
       case: m => _ join unit Hc _ Hlu _ _ /=.
         by rewrite Hc Hlu.
@@ -87,9 +87,9 @@ Aのインスタンスは任意のB要素（Fフィールドを経由して参�
       Definition pack c := @Pack T c.
       Definition clone := fun c & cT -> T & phant_id (pack c) cT => pack c.
       
-      Definition valid := valid_op class.
-      Definition join := join_op class.
-      Definition unit := unit_op class.
+      Definition valid_op := valid class.
+      Definition join_op := join class.
+      Definition unit_op := unit class.
     End ClassDef.
 
 (**
@@ -100,10 +100,9 @@ Exports の宣言
       Notation pcmType := type.
       Notation PcmMixin := Mixin.
       Notation PcmType T m := (@Pack T m).
-      Notation "x \+ y" := (join x y) (at level 43, left associativity).
-      (* join_opではない。 *)
-      Notation valid := valid.
-      Notation Unit := unit.
+      Notation "x \+ y" := (join_op x y) (at level 43, left associativity).
+      Notation Valid := valid_op.
+      Notation Unit := unit_op.
       Coercion sort : type >-> Sortclass.
 
 (**
@@ -142,13 +141,13 @@ Exercices 7.1
           by [].
         Qed.
         
-        Lemma validL (x y : U) : valid (x \+ y) -> valid x.
+        Lemma validL (x y : U) : Valid (x \+ y) -> Valid x.
         Proof.
           case: U x y => tp [v j z Cj Aj H1 H2 H3 x y] => H.
           by apply: (H2 x y).
         Qed.
         
-        Lemma validR (x y : U) : valid (x \+ y) -> valid y.
+        Lemma validR (x y : U) : Valid (x \+ y) -> Valid y.
         Proof.
           case: U x y => tp [v j z Cj Aj H1 H2 H3 x y].
           rewrite [x \+ y]Cj.
@@ -168,7 +167,7 @@ Exercices 7.1
           by apply H1.
         Qed.
         
-        Lemma valid_unit : valid (@Unit U).
+        Lemma valid_unit : valid_op (@Unit U).
         Proof.
           case: U => tp [v j z Cj Aj H1 H2 H3].
           by apply H3.
@@ -196,7 +195,7 @@ Mixin -- PCMに簡約法則を追加する。
  *)
     Record mixin_of (U : pcmType) :=
       Mixin {
-          _ : forall a b c : U, valid (a \+ b) -> a \+ b = a \+ c -> b = c
+          _ : forall a b c : U, Valid (a \+ b) -> a \+ b = a \+ c -> b = c
         }.
     Notation class_of := mixin_of (only parsing). (* not used *)
     
@@ -225,7 +224,7 @@ Exports の宣言
 可換則を証明しておく。
  *)
       Lemma cancel (U : cancelPcmType) (x y z : U) : (* Coecion U *)
-        valid (x \+ y) -> x \+ y = x \+ z -> y = z.
+        Valid (x \+ y) -> x \+ y = x \+ z -> y = z.
       Proof.
           by case: U x y z => Up [Hc] x y z; apply: Hc.
       Qed.
@@ -237,11 +236,11 @@ Exports の宣言
  *)
   
   Lemma cancelC (U : cancelPcmType) (x y z : U) :
-    valid (y \+ x \+ z) -> y \+ x = x \+ z -> y = z.
+    Valid (y \+ x \+ z) -> y \+ x = x \+ z -> y = z.
   Proof.
       by move/validL; rewrite ![y \+ _]joinC; apply: cancel.
   Qed.
-
+  
 (**
 7.4 Instantiation and canonical structures
 
@@ -299,9 +298,9 @@ nat_pcmType <- CancelPCM.sort ( nat_cancelPcmType )
   Section PCMExamples.
     Variables a b c : nat.
 
-    Check PCM.join_op : forall T : Type, PCM.mixin_of T -> T -> T -> T.
-    Check PCM.join : forall cT : pcmType, cT -> cT -> cT.
-    About "_ \+ _".                         (* PCM.join  *)
+    Check PCM.join : forall T : Type, PCM.mixin_of T -> T -> T -> T.
+    Check PCM.join_op : forall cT : pcmType, cT -> cT -> cT.
+    About "_ \+ _".                         (* PCM.join_op  *)
     
     Goal a \+ (b \+ c) =  c \+ (b \+ a).
       by rewrite joinA [c \+ _]joinC [b \+ _]joinC.
