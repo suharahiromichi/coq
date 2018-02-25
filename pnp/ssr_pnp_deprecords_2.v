@@ -63,7 +63,7 @@ packのインスタンスは任意のsortの要素
 （typeフィールドを経由して参照される、型Typeのこと）
 にコアーションされる。コアーションのために
 
-``sort :  type -> Type``
+``sort : type -> Type``
 
 が挿入される。原文：
 
@@ -154,20 +154,20 @@ Exercices 7.1
           by apply: (H2 y x).
         Qed.
         
-        Lemma unitL (x : U) : (@Unit U) \+ x = x.
+        Lemma unitL (x : U) : (Unit U) \+ x = x.
         Proof.
           case: U x => tp [v j z Cj Aj H1 H2 H3 x].
           by apply H1.
         Qed.
         
-        Lemma unitR (x : U) : x \+ (@Unit U) = x.
+        Lemma unitR (x : U) : x \+ (Unit U) = x.
         Proof.
           case: U x => tp [v j z Cj Aj H1 H2 H3 x].
           rewrite [x \+ _]Cj.
           by apply H1.
         Qed.
         
-        Lemma valid_unit : valid_op (@Unit U).
+        Lemma valid_unit : Valid (Unit U).
         Proof.
           case: U => tp [v j z Cj Aj H1 H2 H3].
           by apply H3.
@@ -187,7 +187,6 @@ End of Exercices 7.1
 7.3 Implementing inheritance hierarchies
 
 ふたつめのモジュール、簡約可換モノイド。
-(mathcompの命名法では、cancelPcmType)
  *)
   Module CancelPCM.
 (**
