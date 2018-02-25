@@ -48,16 +48,16 @@ Module DepRecords.
         sort :> Type;
         m : pcmMixin sort
       }.
-(*  Coercion sort : pcmType >-> Sortclass. *)
+  (* Coercion sort : pcmType >-> Sortclass. *)
   Print Graph.                       (* [sort] : pcmType >-> Sortclass *)
   
-  Definition valid_op {T : pcmType} := @valid (sort T) (m T).
+  Definition valid_op {T : pcmType} := @valid T (m T). (* 右辺の第2引数は(sort T) *)
   Notation Valid := valid_op.
   
-  Definition join_op {T : pcmType} := @join (sort T) (m T).
+  Definition join_op {T : pcmType} := @join T (m T).
   Notation "x \+ y" := (join_op x y) (at level 43, left associativity).
   
-  Definition unit_op {T : pcmType} := @unit (sort T) (m T).
+  Definition unit_op {T : pcmType} := @unit T (m T).
   Notation Unit := unit_op.
 (**
 7.2 Properties of partial commutative monoids
