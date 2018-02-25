@@ -121,7 +121,7 @@ Exercices 7.1
         by apply H1.
     Qed.
     
-    Lemma valid_unit : valid_op (@Unit U).
+    Lemma valid_unit : Valid (@Unit U).
     Proof.
       case: U => tp [v j z Cj Aj H1 H2 H3].
         by apply H3.
@@ -131,7 +131,7 @@ End of Exercices 7.1
    *)
   End PCMLemmas.
 (**
-ひとつめのモジュール、可換モノイドの終了。
+可換モノイドの定義の終了。
  *)
 
 (**
@@ -163,7 +163,7 @@ Mixin -- PCMに簡約法則を追加する。
       by case: U x y z => Up [Hc] x y z; apply: Hc.
   Qed.
 (**
-ふたつめのモジュール、簡約可換モノイドの終了。
+簡約可換モノイドの定義の終了。
  *)
   
   Lemma cancelC (U : cancelPcmType) (x y z : U) :
