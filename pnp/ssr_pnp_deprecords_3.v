@@ -108,13 +108,13 @@ Exercices 7.1
         by apply: (H2 y x).
     Qed.
     
-    Lemma unitL (x : U) : (@Unit U) \+ x = x.
+    Lemma unitL (x : U) : Unit \+ x = x.    (* Unit は @(Unit U) *)
     Proof.
       case: U x => tp [v j z Cj Aj H1 H2 H3 x].
         by apply H1.
     Qed.
     
-    Lemma unitR (x : U) : x \+ (@Unit U) = x.
+    Lemma unitR (x : U) : x \+ Unit = x.
     Proof.
       case: U x => tp [v j z Cj Aj H1 H2 H3 x].
       rewrite [x \+ _]Cj.
@@ -192,7 +192,14 @@ nat <- sort ( nat_pcmType )
 nat_pcmMixin <- m ( nat_pcmType )
 が追加される。
  *)
-
+  
+  (* コアーションの例 *)
+  Check nat_pcmType : pcmType.
+  Compute sort nat_pcmType.                 (* nat *)
+  Check 1 : nat_pcmType.
+  Check 1 : sort nat_pcmType.
+  Check 1 : nat.
+  
 (**
 nat_pcmType が Canonical でないと、nat_add_perm の定義がエラーになる。
 nat_pcmType を Canonical にすると、nat_add_perm の nat を nat_pcmType として扱える。
@@ -248,7 +255,6 @@ nat_cancelPcmMixin <- m2 ( nat_cancelPcmType )
         by [].
     Qed.
   End PCMExamples.
-
 End DepRecords.
 
 (* END *)
