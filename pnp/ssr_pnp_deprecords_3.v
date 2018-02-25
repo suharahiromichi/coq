@@ -19,10 +19,9 @@ Module DepRecords.
 
 (**
 7.1 Encoding partial commutative monoids
+
+可換モノイド
  *)
-(**
-Mixinの定義
-*)
   Record pcmMixin (T : Type) :=
     PcmMixin {
         valid : T -> bool;
@@ -44,9 +43,6 @@ Mixinの定義
 (**
 7.1.3 Packaging the structure from mixins
  *)
-(**
-Packの定義
-*)
   Structure pcmType : Type :=
     PcmType {
         sort : Type;
@@ -54,26 +50,7 @@ Packの定義
       }.
   Local Coercion sort : pcmType >-> Sortclass.
   Print Graph.                       (* [sort] : type >-> Sortclass *)
-(**
-packのインスタンスは任意のsortの要素
-（typeフィールドを経由して参照される、型Typeのこと）
-にコアーションされる。コアーションのために
-
-``sort : type -> Type``
-
-が挿入される。原文：
-
-an instance of pack type should be coerced into an element of an arbitrary sort,
-it should be done via referring to is type field.
-
-``Coercion F : A >-> B.``
-
-Aのインスタンスは任意のB要素（Fフィールドを経由して参照される）
-にコアーションされる。次と比較せよ。
-コアーションのために ``is_true`` が挿入される。
-
-``Coercion is_true : bool >-> Sortclass. (* Prop *)``
- *)
+  
   Definition valid_op {T : pcmType} := @valid (sort T) (m T).
   Notation Valid := valid_op.
   
@@ -173,9 +150,10 @@ Mixin -- PCMに簡約法則を追加する。
   Structure cancelPcmType : Type :=
     CancelPcmType {
         sort2 : pcmType;
-        _ : cancelPcmMixin sort2
+        m2 : cancelPcmMixin sort2
       }.
   Coercion sort2 : cancelPcmType >-> pcmType.
+  Print Graph.                       (* [sort2] : cancelPcmType >-> pcmType *)
 (**
 可換則を証明しておく。
  *)
@@ -211,7 +189,8 @@ Mixin -- PCMに簡約法則を追加する。
   Print Canonical Projections.
 (**
 nat <- sort ( nat_pcmType )
-が追加される。typeはCoercionであることに注意！
+nat_pcmMixin <- m ( nat_pcmType )
+が追加される。
  *)
 
 (**
@@ -245,8 +224,10 @@ nat_pcmType を Canonical にすると、nat_cancelP の nat を nat_pcmType と
   Print Canonical Projections.
 (**
 nat_pcmType <- sort2 ( nat_cancelPcmType )
-が追加される。sortはCoercionであることに注意！
+nat_cancelPcmMixin <- m2 ( nat_cancelPcmType )
+が追加される。
  *)
+
   
   Section PCMExamples.
     Variables a b c : nat.
