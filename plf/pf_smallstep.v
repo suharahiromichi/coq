@@ -486,6 +486,8 @@ Qed.
 
 (5) (3)(4)より、値と正規形は同じである。
     ∀t, value t <-> ~(∃t', t ==> t').
+
+参考：TAPL p.28
 *)
 
 (** ** step(==>)が強進行性であることの証明 *)
@@ -499,6 +501,7 @@ Qed.
 inversionを使うことの是非については議論しないが、ここでは、Coqの定石の説明する。
  *)
 
+(** t は強進行性を満たす。 *)
 Theorem strong_progress : forall t : tm,
     value t \/ (exists t', t ==> t').
 Proof.
@@ -535,6 +538,7 @@ fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
 tが正規形であるとは、t ==> t' なる t'が存在しない（もうstepできない）ことをいう。 *)
 
 (** ** 値なら正規形であることの証明 *)
+(** t が値なら、t は正規形である。 *)
 Lemma value_is_nf : forall v,
   value v -> normal_form step v.
 Proof.
@@ -547,13 +551,16 @@ Proof.
 Qed.
 
 (** ** 正規形なら値であることの証明 *)
-(** オリジナルは、assert を使っているが、わかりやすく補題として外に出した。  *)
-Lemma l_strong_progress__nf_is_value : forall t,
-    (value t \/ (exists t', t ==> t')) -> normal_form step t -> value t.
+
+(** 補題：t が強進行性を満たすなら、tが正規形なら、tは値である。 *)
+(** ただし、これは任意の二項関係(s : tm -> tm -> Prop) で成立する。 *)
+(** suhara オリジナルは、assert を使っているが、わかりやすく補題として外に出した。  *)
+Lemma l_strong_progress__nf_is_value : forall t s,
+    (value t \/ (exists t', s t t')) -> normal_form s t -> value t.
 Proof.
   unfold normal_form.
   intros t G H.
-  destruct G.              (** 前提が \/ のとき、左右で場合分けする。 *)
+  destruct H.              (** 前提が \/ のとき、左右で場合分けする。 *)
   (** 左側 *)
   + easy.                   (** 前提がゴールと同じ。 *) (** apply H0. *)
   (** 右側 *)
@@ -561,6 +568,8 @@ Proof.
     (** exfalso. apply H. assumption. *) 
 Qed.
 
+
+(** tが正規形なら、tは値である。 *)
 Lemma nf_is_value : forall t,
     normal_form step t -> value t.
 Proof.
@@ -579,6 +588,8 @@ Proof.
 Qed.
 
 (**
+本文より：
+
 なぜ、値と正規形が同じあることが興味深いのでしょう？ 2つの理由があります:
 
 なぜならvalue(値)は構文的概念です。つまり項の形を見ることで定義されま
@@ -608,10 +619,11 @@ http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-
 (* ################################################################# *)
 (** * Multi-Step Reduction *)
 (** 概要：
-マルチステップ簡約(multi-step reduction)関係 ⇒* は1ステップ関係 ⇒の反射推移閉包です。
-マルチステップ簡約(multi-step reduction)関係 (tm1 ==>* tm2) は、
-step関係 (tm1 ==> tm2) の反射推移閉包です。
 
+マルチステップ簡約(multi-step reduction)関係 ==>* は、
+1ステップ関係 ==> の反射推移閉包です。
+
+（step自体は反射でも推移でもない。）
 *)
 
 Check step : tm -> tm -> Prop.
@@ -620,8 +632,8 @@ Check multi step : tm -> tm -> Prop.        (* tm1 ==>* tm2 *)
 Check multi step : relation tm.             (* tm1 ==>* tm2 *)
 
 (** 導入される公理 *)
-Check multi_refl step : forall x : tm, x ==>* x.
-Check multi_step step : forall x y z : tm, x ==> y -> y ==>* z -> x ==>* z.
+Check multi_refl step : forall x : tm, x ==>* x. (* 反射 *)
+Check multi_step step : forall x y z : tm, x ==> y -> y ==>* z -> x ==>* z. (* 推移 *)
 
 (** lf/Rel.v では、clos_refl_trans_1n として定義されている。 *)
 
@@ -634,40 +646,49 @@ Goal sample ==>* (P (C 6)
                    (P (C 11) (P (C 12) (C 13)))).
 Proof.
   apply multi_step with (y:=(P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))))).
-  - (* sample ==> P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) *)
-    constructor.
+  (** sample ==> P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) *)
+  - constructor.
     constructor.
     constructor.
     constructor.
   - apply multi_step with (y:=(P (C 6) (P (C 11) (P (C 12) (C 13))))).
-    + (* P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) ==>
+    (** P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) ==>
          P (C 6) (P (C 11) (P (C 12) (C 13))) *)
-      constructor.
+    + constructor.
       constructor.
     + apply multi_refl.
 Qed.
 
 (* ================================================================= *)
 (** ** Normal Forms Again *)
-(** 概要：
-
+(**
 tが0以上のステップでt'に簡約され、
 t'が正規形(normal form、前出、もうこれ以上stepできない形)のとき、
 「t'はtの正規形である」と言います。
 
-これを二項関係 [normal_form_of t t'] で定義する。
-
-normal_form_of は全域関数である。
-つまり、任意の項tに対して正規形t'が決まる。
-すでに、tが正規形の場合は [normal_form_of t t] となる。
+これを二項関係 [normal_form_of t t'] で定義し、
+[t ==>* t'] で示す。
  *)
 
 Print normal_form_of.
 (** [fun (t t' : tm) => t ==>* t' /\ ~(∃t'', t' ==> t'')] *)
 
 (**
-(1) 正規形はユニークである。
-つまり、二項関係(normal_form_of)は決定的である。
+概要：
+二項関係(normal_form_of)は、次のふたつの性質をもつ。
+
+(1) 正規形の一意性：この二項関係(normal_form_of)は決定的である。
+(2) 簡約（評価）の停止性：すべての項に対して、正規形が存在する。
+
+(1)(2)より、normal_form_of は全域関数である。
+
+参考：TAPL p.29
+ *)
+
+(**
+(1) 正規形の一意性を証明する。
+
+xがy1とy2に簡約でき、y1もy2も正規形なら、y1 = y2 である。
 
 [[
 deterministic normal_form_of :
@@ -675,39 +696,21 @@ deterministic normal_form_of :
 ]]
 *)
 
-(** suhara 補題として、==> の正規型なら、stepしないことを証明しておきます。  *)
+(** 補題： 正規型なら、 stepしない suhara *)
 (** [step_normal_form x] と [x ==> y] は矛盾 *)
-Lemma nf__not_step : forall (x y : tm), normal_form step x -> ~ x ==> y.
+(** ただし、これは任意の二項関係(s : tm -> tm -> Prop) で成立する。 *)
+Lemma l_nf__not_step : forall (x y : tm) s, normal_form s x -> ~ s x y.
 Proof.
-  unfold step_normal_form, normal_form.
-  intros x y H1 H2.
+  unfold normal_form.
+  intros x y s H1 H2.
   apply H1.
   now exists y.
 Qed.
 
-(* *************** *)
-Lemma test : forall (x : tm), value x -> forall (y : tm), ~ x ==> y.
-Proof.
-  intro x.
-  intros H.
-  inversion H; subst.
-  intros y.
-  now intro Contra.
-Qed.
-Lemma nf__not_step' : forall (x y : tm), normal_form step x -> ~ x ==> y.
-Proof.
-  intros.
-  apply test.
-  now apply nf_is_value.
-Qed.
-(* *************** *)
-
-(** また、step の決定性 step_deterministic も使用します。  *)
-
 Goal deterministic normal_form_of.
 Proof.
   unfold deterministic.
-  (* forall x y1 y2 : tm, normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2 *)
+  (** forall x y1 y2 : tm, normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2 *)
   unfold normal_form_of.
   unfold step_normal_form.                  (* normal_form step *)
   intros x y1 y2 P1 P2.
@@ -723,13 +726,16 @@ Proof.
   - apply IHP11.
     + apply P12.
     + inversion Hy2; subst.
-      * now apply (nf__not_step y2 y) in P2.  (* P2 と Hy2 は矛盾、補足参照 *)
+      * now apply (l_nf__not_step y2 y step) in P2.  (* P2 と Hy2 は矛盾、補足参照 *)
       * now rewrite (step_deterministic x y y0). (* H と H0 から y = y0 *)
     + easy.                                      (* apply P2 *)
 Qed.
+(** step の決定性 step_deterministic も使用します。  *)
 
 (**
-(2) stepは正規化性を持つ（任意のtは、0以上のステップで、正規形に到達できる）。
+(2) 簡約（評価）の停止性を証明する。
+
+stepは正規化性を持つ（任意のtは、0以上のステップで、正規形に到達できる）。
 つまり、任意のtに対して、あるt'があって、tからステップを進めるとt'に到達し、
 かつt'は正規形である。 
 
@@ -772,6 +778,8 @@ Qed.
 (* ================================================================= *)
 (** ** Equivalence of Big-Step and Small-Step *)
 (** 概要：
+
+（略）
 
 *)
 
