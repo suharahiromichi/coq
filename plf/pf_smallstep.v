@@ -586,11 +586,12 @@ Proof.
   - now apply nf_is_value.
   - now apply value_is_nf.
 Qed.
+(** 後で使う。 *)
 
 (**
 本文より：
 
-なぜ、値と正規形が同じあることが興味深いのでしょう？ 2つの理由があります:
+なぜ、値と正規形が同じあることが興味深いのでしょう？
 
 なぜならvalue(値)は構文的概念です。つまり項の形を見ることで定義されま
 す。一方normal_form(正規形)は意味論的なものです。 つまり項がどのように
@@ -745,6 +746,14 @@ step_normalizing :
 ]]
 *)
 
+(**
+ふたつの合同補題 (congruence lemma) を証明しておく。
+*)
+Check multistep_congr_1 : forall t1 t1' t2 : tm, t1 ==>* t1' -> P t1 t2 ==>* P t1' t2.
+Check multistep_congr_2 : forall t1 t2 t2' : tm, value t1 ->
+                                                 t2 ==>* t2' -> P t1 t2 ==>* P t1 t2'.
+(** ふたつめは、左側の子(t1)が value の時が条件となる。stepは左から簡約するから。 *)
+
 Lemma step_normalizing : forall t, exists t', normal_form_of t t'.
 Proof.
   induction t.
@@ -764,9 +773,9 @@ Proof.
     exists (C (n1 + n2)).
     split.
     + apply multi_trans with (P (C n1) t2).
-      * now apply multistep_congr_1.
+      * now apply multistep_congr_1.        (* 合同補題 *)
       * apply multi_trans with (P (C n1) (C n2)).
-        ** apply multistep_congr_2.
+        ** apply multistep_congr_2.         (* 合同補題 *)
            *** apply v_const.
            *** apply H21.
         ** apply multi_R.
