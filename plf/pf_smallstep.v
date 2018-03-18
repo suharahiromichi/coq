@@ -513,16 +513,16 @@ Proof.
     (** IHt1 の左側 *)
     + destruct IHt2 as [H21 | H22].       (** 選言を場合分けする。 *)
       (** IHt2 の左側、t1とt2がvalue であるとき。 *)
-      * destruct H11 as [n1 H11'].        (** value を場合分けする。 *)
-        destruct H21 as [n2 H21'].        (** value を場合分けする。 *)
+      * destruct H11 as [n1].            (** value を場合分けする。 *)
+        destruct H21 as [n2].            (** value を場合分けする。 *)
         exists (C (n1 + n2)).
         now apply ST_PlusConstConst.
       (** IHt2 の右側、t1がvalue、t2がstep可能であるとき。 *)
-      * destruct H22 as [t' H22'].       (** exists を場合分けする。 *)
+      * destruct H22 as [t'].           (** exists を場合分けする。 *)
         exists (P t1 t').
         now apply ST_Plus2.
     (** IHt1 の右側、t1がstep可能であるとき。 *)
-    + destruct H12 as [t' H12'].         (** exists を場合分けする。 *)
+    + destruct H12 as [t'].             (** exists を場合分けする。 *)
       exists (P t' t2).
       now apply ST_Plus1.
 Qed.
@@ -565,7 +565,7 @@ Proof.
   + easy.                   (** 前提がゴールと同じ。 *) (** apply H0. *)
   (** 右側 *)
   + easy.                         (** 矛盾した前提があるとき。 *)
-    (** exfalso. apply H. assumption. *) 
+     (** exfalso. apply H. assumption. *) 
 Qed.
 
 
