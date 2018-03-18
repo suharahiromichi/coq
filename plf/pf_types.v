@@ -43,11 +43,11 @@ Hint Constructors multi.
 
 4. Typing ... 型を導入する。型のついた（well-typed) 項という。
 
-5. Type Soundness ... 型の安全性（健全性ともいう） TAPL日本語版 p.72。
+5. Type Progress ... 型の進行性。型のついた項の正規形は値である。（ステップが行き詰まらない）
 
-- 進行性 Progress ... 型のついた項の正規形は値である。（ステップが行き詰まらない）
+6. Type Preservation ... 型の保存性。型のついた項をステップしても、また型のつく項である。
 
-- 型の保存性 Type Preservation ...型のついた項をステップしても、また型のつく項である。
+7. Type Soundness ... 型の安全性（健全性ともいう） TAPL日本語版 p.72。
  *)
 
 (* ################################################################# *)
@@ -178,10 +178,69 @@ forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2
  *)
 (** ステップは決定的である。 *)
 Check step_deterministic : forall x y1 y2, x ==> y1 -> x ==> y2 -> y1 = y2.
-
+(** とりあえず、以降では使わない。  *)
 
 (* ================================================================= *)
 (** ** Typing *)
 
+Print ty.
+(**
+[[
+Inductive ty : Set :=
+ | TBool : ty
+ | TNat : ty.
+]]
+*)
+
+Print has_type.
+(**
+[[
+Inductive has_type : tm -> ty -> Prop :=
+  | T_True : |- ttrue \in TBool
+  | T_False : |- tfalse \in TBool
+  | T_If : forall (t1 t2 t3 : tm) (T : ty),
+           |- t1 \in TBool ->
+           |- t2 \in T -> |- t3 \in T -> |- tif t1 t2 t3 \in T
+  | T_Zero : |- tzero \in TNat
+  | T_Succ : forall t1 : tm, |- t1 \in TNat -> |- tsucc t1 \in TNat
+  | T_Pred : forall t1 : tm, |- t1 \in TNat -> |- tpred t1 \in TNat
+  | T_Iszero : forall t1 : tm, |- t1 \in TNat -> |- tiszero t1 \in TBool.
+]]
+ *)
+
+Locate "|- _ \in _".                        (** [has_type t T] *)
+
+Check has_type_1 : |- tif tfalse tzero (tsucc tzero) \in TNat. (** 型が付く *)
+Check has_type_not : ~ (|- tif tfalse tzero ttrue \in TBool).  (** 型が付かない *)
+
+(** 正準形  *)
+(** 項の型がBoolで、項が値なら、その項はBool値である。 *)
+Check bool_canonical : forall t, |- t \in TBool -> value t -> bvalue t.
+(** 項の型がNatで、項が値なら、その項はNat値である。 *)
+Check nat_canonical : forall t, |- t \in TNat -> value t -> nvalue t.
+
+(* ================================================================= *)
+(** ** Progress *)
+(** 項tが型Tなら、tは値かステップできる。 *)
+Check progress : forall t T,
+  |- t \in T ->
+  value t \/ exists t', t ==> t'.
+
+(* ================================================================= *)
+(** ** Type Preservation *)
+(** 項tが型Tで、tがt'にステップできるなら、t'の型はTである。 *)
+Check preservation : forall t t' T,
+  |- t \in T ->
+  t ==> t' ->
+  |- t' \in T.
+
+(* ================================================================= *)
+(** ** Type Soundness *)
+(** 項tが型Tで、tがt'にマルチステップできるなら、t'は行き詰まっていない。
+        つまり、tはマルチステップして値になる。 *)
+Check soundness : forall t t' T,
+  |- t \in T ->
+  t ==>* t' ->
+  ~(stuck t').
 
 (* END *)
