@@ -105,6 +105,7 @@ Hint Unfold update.
 (* ================================================================= *)
 (** ** Operational Semantics *)
 
+Locate "_ ==> _".                           (** ["t1 '==>' t2" := step t1 t2] *)
 Print step.
 (**
 [[
@@ -117,13 +118,12 @@ Inductive step : tm -> tm -> Prop :=
   | ST_PredZero : tpred tzero ==> tzero
   | ST_PredSucc : forall t1 : tm, nvalue t1 -> tpred (tsucc t1) ==> t1
   | ST_Pred : forall t1 t1' : tm, t1 ==> t1' -> tpred t1 ==> tpred t1'
-  | ST_IszeroZero : tiszero tzero ==> ttrue
+  | ST_IszeroZero : tiszero tzero ==> ttrueo
   | ST_IszeroSucc : forall t1 : tm, nvalue t1 -> tiszero (tsucc t1) ==> tfalse
   | ST_Iszero : forall t1 t1' : tm, t1 ==> t1' -> tiszero t1 ==> tiszero t1'.
 ]]
 *)
 
-Locate "_ ==> _".                           (** ["t1 '==>' t2" := step t1 t2] *)
 (**
 Hint Constructors step.
 *)
@@ -192,6 +192,7 @@ Inductive ty : Set :=
 ]]
 *)
 
+Locate "|- _ \in _".                        (** [has_type t T] *)
 Print has_type.
 (**
 [[
@@ -208,10 +209,145 @@ Inductive has_type : tm -> ty -> Prop :=
 ]]
  *)
 
-Locate "|- _ \in _".                        (** [has_type t T] *)
-
 Check has_type_1 : |- tif tfalse tzero (tsucc tzero) \in TNat. (** 型が付く *)
 Check has_type_not : ~ (|- tif tfalse tzero ttrue \in TBool).  (** 型が付かない *)
+
+(* suhara *)
+(** 項の型を返す関数。計算量がO(n)であること。  *)
+Fixpoint type_of (t : tm) : option ty :=
+  match t with
+  | ttrue => Some TBool
+  | tfalse => Some TBool
+  | tif t1 t2 t3 => match type_of t1 with
+                    | Some TBool => match type_of t2 with
+                                    | Some TBool => match type_of t3 with
+                                                    | Some TBool => Some TBool
+                                                    | _ => None
+                                                    end
+                                    | Some TNat  => match type_of t3 with
+                                                    | Some TNat  => Some TNat
+                                                    | _ => None
+                                                    end
+                                    | _ => None
+                                    end
+                    | _ => None
+                    end
+  | tzero => Some TNat
+  | tsucc t1 => match type_of t1 with
+                | Some TNat => Some TNat
+                | _ => None
+                end
+  | tpred t1 => match type_of t1 with
+                | Some TNat => Some TNat
+                | _ => None
+                end
+  | tiszero t1 => match type_of t1 with
+                  | Some TNat => Some TBool
+                  | _ => None
+                  end
+  end.
+
+Compute type_of (tif tfalse tzero (tsucc tzero)). (** Some TNat *)
+Compute type_of (tif tfalse tzero ttrue).         (** None *)
+
+Lemma equiv_types_1 t ty : type_of t = Some ty -> |- t \in ty.
+Proof.
+  intros H.
+  generalize dependent ty.
+  induction t; intros ty H; inversion H.
+  - easy.
+  - easy.
+  - apply T_If.
+    + apply IHt1.
+      destruct (type_of t1).
+      * now destruct t.
+      * easy.
+    + apply IHt2.
+      destruct (type_of t1).
+      * destruct (type_of t2).
+        ** destruct (type_of t3).
+           *** destruct t.
+               **** destruct t0.
+                    ***** now destruct t4.
+                    ***** now destruct t4.
+               **** now destruct t0.
+           *** destruct t.
+               **** now destruct t0.
+               **** now destruct t0.
+        ** now destruct t.
+      * easy.
+    + apply IHt3.
+      destruct (type_of t1).
+      * destruct (type_of t2).
+        ** destruct (type_of t3).
+           *** destruct t.
+               **** destruct t0.
+                    ***** now destruct t4.
+                    ***** now destruct t4.
+               **** now destruct t0.
+           *** destruct t.
+               **** now destruct t0.
+               **** now destruct t0.
+        ** now destruct t.
+      * easy.
+  - easy.
+  - destruct ty.
+    + destruct (type_of t).
+      * now destruct t0.
+      * easy.
+    + apply T_Succ.
+      apply IHt.
+      destruct (type_of t).
+      * now destruct t0.
+      * easy.
+  - destruct ty.
+    + destruct (type_of t).
+      * now destruct t0.
+      * easy.
+    + apply T_Pred.
+      apply IHt.
+      destruct (type_of t).
+      * now destruct t0.
+      * easy.
+  - destruct ty.
+    * apply T_Iszero.
+      destruct (type_of t).
+      ** destruct t0.
+         *** easy.
+         *** now apply IHt.
+      ** easy.
+    * destruct (type_of t).
+      ** now destruct t0.
+      ** easy.
+Qed.
+
+Lemma equiv_types_2 t ty : |- t \in ty -> type_of t = Some ty.
+Proof.
+  intros H.
+  induction H.
+  - easy.
+  - easy.
+  - inversion t1; simpl;
+      rewrite IHhas_type1; simpl;
+        rewrite IHhas_type2; simpl;
+          rewrite IHhas_type3; simpl;
+            now destruct T.
+  - easy.
+  - inversion t1; simpl;
+      now rewrite IHhas_type.
+  - inversion t1; simpl;
+      now rewrite IHhas_type.
+  - inversion t1; simpl;
+      now rewrite IHhas_type.
+Qed.
+
+Theorem equiv_types t ty : type_of t = Some ty <-> |- t \in ty.
+Proof.
+  split.
+  - apply equiv_types_1.
+  - apply equiv_types_2.
+Qed.
+
 
 (** 正準形  *)
 (** 項の型がBoolで、項が値なら、その項はBool値である。 *)
