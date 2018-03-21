@@ -213,6 +213,21 @@ Check has_type_1 : |- tif tfalse tzero (tsucc tzero) \in TNat. (** 型が付く 
 Check has_type_not : ~ (|- tif tfalse tzero ttrue \in TBool).  (** 型が付かない *)
 
 (* suhara *)
+Theorem type_deterministic t ty1 ty2 :
+    has_type t ty1 -> has_type t ty2 -> ty1 = ty2.
+Proof.
+  intros Hy1 Hy2.
+  generalize dependent ty2.
+  induction Hy1; intros ty2 Hy2; inversion Hy2; subst.
+  - easy.
+  - easy.
+  - now apply IHHy1_2.
+  - easy.
+  - easy.
+  - easy.
+  - easy.
+Qed.
+
 (** 項の型を返す関数。計算量がO(n)であること。  *)
 Fixpoint type_of (t : tm) : option ty :=
   match t with
