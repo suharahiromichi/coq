@@ -217,15 +217,8 @@ Theorem type_deterministic t ty1 ty2 :
     has_type t ty1 -> has_type t ty2 -> ty1 = ty2.
 Proof.
   intros Hy1 Hy2.
-  generalize dependent ty2.
-  induction Hy1; intros ty2 Hy2; inversion Hy2; subst.
-  - easy.
-  - easy.
-  - now apply IHHy1_2.
-  - easy.
-  - easy.
-  - easy.
-  - easy.
+  induction Hy1; inversion Hy2; subst; try easy.
+  now apply IHHy1_2.
 Qed.
 
 (** 項の型を返す関数。計算量がO(n)であること。  *)
@@ -234,16 +227,10 @@ Fixpoint type_of (t : tm) : option ty :=
   | ttrue => Some TBool
   | tfalse => Some TBool
   | tif t1 t2 t3 => match type_of t1 with
-                    | Some TBool => match type_of t2 with
-                                    | Some TBool => match type_of t3 with
-                                                    | Some TBool => Some TBool
-                                                    | _ => None
-                                                    end
-                                    | Some TNat  => match type_of t3 with
-                                                    | Some TNat  => Some TNat
-                                                    | _ => None
-                                                    end
-                                    | _ => None
+                    | Some TBool => match (type_of t2, type_of t3) with
+                                    | (Some TBool, Some TBool) => Some TBool
+                                    | (Some TNat,  Some TNat)  => Some TNat
+                                    | _                        => None
                                     end
                     | _ => None
                     end
@@ -274,93 +261,62 @@ Proof.
   - easy.
   - apply T_If.
     + apply IHt1.
-      destruct (type_of t1).
-      * now destruct t.
-      * easy.
+      now destruct (type_of t1) as [t |]; try destruct t.
     + apply IHt2.
-      destruct (type_of t1).
-      * destruct (type_of t2).
-        ** destruct (type_of t3).
-           *** destruct t.
-               **** destruct t0.
-                    ***** now destruct t4.
-                    ***** now destruct t4.
-               **** now destruct t0.
-           *** destruct t.
-               **** now destruct t0.
-               **** now destruct t0.
-        ** now destruct t.
-      * easy.
+      try destruct (type_of t1) as [t |];
+        try destruct (type_of t2) as [t' |];
+        try destruct (type_of t3) as [t'' |];
+        try destruct t; try destruct t'; try destruct t'';
+          easy.
     + apply IHt3.
-      destruct (type_of t1).
-      * destruct (type_of t2).
-        ** destruct (type_of t3).
-           *** destruct t.
-               **** destruct t0.
-                    ***** now destruct t4.
-                    ***** now destruct t4.
-               **** now destruct t0.
-           *** destruct t.
-               **** now destruct t0.
-               **** now destruct t0.
-        ** now destruct t.
-      * easy.
+      try destruct (type_of t1) as [t |];
+        try destruct (type_of t2) as [t' |];
+        try destruct (type_of t3) as [t'' |];
+        try destruct t; try destruct t'; try destruct t'';
+          easy.
   - easy.
   - destruct ty.
-    + destruct (type_of t).
-      * now destruct t0.
-      * easy.
+    + now destruct (type_of t) as [t' |]; try destruct t'.
     + apply T_Succ.
       apply IHt.
-      destruct (type_of t).
-      * now destruct t0.
-      * easy.
+      now destruct (type_of t) as [t' |]; try destruct t'.
   - destruct ty.
-    + destruct (type_of t).
-      * now destruct t0.
-      * easy.
+    + now destruct (type_of t) as [t' |]; try destruct t'.
     + apply T_Pred.
       apply IHt.
-      destruct (type_of t).
-      * now destruct t0.
-      * easy.
+      now destruct (type_of t) as [t' |]; try destruct t'.
   - destruct ty.
-    * apply T_Iszero.
-      destruct (type_of t).
-      ** destruct t0.
-         *** easy.
-         *** now apply IHt.
-      ** easy.
-    * destruct (type_of t).
-      ** now destruct t0.
-      ** easy.
+    + apply T_Iszero.
+      apply IHt.
+      now destruct (type_of t) as [t' |]; try destruct t'.
+    + now destruct (type_of t) as [t' |]; try destruct t'.
 Qed.
 
 Lemma equiv_types_2 t ty : |- t \in ty -> type_of t = Some ty.
 Proof.
   intros H.
-  induction H.
+  induction H as [| | t' | | t' | t' | t'].
   - easy.
   - easy.
-  - inversion t1; simpl;
+  - inversion t'; simpl;
       rewrite IHhas_type1; simpl;
         rewrite IHhas_type2; simpl;
           rewrite IHhas_type3; simpl;
             now destruct T.
   - easy.
-  - inversion t1; simpl;
+  - inversion t'; simpl;
       now rewrite IHhas_type.
-  - inversion t1; simpl;
+  - inversion t'; simpl;
       now rewrite IHhas_type.
-  - inversion t1; simpl;
+  - inversion t'; simpl;
       now rewrite IHhas_type.
 Qed.
 
 Theorem equiv_types t ty : type_of t = Some ty <-> |- t \in ty.
 Proof.
   split.
-  - apply equiv_types_1.
-  - apply equiv_types_2.
+  - now apply equiv_types_1.
+  - now apply equiv_types_2.
 Qed.
 
 
