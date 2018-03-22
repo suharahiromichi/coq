@@ -128,7 +128,8 @@ Inductive step : tm -> tm -> Prop :=
 Hint Constructors step.
 *)
 
-(** 正規形 normal_form の定義は前章と同じく、もうステップできない項の意味である。 *)
+(** 正規形 normal_form の定義は前章の定義を使う。
+もうステップできない項の意味である。 *)
 Check @normal_form : forall X : Type, relation X -> X -> Prop.
 Print normal_form.
 (**
@@ -165,7 +166,7 @@ Proof.
   now exists t2.
 Qed.
 
-(** 決定的であることの定義は前章と同じである。 *)
+(** 決定的であることの定義は前章の定義を使う。 *)
 Check @deterministic : forall X : Type, relation X -> Prop.
 Print deterministic.
 (**
@@ -328,6 +329,7 @@ Check nat_canonical : forall t, |- t \in TNat -> value t -> nvalue t.
 
 (* ================================================================= *)
 (** ** Progress *)
+
 (** 項tが型Tなら、tは値かステップできる。 *)
 Check progress : forall t T,
   |- t \in T ->
@@ -335,6 +337,7 @@ Check progress : forall t T,
 
 (* ================================================================= *)
 (** ** Type Preservation *)
+
 (** 項tが型Tで、tがt'にステップできるなら、t'の型はTである。 *)
 Check preservation : forall t t' T,
   |- t \in T ->
@@ -343,8 +346,27 @@ Check preservation : forall t t' T,
 
 (* ================================================================= *)
 (** ** Type Soundness *)
+
+(** multistep マルチステップ簡約の定義は前章と同じである。
+ただし、定義しなおす必要がある。 *)
+Locate "_ ==>* _".                          (** [multistep t1 t2] *)
+Check multistep.
+Print multistep.                            (** [multi step] *)
+
+(** multi 反射推移閉包の定義は前章のを使う。 *)
+Check @multi : forall X : Type, relation X -> relation X.
+Print multi.
+(**
+[[
+Inductive multi (X : Type) (R : relation X) : relation X :=
+  | multi_refl : forall x : X, multi R x x
+  | multi_step : forall x y z : X, R x y -> multi R y z -> multi R x z.
+]]
+*)
+
 (** 項tが型Tで、tがt'にマルチステップできるなら、t'は行き詰まっていない。
         つまり、tはマルチステップして値になる。 *)
+
 Check soundness : forall t t' T,
   |- t \in T ->
   t ==>* t' ->
