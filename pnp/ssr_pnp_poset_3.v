@@ -33,24 +33,25 @@ Packの定義
         sort :> Type;
         m : posetMixin sort
       }.
-  Print Graph.                          (* [sort] : type >-> Sortclass *)
-  
+  Print Graph.   (* [sort] : posetType >-> Sortclass *)
+(*  Local Coercion sort : posetType >-> Sortclass. *)
+
+(*
   Variable cT: posetType.
   
-(*
   Print posetType.
   Definition poset_struct : posetMixin cT := (* Coercion cT *)
     let: PosetType _ c := cT return posetMixin cT in c.
   Definition valid_op := valid poset_struct.
   Definition rel_op := rel poset_struct.
 *)  
-  Definition valid_op {T : posetType} := @valid T (m T).
-  Definition rel_op {T : posetType} := @rel T (m T).
+  Definition valid_op {cT : posetType} := @valid cT (m cT).
+  Definition rel_op {cT : posetType} := @rel cT (m cT).
   
   Notation "x <== y" := (rel_op x y) (at level 70, no associativity).
   (* rel ではない！ *)
-  Notation Rel := rel_op.
-  Notation Valid := valid_op.
+  Notation Rel := @rel_op.
+  Notation Valid := @valid_op.
   
   Section POSETLemmas.
     Variable T : posetType.
@@ -106,7 +107,7 @@ Packの定義
   Section PosetExamples.
     Variables x y z : nat.
     
-    Check @Rel : forall cT : posetType, cT -> cT -> bool.
+    Check Rel : forall cT : posetType, cT -> cT -> bool.
     About "_ <== _".                          (* Rel := POSET.rel_op *)
     
     Goal x <== x.
