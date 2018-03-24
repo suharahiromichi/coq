@@ -58,7 +58,7 @@ Exports の宣言
       Notation Rel := rel_op.
       Notation Valid := valid_op.
       Coercion sort : type >-> Sortclass.
-
+      
       Section POSETLemmas.
         Variable T : posetType.
         
@@ -67,7 +67,7 @@ Exports の宣言
           case: T x => tp [rel Hv Href Hasym Htrans x].
             by apply: Href.
         Qed.
-      
+        
         Lemma poset_asym (x y : T) : x <== y -> y <== x -> x = y.
         Proof.
           case: T x y => tp [rel Hv Href Hasym Htrans x y].
@@ -84,25 +84,34 @@ Exports の宣言
   End POSET.
   Export POSET.Exports.                    (* Exportsをexportする。 *)
   
+(**
+自然数のPOSETを定義する。
+ *)
   Check leqnn : forall n : nat, n <= n.
-  Lemma eqn_leq' : forall m n, m <= n -> n <= m -> m = n.
+  
+  Lemma eqn_leq' : forall m n : nat, m <= n -> n <= m -> m = n.
   Proof.
     move=> m n.
     elim: m n => [|m IHm] [|n] //.
     move=> H1 H2; congr (_ .+1); move: H1 H2.
       by apply (IHm n).
   Qed.
+  
   Check leq_trans : forall n m p : nat, m <= n -> n <= p -> m <= p.
-
+  
   Definition nat_posetMixin :=
     PosetMixin
       (fun _ => id true)                    (* valid *)
       leqnn                                 (* ref *)
       eqn_leq'                              (* asym *)
       leq_trans.                            (* trans *)
-
+  
   Canonical nat_posetType := PosetType nat nat_posetMixin.
   Print Canonical Projections. (* nat <- POSETDef.sort ( nat_posetType ) *)
+  
+  Compute 1 <== 1.                          (* true *)
+  Compute 1 <== 2.                          (* true *)
+  Compute 2 <== 1.                          (* false *)
   
   Section PosetExamples.
     Variables x y z : nat.
