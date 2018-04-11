@@ -622,7 +622,10 @@ http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-
 (** 概要：
 
 マルチステップ簡約(multi-step reduction)関係 ==>* は、
-1ステップ関係 ==> の反射推移閉包です。
+1ステップ関係 step ==> の0回以上の繰り返しの反射推移閉包です。
+
+0回なら反射であり、
+2回stepして3回stepした結果と5回stepした結果が同じになるので推移性がある。
 
 （step自体は反射でも推移でもない。）
 *)
@@ -667,8 +670,7 @@ tが0以上のステップでt'に簡約され、
 t'が正規形(normal form、前出、もうこれ以上stepできない形)のとき、
 「t'はtの正規形である」と言います。
 
-これを二項関係 [normal_form_of t t'] で定義し、
-[t ==>* t'] で示す。
+これを二項関係 [normal_form_of t t'] で定義する。
  *)
 
 Print normal_form_of.
@@ -676,7 +678,7 @@ Print normal_form_of.
 
 (**
 概要：
-二項関係(normal_form_of)は、次のふたつの性質をもつ。
+この二項関係 [normal_form_of] は、次のふたつの性質をもつ。
 
 (1) 正規形の一意性：この二項関係(normal_form_of)は決定的である。
 (2) 簡約（評価）の停止性：すべての項に対して、正規形が存在する。
@@ -689,7 +691,7 @@ Print normal_form_of.
 (**
 (1) 正規形の一意性を証明する。
 
-xがy1とy2に簡約でき、y1もy2も正規形なら、y1 = y2 である。
+xが正規形のy1とy2に簡約できるなら、y1 = y2 である。
 
 [[
 deterministic normal_form_of :
@@ -738,7 +740,7 @@ Qed.
 
 stepは正規化性を持つ（任意のtは、0以上のステップで、正規形に到達できる）。
 つまり、任意のtに対して、あるt'があって、tからステップを進めるとt'に到達し、
-かつt'は正規形である。 
+かつ、t'はもうこれ以上stepできない（正規形である）。
 
 [[
 step_normalizing :
