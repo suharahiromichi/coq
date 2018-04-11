@@ -2,6 +2,10 @@
 
 From mathcomp Require Import all_ssreflect.
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Import Prenex Implicits.
+
 Axiom Excluded_Middle : forall (P : Prop), P \/ ~P. (* 排中律 *)
 Axiom Absurd : forall (P : Prop), ~ P /\ P -> False.
 
@@ -30,15 +34,15 @@ Section DIAG.
   Proof.
     exists diag.
     move=> n Hc.
-    apply: (Absurd (φ n n = diag n)).
+    apply: (@Absurd (φ n n = diag n)).
     split.
     - rewrite /diag => H1.
-      case H2 : (φ n n); by rewrite H2 in H1.
+      by case H2 : (φ n n); rewrite H2 in H1.
     - by rewrite Hc.
   Qed.
   
-    (* refine ((_ : φ n n <> diag n) (_ : φ n n = diag n)). *)
-    (* absurd (F n n = diag F n). *)
+  (* refine ((_ : φ n n <> diag n) (_ : φ n n = diag n)). *)
+  (* absurd (F n n = diag F n). *)
 End DIAG.
 
 (* END *)
