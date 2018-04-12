@@ -34,7 +34,7 @@ Hint Constructors multi.
 
 1. Syntax ... 前章より複雑な項を定義する。
 
-2, Operational Semantics ... 前節で定義した項についてステップ（==>）を定義する。
+2. Operational Semantics ... 前節で定義した項についてステップ（==>）を定義する。
 (single-step) small-step 評価関係(簡約関係)。
 
 3. Normal Forms and Values ... 強正規化が成り立たない。
@@ -222,7 +222,7 @@ Proof.
   now apply IHHy1_2.
 Qed.
 
-(** 項の型を返す関数。計算量がO(n)であること。  *)
+(** 項の型を返す関数。計算量がO(n)であること。suhara *)
 Fixpoint type_of (t : tm) : option ty :=
   match t with
   | ttrue => Some TBool
@@ -319,7 +319,7 @@ Proof.
   - now apply equiv_types_1.
   - now apply equiv_types_2.
 Qed.
-
+(** 項の型を返す関数。ここまで。suhara *)
 
 (** 正準形  *)
 (** 項の型がBoolで、項が値なら、その項はBool値である。 *)
@@ -347,12 +347,6 @@ Check preservation : forall t t' T,
 (* ================================================================= *)
 (** ** Type Soundness *)
 
-(** multistep マルチステップ簡約の定義は前章と同じである。
-ただし、定義しなおす必要がある。 *)
-Locate "_ ==>* _".                          (** [multistep t1 t2] *)
-Check multistep.
-Print multistep.                            (** [multi step] *)
-
 (** multi 反射推移閉包の定義は前章のを使う。 *)
 Check @multi : forall X : Type, relation X -> relation X.
 Print multi.
@@ -363,6 +357,12 @@ Inductive multi (X : Type) (R : relation X) : relation X :=
   | multi_step : forall x y z : X, R x y -> multi R y z -> multi R x z.
 ]]
 *)
+
+(** multistep マルチステップ簡約の定義は前章と同じである。
+ただし、[Define multistep := (multi step).] と定義しなおす必要がある。 *)
+Locate "_ ==>* _".                          (** [multistep t1 t2] *)
+Check multistep.
+Print multistep.                            (** [multi step] *)
 
 (** 項tが型Tで、tがt'にマルチステップできるなら、t'は行き詰まっていない。
         つまり、tはマルチステップして値になる。 *)
