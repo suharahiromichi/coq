@@ -618,6 +618,7 @@ http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-
  *)
 
 (* ################################################################# *)
+(** ProofCafe ##75 2018/04/21 *)
 (** * Multi-Step Reduction *)
 (** 概要：
 
