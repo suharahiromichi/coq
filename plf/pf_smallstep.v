@@ -623,12 +623,12 @@ http://study-func-prog.blogspot.jp/2010/12/coq-coq-advent-calender-inversion-19-
 (** 概要：
 
 マルチステップ簡約(multi-step reduction)関係 ==>* は、
-1ステップ関係 step ==> の0回以上の繰り返しの反射推移閉包です。
+1ステップ関係 step ==> の0回以上の繰り返しであり、反射推移閉包です。
 
+stepを1回した場合結果は、反射でも推移でもない。しかし、
+例えば、
 0回なら反射であり、
 2回stepして3回stepした結果と5回stepした結果が同じになるので推移性がある。
-
-（step自体は反射でも推移でもない。）
 *)
 
 Check step : tm -> tm -> Prop.
@@ -636,11 +636,51 @@ Check step : relation tm.
 Check multi step : tm -> tm -> Prop.        (* tm1 ==>* tm2 *)
 Check multi step : relation tm.             (* tm1 ==>* tm2 *)
 
-(** 導入される公理 *)
-Check multi_refl step : forall x : tm, x ==>* x. (* 反射 *)
-Check multi_step step : forall x y z : tm, x ==> y -> y ==>* z -> x ==>* z. (* 推移 *)
-
+(** 導入される定義 *)
 (** lf/Rel.v では、clos_refl_trans_1n として定義されている。 *)
+Print multi_refl.
+(**
+[[
+Inductive multi (X : Type) (R : relation X) : relation X :=
+  | multi_refl : forall x : X, multi R x x
+  | multi_step : forall x y z : X, R x y -> multi R y z -> multi R x z
+]]
+*)
+Check multi_refl step : forall x : tm, x ==>* x.
+Check multi_step step : forall x y z : tm, x ==> y -> y ==>* z -> x ==>* z.
+(** ふたつめの定義は、推移性そのものではないことに注意してください。
+stepして、multi_step した結果は multi_step と言っているだけ。
+
+推移性を自然に書いた次の定義だと、y の決め方が難しく、証明が難しくなる。
+このあたりの説明は、lf/Rel.v にあります。
+
+[[multi R x y  -> multi R y z -> multi R x z]]
+  *)
+
+(** 本当に推移性を持つことは証明する必要がある。 *)
+(** これらの補題は実際に使う。  *)
+Lemma multi_R : forall (X : Type) (R : relation X) (x y : X),
+    R x y -> multi R x y.
+Proof.
+  intros X R x y HR.
+  apply (multi_step R x y).             (* apply multi_step with y. *)
+  apply HR.
+  now apply multi_refl.
+Qed.
+
+Lemma multi_trans : forall (X : Type) (R : relation X) (x y z : X),
+    multi R x y  ->
+    multi R y z ->
+    multi R x z.
+Proof.
+  intros X R x y z H1 H2.
+  induction H1 as [|x x' y HR G].
+  + now apply H2.                           (* (1) multi step R x z *)
+  + apply (multi_step R x x' z).            (* (2) multi step R x z *)
+    apply HR.                               (* (2) R x x' *)
+    apply IHG.                              (* (2) multi step R x z *)
+    now apply H2.
+Qed.
 
 (** 前出の ==> ではだめだった例を証明する。 *)
 
