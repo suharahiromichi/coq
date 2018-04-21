@@ -665,7 +665,10 @@ Lemma multi_R : forall (X : Type) (R : relation X) (x y : X),
     R x y -> multi R x y.
 Proof.
   intros X R x y HR.
-  apply (multi_step R x y).             (* apply multi_step with y. *)
+  apply (multi_step R) with (y:=y).
+  Check (multi_step R x y y).             (* apply multi_step with y. *)
+  (* apply (multi_step R x y y). *)
+  (* apply (multi_step R x y).             (* apply multi_step with y. *) *)
   apply HR.
   now apply multi_refl.
 Qed.
@@ -678,19 +681,39 @@ Lemma multi_trans : forall (X : Type) (R : relation X) (x y z : X),
     multi R y z ->
     multi R x z.
 Proof.
-  intros X R x y z H1 H2.
-  induction H1 as [|x x' y HR G].
-  + now apply H2.                           (* (1) multi step R x z *)
-  + apply (multi_step R x x' z).            (* (2) multi step R x z *)
-    apply HR.                               (* (2) R x' z *)
-    apply IHG.                              (* (2) multi step R x' z *)
-    now apply H2.
+  intros X R x y z G H.
+  induction G as [|x y' y HR G].
+  - now apply H.                         (* (1) multi step R x z *)
+  - apply (multi_step R x y' z).         (* (2) multi step R x z *)
+    + now apply HR.                      (* (2.1) R x' z *)
+    + apply IHG.                         (* (2.2) multi step R x' z *)
+      now apply H.
 Qed.
 
 (** 前出の ==> ではだめだった例を証明する。 *)
 
 Definition sample := (P (P (C 1) (P (C 2) (C 3)))
                         (P (C 11) (P (C 12) (C 13)))) : tm.
+
+Goal sample ==>* (C 42).
+Proof.
+  apply multi_step with (y:=(P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))))).
+  (** sample ==> P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) *)
+  - constructor.
+    constructor.
+    constructor.
+    constructor.
+  - apply multi_step with (y:=(P (C 6) (P (C 11) (P (C 12) (C 13))))).
+    (** P (P (C 1) (C 5)) (P (C 11) (P (C 12) (C 13))) ==>
+         P (C 6) (P (C 11) (P (C 12) (C 13))) *)
+    + constructor.
+      constructor.
+    + apply multi_step with (y:=(P (C 6) (P (C 23) (C 13)))).
+      * constructor.
+        constructor.
+        admit.
+      * admit.
+Admitted.
 
 Goal sample ==>* (P (C 6)
                    (P (C 11) (P (C 12) (C 13)))).
@@ -774,12 +797,12 @@ Proof.
   generalize dependent y2.
   
   induction P11 as [x|x y z H]; intros y2 Hy2 P2.
-  - inversion Hy2.
+  - destruct Hy2.
     + reflexivity.
-    + induction P12.
+    + destruct P12.
       now exists y.
   - apply IHP11.
-    + apply P12.
+    + now apply P12.
     + inversion Hy2; subst.
       * now apply (l_nf__not_step y2 y step) in P2.  (* P2 と Hy2 は矛盾、補題参照 *)
       * now rewrite (step_deterministic x y y0). (* H と H0 から y = y0 *)
@@ -850,6 +873,8 @@ Qed.
 (** ** Equivalence of Big-Step and Small-Step *)
 
 (** evalF と multi step [==>*] のどちらも、全域関数である。 *)
+
+Compute evalF sample.
 
 (** 概要：
 
