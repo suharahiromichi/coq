@@ -637,7 +637,8 @@ Check multi step : tm -> tm -> Prop.        (* tm1 ==>* tm2 *)
 Check multi step : relation tm.             (* tm1 ==>* tm2 *)
 
 (** 導入される定義 *)
-(** lf/Rel.v では、clos_refl_trans_1n として定義されている。 *)
+(** lf/Rel.v や、theories/Relations/Relation_Operators.v では、
+clos_refl_trans_1n として定義されている。 *)
 Print multi_refl.
 (**
 [[
@@ -657,8 +658,9 @@ stepして、multi_step した結果は multi_step と言っているだけ。
 [[multi R x y  -> multi R y z -> multi R x z]]
   *)
 
-(** 本当に推移性を持つことは証明する必要がある。 *)
-(** これらの補題は実際に使う。  *)
+(** ただし、この multi の定義がいくつかの性質を満たすことは、証明が必要である。  *)
+
+(** multi R が R を含む、すなわち、R x y なら multi R x y である。 *)
 Lemma multi_R : forall (X : Type) (R : relation X) (x y : X),
     R x y -> multi R x y.
 Proof.
@@ -668,6 +670,9 @@ Proof.
   now apply multi_refl.
 Qed.
 
+(** 推移性を持つことも証明する必要がある。 *)
+(** これらの補題は実際に使う。  *)
+(** より詳しくは、theories/Relations/Operators_Properties.v  *)
 Lemma multi_trans : forall (X : Type) (R : relation X) (x y z : X),
     multi R x y  ->
     multi R y z ->
@@ -677,8 +682,8 @@ Proof.
   induction H1 as [|x x' y HR G].
   + now apply H2.                           (* (1) multi step R x z *)
   + apply (multi_step R x x' z).            (* (2) multi step R x z *)
-    apply HR.                               (* (2) R x x' *)
-    apply IHG.                              (* (2) multi step R x z *)
+    apply HR.                               (* (2) R x' z *)
+    apply IHG.                              (* (2) multi step R x' z *)
     now apply H2.
 Qed.
 
@@ -714,7 +719,11 @@ t'が正規形(normal form、前出、もうこれ以上stepできない形)の�
 これを二項関係 [normal_form_of t t'] で定義する。
  *)
 
+Print step_normal_form.                     (* [normal_form step] *)
+Print normal_form.
+(** [fun (X : Type) (R : relation X) (t : X) => ~(∃ t' : X, R t t')] *)
 Print normal_form_of.
+(** [fun (t t' : tm) => t ==>* t' /\ step_normal_form t')] *)
 (** [fun (t t' : tm) => t ==>* t' /\ ~(∃t'', t' ==> t'')] *)
 
 (**
@@ -738,9 +747,11 @@ xが正規形のy1とy2に簡約できるなら、y1 = y2 である。
 deterministic normal_form_of :
   ∀x y1 y2. normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2
 ]]
+
+[deterministic] は既出。
 *)
 
-(** 補題： 正規型なら、 stepしない suhara *)
+(** 補題： 正規型なら stepしない。 suhara *)
 (** [step_normal_form x] と [x ==> y] は矛盾 *)
 (** ただし、これは任意の二項関係(s : tm -> tm -> Prop) で成立する。 *)
 Lemma l_nf__not_step : forall (x y : tm) s, normal_form s x -> ~ s x y.
@@ -754,7 +765,7 @@ Qed.
 Goal deterministic normal_form_of.
 Proof.
   unfold deterministic.
-  (** forall x y1 y2 : tm, normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2 *)
+  (** [forall x y1 y2 : tm, normal_form_of x y1 -> normal_form_of x y2 -> y1 = y2] *)
   unfold normal_form_of.
   unfold step_normal_form.                  (* normal_form step *)
   intros x y1 y2 P1 P2.
@@ -770,7 +781,7 @@ Proof.
   - apply IHP11.
     + apply P12.
     + inversion Hy2; subst.
-      * now apply (l_nf__not_step y2 y step) in P2.  (* P2 と Hy2 は矛盾、補足参照 *)
+      * now apply (l_nf__not_step y2 y step) in P2.  (* P2 と Hy2 は矛盾、補題参照 *)
       * now rewrite (step_deterministic x y y0). (* H と H0 から y = y0 *)
     + easy.                                      (* apply P2 *)
 Qed.
@@ -779,10 +790,17 @@ Qed.
 (**
 (2) 簡約（評価）の停止性を証明する。
 
+直観的な証明：
+stepを1回おこなうと[P]が1個減る。こののとから、stepを繰り返すといつかは[P]がなくなる。
+(see. TAPL p.29)
+
+形式的な証明：
 stepは正規化性を持つ（任意のtは、0以上のステップで、正規形に到達できる）。
+[[
+∀t, ∃t', normal_form_of t t'
+]]
 つまり、任意のtに対して、あるt'があって、tからステップを進めるとt'に到達し、
 かつ、t'はもうこれ以上stepできない（正規形である）。
-
 [[
 step_normalizing :
     ∀t, ∃t', t ==>* t' /\ ~(∃t'', t' ==> t'')
@@ -815,6 +833,7 @@ Proof.
     rewrite <- H' in H21.
     exists (C (n1 + n2)).
     split.
+    (* apply multi_step ではだめ。 *)
     + apply multi_trans with (P (C n1) t2).
       * now apply multistep_congr_1.        (* 合同補題 *)
       * apply multi_trans with (P (C n1) (C n2)).
@@ -829,6 +848,9 @@ Qed.
 
 (* ================================================================= *)
 (** ** Equivalence of Big-Step and Small-Step *)
+
+(** evalF と multi step [==>*] のどちらも、全域関数である。 *)
+
 (** 概要：
 
 （略）
