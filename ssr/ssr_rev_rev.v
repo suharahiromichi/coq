@@ -25,11 +25,12 @@ Section Rev.
   
   (** ### rev1 に関する補題を証明する。  *)
   
-  Lemma snoc_rev1 (x : T) (l : seq T) : rev1 (rcons l x) = x :: (rev1 l).
+  Lemma rcons_rev1 (x : T) (l : seq T) : rev1 (rcons l x) = x :: (rev1 l).
   Proof.
     elim: l => [| x' l IHl] /=.
     - done.
-    - by rewrite IHl.
+    - rewrite IHl.
+      done.
   Qed.
   
   (** ## 末尾再帰を使った定義 *)
@@ -49,14 +50,17 @@ Section Rev.
     elim: l m => [| x l IHl m] /=.
     + done.
     + rewrite -[x :: m ++ n]cat_cons.
-        by rewrite (IHl (x :: m)).
+      rewrite (IHl (x :: m)).
+      done.
   Qed.
   
   Lemma l_rev2_cat_l (l m n : seq T) : catrev (l ++ m) n = catrev m [::] ++ catrev l n.
   Proof.
     elim: l n => [n | a l IHl n] /=.
-    - by rewrite -l_rev2_cat_r.
-    - by rewrite IHl.
+    - rewrite -l_rev2_cat_r.
+      done.
+    - rewrite IHl.
+      done.
   Qed.
   
   (** ## ふたつの定義が同じであることの証明 *)
@@ -64,11 +68,11 @@ Section Rev.
   Theorem rev1_rev2 (l : seq T) : rev1 l = rev2 l.
   Proof.
     rewrite /rev2.
-    elim: l.
+    elim: l => [| a l IHl] /=.
     - done.
-    - move=> a l IHl /=.
-      rewrite IHl /rcons /=.
-        by rewrite -l_rev2_cat_r.
+    - rewrite IHl /rcons.
+      rewrite -l_rev2_cat_r.
+      done.
   Qed.
   
   (** # 対合であることを証明する。 *)
@@ -79,17 +83,17 @@ Section Rev.
   Proof.
     elim: l => [| n l IHl] /=.
     - done.
-    - rewrite snoc_rev1.
-        by rewrite IHl.
+    - rewrite rcons_rev1.
+      rewrite IHl.
+      done.
   Qed.
   
   (** ## rev2 が対合であることを証明する。rev1を経由する。 *)
   
   Lemma rev2_rev2 (l : seq T) : rev2 (rev2 l) = l.
   Proof.
-    rewrite -rev1_rev2.
-    rewrite -rev1_rev2.
-      by apply rev1_involutive.
+    rewrite -!rev1_rev2.
+    apply rev1_involutive.
   Qed.
   
   (** ## rev2 が対合であることを証明する。直接証明する。 *)
@@ -103,7 +107,8 @@ Section Rev.
       rewrite (l_rev2_cat_r l [::] [:: a]).
       Check l_rev2_cat_l (catrev l [::]) [::a] [::].
       rewrite (l_rev2_cat_l (catrev l [::]) [::a] [::]).
-        by rewrite IHl /=.
+      rewrite IHl /=.
+      done.
   Qed.
   
 End Rev.
