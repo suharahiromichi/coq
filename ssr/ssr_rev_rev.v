@@ -43,51 +43,12 @@ Section Rev.
         by rewrite (IH (x :: m)).
   Qed.
   
-  (*
-  Lemma catrev_catr s t u : rev2s s (t ++ u) = rev2s s t ++ u.
-  Proof. by elim: s t => //= x s IHs t; rewrite -IHs. Qed.
-
-  Lemma catrev_catl s t u : rev2s (s ++ t) u = rev2s t (rev2s s u).
-  Proof. by elim: s u => /=. Qed.
-
-  Lemma catrevE s t : rev2s s t = rev2s s [::] ++ t.
-  Proof. by rewrite -catrev_catr. Qed.
-   *)
-  
   Lemma l_rev2_cat_l (s t u : seq T) : rev2s (s ++ t) u = rev2s t [::] ++ rev2s s u.
   Proof.
     elim: s u => [u | a l IH u] /=.
     - by rewrite l_rev2_cat_r.
     - by rewrite IH.
   Qed.
-  
-  (*
-  Lemma l_rev2_cat_l (s t u : seq T) : rev2s (s ++ t) u = rev2s t [::] ++ rev2s s u.
-  Proof.
-    rewrite -catrevE.
-      by rewrite catrev_catl.
-  Qed.
-  *)
-(*  
-
-  Lemma test21 : forall l m,  rev2s l [::] ++ m = rev2s l m.
-  Proof.
-    move=> l.
-    elim: l => [l| x l IH l'] /=.
-    + done.
-    + Check (IH (x :: l')).
-  Admitted.
-  
-  Lemma test22 : forall l m,  rev2s l [::] ++ rev2s m [::] = rev2s (m ++ l) [::].
-  Proof.
-  Admitted.
-  
-  Lemma test21' : forall l a, rcons (rev2s l [::]) a = rev2s l [:: a].
-  Admitted.
-  
-  Lemma test22' : forall l a,  a :: (rev2s l [::]) = rev2s (rcons l a) [::].
-  Admitted.
- *)
   
   (** ## ふたつの定義が同じであることの証明 *)
   
@@ -126,7 +87,7 @@ Section Rev.
   Proof.
     rewrite -rev1_rev2.
     rewrite -rev1_rev2.
-    apply rev1_involutive.
+      by apply rev1_involutive.
   Qed.
   
   (** ## rev2 が対合であることを証明する。直接証明する。 *)
@@ -138,12 +99,8 @@ Section Rev.
     - done.
     - Check l_rev2_cat_r l [::] [:: a].
       rewrite -(l_rev2_cat_r l [::] [:: a]).
-      (* rewrite -(test21 l [:: a]) /=. *)
-      (* Check test22 (rev2s l [::]) [:: a]. 
-      Check (test22 [:: a] (rev2s l [::])). *)
       Check l_rev2_cat_l (rev2s l [::]) [::a] [::].
       rewrite (l_rev2_cat_l (rev2s l [::]) [::a] [::]).
-      (* rewrite -(test22 [:: a] (rev2s l [::])). *)
         by rewrite IH /=.
   Qed.
   
