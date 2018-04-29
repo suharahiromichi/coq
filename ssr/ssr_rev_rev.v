@@ -25,17 +25,17 @@ Section Rev.
   
   (** ## 末尾再帰を使った定義 *)
   
-  Fixpoint rev2s (l m : seq T) : seq T :=
+  Fixpoint catrev (l m : seq T) : seq T :=
     match l with
     | [::] => m
-    | x :: l => rev2s l (x :: m)
+    | x :: l => catrev l (x :: m)
     end.
   
-  Definition rev2 (l : seq T) : seq T := rev2s l [::].
+  Definition rev2 (l : seq T) : seq T := catrev l [::].
   
   (** ## rev2 に関する補題を証明する。  *)
   
-  Lemma l_rev2_cat_r (l m n : seq T) : rev2s l m ++ n = rev2s l (m ++ n).
+  Lemma l_rev2_cat_r (l m n : seq T) : catrev l (m ++ n) = catrev l m ++ n.
   Proof.
     elim: l m => [| x l IH m] /=.
     + done.
@@ -43,10 +43,10 @@ Section Rev.
         by rewrite (IH (x :: m)).
   Qed.
   
-  Lemma l_rev2_cat_l (s t u : seq T) : rev2s (s ++ t) u = rev2s t [::] ++ rev2s s u.
+  Lemma l_rev2_cat_l (l m n : seq T) : catrev (l ++ m) n = catrev m [::] ++ catrev l n.
   Proof.
-    elim: s u => [u | a l IH u] /=.
-    - by rewrite l_rev2_cat_r.
+    elim: l n => [n | a l IH n] /=.
+    - by rewrite -l_rev2_cat_r.
     - by rewrite IH.
   Qed.
   
@@ -59,7 +59,7 @@ Section Rev.
     - done.
     - move=> a l IH /=.
       rewrite IH /rcons /=.
-        by rewrite l_rev2_cat_r.
+        by rewrite -l_rev2_cat_r.
   Qed.
   
   (** ## rev1 が対合であることを証明する。 *)
@@ -98,9 +98,9 @@ Section Rev.
     elim: l => [| a l IH] /=.
     - done.
     - Check l_rev2_cat_r l [::] [:: a].
-      rewrite -(l_rev2_cat_r l [::] [:: a]).
-      Check l_rev2_cat_l (rev2s l [::]) [::a] [::].
-      rewrite (l_rev2_cat_l (rev2s l [::]) [::a] [::]).
+      rewrite (l_rev2_cat_r l [::] [:: a]).
+      Check l_rev2_cat_l (catrev l [::]) [::a] [::].
+      rewrite (l_rev2_cat_l (catrev l [::]) [::a] [::]).
         by rewrite IH /=.
   Qed.
   
