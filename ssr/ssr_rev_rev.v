@@ -7,12 +7,12 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-(** # 二種類のreverseの定義 *)
-
 Section Rev.
   
   Variable T : Type.                        (* 任意のT型のデータについて、 *)
 
+  (** # 二種類のreverseの定義 *)
+  
   (** ## rcons を使った定義 *)
 
   Definition rcons l (a : T) := l ++ [:: a].
@@ -22,6 +22,15 @@ Section Rev.
     | nil    => nil
     | h :: t => rcons (rev1 t) h
     end.
+  
+  (** ### rev1 に関する補題を証明する。  *)
+  
+  Lemma snoc_rev1 (x : T) (l : seq T) : rev1 (rcons l x) = x :: (rev1 l).
+  Proof.
+    elim: l => [| x' l IHl] /=.
+    - done.
+    - by rewrite IHl.
+  Qed.
   
   (** ## 末尾再帰を使った定義 *)
   
@@ -33,21 +42,21 @@ Section Rev.
   
   Definition rev2 (l : seq T) : seq T := catrev l [::].
   
-  (** ## rev2 に関する補題を証明する。  *)
+  (** ### rev2 に関する補題を証明する。  *)
   
   Lemma l_rev2_cat_r (l m n : seq T) : catrev l (m ++ n) = catrev l m ++ n.
   Proof.
-    elim: l m => [| x l IH m] /=.
+    elim: l m => [| x l IHl m] /=.
     + done.
     + rewrite -[x :: m ++ n]cat_cons.
-        by rewrite (IH (x :: m)).
+        by rewrite (IHl (x :: m)).
   Qed.
   
   Lemma l_rev2_cat_l (l m n : seq T) : catrev (l ++ m) n = catrev m [::] ++ catrev l n.
   Proof.
-    elim: l n => [n | a l IH n] /=.
+    elim: l n => [n | a l IHl n] /=.
     - by rewrite -l_rev2_cat_r.
-    - by rewrite IH.
+    - by rewrite IHl.
   Qed.
   
   (** ## ふたつの定義が同じであることの証明 *)
@@ -57,21 +66,14 @@ Section Rev.
     rewrite /rev2.
     elim: l.
     - done.
-    - move=> a l IH /=.
-      rewrite IH /rcons /=.
+    - move=> a l IHl /=.
+      rewrite IHl /rcons /=.
         by rewrite -l_rev2_cat_r.
   Qed.
   
-  (** ## rev1 が対合であることを証明する。 *)
+  (** # 対合であることを証明する。 *)
   
-  Lemma snoc_rev1 : forall n l,
-      rev1 (rcons l n) = n :: (rev1 l).
-  Proof.
-    move=> n l.
-    elim: l => [|m l IHl] /=.
-    - done.
-    - by rewrite IHl.
-  Qed.
+  (** ## rev1 が対合であることを証明する。 *)
   
   Theorem rev1_involutive (l : seq T) : rev1 (rev1 l) = l.
   Proof.
@@ -95,13 +97,13 @@ Section Rev.
   Lemma rev2_rev2' (l : seq T) : rev2 (rev2 l) = l.
   Proof.
     rewrite /rev2.
-    elim: l => [| a l IH] /=.
+    elim: l => [| a l IHl] /=.
     - done.
     - Check l_rev2_cat_r l [::] [:: a].
       rewrite (l_rev2_cat_r l [::] [:: a]).
       Check l_rev2_cat_l (catrev l [::]) [::a] [::].
       rewrite (l_rev2_cat_l (catrev l [::]) [::a] [::]).
-        by rewrite IH /=.
+        by rewrite IHl /=.
   Qed.
   
 End Rev.
