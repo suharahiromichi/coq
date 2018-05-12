@@ -34,6 +34,19 @@ Proof.
   (* p < o のとき、Goal は m <= n /\ true -> False *)
   Admitted.
 
+(* ゴールに不等式がないと使えない。 *)
+Goal forall (m n : nat), m = n.
+Proof.
+  move=> m n.
+  Fail case: leqP.
+  Check (leqP m n).
+  case: (leqP m n).
+Admitted.  
+
+
+(* ***** PnP から ***** *)
+
+
 Lemma huh' n m : (m <= n) /\ (m > n) -> False.
 Proof.
   move/andP.
