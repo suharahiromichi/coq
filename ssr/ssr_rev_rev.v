@@ -13,6 +13,7 @@ From mathcomp Require Import all_ssreflect.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
+
 Section Rev.
   (* 任意のT型のデータについて証明する。 *)
   (* Sectionの外から適当な型を与えたり、データから型を推論できる。  *)
@@ -103,7 +104,7 @@ Section Rev.
     elim: l => [| a l IHl] /=.
     - done.
     - rewrite (l_rev2_cat_r l [::] [:: a]).
-    - rewrite (l_rev2_cat_l (catrev l [::]) [::a] [::]).
+      rewrite (l_rev2_cat_l (catrev l [::]) [::a] [::]).
       rewrite IHl.
       done.
   Qed.
