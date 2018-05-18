@@ -43,8 +43,8 @@ Section Rev.
     revsub l (m ++ n) = revsub l m ++ n.
   Proof.
     elim: l m => [| x l IHl m] /=.
-    + done.
-    + rewrite -[x :: m ++ n]cat_cons.
+    - done.
+    - rewrite -[x :: m ++ n]cat_cons.
       rewrite (IHl (x :: m)).
       done.
   Qed.
@@ -79,7 +79,7 @@ Section Rev.
   Qed.
   
   (** ** rev2 について証明。rev1を経由する例 *)
-  (** すでにある定理を再利用する。 *)
+  (* すでにある定理を再利用する。 *)
   Theorem rev2_involutive (l : seq T) : rev2 (rev2 l) = l.
   Proof.
     rewrite -!rev1_rev2.
@@ -119,7 +119,7 @@ End Rev.
 *)
 
 (**
-[2.] 萩原学、アフェルト・レナルド 「Coq/SSReflect/MathComp」 森北出版
+[2.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
 [http://www.morikita.co.jp/books/book/3287]
 
 SSReflect本。おすすめ。数学の定理の証明がテーマである。
