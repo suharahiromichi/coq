@@ -28,7 +28,7 @@ Hint Constructors multi.
  *)
 
 (* ################################################################# *)
-(** ProofCafe ##75 2018/04/21 *)
+(** ProofCafe ##76 2018/06/16 *)
 
 (** 概要
 
@@ -131,6 +131,18 @@ Hint Constructors step.
 (* ================================================================= *)
 (** ** Normal Forms and Values *)
 
+(** 前章 Smallstep.v の復習：
+（定義）項が正規形であるとは、その項がもうこれ以上ステップできないことをいう。
+normal_form
+この定義は、本章 Types.v でも引き継ぐ。
+
+（定理）項が正規形であることと、項が値であることは同値である。
+nf_same_as_value
+
+nf_is_value と value_is_nf 
+本章の項の定義では nf_is_value が成立しないので、同値ではない。
+ *)
+
 (** 正規形 normal_form の定義は前章の定義を使う。
 もうステップできない項の意味である。 *)
 Check @normal_form : forall X : Type, relation X -> X -> Prop.
@@ -144,6 +156,10 @@ fun (X : Type) (R : relation X) (t : X) => ~ (exists t' : X, R t t')
 *)
 Print step_normal_form.                     (** [normal_form step] *)
 
+(**
+（定義）正規形だが値でない項を、ステップが行き詰まる(stuck)項と呼ぶ。
+（定理）本章の項の定義だと、ステップが行き詰まる項がある。
+*)
 Check stuck : tm -> Prop.
 Print stuck.
 (**
@@ -152,13 +168,21 @@ stuck = fun t : tm => step_normal_form t /\ ~ value t.
 ]]
  *)
 
-(** ステップが行き詰まる項が存在する。ステップできないが、値でもない項がある。 *)
+(** ステップが行き詰まる項が存在することを証明する。 *)
+(** 前章の [nf_is_value : forall t, normal_form step t -> value t] と比べる。  *)
 Check some_term_is_stuck : exists t : tm, stuck t.
 Check some_term_is_stuck : exists t : tm, normal_form step t /\ ~ value t.
 
 (** 値は正規形である。値ならステップできない項である。 *)
-Check value_is_nf : forall t : tm, value t -> step_normal_form t.
+(** 前章の結果とおなじ。  *)
 Check value_is_nf : forall t : tm, value t -> normal_form step t.
+Check value_is_nf : forall t : tm, value t -> step_normal_form t.
+Check value_is_nf : forall t : tm, value t -> ~ (exists t', t ==> t').
+
+(**
+問題提起：どんな項だと行き詰まるのか、行き詰まらないのか。
+それを事前に知ることができるだろうか。答えは、Type Progress の節を参照のこと。
+ *)
 
 (* suhara *)
 Lemma value_is_not_step t1 t2 : value t1 -> ~ t1 ==> t2.
@@ -169,6 +193,9 @@ Proof.
   now exists t2.
 Qed.
 
+(**
+（定理) ステップは決定的である。
+ *)
 (** 決定的であることの定義は前章の定義を使う。 *)
 Check @deterministic : forall X : Type, relation X -> Prop.
 Print deterministic.
