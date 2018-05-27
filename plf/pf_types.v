@@ -387,7 +387,7 @@ Check nat_canonical : forall t, |- t \in TNat -> value t -> nvalue t.
 (** 進行 [TAPL 定理8.3.2] *)
 Check progress : forall t T,
   |- t \in T ->
-  value t \/ exists t', t ==> t'.
+  value t \/ exists t', t ==> t'.           (* ~ (stuck t) *)
 
 (* ================================================================= *)
 (** ** Type Preservation *)
@@ -421,10 +421,33 @@ Print multistep.                            (** [multi step] *)
 
 (** 項tが型Tで、tがt'にマルチステップできるなら、t'は行き詰まっていない。
         つまり、tはマルチステップして値になる。 *)
+(** [健全性] *)
 
-Check soundness : forall t t' T,
+(** 進行性と保存性が証明されたことで、健全性が証明されたとしてもよいが、
+ここでは、「型付けできる項は、マルチステップして値になる」
+つまり、ステップを繰り返してもおかしくならない [TAPL] 、ということを証明する。
+これを健全性、あるいは、安全性 と呼ぶ。
+  *)
+
+(** 証明：
+    まんなかの [t ==>* t'] で帰納法をすると、
+    帰納のそこから [(|- x \in T) -> ~(stuck x)] なので、これは進行性を使って証明する。
+    帰納の仮定から [(|- y \in T) -> ~(stuck z)] をゴールに適用すると、
+    [(|- x \in T) -> (x ==> y) -> (|- y \in T)] が得られるので、これは保存性を使って証明する。
+*)
+
+Corollary soundness : forall t t' T,
   |- t \in T ->
   t ==>* t' ->
   ~(stuck t').
+Proof.
+  (* suhara 証明を見直した。 *)
+  intros t t' T HT P.
+  induction P.
+  - intros [R S].                        (* ~(stuck x) を分解する。 *)
+    now destruct (progress x T HT).
+  - apply IHP.
+    now apply (preservation x y T HT H).
+Qed.
 
 (* END *)
