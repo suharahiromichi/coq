@@ -33,6 +33,7 @@ Hint Constructors multi.
 (** 概要
 
 1. Syntax ... 前章より複雑な項を定義する。
+ここで定義するものは、TAPLの第8章で定義するものと同じ。
 
 2. Operational Semantics ... 前節で定義した項についてステップ（==>）を定義する。
 (single-step) small-step 評価関係(簡約関係)。
@@ -118,7 +119,7 @@ Inductive step : tm -> tm -> Prop :=
   | ST_PredZero : tpred tzero ==> tzero
   | ST_PredSucc : forall t1 : tm, nvalue t1 -> tpred (tsucc t1) ==> t1
   | ST_Pred : forall t1 t1' : tm, t1 ==> t1' -> tpred t1 ==> tpred t1'
-  | ST_IszeroZero : tiszero tzero ==> ttrueo
+  | ST_IszeroZero : tiszero tzero ==> ttrue
   | ST_IszeroSucc : forall t1 : tm, nvalue t1 -> tiszero (tsucc t1) ==> tfalse
   | ST_Iszero : forall t1 t1' : tm, t1 ==> t1' -> tiszero t1 ==> tiszero t1'.
 ]]
@@ -173,16 +174,32 @@ stuck = fun t : tm => step_normal_form t /\ ~ value t.
 Check some_term_is_stuck : exists t : tm, stuck t.
 Check some_term_is_stuck : exists t : tm, normal_form step t /\ ~ value t.
 
-(** 値は正規形である。値ならステップできない項である。 *)
-(** 前章の結果とおなじ。  *)
-Check value_is_nf : forall t : tm, value t -> normal_form step t.
-Check value_is_nf : forall t : tm, value t -> step_normal_form t.
-Check value_is_nf : forall t : tm, value t -> ~ (exists t', t ==> t').
+(* suhara *)
+(** ns_is_value の否定を証明する。 *)
+Goal ~ (forall t, normal_form step t -> value t).
+Proof.
+  intro Hc.
+  destruct (Hc (tsucc ttrue)).
+  - unfold step_normal_form.
+    intro H.
+    destruct H.
+    now inversion H.
+  - now inversion H.
+  - now inversion H.
+Qed.
 
 (**
 問題提起：どんな項だと行き詰まるのか、行き詰まらないのか。
-それを事前に知ることができるだろうか。答えは、Type Progress の節を参照のこと。
+それを事前に知ることができるだろうか。
+
+答えは、Type Progress の節を参照のこと。
  *)
+
+(** 値は正規形である。値ならステップできない項である。 *)
+(** これは、前章の結果とおなじ。  *)
+Check value_is_nf : forall t : tm, value t -> normal_form step t.
+Check value_is_nf : forall t : tm, value t -> step_normal_form t.
+Check value_is_nf : forall t : tm, value t -> ~ (exists t', t ==> t').
 
 (* suhara *)
 Lemma value_is_not_step t1 t2 : value t1 -> ~ t1 ==> t2.
@@ -208,8 +225,8 @@ forall x y1 y2 : X, R x y1 -> R x y2 -> y1 = y2
 ]]
  *)
 (** ステップは決定的である。 *)
-Check step_deterministic : forall x y1 y2, x ==> y1 -> x ==> y2 -> y1 = y2.
 (** とりあえず、以降では使わない。  *)
+Check step_deterministic : forall x y1 y2, x ==> y1 -> x ==> y2 -> y1 = y2.
 
 (* ================================================================= *)
 (** ** Typing *)
@@ -244,6 +261,8 @@ Check has_type_1 : |- tif tfalse tzero (tsucc tzero) \in TNat. (** 型が付く 
 Check has_type_not : ~ (|- tif tfalse tzero ttrue \in TBool).  (** 型が付かない *)
 
 (* suhara *)
+(** 型付けは決定的である。[TAPL 定理8.2.4] *)
+(** とりあえず、以降では使わない。  *)
 Theorem type_deterministic t ty1 ty2 :
     has_type t ty1 -> has_type t ty2 -> ty1 = ty2.
 Proof.
@@ -252,7 +271,9 @@ Proof.
   now apply IHHy1_2.
 Qed.
 
-(** 項の型を返す関数。計算量がO(n)であること。suhara *)
+(* suhara *)
+(** 項の型を返す関数。計算量がO(n)であること。 *)
+(** とりあえず、以降では使わない。  *)
 Fixpoint type_of (t : tm) : option ty :=
   match t with
   | ttrue => Some TBool
@@ -283,6 +304,7 @@ Fixpoint type_of (t : tm) : option ty :=
 Compute type_of (tif tfalse tzero (tsucc tzero)). (** Some TNat *)
 Compute type_of (tif tfalse tzero ttrue).         (** None *)
 
+(** 型を返す関数が、型付けの結果と同じになるとを証明する。 *)
 Lemma equiv_types_1 t ty : type_of t = Some ty -> |- t \in ty.
 Proof.
   intros H.
@@ -351,7 +373,8 @@ Proof.
 Qed.
 (** 項の型を返す関数。ここまで。suhara *)
 
-(** 正準形  *)
+(** 正準形、標準型 [TAPL 補題8.3.1] *)
+(** Progress を証明するための補題である。  *)
 (** 項の型がBoolで、項が値なら、その項はBool値である。 *)
 Check bool_canonical : forall t, |- t \in TBool -> value t -> bvalue t.
 (** 項の型がNatで、項が値なら、その項はNat値である。 *)
@@ -360,7 +383,8 @@ Check nat_canonical : forall t, |- t \in TNat -> value t -> nvalue t.
 (* ================================================================= *)
 (** ** Progress *)
 
-(** 項tが型Tなら、tは値かステップできる。 *)
+(** 項tが型Tなら、tは値であるかステップできる。 *)
+(** 進行 [TAPL 定理8.3.2] *)
 Check progress : forall t T,
   |- t \in T ->
   value t \/ exists t', t ==> t'.
@@ -368,7 +392,8 @@ Check progress : forall t T,
 (* ================================================================= *)
 (** ** Type Preservation *)
 
-(** 項tが型Tで、tがt'にステップできるなら、t'の型はTである。 *)
+(** 項tが型T かつ tがt'にステップできるなら、t'の型はTである。 *)
+(** 保存 [TAPL 定理8.3.3] *)
 Check preservation : forall t t' T,
   |- t \in T ->
   t ==> t' ->
