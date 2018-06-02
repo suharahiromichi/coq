@@ -418,6 +418,14 @@ Inductive multi (X : Type) (R : relation X) : relation X :=
 Locate "_ ==>* _".                          (** [multistep t1 t2] *)
 Check multistep.
 Print multistep.                            (** [multi step] *)
+Print multi.
+(**
+[[
+  Inductive multi (X : Type) (R : relation X) : relation X :=
+  | multi_refl : forall x : X, multi R x x
+  | multi_step : forall x y z : X, R x y -> multi R y z -> multi R x z
+]]
+ *)
 
 (** 項tが型Tで、tがt'にマルチステップできるなら、t'は行き詰まっていない。
         つまり、tはマルチステップして値になる。 *)
@@ -430,10 +438,16 @@ Print multistep.                            (** [multi step] *)
   *)
 
 (** 証明：
-    まんなかの [t ==>* t'] で帰納法をすると、
-    帰納のそこから [(|- x \in T) -> ~(stuck x)] なので、これは進行性を使って証明する。
-    帰納の仮定から [(|- y \in T) -> ~(stuck z)] をゴールに適用すると、
-    [(|- x \in T) -> (x ==> y) -> (|- y \in T)] が得られるので、これは保存性を使って証明する。
+まんなかの [t ==>* t'] で帰納法をする。
+
+[mult_refl]のとき[x ==>* x]なので、[(|- x \in T) -> ~(stuck x)] を得る。
+これは進行性を使って証明する。
+
+[mult_step]のとき[x ==> y -> y ==>* z]なので、
+[(|- x \in T) -> (x ==> y) -> (y ==>* z) -> ~(stuck z)] と、
+帰納法の仮定 [(|- y \in T) -> ~(stuck z)] を得る。
+帰納法の仮定をゴールに適用すると、[(|- x \in T) -> (x ==> y) -> (|- y \in T)] を得る。
+これは保存性を使って証明する。
 *)
 
 Corollary soundness : forall t t' T,
@@ -443,6 +457,19 @@ Corollary soundness : forall t t' T,
 Proof.
   (* suhara 証明を見直した。 *)
   intros t t' T HT P.
+  Check multi_ind tm step.
+  Check (fun t t' => |- t \in T -> ~(stuck t')).
+  Check multi_ind tm step (fun t t' => |- t \in T -> ~(stuck t')) :
+    (forall x : tm,
+        |- x \in T -> ~(stuck x))
+    ->
+    (forall x y z : tm,
+        x ==> y -> y ==>* z ->
+        (|- y \in T -> ~(stuck z)) ->       (* IHP *)
+        |- x \in T -> ~(stuck z))
+    ->
+    forall t t' : tm, t ==>* t' -> |- t \in T -> ~(stuck t').
+
   induction P.
   - intros [R S].                        (* ~(stuck x) を分解する。 *)
     now destruct (progress x T HT).
