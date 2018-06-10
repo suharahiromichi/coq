@@ -35,14 +35,17 @@ Hint Constructors multi.
 1. Syntax ... 前章より複雑な項を定義する。
 ここで定義するものは、TAPLの第8章で定義するものと同じ。
 
-2. Operational Semantics ... 前節で定義した項についてステップ（==>）を定義する。
+2. Operational Semantics ... Syntaxを定義した項についてステップ（==>）を定義する。
 (single-step) small-step 評価関係(簡約関係)。
 
 3. Normal Forms and Values ... 強正規化が成り立たない。
 すなわち、値ではないが、もうステップできない項があることを示す。
-（もうこれ以上簡約できない、行き詰まる、スタックstuckする）
+（もうこれ以上簡約できない、行き詰まる、スタックstuckする、項がある）
+では、どんな項だと行き詰まるのか。それを事前に知ることはできないだろうか。
 
 4. Typing ... 型を導入する。型のついた（well-typed) 項という。
+
+(おまけ。型付は決定的であること。型を返す手続きを定義してみる。）
 
 5. Type Progress ... 型の進行性。型のついた項の正規形は値である。（ステップが行き詰まらない）
 
@@ -140,7 +143,7 @@ normal_form
 （定理）項が正規形であることと、項が値であることは同値である。
 nf_same_as_value
 
-nf_is_value と value_is_nf 
+この定理は、nf_is_value と value_is_nf からなる。
 本章の項の定義では nf_is_value が成立しないので、同値ではない。
  *)
 
@@ -179,7 +182,8 @@ Check some_term_is_stuck : exists t : tm, normal_form step t /\ ~ value t.
 Goal ~ (forall t, normal_form step t -> value t).
 Proof.
   intro Hc.
-  destruct (Hc (tsucc ttrue)).
+  Check Hc (tsucc ttrue).              (* 具体的に、行き詰まる項 (tsucc ttrue) を与える。 *)
+  destruct (Hc (tsucc ttrue)).         (* それについて、ns_is_value の否定を証明する。 *)
   - unfold step_normal_form.
     intro H.
     destruct H.
@@ -259,6 +263,7 @@ Inductive has_type : tm -> ty -> Prop :=
 
 Check has_type_1 : |- tif tfalse tzero (tsucc tzero) \in TNat. (** 型が付く *)
 Check has_type_not : ~ (|- tif tfalse tzero ttrue \in TBool).  (** 型が付かない *)
+(* オリジナルのテキストだと、正準形に飛ぶ。 *)
 
 (* suhara *)
 (** 型付けは決定的である。[TAPL 定理8.2.4] *)
@@ -450,13 +455,14 @@ Print multi.
 これは保存性を使って証明する。
 *)
 
+(* suhara 証明を見直した。 *)
 Corollary soundness : forall t t' T,
   |- t \in T ->
   t ==>* t' ->
   ~(stuck t').
 Proof.
-  (* suhara 証明を見直した。 *)
   intros t t' T HT P.
+  
   Check multi_ind tm step.
   Check (fun t t' => |- t \in T -> ~(stuck t')).
   Check multi_ind tm step (fun t t' => |- t \in T -> ~(stuck t')) :
