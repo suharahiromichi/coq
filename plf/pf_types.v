@@ -385,6 +385,12 @@ Check bool_canonical : forall t, |- t \in TBool -> value t -> bvalue t.
 (** 項の型がNatで、項が値なら、その項はNat値である。 *)
 Check nat_canonical : forall t, |- t \in TNat -> value t -> nvalue t.
 
+(* ################################################################# *)
+(** ProofCafe ##77 2018/07/21 *)
+(** TAPL では、進行 + 保存 = 安全性 をスローガンとしているが、
+安全性 Soundness を 進行 progress と 保存 preservation から証明していることに注目してください。
+*)
+
 (* ================================================================= *)
 (** ** Progress *)
 
