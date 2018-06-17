@@ -60,7 +60,7 @@ Qed.
 (** ***************** *)
 
 (** Smallstep で定義した Plus コンストラクタの場合 *)
-Goal forall tm1 tm2, P tm1 tm2 = tm1 -> False.
+Goal forall tm1 tm2, P tm1 tm2 <> tm1.
 Proof.
   intros tm1 tm2 H.
   induction tm1.
