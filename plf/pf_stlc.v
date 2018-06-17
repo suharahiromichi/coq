@@ -29,7 +29,7 @@ Require Import Stlc.
 
 (** 自由変数の扱いについて。テクニカルノート *)
 
-(** 「λx.(x x) の型付け不能」 最後の演習問題 TAPL 演習 9.3.2. とおなじ。 *)
+(** 「λx.(x x) の型付け不能」 最後の演習問題 *)
 
 (** [~ (exists S, exists T, empty |- \x : S. x x \in T) ] **)
 (** [~ (∃S. ∃T. ├ λx : S.(x x) ∈ T *)
@@ -40,18 +40,26 @@ Check STLC.typing_nonexample_3 :
                       (STLC.tabs STLC.x S (STLC.tapp (STLC.tvar STLC.x) (STLC.tvar STLC.x)))
                       T).
 
-(** TAPL 回答 9.3.2. では、
-すべての型が有限サイズを持つことから T1 -> T2 = T1 は偽であるとしている。 *)
-(** これを形式化すると次になる *)
-Lemma type_finiteness : forall T1 T2, STLC.TArrow T1 T2 <> T1.
+(** ***************** *)
+(** TAPL 演習 9.3.2 が参考になる。 *)
+(** ***************** *)
+
+(** TAPL の 演習 9.3.2 *)
+(** 回答 9.3.2. では、すべての型が有限サイズを持つことから、
+    T1 -> T2 = T1 は偽であるとしている。 *)
+Lemma type_finiteness : forall (T1 T2 : STLC.ty), STLC.TArrow T1 T2 <> T1.
 Proof.
   intros T1 T2 H.
   induction T1 as [|T11 H1 T12 H2].
   - (* T1 = TBool *)
     easy.
   - (* T1 = T11 -> T12 *)
-    inversion H; clear H.                 (* subst はエラーになる。 *)
-    rewrite H4 in *; clear H4.
+    (* inversion タクティクは、TAPL の 型付け関係の逆転の補題
+       (9.3.1 inversion lemma) を使うのとと同じ。 *)
+    inversion H.
+    (* T11 -> T12 = T11 を得る。 *)
+    rewrite H4 in *.                      (* subst はエラーになる。 *)
+    (* これは偽である。 *)
     easy.
 Qed.
 
