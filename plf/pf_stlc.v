@@ -185,15 +185,45 @@ Fail Compute (fun x1 => (fun f => (fun x2 => f x2) false) (fun y => x2)) true. (
 x は true となる。
 *)
 
+(* small step は項書換え系なので、静的束縛と同じ結果になる。 *)
+
+Compute (fun x => (fun f => (fun x => f
+                                        x)
+                              false)
+                    (fun y => x))
+        true.
+(* true *)
+
 Definition t := 
   tapp
-    (tabs x TBool
-          (tapp (tabs z (TArrow TBool TBool) (tabs x TBool (tapp
-                                                              (tapp
-                                                                 (tvar z)
-                                                                 (tvar x))
-                                                              ttrue)))
-                (tabs y TBool (tvar x))))
-    tfalse.
+    (tabs x TBool (tapp
+                     (tabs z (TArrow TBool TBool) (tapp
+                                                     (tabs x TBool (tapp
+                                                                      (tvar z)
+                                                                      (tvar x)))
+                                                     tfalse))
+                     (tabs y TBool (tvar x))))
+    ttrue.
+
+Goal t ==>* ttrue.
+Proof.
+  eapply multi_step.
+  - constructor.
+    easy.
+  - simpl.
+    eapply multi_step.
+    + constructor.
+      easy.
+    + simpl.
+      eapply multi_step.
+      * constructor.
+        easy.
+      * simpl.
+        eapply multi_step.
+        ** constructor.
+           easy.
+        ** simpl.
+           easy.
+Qed.
 
 (* END *)
