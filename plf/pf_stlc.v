@@ -23,6 +23,7 @@ Require Import Imp.
 Require Import Smallstep.
 Require Import Types.
 Require Import Stlc.
+Export STLC.
 
 (* ################################################################# *)
 (** ProofCafe ##77 2018/07/21 *)
@@ -48,7 +49,20 @@ when the function is actually applied to an argument.
 We also make the second choice here.
 （引用終）
 
+具体的には、任意の項tに対して、value (tabs x T t) が成り立つ。
+ *)
 
+Print value.
+(**
+[[
+Inductive value : tm -> Prop :=
+  | v_abs : forall (x : id) (T : ty) (t : tm), value (tabs x T t)
+  | v_true : value ttrue
+  | v_false : value tfalse
+]]
+*)
+
+(**
 置換 Substituion の節
 
 （引用）
@@ -77,10 +91,10 @@ TAPLのサンプルコードは de Brujin Index を使用している。
 (** [~ (exists S, exists T, empty |- \x : S. x x \in T) ] **)
 (** [~ (∃S. ∃T. ├ λx : S.(x x) ∈ T *)
 
-Check STLC.typing_nonexample_3 :
-  ~ (exists S T : STLC.ty,
-        STLC.has_type empty
-                      (STLC.tabs STLC.x S (STLC.tapp (STLC.tvar STLC.x) (STLC.tvar STLC.x)))
+Check typing_nonexample_3 :
+  ~ (exists S T : ty,
+        has_type empty
+                      (tabs x S (tapp (tvar x) (tvar x)))
                       T).
 
 (** ***************** *)
@@ -90,7 +104,7 @@ Check STLC.typing_nonexample_3 :
 (** TAPL の 演習 9.3.2 *)
 (** 回答 9.3.2. では、すべての型が有限サイズを持つことから、
     T1 -> T2 = T1 は偽であるとしている。 *)
-Lemma type_finiteness : forall (T1 T2 : STLC.ty), STLC.TArrow T1 T2 <> T1.
+Lemma type_finiteness : forall (T1 T2 : ty), TArrow T1 T2 <> T1.
 Proof.
   intros T1 T2 H.
   induction T1 as [|T11 H1 T12 H2].
@@ -134,5 +148,52 @@ Qed.
 
 (** より一般的に、(Inductiveで定義された）コンストラクタの有限性を証明できないだろうか。 *)
 (** 直観的な証明ではひとことで済むことが、形式的には毎回証明が必要になる例だろうか。 *)
+
+(* END *)
+
+
+(** 補足説明 *)
+(** BIG STEP の話はどうなりましたか。 *)
+
+(** small step は項書換え系である。
+一方、big step で、環境束縛による評価をおこなう場合、
+静的束縛と動的束縛の違いによって、結果が事なる場合がある。
+ *)
+
+(** 例 *)
+Check   (fun x => (fun f => (fun x => f (x + 3)) 2) (fun y => x + y)) 1.
+Compute (fun x => (fun f => (fun x => f (x + 3)) 2) (fun y => x + y)) 1. (* 6 *)
+
+Check   (fun x => (fun f => (fun x => f x) false) (fun y => x)) true.
+Compute (fun x => (fun f => (fun x => f x) false) (fun y => x)) true. (* true *)
+
+(* f = fun y => x であるが、 *)
+(* 静的束縛の場合は、f ≡ fun y => x1 ≡ fun y => true *)
+(* f x2 ≡ false *)
+Compute (fun x1 => (fun f => (fun x2 => f x2) false) (fun y => x1)) true. (* true *)
+
+(* 動的束縛の場合は、f ≡ fun y => x2 ≡ fun y => true *)
+(* f x2 ≡ true *)
+Fail Compute (fun x1 => (fun f => (fun x2 => f x2) false) (fun y => x2)) true. (* true *)
+
+(*
+現在では、動的束縛のこの結果は「bug」とされているので、
+関数抽象を評価すると、値として「クロージャ closure」が得られると考える。
+
+環境 (x:=true) のもとで、λy.x を評価すると、<λy.x, (x:=true)> が得られ、fに代入される。
+環境 (x:=false) のもとで、f x を適用しても、fの中身を評価するときはクロージャの環境が使われるので
+x は true となる。
+*)
+
+Definition t := 
+  tapp
+    (tabs x TBool
+          (tapp (tabs z (TArrow TBool TBool) (tabs x TBool (tapp
+                                                              (tapp
+                                                                 (tvar z)
+                                                                 (tvar x))
+                                                              ttrue)))
+                (tabs y TBool (tvar x))))
+    tfalse.
 
 (* END *)
