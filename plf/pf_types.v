@@ -461,32 +461,24 @@ Print multi.
 これは保存性を使って証明する。
 *)
 
-(* suhara 証明を見直した。 *)
-Corollary soundness : forall t t' T,
-  |- t \in T ->
-  t ==>* t' ->
-  ~(stuck t').
-Proof.
-  intros t t' T HT P.
-  
-  Check multi_ind tm step.
-  Check (fun t t' => |- t \in T -> ~(stuck t')).
-  Check multi_ind tm step (fun t t' => |- t \in T -> ~(stuck t')) :
-    (forall x : tm,
-        |- x \in T -> ~(stuck x))
-    ->
-    (forall x y z : tm,
-        x ==> y -> y ==>* z ->
-        (|- y \in T -> ~(stuck z)) ->       (* IHP *)
-        |- x \in T -> ~(stuck z))
-    ->
-    forall t t' : tm, t ==>* t' -> |- t \in T -> ~(stuck t').
+Definition notstuck t := value t \/ exists t'', t ==> t''.
 
-  induction P.
-  - intros [R S].                        (* ~(stuck x) を分解する。 *)
-    now destruct (progress x T HT).
-  - apply IHP.
-    now apply (preservation x y T HT H).
+Lemma test : forall t, notstuck t -> ~ stuck t.
+Proof.
+  unfold notstuck, stuck, step_normal_form.
+  intro t.
+  intros H Hc.
+  destruct Hc.
+  now destruct H.
+Qed.
+
+Corollary soundness t t' T : |- t \in T -> t ==>* t' -> notstuck t'.
+Proof.
+  intros HT P.
+  induction P as [t | t x t'' P HP].
+  - now apply (progress t T).
+  - apply IHHP.                             (* IHHP : |- x \in T -> notstuck t'' *)
+    now apply (preservation t x T).
 Qed.
 
 (* END *)
