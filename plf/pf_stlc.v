@@ -151,6 +151,17 @@ Qed.
 
 (* END *)
 
+(** 補足説明 *)
+
+(**
+型の有限性を前提とすると、再帰呼び出しによる繰り返しができないことになります。
+それについては、MoreStlc の General Recursion の節 や
+
+https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2016_kyouyou/typed.pdf
+
+を参考にしてください。
+*)
+
 
 (** 補足説明 *)
 (** BIG STEP の話はどうなりましたか。 *)
