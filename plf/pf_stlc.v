@@ -23,10 +23,88 @@ Require Import Imp.
 Require Import Smallstep.
 Require Import Types.
 Require Import Stlc.
+
+(* Module *)
+Import STLC.
 Export STLC.
 
 (* ################################################################# *)
-(** ProofCafe ##77 2018/07/21 *)
+(** ProofCafe ##78 2018/08/18 *)
+
+(**
+概要
+
+型と項を定義する。
+*)
+
+Print ty.
+(**
+型は、Bool と（Boolの）関数型。
+[[
+ | TBool : ty
+ | TArrow : ty -> ty -> ty
+]]
+*)
+
+Print tm.
+(**
+Bool型の定数とif式、変数と関数抽象と関数適用だけからなる項である。
+[[
+  | tvar : id -> tm
+  | tapp : tm -> tm -> tm
+  | tabs : id -> ty -> tm -> tm
+  | ttrue : tm
+  | tfalse : tm
+  | tif : tm -> tm -> tm -> tm
+]]
+*)
+
+(**
+Small-Step 関係を定義する。
+*)
+Print step.
+(**
+[[
+  | ST_AppAbs : forall (x : id) (T : ty) (t12 v2 : tm),
+                value v2 -> tapp (tabs x T t12) v2 ==> [x := v2] t12
+  | ST_App1 : forall t1 t1' t2 : tm, t1 ==> t1' -> tapp t1 t2 ==> tapp t1' t2
+  | ST_App2 : forall v1 t2 t2' : tm,
+              value v1 -> t2 ==> t2' -> tapp v1 t2 ==> tapp v1 t2'
+  | ST_IfTrue : forall t1 t2 : tm, tif ttrue t1 t2 ==> t1
+  | ST_IfFalse : forall t1 t2 : tm, tif tfalse t1 t2 ==> t2
+  | ST_If : forall t1 t1' t2 t3 : tm,
+            t1 ==> t1' -> tif t1 t2 t3 ==> tif t1' t2 t3
+]]
+*)
+
+(**
+型付け(typing)関係を定義する。
+*)
+Locate "_ |- _ \in _". (* "Gamma '|-' t '\in' T" := has_type Gamma t T *)
+Print has_type.
+(**
+[[
+Inductive has_type : context -> tm -> ty -> Prop :=
+  | T_Var : forall (Gamma : id -> option ty) (x : id) (T : ty),
+            Gamma x = Some T -> Gamma |- tvar x \in T
+  | T_Abs : forall (Gamma : partial_map ty) (x : id) (T11 T12 : ty) (t12 : tm),
+            update Gamma x T11 |- t12 \in T12 ->
+            Gamma |- tabs x T11 t12 \in TArrow T11 T12
+  | T_App : forall (T11 T12 : ty) (Gamma : context) (t1 t2 : tm),
+            Gamma |- t1 \in TArrow T11 T12 ->
+            Gamma |- t2 \in T11 -> Gamma |- tapp t1 t2 \in T12
+  | T_True : forall Gamma : context, Gamma |- ttrue \in TBool
+  | T_False : forall Gamma : context, Gamma |- tfalse \in TBool
+  | T_If : forall (t1 t2 t3 : tm) (T : ty) (Gamma : context),
+           Gamma |- t1 \in TBool ->
+           Gamma |- t2 \in T -> Gamma |- t3 \in T -> Gamma |- tif t1 t2 t3 \in T
+]]
+*)
+
+(**
+それでは、typing examples を解いていきましょう。
+*)
+
 
 (** 自由変数の扱いについて。テクニカルノート *)
 
