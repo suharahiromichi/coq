@@ -109,6 +109,26 @@ Inductive has_type : context -> tm -> ty -> Prop :=
 それでは、typing_example を解いていきましょう！！！
 *)
 
+(**
+注意：原ドキュメントの
+
+[Gamma x = T] は、[x : T ∈ Gamma] の意味です。
+[Gamma, x:T11] は、[Gamma ∪ {x:T11}] の意味です。
+
+Map.v では Gamma は関数として定義されるので、
+[x : T ∈ Gamma] を [(Gamma x) = (Some T)] と記述しています。また、
+[Gamma ∪ {x:T11}] は [update Gamma x T11] となります。
+
+typing_example_1 の証明図
+[[
+  x : Bool ∈ {X : Bool}
+----------------------------------------- T_Var
+{x : Bool} |- x : Bool
+----------------------------------------- T_Abs
+        φ |- λx:Bool.x : Bool -> Bool
+]]
+*)
+
 (** ***************** *)
 (** （順番が戻ります） *)
 (** ***************** *)
