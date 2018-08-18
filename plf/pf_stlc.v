@@ -115,7 +115,7 @@ Inductive has_type : context -> tm -> ty -> Prop :=
 [Gamma x = T] は、[x : T ∈ Gamma] の意味です。
 [Gamma, x:T11] は、[Gamma ∪ {x:T11}] の意味です。
 
-Map.v では Gamma は関数として定義されるので、
+Map.v では Gamma は関数 (partical_map型) として定義されるので、
 [x : T ∈ Gamma] を [(Gamma x) = (Some T)] と記述しています。また、
 [Gamma ∪ {x:T11}] は [update Gamma x T11] となります。
 
@@ -128,6 +128,63 @@ typing_example_1 の証明図
         φ |- λx:Bool.x : Bool -> Bool
 ]]
 *)
+
+(** Gamma の定義について。Map.v を参照 *)
+
+(** Gamma の作り方 *)
+Definition Empty  := @empty ty             : partial_map ty. (* φ *)
+Definition Gamma1 := update Empty  x TBool : partial_map ty. (* {x : Bool} *)
+Definition Gamma2 := update Gamma1 y (TArrow TBool TBool) : partial_map ty.
+(* Gamma1 ∪ {y : Bool -> Bool *)
+
+(** Gamma から型の取り出し型  *)
+Compute Empty x.                            (* None *)
+Compute Gamma1 x.                           (* Bool *)
+Compute Gamma1 y.                           (* None *)
+Compute Gamma2 x.                           (* Bool *)
+Compute Gamma2 y.                           (* Bool -> Bool *)
+
+(** Gamma を update したものをすぐに取り出している場合は、
+[apply update_eq] でただちに証明できる。 *)
+
+Goal update Empty x TBool x = Some TBool.
+Proof.
+  now apply update_eq.
+  Undo.
+  Check (update_eq ty Empty x TBool) : update Empty x TBool x = Some TBool.
+  now apply (update_eq ty Empty y TBool).
+  Undo.
+  
+  (* updateを計算してしまう、という方法もある。 *)
+  unfold update, t_update. simpl. reflexivity.
+Qed.
+
+Goal update Gamma1 y (TArrow TBool TBool) y = Some (TArrow TBool TBool).
+Proof.
+  now apply update_eq.
+  Undo.
+  Check (update_eq ty Gamma1 y (TArrow TBool TBool)) :
+    update Gamma1 y (TArrow TBool TBool) y = Some (TArrow TBool TBool).
+  now apply (update_eq ty Gamma1 y (TArrow TBool TBool)).
+  Undo.
+  
+  (* updateを計算してしまう、という方法もある。 *)
+  unfold update, t_update. simpl. reflexivity.
+Qed.
+
+(** updateを計算してしまう、という方法もある。 *)
+(** こっちのほうが汎用的なのではないか。  *)
+Goal Gamma2 y = Some (TArrow TBool TBool).
+Proof.
+  unfold Gamma2, Gamma1.
+  unfold update, t_update. simpl. reflexivity.
+Qed.
+
+Goal Gamma2 x = Some TBool.
+Proof.
+  unfold Gamma2, Gamma1.
+  unfold update, t_update. simpl. reflexivity.
+Qed.
 
 (** ***************** *)
 (** （順番が戻ります） *)
