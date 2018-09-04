@@ -362,6 +362,8 @@ Definition predecessor_of_positive'' :=
 依存型の話 田中哲 産業技術総合研究所
 Proof Summit 2018
 
+http://www.a-k-r.org/pub/2018-09-02-deptype-proofsummit2018.pdf
+
 dependent match (return 節を使うmatch) を使う用途はいくつかある
  *)
 
