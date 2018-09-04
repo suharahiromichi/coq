@@ -116,8 +116,8 @@ Inductive List (A:Set) : Set :=
 Check
   (fun l:List nat =>
      match l with
-     | nil => nil nat
-     | cons _ l' => l'
+     | nil _ => nil nat
+     | cons _ _ l' => l'
      end).
 
 
@@ -188,7 +188,7 @@ Fixpoint dec (n m:nat) {struct n} : LE n m \/ LE m n :=
 
 
 Lemma dec' (n m : nat) : LE n m \/ LE m n.
-  intros n m.
+(*  intros n m. *)
   case (dec n m).
   intros h.
   left.
@@ -349,9 +349,42 @@ Print predecessor_of_positive.
 Definition predecessor_of_positive'' := 
   fun (n : nat) (H : 1 <= n) =>
     match H in (_ <= n0) return (exists p : nat, n0 = S p) with
-    | le_n => ex_intro (fun p : nat => 1 = S p) 0 (refl_equal 1)
-    | le_S m _ => ex_intro (fun p : nat => S m = S p) m (refl_equal (S m))
+    | le_n _ => ex_intro (fun p : nat => 1 = S p) 0 (refl_equal 1)
+    | le_S _ m _ => ex_intro (fun p : nat => S m = S p) m (refl_equal (S m))
   end.
 
+
+(* **** *)
+(* 追記 *)
+(* **** *)
+
+(*
+依存型の話 田中哲 産業技術総合研究所
+Proof Summit 2018
+
+dependent match (return 節を使うmatch) を使う用途はいくつかある
+ *)
+
+(*
+(3) 型を計算して求める類の依存型の値を返したい (p.80)
+*)
+
+(* b の真偽で型が異なる型の例 *)
+Definition D (b : bool) : Set :=
+  if b then nat else unit.
+
+(* 「D b」型とすれば正しいはずだが、Coqは見抜いてくれない *)
+Fail Definition f b :=
+  match b with
+  | true => 0
+  | false => tt
+  end.
+
+(* return節にD bと書けばCoqは正しく確認してくれる *)
+Definition f b :=
+  match b return D b with
+  | true => 0
+  | false => tt
+end.
 
 (* END *)
