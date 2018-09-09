@@ -93,6 +93,10 @@ Print step.
 (**
 それでは、step_example を解いていきましょう！！！
 *)
+Check step_example1 : tapp idBB idB ==>* idB.
+Check step_example2 : tapp idBB (tapp idBB idB) ==>* idB.
+Check step_example3 : tapp (tapp idBB notB) ttrue ==>* tfalse.
+Check step_example4 : tapp idBB (tapp notB ttrue) ==>* tfalse.
 
 (**
 **************************************************
@@ -121,14 +125,33 @@ Inductive has_type : context -> tm -> ty -> Prop :=
 *)
 
 (**
-fixpoint で type_of を定義する。
+fixpoint で type_of を定義する。TAPLの10.3型検査の節を参照。
 type_of と has_type が同じであることを証明する。
 equiv_types については、pf_type.v を参照のこと。
+こういった証明の技法については、SFの第3部 VFA も参照のこと。
  *)
 
 (**
 それでは、typing_example を解いていきましょう！！！
 *)
+Check typing_example_1 : empty |- idB \in TArrow TBool TBool.
+Check typing_example_2 : empty |- tabs x TBool
+            (tabs y (TArrow TBool TBool) (tapp (tvar y) (tapp (tvar y) (tvar x)))) \in
+    TArrow TBool (TArrow (TArrow TBool TBool) TBool).
+Check typing_example_3 : exists T,
+    empty |-
+      (tabs x (TArrow TBool TBool)
+         (tabs y (TArrow TBool TBool)
+            (tabs z TBool
+               (tapp (tvar y) (tapp (tvar x) (tvar z)))))) \in T.
+Check typing_nonexample_1 :
+  ~ (exists T : ty,
+        empty |- tabs x TBool (tabs y TBool (tapp (tvar x) (tvar y))) \in T).
+Check typing_nonexample_3 :        (* TAPL 演習 9.3.2. とおなじ。 *)
+  ~ (exists S, exists T,
+        empty |-
+          (tabs x S
+             (tapp (tvar x) (tvar x))) \in T).
 
 (**
 注意：原ドキュメントでは、Gammaが関数か集合か解りにくくなっています。
@@ -167,6 +190,12 @@ Compute Gamma2 y.                           (* Bool -> Bool *)
 
 (** Gamma を update したものをすぐに取り出している場合は、
 [apply update_eq] でただちに証明できる。 *)
+
+Check update_eq : forall (A : Type) (m : partial_map A) (x : id) (v : A),
+    update m x v x = Some v.
+(** mをxでupdateしたあと [update m x v]、
+すぐxを取り出す [(update m x v) x]  。
+ならば、値は [v] である。 *)
 
 Goal update Empty x TBool x = Some TBool.
 Proof.
@@ -271,85 +300,6 @@ TAPLは、習慣 5.3.4
 TAPLのサンプルコードは de Brujin Index を使用している。
 *)
 
-(** ***************** *)
-(** 話題#2 「λx.(x x) の型付け不能」 最後の演習問題 *)
-(** ***************** *)
-
-(** [~ (exists S, exists T, empty |- \x : S. x x \in T) ] **)
-(** [~ (∃S. ∃T. ├ λx : S.(x x) ∈ T *)
-
-Check typing_nonexample_3 :
-  ~ (exists S T : ty,
-        has_type empty
-                      (tabs x S (tapp (tvar x) (tvar x)))
-                      T).
-
-(** ***************** *)
-(** TAPL 演習 9.3.2 が参考になる。 *)
-(** ***************** *)
-
-(** TAPL の 演習 9.3.2 *)
-(** 回答 9.3.2. では、すべての型が有限サイズを持つことから、
-    T1 -> T2 = T1 は偽であるとしている。 *)
-Lemma type_finiteness : forall (T1 T2 : ty), TArrow T1 T2 <> T1.
-Proof.
-  intros T1 T2 H.
-  induction T1 as [|T11 H1 T12 H2].
-  - (* T1 = TBool *)
-    easy.
-  - (* T1 = T11 -> T12 *)
-    (* inversion タクティクは、TAPL の 型付け関係の逆転の補題
-       (9.3.1 inversion lemma) を使うのとと同じ。 *)
-    inversion H.
-    (* T11 -> T12 = T11 を得る。 *)
-    rewrite H4 in *.                      (* subst はエラーになる。 *)
-    (* これは偽である。 *)
-    easy.
-Qed.
-
-(** ***************** *)
-(** これは、STLCに限定したことでははなく、コンストラクタ一般に成り立つ。  *)
-(** ***************** *)
-
-(** Smallstep で定義した Plus コンストラクタの場合 *)
-Goal forall tm1 tm2, P tm1 tm2 <> tm1.
-Proof.
-  intros tm1 tm2 H.
-  induction tm1.
-  - easy.
-  - inversion H.
-    rewrite H1 in *.
-    easy.
-Qed.
-
-(** list の cons の有限性 *)
-Lemma list_finiteness : forall (n : nat) (l : list nat), cons n l <> l.
-Proof.
-  intros n l H.
-  induction l as [|n' l].
-  - easy.
-  - inversion H; clear H.                 (* subst はエラーになる。 *)
-    rewrite H1 in *; clear H1.
-    easy.
-Qed.
-
-(** より一般的に、(Inductiveで定義された）コンストラクタの有限性を証明できないだろうか。 *)
-(** 直観的な証明ではひとことで済むことが、形式的には毎回証明が必要になる例だろうか。 *)
-
-(* END *)
-
-(** 補足説明 *)
-
-(**
-型の有限性を前提とすると、再帰呼び出しによる繰り返しができないことになります。
-それについては、MoreStlc の General Recursion の節 や
-
-https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2016_kyouyou/typed.pdf
-
-を参考にしてください。
-*)
-
-
 (** 補足説明 *)
 (** BIG STEP の話はどうなりましたか。 *)
 
@@ -430,5 +380,77 @@ Proof.
         ** simpl.
            easy.
 Qed.
+
+(** ***************** *)
+(** 話題#2 「λx.(x x) の型付け不能」 最後の演習問題 *)
+(** ***************** *)
+
+(** [~ (exists S, exists T, empty |- \x : S. x x \in T) ] **)
+(** [~ (∃S. ∃T. ├ λx : S.(x x) ∈ T *)
+
+Check typing_nonexample_3 :
+  ~ (exists S T : ty,
+        has_type empty
+                      (tabs x S (tapp (tvar x) (tvar x)))
+                      T).
+
+(** TAPL 演習 9.3.2 が参考になる。 *)
+
+(** TAPL の 演習 9.3.2 *)
+(** 回答 9.3.2. では、すべての型が有限サイズを持つことから、
+    T1 -> T2 = T1 は偽であるとしている。 *)
+Lemma type_finiteness : forall (T1 T2 : ty), TArrow T1 T2 <> T1.
+Proof.
+  intros T1 T2 H.
+  induction T1 as [|T11 H1 T12 H2].
+  - (* T1 = TBool *)
+    easy.
+  - (* T1 = T11 -> T12 *)
+    (* inversion タクティクは、TAPL の 型付け関係の逆転の補題
+       (9.3.1 inversion lemma) を使うのとと同じ。 *)
+    inversion H.
+    (* T11 -> T12 = T11 を得る。 *)
+    rewrite H4 in *.                      (* subst はエラーになる。 *)
+    (* これは偽である。 *)
+    easy.
+Qed.
+
+(** これは、STLCに限定したことでははなく、コンストラクタ一般に成り立つ。  *)
+
+(** Smallstep で定義した Plus コンストラクタの場合 *)
+Goal forall tm1 tm2, P tm1 tm2 <> tm1.
+Proof.
+  intros tm1 tm2 H.
+  induction tm1.
+  - easy.
+  - inversion H.
+    rewrite H1 in *.
+    easy.
+Qed.
+
+(** list の cons の有限性 *)
+Lemma list_finiteness : forall (n : nat) (l : list nat), cons n l <> l.
+Proof.
+  intros n l H.
+  induction l as [|n' l].
+  - easy.
+  - inversion H; clear H.                 (* subst はエラーになる。 *)
+    rewrite H1 in *; clear H1.
+    easy.
+Qed.
+
+(** より一般的に、(Inductiveで定義された）コンストラクタの有限性を証明できないだろうか。 *)
+(** 直観的な証明ではひとことで済むことが、形式的には毎回証明が必要になる例だろうか。 *)
+
+(** 補足説明 *)
+
+(**
+型の有限性を前提とすると、再帰呼び出しによる繰り返しができないことになります。
+それについては、MoreStlc の General Recursion の節 や
+
+https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2016_kyouyou/typed.pdf
+
+を参考にしてください。
+*)
 
 (* END *)
