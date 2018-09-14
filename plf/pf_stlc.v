@@ -29,7 +29,31 @@ Import STLC.
 Export STLC.
 
 (* ################################################################# *)
-(** ProofCafe ##78 2018/08/18 *)
+(** ProofCafe ##79 2018/09/15 *)
+
+(**
+目次
+
+対象言語の型と項を定義する。
+
+Small-Step 関係を定義する。
+
+話題 #1 substi_correct
+
+型付け(typing)関係を定義する。
+
+話題 #2 equiv_types
+
+話題 #3 Gamma
+
+話題#1 自由変数の扱いについて。テクニカルノート
+
+補足説明 Big Step
+
+話題#2 「λx.(x x) の型付け不能」 最後の演習問題
+
+補足説明 型の有限性を前提
+*)
 
 (**
 概要
@@ -65,15 +89,6 @@ Small-Step 関係を定義する。
 **************************************************
 *)
 Locate "[ _ := _ ] _".                      (* subst x s t *)
-(**
-subst は Fixpoint で定義された関数である。
-Inductive で定義された substi と同じであることを証明する。
- *)
-Check substi : tm -> id -> tm -> tm -> Prop.
-(** subst の引数と値の関係を定義する仕様と考える。 *)
-
-Check substi_correct :
-  forall (s : tm) (x : id) (t t' : tm), [x := s] t = t' <-> substi s x t t'.
 
 Print step.
 (**
@@ -97,6 +112,19 @@ Check step_example1 : tapp idBB idB ==>* idB.
 Check step_example2 : tapp idBB (tapp idBB idB) ==>* idB.
 Check step_example3 : tapp (tapp idBB notB) ttrue ==>* tfalse.
 Check step_example4 : tapp idBB (tapp notB ttrue) ==>* tfalse.
+
+(* 話題 #1 *)
+(**
+subst は Fixpoint で定義された関数である。
+Inductive で定義された substi と同じであることを証明する。
+
+こういった証明の技法については、SFの第3部 VFA も参照のこと。
+ *)
+Check substi : tm -> id -> tm -> tm -> Prop.
+(** subst の引数と値の関係を定義する仕様と考える。 *)
+
+Check substi_correct :
+  forall (s : tm) (x : id) (t t' : tm), [x := s] t = t' <-> substi s x t t'.
 
 (**
 **************************************************
@@ -123,13 +151,7 @@ Inductive has_type : context -> tm -> ty -> Prop :=
            Gamma |- t2 \in T -> Gamma |- t3 \in T -> Gamma |- tif t1 t2 t3 \in T
 ]]
 *)
-
-(**
-fixpoint で type_of を定義する。TAPLの10.3型検査の節を参照。
-type_of と has_type が同じであることを証明する。
-equiv_types については、pf_type.v を参照のこと。
-こういった証明の技法については、SFの第3部 VFA も参照のこと。
- *)
+(** if t1 t2 t3 のthen (t2) と else (t3) が同じ型でなければならないことに注意してください。 *)
 
 (**
 それでは、typing_example を解いていきましょう！！！
@@ -153,10 +175,19 @@ Check typing_nonexample_3 :        (* TAPL 演習 9.3.2. とおなじ。 *)
           (tabs x S
              (tapp (tvar x) (tvar x))) \in T).
 
+(* 話題 #2 *)
+(**
+fixpoint で type_of を定義する。TAPLの10.3型検査の節を参照。
+
+type_of と has_type が同じであることを証明する equiv_types 。
+これについては、pf_type.v を参照のこと。
+ *)
+
+(* 話題 #3 *)
 (**
 注意：原ドキュメントでは、Gammaが関数か集合か解りにくくなっています。
 
-[Gamma x = T] は、関数で [(Gamma x) = T] であり、集合で [x:T ∈ Gamma] の意味です。
+Gamma は関数で [Gamma x = T] は [(Gamma x) = T] であり、集合で [x:T ∈ Gamma] の意味です。
 また、[Gamma, x:T11] は、[Gamma ∪ {x:T11}] の意味です（どちらも集合）。
 
 Map.v では Gamma は関数 (partical_map型) として定義されるので、
