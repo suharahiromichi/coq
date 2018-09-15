@@ -29,6 +29,7 @@ Import STLC.
 Export STLC.
 
 (* ################################################################# *)
+(** ProofCafe ##78 2018/08/18 *)
 (** ProofCafe ##79 2018/09/15 *)
 
 (**
@@ -48,11 +49,11 @@ Small-Step 関係を定義する。
 
 話題#1 自由変数の扱いについて。テクニカルノート
 
-補足説明 Big Step
+補足説明 Big Step はどうなった？
 
 話題#2 「λx.(x x) の型付け不能」 最後の演習問題
 
-補足説明 型の有限性を前提
+補足説明 型の有限性を前提としていること
 *)
 
 (**
@@ -70,6 +71,9 @@ Print ty.
 ]]
 *)
 
+(** BNF風に書くと  *)
+(** <ty> ::= TBool | TArrow <ty> <ty>  *)
+
 Print tm.
 (**
 Bool型の定数とif式、変数と関数抽象と関数適用だけからなる項である。
@@ -82,6 +86,11 @@ Bool型の定数とif式、変数と関数抽象と関数適用だけからな�
   | tif : tm -> tm -> tm -> tm
 ]]
 *)
+
+(** BNF風に書くと  *)
+(** <id> ::= x | y | z  *)
+(** <tm> ::= tvar <id> | tapp <tm> <tm> | tabs <id> <ty> <tm>
+    | ttrue | tfalse | tif <tm> <tm> <tm> *)
 
 (**
 **************************************************
@@ -105,6 +114,16 @@ Print step.
 ]]
 *)
 
+Locate "_ ==> _".          (* "t1 '==>' t2" := step t1 t2 *)
+Locate "_ ==>* _".         (* "t1 '==>*' t2" := multi step t1 t2 *)
+About multi.               (* mutli は Smallstep で定義されたもの。 *)
+Print multi.               (* 次の R に step が入る。 *)
+(**
+Inductive multi {X : Type} (R : relation X) : relation X :=
+    multi_refl : forall x : X, multi R x x
+  | multi_step : forall x y z : X, R x y -> multi R y z -> multi R x z
+ *)
+
 (**
 それでは、step_example を解いていきましょう！！！
 *)
@@ -112,6 +131,7 @@ Check step_example1 : tapp idBB idB ==>* idB.
 Check step_example2 : tapp idBB (tapp idBB idB) ==>* idB.
 Check step_example3 : tapp (tapp idBB notB) ttrue ==>* tfalse.
 Check step_example4 : tapp idBB (tapp notB ttrue) ==>* tfalse.
+Check step_example5 : (tapp (tapp idBBBB idBB) idB) ==>* idB.
 
 (* 話題 #1 *)
 (**
