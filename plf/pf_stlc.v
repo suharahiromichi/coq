@@ -92,6 +92,9 @@ Bool型の定数とif式、変数と関数抽象と関数適用だけからな�
 (** <tm> ::= tvar <id> | tapp <tm> <tm> | tabs <id> <ty> <tm>
     | ttrue | tfalse | tif <tm> <tm> <tm> *)
 
+(** このうち、ttrue、tfalse と tabs<id><ty><tm> がvalueである。
+    tvar<id>はvalueでないことの注意してください。 *)
+
 (**
 **************************************************
 Small-Step 関係を定義する。
@@ -112,6 +115,22 @@ Print step.
   | ST_If : forall t1 t1' t2 t3 : tm,
             t1 ==> t1' -> tif t1 t2 t3 ==> tif t1' t2 t3
 ]]
+
+[[
+証明図っぽい書き方
+A ==> A'  B ==> B'
+-----------------
+C ==> C'
+]]
+
+は、[A ==> A' -> B ==> B' -> C ==> C'] の意味です。
+
+また、
+
+ST_If は、if t1 then t2 else t3 のうち if項である t1 をまず値にすること、
+ST_App1 は、(t1 tm) の t1の項をまず値にすること。
+
+を示しています。
 *)
 
 Locate "_ ==> _".          (* "t1 '==>' t2" := step t1 t2 *)
@@ -135,8 +154,31 @@ Check step_example5 : (tapp (tapp idBBBB idBB) idB) ==>* idB.
 
 (* 話題 #1 *)
 (**
-subst は Fixpoint で定義された関数である。
-Inductive で定義された substi と同じであることを証明する。
+subst は Fixpoint で定義された関数で、変数を項に置き換えるものある。
+ *)
+Print subst.
+(**
+[[
+subst = 
+fix subst (x : id) (s t : tm) {struct t} : tm :=
+  match t with
+  | tvar x' => if beq_id x x' then s else t
+  | tapp t1 t2 => tapp (subst x s t1) (subst x s t2)
+  | tabs x' T t1 => tabs x' T (if beq_id x x' then t1 else subst x s t1) ← 注意
+  | ttrue => ttrue
+  | tfalse => tfalse
+  | tif t1 t2 t3 => tif (subst x s t1) (subst x s t2) (subst x s t3)
+  end
+     : id -> tm -> tm -> tm
+]]
+
+注意：
+[tabs <id> <ty> <tm>] の<tm>についても書き換えが行われることに注意してください。
+このとき、束縛された変数は（仮に名前が同じでも）書き換えの対象になりません。
+ *)
+
+(**
+Fixpoint で定義されたsubst と Inductive で定義された substi と同じであることを証明する。
 
 こういった証明の技法については、SFの第3部 VFA も参照のこと。
  *)
