@@ -152,6 +152,10 @@ Check step_example3 : tapp (tapp idBB notB) ttrue ==>* tfalse.
 Check step_example4 : tapp idBB (tapp notB ttrue) ==>* tfalse.
 Check step_example5 : (tapp (tapp idBBBB idBB) idB) ==>* idB.
 
+
+(* ################################################################# *)
+(** ProofCafe ##80 2018/09/20 *)
+
 (* 話題 #1 *)
 (**
 subst は Fixpoint で定義された関数で、変数を項に置き換えるものある。
