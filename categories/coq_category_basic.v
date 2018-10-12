@@ -38,7 +38,7 @@ Definition comp0 (m n : Hom0 tt tt) := m + n.
 Check comp0 1 2 : Hom0 tt tt.
 Compute comp0 1 2.                          (* 3 *)
 
-(* Cat1 集合圏 *)
+(* Cat1 集合の圏 *)
 Definition Hom1 (A B : Set) : Set := A -> B.
 Check Hom1 : Set -> Set -> Set.
 Check plus 1 : Hom1 nat nat.
@@ -56,7 +56,7 @@ Definition G (f : Hom1 nat nat) : Hom0 tt tt := f 0.
 Check comp0 (G (plus 1)) (G (plus 2)) : Hom0 tt tt.
 Compute comp0 (G (plus 1)) (G (plus 2)).    (* 3 *)
 
-(* Cat2 LEの圏 *)
+(* Cat2 半順序集合の圏 *)
 Definition Hom2 (m n : nat) : Set := m <= n.
 Check Hom2 : nat -> nat -> Set.
 Definition le34 : Hom2 3 4. Proof. unfold Hom2. omega. Defined.
