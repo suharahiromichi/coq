@@ -317,7 +317,6 @@ Check typing_example_3 : exists T,
                (tapp (tvar y) (tapp (tvar x) (tvar z)))))) \in T.
 
 
-Hint Resolve update_eq.
 Example typing_example_2 :
   empty |-
     (tabs x TBool
@@ -329,23 +328,24 @@ Proof.
   apply T_Abs.
   apply T_Abs.
   apply T_App with (T11:=TBool).
-  apply T_Var.
-  apply update_eq.
+  - apply T_Var.
+    apply update_eq.
   - apply T_App with (T11:=TBool).
     + apply T_Var.
       apply update_eq.
     + apply T_Var.
       apply update_neq.
-      (* y <> x *)
-      admit.
-
+      unfold x, y, not.                     (* x y は Coqの変数ではない。 *)
+      intro HContra.
+      inversion HContra.
+      
   (* update を計算してしまう版 *)
   Restart.
   apply T_Abs.
   apply T_Abs.
   apply T_App with (T11:=TBool).
-  apply T_Var.
-  unfold update, t_update. simpl. reflexivity.
+  - apply T_Var.
+    unfold update, t_update. simpl. reflexivity.
   - apply T_App with (T11:=TBool).
     + apply T_Var.
       unfold update, t_update. simpl. reflexivity.
@@ -354,11 +354,13 @@ Proof.
       
   (* ... を auto に置き換えた版 *)
   Restart.
+  Hint Resolve update_eq.
+
   apply T_Abs.
   apply T_Abs.
   eapply T_App.
-  apply T_Var.                             (* auto にふくめられる。 *)
-  auto.                                    (* apply update_eq *)
+  - apply T_Var.                           (* auto にふくめられる。 *)
+    auto.                                  (* apply update_eq *)
   - eapply T_App.
     + apply T_Var.                         (* auto にふくめられる。 *)
       auto.                                (* apply update_eq *)
@@ -674,19 +676,5 @@ Proof.
     rewrite H1 in *; clear H1.
     easy.
 Qed.
-
-(** より一般的に、(Inductiveで定義された）コンストラクタの有限性を証明できないだろうか。 *)
-(** 直観的な証明ではひとことで済むことが、形式的には毎回証明が必要になる例だろうか。 *)
-
-(** 補足説明 *)
-
-(**
-型の有限性を前提とすると、再帰呼び出しによる繰り返しができないことになります。
-それについては、MoreStlc の General Recursion の節 や
-
-https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2016_kyouyou/typed.pdf
-
-を参考にしてください。
-*)
 
 (* END *)
