@@ -304,6 +304,17 @@ Inductive has_type : context -> tm -> ty -> Prop :=
 
 (**
 それでは、typing_example を解いていきましょう！！！
+
+[Proof with auto using update_eq] とすると [...] で、auto（と update_eqの適用）が
+実行されるが、あまり使わないのではないか。以下の説明では使っていない。
+
+ヒント：Gammaのコンストラクタを適用して [update m x v x = Some v] の形にする。
+その後、
+update_eq または update_neq を適用する。
+あるいは、update を「計算」してもよい。
+
+[Hint Resolve update_eq] とすると auto で update_eq で適用されるが、
+auto でも update が「計算」される場合がある。話題#3を参照のこと。
 *)
 Check typing_example_1 : empty |- idB \in TArrow TBool TBool.
 Check typing_example_2 : empty |- tabs x TBool
@@ -327,15 +338,15 @@ Proof.
   (* 補題に忠実な版 *)
   apply T_Abs.
   apply T_Abs.
-  apply T_App with (T11:=TBool).
+  eapply T_App.                    (* apply T_App with (T11:=TBool) *)
   - apply T_Var.
     apply update_eq.
-  - apply T_App with (T11:=TBool).
+  - eapply T_App.                  (* apply T_App with (T11:=TBool) *)
     + apply T_Var.
       apply update_eq.
     + apply T_Var.
       apply update_neq.
-      unfold x, y, not.                     (* x y は Coqの変数ではない。 *)
+      unfold x, y, not.               (* x y は Coqの変数ではない。 *)
       intro HContra.
       inversion HContra.
       
@@ -359,13 +370,10 @@ Proof.
   apply T_Abs.
   apply T_Abs.
   eapply T_App.
-  - apply T_Var.                           (* auto にふくめられる。 *)
-    auto.                                  (* apply update_eq *)
+  - auto.                           (* apply T_Var. apply update_eq *)
   - eapply T_App.
-    + apply T_Var.                         (* auto にふくめられる。 *)
-      auto.                                (* apply update_eq *)
-    + apply T_Var.                         (* auto にふくめられる。 *)
-      auto.                                (* reflexivity (apply update_eq ではない) *)
+    + auto.               (* apply T_Var. apply update_eq *)
+    + auto.               (* apply T_Var. reflexivity (apply update_eq ではない) *)
 Qed.
 
 Check typing_nonexample_1 :
@@ -415,7 +423,7 @@ typing_example_1 の証明図を集合的に書く。
 また、string が id に変わっているが、これは大きな影響はない。
 *)
 
-(** Gamma の定義について。Map.v を参照 *)
+(** Gamma の定義について。Maps.v を参照 *)
 
 (** Gamma の作り方 *)
 Definition Empty  := @empty ty             : partial_map ty. (* φ *)
