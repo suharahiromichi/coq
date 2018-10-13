@@ -182,15 +182,98 @@ fix subst (x : id) (s t : tm) {struct t} : tm :=
  *)
 
 (**
+Egisonのコード
+http://xenophobia.hatenablog.com/entry/2013/12/02/225511
+
+(define $subst
+  (lambda [$x $t]
+    (letrec {[$go
+              (match-lambda term
+                {[<var ,x> t]
+                 [<app $t1 $t2> <App (go t1) (go t2)>]
+                 [<lam (& $y ^,x) $t1> <Lam y (go t1)>]
+                 [<op $ope $t1 $t2> <Op ope (go t1) (go t2)>]
+                 [$t t]})]} go)))
+
+"^,x"というパターンはEgison独自のもので、NOTパターン"^(pattern)"は
+「(pattern)にマッチしない」、Valueパターン",(expr)"は「(expr)を評価し
+た値にマッチ」を意味します。つまり"^,x"で「変数xの値にマッチしない値に
+マッチ」となり、λ抽象によるshadowingをうまく表現しています。
+（中略）
+閉じた項に関する代入しか起こらないと仮定します。
+（これはPLFの定義とおなじ）
+*)
+
+(**
 Fixpoint で定義されたsubst と Inductive で定義された substi と同じであることを証明する。
 
 こういった証明の技法については、SFの第3部 VFA も参照のこと。
  *)
+
 Check substi : tm -> id -> tm -> tm -> Prop.
 (** subst の引数と値の関係を定義する仕様と考える。 *)
+(**
+   substi の定義のヒント：
+[[
+   Inductive substi (s:tm) (x:id) : tm -> tm -> Prop :=
+   | s_var1 : substi s x (tvar x) s
+]]
+まで答えが書いてある。これ(s_var1)は、[[x := s] (tvar x) = s] であり、
+書き換えの対象の項が変数([x])であり、代入左辺([x])と同じ場合を示す。すなわち、
+[[x := s]] を [tvar x] に適用すると [s] になる、という変数についての書き換え規則のひとつである。
+
+変数についての書き換え規則を完全にするには、s_var2 として、
+書き換えの対象の項が変数([x'])であり、代入左辺([x])と異なる場合を追加する。すなわち、
+[[x := s]] を [tvar x'] に適用すると [tvar x'] のまま（書き換えが起きない）であることを追加する。
+このとき、[x ≠ x'] であることを明示するが、これは [beq_id x x'] = false を使う。
+
+同様に
+s_abs1として、absの束縛変数が代入左辺と一致する場合（absの本体が書き換え対象にならない）と、
+s_abs2として、absの束縛変数が代入左辺と一致しない場合（absの本体が書き換え対象になる）
+を追加する。s_abs2でも、s_var2のように、[beq_id] による場合分けをおこなう。
+
+[[
+   Inductive substi (s:tm) (x:id) : tm -> tm -> Prop :=
+   | s_var1 : substi s x (tvar x) s
+   | s_var2 : forall x', beq_id x x'= false -> (FILL HERE)
+   | s_abs1 : (FILL HERE)
+   | s_abs2 : forall x', beq_id x x'= false -> (FILL HERE)
+   | s_app : (FILL HERE)
+   | s_true : (FILL HERE)
+   | s_false : (FILL HERE)
+   | s_if : (FILL HERE).
+]]
+ *)
 
 Check substi_correct :
   forall (s : tm) (x : id) (t t' : tm), [x := s] t = t' <-> substi s x t t'.
+
+(**
+   substi_correct の証明のヒント：
+ *)
+(**
+   [->] の証明では、[t']を代入で消してしまい、
+   [substi s x t ([x := s] t)] を [t] についての帰納法で証明することになる。
+   このとき、s_var2 と s_abs2 の場合において、[beq_id x x']の真偽で場合分けをしたくなる。
+   （注意：[x'] は別の名前に変わっている場合があります。）
+
+   [case (beq_id x x')] または [destruct (beq_id x x')] とすると、
+   [beq_id x x']の真偽が前提から失われてしまう。
+   [remember (beq_id x i) as b. destruct b] を「覚えておいて」使うとよいが、
+   [case_eq (beq_id x i)] のほうが、前提が、
+   [H : beq_id x i = true] と [H : beq_id x i = false] になるので、使いやすい。
+ *)
+(**
+   前提の [beq_id x y = true] は、次の補題で [x = y] に書き変えられる。
+*)
+Check beq_id_true_iff : forall x y : id, beq_id x y = true <-> x = y.
+
+(**
+   [<-] の証明では、[substi s x t t' -> [x := s] t = t'] の [H : substi s x t t']
+   についての帰納法で証明する。
+   ゴールで出現する [beq_id x x] は、次の補題で true に書き変えられる。
+ *)   
+Check beq_id_refl : forall id : id, true = beq_id id id.
 
 (**
 **************************************************
