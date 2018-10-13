@@ -47,11 +47,11 @@ Small-Step 関係を定義する。
 
 話題 #3 Gamma
 
-話題#1 自由変数の扱いについて。テクニカルノート
+話題#4 自由変数の扱いについて。テクニカルノート
 
 補足説明 Big Step はどうなった？
 
-話題#2 「λx.(x x) の型付け不能」 最後の演習問題
+話題#5 「λx.(x x) の型付け不能」 最後の演習問題
 
 補足説明 型の有限性を前提としていること
 *)
@@ -156,7 +156,7 @@ Check step_example5 : (tapp (tapp idBBBB idBB) idB) ==>* idB.
 (* ################################################################# *)
 (** ProofCafe ##80 2018/09/20 *)
 
-(* 話題 #1 *)
+(** 話題 #1 substi_correct *)
 (**
 subst は Fixpoint で定義された関数で、変数を項に置き換えるものある。
  *)
@@ -258,10 +258,10 @@ Check substi_correct :
    （注意：[x'] は別の名前に変わっている場合があります。）
 
    [case (beq_id x x')] または [destruct (beq_id x x')] とすると、
-   [beq_id x x']の真偽が前提から失われてしまう。
-   [remember (beq_id x i) as b. destruct b] を「覚えておいて」使うとよいが、
-   [case_eq (beq_id x i)] のほうが、前提が、
+   [beq_id x x']の真偽が前提から失われてしまう。[remember]を使ってもよいが、
+   [case_eq (beq_id x x')] のほうが、前提が、
    [H : beq_id x i = true] と [H : beq_id x i = false] になるので、使いやすい。
+   これは、ssreflect/mathcomp の [case H : (beq_id x x')] と同じ。
  *)
 (**
    前提の [beq_id x y = true] は、次の補題で [x = y] に書き変えられる。
@@ -315,6 +315,57 @@ Check typing_example_3 : exists T,
          (tabs y (TArrow TBool TBool)
             (tabs z TBool
                (tapp (tvar y) (tapp (tvar x) (tvar z)))))) \in T.
+
+
+Hint Resolve update_eq.
+Example typing_example_2 :
+  empty |-
+    (tabs x TBool
+       (tabs y (TArrow TBool TBool)
+          (tapp (tvar y) (tapp (tvar y) (tvar x))))) \in
+    (TArrow TBool (TArrow (TArrow TBool TBool) TBool)).
+Proof.
+  (* 補題に忠実な版 *)
+  apply T_Abs.
+  apply T_Abs.
+  apply T_App with (T11:=TBool).
+  apply T_Var.
+  apply update_eq.
+  - apply T_App with (T11:=TBool).
+    + apply T_Var.
+      apply update_eq.
+    + apply T_Var.
+      apply update_neq.
+      (* y <> x *)
+      admit.
+
+  (* update を計算してしまう版 *)
+  Restart.
+  apply T_Abs.
+  apply T_Abs.
+  apply T_App with (T11:=TBool).
+  apply T_Var.
+  unfold update, t_update. simpl. reflexivity.
+  - apply T_App with (T11:=TBool).
+    + apply T_Var.
+      unfold update, t_update. simpl. reflexivity.
+    + apply T_Var.
+      unfold update, t_update. simpl. reflexivity.
+      
+  (* ... を auto に置き換えた版 *)
+  Restart.
+  apply T_Abs.
+  apply T_Abs.
+  eapply T_App.
+  apply T_Var.                             (* auto にふくめられる。 *)
+  auto.                                    (* apply update_eq *)
+  - eapply T_App.
+    + apply T_Var.                         (* auto にふくめられる。 *)
+      auto.                                (* apply update_eq *)
+    + apply T_Var.                         (* auto にふくめられる。 *)
+      auto.                                (* reflexivity (apply update_eq ではない) *)
+Qed.
+
 Check typing_nonexample_1 :
   ~ (exists T : ty,
         empty |- tabs x TBool (tabs y TBool (tapp (tvar x) (tvar y))) \in T).
@@ -323,6 +374,8 @@ Check typing_nonexample_3 :        (* TAPL 演習 9.3.2. とおなじ。 *)
         empty |-
           (tabs x S
              (tapp (tvar x) (tvar x))) \in T).
+
+(** 話題#5 「λx.(x x) の型付け不能」 最後の演習問題 参照。 *)
 
 (* 話題 #2 *)
 (**
@@ -339,7 +392,7 @@ type_of と has_type が同じであることを証明する equiv_types 。
 Gamma は関数で [Gamma x = T] は [(Gamma x) = T] であり、集合で [x:T ∈ Gamma] の意味です。
 また、[Gamma, x:T11] は、[Gamma ∪ {x:T11}] の意味です（どちらも集合）。
 
-Map.v では Gamma は関数 (partical_map型) として定義されるので、
+Maps.v では Gamma は関数 (partical_map型) として定義されるので、
 [x : T ∈ Gamma] を [(Gamma x) = (Some T)] と記述しています。また、
 [Gamma ∪ {x:T11}] は [update Gamma x T11] となります。
 
@@ -424,7 +477,7 @@ Proof.
 Qed.
 
 (** ***************** *)
-(** 話題#1 自由変数の扱いについて。テクニカルノート *)
+(** 話題#4 自由変数の扱いについて。テクニカルノート *)
 (** ***************** *)
 
 (**
@@ -565,7 +618,7 @@ Proof.
 Qed.
 
 (** ***************** *)
-(** 話題#2 「λx.(x x) の型付け不能」 最後の演習問題 *)
+(** 話題#5 「λx.(x x) の型付け不能」 最後の演習問題 *)
 (** ***************** *)
 
 (** [~ (exists S, exists T, empty |- \x : S. x x \in T) ] **)
