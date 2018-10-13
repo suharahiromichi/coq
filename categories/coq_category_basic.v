@@ -1,14 +1,14 @@
 (**
 シングルトン
 対象の型  unit
-対象      tt（のみ）
+対象の例  tt（のみ）
 射の型    Hom := ∀a b : unit, nat
 射の型    Hom tt tt  (= nat)
 射の例    1, 2
 
 集合の圏
 対象の型  Set
-対象      nat（のみ）
+対象の例  nat（のみ）
 射の型    Hom := ∀A B : Set, A -> B
 射の型    Hom nat nat  (= nat -> nat)
 射の例    plus 1, plus 2
@@ -25,6 +25,20 @@ LEの圏
 対象の例  こ,た
 射の型    (Inductive な定義)
 射の例    siri こ た
+
+型の圏
+対象の型  Type
+対象の例  nat
+射の型    Hom := ∀A B : Type, A -> B
+射の型    Hom nat nat  (= nat -> nat)
+射の例    plus 1, plus 2  (項)
+
+論理式の圏
+対象の型  Prop
+対象の例  1=2,2=1
+射の型    Hom := ∀A B : Prop, A -> B
+射の型    Hom (1=2) (2=1)
+射の例    1=2 -> 2=1    (演繹、証明図）
 *)
 
 Require Import Omega.
