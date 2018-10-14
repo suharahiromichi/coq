@@ -73,7 +73,7 @@ Proof.
 Qed.
 
 (* 結合律 associative low *)
-Theorem assoc1 : forall m n p,
+Theorem assoc0 : forall m n p,
     comp0 m (comp0 n p) = comp0 (comp0 m n) p.
 Proof.
  intros.
@@ -164,8 +164,10 @@ Inductive Hom3 : Hira -> Hira -> Set := siri : forall (a b : Hira), Hom3 a b.
 Check Hom3 : Hira -> Hira -> Set.
 Definition こた := siri こ た : Hom3 こ た.
 Definition たき := siri た き : Hom3 た き.
+
 Definition comp3 {A B C : Hira} (f : Hom3 A B) (g : Hom3 B C) : Hom3 A C.
 Proof. easy. Defined.
+
 Check comp3 こた たき : Hom3 こ き.
 Compute comp3 こた たき.                  (* siri こ き : Home3 こ き *)
 
@@ -173,20 +175,55 @@ Compute comp3 こた たき.                  (* siri こ き : Home3 こ き *)
 Definition id3 A : Hom3 A A := siri A A.
 
 (* 単位元律 unit law 01 *)
+Theorem unit3_l : forall (A B : Hira) (f : Hom3 A B), comp3 (id3 A) f = f.
+Proof.
+  intros.
+  case f.
+  intros.
+  unfold comp3, id3.
+  reflexivity.
+Qed.
+
+(*
 Theorem unit3_l : forall (A B : Hira), comp3 (id3 A) (siri A B) = siri A B.
 Proof.
   intros.
   reflexivity.
 Qed.
+ *)
 
 (* 単位元律 unit law 02 *)
+Theorem unit3_r : forall (A B : Hira) (f : Hom3 A B), comp3 f (id3 B) = f.
+Proof.
+  intros.
+  case f.
+  intros.
+  unfold comp3, id3.
+  reflexivity.
+Qed.
+
+(*
 Theorem unit3_r : forall (A B : Hira), comp3 (siri A B) (id3 B) = siri A B.
 Proof.
  intros.
  reflexivity.
 Qed.
+ *)
 
 (* 結合律 associative low *)
+
+Theorem assoc3 : forall (A B C D : Hira) (f : Hom3 A B) (g : Hom3 B C) (h : Hom3 C D),
+    comp3 f (comp3 g h) = comp3 (comp3 f g) h.
+Proof.
+ intros.
+ induction f.
+ induction g.
+ induction h.
+ unfold comp3, id3.
+ reflexivity.
+Qed.
+
+(*
 Theorem assoc3 : forall A B C D,
     comp3 (siri A B) (comp3 (siri B C) (siri C D)) =
     comp3 (comp3 (siri A B) (siri B C)) (siri C D).
@@ -194,5 +231,6 @@ Proof.
  intros.
  reflexivity.
 Qed.
+ *)
 
 (* END *)
