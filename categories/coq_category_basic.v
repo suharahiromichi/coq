@@ -138,6 +138,13 @@ Definition comp2 {m n p} H1 H2 := le_trans m n p H1 H2.
 Check comp2 le34 le45 : Hom2 3 5.
 Compute comp2 le34 le45.
 
+Axiom proof_irrelevance : forall (P : Prop) (p1 p2 : P), p1 = p2.
+Definition le35 : Hom2 3 5. Proof. unfold Hom2. omega. Defined.
+Goal comp2 le34 le45 = le35.                (* irrelevance が必要 *)
+Proof.
+  apply proof_irrelevance.
+Qed.
+
 (* 恒等射 identity *)
 Definition id2 (n : nat) : Hom2 n n. Proof. unfold Hom2. easy. Defined.
 
@@ -145,18 +152,25 @@ Definition id2 (n : nat) : Hom2 n n. Proof. unfold Hom2. easy. Defined.
 Theorem unit2_l : forall (m n : nat) (f : Hom2 m n),
     comp2 (id2 m) f = f.                    (* irrelevance が必要 *)
 Proof.
-  unfold Hom2.
   intros.
-  unfold id2, comp2.
-  Check Nat.le_trans.
-  Admitted.
+  apply proof_irrelevance.
+Qed.
 
 (* 単位元律 unit law 02 *)
-(* TODO *)
+Theorem unit2_r : forall (m n : nat) (f : Hom2 m n),
+    comp2 f (id2 n) = f.                    (* irrelevance が必要 *)
+Proof.
+  intros.
+  apply proof_irrelevance.
+Qed.
 
 (* 結合律 associative low *)
-(* TODO *)
-
+Theorem assoc2 : forall (m n p l : nat) (f : Hom2 m n) (g : Hom2 n p) (h : Hom2 p l),
+    comp2 f (comp2 g h) = comp2 (comp2 f g) h. (* irrelevance が必要 *)
+Proof.
+  intros.
+  apply proof_irrelevance.
+Qed.
 
 (* Cat3 しりとりの圏 *)
 Inductive Hira : Set := こ | ぶ | た | ぬ | き | つ | ね.
@@ -211,7 +225,6 @@ Qed.
  *)
 
 (* 結合律 associative low *)
-
 Theorem assoc3 : forall (A B C D : Hira) (f : Hom3 A B) (g : Hom3 B C) (h : Hom3 C D),
     comp3 f (comp3 g h) = comp3 (comp3 f g) h.
 Proof.
