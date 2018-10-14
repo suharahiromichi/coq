@@ -51,7 +51,7 @@ Class Setoid : Type :=
     eqv : carrier -> carrier -> Prop;
     eqv_equivalence : Equivalence eqv
   }.
-Coercion carrier : Setoid >-> Sortclass.
+Coercion carrier : Setoid >-> Sortclass.    (* Classのとき「:>」は使えない。 *)
 Notation "x === y" := (eqv x y).
       
 Class Category `(Hom : Obj -> Obj -> Setoid) : Type :=
@@ -83,6 +83,7 @@ Proof.
 Qed.
 
 (* comp は eqv について固有関数である。 *)
+(* comp「\\o」で繋いだ部分をeqv「===」で書き換えられる。 *)
 Instance category_comp_Proper `(C : Category Obj) (a b c : Obj) :
   Proper (@eqv (b ~> c) ==> @eqv (a ~> b) ==> @eqv (a ~> c)) comp.
 Proof.
@@ -303,10 +304,9 @@ Check 0 <= 0 : Prop.
 Definition eq_le m n (p q : m <= n) := True.
   
 Instance EquivGeq : forall (m n : nat), Equivalence (@eq_le m n).
-Proof.
-    by [].
-Qed. 
-  
+  by [].
+Qed.
+
 Instance EqLe : forall (m n : nat), Setoid :=
   {
     carrier := m <= n;
@@ -357,6 +357,12 @@ Proof.
 Defined.
 
 Check P_LE.
+Print P_LE.
+Section TEST.
+Variable le34 : 3 <= 4.
+Variable le45 : 4 <= 5.
+Check comp le45 le34 : 3 <= 5.
+End TEST.
 
 Check min : nat -> nat -> nat.
 Check @Product P_LE EqLe P_LE min.

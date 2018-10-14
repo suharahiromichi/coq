@@ -137,6 +137,7 @@ Definition le45 : Hom2 4 5. Proof. unfold Hom2. omega. Defined.
 Definition comp2 {m n p} H1 H2 := le_trans m n p H1 H2.
 Check comp2 le34 le45 : Hom2 3 5.
 Compute comp2 le34 le45.
+(* Aw_1_3_Categories.v の定義だとcompが異なるのでirrelevanceが要らない。 *)
 
 Axiom proof_irrelevance : forall (P : Prop) (p1 p2 : P), p1 = p2.
 Definition le35 : Hom2 3 5. Proof. unfold Hom2. omega. Defined.
@@ -146,7 +147,7 @@ Proof.
 Qed.
 
 (* 恒等射 identity *)
-Definition id2 (n : nat) : Hom2 n n. Proof. unfold Hom2. easy. Defined.
+Definition id2 (n : nat) : Hom2 n n. Proof. unfold Hom2. omega. Defined.
 
 (* 単位元律 unit law 01 *)
 Theorem unit2_l : forall (m n : nat) (f : Hom2 m n),
