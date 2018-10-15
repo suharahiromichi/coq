@@ -57,13 +57,28 @@ Compute comp0 1 2.                          (* 3 *)
 Definition id0 : Hom0 tt tt := 0.
 
 (* 単位元律 unit law 01 *)
+Theorem unit0_l : forall (f : Hom0 tt tt), comp0 id0 f = f.
+Proof.
+  intros.
+  reflexivity.
+Qed.
+(*
 Theorem unit0_l : forall (n : nat), comp0 id0 n = n.
 Proof.
   intros.
   reflexivity.
 Qed.
-
+ *)
+  
 (* 単位元律 unit law 02 *)
+Theorem unit0_r : forall (f : Hom0 tt tt), comp0 f id0 = f.
+Proof.
+  intros.
+  unfold id0, comp0.
+  Search _ (_ + 0 = _).
+  apply Nat.add_0_r.
+Qed.
+(*
 Theorem unit0_r : forall (n : nat), comp0 n id0 = n.
 Proof.
   intros.
@@ -71,8 +86,17 @@ Proof.
   Search _ (_ + 0 = _).
   apply Nat.add_0_r.
 Qed.
-
+ *)
+  
 (* 結合律 associative low *)
+Theorem assoc0 : forall (f : Hom0 tt tt) (g : Hom0 tt tt) (h : Hom0 tt tt),
+    comp0 f (comp0 g h) = comp0 (comp0 f g) h.
+Proof.
+ unfold id0, comp0.
+ Search _ (_ + _ + _ = _).
+ apply plus_assoc.
+Qed.
+(*
 Theorem assoc0 : forall m n p,
     comp0 m (comp0 n p) = comp0 (comp0 m n) p.
 Proof.
@@ -81,14 +105,15 @@ Proof.
  Search _ (_ + _ + _ = _).
  apply plus_assoc.
 Qed.
-
+*)
 
 (* Cat1 集合の圏 *)
 Definition Hom1 (A B : Set) : Set := A -> B.
 Check Hom1 : Set -> Set -> Set.
 Check plus 1 : Hom1 nat nat.
 Check plus 2 : Hom1 nat nat.
-Definition comp1 {A B C : Set} (f : Hom1 B C) (g : Hom1 A B) := fun x => f (g x).
+Definition comp1 {A B C : Set} (f : Hom1 B C) (g : Hom1 A B) : Hom1 A C.
+= fun x => f (g x).
 Check comp1 (plus 1) (plus 2) : Hom1 nat nat.
 Compute comp1 (plus 1) (plus 2).            (* fun x : x + 3 *)
 
@@ -97,28 +122,34 @@ Compute comp1 (plus 1) (plus 2).            (* fun x : x + 3 *)
 Definition id1 : Hom1 nat nat := plus 0.
 
 (* 単位元律 unit law 01 *)
-Theorem unit1_l : forall (n : nat), comp1 id1 (plus n) = plus n.
+
+Theorem unit1_l : forall (f : Hom1 nat nat), comp1 id1 f = f.
 Proof.
   intros.
   reflexivity.
 Qed.
+(* Theorem unit1_l : forall (n : nat), comp1 id1 (plus n) = plus n. *)
 
 (* 単位元律 unit law 02 *)
-Theorem unit1_r : forall (n : nat), comp1 (plus n) id1 = plus n.
+Theorem unit1_r : forall (f : Hom1 nat nat), comp1 f id1 = f.
 Proof.
   intros.
   reflexivity.
 Qed.
+(* Theorem unit1_r : forall (n : nat), comp1 (plus n) id1 = plus n. *)
 
 (* 結合律 associative low *)
+Theorem assoc1 : forall (f : Hom1 nat nat) (g : Hom1 nat nat) (h : Hom1 nat nat),
+    comp1 f (comp1 g h) = comp1 (comp1 f g) h.
+Proof.
+  intros.
+  reflexivity.
+Qed.
+(*
 Theorem assoc1 : forall m n p,
     comp1 (plus m) (comp1 (plus n) (plus p)) =
     comp1 (comp1 (plus m) (plus n)) (plus p).
-Proof.
- intros.
- reflexivity.
-Qed.
-
+*)
 
 (* 関手 *)
 Definition F (n : Hom0 tt tt) : Hom1 nat nat := plus n.
