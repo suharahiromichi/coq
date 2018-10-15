@@ -353,14 +353,10 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
 
 Program Instance SINGLETON : Category Hom0 := (* unit *)
   {|
+    id _       := id0;
     comp _ _ _ := comp0
   |}.
-Obligation 1.
-Proof.
-  Check id0.
-  now apply id0.
-Defined.
-Obligation 4.
+Obligation 3.
 Proof.
   unfold id0, comp0.
   apply plus_assoc.
@@ -373,65 +369,46 @@ Program Instance SETS      : Category Hom1 := (* Set *)
     comp _ _ _ := comp1
   |}.
 
-Program Instance NAT       : Category Hom2. (* nat *)
+Program Instance NAT       : Category Hom2 := (* nat *)
+  {|
+    id        := id2;
+    comp _ _ _ := comp2
+  |}.
 Obligation 1.
 Proof.
-  Check id2.
-  now apply id2.
-Defined.
-Obligation 2.
+  unfold comp2.
+  unfold id2.                               (* omega でなく easy で解くこと。 *)
   unfold Hom2 in *.
-  eapply comp2.
-  - now apply H.
-  - now apply H0.
-Defined.
+  apply proof_irrelevance.
+Qed.
+Obligation 2.
+Proof.
+  unfold comp2.
+  unfold id2.                               (* omega でなく easy で解くこと。 *)
+  unfold Hom2 in *.
+  apply proof_irrelevance.
+Qed.
 Obligation 3.
 Proof.
-  unfold NAT_obligation_2.
-  unfold NAT_obligation_1.
-  unfold comp2.
-  unfold id2.                               (* omega でなく easy で解くこと。 *)
-  unfold Hom2 in *.
-  apply proof_irrelevance.
-Qed.
-Obligation 4.
-  unfold NAT_obligation_2.
-  unfold NAT_obligation_1.
-  unfold comp2.
-  unfold id2.                               (* omega でなく easy で解くこと。 *)
-  unfold Hom2 in *.
-  apply proof_irrelevance.
-Qed.
-Obligation 5.
-  unfold NAT_obligation_2.
   unfold comp2.
   unfold id2.                               (* omega でなく easy で解くこと。 *)
   unfold Hom2 in *.
   apply proof_irrelevance.
 Qed.
 
-Program Instance SIRI      : Category Hom3. (* Hira *)
-Obligation 1.
-Proof.
-  now eapply id3.
-Defined.
+Program Instance SIRI      : Category Hom3 := (* Hira *)
+  {|
+    id := id3;
+    comp _ _ _ := comp3
+  |}.
 Obligation 2.
 Proof.
-  eapply comp3.
-  - now apply H.
-  - now apply H0.
-Defined.
-Obligation 4.
-  unfold SIRI_obligation_2.
-  unfold SIRI_obligation_1.
   induction f.
   + easy.
   + simpl.
     now rewrite IHf.
 Qed.
-Obligation 5.
-  unfold SIRI_obligation_2.
-  unfold SIRI_obligation_1.
+Obligation 3.
   intros.
   induction f.
   - simpl.
