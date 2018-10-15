@@ -113,18 +113,18 @@ Definition Hom1 (A B : Set) : Set := A -> B.
 Check Hom1 : Set -> Set -> Set.
 Check plus 1 : Hom1 nat nat.
 Check plus 2 : Hom1 nat nat.
-Definition comp1 {A B C : Set} (f : Hom1 B C) (g : Hom1 A B) : Hom1 A C
-  := fun x => f (g x).
+Definition comp1 {A B C : Set} (f : Hom1 A B) (g : Hom1 B C) : Hom1 A C
+  := fun x => g (f x).
 Check comp1 (plus 1) (plus 2) : Hom1 nat nat.
 Compute comp1 (plus 1) (plus 2).            (* fun x : x + 3 *)
 
 
 (* 恒等射 identity *)
-Definition id1 : Hom1 nat nat := plus 0.
+Definition id1 : Hom1 nat nat := fun x => x. (* plus 0 *)
 
 (* 単位元律 unit law 01 *)
 
-Theorem unit1_l : forall (f : Hom1 nat nat), comp1 id1 f = f.
+Theorem unit1_l : forall (f : Hom1 nat nat), comp1 f id1 = f.
 Proof.
   intros.
   reflexivity.
@@ -366,22 +366,12 @@ Proof.
   apply plus_assoc.
 Qed.
 
-(*
-Program Instance SETS      : Category Hom1. (* Set *)
-Obligation 1.
-Proof.
-  Check id1.
-Admitted.
-Obligation 2.
-Proof.
-  Check @comp1 A B C.
-  now apply (@comp1 A B C).
-Defined.
-Obligation 3.
-Proof.
-  unfold SETS_obligation_2.
-  Admitted.
-*)
+
+Program Instance SETS      : Category Hom1 := (* Set *)
+  {|
+    id nat     := fun x => x;
+    comp _ _ _ := comp1
+  |}.
 
 Program Instance NAT       : Category Hom2. (* nat *)
 Obligation 1.
