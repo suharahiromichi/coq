@@ -112,8 +112,8 @@ Definition Hom1 (A B : Set) : Set := A -> B.
 Check Hom1 : Set -> Set -> Set.
 Check plus 1 : Hom1 nat nat.
 Check plus 2 : Hom1 nat nat.
-Definition comp1 {A B C : Set} (f : Hom1 B C) (g : Hom1 A B) : Hom1 A C.
-= fun x => f (g x).
+Definition comp1 {A B C : Set} (f : Hom1 B C) (g : Hom1 A B) : Hom1 A C
+  := fun x => f (g x).
 Check comp1 (plus 1) (plus 2) : Hom1 nat nat.
 Compute comp1 (plus 1) (plus 2).            (* fun x : x + 3 *)
 
@@ -206,76 +206,59 @@ Qed.
 
 (* Cat3 しりとりの圏 *)
 Inductive Hira : Set := こ | ぶ | た | ぬ | き | つ | ね.
+Inductive Hom3 : Hira -> Hira -> Set :=
+  | single : forall A, Hom3 A A
+  | cons : forall {A' B : Hira} (A : Hira) (tl : Hom3 A' B), Hom3 A B.
+(*
 Inductive Hom3 : Hira -> Hira -> Set := siri : forall (a b : Hira), Hom3 a b.
+*)
 Check Hom3 : Hira -> Hira -> Set.
-Definition こた := siri こ た : Hom3 こ た.
-Definition たき := siri た き : Hom3 た き.
+Definition こぶた := cons こ (cons ぶ (single た)) : Hom3 こ た.
+Definition たぬき := cons た (cons ぬ (single き)) : Hom3 た き.
 
 Definition comp3 {A B C : Hira} (f : Hom3 A B) (g : Hom3 B C) : Hom3 A C.
-Proof. easy. Defined.
+Proof.
+  intros.
+  induction f.
+  + easy.
+  + Check (cons A (IHf g)).
+    apply (cons A (IHf g)).
+Defined.
 
-Check comp3 こた たき : Hom3 こ き.
-Compute comp3 こた たき.                  (* siri こ き : Home3 こ き *)
+Check comp3 こぶた たぬき : Hom3 こ き.
+Compute comp3 こぶた たぬき.        (* こ ぶ た ぬ き : Home3 こ き *)
 
 (* 恒等射 identity *)
-Definition id3 A : Hom3 A A := siri A A.
+Definition id3 A : Hom3 A A := single A.
 
 (* 単位元律 unit law 01 *)
 Theorem unit3_l : forall (A B : Hira) (f : Hom3 A B), comp3 (id3 A) f = f.
 Proof.
   intros.
-  case f.
-  intros.
-  unfold comp3, id3.
-  reflexivity.
+  now simpl.
 Qed.
-
-(*
-Theorem unit3_l : forall (A B : Hira), comp3 (id3 A) (siri A B) = siri A B.
-Proof.
-  intros.
-  reflexivity.
-Qed.
- *)
 
 (* 単位元律 unit law 02 *)
 Theorem unit3_r : forall (A B : Hira) (f : Hom3 A B), comp3 f (id3 B) = f.
 Proof.
   intros.
-  case f.
-  intros.
-  unfold comp3, id3.
-  reflexivity.
+  induction f.
+  + easy.
+  + simpl.
+    now rewrite IHf.
 Qed.
-
-(*
-Theorem unit3_r : forall (A B : Hira), comp3 (siri A B) (id3 B) = siri A B.
-Proof.
- intros.
- reflexivity.
-Qed.
- *)
 
 (* 結合律 associative low *)
 Theorem assoc3 : forall (A B C D : Hira) (f : Hom3 A B) (g : Hom3 B C) (h : Hom3 C D),
     comp3 f (comp3 g h) = comp3 (comp3 f g) h.
 Proof.
- intros.
- induction f.
- induction g.
- induction h.
- unfold comp3, id3.
- reflexivity.
+  intros.
+  induction f.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHf.
+    reflexivity.
 Qed.
-
-(*
-Theorem assoc3 : forall A B C D,
-    comp3 (siri A B) (comp3 (siri B C) (siri C D)) =
-    comp3 (comp3 (siri A B) (siri B C)) (siri C D).
-Proof.
- intros.
- reflexivity.
-Qed.
- *)
 
 (* END *)
