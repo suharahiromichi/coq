@@ -49,7 +49,8 @@ Definition Hom0 (A B : unit) : Set := nat.
 Check Hom0 : unit -> unit -> Set.
 Check 1 : Hom0 tt tt.
 Check 2 : Hom0 tt tt.
-Definition comp0 (m n : Hom0 tt tt) := m + n.  
+Definition comp0 (m n : Hom0 tt tt) : Hom0 tt tt := m + n.
+Check comp0.
 Check comp0 1 2 : Hom0 tt tt.
 Compute comp0 1 2.                          (* 3 *)
 
@@ -178,7 +179,10 @@ Proof.
 Qed.
 
 (* 恒等射 identity *)
-Definition id2 (n : nat) : Hom2 n n. Proof. unfold Hom2. omega. Defined.
+Definition id2 (n : nat) : Hom2 n n.
+Proof.
+  unfold Hom2. easy.                        (* omega でなく *)
+Defined.
 
 (* 単位元律 unit law 01 *)
 Theorem unit2_l : forall (m n : nat) (f : Hom2 m n),
@@ -252,6 +256,192 @@ Qed.
 Theorem assoc3 : forall (A B C D : Hira) (f : Hom3 A B) (g : Hom3 B C) (h : Hom3 C D),
     comp3 f (comp3 g h) = comp3 (comp3 f g) h.
 Proof.
+  intros.
+  induction f.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHf.
+    reflexivity.
+Qed.
+
+(* END *)
+
+Generalizable Variables Obj.
+
+(*
+Class Category1 `(Hom : Obj -> Obj -> Set) : Type :=
+  {
+  }.
+Program Instance SINGLETON1 : Category1 Hom0. (* unit *)
+Program Instance SETS1      : Category1 Hom1. (* Set *)
+Program Instance NAT1       : Category1 Hom2. (* nat *)
+Program Instance SIRI1      : Category1 Hom3. (* Hira *)
+
+Class Category2 `(Hom : Obj -> Obj -> Set) : Type :=
+  {
+    comp22 : forall {A B C : Obj}, Hom A B -> Hom B C -> Hom A C
+  }.
+
+Program Instance SINGLETON2 : Category2 Hom0. (* unit *)
+
+Program Instance SETS2      : Category2 Hom1. (* Set *)
+Obligation 1.
+Proof.
+  Check @comp1 A B C.
+  now apply (@comp1 A B C).
+Defined.
+
+Program Instance NAT2       : Category2 Hom2. (* nat *)
+Obligation 1.
+Proof.
+  unfold Hom2 in *.
+  eapply comp2.
+  - now apply H.
+  - now apply H0.
+Defined.
+
+Program Instance SIRI2      : Category2 Hom3. (* Hira *)
+Obligation 1.
+Proof.
+  eapply comp3.
+  - now apply H.
+  - now apply H0.
+Defined.
+
+Class Category3 `(Hom : Obj -> Obj -> Set) : Type :=
+  {
+    id33  : forall {A : Obj}, Hom A A
+  }.
+
+Program Instance SINGLETON3 : Category3 Hom0. (* unit *)
+Obligation 1.
+Proof.
+  Check id0.
+  now apply id0.
+Defined.
+
+Program Instance SETS3      : Category3 Hom1. (* Set *)
+Obligation 1.
+Proof.
+  Check id1.
+Admitted.
+
+Program Instance NAT3       : Category3 Hom2. (* nat *)
+Obligation 1.
+Proof.
+  Check id2.
+  now eapply id2.
+Defined.
+
+Program Instance SIRI3      : Category3 Hom3. (* Hira *)
+Obligation 1.
+Proof.
+  now eapply id3.
+Qed.
+*)
+
+Class Category `(Hom : Obj -> Obj -> Set) : Type :=
+  {
+    id   : forall {A : Obj}, Hom A A;
+    comp : forall {A B C : Obj}, Hom A B -> Hom B C -> Hom A C;
+    left_identity   : forall {A B : Obj} {f : Hom A B}, comp id f = f;
+    right_identity  : forall {A B : Obj} {f : Hom A B}, comp f id = f;
+    associativity   : forall {A B C D : Obj} {f : Hom A B} {g : Hom B C} {h : Hom C D},
+        comp f (comp g h) = comp (comp f g) h
+  }.
+
+Program Instance SINGLETON : Category Hom0 := (* unit *)
+  {|
+    comp _ _ _ := comp0
+  |}.
+Obligation 1.
+Proof.
+  Check id0.
+  now apply id0.
+Defined.
+Obligation 4.
+Proof.
+  unfold id0, comp0.
+  apply plus_assoc.
+Qed.
+
+(*
+Program Instance SETS      : Category Hom1. (* Set *)
+Obligation 1.
+Proof.
+  Check id1.
+Admitted.
+Obligation 2.
+Proof.
+  Check @comp1 A B C.
+  now apply (@comp1 A B C).
+Defined.
+Obligation 3.
+Proof.
+  unfold SETS_obligation_2.
+  Admitted.
+*)
+
+Program Instance NAT       : Category Hom2. (* nat *)
+Obligation 1.
+Proof.
+  Check id2.
+  now apply id2.
+Defined.
+Obligation 2.
+  unfold Hom2 in *.
+  eapply comp2.
+  - now apply H.
+  - now apply H0.
+Defined.
+Obligation 3.
+Proof.
+  unfold NAT_obligation_2.
+  unfold NAT_obligation_1.
+  unfold comp2.
+  unfold id2.                               (* omega でなく easy で解くこと。 *)
+  unfold Hom2 in *.
+  apply proof_irrelevance.
+Qed.
+Obligation 4.
+  unfold NAT_obligation_2.
+  unfold NAT_obligation_1.
+  unfold comp2.
+  unfold id2.                               (* omega でなく easy で解くこと。 *)
+  unfold Hom2 in *.
+  apply proof_irrelevance.
+Qed.
+Obligation 5.
+  unfold NAT_obligation_2.
+  unfold comp2.
+  unfold id2.                               (* omega でなく easy で解くこと。 *)
+  unfold Hom2 in *.
+  apply proof_irrelevance.
+Qed.
+
+Program Instance SIRI      : Category Hom3. (* Hira *)
+Obligation 1.
+Proof.
+  now eapply id3.
+Defined.
+Obligation 2.
+Proof.
+  eapply comp3.
+  - now apply H.
+  - now apply H0.
+Defined.
+Obligation 4.
+  unfold SIRI_obligation_2.
+  unfold SIRI_obligation_1.
+  induction f.
+  + easy.
+  + simpl.
+    now rewrite IHf.
+Qed.
+Obligation 5.
+  unfold SIRI_obligation_2.
+  unfold SIRI_obligation_1.
   intros.
   induction f.
   - simpl.
