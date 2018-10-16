@@ -51,6 +51,8 @@ Generalizable Variables Obj.
 
 Class Category `(Hom : Obj -> Obj -> Set) : Type :=
   {
+    Hom := Hom;
+    Obj := Obj;
     id              : forall {A : Obj}, Hom A A;
     comp            : forall {A B C : Obj}, Hom A B -> Hom B C -> Hom A C;
     left_identity   : forall {A B : Obj} {f : Hom A B}, comp id f = f;
@@ -64,7 +66,7 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
 (* シングルトン *)
 (* *********** *)
 Definition Hom0 (A B : unit) : Set := nat.
-Program Instance SINGLETON : Category Hom0 :=
+Program Instance SINGLETON : @Category unit Hom0 :=
   {|
     id _ := 0;
     comp _ _ _ := fun m n => m + n
@@ -75,7 +77,8 @@ Proof.
 Qed.
 
 (* 例 *)
-Check comp 2 3 : Hom0 tt tt.
+Check Hom : unit -> unit -> Set.
+Check comp 2 3 : Hom tt tt.
 Compute comp 2 3.
 
 
@@ -83,14 +86,15 @@ Compute comp 2 3.
 (* 集合の圏 *)
 (* ******** *)
 Definition Hom1 (A B : Set) : Set := A -> B.
-Program Instance SETS      : Category Hom1 := (* Set *)
+Program Instance SETS : @Category Set Hom1 :=
   {|
-    id nat     := fun x => x;
+    id _ := fun x => x;
     comp _ _ _ := fun f g x => g (f x)
   |}.
 
 (* 例 *)
-Check comp (plus 2) (plus 3) : Hom1 nat nat.
+Check Hom : Set -> Set -> Set.
+Check comp (plus 2) (plus 3) : Hom nat nat.
 Compute comp (plus 2) (plus 3).
 
 
@@ -104,16 +108,10 @@ Proof.
 Defined.
 Definition comp2 {m n p} H1 H2 := le_trans m n p H1 H2.
 
-(* 例 *)
-Definition le34 : Hom2 3 4. Proof. unfold Hom2. omega. Defined.
-Definition le45 : Hom2 4 5. Proof. unfold Hom2. omega. Defined.
-Check comp2 le34 le45 : Hom2 3 5.
-Compute comp2 le34 le45.
-
-Program Instance NAT : Category Hom2 := (* nat *)
+Program Instance NAT : @Category nat Hom2 :=
   {|
     id := id2;
-    comp _ _ _ := comp2
+    comp nat  _ _ := comp2
   |}.
 Obligation 1.
 Proof.
@@ -130,6 +128,12 @@ Proof.
   unfold Hom2 in *.
   apply proof_irrelevance.
 Qed.
+
+(* 例 *)
+Definition le34 : Hom 3 4. Proof. unfold Hom, Hom2. omega. Defined.
+Definition le45 : Hom 4 5. Proof. unfold Hom, Hom2. omega. Defined.
+Check comp le34 le45 : Hom 3 5.
+Compute comp le34 le45.
 
 
 (* *********** *)
@@ -149,13 +153,7 @@ Proof.
     apply (cons A (IHf g)).
 Defined.
 
-(* 例 *)
-Definition こぶた := cons こ (cons ぶ (single た)) : Hom3 こ た.
-Definition たぬき := cons た (cons ぬ (single き)) : Hom3 た き.
-Check comp3 こぶた たぬき : Hom3 こ き.
-Compute comp3 こぶた たぬき.        (* こ ぶ た ぬ き : Home3 こ き *)
-
-Program Instance SIRI : Category Hom3 := (* Hira *)
+Program Instance SIRI : @Category Hira Hom3 :=
   {|
     id := single;
     comp _ _ _ := comp3
@@ -176,5 +174,11 @@ Proof.
   + simpl.
     now rewrite IHf.
 Qed.
+
+(* 例 *)
+Definition こぶた := cons こ (cons ぶ (single た)) : Hom こ た.
+Definition たぬき := cons た (cons ぬ (single き)) : Hom た き.
+Check comp こぶた たぬき : Hom こ き.
+Compute comp こぶた たぬき.        (* こ ぶ た ぬ き : Home こ き *)
 
 (* END *)
