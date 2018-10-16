@@ -1,3 +1,4 @@
+(* comp := fun f g x => g (f x) と 定義する版 *)
 (**
 シングルトン
 対象の型  unit
@@ -69,7 +70,7 @@ Definition Hom0 (A B : unit) : Set := nat.
 Program Instance SINGLETON : @Category unit Hom0 :=
   {|
     id _ := 0;
-    comp _ _ _ := fun m n => m + n
+    comp _ _ _:= fun m n => m + n
   |}.
 Obligation 3.
 Proof.
