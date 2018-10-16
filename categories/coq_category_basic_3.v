@@ -62,6 +62,8 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
         comp f (comp g h) = comp (comp f g) h
   }.
 
+Notation "A ~> B" := (Hom A B) (at level 51, left associativity).
+Notation "f \o g" := (comp f g) (at level 51, left associativity).
 
 (* *********** *)
 (* シングルトン *)
@@ -81,7 +83,7 @@ Qed.
 Check Hom : unit -> unit -> Set.
 Check comp 2 3 : Hom tt tt.
 Compute comp 2 3.
-
+Check 2 \o 3 : tt ~> tt.
 
 (* ******** *)
 (* 集合の圏 *)
@@ -97,7 +99,7 @@ Program Instance SETS : @Category Set Hom1 :=
 Check Hom : Set -> Set -> Set.
 Check comp (plus 2) (plus 3) : Hom nat nat.
 Compute comp (plus 2) (plus 3).
-
+Check (plus 2) \o (plus 3) : nat ~> nat.
 
 (* ************* *)
 (* 半順序集合の圏 *)
@@ -135,7 +137,7 @@ Definition le34 : Hom 3 4. Proof. unfold Hom, Hom2. omega. Defined.
 Definition le45 : Hom 4 5. Proof. unfold Hom, Hom2. omega. Defined.
 Check comp le45 le34 : Hom 3 5.
 Compute comp le45 le34.
-
+Check le45 \o le34 : 3 ~> 5.
 
 (* *********** *)
 (* しりとりの圏 *)
@@ -182,5 +184,6 @@ Definition こぶた := cons こ (cons ぶ (single た)) : Hom こ た.
 Definition たぬき := cons た (cons ぬ (single き)) : Hom た き.
 Check comp たぬき こぶた : Hom こ き.
 Compute comp たぬき こぶた.          (* こ ぶ た ぬ き : Home こ き *)
+Check たぬき \o こぶた : こ ~> き.
 
 (* END *)
