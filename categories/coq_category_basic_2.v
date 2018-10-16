@@ -62,6 +62,9 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
         comp f (comp g h) = comp (comp f g) h
   }.
 
+Notation "A ~{ Cat }~> B" := (@Hom _ _ Cat A B) (at level 51, left associativity).
+Notation "A ~> B" := (Hom A B) (at level 51, left associativity).
+Notation "f \o g" := (comp g f) (at level 51, left associativity).
 
 (* *********** *)
 (* シングルトン *)
@@ -82,6 +85,7 @@ Check Hom : unit -> unit -> Set.
 Check comp 2 3 : Hom tt tt.
 Compute comp 2 3.
 Check 2 \o 3 : tt ~> tt.
+Check 2 \o 3 : tt ~{SINGLETON}~> tt.
 
 (* ******** *)
 (* 集合の圏 *)
@@ -98,6 +102,7 @@ Check Hom : Set -> Set -> Set.
 Check comp (plus 2) (plus 3) : Hom nat nat.
 Compute comp (plus 2) (plus 3).
 Check (plus 2) \o (plus 3) : nat ~> nat.
+Check (plus 2) \o (plus 3) : nat ~{SETS}~> nat.
 
 (* ************* *)
 (* 半順序集合の圏 *)
@@ -136,6 +141,7 @@ Definition le45 : Hom 4 5. Proof. unfold Hom, Hom2. omega. Defined.
 Check comp le34 le45 : Hom 3 5.
 Compute comp le34 le45.
 Check le45 \o le34 : 3 ~> 5.
+Check le45 \o le34 : 3 ~{NAT}~> 5.
 
 (* *********** *)
 (* しりとりの圏 *)
@@ -182,5 +188,6 @@ Definition たぬき := cons た (cons ぬ (single き)) : Hom た き.
 Check comp こぶた たぬき : Hom こ き.
 Compute comp こぶた たぬき.        (* こ ぶ た ぬ き : Home こ き *)
 Check たぬき \o こぶた : こ ~> き.
+Check たぬき \o こぶた : こ ~{SIRI}~> き.
 
 (* END *)
