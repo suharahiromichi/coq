@@ -315,6 +315,8 @@ update_eq または update_neq を適用する。
 
 [Hint Resolve update_eq] とすると auto で update_eq で適用されるが、
 auto でも update が「計算」される場合がある。話題#3を参照のこと。
+
+update_neq の前提の [y <> x] は成立する。Coqの変数ではなく、STLCのIdで異なるため。
 *)
 Check typing_example_1 : empty |- idB \in TArrow TBool TBool.
 Check typing_example_2 : empty |- tabs x TBool
@@ -340,18 +342,29 @@ Proof.
   apply T_Abs.
   eapply T_App.                    (* apply T_App with (T11:=TBool) *)
   - apply T_Var.
+    Check @update_eq ty (update empty x TBool) y (TArrow TBool TBool).
     apply update_eq.
   - eapply T_App.                  (* apply T_App with (T11:=TBool) *)
     + apply T_Var.
+      Check @update_eq ty (update empty x TBool) y (TArrow TBool TBool).
       apply update_eq.
     + apply T_Var.
+      Check @update_neq ty (TArrow TBool TBool) x y (update empty x TBool).
       apply update_neq.
       unfold x, y, not.               (* x y は Coqの変数ではない。 *)
       intro HContra.
       inversion HContra.
-      
-  (* update を計算してしまう版 *)
-  Restart.
+Qed.
+
+
+Example typing_example_2' :
+  empty |-
+    (tabs x TBool
+       (tabs y (TArrow TBool TBool)
+          (tapp (tvar y) (tapp (tvar y) (tvar x))))) \in
+    (TArrow TBool (TArrow (TArrow TBool TBool) TBool)).
+Proof.
+(* update を計算してしまう版 *)
   apply T_Abs.
   apply T_Abs.
   apply T_App with (T11:=TBool).
@@ -362,19 +375,27 @@ Proof.
       unfold update, t_update. simpl. reflexivity.
     + apply T_Var.
       unfold update, t_update. simpl. reflexivity.
-      
-  (* ... を auto に置き換えた版 *)
-  Restart.
-  Hint Resolve update_eq.
+Qed.
 
+
+Example typing_example_2'' :
+  empty |-
+    (tabs x TBool
+       (tabs y (TArrow TBool TBool)
+          (tapp (tvar y) (tapp (tvar y) (tvar x))))) \in
+    (TArrow TBool (TArrow (TArrow TBool TBool) TBool)).
+Proof.
+  Hint Resolve update_eq.
+  
   apply T_Abs.
   apply T_Abs.
   eapply T_App.
-  - auto.                           (* apply T_Var. apply update_eq *)
+  - auto.                 (* apply T_Var. apply update_eq *)
   - eapply T_App.
     + auto.               (* apply T_Var. apply update_eq *)
     + auto.               (* apply T_Var. reflexivity (apply update_eq ではない) *)
 Qed.
+
 
 Check typing_nonexample_1 :
   ~ (exists T : ty,
@@ -644,7 +665,7 @@ Check typing_nonexample_3 :
 
 (** TAPL の 演習 9.3.2 *)
 (** 回答 9.3.2. では、すべての型が有限サイズを持つことから、
-    T1 -> T2 = T1 は偽であるとしている。 *)
+    T1 -> T2 = T1 は偽であるとしている。それを補題として証明しておく。 *)
 Lemma type_finiteness : forall (T1 T2 : ty), TArrow T1 T2 <> T1.
 Proof.
   intros T1 T2 H.
