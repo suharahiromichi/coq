@@ -64,6 +64,7 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
 
 Notation "A ~{ Cat }~> B" := (@Hom _ _ Cat A B) (at level 51, left associativity).
 Notation "A ~> B" := (Hom A B) (at level 51, left associativity).
+Notation "f \; g" := (comp f g) (at level 51, left associativity).
 Notation "f \o g" := (comp g f) (at level 51, left associativity).
 
 (* *********** *)
@@ -83,9 +84,9 @@ Qed.
 (* 例 *)
 Check Hom : unit -> unit -> Set.
 Check comp 2 3 : Hom tt tt.
-Compute comp 2 3.
-Check 2 \o 3 : tt ~> tt.
-Check 2 \o 3 : tt ~{SINGLETON}~> tt.
+Check 2 \; 3 : tt ~> tt.
+Check 2 \; 3 : tt ~{SINGLETON}~> tt.
+Compute (3 \; 2).                           (* 3 + 2 = 5 *)
 
 (* ******** *)
 (* 集合の圏 *)
@@ -99,10 +100,12 @@ Program Instance SETS : @Category Set Hom1 :=
 
 (* 例 *)
 Check Hom : Set -> Set -> Set.
-Check comp (plus 2) (plus 3) : Hom nat nat.
-Compute comp (plus 2) (plus 3).
-Check (plus 2) \o (plus 3) : nat ~> nat.
-Check (plus 2) \o (plus 3) : nat ~{SETS}~> nat.
+Check comp (mult 2) (mult 3) : Hom nat nat.
+Check (plus 2) \; (mult 3) : nat ~> nat.
+Check (plus 2) \; (mult 3) : nat ~{SETS}~> nat.
+Check (mult 3) \o (plus 2) : nat ~> nat.
+Check (mult 3) \o (plus 2) : nat ~{SETS}~> nat.
+Compute ((mult 3) \o (plus 2)) 1.           (* 3 * (2 + 1) *)
 
 (* ************* *)
 (* 半順序集合の圏 *)
@@ -140,8 +143,8 @@ Definition le34 : Hom 3 4. Proof. unfold Hom, Hom2. omega. Defined.
 Definition le45 : Hom 4 5. Proof. unfold Hom, Hom2. omega. Defined.
 Check comp le34 le45 : Hom 3 5.
 Compute comp le34 le45.
-Check le45 \o le34 : 3 ~> 5.
-Check le45 \o le34 : 3 ~{NAT}~> 5.
+Check le34 \; le45 : 3 ~> 5.
+Check le34 \; le45 : 3 ~{NAT}~> 5.
 
 (* *********** *)
 (* しりとりの圏 *)
@@ -187,7 +190,7 @@ Definition こぶた := cons こ (cons ぶ (single た)) : Hom こ た.
 Definition たぬき := cons た (cons ぬ (single き)) : Hom た き.
 Check comp こぶた たぬき : Hom こ き.
 Compute comp こぶた たぬき.        (* こ ぶ た ぬ き : Home こ き *)
-Check たぬき \o こぶた : こ ~> き.
-Check たぬき \o こぶた : こ ~{SIRI}~> き.
+Check こぶた \; たぬき  : こ ~> き.
+Check こぶた \; たぬき : こ ~{SIRI}~> き.
 
 (* END *)
