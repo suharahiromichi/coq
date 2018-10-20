@@ -65,13 +65,15 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
 Notation "A ~{ Cat }~> B" := (@Hom _ _ Cat A B) (at level 51, left associativity).
 Notation "A ~> B" := (Hom A B) (at level 51, left associativity).
 Notation "f \; g" := (comp f g) (at level 51, left associativity).
+Notation "f \{ Cat }; g" := (@comp _ _ Cat _ _ _ f g) (at level 51, left associativity).
 Notation "f \o g" := (comp g f) (at level 51, left associativity).
+Notation "f \{ Cat }o g" := (@comp _ _ Cat _ _ _ g f) (at level 51, left associativity).
 
 (* *********** *)
 (* シングルトン *)
 (* *********** *)
 Definition Hom0 (A B : unit) : Set := nat.
-Program Instance SINGLETON : @Category unit Hom0 :=
+Program Instance SPLUS : @Category unit Hom0 :=
   {|
     id _ := 0;
     comp _ _ _:= fun m n => m + n
@@ -81,12 +83,28 @@ Proof.
   now apply plus_assoc.
 Qed.
 
+Program Instance SMULT : @Category unit Hom0 :=
+  {|
+    id _ := 1;
+    comp _ _ _:= fun m n => m * n
+  |}.
+Obligation 2.
+Proof.
+  now apply Nat.mul_1_r.
+Qed.
+Obligation 3.
+Proof.
+  now apply mult_assoc.
+Qed.
+
 (* 例 *)
 Check Hom : unit -> unit -> Set.
 Check comp 2 3 : Hom tt tt.
 Check 2 \; 3 : tt ~> tt.
-Check 2 \; 3 : tt ~{SINGLETON}~> tt.
-Compute (3 \; 2).                           (* 3 + 2 = 5 *)
+Check 2 \{SPLUS}; 3 : tt ~{SPLUS}~> tt.
+Check 2 \{SMULT}; 3 : tt ~{SMULT}~> tt.
+Compute (3 \{SPLUS}; 2).                    (* 3 + 2 = 5 *)
+Compute (3 \{SMULT}; 2).                    (* 3 * 2 = 6 *)
 
 (* ******** *)
 (* 集合の圏 *)
@@ -109,11 +127,11 @@ Compute ((mult 3) \o (plus 2)) 1.           (* 3 * (2 + 1) *)
 
 
 (* 関手 *)
-Definition F (n : tt ~{SINGLETON}~> tt) : nat ~{SETS}~> nat := id.
+Definition F (n : tt ~{SPLUS}~> tt) : nat ~{SETS}~> nat := id.
 Check (F 1) \; (F 2) : nat ~{SETS}~> nat.
 Compute (F 1) \; (F 2).                     (* fun x => x + 3 *)
 
-Goal forall (m n : tt ~{SINGLETON}~> tt), F m \; F n = F (m \; n).
+Goal forall (m n : tt ~{SPLUS}~> tt), F m \; F n = F (m \; n).
 Proof.
   intros m n.
   unfold F.
@@ -122,8 +140,8 @@ Proof.
 Qed.
 
 (* この方向の関手は、一般的には定義できない。 *)
-Definition G (f : nat ~{SETS}~> nat) : tt ~{SINGLETON}~> tt := f 0.
-Check (G (plus 1)) \; (G (plus 2)) : tt ~{SINGLETON}~> tt.
+Definition G (f : nat ~{SETS}~> nat) : tt ~{SPLUS}~> tt := f 0.
+Check (G (plus 1)) \; (G (plus 2)) : tt ~{SPLUS}~> tt.
 Compute (G (plus 1)) \; (G (plus 2)).       (* 3 *)
 
 Goal forall (f g : nat ~{SETS}~> nat), G f \; G g = G (f \; g).
@@ -136,41 +154,103 @@ Admitted.
 (* ************* *)
 (* 半順序集合の圏 *)
 (* ************* *)
-Definition Hom2 (m n : nat) : Set := m <= n.
-Definition id2 (n : nat) : Hom2 n n.
+Definition Hom21 (m n : nat) : Set := m <= n.
+Definition id21 (n : nat) : Hom21 n n.
 Proof.
-  unfold Hom2. easy.                        (* omega でなく *)
+  unfold Hom21. easy.                        (* omega でなく *)
 Defined.
-Definition comp2 {m n p} H1 H2 := le_trans m n p H1 H2.
+Definition comp21 {m n p} H1 H2 := le_trans m n p H1 H2.
 
-Program Instance NAT : @Category nat Hom2 :=
+Program Instance P_LE : @Category nat Hom21 :=
   {|
-    id := id2;
-    comp nat  _ _ := comp2
+    id := id21;
+    comp nat  _ _ := comp21
   |}.
 Obligation 1.
 Proof.
-  unfold Hom2 in *.
+  unfold Hom21 in *.
   apply proof_irrelevance.
 Qed.
 Obligation 2.
 Proof.
-  unfold Hom2 in *.
+  unfold Hom21 in *.
   apply proof_irrelevance.
 Qed.
 Obligation 3.
 Proof.
-  unfold Hom2 in *.
+  unfold Hom21 in *.
   apply proof_irrelevance.
 Qed.
 
+
+Definition Hom22 (m n : nat) : Set := n <= m.
+Definition id22 (n : nat) : Hom22 n n.
+Proof.
+  unfold Hom22. easy.                        (* omega でなく *)
+Defined.
+Definition comp22 {m n p} H1 H2 := le_trans p n m H2 H1.
+
+Program Instance P_GE : @Category nat Hom22 :=
+  {|
+    id := id22;
+    comp nat  _ _ := comp22
+  |}.
+Obligation 1.
+Proof.
+  unfold Hom22 in *.
+  apply proof_irrelevance.
+Qed.
+Obligation 2.
+Proof.
+  unfold Hom22 in *.
+  apply proof_irrelevance.
+Qed.
+Obligation 3.
+Proof.
+  unfold Hom22 in *.
+  apply proof_irrelevance.
+Qed.
+
+
 (* 例 *)
-Definition le34 : Hom 3 4. Proof. unfold Hom, Hom2. omega. Defined.
-Definition le45 : Hom 4 5. Proof. unfold Hom, Hom2. omega. Defined.
-Check comp le34 le45 : Hom 3 5.
-Compute comp le34 le45.
+Definition le34 : 3 ~{P_LE}~> 4. Proof. unfold Hom, Hom21. omega. Defined.
+Definition le45 : 4 ~{P_LE}~> 5. Proof. unfold Hom, Hom21. omega. Defined.
 Check le34 \; le45 : 3 ~> 5.
-Check le34 \; le45 : 3 ~{NAT}~> 5.
+Check le34 \; le45 : 3 ~{P_LE}~> 5.
+
+Definition ge43 : 4 ~{P_GE}~> 3. Proof. unfold Hom, Hom22. omega. Defined.
+Definition ge54 : 5 ~{P_GE}~> 4. Proof. unfold Hom, Hom22. omega. Defined.
+Check ge54 \; ge43 : 5 ~> 3.
+Check ge54 \; ge43 : 5 ~{P_GE}~> 3.
+
+(* 関手 *)
+Definition F2 {m n : nat} (f : m ~{P_LE}~> n) : n ~{P_GE}~> m.
+Proof.
+  unfold Hom, Hom21, Hom22 in *.
+  easy.
+Defined.
+Check F2 le34 : 4 ~{P_GE}~> 3.
+Goal forall (m n p : nat) (f : m ~{P_LE}~> n) (g : n ~{P_LE}~> p),
+    F2 g \; F2 f = F2 (f \; g).
+Proof.
+  intros.
+  unfold Hom, Hom21, Hom22 in *.
+  apply proof_irrelevance.
+Qed.
+
+Definition G2 {m n : nat} (f : m ~{P_GE}~> n) : n ~{P_LE}~> m.
+Proof.
+  unfold Hom, Hom21, Hom22 in *.
+  easy.
+Defined.
+Goal forall (m n p : nat) (f : m ~{P_GE}~> n) (g : n ~{P_GE}~> p),
+    G2 g \; G2 f = G2 (f \; g).
+Proof.
+  intros.
+  unfold Hom, Hom21, Hom22 in *.
+  apply proof_irrelevance.
+Qed.
+
 
 (* *********** *)
 (* しりとりの圏 *)
