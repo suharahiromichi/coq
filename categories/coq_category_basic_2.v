@@ -107,6 +107,32 @@ Check (mult 3) \o (plus 2) : nat ~> nat.
 Check (mult 3) \o (plus 2) : nat ~{SETS}~> nat.
 Compute ((mult 3) \o (plus 2)) 1.           (* 3 * (2 + 1) *)
 
+
+(* 関手 *)
+Definition F (n : tt ~{SINGLETON}~> tt) : nat ~{SETS}~> nat := id.
+Check (F 1) \; (F 2) : nat ~{SETS}~> nat.
+Compute (F 1) \; (F 2).                     (* fun x => x + 3 *)
+
+Goal forall (m n : tt ~{SINGLETON}~> tt), F m \; F n = F (m \; n).
+Proof.
+  intros m n.
+  unfold F.
+  simpl.
+  reflexivity.
+Qed.
+
+(* この方向の関手は、一般的には定義できない。 *)
+Definition G (f : nat ~{SETS}~> nat) : tt ~{SINGLETON}~> tt := f 0.
+Check (G (plus 1)) \; (G (plus 2)) : tt ~{SINGLETON}~> tt.
+Compute (G (plus 1)) \; (G (plus 2)).       (* 3 *)
+
+Goal forall (f g : nat ~{SETS}~> nat), G f \; G g = G (f \; g).
+Proof.
+  intros f g.
+  unfold G.
+  simpl.
+Admitted.
+
 (* ************* *)
 (* 半順序集合の圏 *)
 (* ************* *)
