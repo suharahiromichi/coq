@@ -213,17 +213,17 @@ Program Instance P_LE : @Category nat Hom21 :=
 Obligation 1.
 Proof.
   unfold Hom21 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 Obligation 2.
 Proof.
   unfold Hom21 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 Obligation 3.
 Proof.
   unfold Hom21 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 
 
@@ -242,17 +242,17 @@ Program Instance P_GE : @Category nat Hom22 :=
 Obligation 1.
 Proof.
   unfold Hom22 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 Obligation 2.
 Proof.
   unfold Hom22 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 Obligation 3.
 Proof.
   unfold Hom22 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 
 
@@ -279,7 +279,7 @@ Goal forall (m n p : nat) (f : m ~{P_LE}~> n) (g : n ~{P_LE}~> p),
 Proof.
   intros.
   unfold Hom, Hom21, Hom22 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 
 Definition G2 {m n : nat} (f : m ~{P_GE}~> n) : n ~{P_LE}~> m.
@@ -292,7 +292,7 @@ Goal forall (m n p : nat) (f : m ~{P_GE}~> n) (g : n ~{P_GE}~> p),
 Proof.
   intros.
   unfold Hom, Hom21, Hom22 in *.
-  apply proof_irrelevance.
+  now apply proof_irrelevance.
 Qed.
 
 
@@ -310,7 +310,7 @@ Proof.
   induction f.
   + easy.
   + Check (cons A (IHf g)).
-    apply (cons A (IHf g)).
+    now apply (cons A (IHf g)).
 Defined.
 
 Program Instance SIRI : @Category Hira Hom3 :=
