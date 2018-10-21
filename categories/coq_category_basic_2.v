@@ -130,14 +130,35 @@ Compute ((mult 3) \o (plus 2)) 1.           (* 3 * (2 + 1) *)
 (* 関手 *)
 Require Import Coq.Logic.FunctionalExtensionality.
 
-Definition F (n : tt ~{SPLUS}~> tt) : nat ~{SETS}~> nat := fun x => n + x.
-Check (F 1) \; (F 2) : nat ~{SETS}~> nat.
-Compute (F 1) \; (F 2).                     (* fun x => x + 3 *)
+Generalizable Variables Obja Homa Objb Homb.
 
-Goal forall (m n : tt ~{SPLUS}~> tt), F m \; F n = F (m \; n).
+Class Functor `(Ca : @Category Obja Homa) `(Cb : @Category Objb Homb) : Type :=
+  {
+    a : Obja;
+    b : Objb;
+    fobj : Obja -> Objb;
+    fmor : Homa a a -> Homb b b;
+    fmor_comp : forall (m n : a ~{Ca}~> a), fmor m \; fmor n = fmor (m \; n)
+  }.
+    
+Definition Fobj (a : unit) : Set := nat.
+Check Fobj tt : Set.
+Compute Fobj tt.                            (* nat *)
+
+Definition Fmor (n : tt ~{SPLUS}~> tt) : nat ~{SETS}~> nat := fun x => n + x.
+Check (Fmor 1) \; (Fmor 2) : nat ~{SETS}~> nat.
+Compute (Fmor 1) \; (Fmor 2).               (* fun x => x + 3 *)
+
+Program Instance F : Functor SPLUS SETS :=
+  {|
+    a := tt;
+    b := nat;
+    fobj := Fobj;
+    fmor := Fmor
+  |}.
+Obligation 1.
 Proof.
-  intros m n.
-  unfold F.
+  unfold Fmor.
   simpl.
   Check @functional_extensionality_dep.
   Check functional_extensionality_dep
@@ -147,6 +168,21 @@ Proof.
   now rewrite plus_assoc.
 Qed.
 
+(*
+Goal forall (m n : tt ~{SPLUS}~> tt), Fmor m \; Fmor n = Fmor (m \; n).
+Proof.
+  intros m n.
+  unfold Fmor.
+  simpl.
+  Check @functional_extensionality_dep.
+  Check functional_extensionality_dep
+        (fun x : nat => n + (m + x)) (fun x : nat => m + n + x).
+  eapply functional_extensionality_dep.
+  intro x.
+  now rewrite plus_assoc.
+Qed.
+*)
+  
 (* この方向の関手は、一般的には定義できない。 *)
 Definition G (f : nat ~{SETS}~> nat) : tt ~{SPLUS}~> tt := f 0.
 Check (G (plus 1)) \; (G (plus 2)) : tt ~{SPLUS}~> tt.
