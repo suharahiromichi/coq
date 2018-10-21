@@ -64,10 +64,10 @@ Class Category `(Hom : Obj -> Obj -> Set) : Type :=
 
 Notation "A ~{ Cat }~> B" := (@Hom _ _ Cat A B) (at level 51, left associativity).
 Notation "A ~> B" := (Hom A B) (at level 51, left associativity).
-Notation "f \; g" := (comp f g) (at level 51, left associativity).
-Notation "f \{ Cat }; g" := (@comp _ _ Cat _ _ _ f g) (at level 51, left associativity).
 Notation "f \o g" := (comp g f) (at level 51, left associativity).
 Notation "f \{ Cat }o g" := (@comp _ _ Cat _ _ _ g f) (at level 51, left associativity).
+Notation "f \; g" := (comp f g) (at level 51, left associativity).
+Notation "f \{ Cat }; g" := (@comp _ _ Cat _ _ _ f g) (at level 51, left associativity).
 
 (* *********** *)
 (* シングルトン *)
@@ -76,25 +76,25 @@ Definition Hom0 (A B : unit) : Set := nat.
 Program Instance SPLUS : @Category unit Hom0 :=
   {|
     id _ := 0;
-    comp _ _ _:= fun m n => m + n
+    comp _ _ _:= fun m n => n + m           (* 関手が成り立つように (n + m) + x *)
   |}.
 Obligation 3.
 Proof.
-  now apply plus_assoc.
+  now apply plus_assoc_reverse.
 Qed.
 
 Program Instance SMULT : @Category unit Hom0 :=
   {|
     id _ := 1;
-    comp _ _ _:= fun m n => m * n
+    comp _ _ _:= fun m n => n * m
   |}.
-Obligation 2.
+Obligation 1.
 Proof.
   now apply Nat.mul_1_r.
 Qed.
 Obligation 3.
 Proof.
-  now apply mult_assoc.
+  now apply mult_assoc_reverse.
 Qed.
 
 (* 例 *)
@@ -105,6 +105,7 @@ Check 2 \{SPLUS}; 3 : tt ~{SPLUS}~> tt.
 Check 2 \{SMULT}; 3 : tt ~{SMULT}~> tt.
 Compute (3 \{SPLUS}; 2).                    (* 3 + 2 = 5 *)
 Compute (3 \{SMULT}; 2).                    (* 3 * 2 = 6 *)
+
 
 (* ******** *)
 (* 集合の圏 *)
@@ -127,7 +128,9 @@ Compute ((mult 3) \o (plus 2)) 1.           (* 3 * (2 + 1) *)
 
 
 (* 関手 *)
-Definition F (n : tt ~{SPLUS}~> tt) : nat ~{SETS}~> nat := id.
+Require Import Coq.Logic.FunctionalExtensionality.
+
+Definition F (n : tt ~{SPLUS}~> tt) : nat ~{SETS}~> nat := fun x => n + x.
 Check (F 1) \; (F 2) : nat ~{SETS}~> nat.
 Compute (F 1) \; (F 2).                     (* fun x => x + 3 *)
 
@@ -136,7 +139,12 @@ Proof.
   intros m n.
   unfold F.
   simpl.
-  reflexivity.
+  Check @functional_extensionality_dep.
+  Check functional_extensionality_dep
+        (fun x : nat => n + (m + x)) (fun x : nat => m + n + x).
+  eapply functional_extensionality_dep.
+  intro x.
+  now rewrite plus_assoc.
 Qed.
 
 (* この方向の関手は、一般的には定義できない。 *)
@@ -223,7 +231,7 @@ Definition ge54 : 5 ~{P_GE}~> 4. Proof. unfold Hom, Hom22. omega. Defined.
 Check ge54 \; ge43 : 5 ~> 3.
 Check ge54 \; ge43 : 5 ~{P_GE}~> 3.
 
-(* 関手 *)
+(* 関手もどき。compの引数が逆転するので、関手の規則を満たしていない。 *)
 Definition F2 {m n : nat} (f : m ~{P_LE}~> n) : n ~{P_GE}~> m.
 Proof.
   unfold Hom, Hom21, Hom22 in *.
