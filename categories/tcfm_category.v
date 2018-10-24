@@ -110,7 +110,11 @@ Admitted.
 Definition E2 (x y : O2) : Equiv (x --> y) := fun (f g : x --> y) => f = g.
 *)
 
-Definition I2 : CatId O2 := fun (n : O2) (H : n <= n) => n <= n.
+Compute @CatId O2 A2.                       (* forall x : nat, x <= x *)
+Lemma test : forall x : nat, x <= x.
+Admitted.
+Check test : CatId O2.
+Definition I2 := test.
 Definition C2 : CatComp O2 := fun (m n p : nat) H1 H2 => le_trans m n p H2 H1.
 
 Check @Category O2 A2 E2 I2 C2 : Prop.
