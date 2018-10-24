@@ -46,7 +46,7 @@ Require Import Coq.Logic.ProofIrrelevance.
 
 Definition O0 : Type := unit.
 Definition A0 : Arrows O0 := fun (x y : unit) => nat.
-Definition E0 (x y : unit) : Equiv (x --> y) := fun (m n : nat) => m = n.
+Definition E0 (x y : O0) : Equiv (x --> y) := fun (m n : nat) => m = n.
 Definition I0 : CatId O0 := fun (_ : unit) => 0.
 Definition C0 : CatComp O0 := fun (_ _ _ : unit) (m n : nat) => m + n.
 
@@ -72,5 +72,50 @@ Qed.
 Check @Arrow unit A0 tt tt : Type.
 Check @comp O0 A0 C0 tt tt tt 3 2 : tt --> tt.
 Check @cat_id O0 A0 I0 tt : tt --> tt.
+
+
+(* ******** *)
+(* 集合の圏 *)
+(* ******** *)
+Definition O1 : Type := Set.
+Definition A1 : Arrows O1 := fun (x y : Set) => x -> y.
+(*
+Definition E1 (x y : O1) : Equiv (x --> y) := fun (f g : x -> y) (a : x) => f a = g a.
+*)
+Definition I1 : CatId O1 := fun a => a.
+Definition C1 : CatComp O1 := fun (x y z : Set) (f : y -> z) (g : x -> y) (a : x) =>
+                                f (g a).
+
+(*
+Check Category O1 : Prop.
+Check @Category O1 A1 E1 I1 C1 : Prop.
+Program Instance SETS : @Category O1 A1 E1 I1 C1.
+ *)
+
+(* ************* *)
+(* 半順序集合の圏 *)
+(* ************* *)
+Definition O2 : Type := nat.
+Definition A2 : Arrows O2 := fun (m n : nat) => m <= n.
+(*
+Definition E2 (x y : O2) : Equiv (x --> y) := fun (f g : x --> y) => f = g.
+*)
+Definition I2 : CatId O2 := fun (n : nat) => n <= n.
+Definition C2 : CatComp O2 := fun (m n p : nat) H1 H2 => le_trans m n p H2 H1.
+
+(* *********** *)
+(* しりとりの圏 *)
+(* *********** *)
+Inductive O3 : Type := こ | ぶ | た | ぬ | き | つ | ね.
+Inductive A3 : Arrows O3 :=
+  | single : forall A, A3 A A
+  | cons : forall {A' B : O3} (A : O3) (tl : A3 A' B), A3 A B.
+(*
+Definition E3 (x y : O3) : Equiv (x --> y) := fun (f g : A3) => f = g.
+ *)
+Definition I3 : CatId O3 := single.
+(*
+Definition C3 (A B C : O3) (f : A --> B) (g : B --> C) : A --> C. (* CatComp O3. *)
+ *)
 
 (* END *)
