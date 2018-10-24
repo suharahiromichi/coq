@@ -133,14 +133,22 @@ Inductive A3 : Arrows O3 :=
   | single : forall A, A3 A A
   | cons : forall {A' B : O3} (A : O3) (tl : A3 A' B), A3 A B.
 
+Check A3 こ た.
+
 Program Instance E3 (x y : O3) : Equiv (A3 x y).
-Obligation 1.
+Obligations.
+Obligation 4.
 Admitted.
 (*
 Definition E3 (x y : O3) : Equiv (x --> y) := fun (f g : A3) => f = g.
  *)
 
 Definition I3 : CatId O3 := single.
+Program Definition C3 (A B C : O3) (f : A3 A B) (g : A3 B C) : A3 A C. (* CatComp O3. *)
+Obligation 4.
+Admitted.
+Obligation 5.
+Admitted.
 (*
 Definition C3 (A B C : O3) (f : A --> B) (g : B --> C) : A --> C. (* CatComp O3. *)
  *)
