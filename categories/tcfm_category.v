@@ -79,29 +79,47 @@ Check @cat_id O0 A0 I0 tt : tt --> tt.
 (* ******** *)
 Definition O1 : Type := Set.
 Definition A1 : Arrows O1 := fun (x y : Set) => x -> y.
+Program Instance E1 (x y : O1) : Equiv (x -> y).
+Obligation 1.
+Admitted.
 (*
 Definition E1 (x y : O1) : Equiv (x --> y) := fun (f g : x -> y) (a : x) => f a = g a.
 *)
-Definition I1 : CatId O1 := fun a => a.
+Definition I1 : CatId O1 := fun (a : O1) (x : a) => x.
 Definition C1 : CatComp O1 := fun (x y z : Set) (f : y -> z) (g : x -> y) (a : x) =>
                                 f (g a).
 
-(*
 Check Category O1 : Prop.
 Check @Category O1 A1 E1 I1 C1 : Prop.
 Program Instance SETS : @Category O1 A1 E1 I1 C1.
- *)
+Obligation 1.
+Admitted.
+Obligation 2.
+Admitted.
 
 (* ************* *)
 (* 半順序集合の圏 *)
 (* ************* *)
 Definition O2 : Type := nat.
 Definition A2 : Arrows O2 := fun (m n : nat) => m <= n.
+Program Instance E2 (x y : O2) : Equiv (x <= y).
+Obligation 1.
+Proof.
+Admitted.
 (*
 Definition E2 (x y : O2) : Equiv (x --> y) := fun (f g : x --> y) => f = g.
 *)
-Definition I2 : CatId O2 := fun (n : nat) => n <= n.
+
+Definition I2 : CatId O2 := fun (n : O2) (H : n <= n) => n <= n.
 Definition C2 : CatComp O2 := fun (m n p : nat) H1 H2 => le_trans m n p H2 H1.
+
+Check @Category O2 A2 E2 I2 C2 : Prop.
+Program Instance LE : @Category O2 A2 E2 I2 C2.
+Obligation 1.
+Admitted.
+Obligation 2.
+Admitted.
+
 
 (* *********** *)
 (* しりとりの圏 *)
@@ -110,12 +128,18 @@ Inductive O3 : Type := こ | ぶ | た | ぬ | き | つ | ね.
 Inductive A3 : Arrows O3 :=
   | single : forall A, A3 A A
   | cons : forall {A' B : O3} (A : O3) (tl : A3 A' B), A3 A B.
+
+Program Instance E3 (x y : O3) : Equiv (A3 x y).
+Obligation 1.
+Admitted.
 (*
 Definition E3 (x y : O3) : Equiv (x --> y) := fun (f g : A3) => f = g.
  *)
+
 Definition I3 : CatId O3 := single.
 (*
 Definition C3 (A B C : O3) (f : A --> B) (g : B --> C) : A --> C. (* CatComp O3. *)
  *)
+
 
 (* END *)
