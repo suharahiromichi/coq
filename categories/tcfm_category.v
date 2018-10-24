@@ -3,6 +3,8 @@
 
 (* Global Generalizable All Variables. *)
 
+(* Set Implicit Arguments. *)
+
 Generalizable Variables O x y.
 
 Require Import Relations.
@@ -48,7 +50,8 @@ Definition E0 (x y : unit) : Equiv (x --> y) := fun (m n : nat) => m = n.
 Definition I0 : CatId O0 := fun (_ : unit) => 0.
 Definition C0 : CatComp O0 := fun (_ _ _ : unit) (m n : nat) => m + n.
 
-Check @Category O0 A0 E0 I0 C0.
+Check Category O0 : Prop.
+Check @Category O0 A0 E0 I0 C0 : Prop.
 Program Instance SPLUS : @Category O0 A0 E0 I0 C0.
 Obligation 1.
 Proof.
@@ -65,5 +68,9 @@ Proof.
   unfold comp, C0.
   now apply plus_assoc.
 Qed.
+
+Check @Arrow unit A0 tt tt : Type.
+Check @comp O0 A0 C0 tt tt tt 3 2 : tt --> tt.
+Check @cat_id O0 A0 I0 tt : tt --> tt.
 
 (* END *)
