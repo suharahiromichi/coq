@@ -45,10 +45,10 @@ Require Import Coq.Logic.ProofIrrelevance.
 (* *********** *)
 
 Definition O0 : Type := unit.
-Definition A0 : Arrows O0 := fun (x y : unit) => nat.
-Definition E0 (x y : O0) : Equiv (x --> y) := fun (m n : nat) => m = n.
-Definition I0 : CatId O0 := fun (_ : unit) => 0.
-Definition C0 : CatComp O0 := fun (_ _ _ : unit) (m n : nat) => m + n.
+Definition A0 : Arrows O0 := fun (x y : O0) => nat.
+Definition E0 (x y : O0) : Equiv (A0 x y) := fun (m n : nat) => m = n.
+Definition I0 : CatId O0 := fun (_ : O0) => 0.
+Definition C0 : CatComp O0 := fun (_ _ _ : O0) (m n : nat) => m + n.
 
 Check Category O0 : Prop.
 Check @Category O0 A0 E0 I0 C0 : Prop.
@@ -60,7 +60,7 @@ Proof.
   + now unfold Reflexive.
   + now unfold Symmetric.
   + unfold Transitive.
-    intros x' y' z H1 H2.
+    intros x' y' z' H1 H2.
     now rewrite H1, H2.
 Qed.
 Obligation 2.
@@ -78,51 +78,76 @@ Check @cat_id O0 A0 I0 tt : tt --> tt.
 (* 集合の圏 *)
 (* ******** *)
 Definition O1 : Type := Set.
-Definition A1 : Arrows O1 := fun (x y : Set) => x -> y.
-Program Instance E1 (x y : O1) : Equiv (x -> y).
-Obligation 1.
-Admitted.
-(*
-Definition E1 (x y : O1) : Equiv (x --> y) := fun (f g : x -> y) (a : x) => f a = g a.
-*)
+Definition A1 : Arrows O1 := fun (x y : O1) => x -> y.
+Definition E1 (x y : O1) : Equiv (A1 x y) := (* x -> y *)
+  fun (f g : A1 x y) => forall (a : x), f a = g a.
 Definition I1 : CatId O1 := fun (a : O1) (x : a) => x.
-Definition C1 : CatComp O1 := fun (x y z : Set) (f : y -> z) (g : x -> y) (a : x) =>
-                                f (g a).
+Definition C1 : CatComp O1 :=
+  fun (x y z : O1) (f : A1 y z) (g : A1 x y) (a : x) => f (g a).
 
 Check Category O1 : Prop.
 Check @Category O1 A1 E1 I1 C1 : Prop.
 Program Instance SETS : @Category O1 A1 E1 I1 C1.
 Obligation 1.
-Admitted.
+Proof.
+  unfold Setoid, equiv, E1.
+  split.
+  + now unfold Reflexive.
+  + now unfold Symmetric.
+  + unfold Transitive.
+    intros x' y' z' H1 H2 a.
+    rewrite H1.
+    rewrite <- H2.
+    easy.
+Qed.
 Obligation 2.
-Admitted.
+Proof.
+  unfold equiv, E1, comp, C1.
+  intros yz yz' H1 xy xy' H2 a.
+  rewrite H2.
+  rewrite H1.
+  easy.
+Qed.
+
 
 (* ************* *)
 (* 半順序集合の圏 *)
 (* ************* *)
 Definition O2 : Type := nat.
-Definition A2 : Arrows O2 := fun (m n : nat) => m <= n.
-Program Instance E2 (x y : O2) : Equiv (x <= y).
-Obligation 1.
-Proof.
-Admitted.
-(*
-Definition E2 (x y : O2) : Equiv (x --> y) := fun (f g : x --> y) => f = g.
-*)
-
-Compute @CatId O2 A2.                       (* forall x : nat, x <= x *)
-Lemma test : forall x : nat, x <= x.
-Admitted.
-Check test : CatId O2.
-Definition I2 := test.
-Definition C2 : CatComp O2 := fun (m n p : nat) H1 H2 => le_trans m n p H2 H1.
+Definition A2 : Arrows O2 := fun (x y : O2) => x <= y.
+Definition E2 (x y : O2) : Equiv (A2 x y) := (* x <= y *)
+  fun (H1 H2 : A2 x y) => H1 = H2.
+Definition I2 := le_n.                      (* CatId O2 *)
+Definition C2 : CatComp O2 :=
+  fun (x y z : O2) H1 H2 => le_trans x y z H2 H1.
 
 Check @Category O2 A2 E2 I2 C2 : Prop.
 Program Instance LE : @Category O2 A2 E2 I2 C2.
 Obligation 1.
-Admitted.
+  unfold Setoid, equiv, E2.
+  split.
+  + now unfold Reflexive.
+  + now unfold Symmetric.
+  + unfold Transitive.
+    intros x' y' z' H1 H2.
+    now rewrite H1, H2.
+Qed.
 Obligation 2.
-Admitted.
+Proof.
+  unfold comp, C2.
+  unfold Arrow, A2 in *.
+  now apply proof_irrelevance.
+Qed.
+Obligation 3.
+  unfold comp, C2.
+  unfold Arrow, A2 in *.
+  now apply proof_irrelevance.
+Qed.
+Obligation 4.
+  unfold comp, C2.
+  unfold Arrow, A2 in *.
+  now apply proof_irrelevance.
+Qed.
 
 
 (* *********** *)
@@ -133,25 +158,48 @@ Inductive A3 : Arrows O3 :=
   | single : forall A, A3 A A
   | cons : forall {A' B : O3} (A : O3) (tl : A3 A' B), A3 A B.
 
-Check A3 こ た.
+Check cons こ (cons ぶ (single た)) : A3 こ た.
+Goal cons こ (cons ぶ (single た)) = cons こ (cons ぶ (single た)).
+Proof. reflexivity. Qed.                    (* 普通に = が成り立つ。 *)
 
-Program Instance E3 (x y : O3) : Equiv (A3 x y).
-Obligations.
-Obligation 4.
-Admitted.
-(*
-Definition E3 (x y : O3) : Equiv (x --> y) := fun (f g : A3) => f = g.
- *)
-
+Definition E3 (x y : O3) : Equiv (A3 x y) :=
+  fun (s t : A3 x y) => s = t.
 Definition I3 : CatId O3 := single.
-Program Definition C3 (A B C : O3) (f : A3 A B) (g : A3 B C) : A3 A C. (* CatComp O3. *)
-Obligation 4.
-Admitted.
-Obligation 5.
-Admitted.
-(*
-Definition C3 (A B C : O3) (f : A --> B) (g : B --> C) : A --> C. (* CatComp O3. *)
- *)
 
+Definition c3 (x y z : O3) (s : A3 x y) (t : A3 y z) : A3 x z. (* CatComp O3. *)
+  induction s.
+  + easy.
+  + now apply (cons A (IHs t)).
+Defined.
+Definition C3 : CatComp O3 :=
+  fun (x y z : O3) (s : A3 y z) (t : A3 x y) => c3 x y z t s.
+
+Check @Category O3 A3 E3 I3 C3 : Prop.
+Program Instance SIRI : @Category O3 A3 E3 I3 C3.
+Obligation 1.
+  unfold Setoid, equiv, E3.
+  split.
+  + now unfold Reflexive.
+  + now unfold Symmetric.
+  + unfold Transitive.
+    intros x' y' z' H1 H2.
+    now rewrite H1, H2.
+Qed.
+Obligation 2.
+Proof.
+  unfold comp, C3.
+  induction a.
+  - now simpl.
+  - simpl.
+    now rewrite IHa.
+Qed.
+Obligation 3.
+Proof.
+  unfold comp, C3.
+  induction a.
+  - now simpl.
+  - simpl.
+    now rewrite IHa.
+Qed.
 
 (* END *)
