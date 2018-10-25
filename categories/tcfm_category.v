@@ -69,9 +69,11 @@ Proof.
   now apply plus_assoc.
 Qed.
 
-Check @Arrow unit A0 tt tt : Type.
-Check @comp O0 A0 C0 tt tt tt 3 2 : tt --> tt.
+(* 例 *)
 Check @cat_id O0 A0 I0 tt : tt --> tt.
+Compute @cat_id O0 A0 I0 tt.                (* 0 *)
+Check @comp O0 A0 C0 tt tt tt 3 2 : tt --> tt.
+Compute @comp O0 A0 C0 tt tt tt 3 2.        (* 5 *)
 
 
 (* ******** *)
@@ -108,6 +110,12 @@ Proof.
   rewrite H1.
   easy.
 Qed.
+
+(* 例 *)
+Check @cat_id O1 A1 I1 nat : nat --> nat.
+Compute @cat_id O1 A1 I1 nat.               (* id *)
+Check @comp O1 A1 C1 nat nat nat (plus 3) (plus 2) : nat --> nat.
+Compute @comp O1 A1 C1 nat nat nat (plus 3) (plus 2). (* plus 5 *)
 
 
 (* ************* *)
@@ -148,6 +156,16 @@ Obligation 4.
   unfold Arrow, A2 in *.
   now apply proof_irrelevance.
 Qed.
+
+(* 例 *)
+Definition le33 : 3 <= 3. Proof. easy. Defined.
+Definition le34 : 3 <= 4. Proof. omega. Defined.
+Definition le45 : 4 <= 5. Proof. omega. Defined.
+
+Check @cat_id O2 A2 I2 2  : 2 --> 2.
+Compute @cat_id O2 A2 I2 2.                 (* le_n 2 *)
+Check @comp O2 A2 C2 3 4 5 le45 le34 : 3 --> 5.
+Compute @comp O2 A2 C2 3 4 5 le45 le34.     (* *** *)
 
 
 (* *********** *)
@@ -201,5 +219,15 @@ Proof.
   - simpl.
     now rewrite IHa.
 Qed.
+
+(* 例 *)
+Definition ko := single こ.
+Definition kobuta := cons こ (cons ぶ (single た)).
+Definition tanuki := cons た (cons ぬ (single き)).
+
+Check @cat_id O3 A3 I3 こ : こ --> こ.
+Compute @cat_id O3 A3 I3 こ.                   (* single こ *)
+Check @comp O3 A3 C3 こ た き tanuki kobuta.   (* こ --> き *)
+Compute @comp O3 A3 C3 こ た き tanuki kobuta. (* こ ぶ た ぬ き *)
 
 (* END *)
