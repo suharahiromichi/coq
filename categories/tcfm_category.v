@@ -10,12 +10,11 @@ Generalizable Variables O x y.
 Require Import Relations.
 Require Import Morphisms.                   (* Proper *)
 
+Class Arrows (O : Type) : Type := arrow : O -> O -> Type.
 Class Equiv A := equiv : relation A.
 
-Class Arrows (O : Type) : Type := Arrow : O -> O -> Type.
-
 Notation "A == B" := (equiv A B) (at level 55, right associativity).
-Notation "A --> B" := (Arrow A B) (at level 55, right associativity).
+Notation "A --> B" := (arrow A B) (at level 55, right associativity).
 
 Class CatId O `{Arrows O} := cat_id : `(x --> x).
 Class CatComp O `{Arrows O} :=
@@ -23,10 +22,16 @@ Class CatComp O `{Arrows O} :=
 
 Notation "A \o B" := (comp A B) (at level 40, left associativity).
 
-Class Setoid A {Ae : Equiv A} : Prop := setoid_eq :> Equivalence (@equiv A Ae).
+Class Setoid A {Ae : Equiv A} : Prop :=
+  setoid_eq :> Equivalence (@equiv A Ae).
+(* これは、Operational Class である。
+   Prop. Class にした場合は、unfold Setoid を split に変える。 *)
 
-Class Category (O : Type) `{!Arrows O} `{forall x y : O, Equiv (x --> y)}
-      `{!CatId O} `{!CatComp O} : Prop :=
+Class Category (O : Type)
+      `{!Arrows O}
+      `{forall x y : O, Equiv (x --> y)}
+      `{!CatId O}
+      `{!CatComp O} : Prop :=
   {
     arrow_equiv :> forall x y, Setoid (x --> y);
     comp_proper :> forall x y z, Proper (equiv ==> equiv ==> equiv) (@comp _ _ _ x y z);
@@ -38,6 +43,7 @@ Class Category (O : Type) `{!Arrows O} `{forall x y : O, Equiv (x --> y)}
 
 
 Require Import Omega.
+Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.ProofIrrelevance.
 
 (* *********** *)
@@ -45,17 +51,19 @@ Require Import Coq.Logic.ProofIrrelevance.
 (* *********** *)
 
 Definition O0 : Type := unit.
-Definition A0 : Arrows O0 := fun (x y : O0) => nat.
-Definition E0 (x y : O0) : Equiv (A0 x y) := fun (m n : nat) => m = n.
-Definition I0 : CatId O0 := fun (_ : O0) => 0.
-Definition C0 : CatComp O0 := fun (_ _ _ : O0) (m n : nat) => m + n.
+Instance A0 : Arrows O0 := fun (x y : O0) => nat.
+Instance E0 (x y : O0) : Equiv (A0 x y) := fun (m n : nat) => m = n.
+Instance I0 : CatId O0 := fun (_ : O0) => 0.
+Instance C0 : CatComp O0 := fun (_ _ _ : O0) (m n : nat) => m + n.
 
 Check Category O0 : Prop.
 Check @Category O0 A0 E0 I0 C0 : Prop.
 Program Instance SPLUS : @Category O0 A0 E0 I0 C0.
-Obligation 1.
+Obligation 1.                               (* Setoid (x --> y) *)
 Proof.
-  unfold Setoid, equiv, E0.
+  unfold Setoid.                            (* Equivalence equiv *)
+  unfold equiv.                             (* Equivalence (E0 x y) *)
+  unfold E0.                                (* Equivalence (fun m n : nat => m = n) *)
   split.
   + now unfold Reflexive.
   + now unfold Symmetric.
@@ -79,12 +87,17 @@ Compute @comp O0 A0 C0 tt tt tt 3 2.        (* 5 *)
 (* ******** *)
 (* 集合の圏 *)
 (* ******** *)
+
 Definition O1 : Type := Set.
-Definition A1 : Arrows O1 := fun (x y : O1) => x -> y.
-Definition E1 (x y : O1) : Equiv (A1 x y) := (* x -> y *)
+Instance A1 : Arrows O1 := fun (x y : O1) => x -> y.
+Instance E1 (x y : O1) : Equiv (A1 x y) := (* x -> y *)
   fun (f g : A1 x y) => forall (a : x), f a = g a.
-Definition I1 : CatId O1 := fun (a : O1) (x : a) => x.
-Definition C1 : CatComp O1 :=
+(*
+Instance E1 (x y : O1) : Equiv (A1 x y) := (* x -> y *)
+  fun (f g : A1 x y) => f = g.
+*)
+Instance I1 : CatId O1 := fun (a : O1) (x : a) => x.
+Instance C1 : CatComp O1 :=
   fun (x y z : O1) (f : A1 y z) (g : A1 x y) (a : x) => f (g a).
 
 Check Category O1 : Prop.
@@ -122,11 +135,11 @@ Compute @comp O1 A1 C1 nat nat nat (plus 3) (plus 2). (* plus 5 *)
 (* 半順序集合の圏 *)
 (* ************* *)
 Definition O2 : Type := nat.
-Definition A2 : Arrows O2 := fun (x y : O2) => x <= y.
-Definition E2 (x y : O2) : Equiv (A2 x y) := (* x <= y *)
+Instance A2 : Arrows O2 := fun (x y : O2) => x <= y.
+Instance E2 (x y : O2) : Equiv (A2 x y) := (* x <= y *)
   fun (H1 H2 : A2 x y) => H1 = H2.
-Definition I2 := le_n.                      (* CatId O2 *)
-Definition C2 : CatComp O2 :=
+Instance I2 : CatId O2 := le_n.
+Instance C2 : CatComp O2 :=
   fun (x y z : O2) H1 H2 => le_trans x y z H2 H1.
 
 Check @Category O2 A2 E2 I2 C2 : Prop.
@@ -143,17 +156,18 @@ Qed.
 Obligation 2.
 Proof.
   unfold comp, C2.
-  unfold Arrow, A2 in *.
+  unfold arrow, A2 in *.
+  Check proof_irrelevance.
   now apply proof_irrelevance.
 Qed.
 Obligation 3.
   unfold comp, C2.
-  unfold Arrow, A2 in *.
+  unfold arrow, A2 in *.
   now apply proof_irrelevance.
 Qed.
 Obligation 4.
   unfold comp, C2.
-  unfold Arrow, A2 in *.
+  unfold arrow, A2 in *.
   now apply proof_irrelevance.
 Qed.
 
@@ -180,7 +194,7 @@ Check cons こ (cons ぶ (single た)) : A3 こ た.
 Goal cons こ (cons ぶ (single た)) = cons こ (cons ぶ (single た)).
 Proof. reflexivity. Qed.                    (* 普通に = が成り立つ。 *)
 
-Definition E3 (x y : O3) : Equiv (A3 x y) :=
+Instance E3 (x y : O3) : Equiv (A3 x y) :=
   fun (s t : A3 x y) => s = t.
 Definition I3 : CatId O3 := single.
 
