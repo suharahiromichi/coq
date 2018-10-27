@@ -65,6 +65,14 @@ Notation "A \o B" := (comp A B) (at level 40, left associativity).
 (* *********** *)
 (* シングルトン *)
 (* *********** *)
+(* 
+対象の集合 : unit
+対象の例（唯一） : tt
+射の集合（唯一） : tt --> tt (= nat と定める)
+射の例     : 0,1,2.....
+恒等射     : 0
+射の合成   : natの加算
+ *)
 
 Definition O0 : Type := unit.
 Instance A0 : Arrows O0 := fun (x y : O0) => nat.
@@ -119,6 +127,14 @@ Compute @comp O0 A0 C0 tt tt tt 3 2.        (* 5 *)
 (* ******** *)
 (* 集合の圏 *)
 (* ******** *)
+(* 
+対象の集合 : Set
+対象の例   : nat (その他)
+射の集合の例 : nat -> nat (その他)
+射の例     : plus 0 (= id), plus 1, plus 2,....
+恒等射     : id
+射の合成   : 関数の合成
+ *)
 
 Definition O1 : Type := Set.
 Instance A1 : Arrows O1 := fun (x y : O1) => x -> y.
@@ -182,6 +198,15 @@ Compute @comp O1 A1 C1 nat nat nat (plus 3) (plus 2). (* plus 5 *)
 (* ************* *)
 (* 半順序集合の圏 *)
 (* ************* *)
+(* 
+対象の集合 : nat
+対象の例   : 0,1,2,....
+射の集合の例 : 0 --> 0, 0 --> 1,...
+射の例     :  0≦0, 0≦1,.. (対象が決まると唯一決まる)
+恒等射     : 0≦0, 1≦1,..
+射の合成   : 不等号の遷移性
+ *)
+
 Definition O2 : Type := nat.
 Instance A2 : Arrows O2 := fun (x y : O2) => x <= y.
 Instance E2 (x y : O2) : Equiv (A2 x y) := (* x <= y *)
@@ -257,6 +282,15 @@ Compute @comp O2 A2 C2 3 4 5 le45 le34.
 (* *********** *)
 (* しりとりの圏 *)
 (* *********** *)
+(* 
+対象の集合 : ひらがな
+対象の例   : こ,ぶ,た,ぬ,き,い,や
+射の集合の例 : た --> き
+射の例     : たぬき, たいやき
+恒等射     : た
+射の合成   : 文字列の連結
+ *)
+
 Inductive O3 : Type := こ | ぶ | た | ぬ | き | つ | ね | い | や.
 Inductive A3 : Arrows O3 :=
   | single : forall A, A3 A A
