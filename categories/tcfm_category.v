@@ -291,7 +291,7 @@ Compute @cat_id O2 A2 I2 3.                 (* le_n 3 *)
 対象の例   : こ,ぶ,た,ぬ,き,い,や,...
 射の集合の例 : た --> き
 射の例     : たぬき, たいやき
-射の合成   : 文字列の連結
+射の合成   : しりとりをした文字列の連結
 恒等射     : こ,た,... (1文字語)
  *)
 
@@ -308,13 +308,13 @@ Instance E3 (x y : O3) : Equiv (A3 x y) :=
   fun (s t : A3 x y) => s = t.
 Definition I3 : CatId O3 := single.
 
-Definition c3 (x y z : O3) (s : A3 x y) (t : A3 y z) : A3 x z. (* CatComp O3. *)
+Definition C3 (x y z : O3) (t : A3 y z) (s : A3 x y) : A3 x z.
+Proof.
   induction s.
   + easy.
   + now apply (cons A (IHs t)).
 Defined.
-Definition C3 : CatComp O3 :=
-  fun (x y z : O3) (s : A3 y z) (t : A3 x y) => c3 x y z t s.
+Check C3 : CatComp O3.
 
 Check @Category O3 A3 E3 I3 C3 : Prop.
 Program Instance SIRI : @Category O3 A3 E3 I3 C3.
