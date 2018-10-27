@@ -95,9 +95,8 @@ Qed.
 
 (* 例 *)
 Check @arrow O0 A0 tt tt.                   (* 射の型 *)
-Check 1 : @arrow O0 A0 tt tt.               (* 1 は射の例 *)
+Check tt --> tt.                            (* 上記の構文糖 *)
 Check 1 : tt --> tt.                        (* 1 は射の例 *)
-Check 0 : @arrow O0 A0 tt tt.               (* 0 は射の例 *)
 Check 0 : tt --> tt.                        (* 0 は射の例 *)
 
 Check @cat_id O0 A0 I0 tt : tt --> tt.      (* cat_id は射のひとつ *)
@@ -159,9 +158,8 @@ Qed.
 
 (* 例 *)
 Check @arrow O1 A1 nat nat.                 (* 射の型のひとつ *)
-Check plus 1 : @arrow O1 A1 nat nat.        (* plus 1 は射の例 *)
+Check nat --> nat.                          (* 上記の構文糖 *)
 Check plus 1 : nat --> nat.                 (* plus 1 は射の例 *)
-Check plus 0 : @arrow O1 A1 nat nat.        (* plus 0 は射の例 *)
 Check plus 0 : nat --> nat.                 (* plus 0 は射の例 *)
 
 Check @cat_id O1 A1 I1 nat : nat --> nat.   (* cat_id は射のひとつ *)
@@ -223,22 +221,19 @@ Qed.
 
 (* 例 *)
 Check @arrow O2 A2 3 3.                     (* 射の型のひとつ *)
-Check @arrow O2 A2 3 4.                     (* 射の型のひとつ *)
-Check @arrow O2 A2 4 5.                     (* 射の型のひとつ *)
-Check @arrow O2 A2 3 5.                     (* 射の型のひとつ *)
+Check 3 --> 3.                              (* 上記の構文糖 *)
+Check 3 --> 4.                              (* 射の型のひとつ *)
+Check 4 --> 5.                              (* 射の型のひとつ *)
+Check 3 --> 5.                              (* 射の型のひとつ *)
 
 Definition le33 : 3 <= 3. Proof. easy. Defined.
 Definition le34 : 3 <= 4. Proof. omega. Defined.
 Definition le45 : 4 <= 5. Proof. omega. Defined.
 Definition le35 : 3 <= 5. Proof. omega. Defined.
 
-Check le33 : @arrow O2 A2 3 3.              (* この型の射は唯一 *)
 Check le33 : 3 --> 3.                       (* この型の射は唯一 *)
-Check le34 : @arrow O2 A2 3 4.              (* この型の射は唯一 *)
 Check le34 : 3 --> 4.                       (* この型の射は唯一 *)
-Check le45 : @arrow O2 A2 4 5.              (* この型の射は唯一 *)
 Check le45 : 4 --> 5.                       (* この型の射は唯一 *)
-Check le35 : @arrow O2 A2 3 5.              (* この型の射は唯一 *)
 Check le35 : 3 --> 5.                       (* この型の射は唯一 *)
 
 Check @cat_id O2 A2 I2 3  : 3 --> 3.        (* cat_id は射のひとつ *)
@@ -262,7 +257,7 @@ Compute @comp O2 A2 C2 3 4 5 le45 le34.
 (* *********** *)
 (* しりとりの圏 *)
 (* *********** *)
-Inductive O3 : Type := こ | ぶ | た | ぬ | き | つ | ね.
+Inductive O3 : Type := こ | ぶ | た | ぬ | き | つ | ね | い | や.
 Inductive A3 : Arrows O3 :=
   | single : forall A, A3 A A
   | cons : forall {A' B : O3} (A : O3) (tl : A3 A' B), A3 A B.
@@ -312,25 +307,25 @@ Proof.
 Qed.
 
 (* 例 *)
-Check @arrow O3 A3 こ こ.                     (* 射の型のひとつ *)
-Check @arrow O3 A3 こ た.                     (* 射の型のひとつ *)
-Check @arrow O3 A3 た き.                     (* 射の型のひとつ *)
-Check @arrow O3 A3 こ き.                     (* 射の型のひとつ *)
+Check @arrow O3 A3 こ こ.                   (* 射の型のひとつ *)
+Check こ --> こ.                            (* 上記の構文糖衣 *)
+Check こ --> た.                            (* 射の型のひとつ *)
+Check た --> き.                            (* 射の型のひとつ *)
+Check こ --> き.                            (* 射の型のひとつ *)
 
 Definition ko := single こ.
 Definition kobuta := cons こ (cons ぶ (single た)).
 Definition tanuki := cons た (cons ぬ (single き)).
+Definition taiyaki := cons た (cons い (cons や (single き))).
 Definition kobuta_tanuki := cons こ (cons ぶ (cons た (cons ぬ (single き)))).
 
-Check ko     : @arrow O3 A3 こ こ.          (* この型の射の例 *)
-Check ko     : こ --> こ.                   (* この型の射の例 *)
-Check kobuta : @arrow O3 A3 こ た.          (* この型の射の例 *)
-Check kobuta : こ --> た.                   (* この型の射の例 *)
-Check tanuki : @arrow O3 A3 た き.          (* この型の射の例 *)
-Check tanuki : た --> き.                   (* この型の射の例 *)
+Check ko      : こ --> こ.                  (* この型の射の例 *)
+Check kobuta  : こ --> た.                  (* この型の射の例 *)
+Check tanuki  : た --> き.                  (* この型の射の例 *)
+Check taiyaki : た --> き.                  (* この型の射の例、別の例 *)
 
 Check @cat_id O3 A3 I3 こ : こ --> こ.      (* cat_id は射のひとつ *)
-Goal ko = @cat_id O3 A3 I3 こ.       (* cat_id こ は single こ に等しい。 *)
+Goal ko = @cat_id O3 A3 I3 こ. (* cat_id こ は single こ に等しい。 *)
 Proof.
   unfold cat_id, I3.
   easy.
