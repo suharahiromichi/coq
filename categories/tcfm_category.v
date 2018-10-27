@@ -67,11 +67,11 @@ Notation "A \o B" := (comp A B) (at level 40, left associativity).
 (* *********** *)
 (* 
 対象の集合 : unit
-対象の例（唯一） : tt
+対象（唯一） : tt
 射の集合（唯一） : tt --> tt (= nat と定める)
 射の例     : 0,1,2.....
-恒等射     : 0
 射の合成   : natの加算
+恒等射     : 0
  *)
 
 Definition O0 : Type := unit.
@@ -107,14 +107,7 @@ Check tt --> tt.                            (* 上記の構文糖 *)
 Check 1 : tt --> tt.                        (* 1 は射の例 *)
 Check 0 : tt --> tt.                        (* 0 は射の例 *)
 
-Check @cat_id O0 A0 I0 tt : tt --> tt.      (* cat_id は射のひとつ *)
-Goal 0 = @cat_id O0 A0 I0 tt.               (* cat_id は 0 と等しい *)
-Proof.
-  unfold cat_id, I0.
-  easy.
-Qed.
-Compute @cat_id O0 A0 I0 tt.                (* 0 *)
-
+(* 射 2 と 3 の合成は 5 になる。 *)
 Check @comp O0 A0 C0 tt tt tt 3 2 : tt --> tt.
 Goal 5 = @comp O0 A0 C0 tt tt tt 3 2.
 Proof.
@@ -123,17 +116,27 @@ Proof.
 Qed.
 Compute @comp O0 A0 C0 tt tt tt 3 2.        (* 5 *)
 
+Check @cat_id O0 A0 I0 tt : tt --> tt.      (* cat_id は射のひとつ *)
+Goal 0 = @cat_id O0 A0 I0 tt.               (* cat_id は 0 と等しい *)
+Proof.
+  unfold cat_id, I0.
+  easy.
+Qed.
+Compute @cat_id O0 A0 I0 tt.                (* 0 *)
+
 
 (* ******** *)
 (* 集合の圏 *)
 (* ******** *)
 (* 
 対象の集合 : Set
-対象の例   : nat (その他)
-射の集合の例 : nat -> nat (その他)
-射の例     : plus 0 (= id), plus 1, plus 2,....
-恒等射     : id
+対象の例   : nat など
+射の集合の例 : nat -> nat  など
+射の例     : plus 0 (= id_nat), plus 1, plus 2,....
 射の合成   : 関数の合成
+恒等射     : id_nat (その他)
+
+注意：対象は自然数の集合natである。0,1,2,..は対象ではない。
  *)
 
 Definition O1 : Type := Set.
@@ -178,14 +181,7 @@ Check nat --> nat.                          (* 上記の構文糖 *)
 Check plus 1 : nat --> nat.                 (* plus 1 は射の例 *)
 Check plus 0 : nat --> nat.                 (* plus 0 は射の例 *)
 
-Check @cat_id O1 A1 I1 nat : nat --> nat.   (* cat_id は射のひとつ *)
-Goal id = @cat_id O1 A1 I1 nat.             (* cat_id は id に等しい *)
-Proof.
-  unfold cat_id, I1.
-  easy.
-Qed.
-Compute @cat_id O1 A1 I1 nat.               (* id *)
-
+(* 射 plus 2 と plus 3 の合成は plus 5 になる。 *)
 Check @comp O1 A1 C1 nat nat nat (plus 3) (plus 2) : nat --> nat.
 Goal plus 5 = @comp O1 A1 C1 nat nat nat (plus 3) (plus 2).
 Proof.
@@ -193,6 +189,14 @@ Proof.
   easy.
 Qed.
 Compute @comp O1 A1 C1 nat nat nat (plus 3) (plus 2). (* plus 5 *)
+
+Check @cat_id O1 A1 I1 nat : nat --> nat.   (* cat_id は射のひとつ *)
+Goal id = @cat_id O1 A1 I1 nat.             (* cat_id は id に等しい *)
+Proof.
+  unfold cat_id, I1.
+  easy.
+Qed.
+Compute @cat_id O1 A1 I1 nat.               (* id *)
 
 
 (* ************* *)
@@ -202,9 +206,9 @@ Compute @comp O1 A1 C1 nat nat nat (plus 3) (plus 2). (* plus 5 *)
 対象の集合 : nat
 対象の例   : 0,1,2,....
 射の集合の例 : 0 --> 0, 0 --> 1,...
-射の例     :  0≦0, 0≦1,.. (対象が決まると唯一決まる)
-恒等射     : 0≦0, 1≦1,..
+射の例     : 0≦0, 0≦1,.. (対象が決まると唯一決まる)
 射の合成   : 不等号の遷移性
+恒等射     : 0≦0, 1≦1,..
  *)
 
 Definition O2 : Type := nat.
@@ -261,14 +265,6 @@ Check le34 : 3 --> 4.                       (* この型の射は唯一 *)
 Check le45 : 4 --> 5.                       (* この型の射は唯一 *)
 Check le35 : 3 --> 5.                       (* この型の射は唯一 *)
 
-Check @cat_id O2 A2 I2 3  : 3 --> 3.        (* cat_id は射のひとつ *)
-Goal le_n 3 = @cat_id O2 A2 I2 3.           (* cat_id 3 は 3≦3 に等しい。 *)
-Proof.
-  unfold cat_id, I2.
-  easy.
-Qed.
-Compute @cat_id O2 A2 I2 3.                 (* le_n 3 *)
-
 (* 3≦4 と 4≦5 を 合成すると 3≦5 になる。 *)
 Check @comp O2 A2 C2 3 4 5 le45 le34 : 3 --> 5.
 Goal le35 = @comp O2 A2 C2 3 4 5 le45 le34.
@@ -278,17 +274,25 @@ Proof.
 Qed.
 Compute @comp O2 A2 C2 3 4 5 le45 le34.
 
+Check @cat_id O2 A2 I2 3  : 3 --> 3.        (* cat_id は射のひとつ *)
+Goal le_n 3 = @cat_id O2 A2 I2 3.           (* cat_id 3 は 3≦3 に等しい。 *)
+Proof.
+  unfold cat_id, I2.
+  easy.
+Qed.
+Compute @cat_id O2 A2 I2 3.                 (* le_n 3 *)
+
 
 (* *********** *)
 (* しりとりの圏 *)
 (* *********** *)
 (* 
 対象の集合 : ひらがな
-対象の例   : こ,ぶ,た,ぬ,き,い,や
+対象の例   : こ,ぶ,た,ぬ,き,い,や,...
 射の集合の例 : た --> き
 射の例     : たぬき, たいやき
-恒等射     : た
 射の合成   : 文字列の連結
+恒等射     : こ,た,... (1文字語)
  *)
 
 Inductive O3 : Type := こ | ぶ | た | ぬ | き | つ | ね | い | や.
@@ -341,22 +345,37 @@ Proof.
 Qed.
 
 (* 例 *)
-Check @arrow O3 A3 こ こ.                   (* 射の型のひとつ *)
-Check こ --> こ.                            (* 上記の構文糖衣 *)
-Check こ --> た.                            (* 射の型のひとつ *)
+Check @arrow O3 A3 ね こ.                   (* 射の型のひとつ *)
+Check ね --> こ.                            (* 上記の構文糖衣 *)
+Check こ --> こ.                            (* 射の型のひとつ *)
 Check た --> き.                            (* 射の型のひとつ *)
-Check こ --> き.                            (* 射の型のひとつ *)
+Check き --> ね.                            (* 射の型のひとつ *)
+Check た --> ね.                            (* 射の型のひとつ *)
 
+Definition neko := cons ね (single こ).
 Definition ko := single こ.
-Definition kobuta := cons こ (cons ぶ (single た)).
+Definition koneko := cons こ (cons ね (single こ)).
 Definition tanuki := cons た (cons ぬ (single き)).
 Definition taiyaki := cons た (cons い (cons や (single き))).
-Definition kobuta_tanuki := cons こ (cons ぶ (cons た (cons ぬ (single き)))).
+Definition kitune := cons き (cons つ (single ね)).
+Definition tanukitune := cons た (cons ぬ (cons き (cons つ (single ね)))).
 
+Check neko    : ね --> こ.                  (* この型の射の例 *)
 Check ko      : こ --> こ.                  (* この型の射の例 *)
-Check kobuta  : こ --> た.                  (* この型の射の例 *)
+Check koneko  : こ --> こ.                  (* この型の射の例、別の例 *)
 Check tanuki  : た --> き.                  (* この型の射の例 *)
 Check taiyaki : た --> き.                  (* この型の射の例、別の例 *)
+Check kitune  : き --> ね.                  (* この型の射の例 *)
+Check tanukitune : た --> ね.               (* この型の射の例 *)
+
+(* たぬき と きつね を 合成すると たぬきつね になる。 *)
+Check @comp O3 A3 C3 た き ね kitune tanuki : た --> ね.
+Goal tanukitune = @comp O3 A3 C3 た き ね kitune tanuki.
+Proof.
+  unfold comp, C3.
+  easy.
+Qed.
+Compute @comp O3 A3 C3 た き ね kitune tanuki.
 
 Check @cat_id O3 A3 I3 こ : こ --> こ.      (* cat_id は射のひとつ *)
 Goal ko = @cat_id O3 A3 I3 こ. (* cat_id こ は single こ に等しい。 *)
@@ -366,14 +385,9 @@ Proof.
 Qed.
 Compute @cat_id O3 A3 I3 こ.                 (* single こ *)
 
-(* こぶた と たぬき を 合成すると こぶたぬき になる。 *)
-Check @comp O3 A3 C3 こ た き tanuki kobuta : こ --> き.
-Goal kobuta_tanuki = @comp O3 A3 C3 こ た き tanuki kobuta.
-Proof.
-  unfold comp, C3.
-  easy.
-Qed.
-Compute @comp O3 A3 C3 こ た き tanuki kobuta.
+(* こねこ は cat_id ではないことに注意してください。 *)
+Compute @comp O3 A3 C3 ね こ こ ko neko.     (* ねこ と こ の連結は ねこ *)
+Compute @comp O3 A3 C3 ね こ こ koneko neko. (* ねこ と こねこ の連結は ねこねこ *)
 
 
 (* 始対象 *)
