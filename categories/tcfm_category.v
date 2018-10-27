@@ -5,46 +5,62 @@
 
 (* Set Implicit Arguments. *)
 
-Generalizable Variables O x y.
-
 Require Import Relations.
 Require Import Morphisms.                   (* Proper *)
-
-Class Arrows (O : Type) : Type := arrow : O -> O -> Type.
-Class Equiv A := equiv : relation A.
-
-Notation "A == B" := (equiv A B) (at level 55, right associativity).
-Notation "A --> B" := (arrow A B) (at level 55, right associativity).
-
-Class CatId O `{Arrows O} := cat_id : `(x --> x).
-Class CatComp O `{Arrows O} :=
-  comp : forall {x y z}, (y --> z) -> (x --> y) -> (x --> z).
-
-Notation "A \o B" := (comp A B) (at level 40, left associativity).
-
-Class Setoid A {Ae : Equiv A} : Prop :=
-  setoid_eq :> Equivalence (@equiv A Ae).
-(* これは、Operational Class である。
-   Prop. Class にした場合は、unfold Setoid を split に変える。 *)
-
-Class Category (O : Type)
-      `{!Arrows O}
-      `{forall x y : O, Equiv (x --> y)}
-      `{!CatId O}
-      `{!CatComp O} : Prop :=
-  {
-    arrow_equiv :> forall x y, Setoid (x --> y);
-    comp_proper :> forall x y z, Proper (equiv ==> equiv ==> equiv) (@comp _ _ _ x y z);
-    comp_assoc w x y z (a : w --> x) (b : x --> y) (c : y --> z) :
-      c \o (b \o a) = (c \o b) \o a;
-    id_l `(a : x --> y) : cat_id _ \o a = a;
-    id_r `(a : x --> y) : a \o cat_id _ = a;
-  }.
-
 
 Require Import Omega.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.ProofIrrelevance.
+
+Section Category_Class.
+  Generalizable Variables O x y.
+  
+  Class Arrows (O : Type) : Type := arrow : O -> O -> Type.
+  Class Equiv A := equiv : relation A.
+  
+  Notation "A == B" := (equiv A B) (at level 55, right associativity).
+  Notation "A --> B" := (arrow A B) (at level 55, right associativity).
+  
+  Class CatId O `{Arrows O} := cat_id : `(x --> x).
+  Class CatComp O `{Arrows O} :=
+    comp : forall {x y z}, (y --> z) -> (x --> y) -> (x --> z).
+  
+  Notation "A \o B" := (comp A B) (at level 40, left associativity).
+  
+  Class Setoid A {Ae : Equiv A} : Prop :=
+    setoid_eq :> Equivalence (@equiv A Ae).
+  (* これは、Operational Class である。
+     Prop. Class にした場合は、unfold Setoid を split に変える。 *)
+  
+  Section setoid_morphisms.
+  Context {A B} {Ae : Equiv A} {Be : Equiv B} (f : A -> B).    
+    Class Setoid_Morphism :=
+      {
+        setoidmor_a : Setoid A;
+        setoidmor_b : Setoid B;
+        sm_proper :> Proper (equiv ==> equiv) f
+      }. 
+  End setoid_morphisms.
+  
+  Class Category (O : Type)
+        `{!Arrows O}
+        `{forall x y : O, Equiv (x --> y)}
+        `{!CatId O}
+        `{!CatComp O} : Prop :=
+    {
+      arrow_equiv :> forall x y, Setoid (x --> y);
+      comp_proper :> forall x y z,
+          Proper (equiv ==> equiv ==> equiv) (@comp _ _ _ x y z);
+      comp_assoc w x y z (a : w --> x) (b : x --> y) (c : y --> z) :
+        c \o (b \o a) = (c \o b) \o a;
+      id_l `(a : x --> y) : cat_id _ \o a = a;
+      id_r `(a : x --> y) : a \o cat_id _ = a;
+    }.
+End Category_Class.
+
+Notation "A == B" := (equiv A B) (at level 55, right associativity).
+Notation "A --> B" := (arrow A B) (at level 55, right associativity).
+Notation "A \o B" := (comp A B) (at level 40, left associativity).
 
 (* *********** *)
 (* シングルトン *)
@@ -243,5 +259,45 @@ Check @cat_id O3 A3 I3 こ : こ --> こ.
 Compute @cat_id O3 A3 I3 こ.                   (* single こ *)
 Check @comp O3 A3 C3 こ た き tanuki kobuta.   (* こ --> き *)
 Compute @comp O3 A3 C3 こ た き tanuki kobuta. (* こ ぶ た ぬ き *)
+
+(* 始対象 *)
+Section initiality.
+  Generalizable Variables X.
+  Context `{Category X}.
+  
+  Class InitialArrow (x : X) : Type := initial_arrow: forall y, x --> y.
+
+  Class Initial (x : X) `{InitialArrow x}: Prop :=
+    initial_arrow_unique : forall y f', initial_arrow y = f'.
+End initiality.
+
+Program Definition IA0 (x : O0) : @InitialArrow O0 A0 x := fun (y : O0) => _.
+Obligation 1.
+Admitted.
+
+Program Instance ISNGL : @Initial O0 A0 tt (IA0 tt).
+Obligation 1.
+Proof.
+  unfold initial_arrow, IA0.
+  Admitted.
+
+(* 関手 *)
+
+Section functor_class.
+  Generalizable Variables C D x y z a.
+  
+  Context `{Category C} `{Category D} (M : C -> D).
+  
+  Class Fmap: Type := fmap: forall {v w : C}, (v --> w) -> (M v --> M w).
+  
+  Class Functor `(Fmap): Prop :=
+    {
+      functor_from : Category C;
+      functor_to : Category D;
+      functor_morphism :> forall a b : C, Setoid_Morphism (@fmap _ a b);
+      preserves_id : `(fmap (cat_id _ : a --> a) = cat_id _);
+      preserves_comp `(f : y --> z) `(g : x --> y) : fmap (f \o g) = fmap f \o fmap g
+    }.
+End functor_class.
 
 (* END *)
