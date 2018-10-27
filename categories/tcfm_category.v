@@ -288,9 +288,9 @@ Section functor_class.
   
   Context `{Category C} `{Category D} (M : C -> D).
   
-  Class Fmap: Type := fmap: forall {v w : C}, (v --> w) -> (M v --> M w).
+  Class Fmap: Type := fmap : forall {v w : C}, (v --> w) -> (M v --> M w).
   
-  Class Functor `(Fmap): Prop :=
+  Class Functor `(Fmap) : Prop :=
     {
       functor_from : Category C;
       functor_to : Category D;
@@ -299,5 +299,59 @@ Section functor_class.
       preserves_comp `(f : y --> z) `(g : x --> y) : fmap (f \o g) = fmap f \o fmap g
     }.
 End functor_class.
+
+Definition M01 (a : unit) : O1 := nat.
+
+Check @Fmap.
+Check @Fmap O0 A0 O1 A1 M01 : Type.
+Check Fmap M01 : Type.
+
+Definition f01 (x y : O0) (n : nat) := fun (x : nat) => x + n.
+Definition F01 : @Fmap O0 A0 O1 A1 M01 := f01.
+
+Check @Functor O0 A0 E0 I0 C0 O1 A1 E1 I1 C1 M01 F01.
+Check Functor M01 F01.
+Program Instance FUN01 : Functor M01 F01.
+Obligation 1.
+Proof.
+  split.
+  - split.                                  (* Setoid (a --> b) *)
+    + unfold Reflexive.
+      now unfold equiv, E0.
+    + unfold Symmetric.
+      now unfold equiv, E0.
+    + unfold Transitive.
+      unfold equiv, E0.
+      intros.
+      now subst.
+  - split.                                  (* Setoid (M a --> M b) *)
+    + unfold Reflexive.
+      now unfold equiv, E1.
+    + unfold Symmetric.
+      now unfold equiv, E1.
+    + unfold Transitive.
+      unfold equiv, E1.
+      intros.
+      erewrite H.
+      erewrite <- H0.
+      easy.
+  - intro x.
+    intros y H.
+    unfold equiv, E0 in H.
+    rewrite H.
+    easy.
+Qed.
+
+Check Fmap M01.
+Check F01.
+Check @fmap O0 A0 O1 A1 M01 F01 tt tt : tt --> tt -> nat --> nat.
+Check @fmap O0 A0 O1 A1 M01 F01 tt tt   1         :  nat --> nat.
+Check plus 1                                      : nat --> nat.
+
+Goal @fmap O0 A0 O1 A1 M01 F01 tt tt   1 = fun x => x + 1.
+Proof.
+  unfold fmap, M01, F01, f01.
+  easy.
+Qed.
 
 (* END *)
