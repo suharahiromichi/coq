@@ -30,15 +30,15 @@ Require Import Morphisms Program Unicode.Utf8.
 Definition Value := nat.
 Definition Vars V := V → Value.
 
-Lemma sum_assoc {A B C}: (A + B) + C → A + (B + C).
+Lemma sum_assoc {A B C} : (A + B) + C → A + (B + C).
   intuition.
 Defined.
 
-Lemma bla {A B C}: (A + B) → A + (B + C).
+Lemma bla {A B C} : (A + B) → A + (B + C).
   intuition.
 Defined.
 
-Lemma monkey {A B}: False  +  A → A  +  B.
+Lemma monkey {A B} : False  +  A → A  +  B.
   intuition.
 Defined.
 
@@ -72,7 +72,10 @@ Qed.
 Definition novars : Vars False := False_rect _.
 Definition singlevar (x : Value) : Vars unit := fun _ => x.
 Definition merge {A B} (a : Vars A) (b : Vars B) : Vars (A + B) :=
-  fun i => match i with inl j => a j | inr j => b j end.
+  fun i => match i with
+           | inl j => a j
+           | inr j => b j
+           end.
 
 Section Lookup.
 
@@ -155,7 +158,7 @@ Section Quote.
       quote := Mult (map_var bla (quote n)) (map_var sum_assoc (quote m))
     }.
   Next Obligation.
-  Proof with auto.
+  Proof.
     destruct Quote0, Quote1.
     subst. simpl.
     do 2 rewrite eval_map_var.
@@ -180,15 +183,23 @@ Section Quote.
   
 End Quote.
 
+Check @quote : ∀ (V : Type) (l : Vars V) (n : Value) (V' : Type) (r : Vars V'), 
+    Quote l n r → Expr (V + V').
+
 Check @eval_quote : ∀ (V : Type) (l : Vars V) (n : Value) (V' : Type) (r : Vars V') 
                        (Quote : Quote l n r), eval (merge l r) quote = n.
 
+
+(* When quoting something from scratch we will want to start with an empty heap.
+   To avoid having to mention this, we define quote' and eval_quote': *)
+
 Definition quote' : ∀ x {V'} {v : Vars V'} {d : Quote novars x v}, Expr _ :=
-  @quote _ _.
+  @quote False novars.                      (* オリジナルは _ _ *)
 
 Definition eval_quote' : ∀ x {V'} {v : Vars V'} {d : Quote novars x v},
     eval (merge novars v) quote = x :=
-  @eval_quote _ _ .
+  @eval_quote False novars.                 (* オリジナルは _ _ *)
+Print eval_quote'.
 
 
 Implicit Arguments quote' [[V'] [v] [d]].
@@ -215,12 +226,22 @@ Section inspect.
   
   Eval compute in quote.                    (* Zero *)
   
+  Check @quote _     _      x _ _ _ : Expr (() + False). (* これはだめとする。 *)
+  Check @quote False novars x _ _ _ : Expr (False + ()).
+  Check quote' x                    : Expr (False + ()).
+
+  Compute @quote _     _      x _ _ _.      (* = Var (inl ()) *)
+  Compute @quote False novars x _ _ _.      (* = Var (inr ()) *)
+  Compute quote' x.                         (* = Var (inr ()) *)
+  
   Check quote' 0 : Expr (False + False).
   Check quote' x : Expr (False + ()).
   Check quote' y : Expr (False + ()).
   Check quote' (x * 0) : Expr (False + (() + False)).
   Check quote' (x * y) : Expr (False + (() + ())).
   Check quote' ((x * y) * (x * 0)) : Expr (False + (() + () + (False + False))).
+
+  Check @quote False novars ((x * y) * (x * 0)) _ _ _ : Expr (False + (() + () + (False + False))).
 
   Eval compute in quote' 0.       (* = Zero *)
   Eval compute in quote' x.       (* = Var (inr tt) *)
@@ -231,8 +252,21 @@ Section inspect.
   (* = Mult (Mult (Var (inr (inl (inl ())))) (Var (inr (inl (inr ())))))
      (Mult (Var (inr (inl (inl ())))) Zero) *)
   
+  Check @eval_quote False novars 0 _ _ _ : eval (merge novars novars) quote = 0.
   Check eval_quote' 0 : eval (merge novars novars) quote = 0.
+  
+  Check @eval_quote _     _      x _ _ _ : eval (merge (singlevar x) novars) quote = x.
+  (* ↑×とする。 *)
+  Check @eval_quote False novars x _ _ _ : eval (merge novars (singlevar x)) quote = x.
   Check eval_quote' x : eval (merge novars (singlevar x)) quote = x.
+
+  Compute @eval_quote _     _      x _ _ _.
+  (* ↑×とする。 *)
+  Compute @eval_quote False novars x _ _ _.
+  Compute eval_quote' x.
+
+  
+  
   Check eval_quote' y : eval (merge novars (singlevar y)) quote = y.
   Check eval_quote' (x * 0) :
     eval (merge novars (merge (singlevar x) novars)) quote = x * 0.
@@ -244,18 +278,6 @@ Section inspect.
              (merge (merge (singlevar x) (singlevar y)) (merge novars novars))) quote =
     x * y * (x * 0).
   
-  Check @eval_quote _ _ 0 _ _ _ : eval (merge _ novars) quote = 0.
-  Check @eval_quote _ _ x _ _ _ : eval (merge (singlevar x) novars) quote = x.
-  Check @eval_quote _ _ y _ _ _ : eval (merge (singlevar y) novars) quote = y.
-  Check @eval_quote _ _ (x * 0) _ _ _ :
-    eval (merge (singlevar x) (merge novars novars)) quote = x * 0.
-  Check @eval_quote _ _ (x * y) _ _ _ :
-    eval (merge (singlevar x) (merge novars (singlevar y))) quote = x * y.
-  Check @eval_quote _ _ ((x * y) * (x * 0)) _ _ _ :
-    eval
-      (merge (singlevar x)
-             (merge (merge novars (singlevar y)) (merge novars novars))) quote =
-    x * y * (x * 0).
   
   (* The second occurrence of (Var (inr (inl (inl ())))) means
    the quoting has successfully noticed that it's the same
