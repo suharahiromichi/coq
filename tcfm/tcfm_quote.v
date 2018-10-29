@@ -193,14 +193,29 @@ Check @eval_quote : ∀ (V : Type) (l : Vars V) (n : Value) (V' : Type) (r : Var
 (* When quoting something from scratch we will want to start with an empty heap.
    To avoid having to mention this, we define quote' and eval_quote': *)
 
-Definition quote' : ∀ x {V'} {v : Vars V'} {d : Quote novars x v}, Expr _ :=
-  @quote False novars.                      (* オリジナルは _ _ *)
+(* 
+Definition quote': ∀ x {V'} {v: Vars V'} {d: Quote novars x v}, Expr _ := @quote _ _.
+ *)
+Definition quote' x {V'} {v : Vars V'} {d : Quote novars x v} :
+  Expr (False + V').
+Proof.
+  destruct d.
+  easy.
+Defined.
 
-Definition eval_quote' : ∀ x {V'} {v : Vars V'} {d : Quote novars x v},
-    eval (merge novars v) quote = x :=
-  @eval_quote False novars.                 (* オリジナルは _ _ *)
-Print eval_quote'.
-
+(*
+Definition eval_quote': ∀ x {V'} {v: Vars V'} {d: Quote novars x v},
+  eval (merge novars v) quote = x
+    := @eval_quote _ _ .
+*)
+Definition eval_quote' x {V'} {v : Vars V'} {d : Quote novars x v} :
+    eval (merge novars v) quote = x.
+Proof.
+  intros.
+  destruct d.
+  unfold quote.
+  easy.
+Defined.
 
 Implicit Arguments quote' [[V'] [v] [d]].
 Implicit Arguments eval_quote' [[V'] [v] [d]].
