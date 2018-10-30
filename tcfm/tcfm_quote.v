@@ -166,7 +166,7 @@ Section Quote.
   Qed.
   
   Global Program Instance quote_old_var V (v : Vars V) x {i : Lookup x v} :
-    Quote v x novars | 8 :=
+    Quote v x novars | 8 :=                 (* 8 *)
     {
       quote := Var (inl (lookup x v))
     }.
@@ -176,7 +176,7 @@ Section Quote.
   Qed.
   
   Global Program Instance quote_new_var V (v : Vars V) x :
-    Quote v x (singlevar x) | 9 :=
+    Quote v x (singlevar x) | 9 :=          (* 9 *)
     {
       quote := Var (inr tt)
     }.
@@ -224,9 +224,22 @@ Implicit Arguments eval_quote' [[V'] [v] [d]].
 
 Goal ∀ x y (P : Value → Prop), P ((x * y) * (x * 0)).
   intros.
-  Check eval_quote.
+  (*
+    @eval_quote
+    : ∀ (V : Type) (l : Vars V) (n : Value) (V' : Type) (r : Vars V') 
+     (Quote : Quote l n r), eval (merge l r) quote = n
+   *)
+  
   Check eval_quote'.
-  rewrite <- eval_quote.
+  (* rewrite <- eval_quote. *)
+  (*
+    10, 9 のときエラーになる。
+  Error: Cannot infer the implicit parameter l of eval_quote whose type is
+  "Vars ?V" in environment:
+  x, y : nat
+  P : Value → Prop
+  *)
+  
   rewrite <- (eval_quote' _).
     (* turns the goal into
          P (eval some_variable_pack_composed_from_combinators quote)
@@ -270,7 +283,12 @@ Section inspect.
   Check @eval_quote False novars 0 _ _ _ : eval (merge novars novars) quote = 0.
   Check eval_quote' 0 : eval (merge novars novars) quote = 0.
   
+  (* 10,9 のとき、未定変数が残る。 *)
+  Check @eval_quote _     _      x _ _ _ : eval (merge _      (singlevar x)) quote = x.
+  (* 8,9 のとき、値が決まる。 *)
   Check @eval_quote _     _      x _ _ _ : eval (merge (singlevar x) novars) quote = x.
+  
+
   (* ↑×とする。 *)
   Check @eval_quote False novars x _ _ _ : eval (merge novars (singlevar x)) quote = x.
   Check eval_quote' x : eval (merge novars (singlevar x)) quote = x.
@@ -279,8 +297,8 @@ Section inspect.
   (* ↑×とする。 *)
   Compute @eval_quote False novars x _ _ _.
   Compute eval_quote' x.
-
   
+
   
   Check eval_quote' y : eval (merge novars (singlevar y)) quote = y.
   Check eval_quote' (x * 0) :
@@ -293,6 +311,11 @@ Section inspect.
              (merge (merge (singlevar x) (singlevar y)) (merge novars novars))) quote =
     x * y * (x * 0).
   
+  
+  (* ひとつの _ が決まると、すべて決まる。 *)
+  Check eval_quote' _ : eval _ (quote' (x * 0)) = _.
+  (* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ *)
+
   
   (* The second occurrence of (Var (inr (inl (inl ())))) means
    the quoting has successfully noticed that it's the same
