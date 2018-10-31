@@ -70,15 +70,28 @@ Qed.
 (* Some simple combinators for variable packs : *)
 
 Definition novars : Vars False := False_rect _.
+Variable paradox : False.
+Check novars paradox : nat.
+Compute novars.
+Compute novars paradox.                     (* nat 型の void を返す。 *)
+
 Definition singlevar (x : Value) : Vars unit := fun _ => x.
+Check singlevar 0 tt : nat.
+Compute singlevar 0.
+Compute singlevar 0 tt.                     (* 0 : nat *)
+
 Definition merge {A B} (a : Vars A) (b : Vars B) : Vars (A + B) :=
   fun i => match i with
            | inl j => a j
            | inr j => b j
            end.
+Check merge (singlevar 0) novars : Vars (() + False). (* () = unit *)
+Compute merge novars (singlevar 0).
+Compute merge novars (singlevar 0) (inl paradox). (* void *)
+Compute merge novars (singlevar 0) (inr tt).      (* 0 *)
 
 Section Lookup.
-
+  (* Given a heap and value, Lookup instances give the value's index in the heap: *)
   Class Lookup {A} (x : Value) (f : Vars A) :=
     {
       lookup : A;
@@ -88,6 +101,10 @@ Section Lookup.
   Global Implicit Arguments lookup [[A] [Lookup]].
 
   Context (x : Value) {A B} (va : Vars A) (vb : Vars B).
+
+  (* If the heap is a merge of two heaps and we can find the value's
+  index in the left heap, we can access it by indexing the merged
+  heap: *)
 
   Global Instance lookup_left `{!Lookup x va} : Lookup x (merge va vb) :=
     {
@@ -107,12 +124,51 @@ Section Lookup.
 
   (* If the heap is just a singlevar, we can easily index it. *)
   
-  Global Program Instance : Lookup x (singlevar x) :=
+  Global Program Instance lookup_single : Lookup x (singlevar x) :=
     {
       lookup := tt
     }.
-
+  
 End Lookup.
+
+Check novars      : Vars False.
+Check singlevar 0 : Vars unit.
+Check merge novars (singlevar 0) : Vars (False + unit).
+  
+Check lookup 0 novars.
+Check @lookup False  0 novars _.
+  
+Check lookup 0 (singlevar 0).
+Check @lookup unit 0 (singlevar 0) (lookup_single 0).
+  
+Check lookup 0 (merge novars (singlevar 0)) : False + unit.
+Check @lookup_right 0 False unit novars  (singlevar 0) (lookup_single 0).
+Check @lookup (False + unit) 0 (merge novars (singlevar 0)).
+(* : Lookup 0 (merge novars (singlevar 0)) → False + () *)
+Check @lookup (False + unit) 0 (merge novars (singlevar 0))
+      (@lookup_right 0 False unit novars  (singlevar 0) (lookup_single 0)).
+
+Check lookup_correct : novars (lookup 0 novars) = 0.
+Check lookup_correct : singlevar 0 (lookup 0 (singlevar 0)) = 0.
+Check lookup_correct : singlevar 0 (lookup 0 (singlevar 0)) = 0.
+
+Check @lookup_correct False 0 novars _ : novars (lookup 0 novars) = 0.
+Check @lookup_correct unit 0 (singlevar 0) (lookup_single 0) :
+  singlevar 0 (lookup 0 (singlevar 0)) = 0.
+
+Check @lookup_right 0 False unit novars (singlevar 0) (lookup_single 0).
+(*
+  ∀ Lookup : Lookup 0 (merge novars (singlevar 0)),
+  merge novars (singlevar 0)
+  (lookup 0 (merge novars (singlevar 0)))
+  = 0
+*)
+Check @lookup_correct (False + unit) 0 (merge novars (singlevar 0))
+      (@lookup_right 0 False unit novars (singlevar 0) (lookup_single 0)) :
+  merge novars (singlevar 0) (lookup 0 (merge novars (singlevar 0))) = 0.
+
+
+
 
 
 Definition map_var {V W : Type} (f : V → W) : Expr V → Expr W :=
@@ -313,9 +369,28 @@ Section inspect.
   
   
   (* ひとつの _ が決まると、すべて決まる。 *)
-  Check eval_quote' _ : eval _ (quote' (x * 0)) = _.
-  (* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ *)
+  Check eval_quote' _ : eval _ (quote' _) = _.
+  Check @eval_quote _ _ _ _ _ _ : eval _ (@quote _ _ _ _ _ _) = _.
 
+
+  (* みっつのバリエーション *)
+  Check eval_quote' x : eval _ (quote' x) = x.
+  (* 
+     eval_quote' x : eval (merge novars (singlevar x)) (quote' x) = x
+     : eval (merge novars (singlevar x)) (quote' x) = x
+   *)
+  Check @eval_quote _ _ x _ _ _ : eval _ (@quote _ _ x _ _ _) = x.
+  (* 
+     8,9 のとき、
+     eval_quote : eval (merge (singlevar x) novars) quote = x
+     : eval (merge (singlevar x) novars) quote = x
+
+     10,9 のとき、
+     eval_quote : eval (merge ?l (singlevar x)) quote = x
+     : eval (merge ?l (singlevar x)) quote = x
+   *)
+  (* @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ *)
+  
   
   (* The second occurrence of (Var (inr (inl (inl ())))) means
    the quoting has successfully noticed that it's the same
