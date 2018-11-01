@@ -90,6 +90,7 @@ Compute merge novars (singlevar 0).
 Compute merge novars (singlevar 0) (inl paradox). (* void *)
 Compute merge novars (singlevar 0) (inr tt).      (* 0 *)
 
+
 Section Lookup.
   (* Given a heap and value, Lookup instances give the value's index in the heap: *)
   Class Lookup {A} (x : Value) (f : Vars A) :=
@@ -111,8 +112,18 @@ Section Lookup.
       lookup := inl (lookup x va)
     }.
   Proof.
-    apply lookup_correct.
+    simpl.
+    Check @lookup_correct A x va Lookup0.
+    apply (@lookup_correct _ x _ _).
   Defined.
+
+  (*                                   f             lookup              = x *)
+  Goal forall (Lookup0 : Lookup x va), (merge va vb) (inl (lookup x va)) = x.
+  Proof.
+    intros.
+    simpl.
+    apply lookup_correct.
+  Qed.
   
   Global Instance lookup_right `{!Lookup x vb} : Lookup x (merge va vb) :=
     {
@@ -135,11 +146,14 @@ Check novars      : Vars False.
 Check singlevar 0 : Vars unit.
 Check merge novars (singlevar 0) : Vars (False + unit).
   
+
 Check lookup 0 novars.
 Check @lookup False  0 novars _.
-  
+Compute lookup 0 novars.                    (* void *)
+
 Check lookup 0 (singlevar 0).
 Check @lookup unit 0 (singlevar 0) (lookup_single 0).
+Compute lookup 0 (singlevar 0).             (* tt *)
   
 Check lookup 0 (merge novars (singlevar 0)) : False + unit.
 Check @lookup_right 0 False unit novars  (singlevar 0) (lookup_single 0).
@@ -147,10 +161,54 @@ Check @lookup (False + unit) 0 (merge novars (singlevar 0)).
 (* : Lookup 0 (merge novars (singlevar 0)) → False + () *)
 Check @lookup (False + unit) 0 (merge novars (singlevar 0))
       (@lookup_right 0 False unit novars  (singlevar 0) (lookup_single 0)).
+Compute lookup 0 (merge novars (singlevar 0)). (* inr tt *)
+
+Check lookup 0 (merge (singlevar 0) (singlevar 0)) : unit + unit.
+Compute lookup 0 (merge (singlevar 0) (singlevar 0)). (* inr tt *)
+
+Check lookup 0 (merge (singlevar 0) (singlevar 1)) : unit + unit.
+Compute lookup 0 (merge (singlevar 0) (singlevar 1)). (* inl tt *)
+
+Check lookup 0 (merge (singlevar 1) (singlevar 1)) : unit + unit.
+Compute lookup 0 (merge (singlevar 1) (singlevar 1)). (* void *)
+
+Check lookup 0 (merge novars (merge (singlevar 0) (singlevar 0))) : False + (unit + unit).
+Compute lookup 0 (merge novars (merge (singlevar 0) (singlevar 0))). (* inr (inr tt) *)
+
+Check lookup 0 (merge novars (merge (singlevar 0) (singlevar 1))) : False + (unit + unit).
+Compute lookup 0 (merge novars (merge (singlevar 0) (singlevar 1))). (* inr (inl tt) *)
+
+Check lookup 0 (merge novars (merge (singlevar 1) (singlevar 1))) : False + (unit + unit).
+Compute lookup 0 (merge novars (merge (singlevar 1) (singlevar 1))). (* void *)
+
+Section Test.
+Variable x y : Value.
+Compute lookup x (merge novars (merge (singlevar 1) (singlevar 1))). (* void *)
+Compute lookup x (merge novars (merge (singlevar 1) (singlevar x))). (* inr (inr ()) *)
+
+Compute Lookup 1 (merge novars (merge (singlevar 1) (singlevar 1))).
+Compute Lookup x (merge novars (merge (singlevar 1) (singlevar x))).
+
+Check Lookup x
+      (λ x0 : False + (() + ()), match x0 with
+                                  | inl x => match x return nat with
+                                             end
+                                  | inr (inl _) => 1
+                                  | inr (inr _) => x
+                                  end).
+
 
 Check lookup_correct : novars (lookup 0 novars) = 0.
 Check lookup_correct : singlevar 0 (lookup 0 (singlevar 0)) = 0.
-Check lookup_correct : singlevar 0 (lookup 0 (singlevar 0)) = 0.
+Check lookup_correct :
+  merge novars (singlevar 0) (lookup 0 (merge novars (singlevar 0))) = 0.
+
+Check lookup_correct :
+  merge novars (merge (singlevar 1) (singlevar x))
+        (lookup x (merge novars (merge (singlevar 1) (singlevar x)))) = x.
+Compute (lookup x (merge novars (merge (singlevar 1) (singlevar x)))). (* inr (inr ()) *)
+End Test.
+
 
 Check @lookup_correct False 0 novars _ : novars (lookup 0 novars) = 0.
 Check @lookup_correct unit 0 (singlevar 0) (lookup_single 0) :
@@ -196,7 +254,7 @@ Section Quote.
   Class Quote {V} (l : Vars V) (n : Value) {V'} (r : Vars V') :=
     {
       quote : Expr (V + V');
-      eval_quote : @eval (V+V') (merge l r) quote = n
+      eval_quote : @eval (V + V') (merge l r) quote = n
     }.
   
   Implicit Arguments quote [[V] [l] [V'] [r] [Quote]].
