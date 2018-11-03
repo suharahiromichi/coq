@@ -78,7 +78,7 @@ Section Lookup.
    index in the left heap, we can access it by indexing the merged
    heap : *)
   
-  Global Instance lookup_left `{!Lookup x va} : Lookup x (merge va vb) :=
+  Global Instance lookup_left `{!Lookup x va} : Lookup x (merge va vb) | 2 :=
     {
       lookup := inl (lookup x va)
     }.
@@ -88,7 +88,7 @@ Section Lookup.
   
   (* And vice-versa : *)
 
-  Global Instance lookup_right `{!Lookup x vb} : Lookup x (merge va vb) :=
+  Global Instance lookup_right `{!Lookup x vb} : Lookup x (merge va vb) | 1 :=
     {
       lookup := inr (lookup x vb)
     }.
@@ -98,16 +98,89 @@ Section Lookup.
   
   (* If the heap is just a singlevar, we can easily index it. *)
 
+  (* 
   Global Program Instance : Lookup x (singlevar x) :=
+  { lookup := tt }.
+   *)
+  Global Instance lookup_single : Lookup x (singlevar x) :=
     {
       lookup := tt
     }.
+  Proof.
+    unfold singlevar.
+    reflexivity.
+  Defined.
   
   (* Note that we don't have any fallback/default instances at this
   point. We /will/ introduce such an instance for our Quote class
   later on, which will add a new variable to the heap if another Quote
   instance that relies on Lookup into the "current" heap fails. *)
 End Lookup.
+
+(* 追加 *)
+Section Test.
+  (* lookup x f は、f k = x なる k を求める関数である。 *)
+  
+  Variables x y :Value.
+  
+  Definition f0 := merge (singlevar x) novars.
+  Compute f0 (inl tt).                      (* x *)
+  Compute lookup x f0.                      (* inl tt *)
+  (* inl tt *)
+  Check @lookup_left x                      (* Value *)
+        unit False                          (* Type *)
+        (singlevar x) novars                (* Vars _ *)
+        (lookup_single x).                  (* Lookup _ _ *)
+  Compute @lookup (unit + False) x f0
+          (@lookup_left x                    (* Value *)
+                        unit False           (* Type *)
+                        (singlevar x) novars (* Vars _ *)
+                        (lookup_single x)).  (* Lookup _ _ *)
+  
+  
+  Definition f1 := merge (merge (singlevar x) (singlevar y)) (merge (singlevar x) novars).
+  Compute f1 (inr (inl tt)) .               (* x *)
+  Compute f1 (inl (inl tt)) .               (* x *)
+  
+  Compute lookup x f1.                      (* inl (inl tt) 優先順位 l , r のとき。 *)
+  Compute lookup x f1.                      (* inr (inl tt) 優先順位 r , l のとき。 *)
+  Compute @lookup ((unit + unit) + (unit + False)) x f1
+          _.
+  
+  (* 第6引数まで指定すると、有線順位の影響を受けなくなる。 *)
+  (* inl (inl tt) *)
+  Check @lookup_left x
+        (unit + unit) (unit + False)
+        (merge (singlevar x) (singlevar y)) (merge (singlevar x) novars)
+        (@lookup_left x                           (* Value *)
+                      unit unit                   (* Type *)
+                      (singlevar x) (singlevar y) (* Vars _ *)
+                      (lookup_single x)).         (* Lookup _ _ *)
+  Compute @lookup ((unit + unit) + (unit + False)) x f1
+          (@lookup_left x
+                        (unit + unit) (unit + False)
+                        (merge (singlevar x) (singlevar y)) (merge (singlevar x) novars)
+                        (@lookup_left x         (* Value *)
+                                      unit unit (* Type *)
+                                      (singlevar x) (singlevar y) (* Vars _ *)
+                                      (lookup_single x))). (* Lookup _ _ *)
+  (* inr (inl tt) *)
+  Check @lookup_right x
+        (unit + unit) (unit + False)
+        (merge (singlevar x) (singlevar y)) (merge (singlevar x) novars)
+        (@lookup_left x                     (* Value *)
+                      unit False            (* Type *)
+                      (singlevar x) novars  (* Vars _ *)
+                      (lookup_single x)).   (* Lookup _ _ *)
+  Compute @lookup ((unit + unit) + (unit + False)) x f1
+          (@lookup_right x
+                         (unit + unit) (unit + False)
+                         (merge (singlevar x) (singlevar y)) (merge (singlevar x) novars)
+                         (@lookup_left x          (* Value *)
+                                       unit False (* Type *)
+                                       (singlevar x) novars (* Vars _ *)
+                                       (lookup_single x))). (* Lookup _ _ *)
+End Test.
 
 (* One useful operation we need before we get to Quote relates to
  variables and expression evaluation. As its name suggests, map_var
