@@ -55,7 +55,10 @@ Qed.
 Definition novars : Vars False := False_rect _.
 Definition singlevar (x : Value) : Vars unit := fun _ => x.
 Definition merge {A B} (a : Vars A) (b : Vars B) : Vars (A + B) :=
-  fun i => match i with inl j => a j | inr j => b j end.
+  fun i => match i with
+           | inl j => a j
+           | inr j => b j
+           end.
 
 (* These last two combinators are the "constructors" of an implicitly defined subset of
  Gallina terms (representing Claudio's "heaps") for which we implement syntactic
@@ -99,8 +102,8 @@ Section Lookup.
   (* If the heap is just a singlevar, we can easily index it. *)
 
   (* 
-  Global Program Instance : Lookup x (singlevar x) :=
-  { lookup := tt }.
+  Global Program Instance : Lookup x (singlevar x) := { lookup := tt }.
+  説明のため、名前をつける。
    *)
   Global Instance lookup_single : Lookup x (singlevar x) :=
     {
@@ -119,8 +122,9 @@ End Lookup.
 
 (* 追加 *)
 Section Test.
-  (* lookup x f は、f k = x なる k を求める関数である。 *)
-  
+  (*
+    f k = x のとき、lookup x f = k 
+   *)
   Variables x y :Value.
   
   Definition f0 := merge (singlevar x) novars.
@@ -138,7 +142,9 @@ Section Test.
                         (lookup_single x)).  (* Lookup _ _ *)
   
   
-  Definition f1 := merge (merge (singlevar x) (singlevar y)) (merge (singlevar x) novars).
+  Definition f1 := merge
+                     (merge (singlevar x) (singlevar y))
+                     (merge (singlevar x) novars).
   Compute f1 (inr (inl tt)) .               (* x *)
   Compute f1 (inl (inl tt)) .               (* x *)
   
@@ -317,9 +323,71 @@ Admitted.
 
 (* We can also inspect quotations more directly : *)
 
+Section Test2.
+  Check eval.
+
+  (* 
+     eval vars expr = value のとき、 quote' value vars = expr
+   *)
+  Variables x y : Value.
+  
+  Check eval
+        (merge novars
+               (merge
+                  (merge (singlevar x) (singlevar y))
+                  (merge (singlevar x) novars)))
+        (Mult (Mult (Var (inr (inl (inl ())))) (Var (inr (inl (inr ())))))
+              (Mult (Var (inr (inl (inl ())))) Zero)).
+  Goal eval
+       (merge novars
+              (merge
+                 (merge (singlevar x) (singlevar y))
+                 (merge (singlevar x) novars)))
+       (Mult (Mult (Var (inr (inl (inl ())))) (Var (inr (inl (inr ())))))
+             (Mult (Var (inr (inl (inl ())))) Zero))
+  = ((x * y) * (x * 0)).
+  Proof.
+    simpl.
+    unfold singlevar.
+    easy.
+  Qed.
+  
+  Check @quote' ((x * y) * (x * 0))
+        ((unit + unit) + (unit + False))
+        (merge
+           (merge (singlevar x) (singlevar y))
+           (merge (singlevar x) novars))
+        _.
+  Compute @quote' ((x * y) * (x * 0))
+          ((unit + unit) + (unit + False))
+          (merge
+             (merge (singlevar x) (singlevar y))
+             (merge (singlevar x) novars))
+          _.
+  
+  Check @quote False novars ((x * y) * (x * 0))
+        ((unit + unit) + (unit + False))
+        (merge
+           (merge (singlevar x) (singlevar y))
+           (merge (singlevar x) novars))
+        _.
+  Compute @quote False novars ((x * y) * (x * 0))
+          ((unit + unit) + (unit + False))
+          (merge
+             (merge (singlevar x) (singlevar y))
+             (merge (singlevar x) novars))
+          _.
+  (* 
+     = Mult (Mult (Var (inr (inl (inl ())))) (Var (inr (inl (inr ())))))
+            (Mult (Var (inr (inl (inl ())))) Zero)
+            
+       : Expr (False + (() + () + (False + False)))
+   *)
+End Test2.
+
 Section inspect.
   Variables x y : Value.
-  (* Eval compute in quote' ((x * y) * (x * 0)). *)
+  Eval compute in quote' ((x * y) * (x * 0)).
     (* = Mult (Mult (Var (inr (inl (inl ())))) (Var (inr (inl (inr ())))))
            (Mult (Var (inr (inl (inl ())))) Zero)
        : Expr (False + (() + () + (False + False))) *)
