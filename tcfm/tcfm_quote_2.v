@@ -141,6 +141,7 @@ Section Test.
                         (singlevar x) novars (* Vars _ *)
                         (lookup_single x)).  (* Lookup _ _ *)
   
+  (* ********** *)
   
   Definition f1 := merge
                      (merge (singlevar x) (singlevar y))
@@ -323,6 +324,7 @@ Admitted.
 
 (* We can also inspect quotations more directly : *)
 
+(* 追加 *)
 Section Test2.
   Check eval.
 
@@ -330,6 +332,50 @@ Section Test2.
      eval vars expr = value のとき、 quote' value vars = expr
    *)
   Variables x y : Value.
+  
+  Check eval
+        (merge novars (singlevar x))
+        (Mult (Var (inr ())) Zero).
+  Goal eval
+       (merge novars (singlevar x))
+       (Mult (Var (inr ())) Zero)
+  = x * 0.
+  Proof.
+    simpl.
+    unfold singlevar.
+    easy.
+  Qed.
+  
+  Set Printing Implicit.
+  Check @quote' (x * 0)
+        (unit + False)
+        (merge (singlevar x) novars)
+        (@quote_mult False novars x unit (singlevar x) 0 False novars
+                     (quote_new_var False novars x)
+                     (quote_zero (False + unit)
+                                 (@merge False unit novars (singlevar x)))).
+   Compute @quote' (x * 0)
+          (unit + False)
+          (merge (singlevar x) novars)
+          _.
+
+  Check @quote
+        False novars
+        (x * 0)
+        (unit + False) (merge (singlevar x) novars)
+        _.
+  Compute @quote
+          False novars
+          (x * 0)
+          (unit + False) (merge (singlevar x) novars)
+          _.
+  (* 
+     = Mult (Var (inr (inl ()))) Zero
+     : Expr (False + (() + False))
+   *)
+  
+  
+  (* ********** *)
   
   Check eval
         (merge novars
@@ -357,7 +403,25 @@ Section Test2.
         (merge
            (merge (singlevar x) (singlevar y))
            (merge (singlevar x) novars))
-        _.
+        (@quote_mult False novars (x * y) (() + ())
+                     (@merge () () (singlevar x) (singlevar y)) (x * 0) (() + False)
+                     (@merge () False (singlevar x) novars)
+                     (@quote_mult False novars x () (singlevar x) y () (singlevar y)
+                                  (quote_new_var False novars x)
+                                  (quote_new_var (False + ())
+                                                 (@merge False () novars (singlevar x)) y))
+                     (@quote_mult (False + (() + ()))
+                                  (@merge False (() + ()) novars
+                                          (@merge () () (singlevar x) (singlevar y))) x 
+                                  () (singlevar x) 0 False novars
+                                  (quote_new_var (False + (() + ()))
+                                                 (@merge False (() + ()) novars
+                                                         (@merge () () (singlevar x) (singlevar y))) x)
+                                  (quote_zero (False + (() + ()) + ())
+                                              (@merge (False + (() + ())) ()
+                                                      (@merge False (() + ()) novars
+                                                              (@merge () () (singlevar x) (singlevar y)))
+                                                      (singlevar x))))).
   Compute @quote' ((x * y) * (x * 0))
           ((unit + unit) + (unit + False))
           (merge
