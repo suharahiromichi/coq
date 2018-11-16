@@ -154,7 +154,7 @@ Check step_example5 : (tapp (tapp idBBBB idBB) idB) ==>* idB.
 
 
 (* ################################################################# *)
-(** ProofCafe ##80 2018/09/20 *)
+(** ProofCafe ##80 2018/10/20 *)
 
 (** 話題 #1 substi_correct *)
 (**
@@ -275,6 +275,9 @@ Check beq_id_true_iff : forall x y : id, beq_id x y = true <-> x = y.
  *)   
 Check beq_id_refl : forall id : id, true = beq_id id id.
 
+(* ################################################################# *)
+(** ProofCafe ##81 2018/11/17 *)
+
 (**
 **************************************************
 型付け(typing)関係を定義する。
@@ -319,8 +322,9 @@ auto でも update が「計算」される場合がある。話題#3を参照�
 update_neq の前提の [y <> x] は成立する。Coqの変数ではなく、STLCのIdで異なるため。
 *)
 Check typing_example_1 : empty |- idB \in TArrow TBool TBool.
-Check typing_example_2 : empty |- tabs x TBool
-            (tabs y (TArrow TBool TBool) (tapp (tvar y) (tapp (tvar y) (tvar x)))) \in
+Check typing_example_2 : empty |-
+    tabs x TBool
+         (tabs y (TArrow TBool TBool) (tapp (tvar y) (tapp (tvar y) (tvar x)))) \in
     TArrow TBool (TArrow (TArrow TBool TBool) TBool).
 Check typing_example_3 : exists T,
     empty |-
@@ -329,6 +333,20 @@ Check typing_example_3 : exists T,
             (tabs z TBool
                (tapp (tvar y) (tapp (tvar x) (tvar z)))))) \in T.
 
+
+(* 新しい Map.v の版で追加された Notation *)
+Notation "m '&' { a --> x }" :=
+  (update m a x) (at level 20).
+Notation "m '&' { a --> x ; b --> y }" :=
+  (update (m & { a --> x }) b y) (at level 20).
+Notation "m '&' { a --> x ; b --> y ; c --> z }" :=
+  (update (m & { a --> x ; b --> y }) c z) (at level 20).
+Notation "m '&' { a --> x ; b --> y ; c --> z ; d --> t }" :=
+  (update (m & { a --> x ; b --> y ; c --> z }) d t) (at level 20).
+Notation "m '&' { a --> x ; b --> y ; c --> z ; d --> t ; e --> u }" :=
+  (update (m & { a --> x ; b --> y ; c --> z ; d --> t }) e u) (at level 20).
+Notation "m '&' { a --> x ; b --> y ; c --> z ; d --> t ; e --> u ; f --> v }" :=
+  (update (m & { a --> x ; b --> y ; c --> z ; d --> t ; e --> u }) f v) (at level 20).
 
 Example typing_example_2 :
   empty |-
@@ -424,8 +442,10 @@ Gamma は関数で [Gamma x = T] は [(Gamma x) = T] であり、集合で [x:T 
 また、[Gamma, x:T11] は、[Gamma ∪ {x:T11}] の意味です（どちらも集合）。
 
 Maps.v では Gamma は関数 (partical_map型) として定義されるので、
-[x : T ∈ Gamma] を [(Gamma x) = (Some T)] と記述しています。また、
+[x : T ∈ Gamma] を [(Gamma x) = (Some T)] と記述しています。
+
 [Gamma ∪ {x:T11}] は [update Gamma x T11] となります。
+（注：新しいMap.vのNotation では [Gamma & {x --> T11}] で、少し近づいています。）
 
 typing_example_1 の証明図を集合的に書く。
 [[
@@ -435,21 +455,18 @@ typing_example_1 の証明図を集合的に書く。
 ----------------------------------------- T_Abs
         φ |- λx:Bool.x : Bool->Bool
 ]]
-
-追記：
-このように文句を書いたところ、原書では Maps.v に Notation が追加されて、
-[update Gamma x T11] が [Gamma & {{x --> T11}}] と書けるようになった。
-つまり、Coq側の関数定義を集合風の表記で扱えるようになった。
-
-また、string が id に変わっているが、これは大きな影響はない。
 *)
 
 (** Gamma の定義について。Maps.v を参照 *)
 
 (** Gamma の作り方 *)
 Definition Empty  := @empty ty             : partial_map ty. (* φ *)
-Definition Gamma1 := update Empty  x TBool : partial_map ty. (* {x : Bool} *)
-Definition Gamma2 := update Gamma1 y (TArrow TBool TBool) : partial_map ty.
+
+Definition Gamma1 := Empty & {x --> TBool} : partial_map ty. (* {x : Bool} *)
+(* Definition Gamma1 := update Empty  x TBool : partial_map ty. *)
+
+Definition Gamma2 := Gamma1 & {y --> TArrow TBool TBool} : partial_map ty.
+(* Definition Gamma2 := update Gamma1 y (TArrow TBool TBool) *)
 (* Gamma1 ∪ {y : Bool -> Bool *)
 
 (** Gamma から型の取り出し型  *)
