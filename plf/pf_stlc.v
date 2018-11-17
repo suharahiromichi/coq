@@ -485,29 +485,31 @@ Check update_eq : forall (A : Type) (m : partial_map A) (x : id) (v : A),
 すぐxを取り出す [(update m x v) x]  。
 ならば、値は [v] である。 *)
 
-Goal update Empty x TBool x = Some TBool.
+(* Goal update Empty x TBool x = Some TBool. *)
+(* Goal (Empty & {x --> TBool}) x = Some TBool. *)
+Goal Gamma1 x = Some TBool.
 Proof.
   now apply update_eq.
   Undo.
   Check (update_eq ty Empty x TBool) : update Empty x TBool x = Some TBool.
   now apply (update_eq ty Empty y TBool).
-  Undo.
-  
-  (* updateを計算してしまう、という方法もある。 *)
-  unfold update, t_update. simpl. reflexivity.
 Qed.
 
-Goal update Gamma1 y (TArrow TBool TBool) y = Some (TArrow TBool TBool).
+(* Goal update Gamma1 y (TArrow TBool TBool) y = Some (TArrow TBool TBool). *)
+(* Goal (Gamma1 & {y --> (TArrow TBool TBool)}) y = Some (TArrow TBool TBool). *)
+Goal Gamma2 y = Some (TArrow TBool TBool).
 Proof.
   now apply update_eq.
   Undo.
   Check (update_eq ty Gamma1 y (TArrow TBool TBool)) :
     update Gamma1 y (TArrow TBool TBool) y = Some (TArrow TBool TBool).
   now apply (update_eq ty Gamma1 y (TArrow TBool TBool)).
-  Undo.
-  
-  (* updateを計算してしまう、という方法もある。 *)
-  unfold update, t_update. simpl. reflexivity.
+Qed.
+
+Goal Gamma2 x = Some TBool.
+Proof.
+  apply update_neq.
+  easy.
 Qed.
 
 (** updateを計算してしまう、という方法もある。 *)
