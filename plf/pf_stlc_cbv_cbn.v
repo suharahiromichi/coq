@@ -91,7 +91,6 @@ where "'[' x ':=' s ']' t" := (subst x s t).
 Reserved Notation "t1 '==>' t2" (at level 40).
 
 Module CBV.
-
 (*
 (define $beta-reduce-cbv-naive
   (match-lambda term
@@ -127,6 +126,9 @@ Inductive step : tm -> tm -> Prop :=
 
 where "t1 '==>' t2" := (step t1 t2).
 
+Notation multistep := (multi step).
+Notation "t1 '==>*' t2" := (multistep t1 t2) (at level 40).
+
 End CBV.
 
 Module CBN.
@@ -157,126 +159,14 @@ Inductive step : tm -> tm -> Prop :=
 
 where "t1 '==>' t2" := (step t1 t2).
 
-End CBN.
-
-Import CBV.
-
 Notation multistep := (multi step).
 Notation "t1 '==>*' t2" := (multistep t1 t2) (at level 40).
 
-Lemma step_example1'' :
-  (tapp idBB idB) ==> idB.
-Proof.
-  apply ST_AppAbs.                (* Notation "idBB" を展開する。 *)
-  apply v_abs.
-Qed.
+End CBN.
 
-Lemma step_example1 :
-  (tapp idBB idB) ==>* idB.
-Proof.
-  Check (multi_step step (tapp idBB idB) idB idB).
-  apply (multi_step step (tapp idBB idB) idB idB).
-  Undo 1.
-  apply multi_step with (y:=idB).
-  Undo 1.
-  eapply multi_step.
-  - apply ST_AppAbs.                (* Notation "idBB" を展開する。 *)
-    apply v_abs.
-  - simpl.
-    apply multi_refl.
-Qed.
-
-(** Example:
-
-      (\x:Bool->Bool. x) ((\x:Bool->Bool. x) (\x:Bool. x))
-            ==>* \x:Bool. x
-
-    i.e.,
-
-      (idBB (idBB idB)) ==>* idB.
-*)
-
-Lemma step_example2 :
-  (tapp idBB (tapp idBB idB)) ==>* idB.
-Proof.
-  eapply multi_step.
-  + apply ST_App2.
-    apply v_abs.
-    apply ST_AppAbs.
-    apply v_abs.
-  + eapply multi_step.
-    * apply ST_AppAbs.
-      simpl.
-      apply v_abs.
-    * simpl.
-      apply multi_refl.
-Qed.
-
-(** Example:
-
-      (\x:Bool->Bool. x) 
-         (\x:Bool. if x then false else true) 
-         true
-            ==>* false
-
-    i.e.,
-
-       (idBB notB) ttrue ==>* tfalse.
-*)
-
-Lemma step_example3 :
-  tapp (tapp idBB notB) ttrue ==>* tfalse.
-Proof.
-  eapply multi_step.
-  + apply ST_App1.
-    apply ST_AppAbs.
-    apply v_abs.
-  + eapply multi_step.
-    * apply ST_AppAbs.
-      apply v_true.
-    * simpl.
-      eapply multi_step.
-      apply ST_IfTrue.
-      apply multi_refl.
-Qed.
-
-(** Example:
-
-      (\x:Bool -> Bool. x) 
-         ((\x:Bool. if x then false else true) true)
-            ==>* false
-
-    i.e.,
-
-      idBB (notB ttrue) ==>* tfalse.
-*)
-
-Lemma step_example4 :
-  tapp idBB (tapp notB ttrue) ==>* tfalse.
-Proof.
-  eapply multi_step.
-  - apply ST_App2.
-    + apply v_abs.
-    + apply ST_AppAbs.
-      apply v_true.
-  - eapply multi_step.
-    + apply ST_App2.
-      * apply v_abs.
-      * simpl.
-        apply ST_IfTrue.
-    + eapply multi_step.
-      * apply ST_AppAbs.
-        apply v_false.
-      * apply multi_refl.
-Qed.
-
-Import CBN.
-
-Notation multistep' := (multi step).
-Notation "t1 '==>*' t2" := (multistep' t1 t2) (at level 40).
-
-(* ================================================================= *)
-(** ** Examples *)
+(* ******** *)
+(* Examples *)
+(* ******** *)
 
 (** Example:
 
@@ -287,13 +177,37 @@ Notation "t1 '==>*' t2" := (multistep' t1 t2) (at level 40).
       idBB idB ==>* idB
 *)
 
-Lemma step_example1''' :
+Import CBV.
+Lemma step_cbv_exapmle1' :
   (tapp idBB idB) ==> idB.
 Proof.
-  apply ST_AppAbs.                (* Notation "idBB" を展開する。 *)
+  apply ST_AppAbs.                  (* Notation "idBB" を展開する。 *)
+  apply v_abs.
 Qed.
 
-Lemma step_example1' :
+Lemma step_cbv_exapmle1 :
+  (tapp idBB idB) ==>* idB.
+Proof.
+  Check (multi_step step (tapp idBB idB) idB idB).
+  apply (multi_step step (tapp idBB idB) idB idB).
+  Undo 1.
+  apply multi_step with (y:=idB).
+  Undo 1.
+  eapply multi_step.
+  - apply ST_AppAbs.                (* Notation "idBB" を展開する。 *)
+    apply v_abs.
+  - simpl.
+    apply multi_refl.
+Qed.
+
+Import CBN.
+Lemma step_cbn_exapmle1' :
+  (tapp idBB idB) ==> idB.
+Proof.
+  apply ST_AppAbs.                  (* Notation "idBB" を展開する。 *)
+Qed.
+
+Lemma step_cbn_exapmle1 :
   (tapp idBB idB) ==>* idB.
 Proof.
   Check (multi_step step (tapp idBB idB) idB idB).
@@ -317,7 +231,23 @@ Qed.
       (idBB (idBB idB)) ==>* idB.
 *)
 
-Lemma step_example2' :
+Import CBV.
+Lemma step_cbv_exapmle2 :
+  (tapp idBB (tapp idBB idB)) ==>* idB.
+Proof.
+  eapply multi_step.
+  - apply ST_App2.
+    + apply v_abs.
+    + apply ST_AppAbs.
+      apply v_abs.
+  - eapply multi_step.
+    * apply ST_AppAbs.
+      apply v_abs.
+    * apply multi_refl.
+Qed.
+
+Import CBN.
+Lemma step_cbn_exapmle2 :
   (tapp idBB (tapp idBB idB)) ==>* idB.
 Proof.
   eapply multi_step.
@@ -340,7 +270,25 @@ Qed.
        (idBB notB) ttrue ==>* tfalse.
 *)
 
-Lemma step_example3' :
+Import CBV.
+Lemma step_cbv_exapmle3 :
+  tapp (tapp idBB notB) ttrue ==>* tfalse.
+Proof.
+  eapply multi_step.
+  + apply ST_App1.
+    apply ST_AppAbs.
+    apply v_abs.
+  + eapply multi_step.
+    * apply ST_AppAbs.
+      apply v_true.
+    * simpl.
+      eapply multi_step.
+      apply ST_IfTrue.
+      apply multi_refl.
+Qed.
+
+Import CBN.
+Lemma step_cbn_exapmle3 :
   tapp (tapp idBB notB) ttrue ==>* tfalse.
 Proof.
   eapply multi_step.
@@ -366,7 +314,28 @@ Qed.
       idBB (notB ttrue) ==>* tfalse.
 *)
 
-Lemma step_example4' :
+Import CBV.
+Lemma step_cbv_exapmle4 :
+  tapp idBB (tapp notB ttrue) ==>* tfalse.
+Proof.
+  eapply multi_step.
+  - apply ST_App2.
+    + apply v_abs.
+    + apply ST_AppAbs.
+      apply v_true.
+  - eapply multi_step.
+    + apply ST_App2.
+      * apply v_abs.
+      * simpl.
+        apply ST_IfTrue.
+    + eapply multi_step.
+      * apply ST_AppAbs.
+        apply v_false.
+      * apply multi_refl.
+Qed.
+
+Import CBN.
+Lemma step_cbn_exapmle4 :
   tapp idBB (tapp notB ttrue) ==>* tfalse.
 Proof.
   eapply multi_step.
@@ -380,13 +349,7 @@ Proof.
       * apply multi_refl.
 Qed.
 
-(** We can use the [normalize] tactic defined in the [Types] chapter
-    to simplify these proofs. *)
-
-
-Import CBV.
-(* Import CBN. *)
-
+(*
 Hint Constructors value.
 
 Tactic Notation "print_goal" :=
@@ -414,26 +377,7 @@ Proof. normalize.  Qed.
 Lemma step_example4' :
   tapp idBB (tapp notB ttrue) ==>* tfalse.
 Proof. normalize.  Qed.
-
-(** **** Exercise: 2 stars (step_example5)  *)
-(** Try to do this one both with and without [normalize]. *)
-
-Lemma step_example5 :
-       tapp (tapp idBBBB idBB) idB
-  ==>* idB.
-Proof.
-  (* FILL IN HERE *)
-  normalize.
-Qed.
-
-Lemma step_example5_with_normalize :
-       tapp (tapp idBBBB idBB) idB
-  ==>* idB.
-Proof.
-  (* FILL IN HERE *)
-  normalize.
-Qed.
-(** [] *)
+*)
 
 End STLC.
 
