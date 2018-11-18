@@ -92,6 +92,7 @@ Reserved Notation "t1 '==>' t2" (at level 40).
 
 Module CBV.
 (*
+http://xenophobia.hatenablog.com/entry/2013/12/02/225511
 (define $beta-reduce-cbv-naive
   (match-lambda term
     {
@@ -133,6 +134,7 @@ End CBV.
 
 Module CBN.
 (*
+http://xenophobia.hatenablog.com/entry/2013/12/02/225511
 (define $beta-reduce-cbn-naive
   (match-lambda term
     {[<app <lam $x $t1> $t2>              ((subst x t2) t1)]
@@ -181,8 +183,8 @@ Import CBV.
 Lemma step_cbv_exapmle1' :
   (tapp idBB idB) ==> idB.
 Proof.
-  apply ST_AppAbs.                  (* Notation "idBB" を展開する。 *)
-  apply v_abs.
+  apply ST_AppAbs.
+  now apply v_abs.
 Qed.
 
 Lemma step_cbv_exapmle1 :
@@ -194,17 +196,16 @@ Proof.
   apply multi_step with (y:=idB).
   Undo 1.
   eapply multi_step.
-  - apply ST_AppAbs.                (* Notation "idBB" を展開する。 *)
-    apply v_abs.
-  - simpl.
-    apply multi_refl.
+  - apply ST_AppAbs.
+    now apply v_abs.
+  - now apply multi_refl.
 Qed.
 
 Import CBN.
 Lemma step_cbn_exapmle1' :
   (tapp idBB idB) ==> idB.
 Proof.
-  apply ST_AppAbs.                  (* Notation "idBB" を展開する。 *)
+  now apply ST_AppAbs.
 Qed.
 
 Lemma step_cbn_exapmle1 :
@@ -216,9 +217,8 @@ Proof.
   apply multi_step with (y:=idB).
   Undo 1.
   eapply multi_step.
-  - apply ST_AppAbs.                (* Notation "idBB" を展開する。 *)
-  - simpl.
-    apply multi_refl.
+  - now apply ST_AppAbs.
+  - now apply multi_refl.
 Qed.
 
 (** Example:
@@ -237,13 +237,13 @@ Lemma step_cbv_exapmle2 :
 Proof.
   eapply multi_step.
   - apply ST_App2.
-    + apply v_abs.
+    + now apply v_abs.
     + apply ST_AppAbs.
-      apply v_abs.
+      now apply v_abs.
   - eapply multi_step.
     * apply ST_AppAbs.
-      apply v_abs.
-    * apply multi_refl.
+      now apply v_abs.
+    * now apply multi_refl.
 Qed.
 
 Import CBN.
@@ -251,11 +251,10 @@ Lemma step_cbn_exapmle2 :
   (tapp idBB (tapp idBB idB)) ==>* idB.
 Proof.
   eapply multi_step.
-  - apply ST_AppAbs.
+  - now apply ST_AppAbs.
   - eapply multi_step.
-    + apply ST_AppAbs.
-    + simpl.
-      apply multi_refl.
+    + now apply ST_AppAbs.
+    + now apply multi_refl.
 Qed. 
 
 (** Example:
@@ -275,16 +274,15 @@ Lemma step_cbv_exapmle3 :
   tapp (tapp idBB notB) ttrue ==>* tfalse.
 Proof.
   eapply multi_step.
-  + apply ST_App1.
+  - apply ST_App1.
     apply ST_AppAbs.
-    apply v_abs.
-  + eapply multi_step.
-    * apply ST_AppAbs.
-      apply v_true.
-    * simpl.
-      eapply multi_step.
-      apply ST_IfTrue.
-      apply multi_refl.
+    now apply v_abs.
+  - eapply multi_step.
+    + apply ST_AppAbs.
+      now apply v_true.
+    + eapply multi_step.
+      * now apply ST_IfTrue.
+      * now apply multi_refl.
 Qed.
 
 Import CBN.
@@ -293,14 +291,12 @@ Lemma step_cbn_exapmle3 :
 Proof.
   eapply multi_step.
   - apply ST_App1.
-    apply ST_AppAbs.
-  - simpl.
-    eapply multi_step.
-    + apply ST_AppAbs.
-    + simpl.
-      eapply multi_step.
-      * apply ST_IfTrue.
-      * apply multi_refl.
+    now apply ST_AppAbs.
+  - eapply multi_step.
+    + now apply ST_AppAbs.
+    + eapply multi_step.
+      * now apply ST_IfTrue.
+      * now apply multi_refl.
 Qed.
 
 (** Example:
@@ -320,18 +316,17 @@ Lemma step_cbv_exapmle4 :
 Proof.
   eapply multi_step.
   - apply ST_App2.
-    + apply v_abs.
+    + now apply v_abs.
     + apply ST_AppAbs.
-      apply v_true.
+      now apply v_true.
   - eapply multi_step.
     + apply ST_App2.
-      * apply v_abs.
-      * simpl.
-        apply ST_IfTrue.
+      * now apply v_abs.
+      * now apply ST_IfTrue.
     + eapply multi_step.
       * apply ST_AppAbs.
-        apply v_false.
-      * apply multi_refl.
+        now apply v_false.
+      * now apply multi_refl.
 Qed.
 
 Import CBN.
@@ -339,14 +334,12 @@ Lemma step_cbn_exapmle4 :
   tapp idBB (tapp notB ttrue) ==>* tfalse.
 Proof.
   eapply multi_step.
-  - apply ST_AppAbs.
+  - now apply ST_AppAbs.
   - eapply multi_step.
-    + simpl.
-      apply ST_AppAbs.
-    + simpl.
-      eapply multi_step.
-      * apply ST_IfTrue.
-      * apply multi_refl.
+    + now apply ST_AppAbs.
+    + eapply multi_step.
+      * now apply ST_IfTrue.
+      * now apply multi_refl.
 Qed.
 
 (*
