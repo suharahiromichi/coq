@@ -300,35 +300,48 @@ Proof.
       * now apply multi_refl.
 Qed.
 
-(*
 Hint Constructors value.
+Hint Constructors step.
 
 Tactic Notation "print_goal" :=
   match goal with |- ?x => idtac x end.
 
 Tactic Notation "normalize" :=
   repeat (print_goal; eapply multi_step ;
-            [ (eauto 10; fail) | (instantiate; simpl)]);
+            [ (eauto 10; fail) | (instantiate; simpl) ]);
   apply multi_refl.
 
+Lemma step_example1 :
+  (tcbv idBB idB) ==>* idB.
+Proof. normalize. Qed.
+
+Lemma step_example2 :
+  (tcbv idBB (tcbv idBB idB)) ==>* idB.
+Proof. normalize. Qed.
+
+Lemma step_example3 :
+  tcbv (tcbv idBB notB) ttrue ==>* tfalse.
+Proof. normalize.  Qed.
+
+Lemma step_example4 :
+  tcbv idBB (tcbv notB ttrue) ==>* tfalse.
+Proof. normalize.  Qed.
+
 Lemma step_example1' :
-  (tapp idBB idB) ==>* idB.
-Proof.
-  normalize.
-Qed.
+  (tcbn idBB idB) ==>* idB.
+Proof. normalize. Qed.
 
 Lemma step_example2' :
-  (tapp idBB (tapp idBB idB)) ==>* idB.
+  (tcbn idBB (tcbn idBB idB)) ==>* idB.
 Proof. normalize. Qed.
 
 Lemma step_example3' :
-  tapp (tapp idBB notB) ttrue ==>* tfalse.
+  tcbn (tcbn idBB notB) ttrue ==>* tfalse.
 Proof. normalize.  Qed.
 
 Lemma step_example4' :
-  tapp idBB (tapp notB ttrue) ==>* tfalse.
+  tcbn idBB (tcbn notB ttrue) ==>* tfalse.
 Proof. normalize.  Qed.
-*)
 
 End STLC.
 
