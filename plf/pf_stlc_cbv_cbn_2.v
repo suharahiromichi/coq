@@ -15,7 +15,8 @@ Inductive ty : Type :=
 
 Inductive tm : Type :=
   | tvar : id -> tm
-  | tapp : tm -> tm -> tm
+  | tcbv : tm -> tm -> tm                   (* tapp CBV *)
+  | tcbn : tm -> tm -> tm                   (* tapp CBN *)
   | tabs : id -> ty -> tm -> tm
   | ttrue : tm
   | tfalse : tm
@@ -76,8 +77,10 @@ Fixpoint subst (x:id) (s:tm) (t:tm) : tm :=
       if beq_id x x' then s else t
   | tabs x' T t1 =>
       tabs x' T (if beq_id x x' then t1 else ([x:=s] t1))
-  | tapp t1 t2 =>
-      tapp ([x:=s] t1) ([x:=s] t2)
+  | tcbv t1 t2 =>
+      tcbv ([x:=s] t1) ([x:=s] t2)
+  | tcbn t1 t2 =>
+      tcbn ([x:=s] t1) ([x:=s] t2)
   | ttrue =>
       ttrue
   | tfalse =>
@@ -90,33 +93,24 @@ where "'[' x ':=' s ']' t" := (subst x s t).
 
 Reserved Notation "t1 '==>' t2" (at level 40).
 
-Module CBV.
-(*
-http://xenophobia.hatenablog.com/entry/2013/12/02/225511
-(define $beta-reduce-cbv-naive
-  (match-lambda term
-    {
-     [<app <lam $x $t> (value $v)>        ((subst x v) t)] ;;;;;
-     [<app $t1 $t2>                       <App (beta-reduce-cbv-naive t1) t2>]
-     [<app (value $v) $t>                 <App v (beta-reduce-cbv-naive t)>] ;;;;;
-     [<op $ope (value $v1) (value $v2)>   ((op-reduce ope) v1 v2)]
-     [<op $ope (value $v) $t>             <Op ope v (beta-reduce-cbv-naive t)>]
-     [<op $ope $t1 $t2>                   <Op ope (beta-reduce-cbv-naive t1) t2>]
-     [$v v]
-}))
-  *)
-
 Inductive step : tm -> tm -> Prop :=
-  | ST_AppAbs : forall x T t12 v2,
+  | ST_AppAbs_CBV : forall x T t12 v2,
          value v2 ->
-         (tapp (tabs x T t12) v2) ==> [x:=v2]t12
-  | ST_App1 : forall t1 t1' t2,
+         (tcbv (tabs x T t12) v2) ==> [x:=v2]t12
+  | ST_App1_CBV : forall t1 t1' t2,
          t1 ==> t1' ->
-         tapp t1 t2 ==> tapp t1' t2
-  | ST_App2 : forall v1 t2 t2',
+         tcbv t1 t2 ==> tcbv t1' t2
+  | ST_App2_CBV : forall v1 t2 t2',
          value v1 ->
          t2 ==> t2' ->
-         tapp v1 t2 ==> tapp v1  t2'
+         tcbv v1 t2 ==> tcbv v1  t2'
+
+  | ST_AppAbs_CBN : forall x T t12 v2,
+      (tcbn (tabs x T t12) v2) ==> [x:=v2]t12
+  | ST_App1_CBN : forall t1 t1' t2,
+      t1 ==> t1' ->
+      tcbn t1 t2 ==> tcbn t1' t2
+
   | ST_IfTrue : forall t1 t2,
       (tif ttrue t1 t2) ==> t1
   | ST_IfFalse : forall t1 t2,
@@ -129,44 +123,6 @@ where "t1 '==>' t2" := (step t1 t2).
 
 Notation multistep := (multi step).
 Notation "t1 '==>*' t2" := (multistep t1 t2) (at level 40).
-
-End CBV.
-
-Module CBN.
-(*
-http://xenophobia.hatenablog.com/entry/2013/12/02/225511
-(define $beta-reduce-cbn-naive
-  (match-lambda term
-    {
-     [<app <lam $x $t1> $t2>              ((subst x t2) t1)]
-     [<app $t1 $t2>                       <App (beta-reduce-cbn-naive t1) t2>]
-     [<op $ope (value $v1) (value $v2)>   ((op-reduce ope) v1 v2)]
-     [<op $ope (value $v) $t>             <Op ope v (beta-reduce-cbn-naive t)>]
-     [<op $ope $t1 $t2>                   <Op ope (beta-reduce-cbn-naive t1) t2>]
-     [$v v]
-}))
-  *)
-
-Inductive step : tm -> tm -> Prop :=
-  | ST_AppAbs : forall x T t12 v2,
-      (tapp (tabs x T t12) v2) ==> [x:=v2]t12
-  | ST_App1 : forall t1 t1' t2,
-      t1 ==> t1' ->
-      tapp t1 t2 ==> tapp t1' t2
-  | ST_IfTrue : forall t1 t2,
-      (tif ttrue t1 t2) ==> t1
-  | ST_IfFalse : forall t1 t2,
-      (tif tfalse t1 t2) ==> t2
-  | ST_If : forall t1 t1' t2 t3,
-      t1 ==> t1' ->
-      (tif t1 t2 t3) ==> (tif t1' t2 t3)
-
-where "t1 '==>' t2" := (step t1 t2).
-
-Notation multistep := (multi step).
-Notation "t1 '==>*' t2" := (multistep t1 t2) (at level 40).
-
-End CBN.
 
 (* ******** *)
 (* Examples *)
@@ -181,45 +137,45 @@ End CBN.
       idBB idB ==>* idB
 *)
 
-Import CBV.
+(* CBV *)
 Lemma step_cbv_exapmle1' :
-  (tapp idBB idB) ==> idB.
+  (tcbv idBB idB) ==> idB.
 Proof.
-  apply ST_AppAbs.
+  apply ST_AppAbs_CBV.
   now apply v_abs.
 Qed.
 
 Lemma step_cbv_exapmle1 :
-  (tapp idBB idB) ==>* idB.
+  (tcbv idBB idB) ==>* idB.
 Proof.
-  Check (multi_step step (tapp idBB idB) idB idB).
-  apply (multi_step step (tapp idBB idB) idB idB).
+  Check (multi_step step (tcbv idBB idB) idB idB).
+  apply (multi_step step (tcbv idBB idB) idB idB).
   Undo 1.
   apply multi_step with (y:=idB).
   Undo 1.
   eapply multi_step.
-  - apply ST_AppAbs.
+  - apply ST_AppAbs_CBV.
     now apply v_abs.
   - now apply multi_refl.
 Qed.
 
-Import CBN.
+(* CBN *)
 Lemma step_cbn_exapmle1' :
-  (tapp idBB idB) ==> idB.
+  (tcbn idBB idB) ==> idB.
 Proof.
-  now apply ST_AppAbs.
+  now apply ST_AppAbs_CBN.
 Qed.
 
 Lemma step_cbn_exapmle1 :
-  (tapp idBB idB) ==>* idB.
+  (tcbn idBB idB) ==>* idB.
 Proof.
-  Check (multi_step step (tapp idBB idB) idB idB).
-  apply (multi_step step (tapp idBB idB) idB idB).
+  Check (multi_step step (tcbn idBB idB) idB idB).
+  apply (multi_step step (tcbn idBB idB) idB idB).
   Undo 1.
   apply multi_step with (y:=idB).
   Undo 1.
   eapply multi_step.
-  - now apply ST_AppAbs.
+  - now apply ST_AppAbs_CBN.
   - now apply multi_refl.
 Qed.
 
@@ -233,31 +189,31 @@ Qed.
       (idBB (idBB idB)) ==>* idB.
 *)
 
-Import CBV.
+(* CBV *)
 Lemma step_cbv_exapmle2 :
-  (tapp idBB (tapp idBB idB)) ==>* idB.
+  (tcbv idBB (tcbv idBB idB)) ==>* idB.
 Proof.
   eapply multi_step.
-  - apply ST_App2.
+  - apply ST_App2_CBV.
     + now apply v_abs.
-    + apply ST_AppAbs.
+    + apply ST_AppAbs_CBV.
       now apply v_abs.
   - eapply multi_step.
-    * apply ST_AppAbs.
+    * apply ST_AppAbs_CBV.
       now apply v_abs.
     * now apply multi_refl.
 Qed.
 
-Import CBN.
+(* CBN *)
 Lemma step_cbn_exapmle2 :
-  (tapp idBB (tapp idBB idB)) ==>* idB.
+  (tcbn idBB (tcbn idBB idB)) ==>* idB.
 Proof.
   eapply multi_step.
-  - now apply ST_AppAbs.
+  - now apply ST_AppAbs_CBN.
   - eapply multi_step.
-    + now apply ST_AppAbs.
+    + now apply ST_AppAbs_CBN.
     + now apply multi_refl.
-Qed. 
+Qed.
 
 (** Example:
 
@@ -271,31 +227,31 @@ Qed.
        (idBB notB) ttrue ==>* tfalse.
 *)
 
-Import CBV.
+(* CBV *)
 Lemma step_cbv_exapmle3 :
-  tapp (tapp idBB notB) ttrue ==>* tfalse.
+  tcbv (tcbv idBB notB) ttrue ==>* tfalse.
 Proof.
   eapply multi_step.
-  - apply ST_App1.
-    apply ST_AppAbs.
+  - apply ST_App1_CBV.
+    apply ST_AppAbs_CBV.
     now apply v_abs.
   - eapply multi_step.
-    + apply ST_AppAbs.
+    + apply ST_AppAbs_CBV.
       now apply v_true.
     + eapply multi_step.
       * now apply ST_IfTrue.
       * now apply multi_refl.
 Qed.
 
-Import CBN.
+(* CBN *)
 Lemma step_cbn_exapmle3 :
-  tapp (tapp idBB notB) ttrue ==>* tfalse.
+  tcbn (tcbn idBB notB) ttrue ==>* tfalse.
 Proof.
   eapply multi_step.
-  - apply ST_App1.
-    now apply ST_AppAbs.
+  - apply ST_App1_CBN.
+    now apply ST_AppAbs_CBN.
   - eapply multi_step.
-    + now apply ST_AppAbs.
+    + now apply ST_AppAbs_CBN.
     + eapply multi_step.
       * now apply ST_IfTrue.
       * now apply multi_refl.
@@ -312,33 +268,33 @@ Qed.
       idBB (notB ttrue) ==>* tfalse.
 *)
 
-Import CBV.
+(* CBV *)
 Lemma step_cbv_exapmle4 :
-  tapp idBB (tapp notB ttrue) ==>* tfalse.
+  tcbv idBB (tcbv notB ttrue) ==>* tfalse.
 Proof.
   eapply multi_step.
-  - apply ST_App2.
+  - apply ST_App2_CBV.
     + now apply v_abs.
-    + apply ST_AppAbs.
+    + apply ST_AppAbs_CBV.
       now apply v_true.
   - eapply multi_step.
-    + apply ST_App2.
+    + apply ST_App2_CBV.
       * now apply v_abs.
       * now apply ST_IfTrue.
     + eapply multi_step.
-      * apply ST_AppAbs.
+      * apply ST_AppAbs_CBV.
         now apply v_false.
       * now apply multi_refl.
 Qed.
 
-Import CBN.
+(* CBN *)
 Lemma step_cbn_exapmle4 :
-  tapp idBB (tapp notB ttrue) ==>* tfalse.
+  tcbn idBB (tcbn notB ttrue) ==>* tfalse.
 Proof.
   eapply multi_step.
-  - now apply ST_AppAbs.
+  - now apply ST_AppAbs_CBN.
   - eapply multi_step.
-    + now apply ST_AppAbs.
+    + now apply ST_AppAbs_CBN.
     + eapply multi_step.
       * now apply ST_IfTrue.
       * now apply multi_refl.
