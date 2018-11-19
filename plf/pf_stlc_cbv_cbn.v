@@ -64,8 +64,6 @@ Inductive value : tm -> Prop :=
   | v_false :
       value tfalse.
 
-(* Hint Constructors value. *)
-
 (** ** Substitution *)
 
 Reserved Notation "'[' x ':=' s ']' t" (at level 20).
@@ -137,12 +135,14 @@ Module CBN.
 http://xenophobia.hatenablog.com/entry/2013/12/02/225511
 (define $beta-reduce-cbn-naive
   (match-lambda term
-    {[<app <lam $x $t1> $t2>              ((subst x t2) t1)]
+    {
+     [<app <lam $x $t1> $t2>              ((subst x t2) t1)]
      [<app $t1 $t2>                       <App (beta-reduce-cbn-naive t1) t2>]
      [<op $ope (value $v1) (value $v2)>   ((op-reduce ope) v1 v2)]
      [<op $ope (value $v) $t>             <Op ope v (beta-reduce-cbn-naive t)>]
      [<op $ope $t1 $t2>                   <Op ope (beta-reduce-cbn-naive t1) t2>]
-      [$v v]}))
+     [$v v]
+}))
   *)
 
 Inductive step : tm -> tm -> Prop :=
@@ -342,15 +342,18 @@ Proof.
       * now apply multi_refl.
 Qed.
 
-(*
+Import CBV.
+(* Import CBN. *)
+
 Hint Constructors value.
+Hint Constructors step.
 
 Tactic Notation "print_goal" :=
   match goal with |- ?x => idtac x end.
 
 Tactic Notation "normalize" :=
   repeat (print_goal; eapply multi_step ;
-            [ (eauto 10; fail) | (instantiate; simpl)]);
+            [ (eauto 10; fail) | (instantiate; simpl) ]);
   apply multi_refl.
 
 Lemma step_example1' :
@@ -370,7 +373,6 @@ Proof. normalize.  Qed.
 Lemma step_example4' :
   tapp idBB (tapp notB ttrue) ==>* tfalse.
 Proof. normalize.  Qed.
-*)
 
 End STLC.
 
