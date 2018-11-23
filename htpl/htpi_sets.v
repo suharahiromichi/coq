@@ -91,10 +91,11 @@ Section Sets.
   Qed.
   
   (* 集合演算を論理式に変換する補題 *)
+  (* Vanilla Coqだと、「<->」 の扱いが面倒だが。 *)
   
-  Lemma l_nn P Q : (P <-> Q) -> (~ P <-> ~ Q).
+  Lemma l_nn P Q : (P <-> Q) <-> (~ P <-> ~ Q).
   Proof.
-    (* split. *)
+    split.
     - intros H.
       split.
       + intro HnP.
@@ -105,7 +106,6 @@ Section Sets.
         intro HP.
         apply HnQ.
         now apply H.
-(*
     - intros H.
       split.
       + intros HP.
@@ -116,7 +116,6 @@ Section Sets.
         apply NNPP.
         intro HnP.
         now apply H in HnP.
-*)
   Qed.
   
   Lemma l_union A B : forall a, a ∈ A ∪ B <-> a ∈ A \/ a ∈ B.
@@ -134,7 +133,9 @@ Section Sets.
   Lemma ln_union A B : forall a, ~ a ∈ A ∪ B <-> ~ (a ∈ A \/ a ∈ B).
   Proof.
     intros a.
-    apply l_nn.
+    assert ((a ∈ A ∪ B <-> a ∈ A \/ a ∈ B) <->
+            (~ a ∈ A ∪ B <-> ~ (a ∈ A \/ a ∈ B))) as Hnn by apply l_nn.
+    apply Hnn.
     now apply l_union.
   Qed.
   
@@ -151,7 +152,9 @@ Section Sets.
   Lemma ln_inter A B : forall a, ~ a ∈ A ∩ B <-> ~ (a ∈ A /\ a ∈ B).
   Proof.
     intros a.
-    apply l_nn.
+    assert ((a ∈ A ∩ B <-> a ∈ A /\ a ∈ B) <->
+            (~ a ∈ A ∩ B <-> ~ (a ∈ A /\ a ∈ B))) as Hnn by apply l_nn.
+    apply Hnn.
     now apply l_inter.
   Qed.
   
@@ -164,26 +167,31 @@ Section Sets.
       now split.
   Qed.
 
-  Lemma l_subs' A B : forall a, a ∈ A \ B -> a ∈ A /\ ~ a ∈ B.
-  Proof.
-    intros a.
-    intros [HaA HnaB].
-    now split.
-  Qed.
-  
   Lemma ln_subs A B : forall a, ~ a ∈ A \ B <-> ~ (a ∈ A /\ ~ a ∈ B).
   Proof.
     intros a.
-    apply l_nn.
+    assert ((a ∈ A \ B <-> a ∈ A /\ ~ a ∈ B) <->
+            (~ a ∈ A \ B <-> ~ (a ∈ A /\ ~ a ∈ B))) as Hnn by apply l_nn.
+    apply Hnn.
     now apply l_subs.
   Qed.
   
-  Ltac seteq := apply Extensionality_Ensembles; unfold Same_set; split.
+  Lemma l_seteq A B : (A ⊆ B /\ B ⊆ A) <-> A = B.
+  Proof.
+    split.
+    - intros [HAB HBA].
+      apply Extensionality_Ensembles.
+      unfold Same_set.
+      now split.
+    - intro H.
+      now rewrite H.
+  Qed.
   
   (* l_union を使うことで、apply Union_introl などを直接使う必要はなくなる。 *)
   Lemma union_id A : A ∪ A = A.
   Proof.
-    seteq.
+    apply l_seteq.
+    split.
     - intros x HAA.
       apply l_union in HAA.
       now destruct HAA.
@@ -195,7 +203,7 @@ Section Sets.
   Lemma ex3_2_1' A B C : forall a, A ∩ C ⊆ B /\ a ∈ C -> ~ a ∈ A \ B.
   Proof.
     intros a [HAC HaC].
-    specialize (HAC a).                     (* !!!! *)
+    specialize (HAC a).
     apply ln_subs.
     intro H.
     destruct H as [HaA HnaB].
@@ -208,8 +216,9 @@ Section Sets.
   Lemma ex3_2_3' A B C : A \ B ⊆ C -> forall x, x ∈ A \ C -> x ∈ B.
   Proof.
     intros HABC x HxAC.
-    specialize (HABC x).                    (* !!!! *)
-    apply l_subs' in HxAC.
+    specialize (HABC x).
+    assert (x ∈ A \ C -> x ∈ A /\ ~ x ∈ C) by apply l_subs.
+    apply H in HxAC ; clear H.
     destruct HxAC as [HxA HnxC].
     apply NNPP.
     intros HnxB.
