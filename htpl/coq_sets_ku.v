@@ -167,7 +167,7 @@ Section SetTheory.
     unionf_intro : forall x : U, (exists n : K, x ∈ X n) -> x ∈ UnionF X.
   
   Inductive InterF (X : Fam) : Shugo :=
-    interf_intro : forall x : U, (exists n : K, x ∈ X n) -> x ∈ InterF X.
+    interf_intro : forall x : U, (forall n : K, x ∈ X n) -> x ∈ InterF X.
   
   Lemma mem_unionf F : forall n, F n ⊆ UnionF F.
   Proof.
@@ -176,11 +176,12 @@ Section SetTheory.
     now exists n.
   Qed.
   
-  Lemma mem_interf F : forall n, F n ⊆ InterF F.
+  Lemma mem_interf F : forall n, InterF F ⊆ F n.
   Proof.
-    intros n x HxFn.
-    apply interf_intro.
-    now exists n.
+    intros n x HIF.
+    destruct HIF as [x HIF].
+    specialize (HIF n).
+    easy.
   Qed.
   
   Lemma unionf_inc F G : (forall n, F n ⊆ G n) -> UnionF F ⊆ UnionF G.
@@ -195,10 +196,13 @@ Section SetTheory.
   Lemma interf_inc F G : (forall n, F n ⊆ G n) -> InterF F ⊆ InterF G.
   Proof.
     intros HFG x H.
-    destruct H as [x [n H]].
+    unfold Included in HFG.
+    destruct H as [x H].
     apply interf_intro.
-    exists n.
-    now apply (HFG n).
+    intros n.
+    specialize (HFG n x).
+    specialize (H n).    
+    now apply HFG.
   Qed.
 
 End SetTheory.
