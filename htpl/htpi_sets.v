@@ -246,12 +246,12 @@ Section Sets.
     Example 3.3.1. Suppose A, B, and C are sets, and A \ B ⊆ C.
     Prove that A \ C ⊆ B.
    *)
-
+  
   (*
     Example 3.3.2. Suppose A and B are sets.
     Prove that if A ∩ B = A then A ⊆ B.
    *)
-
+  
   (* 集合族 *)
 
   Variable K : Type.
@@ -260,41 +260,72 @@ Section Sets.
   Inductive UnionF (F : Fam) : Shugo :=
     unionf_intro : forall x : U, (exists n : K, x ∈ F n) -> x ∈ UnionF F.
   
+  Inductive InterF (X : Fam) : Shugo :=
+    interf_intro : forall x : U, (forall n : K, x ∈ X n) -> x ∈ InterF X.
+  
   (* Definition InF (F : Fam) (x : U) : Prop := exists n, x ∈ F n. *)
   Definition InF (F : Fam) (A : Shugo) : Prop := exists n, F n = A.
 
   (*
-    Example 3.3.4. Suppose F and G are families of sets and F ∩ G ≠ ∅.
+    Example 3.3.4. Suppose F and G are families of sets and F ∩ G ≠ ø.
     Prove that ∩F ⊆ ∪G.
    *)
   
+  Lemma ex_3_3_4 F G : (exists n, F n = G n) -> InterF F ⊆ UnionF G.
+  Proof.
+    intros HFG x H.
+    destruct HFG as [n HFG].
+    destruct H.
+    specialize (H n).
+    apply unionf_intro.
+    exists n.
+    now rewrite <- HFG.
+  Qed.
+  
   (*
-    Example 3.3.5. Suppose B is a set and F is a family of sets. Prove that if
-    ∪F ⊆ B then F ⊆ P (B).
+    Example 3.3.5. Suppose B is a set and F is a family of sets.
+    Prove that if ∪F ⊆ B then F ⊆ Power(B).
+    
+    Power(B) はBの冪集合で、部分集合の全体である。
+    
+    F ⊆ Power(B)
+    <->
+    ∀x(x ∈ F → x ∈ Power(B)) ........... xはBの部分集合である。
+    <->
+    ∀x(x ∈ F → ∀y(y ∈ x -> y ∈ B))
    *)
   
   (*
     Givens
     ∪F ⊆ B
-    x ∈ F
+    x ∈ F ....... x は 集合族Fの適当な要素 ∃n(x = F n)
     y ∈ x
-
-  Goal
-    y∈ B
+    
+    Goal
+    y ∈ B
    *)
-  
+
   Lemma ex_3_3_5 : forall (F : Fam) (B x : Shugo) (y : U),
       UnionF F ⊆ B -> InF F x -> y ∈ x -> y ∈ B.
   Proof.
     intros F B x y Hun Hin Hyn.
     specialize (Hun y).
     apply Hun.
-    destruct Hin as [n Hin].
+    (*
+      Givens
+      ∪F ⊆ B
+      x ∈ F
+      y ∈ x
+      
+      Goal
+      y ∈ ∪F
+     *)
     apply unionf_intro.
+    destruct Hin as [n Hin].
     exists n.
     now rewrite Hin.
   Qed.
-
+  
   (*
     Example 3.4.1. Suppose A ⊆ B, and A and C are disjoint.
     Prove that A ⊆ B \ C.
