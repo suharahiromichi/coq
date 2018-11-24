@@ -265,20 +265,20 @@ Section Sets.
   
   (* Definition InF (F : Fam) (x : U) : Prop := exists n, x ∈ F n. *)
   Definition InF (F : Fam) (A : Shugo) : Prop := exists n, F n = A.
-
+  
   (*
     Example 3.3.4. Suppose F and G are families of sets and F ∩ G ≠ ø.
     Prove that ∩F ⊆ ∪G.
    *)
   
-  Lemma ex_3_3_4 F G : (exists n, F n = G n) -> InterF F ⊆ UnionF G.
+  Lemma ex_3_3_4 F G : (exists n m, F n = G m) -> InterF F ⊆ UnionF G.
   Proof.
     intros HFG x H.
-    destruct HFG as [n HFG].
-    destruct H.
+    destruct HFG as [n [m HFG]].
+    destruct H as [x H].
     specialize (H n).
     apply unionf_intro.
-    exists n.
+    exists m.
     now rewrite <- HFG.
   Qed.
   
