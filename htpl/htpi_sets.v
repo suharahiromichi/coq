@@ -263,7 +263,6 @@ Section Sets.
   Inductive InterF (X : Fam) : Shugo :=
     interf_intro : forall x : U, (forall n : K, x ∈ X n) -> x ∈ InterF X.
   
-  (* Definition InF (F : Fam) (x : U) : Prop := exists n, x ∈ F n. *)
   Definition InF (F : Fam) (A : Shugo) : Prop := exists n, F n = A.
   
   (*
@@ -271,7 +270,56 @@ Section Sets.
     Prove that ∩F ⊆ ∪G.
    *)
   
-  Lemma ex_3_3_4 F G : (exists n m, F n = G m) -> InterF F ⊆ UnionF G.
+  Lemma ex_3_3_4 F G : (exists A, InF F A /\ InF G A) -> InterF F ⊆ UnionF G.
+  Proof.
+    intros HFG x H.
+    (*
+      Givens
+      ∃A(A ∈ F ∩ G)
+      ∀A ∈ F(x ∈ A)
+      
+      Goal
+      ∃A ∈ G(x ∈ A)
+     *)
+    (*  destruct HFG as [A [[n HF] [m HG]]]. *)
+    destruct HFG as [A0 [HF HG]].
+    destruct H as [x H].
+    apply unionf_intro.
+    (*
+      Givens
+      A0 ∈ F
+      A0 ∈ G
+      ∀A ∈ F(x ∈ A)
+      
+      Goal
+      ∃A ∈ G(x ∈ A)
+     *)
+    destruct HF as [n HF].
+    destruct HG as [m HG].
+    specialize (H n).
+    exists m.
+    rewrite HF in H.
+    now rewrite HG.
+  Qed.
+  
+  (* 予備 *)
+  Goal forall F G, (exists A, InF F A /\ InF G A) <-> (exists n m, F n = G m).
+  Proof.
+    split.
+    - intros [A [[n HF] [m HG]]].
+      exists n, m.
+      now rewrite HF, HG.
+    - intros [n [m H]].
+      exists (G m).
+      split.
+      + rewrite <- H.
+        now exists n.
+      + rewrite <- H.
+        now exists m.
+  Qed.
+  
+  (* 予備 *)
+  Lemma ex_3_3_4' F G : (exists n m, F n = G m) -> InterF F ⊆ UnionF G.
   Proof.
     intros HFG x H.
     destruct HFG as [n [m HFG]].
