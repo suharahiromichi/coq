@@ -241,7 +241,91 @@ Section Sets.
       now apply HaA.
     - easy.
   Qed.
+
+  (*
+    Example 3.3.1. Suppose A, B, and C are sets, and A \ B ⊆ C.
+    Prove that A \ C ⊆ B.
+   *)
+
+  (*
+    Example 3.3.2. Suppose A and B are sets.
+    Prove that if A ∩ B = A then A ⊆ B.
+   *)
+
+  (* 集合族 *)
+
+  Variable K : Type.
+  Definition Fam := K -> Shugo.
   
+  Inductive UnionF (F : Fam) : Shugo :=
+    unionf_intro : forall x : U, (exists n : K, x ∈ F n) -> x ∈ UnionF F.
+  
+  (* Definition InF (F : Fam) (x : U) : Prop := exists n, x ∈ F n. *)
+  Definition InF (F : Fam) (A : Shugo) : Prop := exists n, F n = A.
+
+  (*
+    Example 3.3.4. Suppose F and G are families of sets and F ∩ G ≠ ∅.
+    Prove that ∩F ⊆ ∪G.
+   *)
+  
+  (*
+    Example 3.3.5. Suppose B is a set and F is a family of sets. Prove that if
+    ∪F ⊆ B then F ⊆ P (B).
+   *)
+  
+  (*
+    Givens
+    ∪F ⊆ B
+    x ∈ F
+    y ∈ x
+
+  Goal
+    y∈ B
+   *)
+  
+  Lemma ex_3_3_5 : forall (F : Fam) (B x : Shugo) (y : U),
+      UnionF F ⊆ B -> InF F x -> y ∈ x -> y ∈ B.
+  Proof.
+    intros F B x y Hun Hin Hyn.
+    specialize (Hun y).
+    apply Hun.
+    destruct Hin as [n Hin].
+    apply unionf_intro.
+    exists n.
+    now rewrite Hin.
+  Qed.
+
+  (*
+    Example 3.4.1. Suppose A ⊆ B, and A and C are disjoint.
+    Prove that A ⊆ B \ C.
+   *)
+
+  (*
+    Example 3.4.4. Suppose A, B, and C are sets.
+    Prove that A ∩ (B \ C) = (A ∩ B) \ C.
+   *)
+  
+  (*
+    Example 3.5.1. Suppose that A, B, and C are sets. Prove that if A ⊆ C and
+    B ⊆ C then A ∪ B ⊆ C.
+  *)
+
+  (*
+    Example 3.5.2. Suppose that A, B and C are sets.
+    Prove that A \ (B \ C) ⊆ (A \ B) ∪ C.
+   *)
+
+  (*
+    Example 3.6.2. Prove that there is a unique set A such that for every set B,
+    A ∪ B = B.
+   *)
+
+  (*
+    Example 3.6.4. Suppose A, B, and C are sets, A and B are not disjoint,
+    A and C are not disjoint, and A has exactly one element.
+    Prove that B and C are not disjoint.
+   *)
+
 End Sets.
 
 (* END *)
