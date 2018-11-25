@@ -246,11 +246,39 @@ Section Sets.
     Example 3.3.1. Suppose A, B, and C are sets, and A \ B ⊆ C.
     Prove that A \ C ⊆ B.
    *)
+
+  Lemma ex3_3_1 A B C : A \ B ⊆ C -> A \ C ⊆ B.
+  Proof.
+    intros H x.
+    (*
+    Givens
+    A\B ⊆ C
+    
+    Goal
+    x ∈ A\C → x ∈ B
+     *)
+    now apply ex3_2_3.
+  Qed.
   
   (*
     Example 3.3.2. Suppose A and B are sets.
     Prove that if A ∩ B = A then A ⊆ B.
    *)
+
+  Lemma ex3_3_2 A B : A ∩ B = A -> A ⊆ B.
+  Proof.
+    intros HAB x HA.
+    (*
+      Givens
+      A∩B=A
+      x∈A
+  
+      Goal 
+      x∈B 
+     *)
+    rewrite <- HAB in HA.
+    now destruct HA.
+  Qed.
   
   (* 集合族 *)
 
@@ -270,7 +298,7 @@ Section Sets.
     Prove that ∩F ⊆ ∪G.
    *)
   
-  Lemma ex_3_3_4 F G : (exists A, InF F A /\ InF G A) -> InterF F ⊆ UnionF G.
+  Lemma ex3_3_4 F G : (exists A, InF F A /\ InF G A) -> InterF F ⊆ UnionF G.
   Proof.
     intros HFG x H.
     (*
@@ -303,6 +331,7 @@ Section Sets.
   Qed.
   
   (* 予備 *)
+  (* 集合族 F G について、 F ∩ G を定義していないので、次を使う。 *)
   Goal forall F G, (exists A, InF F A /\ InF G A) <-> (exists n m, F n = G m).
   Proof.
     split.
@@ -316,18 +345,6 @@ Section Sets.
         now exists n.
       + rewrite <- H.
         now exists m.
-  Qed.
-  
-  (* 予備 *)
-  Lemma ex_3_3_4' F G : (exists n m, F n = G m) -> InterF F ⊆ UnionF G.
-  Proof.
-    intros HFG x H.
-    destruct HFG as [n [m HFG]].
-    destruct H as [x H].
-    specialize (H n).
-    apply unionf_intro.
-    exists m.
-    now rewrite <- HFG.
   Qed.
   
   (*
@@ -353,7 +370,7 @@ Section Sets.
     y ∈ B
    *)
 
-  Lemma ex_3_3_5 : forall (F : Fam) (B x : Shugo) (y : U),
+  Lemma ex3_3_5 : forall (F : Fam) (B x : Shugo) (y : U),
       UnionF F ⊆ B -> InF F x -> y ∈ x -> y ∈ B.
   Proof.
     intros F B x y Hun Hin Hyn.
