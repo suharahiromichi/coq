@@ -395,22 +395,157 @@ Section Sets.
     Example 3.4.1. Suppose A ⊆ B, and A and C are disjoint.
     Prove that A ⊆ B \ C.
    *)
-
+  
+  Lemma not_in_empty : forall x, ~ x ∈ ø.
+  Proof.
+    intros x Hc.
+    (* unfold In in Hc. *)
+    destruct Hc.
+  Qed.
+  
+  Lemma inter_empty A B : A ∩ B = ø -> ~ exists y, y ∈ A /\ y ∈ B.
+  Proof.
+    intros HAB [y [HA HB]].
+    apply l_seteq in HAB as [H1 H2].
+    specialize (H1 y).
+    specialize (H2 y).
+    apply (not_in_empty y).                 (* y ∈ ø *)
+    apply H1.
+    now split.
+  Qed.
+  
+  Lemma ex3_4_1 A B C : A ⊆ B -> A ∩ C = ø -> A ⊆ B \ C.
+  Proof.
+    intros HAB H x HA.
+    split.
+    (* 
+       Givens
+       A ∩ C = ∅
+       x ∈ A
+       
+       Goals
+       x ∈ B
+       ~ x ∈ C
+     *)
+    - specialize (HAB x).
+      now apply HAB.
+    - intros Hc.
+      apply inter_empty in H.
+      apply H.
+      now exists x.
+  Qed.
+  
   (*
     Example 3.4.4. Suppose A, B, and C are sets.
     Prove that A ∩ (B \ C) = (A ∩ B) \ C.
    *)
+
+  Lemma ex3_4_4_sub_1 A B C : (forall x, x ∈ A ∩ (B \ C)) <->
+                              (forall x, x ∈ A /\ x ∈ B /\ ~x ∈ C).
+  Proof.
+    split.
+    - intros H x.
+      specialize (H x).
+      destruct H as [x H1 [H2 H3]].
+      easy.
+    - intros H x.
+      specialize (H x).
+      now split; [| split].
+  Qed.
+  
+  Lemma ex3_4_4_sub_2 A B C : (forall x, x ∈ (A ∩ B) \ C) <->
+                              (forall x, x ∈ A /\ x ∈ B /\ ~x ∈ C).
+  Proof.
+    split.
+    - intros H x.
+      specialize (H x).
+      destruct H as [[H1 H2] H3].
+      easy.
+    - intros H x.
+      specialize (H x).
+      now split; [split |].
+  Qed.
+
+  Lemma ex_3_4_4 A B C : (forall x, x ∈ A ∩ (B \ C)) <->
+                         (forall x, x ∈ (A ∩ B) \ C).
+  Proof.
+    split; intro H.
+    - apply ex3_4_4_sub_2.
+      now apply ex3_4_4_sub_1.
+    - apply ex3_4_4_sub_1.
+      now apply ex3_4_4_sub_2.
+  Qed.
   
   (*
     Example 3.5.1. Suppose that A, B, and C are sets. Prove that if A ⊆ C and
     B ⊆ C then A ∪ B ⊆ C.
   *)
-
+  Lemma ex3_5_1 A B C : A ⊆ C -> B ⊆ C -> A ∪ B ⊆ C.
+  Proof.
+    intros HAC HBC x H.
+    destruct H as [x HxA | x HxB].
+    (*
+      Case 1:
+      Givens
+      A ⊆ C
+      B ⊆ C 
+      x ∈ A
+      Goal
+      x ∈ C
+     *)
+    - specialize (HAC x).
+      now apply HAC.
+    (*
+      Case 2:
+      Givens
+      A ⊆ C
+      B ⊆ C
+      x ∈ B
+      Goal
+      x ∈ C
+     *)
+    - specialize (HBC x).
+      now apply HBC.
+  Qed.
+  
   (*
     Example 3.5.2. Suppose that A, B and C are sets.
     Prove that A \ (B \ C) ⊆ (A \ B) ∪ C.
    *)
 
+  Lemma test P Q : ~ (P /\ ~ Q) -> ~ P \/ Q.
+  Admitted.
+  
+  Lemma ex3_5_2 A B C : A \ (B \ C) ⊆ (A \ B) ∪ C.
+  Proof.
+    intros x H.
+    destruct H as [H1 H2].
+    assert (~ x ∈ B \ C -> ~ (x ∈ B /\ ~ x ∈ C)) as H by apply ln_subs.
+    apply H in H2. clear H.
+    apply test in H2.
+    destruct H2.
+    (*
+      case 1:
+      Givens
+      x ∈ A
+      ~ x ∈ B
+      Goal
+      ( x ∈ A ∧ ~ x ∈ B ) ∨ x ∈ C
+     *)
+    - apply Union_introl.
+      now split.
+    (*
+      case 2:
+      Givens
+      x ∈ A
+      x ∈ C
+      Goal
+      ( x ∈ A ∧ ~ x ∈ B ) ∨ x ∈ C
+     *)
+    - apply Union_intror.
+      easy.
+  Qed.
+  
   (*
     Example 3.6.2. Prove that there is a unique set A such that for every set B,
     A ∪ B = B.
