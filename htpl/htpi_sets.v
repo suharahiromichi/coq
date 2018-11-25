@@ -513,8 +513,15 @@ Section Sets.
     Prove that A \ (B \ C) ⊆ (A \ B) ∪ C.
    *)
 
-  Lemma test P Q : ~ (P /\ ~ Q) -> ~ P \/ Q.
-  Admitted.
+  Lemma not_and_1_or P Q : ~ (P /\ ~ Q) -> ~ P \/ Q.
+    intros H.
+    Check not_and_or.
+    apply not_and_or in H.
+    destruct H as [HP | HQ].
+    - now left.
+    - apply NNPP in HQ.
+      now right.
+  Qed.
   
   Lemma ex3_5_2 A B C : A \ (B \ C) ⊆ (A \ B) ∪ C.
   Proof.
@@ -522,7 +529,8 @@ Section Sets.
     destruct H as [H1 H2].
     assert (~ x ∈ B \ C -> ~ (x ∈ B /\ ~ x ∈ C)) as H by apply ln_subs.
     apply H in H2. clear H.
-    apply test in H2.
+    apply not_and_1_or in H2.
+    apply l_union.
     destruct H2.
     (*
       case 1:
@@ -532,7 +540,8 @@ Section Sets.
       Goal
       ( x ∈ A ∧ ~ x ∈ B ) ∨ x ∈ C
      *)
-    - apply Union_introl.
+    - left.
+      apply l_subs.
       now split.
     (*
       case 2:
@@ -542,8 +551,7 @@ Section Sets.
       Goal
       ( x ∈ A ∧ ~ x ∈ B ) ∨ x ∈ C
      *)
-    - apply Union_intror.
-      easy.
+    - now right.
   Qed.
   
   (*
