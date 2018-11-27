@@ -557,14 +557,143 @@ Section Sets.
   (*
     Example 3.6.2. Prove that there is a unique set A such that for every set B,
     A ∪ B = B.
+    
+    Example 3.6.1 で証明した：
+    ∃!P(x) <->
+    ∃xP(x) ∧ ∀y∀z((P(y) ∧ P(z)) → y = z)
+    を使う。
+    
+    ∃!A.∀B.A ∪ B = B
+    <->
+    ∃A. ∀B.A ∪ B = B
+    /\
+    ∀C∀D(∀B.(C ∪ B = B) /\ ∀B.(D ∪ B = B)) → C = D).
    *)
-
+  
+  Lemma union_comm A B : A ∪ B = B ∪ A.
+  Proof.
+    apply l_seteq.
+    split.
+    - intros x HxAB.
+      destruct HxAB.
+      + apply l_union. now right.
+      + apply l_union. now left.
+    - intros x HxBA.
+      destruct HxBA.
+      + apply l_union. now right.
+      + apply l_union. now left.
+  Qed.
+  
+  Lemma ex3_6_2 : (exists A, forall B, A ∪ B = B) /\
+                  forall C D, (forall B, C ∪ B = B) /\ (forall B, D ∪ B = B) -> C = D.
+  Proof.
+    split.
+    - exists ø.
+      intros B.
+      apply l_seteq.
+      split; intros x H.
+      + now destruct H.
+      + apply l_union. now right.
+    - intros C D [HC HD].
+      (*
+        Givens
+        ∀B(C ∪ B = B)
+        ∀B(D ∪ B = B)
+        Goal
+        C = D
+       *)
+      specialize (HC D).
+      specialize (HD C).
+      rewrite <- HC.
+      rewrite <- HD at 1.
+      now rewrite union_comm.
+  Qed.
+  
   (*
     Example 3.6.4. Suppose A, B, and C are sets, A and B are not disjoint,
     A and C are not disjoint, and A has exactly one element.
     Prove that B and C are not disjoint.
    *)
 
+  (*
+    Givens
+    A ∩ B <> ∅
+    A ∩ C <> ∅
+    ∃!x(x ∈ A)
+    Goal
+    B ∩ C <> ∅
+   *)
+  
+  Lemma not_empty__exists A : A <> ø <-> exists x, x ∈ A.
+  Proof.
+    split.
+    - intro Hc.
+      apply NNPP.
+      intros H1.
+      apply Hc.
+      apply l_seteq.
+      split.
+      + intros x H2.
+        exfalso.
+        apply H1.
+        now exists x.
+      + easy.
+    - intros H.
+      destruct H as [x H].
+      intros Hc.
+      rewrite Hc in H.
+      easy.
+  Qed.
+  
+  Lemma ex3_6_4 A B C : A ∩ B <> ø -> A ∩ C <> ø ->
+                        (exists x, x ∈ A) -> (* 使わない *)
+                        (forall y z, y ∈ A /\ z ∈ A -> y = z) ->
+                        B ∩ C <> ø.
+  Proof.
+    intros HAB HAC HxA H.
+    apply not_empty__exists in HAB.
+    apply not_empty__exists in HAC.
+    apply not_empty__exists.
+    (*
+      Givens
+      ∃x(x ∈ A ∧ x ∈ B)
+      ∃x(x ∈ A ∧ x ∈ C)
+      ∃x(x ∈ A)
+      ∀y∀z((y ∈ A ∧ z ∈ A) → y = z)
+      Goal
+      ∃x(x ∈ B ∧ x ∈ C)
+     *)
+    destruct HAB as [x [b HbA HbB]].
+    destruct HAC as [y [c HcA HcB]].
+    specialize (H b c).
+    (* 
+       Givnes
+       b ∈ A
+       b ∈ B
+       c ∈ A
+       c ∈ C
+       b ∈ A /\ c ∈ A -> b = c
+       Goal
+       exists x0, x0 ∈ B ∩ C
+     *)
+    (* 
+       Givnes
+       b ∈ B
+       c ∈ C
+       b = c
+       Goal
+       b ∈ B
+       b ∈ C
+     *)
+    exists b.
+    apply l_inter.
+    split.
+    - easy.
+    - rewrite H.
+      + easy.
+      + easy.
+  Qed.
+  
 End Sets.
 
 (* END *)
