@@ -5,10 +5,11 @@
 
 (* Set Implicit Arguments. *)
 
-Require Import Relations.
+Require Import Arith.
+Require Import Omega.
+Require Import Relations.                   (* relation など *)
 Require Import Morphisms.                   (* Proper *)
 
-Require Import Omega.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.ProofIrrelevance.
 
@@ -48,11 +49,14 @@ Section Category_Class.
         `{!CatId O}
         `{!CatComp O} : Prop :=
     {
+      (* Setid である。 *)
       arrow_equiv :> forall x y, Setoid (x --> y);
-      comp_proper :> forall x y z,
-          Proper (equiv ==> equiv ==> equiv) (@comp _ _ _ x y z);
+      (* comp で繋いだ項をequivでの書換の対象にできる。 *)
+      comp_proper :> forall x y z, Proper (equiv ==> equiv ==> equiv) (@comp _ _ _ x y z);
+      (* comp の結合性が成立する。 *)
       comp_assoc w x y z (a : w --> x) (b : x --> y) (c : y --> z) :
         c \o (b \o a) = (c \o b) \o a;
+      (* comp の単位元が存在する。 *)
       id_l `(a : x --> y) : cat_id _ \o a = a;
       id_r `(a : x --> y) : a \o cat_id _ = a;
     }.
@@ -95,9 +99,10 @@ Proof.
     intros x' y' z' H1 H2.
     now rewrite H1, H2.
 Qed.
-Obligation 2.
+Obligation 2.                               (* c \o (b \o a) = c \o b \o a *)
 Proof.
   unfold comp, C0.
+  (* c + (b + a) = c + b + a *)
   now apply plus_assoc.
 Qed.
 
@@ -155,7 +160,7 @@ Check Category O1 : Prop.
 Check @Category O1 A1 E1 I1 C1 : Prop.
 Program Instance SETS : @Category O1 A1 E1 I1 C1.
 Obligation 1.
-Proof.
+Proof.                                      (* Setoid (x --> y) *)
   unfold Setoid, equiv, E1.
   split.
   + now unfold Reflexive.
@@ -166,12 +171,13 @@ Proof.
     rewrite <- H2.
     easy.
 Qed.
-Obligation 2.
+Obligation 2.            (* Proper (equiv ==> equiv ==> equiv) comp *)
 Proof.
   unfold equiv, E1, comp, C1.
   intros yz yz' H1 xy xy' H2 a.
-  rewrite H2.
-  rewrite H1.
+  rewrite <- H2.
+  rewrite <- H1.
+  (* yz (xy a) = yz (xy a) *)
   easy.
 Qed.
 
@@ -221,7 +227,7 @@ Instance C2 : CatComp O2 :=
 
 Check @Category O2 A2 E2 I2 C2 : Prop.
 Program Instance LE : @Category O2 A2 E2 I2 C2.
-Obligation 1.
+Obligation 1.                               (* Setoid (x --> y) *)
   unfold Setoid, equiv, E2.
   split.
   + now unfold Reflexive.
@@ -230,21 +236,41 @@ Obligation 1.
     intros x' y' z' H1 H2.
     now rewrite H1, H2.
 Qed.
-Obligation 2.
+Obligation 2.                               (* c \o (b \o a) = c \o b \o a *)
 Proof.
   unfold comp, C2.
   unfold arrow, A2 in *.
-  Check proof_irrelevance.
+  (* Nat.le_trans w y z (Nat.le_trans w x y a b) c =
+     Nat.le_trans w x z a (Nat.le_trans x y z b c) *)
+  
+  (* 普段ゴールには、定理（型）が出現するはずなのに、
+     証明（値）であるle_transが出てきてしまった！ *)
+  
+  (* (w <= x -> x <= y) -> y <= z -> w <= z *)
+  Check Nat.le_trans w y z (Nat.le_trans w x y a b) c : w <= z.
+  (* w <= x -> (x <= y -> y <= z) -> w <= z *)
+  Check Nat.le_trans w x z a (Nat.le_trans x y z b c) : w <= z.
+  
+  (* 公理：型が同じ値は同じ。
+     …こんなことはありえない。irrelevence は 見当違い、無関係 の意味。
+     しかし、証明する定理（型）が同じなら、証明（値）は同じ。
+     …といえば納得できる。つまり、定理に対する証明の一意性を公理として導入する。 *)
+  Check proof_irrelevance : forall (P : Prop) (p1 p2 : P), p1 = p2.
   now apply proof_irrelevance.
 Qed.
 Obligation 3.
-  unfold comp, C2.
+  unfold comp, C2.                          (* cat_id y \o a = a *)
   unfold arrow, A2 in *.
+  (* Nat.le_trans x y y a (cat_id y) = a *)
+  (* x <= y -> y <= y -> x <= y *)
+  Check Nat.le_trans x y y a (cat_id y).
   now apply proof_irrelevance.
 Qed.
 Obligation 4.
-  unfold comp, C2.
+  unfold comp, C2.                          (* a \o cat_id x = a *)
   unfold arrow, A2 in *.
+  (* Nat.le_trans x x y (cat_id x) a = a *)
+  (* x <= x -> x <= y -> x <= y *)
   now apply proof_irrelevance.
 Qed.
 
@@ -307,7 +333,6 @@ Proof. reflexivity. Qed.                    (* 普通に = が成り立つ。 *)
 Instance E3 (x y : O3) : Equiv (A3 x y) :=
   fun (s t : A3 x y) => s = t.
 Definition I3 : CatId O3 := single.
-
 Definition C3 (x y z : O3) (t : A3 y z) (s : A3 x y) : A3 x z.
 Proof.
   induction s.
@@ -318,7 +343,7 @@ Check C3 : CatComp O3.
 
 Check @Category O3 A3 E3 I3 C3 : Prop.
 Program Instance SIRI : @Category O3 A3 E3 I3 C3.
-Obligation 1.
+Obligation 1.                               (* Setoid (x --> y) *)
   unfold Setoid, equiv, E3.
   split.
   + now unfold Reflexive.
@@ -327,21 +352,19 @@ Obligation 1.
     intros x' y' z' H1 H2.
     now rewrite H1, H2.
 Qed.
-Obligation 2.
+Obligation 2.                               (* c \o (b \o a) = c \o b \o a *)
 Proof.
   unfold comp, C3.
-  induction a.
-  - now simpl.
-  - simpl.
-    now rewrite IHa.
+  induction a; simpl.
+  - easy.
+  - now rewrite IHa.
 Qed.
-Obligation 3.
+Obligation 3.                               (* cat_id y \o a = a *)
 Proof.
-  unfold comp, C3.
-  induction a.
-  - now simpl.
-  - simpl.
-    now rewrite IHa.
+  unfold comp, C3, cat_id, I3.
+  induction a; simpl.
+  - easy.
+  - now rewrite IHa.
 Qed.
 
 (* 例 *)
