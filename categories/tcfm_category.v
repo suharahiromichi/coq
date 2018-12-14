@@ -80,7 +80,7 @@ Notation "A \o B" := (comp A B) (at level 40, left associativity).
 
 Definition O0 : Type := unit.
 Instance A0 : Arrows O0 := fun (x y : O0) => nat.
-Instance E0 (x y : O0) : Equiv (A0 x y) := fun (m n : nat) => m = n.
+Instance E0 (x y : O0) : Equiv (A0 x y) := fun (m n : nat) => m = n. (* 射の等しさ *)
 Instance I0 : CatId O0 := fun (_ : O0) => 0.
 Instance C0 : CatComp O0 := fun (_ _ _ : O0) (m n : nat) => m + n.
 
@@ -113,20 +113,14 @@ Check 1 : tt --> tt.                        (* 1 は射の例 *)
 Check 0 : tt --> tt.                        (* 0 は射の例 *)
 
 (* 射 2 と 3 の合成は 5 になる。 *)
+Check comp 3 2 : tt --> tt.
+Compute comp 3 2.                           (* 5 *)
 Check @comp O0 A0 C0 tt tt tt 3 2 : tt --> tt.
-Goal 5 = @comp O0 A0 C0 tt tt tt 3 2.
-Proof.
-  unfold comp, C0.
-  easy.
-Qed.
 Compute @comp O0 A0 C0 tt tt tt 3 2.        (* 5 *)
 
-Check @cat_id O0 A0 I0 tt : tt --> tt.      (* cat_id は射のひとつ *)
-Goal 0 = @cat_id O0 A0 I0 tt.               (* cat_id は 0 と等しい *)
-Proof.
-  unfold cat_id, I0.
-  easy.
-Qed.
+Check cat_id tt : tt --> tt.
+Compute cat_id tt.                          (* 0 *)
+Check @cat_id O0 A0 I0 tt : tt --> tt.
 Compute @cat_id O0 A0 I0 tt.                (* 0 *)
 
 
@@ -137,9 +131,9 @@ Compute @cat_id O0 A0 I0 tt.                (* 0 *)
 対象の集合 : Set
 対象の例   : nat など
 射の集合の例 : nat -> nat  など
-射の例     : plus 0 (= id_nat), plus 1, plus 2,....
+射の例     : plus 0 (= id_nat), plus 1, plus 2,.... (関数)
 射の合成   : 関数の合成
-恒等射     : id_nat (その他)
+恒等射     : id_nat など
 
 注意：対象は自然数の集合natである。0,1,2,..は対象ではない。
  *)
@@ -188,6 +182,8 @@ Check plus 1 : nat --> nat.                 (* plus 1 は射の例 *)
 Check plus 0 : nat --> nat.                 (* plus 0 は射の例 *)
 
 (* 射 plus 2 と plus 3 の合成は plus 5 になる。 *)
+Check comp (plus 3) (plus 2) : nat --> nat.
+Compute comp (plus 3) (plus 2).             (* plus 5 *)
 Check @comp O1 A1 C1 nat nat nat (plus 3) (plus 2) : nat --> nat.
 Goal plus 5 = @comp O1 A1 C1 nat nat nat (plus 3) (plus 2).
 Proof.
@@ -196,8 +192,10 @@ Proof.
 Qed.
 Compute @comp O1 A1 C1 nat nat nat (plus 3) (plus 2). (* plus 5 *)
 
-Check @cat_id O1 A1 I1 nat : nat --> nat.   (* cat_id は射のひとつ *)
-Goal id = @cat_id O1 A1 I1 nat.             (* cat_id は id に等しい *)
+Check cat_id nat : nat --> nat.
+Compute cat_id nat.                        (* id *)
+Check @cat_id O1 A1 I1 nat : nat --> nat.  (* cat_id は射のひとつ *)
+Goal id = @cat_id O1 A1 I1 nat.            (* cat_id は id に等しい *)
 Proof.
   unfold cat_id, I1.
   easy.
@@ -292,21 +290,25 @@ Check le45 : 4 --> 5.                       (* この型の射は唯一 *)
 Check le35 : 3 --> 5.                       (* この型の射は唯一 *)
 
 (* 3≦4 と 4≦5 を 合成すると 3≦5 になる。 *)
+Check comp le45 le34 : 3 --> 5.
+Compute comp le45 le34.
 Check @comp O2 A2 C2 3 4 5 le45 le34 : 3 --> 5.
+Compute @comp O2 A2 C2 3 4 5 le45 le34.
 Goal le35 = @comp O2 A2 C2 3 4 5 le45 le34.
 Proof.
   unfold comp, C2.
   apply proof_irrelevance.
 Qed.
-Compute @comp O2 A2 C2 3 4 5 le45 le34.
 
-Check @cat_id O2 A2 I2 3  : 3 --> 3.        (* cat_id は射のひとつ *)
-Goal le_n 3 = @cat_id O2 A2 I2 3.           (* cat_id 3 は 3≦3 に等しい。 *)
+Check cat_id 3  : 3 --> 3.           (* cat_id は射のひとつ *)
+Compute cat_id 3.                    (* le_n 3 *)
+Check @cat_id O2 A2 I2 3  : 3 --> 3. (* cat_id は射のひとつ *)
+Compute @cat_id O2 A2 I2 3.                 (* le_n 3 *)
+Goal le_n 3 = @cat_id O2 A2 I2 3.    (* cat_id 3 は 3≦3 に等しい。 *)
 Proof.
   unfold cat_id, I2.
   easy.
 Qed.
-Compute @cat_id O2 A2 I2 3.                 (* le_n 3 *)
 
 
 (* *********** *)
@@ -392,21 +394,26 @@ Check kitune  : き --> ね.                  (* この型の射の例 *)
 Check tanukitune : た --> ね.               (* この型の射の例 *)
 
 (* たぬき と きつね を 合成すると たぬきつね になる。 *)
+
+Check comp kitune tanuki : た --> ね.
+(* Compute comp kitune tanuki. *)
 Check @comp O3 A3 C3 た き ね kitune tanuki : た --> ね.
 Goal tanukitune = @comp O3 A3 C3 た き ね kitune tanuki.
+Compute @comp O3 A3 C3 た き ね kitune tanuki.
 Proof.
   unfold comp, C3.
   easy.
 Qed.
-Compute @comp O3 A3 C3 た き ね kitune tanuki.
 
+Check cat_id こ : こ --> こ.
+(* Compute cat_id こ. *)
 Check @cat_id O3 A3 I3 こ : こ --> こ.      (* cat_id は射のひとつ *)
 Goal ko = @cat_id O3 A3 I3 こ. (* cat_id こ は single こ に等しい。 *)
+Compute @cat_id O3 A3 I3 こ.                 (* single こ *)
 Proof.
   unfold cat_id, I3.
   easy.
 Qed.
-Compute @cat_id O3 A3 I3 こ.                 (* single こ *)
 
 (* こねこ は cat_id ではないことに注意してください。 *)
 Compute @comp O3 A3 C3 ね こ こ ko neko.     (* ねこ と こ の連結は ねこ *)
