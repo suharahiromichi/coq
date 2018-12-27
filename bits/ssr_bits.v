@@ -59,15 +59,19 @@ Section Bits.
     [set rshift m x | x in bs].
   Check rcast 4 fset_data : FSET 8.
   
-  (* これの逆はうまくいかない。 *)
-  Definition fset_data2 : FSET 6 := [set inord 0; inord 2; inord 4].
-  Definition x2 := [set @split 4 2 x | x in fset_data2] : {set 'I_4 + 'I_2}.
-  Definition test {m n} (i : 'I_m + 'I_n) : ('I_m + unit) :=
-    match i with
-    | inl i' => inl i'
-    | inr i' => inr tt
-    end.
-  Check [set test x | x in x2] : {set 'I_4 + unit}.
+  (* これの逆。 *)
+  Definition splitlr {n m} (bs : {set 'I_(n + m)}) : {set 'I_n} * {set 'I_m} :=
+    let bs' := [set split x | x in bs] in
+    ([set x : 'I_n | inl x \in bs'], [set x : 'I_m | inr x \in bs']).
+  
+  Definition castl {n m} (bs : {set 'I_(n + m)}) : {set 'I_n} :=
+    [set x : 'I_n | inl x \in [set split x | x in bs]].
+  Check castl (lcast 4 fset_data) : FSET 4.
+  
+  Definition castr {n m} (bs : {set 'I_(n + m)}) : {set 'I_m} :=
+    [set x : 'I_m | inr x \in [set split x | x in bs]].
+  Check castr (rcast 4 fset_data) : FSET 4.
+  
 End Bits.
   
 (*
