@@ -89,7 +89,7 @@ Section Repr.
     forall (i : 'I_n), bs2fs bs = fs -> tnth bs i = (i \in fs).
   Proof.
     Locate "[ set _ | _ ]".
-    Search _ ([ set _ : _ | _ ]).
+    (* Search _ ([ set _ : _ | _ ]). *)
     Check inE.
     rewrite /bs2fs.
     move=> i <-.
@@ -103,6 +103,37 @@ Section Repr.
   Proof.
     now elim.
   Qed.
+
+  Definition joinlsb {n} (pair: BITS n*bool) : BITS n.+1 := cons_tuple pair.2 pair.1.
+  Definition splitlsb {n} (p: BITS n.+1): BITS n*bool := (behead_tuple p, thead p).
+  Definition droplsb {n} (p: BITS n.+1) := (splitlsb p).1.
+  Fixpoint splitmsb {n} : BITS n.+1 -> bool * BITS n :=
+    if n is _.+1
+    then fun p => let (p,b) := splitlsb p in let (c,r) := splitmsb p in (c,joinlsb(r,b))
+    else fun p => let (p,b) := splitlsb p in (b,p).
+  Definition dropmsb {n} (p: BITS n.+1) := (splitmsb p).2.
+
+  (* Lossless shift left: shift one bit to the left, put 0 in lsb *)
+  Definition shlBaux {n} (p: BITS n) : BITS n.+1  := joinlsb (p, false).
+  (* Shift left: shift one bit to the left, put 0 in lsb, lose msb *)
+  Definition shlB {n} (p: BITS n)  := dropmsb (shlBaux p).
+
+  (* 1 が 0 に移ること。 *)
+  (* n.+1 が n に移ること。 *)
+  (* coq-bitset/src/ops/shift.v 参照 *)
+  Definition fset_shl1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
+    [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
+  
+  Lemma n11_n n : 0 < n -> n.-1.+1 = n.
+  Proof.
+    now apply prednK.
+  Qed.
+  
+  Lemma shl1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
+      (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
+      (forall (i : 'I_n), tnth (shlB bs) i = (i \in fset_shl1 fs (n11_n H))).
+  Proof.
+  Admitted.
   
 End Repr.  
 
