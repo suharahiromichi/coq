@@ -93,7 +93,7 @@ Section Repr.
     Check inE.
     rewrite /bs2fs.
     move=> i <-.
-    now rewrite inE.
+    by rewrite inE.
   Qed.
   
   (* ゼロが一致する証明 *)
@@ -101,37 +101,62 @@ Section Repr.
   Check set0 : FSET 0.
   Lemma zero_repr : forall (i : 'I_0), tnth [tuple] i = (i \in set0).
   Proof.
-    now elim.
+    by elim.
   Qed.
 
-  Definition joinlsb {n} (pair: BITS n*bool) : BITS n.+1 := cons_tuple pair.2 pair.1.
-  Definition splitlsb {n} (p: BITS n.+1): BITS n*bool := (behead_tuple p, thead p).
-  Definition droplsb {n} (p: BITS n.+1) := (splitlsb p).1.
-  Fixpoint splitmsb {n} : BITS n.+1 -> bool * BITS n :=
-    if n is _.+1
-    then fun p => let (p,b) := splitlsb p in let (c,r) := splitmsb p in (c,joinlsb(r,b))
-    else fun p => let (p,b) := splitlsb p in (b,p).
-  Definition dropmsb {n} (p: BITS n.+1) := (splitmsb p).2.
+  (* シフト *)
+(*  
+  Lemma n1_1_n n : n.+1 - 1 = n.
+  Proof.
+    by rewrite subn1 -pred_Sn.
+  Qed.
+  
+  Check tcast.
+  Check @drop_tuple 5 1 bool : BITS _    -> BITS (_ - 1).
+  Check belast_tuple false   : BITS _.+1 -> BITS _.+1.
+  Check cons_tuple false     : BITS _    -> BITS _.+1.
+  Definition shl1 {n} (bs : BITS n) : BITS n :=
+    tcast (n1_1_n n)
+      (@drop_tuple n.+1 1 bool (belast_tuple false (cons_tuple false bs))).
+  Check shl1.
+*)
+  
+  Lemma n_11_n n : 0 < n -> n.-1.+1 = n.
+  Proof.
+      by apply prednK.
+  Qed.
 
-  (* Lossless shift left: shift one bit to the left, put 0 in lsb *)
-  Definition shlBaux {n} (p: BITS n) : BITS n.+1  := joinlsb (p, false).
-  (* Shift left: shift one bit to the left, put 0 in lsb, lose msb *)
-  Definition shlB {n} (p: BITS n)  := dropmsb (shlBaux p).
-
+  (* 左シフト *)
+  
+  Compute rcons (behead [:: 0;1;2;3]) 9.    (* [:: 1;2;3;9] *)
+  Compute behead (rcons [:: 0;1;2;3] 9).    (* [:: 1;2;3;9] *)
+  Definition shl1 {n} (bs : BITS n) : BITS n :=
+    behead_tuple (rcons_tuple bs false).
+  
   (* 1 が 0 に移ること。 *)
   (* n.+1 が n に移ること。 *)
   (* coq-bitset/src/ops/shift.v 参照 *)
   Definition fset_shl1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
-    [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
-  
-  Lemma n11_n n : 0 < n -> n.-1.+1 = n.
-  Proof.
-    now apply prednK.
-  Qed.
+    [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
   
   Lemma shl1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
       (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
-      (forall (i : 'I_n), tnth (shlB bs) i = (i \in fset_shl1 fs (n11_n H))).
+      (forall (i : 'I_n), tnth (shl1 bs) i = (i \in fset_shl1 fs (n_11_n H))).
+  Proof.
+  Admitted.
+  
+  (* 右シフト *)
+  
+  Compute belast 9 [:: 0;1;2;3].            (* [:: 9;0;1;2] *)
+  Definition shr1 {n} (bs : BITS n) : BITS n :=
+    belast_tuple false bs.
+  
+  Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
+    [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
+  
+  Lemma shr1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
+      (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
+      (forall (i : 'I_n), tnth (shr1 bs) i = (i \in fset_shr1 fs (n_11_n H))).
   Proof.
   Admitted.
   
