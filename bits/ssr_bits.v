@@ -105,21 +105,6 @@ Section Repr.
   Qed.
 
   (* シフト *)
-(*  
-  Lemma n1_1_n n : n.+1 - 1 = n.
-  Proof.
-    by rewrite subn1 -pred_Sn.
-  Qed.
-  
-  Check tcast.
-  Check @drop_tuple 5 1 bool : BITS _    -> BITS (_ - 1).
-  Check belast_tuple false   : BITS _.+1 -> BITS _.+1.
-  Check cons_tuple false     : BITS _    -> BITS _.+1.
-  Definition shl1 {n} (bs : BITS n) : BITS n :=
-    tcast (n1_1_n n)
-      (@drop_tuple n.+1 1 bool (belast_tuple false (cons_tuple false bs))).
-  Check shl1.
-*)
   
   Lemma n_11_n n : 0 < n -> n.-1.+1 = n.
   Proof.
@@ -169,6 +154,18 @@ Section Repr.
       (forall (i : 'I_n), tnth (shr1 bs) i = (i \in fset_shr1 fs (n_11_n H))).
   Proof.
   Admitted.
+
+  
+  (* 殴って擦る場合は、証明がいる。 *)
+  Lemma n1_1_n n : n.+1 - 1 = n.
+  Proof.
+    by rewrite subn1 -pred_Sn.
+  Qed.
+  
+  Compute drop 1 (cons false [:: true; false]).
+  Definition test {n} (bs : BITS n) : BITS n :=
+    tcast (n1_1_n n)
+      (@drop_tuple n.+1 1 bool (cons_tuple false bs)).
   
 End Repr.  
 
