@@ -130,8 +130,18 @@ Section Repr.
   
   Compute rcons (behead [:: 0;1;2;3]) 9.    (* [:: 1;2;3;9] *)
   Compute behead (rcons [:: 0;1;2;3] 9).    (* [:: 1;2;3;9] *)
+  (*
+    (* tuple型の関数を組み合わせる  *)
   Definition shl1 {n} (bs : BITS n) : BITS n :=
     behead_tuple (rcons_tuple bs false).
+   *)  
+  (* seq型の関数をtupleに適用できるようにする。 *)
+  Lemma shl1P {n} (t : n.-tuple bool) : size (behead (rcons t false)) == n.
+  Proof.
+    by rewrite size_behead size_rcons -pred_Sn size_tuple.
+  Qed.
+  Canonical shl1 {n} t := Tuple (@shl1P n t).
+  Check shl1 : BITS 4 -> BITS 4.
   
   (* 1 が 0 に移ること。 *)
   (* n.+1 が n に移ること。 *)
@@ -148,8 +158,8 @@ Section Repr.
   (* 右シフト *)
   
   Compute belast 9 [:: 0;1;2;3].            (* [:: 9;0;1;2] *)
-  Definition shr1 {n} (bs : BITS n) : BITS n :=
-    belast_tuple false bs.
+  Definition shr1 {n} : BITS n -> BITS n := belast_tuple false.
+  Check shr1 : BITS 4 -> BITS 4.
   
   Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
     [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
