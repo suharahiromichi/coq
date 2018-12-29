@@ -244,11 +244,15 @@ Section Repr.
     [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
   
   Lemma shl1_repr n (bs : BITS n) (fs : FSET n) :
-    forall (H : 0 < n),
-      (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
-      (forall (i : 'I_n), tnth (shl1 bs) i = (i \in fset_shl1 fs (prednK H))).
+    forall (H : 0 < n), repr bs fs ->
+                        repr (shl1 bs) (fset_shl1 fs (prednK H)).
   Proof.
+    move=> H H1 i.
+    move/eqP: (H1 i) => {H1} H1'.  
+    rewrite inE (tnth_nth false) /shl1.
+    Check nth_map.
   Admitted.
+
   
   (* 右シフト *)
   
@@ -256,17 +260,46 @@ Section Repr.
   Definition shr1 {n} : BITS n -> BITS n := belast_tuple false.
   Check shr1 : BITS 4 -> BITS 4.
   
+  Lemma nth_belast1 (x : bool) (s : seq bool) (i : nat) :
+    0 < i -> nth x (belast x s) i = nth x s i.-1.
+  Proof.
+  Admitted.                                 (* XXXXX *)
+  
+  (* 右シフトで追加される最左(bit0)は、falseである。 *)
+  Lemma nth_belast2 (x : bool) (s : seq bool) (i : nat) :
+    i = 0 -> nth x (belast x s) i = false.
+  Proof.
+  Admitted.                                 (* XXXXX *)
+  
   Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
-    [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
+    [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
+  (* シフトで追加される、シフト後の最左(bit0)の値は、とりあえず不問とする。 *)
+  
+  (* i : 'I_n の半端ものの証明に使いそうである。 *)
+  Lemma not_0lt__0 (i : nat) : (0 < i) = false -> i = 0.
+  Proof.
+    move=> H.
+    rewrite lt0n in H.
+    now move/eqP in H.
+  Qed.
   
   Lemma shr1_repr n (bs : BITS n) (fs : FSET n) :
-    forall (H : 0 < n),
-      (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
-      (forall (i : 'I_n), tnth (shr1 bs) i = (i \in fset_shr1 fs (prednK H))).
+    forall (H : 0 < n), repr bs fs ->
+                        repr (shr1 bs) (fset_shr1 fs (prednK H)).
   Proof.
+    move=> H H1 i.
+    move/eqP: (H1 i) => {H1} H1'.  
+    rewrite inE (tnth_nth false) /shr1.
+    case H2 : (0 < i).
+    - rewrite nth_belast1 /=.
+      + admit.                              (* XXXXX *)
+      + done.
+    - rewrite nth_belast2 /=.
+      + done.
+      + now apply: not_0lt__0.
   Admitted.
   
-
+  
   (* cons してから外す例。 *)
   (* n.+1.-1 は n と判断してくれる。 *)
   Compute behead (cons false [:: true; false]).
