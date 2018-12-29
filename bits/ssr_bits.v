@@ -81,30 +81,71 @@ End Bits.
 
 Section Repr.
 
+  Definition repr {n} (bs : BITS n) (fs : FSET n) :=
+    forall (i : 'I_n), tnth bs i == (i \in fs).
+  
+  (* ******** *)
+  (* 変換関数 *)
+  (* ******** *)
+  
   (* タプル表現を集合表現に変換する関数。 *)
-  Definition bs2fs {n} (bs : BITS n) := [set x : 'I_n | tnth bs x].
+  Definition bs2fs {n} (bs : BITS n) : FSET n := [set x : 'I_n | tnth bs x].
   
   (* この変換関数を使った場合に、タプル表現の要素と集合表現に要素が一致する補題。 *)
-  Lemma bs_eq_fs {n} (bs : BITS n) (fs : FSET n) :
-    forall (i : 'I_n), bs2fs bs = fs -> tnth bs i = (i \in fs).
+  Lemma bs_eq_fs {n} (bs : BITS n) (fs : FSET n) : repr bs (bs2fs bs).
   Proof.
     Locate "[ set _ | _ ]".
     (* Search _ ([ set _ : _ | _ ]). *)
+    move=> i.
     Check inE.
-    rewrite /bs2fs.
-    move=> i <-.
     by rewrite inE.
   Qed.
   
-  (* ゼロが一致する証明 *)
+  (* ***** *)
+  (* 長さ0 *)
+  (* ***** *)
+  
   Check [tuple] : BITS 0.
   Check set0 : FSET 0.
-  Lemma zero_repr : forall (i : 'I_0), tnth [tuple] i = (i \in set0).
+  Lemma zero_repr : repr [tuple] set0.
   Proof.
     by elim.
   Qed.
-
+  
+  (* *************** *)
+  (* 全 true / false *)
+  (* *************** *)
+  
+  (* 全 true *)
+  Check (nseq_tuple 4 true) : BITS 4.
+  Check [set: 'I_4] : FSET 4.
+  Lemma all_true_repr {n} : repr (nseq_tuple n true) [set: 'I_n].
+  Proof.
+    move=> i.
+    rewrite inE.
+    Check (tnth_nth false (nseq_tuple n true) i) :
+      tnth (nseq_tuple n true) i = nth false (nseq_tuple n true) i.
+    rewrite (tnth_nth false).        (* nth の default は指定する。 *)
+    
+    Check nth_nseq (nseq_tuple n true).
+    rewrite nth_nseq.
+    
+    (* Goal : (if i < n then true else false) == true *)
+    Check ltn_ord i.
+    rewrite ltn_ord.
+    done.
+  Qed.
+  
+  (* 全 false *)
+  Lemma all_false_repr {n} : repr (nseq_tuple n false) set0.
+  Proof.
+    move=> i.
+    by rewrite inE (tnth_nth false) nth_nseq ltn_ord.
+  Qed.
+  
+  (* ****** *)
   (* シフト *)
+  (* ****** *)
   
   Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n.
   (* H : 0 < n |- prednK H : n.=1.+1 = n *)
@@ -132,7 +173,8 @@ Section Repr.
   Definition fset_shl1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
     [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
   
-  Lemma shl1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
+  Lemma shl1_repr n (bs : BITS n) (fs : FSET n) :
+    forall (H : 0 < n),
       (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
       (forall (i : 'I_n), tnth (shl1 bs) i = (i \in fset_shl1 fs (prednK H))).
   Proof.
@@ -147,12 +189,13 @@ Section Repr.
   Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
     [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
   
-  Lemma shr1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
+  Lemma shr1_repr n (bs : BITS n) (fs : FSET n) :
+    forall (H : 0 < n),
       (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
       (forall (i : 'I_n), tnth (shr1 bs) i = (i \in fset_shr1 fs (prednK H))).
   Proof.
   Admitted.
-
+  
 
   (* cons してから外す例。 *)
   (* n.+1.-1 は n と判断してくれる。 *)
