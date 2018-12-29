@@ -240,8 +240,11 @@ Section Repr.
   (* 1 が 0 に移ること。 *)
   (* n.+1 が n に移ること。 *)
   (* coq-bitset/src/ops/shift.v 参照 *)
+
   Definition fset_shl1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
-    [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
+    [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
+  (* シフトした後の、0〜n.-2 は、シフト前の 1〜n.-1 である。 *)
+  (* シフトで追加される、シフト後の最右(bitn.-1)の値は、とりあえず不問とする。 *)
   
   Lemma shl1_repr n (bs : BITS n) (fs : FSET n) :
     forall (H : 0 < n), repr bs fs ->
@@ -250,9 +253,11 @@ Section Repr.
     move=> H H1 i.
     move/eqP: (H1 i) => {H1} H1'.  
     rewrite inE (tnth_nth false) /shl1.
-    Check nth_map.
+    case H2 : (i < n.-1).
+    - admit.
+    - admit.
   Admitted.
-
+  
   
   (* 右シフト *)
   
@@ -273,6 +278,7 @@ Section Repr.
   
   Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
     [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
+  (* シフトした後の、1〜n.-1 は、シフト前の 0〜n.-2 である。 *)
   (* シフトで追加される、シフト後の最左(bit0)の値は、とりあえず不問とする。 *)
   
   (* i : 'I_n の半端ものの証明に使いそうである。 *)
