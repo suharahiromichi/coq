@@ -252,6 +252,7 @@ Section Repr.
   Proof.
     move=> H H1 i.
     move/eqP: (H1 i) => {H1} H1'.  
+    rewrite (tnth_nth false) in H1'.
     rewrite inE (tnth_nth false) /shl1.
     case H2 : (i < n.-1).
     - admit.
@@ -265,16 +266,28 @@ Section Repr.
   Definition shr1 {n} : BITS n -> BITS n := belast_tuple false.
   Check shr1 : BITS 4 -> BITS 4.
   
-  Lemma nth_belast1 (x : bool) (s : seq bool) (i : nat) :
-    0 < i -> nth x (belast x s) i = nth x s i.-1.
+(*
+  Lemma nth_cons (T : Type) (x0 : T) (a : T) (s : seq T) (i : nat) :
+    nth x0 (a :: s) i = if 0 < i then nth x0 s i.-1 else a.
   Proof.
+  Admitted.
+*)  
+  Lemma nth_belast1 (s : seq bool) (i : nat) :
+    0 < i -> nth false (belast false s) i = nth false s i.-1.
+  Proof.
+    elim: i.
+    - done.
+    - move=> i IHi H.
+      admit.
   Admitted.                                 (* XXXXX *)
   
   (* 右シフトで追加される最左(bit0)は、falseである。 *)
-  Lemma nth_belast2 (x : bool) (s : seq bool) (i : nat) :
-    i = 0 -> nth x (belast x s) i = false.
+  Lemma nth_belast2 (s : seq bool) (i : nat) :
+    i = 0 -> nth false (belast false s) i = false.
   Proof.
-  Admitted.                                 (* XXXXX *)
+    move=> ->.
+    now elim: s.
+  Qed.
   
   Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
     [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
@@ -295,6 +308,7 @@ Section Repr.
   Proof.
     move=> H H1 i.
     move/eqP: (H1 i) => {H1} H1'.  
+    rewrite (tnth_nth false) in H1'.
     rewrite inE (tnth_nth false) /shr1.
     case H2 : (0 < i).
     - rewrite nth_belast1 /=.
