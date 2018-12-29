@@ -119,7 +119,9 @@ Section Repr.
   (* 全 true *)
   Check (nseq_tuple 4 true) : BITS 4.
   Check [set: 'I_4] : FSET 4.
-  Lemma all_true_repr {n} : repr (nseq_tuple n true) [set: 'I_n].
+  
+  Definition all_true {n} := nseq_tuple n true.
+  Lemma all_true_repr {n} : repr all_true [set: 'I_n].
   Proof.
     move=> i.
     rewrite inE.
@@ -127,6 +129,7 @@ Section Repr.
       tnth (nseq_tuple n true) i = nth false (nseq_tuple n true) i.
     rewrite (tnth_nth false).        (* nth の default は指定する。 *)
     
+    Check nth_nseq.
     Check nth_nseq (nseq_tuple n true).
     rewrite nth_nseq.
     
@@ -137,10 +140,54 @@ Section Repr.
   Qed.
   
   (* 全 false *)
-  Lemma all_false_repr {n} : repr (nseq_tuple n false) set0.
+  Definition all_false {n} := nseq_tuple n false.
+  Lemma all_false_repr {n} : repr (@all_false n) set0.
   Proof.
     move=> i.
     by rewrite inE (tnth_nth false) nth_nseq ltn_ord.
+  Qed.
+  
+
+  (* ****** *)
+  (* and/or *)
+  (* ****** *)
+  Check fun x => andb x.1 x.2.
+  Definition band {n} (s t : BITS n) :=
+    map_tuple (fun x => andb x.1 x.2) (zip_tuple s t).
+  Lemma bandP_repr {n} (bs bt : BITS n) (fs ft : FSET n) :
+    repr bs fs -> repr bt ft -> repr (band bs bt) (fs :&: ft).
+  Proof.
+    rewrite /repr => H1 H2 i.
+    move/eqP: (H1 i) => {H1} H1'.
+    move/eqP: (H2 i) => {H2} H2'.
+    rewrite inE (tnth_nth false) /band.
+    rewrite (@nth_map (bool * bool) (false, false) bool false).
+    - rewrite !nth_zip.
+      + now rewrite -H1' -H2' !(tnth_nth false).
+      + now rewrite !size_tuple.
+    - now rewrite size_tuple ltn_ord.
+(*
+    - rewrite /= size_zip /= !size_tuple.
+      rewrite minnE subKn.
+      + now rewrite ltn_ord.
+      + done.
+*)
+  Qed.
+  
+  Definition bor {n} (s t : BITS n) :=
+    map_tuple (fun x => orb x.1 x.2) (zip_tuple s t).
+  Lemma borP_repr {n} (bs bt : BITS n) (fs ft : FSET n) :
+    repr bs fs -> repr bt ft -> repr (bor bs bt) (fs :|: ft).
+  Proof.
+    rewrite /repr => H1 H2 i.
+    move/eqP: (H1 i) => {H1} H1'.
+    move/eqP: (H2 i) => {H2} H2'.
+    rewrite inE (tnth_nth false) /band.
+    rewrite (@nth_map (bool * bool) (false, false) bool false).
+    - rewrite !nth_zip.
+      + now rewrite -H1' -H2' !(tnth_nth false).
+      + now rewrite !size_tuple.
+    - now rewrite size_tuple ltn_ord.
   Qed.
   
   (* ****** *)
