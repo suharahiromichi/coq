@@ -148,6 +148,29 @@ Section Repr.
   Qed.
   
 
+  (* **** *)
+  (* inv  *)
+  (* **** *)
+  Lemma neg_neg a b : a == b -> ~~a == ~~b.
+  Proof.
+    now move/eqP => ->.
+  Qed.
+  
+  Check fun x => negb x.
+  Definition binv {n} (s : BITS n) :=
+    map_tuple (fun x => negb x) s.
+  Lemma binvP_repr {n} (bs : BITS n) (fs : FSET n) :
+    repr bs fs -> repr (binv bs) (~: fs).
+  Proof.
+    rewrite /repr => H1 i.
+    move/eqP: (H1 i) => {H1} H1'.
+    rewrite inE (tnth_nth false) /binv.
+    rewrite (@nth_map bool false bool false).
+    - apply neg_neg.
+      + now rewrite -H1' !(tnth_nth false).
+      + now rewrite size_tuple.
+  Qed.
+  
   (* ****** *)
   (* and/or *)
   (* ****** *)
@@ -207,7 +230,7 @@ Section Repr.
     behead_tuple (rcons_tuple bs false).
 
   (* seq型の関数をtupleに適用できるようにする。 *)
-  Lemma shl1P {n} (t : n.-tuple bool) : size (behead (rcons t false)) == n.
+  Lemma shl1P {n} (t : BITS n) : size (behead (rcons t false)) == n.
   Proof.
     by rewrite size_behead size_rcons -pred_Sn size_tuple.
   Qed.
