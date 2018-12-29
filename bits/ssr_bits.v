@@ -106,20 +106,18 @@ Section Repr.
 
   (* シフト *)
   
-  Lemma n_11_n n : 0 < n -> n.-1.+1 = n.
-  Proof.
-      by apply prednK.
-  Qed.
+  Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n.
+  (* H : 0 < n |- prednK H : n.=1.+1 = n *)
 
   (* 左シフト *)
   
   Compute rcons (behead [:: 0;1;2;3]) 9.    (* [:: 1;2;3;9] *)
   Compute behead (rcons [:: 0;1;2;3] 9).    (* [:: 1;2;3;9] *)
-  (*
-    (* tuple型の関数を組み合わせる  *)
-  Definition shl1 {n} (bs : BITS n) : BITS n :=
+
+  (* tuple型の関数を組み合わせる場合  *)
+  Definition shl1' {n} (bs : BITS n) : BITS n :=
     behead_tuple (rcons_tuple bs false).
-   *)  
+
   (* seq型の関数をtupleに適用できるようにする。 *)
   Lemma shl1P {n} (t : n.-tuple bool) : size (behead (rcons t false)) == n.
   Proof.
@@ -136,7 +134,7 @@ Section Repr.
   
   Lemma shl1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
       (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
-      (forall (i : 'I_n), tnth (shl1 bs) i = (i \in fset_shl1 fs (n_11_n H))).
+      (forall (i : 'I_n), tnth (shl1 bs) i = (i \in fset_shl1 fs (prednK H))).
   Proof.
   Admitted.
   
@@ -151,22 +149,28 @@ Section Repr.
   
   Lemma shr1_repr n (bs : BITS n) (fs : FSET n) (H : 0 < n) :
       (forall (i : 'I_n), tnth bs i = (i \in fs)) ->
-      (forall (i : 'I_n), tnth (shr1 bs) i = (i \in fset_shr1 fs (n_11_n H))).
+      (forall (i : 'I_n), tnth (shr1 bs) i = (i \in fset_shr1 fs (prednK H))).
   Proof.
   Admitted.
 
+
+  (* cons してから外す例。 *)
+  (* n.+1.-1 は n と判断してくれる。 *)
+  Compute behead (cons false [:: true; false]).
+  Definition test' {n} (bs : BITS n) : BITS n :=
+    behead_tuple (cons_tuple false bs).
   
-  (* 殴って擦る場合は、証明がいる。 *)
+  (* drop はかならず 1 とは限らないため、tcast が必要になる。 *)
   Lemma n1_1_n n : n.+1 - 1 = n.
   Proof.
     by rewrite subn1 -pred_Sn.
   Qed.
-  
+  Check behead_tuple.
+
   Compute drop 1 (cons false [:: true; false]).
   Definition test {n} (bs : BITS n) : BITS n :=
     tcast (n1_1_n n)
       (@drop_tuple n.+1 1 bool (cons_tuple false bs)).
-  
 End Repr.  
 
 (* END *)
