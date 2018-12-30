@@ -32,7 +32,7 @@ Section Bits.
     (* maxn i.+1 n = n *)
     apply/maxn_idPr.
     (* i < n *)
-    now apply ltn_ord.
+    by apply ltn_ord.
   Qed.
   
   (* タプルの任意の要素を書き換える関数。tcastを使う際にサイズが変化ない証明を与える。 *)
@@ -153,7 +153,7 @@ Section Repr.
   (* **** *)
   Lemma neg_neg a b : a == b -> ~~a == ~~b.
   Proof.
-    now move/eqP => ->.
+    by move/eqP => ->.
   Qed.
   
   Check fun x => negb x.
@@ -167,8 +167,8 @@ Section Repr.
     rewrite inE (tnth_nth false) /binv.
     rewrite (@nth_map bool false bool false).
     - apply neg_neg.
-      + now rewrite -H1' !(tnth_nth false).
-      + now rewrite size_tuple.
+      + by rewrite -H1' !(tnth_nth false).
+      + by rewrite size_tuple.
   Qed.
   
   (* ****** *)
@@ -186,13 +186,13 @@ Section Repr.
     rewrite inE (tnth_nth false) /band.
     rewrite (@nth_map (bool * bool) (false, false) bool false).
     - rewrite !nth_zip.
-      + now rewrite -H1' -H2' !(tnth_nth false).
-      + now rewrite !size_tuple.
-    - now rewrite size_tuple ltn_ord.
+      + by rewrite -H1' -H2' !(tnth_nth false).
+      + by rewrite !size_tuple.
+    - by rewrite size_tuple ltn_ord.
 (*
     - rewrite /= size_zip /= !size_tuple.
       rewrite minnE subKn.
-      + now rewrite ltn_ord.
+      + by rewrite ltn_ord.
       + done.
 *)
   Qed.
@@ -208,9 +208,9 @@ Section Repr.
     rewrite inE (tnth_nth false) /band.
     rewrite (@nth_map (bool * bool) (false, false) bool false).
     - rewrite !nth_zip.
-      + now rewrite -H1' -H2' !(tnth_nth false).
-      + now rewrite !size_tuple.
-    - now rewrite size_tuple ltn_ord.
+      + by rewrite -H1' -H2' !(tnth_nth false).
+      + by rewrite !size_tuple.
+    - by rewrite size_tuple ltn_ord.
   Qed.
   
   (* ****** *)
@@ -287,14 +287,14 @@ Section Repr.
   Lemma nth_cons (T : Type) (x0 : T) (a : T) (s : seq T) (i : nat) :
     0 < i -> nth x0 (a :: s) i = nth x0 s i.-1.
   Proof.
-    by elim: s i => [|x s IHs]; case.
+    by elim: s i => [|x s IHs]; case. 
   Qed.
   
   Lemma nth_belast_nil (x0 : bool) (i : nat) :
     0 < i -> nth false (belast x0 [::]) i = nth false [::] i.-1.
   Proof.
     move=> H.
-    now rewrite /belast !nth_nil.
+    by rewrite /belast !nth_nil.
   Qed.
   
   Lemma nth_belast_cons (x0 x : bool) s (i : nat) :
@@ -308,7 +308,7 @@ Section Repr.
   Proof.
     elim: s i x0.
     - move=> i x0 H.
-      now apply: nth_belast_nil.
+      by apply: nth_belast_nil.
     - move=> a s IHs i x0 H.
       Check nth_belast_cons false false s.
       rewrite nth_belast_cons.
@@ -327,7 +327,7 @@ Section Repr.
     i = 0 -> nth false (belast false s) i = false.
   Proof.
     move=> ->.
-    now elim: s.
+    by elim: s.
   Qed.
   
   Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
@@ -340,7 +340,7 @@ Section Repr.
   Proof.
     move=> H.
     rewrite lt0n in H.
-    now move/eqP in H.
+    by move/eqP in H.
   Qed.
   
   Lemma shr1_repr n (bs : BITS n) (fs : FSET n) :
@@ -358,7 +358,7 @@ Section Repr.
       + done.
     - rewrite nth_belast2 /=.
       + done.
-      + now apply: not_0lt__0.
+      + by apply: not_0lt__0.
   Admitted.
   
   
