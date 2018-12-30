@@ -274,25 +274,33 @@ Section Repr.
   Proof.
     done.
   Qed.
-
 *)  
+  (* おまけ *)
+  Lemma nth_cat (s1 s2 : seq bool) (x0 : bool) (n : nat) :
+    n < size s1 -> nth x0 (s1 ++ s2) n = nth x0 s1 n.
+  Proof. by elim: s1 n => [|x s1 IHs] []. Qed.
+  
+  Lemma nth_cat' (s1 s2 : seq bool) (x0 : bool) (n : nat) :
+    n >= size s1 -> nth x0 (s1 ++ s2) n = nth x0 s2 (n - size s1).
+  Proof. by elim: s1 n => [|x s1 IHs] []. Qed.
+
   Lemma nth_cons (T : Type) (x0 : T) (a : T) (s : seq T) (i : nat) :
     0 < i -> nth x0 (a :: s) i = nth x0 s i.-1.
   Proof.
-  Admitted.
+    by elim: s i => [|x s IHs]; case.
+  Qed.
   
-  Lemma test' (x0 x : bool) s (i : nat) :
-    nth false (belast x0 (x :: s)) i.+1 == nth false (belast x s) i.
+  Lemma nth_belast_nil (x0 : bool) (i : nat) :
+    0 < i -> nth false (belast x0 [::]) i = nth false [::] i.-1.
   Proof.
-    done.
-  Qed.  
-  Lemma test (x0 x : bool) s (i : nat) :
+    move=> H.
+    now rewrite /belast !nth_nil.
+  Qed.
+  
+  Lemma nth_belast_cons (x0 x : bool) s (i : nat) :
     0 < i -> nth false (belast x0 (x :: s)) i = nth false (belast x s) i.-1.
   Proof.
-    elim: i.
-    - done.
-    - move=> n IHi H.
-      done.
+    by elim: s i => [| a s IHs]; case.
   Qed.  
   
   Lemma nth_belast1 (x0 : bool) (s : seq bool) (i : nat) :
@@ -300,16 +308,17 @@ Section Repr.
   Proof.
     elim: s i x0.
     - move=> i x0 H.
-      admit.
+      now apply: nth_belast_nil.
     - move=> a s IHs i x0 H.
-      Check test false false s.
-      rewrite test.
-      + rewrite nth_cons.
+      Check nth_belast_cons false false s.
+      rewrite nth_belast_cons.
+      + Check @nth_cons bool false a s i.-1.
+        rewrite nth_cons.
         * Check (IHs i.-1 a).
           rewrite -(IHs i.-1 a).
           done.
-        * admit.
-      + admit.
+        * admit.                            (* 0 < i.-1 *)
+      + admit.                              (* 0 < i.-1 *)
     - done.
   Admitted.
   
