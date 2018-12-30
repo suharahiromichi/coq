@@ -267,19 +267,51 @@ Section Repr.
   Check shr1 : BITS 4 -> BITS 4.
   
 (*
+  Compute belast 9 [:: 0;1;2;3].            (* [:: 9;0;1;2] *)
+  Compute 9 :: belast 0 [:: 1;2;3].
+  Lemma test (x0 x : bool) s (i : nat) :
+    nth false (belast x0 (x :: s)) i == nth false (x0 :: belast x s) i.
+  Proof.
+    done.
+  Qed.
+
+*)  
   Lemma nth_cons (T : Type) (x0 : T) (a : T) (s : seq T) (i : nat) :
-    nth x0 (a :: s) i = if 0 < i then nth x0 s i.-1 else a.
+    0 < i -> nth x0 (a :: s) i = nth x0 s i.-1.
   Proof.
   Admitted.
-*)  
-  Lemma nth_belast1 (s : seq bool) (i : nat) :
-    0 < i -> nth false (belast false s) i = nth false s i.-1.
+  
+  Lemma test' (x0 x : bool) s (i : nat) :
+    nth false (belast x0 (x :: s)) i.+1 == nth false (belast x s) i.
+  Proof.
+    done.
+  Qed.  
+  Lemma test (x0 x : bool) s (i : nat) :
+    0 < i -> nth false (belast x0 (x :: s)) i = nth false (belast x s) i.-1.
   Proof.
     elim: i.
     - done.
-    - move=> i IHi H.
+    - move=> n IHi H.
+      done.
+  Qed.  
+  
+  Lemma nth_belast1 (x0 : bool) (s : seq bool) (i : nat) :
+    0 < i -> nth false (belast x0 s) i = nth false s i.-1.
+  Proof.
+    elim: s i x0.
+    - move=> i x0 H.
       admit.
-  Admitted.                                 (* XXXXX *)
+    - move=> a s IHs i x0 H.
+      Check test false false s.
+      rewrite test.
+      + rewrite nth_cons.
+        * Check (IHs i.-1 a).
+          rewrite -(IHs i.-1 a).
+          done.
+        * admit.
+      + admit.
+    - done.
+  Admitted.
   
   (* 右シフトで追加される最左(bit0)は、falseである。 *)
   Lemma nth_belast2 (s : seq bool) (i : nat) :
@@ -312,6 +344,7 @@ Section Repr.
     rewrite inE (tnth_nth false) /shr1.
     case H2 : (0 < i).
     - rewrite nth_belast1 /=.
+      (* nth false bs i.-1 == (cast_ord (prednK H) (inord i.-1) \in fs) *)
       + admit.                              (* XXXXX *)
       + done.
     - rewrite nth_belast2 /=.
