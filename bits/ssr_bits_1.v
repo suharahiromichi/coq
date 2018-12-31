@@ -274,11 +274,7 @@ Section Repr.
     by elim: s i => [| a s IHs]; case.
   Qed.  
   
-  Lemma nth_belast1' (x0 : bool) (s : seq bool) (i : nat) :
-    nth false (belast x0 s) i.+1 = nth false s i.
-  Admitted.
-  
-    Lemma nth_belast1 (x0 : bool) (s : seq bool) (i : nat) :
+  Lemma nth_belast1 (x0 : bool) (s : seq bool) (i : nat) :
     0 < i -> nth false (belast x0 s) i = nth false s i.-1.
   Proof.
     elim: s i x0.
@@ -292,10 +288,7 @@ Section Repr.
         * Check (IHs i.-1 a).
           rewrite -(IHs i.-1 a).
           done.
-        * Check leq0n.                      (* 0 <= n *)
-          Search _ (_ < _).
-          Search _ (0  _).
-          admit.
+        * admit.                            (* 0 < i.-1 *)
       + admit.                              (* 0 < i.-1 *)
     - done.
   Admitted.
@@ -321,6 +314,13 @@ Section Repr.
     by move/eqP in H.
   Qed.
   
+  Lemma test i n : i < n -> i <= n.
+  Proof.
+    elim: n.
+    - done.
+    - move=> n' IHi H.
+  Admitted.
+  
   Lemma shr1_repr n (bs : BITS n) (fs : FSET n) :
     forall (H : 0 < n), repr bs fs ->
                         repr (shr1 bs) (fset_shr1 fs (prednK H)).
@@ -337,8 +337,12 @@ Section Repr.
       + rewrite -H1' /= inordK.
         * done.
         * rewrite !prednK.
-          ** admit.
-          ** admit.
+          Search _ (_ <= _).
+          ** apply test.                    (* i <= n *)
+             Check ltn_ord i : i < n.
+             apply ltn_ord.
+             done.
+          ** done.
         * done.
       + done.
     - rewrite nth_belast2 /=.
