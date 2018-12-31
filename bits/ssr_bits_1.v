@@ -324,28 +324,27 @@ Section Repr.
     (* n を指定すればよいが、cast_ord できないので代入できない。 *)
     Check @inord n i.-1 : 'I_n.+1.
     Check @inord n.+1 i : 'I_n.+1.+1.
-    
-    case H2 : (0 < i).
+
+    case Hi : (0 < i).
     - rewrite nth_belast1 /=.
       + rewrite -H1' /=.
-        Check @inordK n.-1 i.-1.      (* i.-1 < n.-1.+1 -> inord i = i *)
+        Check inordK.
         rewrite inordK.
         * done.
         * (* 普通は i < n なのだが、i.-1 を与えるので、i <= n になってしまう。 *)
           (* i.-1 < n.-1.+1 *)
           (* i.-1.+1 <= n.-1.+1 *)
           Check prednK.
-          rewrite prednK.
-          ** rewrite prednK.
-             *** admit.                     (* i <= n *)
-             *** done.
+          rewrite !prednK.
+          ** apply ltnW.                    (* i < n -> i <= n *)
+             by apply ltn_ord.              (* i : 'I_n -> i < n *)
+          ** done.
           ** done.
       + done.
     - rewrite nth_belast2 /=.
       + done.
       + by apply: not_0lt__0.
-  Admitted.
-  
+  Qed.
   
   (* cons してから外す例。 *)
   (* n.+1.-1 は n と判断してくれる。 *)
