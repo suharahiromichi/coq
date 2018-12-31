@@ -105,29 +105,20 @@ Section Repr.
   (* **** *)
   (* inv  *)
   (* **** *)
-  Lemma neg_neg a b : a == b -> ~~a == ~~b.
-  Proof.
-    by move/eqP => ->.
-  Qed.
-  
   Check fun x => negb x.
   Definition binv {n} (s : BITS n) :=
     map_tuple (fun x => negb x) s.
   Lemma binvP_repr {n} (bs : BITS n) (fs : FSET n) :
     repr bs fs -> repr (binv bs) (~: fs).
   Proof.
-    move=> H1.
-    apply reprs.
-    apply reprs in H1.
-    move=> i.
-    move/eqP: (H1 i) => {H1} H1'.
-    rewrite inE (tnth_nth false) /binv.
+    move/setP => H1.
+    apply/setP => i.
+    move: (H1 i) => {H1} H1.
+    rewrite !inE !(tnth_nth false) in H1.
+    rewrite !inE !(tnth_nth false) /binv.
     rewrite (@nth_map bool false bool false).
-    - apply/eqP.
-      apply neg_neg.
-      move/eqP in H1'.
-        by rewrite -H1' !(tnth_nth false).
-    -  by rewrite size_tuple.
+    - by rewrite H1.                        (* rewrite in_setC *)
+    - by rewrite size_tuple.
   Qed.
   
   (* ****** *)
@@ -139,21 +130,20 @@ Section Repr.
   Lemma bandP_repr {n} (bs bt : BITS n) (fs ft : FSET n) :
     repr bs fs -> repr bt ft -> repr (band bs bt) (fs :&: ft).
   Proof.
-    move=> H1 H2.
-    apply reprs.
-    apply reprs in H1.
-    apply reprs in H2.
-    rewrite /repr'.
-    rewrite /repr' in H1.
-    rewrite /repr' in H2.
+    move/setP => H1.
+    move/setP => H2.
+    apply/setP => i.
     
-    move=> i.
-    move: (H1 i) => {H1} H1'.
-    move: (H2 i) => {H2} H2'.
-    rewrite inE (tnth_nth false) /band.
+    move: (H1 i) => {H1} H1.
+    move: (H2 i) => {H2} H2.
+    
+    rewrite inE (tnth_nth false) in H1.
+    rewrite inE (tnth_nth false) in H2.
+    rewrite inE (tnth_nth false) /band.     (* and *)
     rewrite (@nth_map (bool * bool) (false, false) bool false).
+    
     - rewrite !nth_zip.
-      + by rewrite -H1' -H2' !(tnth_nth false).
+      + by rewrite in_setI -H1 -H2.         (* setI *)
       + by rewrite !size_tuple.
     - by rewrite size_tuple ltn_ord.
   Qed.
@@ -163,21 +153,20 @@ Section Repr.
   Lemma borP_repr {n} (bs bt : BITS n) (fs ft : FSET n) :
     repr bs fs -> repr bt ft -> repr (bor bs bt) (fs :|: ft).
   Proof.
-    move=> H1 H2.
-    apply reprs.
-    apply reprs in H1.
-    apply reprs in H2.
-    rewrite /repr'.
-    rewrite /repr' in H1.
-    rewrite /repr' in H2.
+    move/setP => H1.
+    move/setP => H2.
+    apply/setP => i.
     
-    move=> i.
-    move: (H1 i) => {H1} H1'.
-    move: (H2 i) => {H2} H2'.
-    rewrite inE (tnth_nth false) /bor.
+    move: (H1 i) => {H1} H1.
+    move: (H2 i) => {H2} H2.
+    
+    rewrite inE (tnth_nth false) in H1.
+    rewrite inE (tnth_nth false) in H2.
+    rewrite inE (tnth_nth false) /bor.      (* or *)
     rewrite (@nth_map (bool * bool) (false, false) bool false).
+    
     - rewrite !nth_zip.
-      + by rewrite -H1' -H2' !(tnth_nth false).
+      + by rewrite in_setU -H1 -H2.         (* setU *)
       + by rewrite !size_tuple.
     - by rewrite size_tuple ltn_ord.
   Qed.
@@ -314,13 +303,6 @@ Section Repr.
     by move/eqP in H.
   Qed.
   
-  Lemma test i n : i < n -> i <= n.
-  Proof.
-    elim: n.
-    - done.
-    - move=> n' IHi H.
-  Admitted.
-  
   Lemma shr1_repr n (bs : BITS n) (fs : FSET n) :
     forall (H : 0 < n), repr bs fs ->
                         repr (shr1 bs) (fset_shr1 fs (prednK H)).
@@ -328,22 +310,36 @@ Section Repr.
     move=> H.
     move/setP => H1.
     apply/setP => i.
-    move: (H1 (cast_ord (prednK H) (inord i.-1))) => {H1} H1'.  
+    
+(*  move: (H1 (cast_ord (prednK H) (@inord n.-1 i.-1))) => {H1} H1'. *)
+    move: (H1 (cast_ord (prednK H) (inord i.-1))) => {H1} H1'.
+    
     rewrite !inE (tnth_nth false) in H1'.
     rewrite !inE (tnth_nth false) /shr1 /fset_shr1.
     
+    (* i < n から i < n.-1.+1 。 +1になるのは inordの定義による。 *)
+    (* i : 'I_n に値を足しても引いても、'I_n.-1.+1 型になる。 *)
+    Check inord i : 'I_n.-1.+1.
+    Check @inord n.-1 i : 'I_n.-1.+1.
+    (* n を指定すればよいが、cast_ord できないので代入できない。 *)
+    Check @inord n i.-1 : 'I_n.+1.
+    Check @inord n.+1 i : 'I_n.+1.+1.
+    
     case H2 : (0 < i).
     - rewrite nth_belast1 /=.
-      + rewrite -H1' /= inordK.
+      + rewrite -H1' /=.
+        Check @inordK n.-1 i.-1.      (* i.-1 < n.-1.+1 -> inord i = i *)
+        rewrite inordK.
         * done.
-        * rewrite !prednK.
-          Search _ (_ <= _).
-          ** apply test.                    (* i <= n *)
-             Check ltn_ord i : i < n.
-             apply ltn_ord.
-             done.
+        * (* 普通は i < n なのだが、i.-1 を与えるので、i <= n になってしまう。 *)
+          (* i.-1 < n.-1.+1 *)
+          (* i.-1.+1 <= n.-1.+1 *)
+          Check prednK.
+          rewrite prednK.
+          ** rewrite prednK.
+             *** admit.                     (* i <= n *)
+             *** done.
           ** done.
-        * done.
       + done.
     - rewrite nth_belast2 /=.
       + done.
