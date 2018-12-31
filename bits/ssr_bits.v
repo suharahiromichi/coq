@@ -167,8 +167,8 @@ Section Repr.
     rewrite inE (tnth_nth false) /binv.
     rewrite (@nth_map bool false bool false).
     - apply neg_neg.
-      + by rewrite -H1' !(tnth_nth false).
-      + by rewrite size_tuple.
+       by rewrite -H1' !(tnth_nth false).
+    -  by rewrite size_tuple.
   Qed.
   
   (* ****** *)
@@ -312,12 +312,15 @@ Section Repr.
     - move=> a s IHs i x0 H.
       Check nth_belast_cons false false s.
       rewrite nth_belast_cons.
-      + Check @nth_cons bool false a s i.-1.
+      + Check @nth_cons bool false a s i.
         rewrite nth_cons.
         * Check (IHs i.-1 a).
           rewrite -(IHs i.-1 a).
           done.
-        * admit.                            (* 0 < i.-1 *)
+        * Check leq0n.                      (* 0 <= n *)
+          Search _ (_ < _).
+          Search _ (0  _).
+          admit.
       + admit.                              (* 0 < i.-1 *)
     - done.
   Admitted.
