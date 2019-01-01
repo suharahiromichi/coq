@@ -240,7 +240,6 @@ Section Repr.
       by rewrite H2.
   Qed.
   
-  Definition shr1 {n} : BITS n -> BITS n := belast_tuple false.
   Definition shr1_seq := belast false.
 (*  
   Compute shr1_seq [::].
@@ -248,6 +247,13 @@ Section Repr.
   Compute shr1_seq [:: true; true].
   Compute shr1_seq [:: true; true; true].
 *)  
+  Lemma shr1P {n} (t : BITS n) : size (shr1_seq t) == n.
+  Proof.
+    by rewrite size_belast size_tuple.
+  Qed.
+  Canonical shr1 {n} t := Tuple (@shr1P n t).
+  Check shr1 : BITS 4 -> BITS 4.
+  
   Lemma nth_shr1_0 (s : seq bool) :
     nth false (shr1_seq s) 0 = false.
   Proof.
@@ -260,21 +266,16 @@ Section Repr.
     by elim: s i => [|x s IHs]; case. 
   Qed.
 
+  (* s = [::] で i = 1 のとき、左辺は a、右辺は false であり、成立しない。 *)
   Lemma nth_shr1 (a : bool) (s : seq bool) (i : nat) :
     0 < i -> nth false (shr1_seq (a :: s)) i = nth false (shr1_seq s) i.-1.
   Proof.
-    elim: s.
-    - rewrite nth_nil.
-      admit.
-    - 
   Admitted.
-
-  Compute nth false (shr1_seq [:: true]) 1.
+  
+  (* s = [::] のとき false になり、成立しない。 *)
   Lemma nth_shr1_1 (a : bool) (s : seq bool) :
     nth false (shr1_seq (a :: s)) 1 = a.
   Proof.
-    elim: s.
-    - 
   Admitted.
   
   Lemma nth_shr1_n (s : seq bool) (i : nat) :
