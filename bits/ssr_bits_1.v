@@ -263,38 +263,6 @@ Section Repr.
     by elim: s i => [| a s IHs]; case.
   Qed.  
   
-  Lemma nth_belast1 (x0 : bool) (s : seq bool) (i : nat) :
-    0 < i -> nth false (belast x0 s) i = nth false s i.-1.
-  Proof.
-    elim: s i x0.
-    - move=> i x0 H.
-      by apply: nth_belast_nil.
-    - move=> a s IHs i x0 H.
-      Check nth_belast_cons false false s.
-      rewrite nth_belast_cons.
-      + Check @nth_cons bool false a s i.
-        rewrite nth_cons.
-        * Check (IHs i.-1 a).
-          rewrite -(IHs i.-1 a).
-          done.
-        * admit.                            (* 0 < i.-1 *)
-      + admit.                              (* 0 < i.-1 *)
-    - done.
-  Admitted.
-  
-  (* 右シフトで追加される最左(bit0)は、falseである。 *)
-  Lemma nth_belast2 (s : seq bool) (i : nat) :
-    i = 0 -> nth false (belast false s) i = false.
-  Proof.
-    move=> ->.
-    by elim: s.
-  Qed.
-  
-  Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
-    [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
-  (* シフトした後の、1〜n.-1 は、シフト前の 0〜n.-2 である。 *)
-  (* シフトで追加される、シフト後の最左(bit0)の値は、とりあえず不問とする。 *)
-  
   (* i : 'I_n の半端ものの証明に使いそうである。 *)
   Lemma not_0lt__0 (i : nat) : (0 < i) = false -> i = 0.
   Proof.
@@ -302,6 +270,69 @@ Section Repr.
     rewrite lt0n in H.
     by move/eqP in H.
   Qed.
+  
+  Lemma p0lt__not_1lt__1 i : 0 < i -> 0 < i.-1 = false -> i = 1.
+    elim: i.
+    + done.
+    + move=> i IHi H1 H2.
+      Check @not_0lt__0 i.+1.-1.
+      apply (@not_0lt__0 i.+1.-1) in H2.
+      rewrite PeanoNat.Nat.pred_succ in H2.
+      by rewrite H2.
+  Qed.
+  
+  (* 右シフトで追加される最左(bit0)は、falseである。 *)
+  Lemma nth_belast2 (s : seq bool) (i : nat) :
+    i = 0 -> nth false (belast false s) i = false.
+  Proof.
+    move=> ->.
+      by elim: s.
+  Qed.
+  
+  (* これは正しくない。 XXXXXX *)
+  Lemma nth_belast2' (x0 : bool) (s : seq bool) (i : nat) :
+    i = 0 -> nth false (belast x0 s) i = x0.
+  Proof.
+  Admitted.
+
+  (* これは使えない。使っていない。 *)
+  Lemma nth_belast2'' (x0 : bool) (s : seq bool) (i : nat) :
+    i = 0 -> nth x0 (belast x0 s) i = x0.
+  Proof.
+    move=> ->.
+      by elim: s.
+  Qed.
+  
+  Lemma nth_belast1 (x0 : bool) (s : seq bool) (i : nat) :
+    0 < i -> nth false (belast x0 s) i = nth false s i.-1.
+  Proof.
+    elim: s i x0.
+    - move=> i x0 H.
+      by apply: nth_belast_nil.
+
+    - move=> a s IHs i x0 H.
+      case Hi : (0 < i.-1).
+      + Check nth_belast_cons false false s.
+        rewrite nth_belast_cons.
+        *  Check @nth_cons bool false a s i.
+           rewrite nth_cons.
+           ** Check (IHs i.-1 a).
+              by rewrite -(IHs i.-1 a).
+           ** done.
+        * done.
+      + have H1 : i = 1 by apply p0lt__not_1lt__1.
+        rewrite H1.
+        rewrite nth_belast_cons.
+        * rewrite [1.-1]/=.
+          rewrite [nth false (a :: s) 0]/=.
+            by rewrite nth_belast2'.        (* 正しくない定理 *)
+        * by rewrite -{2}H1.                   (* 0 < 1 *)
+  Qed.
+  
+  Definition fset_shr1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
+    [set i : 'I_n | 0 < i & cast_ord H (@inord n.-1 i.-1) \in fs].
+  (* シフトした後の、1〜n.-1 は、シフト前の 0〜n.-2 である。 *)
+  (* シフトで追加される、シフト後の最左(bit0)の値は、とりあえず不問とする。 *)
   
   Lemma shr1_repr n (bs : BITS n) (fs : FSET n) :
     forall (H : 0 < n), repr bs fs ->
