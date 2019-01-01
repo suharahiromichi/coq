@@ -194,15 +194,36 @@ Section Repr.
   Qed.
   Canonical shl1 {n} t := Tuple (@shl1P n t).
   Check shl1 : BITS 4 -> BITS 4.
+
+  Definition shl1_seq bs := behead (rcons bs false).
   
   (* 1 が 0 に移ること。 *)
   (* n.+1 が n に移ること。 *)
   (* coq-bitset/src/ops/shift.v 参照 *)
 
+  Lemma nth_shl1 (n : nat) (a : bool) (s : seq bool) (i : nat) :
+    i < n.-1 -> nth false (shl1_seq (a :: s)) i = nth false (shl1_seq s) i.-1.
+  Proof.
+  Admitted.
+  
+  Lemma nth_shl1_1 (n : nat) (s : seq bool) (i : nat) :
+    i = n.-1 -> nth false (behead (rcons s false)) i = false.
+  Proof.
+  Admitted.
+  
+  Lemma nth_shl1_n (n : nat) (s : seq bool) (i : nat) :
+    i < n.-1 -> nth false (shl1_seq s) i = nth false s i.+1.
+  Proof.
+  Admitted.
+  
   Definition fset_shl1 {n} (fs : FSET n) (H : n.-1.+1 = n) : FSET n :=
     [set i : 'I_n | i < n.-1 & cast_ord H (@inord n.-1 i.+1) \in fs].
   (* シフトした後の、0〜n.-2 は、シフト前の 1〜n.-1 である。 *)
   (* シフトで追加される、シフト後の最右(bitn.-1)の値は、とりあえず不問とする。 *)
+  
+  Lemma pltn__not_1lt__n_1 n i : i < n -> i < n.-1 = false -> i = n.-1.
+    elim: i.
+  Admitted.
   
   Lemma shl1_repr n (bs : BITS n) (fs : FSET n) :
     forall (H : 0 < n), repr bs fs ->
@@ -211,14 +232,28 @@ Section Repr.
     move=> H.
     move/setP => H1.
     apply/setP => i.
-    move: (H1 i) => {H1} H1'.  
-    rewrite inE (tnth_nth false) in H1'.
-    rewrite inE (tnth_nth false) /shl1.
-    case H2 : (i < n.-1).
-    - admit.
-    - admit.
-  Admitted.
-  
+    
+    move: (H1 (cast_ord (prednK H) (inord i.+1))) => {H1} H1'.
+    
+    rewrite !inE (tnth_nth false) in H1'.
+    rewrite !inE (tnth_nth false) /fset_shl1.
+    
+    case Hi : (i < n.-1).
+    - rewrite (@nth_shl1_n n).
+      + rewrite -H1' /=.
+        Check inordK.
+        rewrite inordK.
+        * done.
+        * by apply Hi.                      (* i.+1 < n.-1.+1 *)
+      + done.
+    - rewrite -H1' /=.
+      Check @nth_shl1_1 n bs.
+      rewrite (@nth_shl1_1 n).
+      + done.
+      + apply pltn__not_1lt__n_1.
+        * done.
+        * done.
+  Qed.
   
   (* 右シフト *)
   
@@ -241,12 +276,11 @@ Section Repr.
   Qed.
   
   Definition shr1_seq := belast false.
-(*  
   Compute shr1_seq [::].
   Compute shr1_seq [:: true].
   Compute shr1_seq [:: true; true].
   Compute shr1_seq [:: true; true; true].
-*)  
+  
   Lemma shr1P {n} (t : BITS n) : size (shr1_seq t) == n.
   Proof.
     by rewrite size_belast size_tuple.
