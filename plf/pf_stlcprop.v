@@ -128,8 +128,8 @@ Check forall t, normal_form step t : Prop.
 (* ################################################################# *)
 (** ProofCafe ##83 2019/1/19 *)
 
-(** 3. 型保存定理へのみちのり：
-    
+(** 3. 型保存定理 *)
+(**
   - 型保存定理 preservation :
     型の導出についての帰納法で証明する。おおむねTypesで定義した項の証明と同じだが、
     代入操作を決めるST_AppAbsのルールだけ異なる。
@@ -142,15 +142,53 @@ Check forall t, normal_form step t : Prop.
       - 文脈不変補題 context_invariance :
         項tのすべての自由変数が文脈ΓとΓ'で同じ型なら、項tは文脈ΓとΓ'で同じ型である。
         
-      - typable_empty__closed :
-        空文脈で型付けられる項は、閉じている（自由変数を含まない）
-*)
+      - empty__any_g :  (suhara)
+        空文脈で型が決まるなら、任意の文脈で型が決まる（上の補題の特別な場合）
+        その証明にも、以下を使う。
+        typable_empty__closed 空文脈で型付けられる項は、閉じている（自由変数を含まない）
+ *)
 
 (** 4. 文脈不変補題  *)
 
+Check context_invariance :
+  forall (Gamma : context) (Gamma' : id -> option ty) (t : tm) (T : ty),
+    Gamma |- t \in T ->
+                   (forall x : id, appears_free_in x t -> Gamma x = Gamma' x) ->
+                   Gamma' |- t \in T.
+
+(** 項tのすべての自由変数が文脈ΓとΓ'で同じ型なら、項tは文脈ΓとΓ'で同じ型である。
+    自由変数が文脈ΓとΓ'で同じ型というのは、言い換えると、
+    (1) ΓとΓ'は変数を登録updateする順番が異なる場合。
+    (2) ΓよりΓ'のほうが余計な登録がある場合。
+    実際のところ、代入補題の証明で使うのは、つぎにふたつの場合である。
+
+(1) 項 t0 が、ゴールと前提で別の文脈で同じ型になっている。
+    実際には、最後のふたつの変数xとyのupdateが入れ替わるだけ。
+  H5   : update (update Gamma x U) y T |- t0 \in T12
+  Goal : update (update Gamma y T) x U |- t0 \in T12
+
+(2) 項 v が、ゴールと前提で別の文脈で同じ型になっている。
+    空文脈から型が決まる項は、任意の文脈で型を決めることができる。
+  Ht'  : empty |- v \in T
+  Goal : Gamma |- v \in T
+  これは typable_empty__closed を使って証明できる。
+ *)
+
+Corollary empty__any_g Gamma v T : empty |- v \in T -> Gamma |- v \in T.
+Proof.
+  intro Ht'.
+  eapply context_invariance.
+  - eassumption.
+  - apply typable_empty__closed in Ht'.
+    unfold closed in Ht'.
+    intros x0 H0.
+    exfalso.
+    now apply (Ht' x0).
+Qed.
+
 (** 5. 代入補題 *)
 Notation "m '&' { a --> x }" := (update m a x) (at level 20).
-(* update Gamma x U |- t を Gamma & {x-->U} と書けるようにする。 *)
+(** update Gamma x U |- t を Gamma & {x-->U} と書けるようにする。 *)
 
 (** 代入補題、置換補題 [TAPL 補題9.3.8] *)
 (** U型の自由変数xを含む項tの型がTのとき、xにU型の値vを代入しても、[x:=v]tはT型である。 *)
@@ -172,8 +210,10 @@ Check forall Gamma x U t v T,
     Gamma & {x-->U} |- t \in T -> Gamma |- v \in U -> Gamma |- [x:=v]t \in T.
 
 
-(** A. さいごに *)
+(** 6. soundness *)
+(** Types の証明と正確に一致する。  *)
 
+(** A. さいごに *)
 (** 以下は、仮です。
     
     ここまでで、型付きラムダ式の健全性をそのCoCにもとづくCoqで証明した
