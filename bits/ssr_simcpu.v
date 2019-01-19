@@ -1,4 +1,5 @@
 (* CPU シミュレータ *)
+(* インストラクションとしての加算などを定義する。 *)
 
 From mathcomp Require Import all_ssreflect.
 Require Extraction.
@@ -33,30 +34,17 @@ Section simcpu.
     - by rewrite leq_add2r.
   Qed.
   
-  (* 加算 ADD *)
+  (* ***** *)
+  
   Lemma imodP (i : nat) : i %% N < N.
     by apply ltn_pmod.
   Qed.
   
-  Definition iadd (i j : 'I_N) : 'I_N := Ordinal (imodP (i + j)).
+  Definition negn (i : nat) := if i == 0 then 0 else N - i.
   
-  (* 加算 ADD2 notused *)
-  Lemma iadd2P (i j : 'I_N) : i + j < N.*2.
+  Lemma inegP (i : 'I_N) : negn i < N.
   Proof.
-    rewrite -addnn.
-    apply ltn_add.
-    - apply ltn_ord.
-    - apply ltn_ord.
-  Qed.
-  
-  Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iadd2P i j).
-  
-  (* 2の補数 NEG *)
-  Definition nneg (i : nat) := if i == 0 then 0 else N - i.
-  
-  Lemma inegP (i : 'I_N) : nneg i < N.
-  Proof.
-    rewrite /nneg.
+    rewrite /negn.
     case H : ((nat_of_ord i) == 0).
     - done.
     - have H' : N - i < N - 0 -> N - i < N by rewrite (subn0 N).
@@ -68,8 +56,30 @@ Section simcpu.
           by move/ltP in H.
   Qed.
   
+  (* 加算 ADD *)
+  Definition iadd (i j : 'I_N) : 'I_N := Ordinal (imodP (i + j)).
+  
+  (* 2の補数 NEG *)
   Definition ineg (i : 'I_N) : 'I_N := Ordinal (inegP i).
+  
+  (* 減算 SUB *)
+  Definition isub (i j : 'I_N) : 'I_N := Ordinal (imodP (i + ineg j)).
+  
+  (* ***** *)
 
+  (* 加算 ADD2 notused *)
+  Lemma iadd2P (i j : 'I_N) : i + j < N.*2.
+  Proof.
+    rewrite -addnn.
+    apply ltn_add.
+    - by apply ltn_ord.
+    - by apply ltn_ord.
+  Qed.
+  
+  Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iadd2P i j).
+  
+  (* ***** *)
+  
   (* 語の連結 JOIN *)
   Definition njoin (i j : nat) := i * N + j.
   
@@ -106,16 +116,25 @@ Extraction iadd.
 let iadd n i j =
   modn (addn (nat_of_ord n i) (nat_of_ord n j)) n
 *)
+
 Extraction ineg.
 (*
   let ineg n i =
-  nneg n (nat_of_ord n i)
+  negn n (nat_of_ord n i)
  *)
+
+Extraction isub.
+(* 
+let isub n i j =
+  modn (addn (nat_of_ord n i) (nat_of_ord n (ineg n j))) n
+ *)
+
 Extraction njoin.
 (* 
 let njoin n i j =
   addn (muln i n) j
  *)
+
 Extraction ijoin.
 (* 
 let ijoin n i j =
