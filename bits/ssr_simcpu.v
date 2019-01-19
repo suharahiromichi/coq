@@ -11,6 +11,7 @@ Section simcpu.
 
   Variable N : nat.                         (* word-lenght *)
   Axiom HN : 0 < N.                         (* 0 ではない。 *)
+  Hint Resolve HN.
   
   Check leq_add : forall m1 m2 n1 n2 : nat, m1 <= n1 -> m2 <= n2 -> m1 + m2 <= n1 + n2.
   
@@ -34,8 +35,7 @@ Section simcpu.
   
   (* 加算 ADD *)
   Lemma imodP (i : nat) : i %% N < N.
-    apply ltn_pmod.
-    by apply HN.
+    by apply ltn_pmod.
   Qed.
   
   Definition iadd (i j : 'I_N) : 'I_N := Ordinal (imodP (i + j)).
@@ -53,24 +53,16 @@ Section simcpu.
   
   (* 2の補数 NEG *)
   Definition nneg (i : nat) := if i == 0 then 0 else N - i.
-  (*  
-  Lemma test : forall n i , n - i < n - 0 -> n - i < n.
-  Proof.
-    move=> n i H.
-    rewrite (subn0 n) in H.
-    done.
-  Qed.
- *)
   
   Lemma inegP (i : 'I_N) : nneg i < N.
   Proof.
     rewrite /nneg.
     case H : ((nat_of_ord i) == 0).
-    - now apply HN.
+    - done.
     - have H' : N - i < N - 0 -> N - i < N by rewrite (subn0 N).
       apply H'.
       apply ltn_sub2l.
-      + apply HN.
+      + done.
       + move/eqP in H.
         apply PeanoNat.Nat.neq_0_lt_0 in H.
           by move/ltP in H.
@@ -95,8 +87,8 @@ Section simcpu.
         rewrite [N.-1 + 1]addn1.
         rewrite prednK.
         * done.
-        * by apply HN.
-      + by apply HN.
+        * done.
+      + done.
       + done.
   Qed.
   
