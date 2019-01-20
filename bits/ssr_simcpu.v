@@ -81,8 +81,7 @@ Section Instractions.
   Qed.
   
   Definition negn (i : nat) := if i == 0 then 0 else N - i.
-  
-  Lemma inegP (i : nat) : negn i < N.
+  Lemma inegnP (i : nat) : negn i < N.
   Proof.
     rewrite /negn.
     case H : (i == 0).
@@ -94,6 +93,13 @@ Section Instractions.
       + move/eqP in H.
         apply PeanoNat.Nat.neq_0_lt_0 in H.
           by move/ltP in H.
+  Qed.
+  
+  Definition neg1 (i : nat) := if i == 0 then 1 else 0.
+  Lemma ineg1P (i : nat) : i < 2 -> neg1 i < 2.
+  Proof.
+    rewrite /neg1 => Hi.
+    by case H : (i == 0).
   Qed.
   
   Lemma wordP (i : 'I_N.*2) : i %% N < N.
@@ -109,7 +115,8 @@ Section Instractions.
   Qed.
   
   Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iaddP (ltn_ord i) (ltn_ord j)).
-  Definition ineg (i : 'I_N) := Ordinal (inegP i).
+  Definition inegn (i : 'I_N) := Ordinal (inegnP i).
+  Definition ineg1 (i : 'I_2) := Ordinal (ineg1P (ltn_ord i)).
   Definition iword (i : 'I_N.*2) : 'I_N := Ordinal (wordP i).
   Definition icarry (i : 'I_N.*2) : 'I_2 := Ordinal (carryP i).
   (* 加算のcarryは、1:true, 0:false *)
@@ -121,16 +128,20 @@ Section Instractions.
   
   (* 減算 SUB *)
   Definition isub (i j : 'I_N) : ('I_N * 'I_2) :=
-    let: a := iadd2 i (ineg j) in (iword a, icarry a).
+    let: a := iadd2 i (inegn j) in (iword a, ineg1 (icarry a)).
+  (* 加算のcarryは、1:true, 0:false *)
+  (* 減算のborrowは、1:true, 0:false *)
   
 End Instractions.
 
 Extraction nat_of_ord. (* let nat_of_ord _ i = i *) (* 第一引数は捨てる。 *)
 
 Extraction negn.
+Extraction neg1.
 
 Extraction iadd2.
-Extraction ineg.
+Extraction inegn.
+Extraction ineg1.
 Extraction iword.
 Extraction icarry.
 Extraction iadd.
