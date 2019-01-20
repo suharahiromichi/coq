@@ -8,7 +8,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Import Prenex Implicits.
   
-Section simcpu.
+Section Operation.
 
   Variable N : nat.                         (* word-lenght *)
   Axiom HN : 0 < N.                         (* 0 ではない。 *)
@@ -66,19 +66,6 @@ Section simcpu.
   Definition isub (i j : 'I_N) : 'I_N := Ordinal (imodP (i + ineg j)).
   
   (* ***** *)
-
-  (* 加算 ADD2 notused *)
-  Lemma iadd2P (i j : 'I_N) : i + j < N.*2.
-  Proof.
-    rewrite -addnn.
-    apply ltn_add.
-    - by apply ltn_ord.
-    - by apply ltn_ord.
-  Qed.
-  
-  Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iadd2P i j).
-  
-  (* ***** *)
   
   (* 語の連結 JOIN *)
   Definition njoin (i j : nat) := i * N + j.
@@ -109,7 +96,7 @@ Section simcpu.
 
   Definition ijoin (i j : 'I_N) : 'I_(N * N) := Ordinal (ijoinP i j).
   
-End simcpu.
+End Operation.
 
 Extraction iadd.  
 (*
@@ -139,6 +126,83 @@ Extraction ijoin.
 (* 
 let ijoin n i j =
   njoin n (nat_of_ord n i) (nat_of_ord n j)
+ *)
+
+
+Section Carry.
+
+  Variable N : nat.                         (* word-lenght *)
+  Hint Resolve HN.
+  
+  (*  Lemma iadd2P (i j : 'I_N) : i + j < N.*2. *)
+  Lemma iadd2P i j : i < N -> j < N -> i + j < N.*2.
+  Proof.
+    rewrite -addnn.
+    apply ltn_add.
+(*
+    - by apply ltn_ord.
+    - by apply ltn_ord.
+*)
+  Qed.
+  
+  Lemma regP (i : 'I_N.*2) : i %% N < N.
+  Proof.
+      by apply ltn_pmod.
+  Qed.
+
+  Lemma carryP (i : 'I_N.*2) : i %/ N < 2.
+  Proof.
+    rewrite ltn_divLR.
+    - by rewrite mul2n.
+    - easy.
+  Qed.
+
+  Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iadd2P (ltn_ord i) (ltn_ord j)).
+  Definition ireg (i : 'I_N.*2) : 'I_N := Ordinal (regP i).
+  Definition icarry (i : 'I_N.*2) : 'I_2 := Ordinal (carryP i).
+
+  Definition radd2 (i j : 'I_N) : 'I_N := ireg (iadd2 i j).
+  Definition cadd2 (i j : 'I_N) : 'I_2 := icarry (iadd2 i j).
+
+End Carry.
+
+Extraction radd2.
+(* 
+let radd2 n i j =
+  ireg n (iadd2 n i j)
+ *)
+  
+Extraction ireg.
+(*
+let ireg n i =
+  modn (nat_of_ord (double n) i) n
+
+  = modn i n
+ *)
+
+(* 第一引数は無視される。 *)
+Extraction nat_of_ord.
+(* 
+let nat_of_ord _ i =
+  i
+ *)
+
+Extraction iadd2.
+(* 
+let iadd2 n i j =
+  addn (nat_of_ord n i) (nat_of_ord n j)
+ *)
+
+Extraction cadd2.
+(* 
+let cadd2 n i j =
+  icarry n (iadd2 n i j)
+ *)
+
+Extraction icarry.
+(* 
+let icarry n i =
+  divn (nat_of_ord (double n) i) n
  *)
 
 (* END *)
