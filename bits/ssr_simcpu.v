@@ -101,6 +101,18 @@ Section Instractions.
     rewrite /neg1 => Hi.
     by case H : (i == 0).
   Qed.
+
+  Lemma icmplP (i : nat) : i < N -> N.-1 - i < N.
+  Proof.
+    move=> Hi.
+    rewrite -subn1.
+    rewrite -subnDA.
+    rewrite {2}(_ : N = N - 0).
+    - apply ltn_sub2l.
+      + done.
+      + done.
+    - by rewrite (subn0 N).                 (* N = N - 0 *)
+  Qed.
   
   Lemma ishlP (i : nat) : i < N -> i.*2 < N.*2.
   Proof.
@@ -138,6 +150,7 @@ Section Instractions.
   Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iaddP (ltn_ord i) (ltn_ord j)).
   Definition inegn (i : 'I_N) := Ordinal (inegnP i).
   Definition ineg1 (i : 'I_2) := Ordinal (ineg1P (ltn_ord i)).
+  Definition icmpl2 (i : 'I_N) := Ordinal (icmplP (ltn_ord i)).
   Definition ishl2 (i : 'I_N) := Ordinal (ishlP (ltn_ord i)).
   
   Definition iword (i : 'I_N.*2) : 'I_N := Ordinal (wordP i).
@@ -147,6 +160,9 @@ Section Instractions.
   
   Definition ishr2 (i : 'I_N) := Ordinal (ishrP (ltn_ord i)).
   Definition iparity (i : 'I_N) : 'I_2 := Ordinal (parityP i).
+
+  Program Definition izero := @Ordinal 2 0 _.
+  Program Definition ione := @Ordinal 2 1 _.
   
   (* 加算 ADD *)
   Definition iadd (i j : 'I_N) : ('I_N * 'I_2) :=
@@ -158,12 +174,19 @@ Section Instractions.
   (* 加算のcarryは、1:true, 0:false *)
   (* 減算のborrowは、1:true, 0:false *)
   
+  (* 反転 COMPL *)
+  Definition icmpl (i : 'I_N) : ('I_N * 'I_2) :=
+    (icmpl2 i, ione).
+  
   (* 左シフト SHIFT LEFT *)
   Definition ishl (i : 'I_N) : ('I_N * 'I_2) :=
     let: a := ishl2 i in (iword a, icarry a).
   
   (* 右シフト SHIFTR RIGHT *)
-  Definition ishr (i : 'I_N) : ('I_N * 'I_2) := (ishr2 i, iparity i).
+  Definition ishr (i : 'I_N) : ('I_N * 'I_2) :=
+    (ishr2 i, ineg1 (iparity i)).
+  (* 偶数は、carry 1 *)
+  (* 奇数は、carry 0 *)
   
 End Instractions.
 
@@ -174,12 +197,16 @@ Extraction neg1.
 Extraction iadd2.
 Extraction inegn.
 Extraction ineg1.
+Extraction icmpl2.
 Extraction ishl2.
 Extraction iword.
 Extraction icarry.
+Extraction izero.                           (* 0 *)
+Extraction ione.                            (* S 0 *)
 
 Extraction iadd.
 Extraction isub.
+Extraction icmpl.
 Extraction ishl.
 Extraction ishr.
 
