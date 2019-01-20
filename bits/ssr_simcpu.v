@@ -102,6 +102,12 @@ Section Instractions.
     by case H : (i == 0).
   Qed.
   
+  Lemma ishlP (i : nat) : i < N -> i.*2 < N.*2.
+  Proof.
+    rewrite -!addnn => Hi.
+    by apply ltn_add.
+  Qed.
+  
   Lemma wordP (i : 'I_N.*2) : i %% N < N.
   Proof.
       by apply ltn_pmod.
@@ -117,6 +123,8 @@ Section Instractions.
   Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iaddP (ltn_ord i) (ltn_ord j)).
   Definition inegn (i : 'I_N) := Ordinal (inegnP i).
   Definition ineg1 (i : 'I_2) := Ordinal (ineg1P (ltn_ord i)).
+  Definition ishl2 (i : 'I_N) := Ordinal (ishlP (ltn_ord i)).
+  
   Definition iword (i : 'I_N.*2) : 'I_N := Ordinal (wordP i).
   Definition icarry (i : 'I_N.*2) : 'I_2 := Ordinal (carryP i).
   (* 加算のcarryは、1:true, 0:false *)
@@ -132,19 +140,25 @@ Section Instractions.
   (* 加算のcarryは、1:true, 0:false *)
   (* 減算のborrowは、1:true, 0:false *)
   
+  (* 左シフト SIFT *)
+  Definition ishl (i : 'I_N) : ('I_N * 'I_2) :=
+    let: a := ishl2 i in (iword a, icarry a).
+  
 End Instractions.
 
 Extraction nat_of_ord. (* let nat_of_ord _ i = i *) (* 第一引数は捨てる。 *)
 
 Extraction negn.
 Extraction neg1.
-
 Extraction iadd2.
 Extraction inegn.
 Extraction ineg1.
+Extraction ishl2.
 Extraction iword.
 Extraction icarry.
+
 Extraction iadd.
 Extraction isub.
+Extraction ishl.
 
 (* END *)
