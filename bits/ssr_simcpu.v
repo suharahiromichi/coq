@@ -86,13 +86,13 @@ Section Instractions.
     rewrite /negn.
     case H : (i == 0).
     - done.
-    - have H' : N - i < N - 0 -> N - i < N by rewrite (subn0 N).
-      apply H'.
-      apply ltn_sub2l.
-      + done.
-      + move/eqP in H.
-        apply PeanoNat.Nat.neq_0_lt_0 in H.
-          by move/ltP in H.
+    - rewrite {2}(_ : N = N - 0).
+      + apply ltn_sub2l.
+        * done.
+        * move/eqP in H.
+          apply PeanoNat.Nat.neq_0_lt_0 in H.
+            by move/ltP in H.
+      + by rewrite (subn0 N).               (* N = N - 0 *)
   Qed.
   
   Definition neg1 (i : nat) := if i == 0 then 1 else 0.
@@ -110,7 +110,7 @@ Section Instractions.
   
   Lemma wordP (i : 'I_N.*2) : i %% N < N.
   Proof.
-      by apply ltn_pmod.
+    by apply ltn_pmod.
   Qed.
 
   Lemma carryP (i : 'I_N.*2) : i %/ N < 2.
@@ -118,6 +118,21 @@ Section Instractions.
     rewrite ltn_divLR.
     - by rewrite mul2n.
     - easy.
+  Qed.
+  
+  Lemma ishrP (i : nat) : i < N -> i %/ 2 < N.
+  Proof.
+    move=> Hi.
+    rewrite ltn_divLR.
+    - rewrite (_ : i = i * 1).
+      + by apply ltn_mul.
+      + by rewrite muln1.                   (* i = i * 1 *)
+    - done.
+  Qed.
+  
+  Lemma parityP (i : nat) : i %% 2 < 2.
+  Proof.
+    now apply ltn_pmod.
   Qed.
   
   Definition iadd2 (i j : 'I_N) : 'I_N.*2 := Ordinal (iaddP (ltn_ord i) (ltn_ord j)).
@@ -130,6 +145,9 @@ Section Instractions.
   (* 加算のcarryは、1:true, 0:false *)
   (* 減算のborrowは、0:true, 1:false *)
   
+  Definition ishr2 (i : 'I_N) := Ordinal (ishrP (ltn_ord i)).
+  Definition iparity (i : 'I_N) : 'I_2 := Ordinal (parityP i).
+  
   (* 加算 ADD *)
   Definition iadd (i j : 'I_N) : ('I_N * 'I_2) :=
     let: a := iadd2 i j in (iword a, icarry a).
@@ -140,9 +158,12 @@ Section Instractions.
   (* 加算のcarryは、1:true, 0:false *)
   (* 減算のborrowは、1:true, 0:false *)
   
-  (* 左シフト SIFT *)
+  (* 左シフト SHIFT LEFT *)
   Definition ishl (i : 'I_N) : ('I_N * 'I_2) :=
     let: a := ishl2 i in (iword a, icarry a).
+  
+  (* 右シフト SHIFTR RIGHT *)
+  Definition ishr (i : 'I_N) : ('I_N * 'I_2) := (ishr2 i, iparity i).
   
 End Instractions.
 
@@ -160,5 +181,6 @@ Extraction icarry.
 Extraction iadd.
 Extraction isub.
 Extraction ishl.
+Extraction ishr.
 
 (* END *)
