@@ -3,11 +3,11 @@
 Mathcomp では、型をつぎのように構成している。
 (eqType) ライプニッツのeqとブールのeqのリフレクションできる型。eqMixin
 
-(choiceType) 可算選択公理 axiom of countable choice が成り立つこと。
-(countType) countable n番め要素が(あれば)一意に決まること。
+(choiceType) 可算選択公理 (axiom of countable choice) が成り立つこと。choiceMixin
+(countType) n番め要素が(あれば)一意に決まる(countable)こと。 countMixin
 
 (finType) 型の要素の列挙(enum)が、eqTypeの意味でユニークである型。finMixin
-(Tuple) サイズの決まったseq。
+(tuple) サイズの決まったseq。
 (finfun) ファントムタイプによって finType -> Type の関数に見えるが、
 実際はタプルであり、fintypeの全要素の個数のサイズのタプル。
 (finset) 特性関数（要素かどうか決める関数）がfinfunである集合
