@@ -3,7 +3,7 @@
 Mathcomp では、型をつぎのように構成している。
 (eqType) ライプニッツのeqとブールのeqのリフレクションできる型。eqMixin
 
-(choiceType) choice opereator (find) が存在すること。
+(choiceType) 加算選択公理 axiom of countable choice が成り立つこと。
 (countType) countable n番め要素が(あれば)一意に決まること。
 
 (finType) 型の要素の列挙(enum)が、eqTypeの意味でユニークである型。finMixin
@@ -155,8 +155,24 @@ Structure tuple_of' (n : nat) (T : Type) := (* サイズnのseq *)
 Notation "n .-TUPLE" := (tuple_of' n) (at level 2, format "n .-TUPLE").
 Check tval' : forall (n : nat) (T : Type), n.-TUPLE T -> seq T.
 
+Print Canonical Projections.
 Canonical tuple_subType' (n : nat) (T : Type) := [subType for tval' n T].
 (* オリジナルの [subType for _] を使用している。 *)
+Print Canonical Projections.
+(*
+tuple_subType' を subType のカノニカルインスタンスにする。
+つまりsubType型を求める引数に、tuple_subType'を推論できるようになる。
+tuple_of' <- sub_sort ( tuple_subType' )
+tval'     <- val ( tuple_subType' )
+Tuple'    <- Sub ( tuple_subType' )
+*)
+Check sub_sort : forall (T : Type) (P : pred T), subType (T:=T) P -> Type.
+Check @val     : forall (T : Type) (P : pred T) (s : subType (T:=T) P), s -> T.
+Check @Sub     : forall (T : Type) (P : pred T) (s : subType (T:=T) P) (x : T), P x -> s.
+Check tval     : forall (n : nat) (T : Type), n.-tuple T -> seq T.
+Check Tuple    : forall (n : nat) (T : Type) (tval : seq T), size tval == n -> n.-tuple T.
+Print tval.  (* fun (n : nat) (T : Type) (t : n.-tuple T) => let (tval, _) := t in tval *)
+Print Tuple. (* Tuple { tval : seq T;  _ : is_true (size tval == n) } *)
 
 Definition tuple_eqMixin' (n : nat) (T : finType) := [eqMixin of n.-TUPLE T by <:].
 (* (@val_eqP (seq_eqType T) (fun x : seq T => size x == n) (tuple_subType n T)) *)
@@ -183,6 +199,11 @@ Definition fgraph' (aT : finType) (rT : Type) (f : finfun_type' aT rT) :=
   let: Finfun' t := f in t.
 Canonical finfun_subType' (aT : finType) (rT : Type) :=
   [newType for fgraph' aT rT].
+Print Canonical Projections.
+(* 
+finfun_type' <- sub_sort ( finfun_subType' )
+fgraph'      <- val ( finfun_subType' )
+ *)
 
 Notation "{ 'FFUN' fT }" := (finfun_type' fT).
 (*
@@ -262,7 +283,12 @@ Check setP : forall (T : finType) (A B : {set T}), A =i B <-> A = B. (* ssrbool.
 (* 6.7 Perm *)
 (* ******** *)
 Inductive perm_of' (T : finType) : Type :=
-  Perm' (pval' : {ffun T -> T}) & injectiveb pval'. (* FFUN XXX *)
+  Perm' (pval' : {ffun T -> T}) : injectiveb pval' -> perm_of' T.
+(* Perm' (pval' : {ffun T -> T}) of injectiveb pval'. *)
+(* Perm' : forall pval' : {ffun T -> T},
+    injectiveb pval' -> perm_of' T. *)
+(* Perm' (pval' : {ffun T -> T}) & injectiveb pval'. *)
+
 Notation "{ 'PERM' T }" := (perm_of' T).
 Definition pval' (T : finType) (p : {PERM T}) :=
   let : Perm' f _ := p in f.
@@ -281,3 +307,29 @@ Canonical  perm_finType'    (T     : finType) :=
   FinType {perm T} (perm_finMixin' T).
 
 (* Q.E.D. *)
+Check tuple_subType   : forall (n : nat) (T : Type), subType (T:=seq T) (fun x : seq T => size x == n).
+Check ordinal_subType : forall n : nat, subType (T:=nat) (fun x : nat => x < n).
+Check perm_subType    : forall T : finType,
+       subType (T:={ffun T -> T})
+         (fun x : {ffun T -> T} => injectiveb (aT:=T) (rT:=T) x).
+Check finfun_subType  : forall (aT : finType) (rT : Type), subType (T:=#|aT|.-tuple rT) xpredT.
+Check set_subType     : forall T : finType, subType (T:={ffun pred T}) xpredT.
+
+
+
+(* Canonical tuple_subType = [subType for tval]  がカノニカルだからできること。 *)
+Set Printing Implicit Defensive.
+Check tuple_subType 3 nat.
+Check tuple_of 3 nat.
+Variable tt : (tuple_subType 3 nat).
+Variable t : (tuple_of 3 nat).
+
+Check valP.
+Check @valP _ _ (tuple_subType 3 nat) tt.
+Check @valP (seq nat) (fun x => size x == 3) (tuple_subType 3 nat).
+Check @valP (seq nat) (fun x => size x == 3) (tuple_subType 3 nat) tt.
+Check @valP (seq nat) (fun x => size x == 3) (tuple_subType 3 nat) t. (* これ！ *)
+Check valP tt.
+Check valP t.                               (* これ！ *)
+
+
