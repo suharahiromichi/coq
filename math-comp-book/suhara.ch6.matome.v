@@ -3,7 +3,7 @@
 Mathcomp では、型をつぎのように構成している。
 (eqType) ライプニッツのeqとブールのeqのリフレクションできる型。eqMixin
 
-(choiceType) 加算選択公理 axiom of countable choice が成り立つこと。
+(choiceType) 可算選択公理 axiom of countable choice が成り立つこと。
 (countType) countable n番め要素が(あれば)一意に決まること。
 
 (finType) 型の要素の列挙(enum)が、eqTypeの意味でユニークである型。finMixin
