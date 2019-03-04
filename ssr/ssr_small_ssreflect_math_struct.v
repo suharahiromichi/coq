@@ -1,7 +1,7 @@
 (** SSReflect/Mathcomp の数学的構造 *)
-
 (*
 From mathcomp Require Import all_ssreflect.
+
 Set Printing All.
 Print Choice.mixin_of.
 Print Countable.mixin_of.
@@ -9,7 +9,6 @@ Print Finite.mixin_of.
 
 From mathcomp Require Import all_algebra.
 *)
-
 Require Import List.
 
 Set Implicit Arguments.
@@ -113,17 +112,25 @@ Module Countable.
 
 End Countable.
 
+Definition associative (S : Type) (op : S -> S -> S) (x y z : S) :=
+  op x (op y z) = op (op x y) z.
+Definition commutative (S T : Type) (op : S -> S -> T) (x y : S) :=
+  op x y = op y x.
+Definition left_id (S T : Type) (e : S) (op : S -> T -> T) (x : T) :=
+  op e x = x.
+Definition right_id (S T : Type) (e : S) (op : T -> S -> T) (x : T) :=
+  op x e = x.
+
+Definition left_inverse (S T R : Type) (e : R)
+           (inv : T -> S) (op : S -> T -> R) (x : T) := op (inv x) x = e.
+
+Definition left_distributive (S T : Type) (op : S -> T -> S) (add : S -> S -> S)
+           (x y : S) (z : T) := op (add x y) z = add (op x z) (op y z).
+Definition right_distributive (S T : Type) (op : S -> T -> T) (add : T -> T -> T)
+           (x : S) (y z : T) := op x (add y z) = add (op x y) (op x z).
+
 Module Zmodule.
 
-  Definition associative (S : Type) (op : S -> S -> S) (x y z : S) :=
-    op x (op y z) = op (op x y) z.
-  Definition commutative (S T : Type) (op : S -> S -> T) (x y : S) :=
-    op x y = op y x.
-  Definition left_id (S T : Type) (e : S) (op : S -> T -> T) (x : T) :=
-    op e x = x.
-  Definition left_inverse (S T R : Type) (e : R)
-             (inv : T -> S) (op : S -> T -> R) (x : T) := op (inv x) x = e.
-  
   Record mixin_of (V : Type) : Type :=
     Mixin {
         zero : V;
@@ -141,7 +148,40 @@ Module Zmodule.
         mixin : mixin_of T
       }.
   
+  Structure type :=
+    Pack {
+        sort; _ : class_of sort;
+        _ : Type
+      }.
 End Zmodule.
+
+Notation zmodType := Zmodule.type.
+Notation addZ := (@Zmodule.add _).
+
+Module Ring.
+  Record mixin_of (R : zmodType) : Type :=
+    Mixin {
+        one : Zmodule.sort R;
+        mul : Zmodule.sort R -> Zmodule.sort R -> Zmodule.sort R;
+        assoc : forall (x y z : Zmodule.sort R), @associative (Zmodule.sort R) mul x y z;
+        l_id : forall (x : Zmodule.sort R),
+            @left_id (Zmodule.sort R) (Zmodule.sort R) one mul x;
+        r_id : forall (x : Zmodule.sort R),
+            @right_id (Zmodule.sort R) (Zmodule.sort R) one mul x;
+(*
+        l_d : forall (x y z : Zmodule.sort R),
+            @left_distributive (Zmodule.sort R) (Zmodule.sort R) mul
+                               (addZ _ (Zmodule.sort R) (Zmodule.sort R)) x y z;
+        r_d : right_distributive mul Zmodule.add; *)
+        (* _ : one != 0 *)
+      }.
+
+  Record class_of (R : Type) : Type :=
+    Class {
+        base : Zmodule.class_of R;
+        mixin : mixin_of (Zmodule.Pack base R)
+      }.
+End Ring.
 
 Definition nat_of_bool (b : bool) := if b then 1 else 0.
 Coercion nat_of_bool : bool >-> nat.
