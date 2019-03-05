@@ -6,7 +6,6 @@ Set Printing All.
 Print Choice.mixin_of.
 Print Countable.mixin_of.
 Print Finite.mixin_of.
-
 From mathcomp Require Import all_algebra.
 *)
 Require Import List.
@@ -15,22 +14,57 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Definition negb (b : bool) := if b then false else true.
+Definition pred := fun T : Type => T -> bool.
+Definition rel := fun T : Type => T -> pred T.
+
 Definition is_true (x : bool) : Prop := x = true.
 Coercion is_true : bool >-> Sortclass.
 
-Definition pred := fun T : Type => T -> bool.
+Definition isSome (T : Type) (u : option T) :=
+  match u return bool with
+  | Some _ => true
+  | None => false
+  end.
+Coercion isSome : option >-> bool.
 
 Inductive reflect (P : Prop) : bool -> Prop :=
 | ReflectT :   P -> reflect P true
 | ReflectF : ~ P -> reflect P false.
 
+Definition eqfun (A B : Type) (f g : B -> A) := forall x : B, f x = g x.
+Notation "f1 =1 f2" := (eqfun f1 f2) (at level 70, no associativity).
+
+Definition pcancel (rT aT : Type) (f : aT -> rT) (g : rT -> option aT) :=
+  forall x : aT, g (f x) = Some x.
+
+Section Relations.
+  Variable S T R : Type.
+  
+  Definition associative (op : S -> S -> S)
+             (x y z : S) := op x (op y z) = op (op x y) z.
+  Definition commutative (op : S -> S -> T)
+             (x y : S) := op x y = op y x.
+  Definition left_id (e : S) (op : S -> T -> T)
+             (x : T) := op e x = x.
+  Definition right_id (e : S) (op : T -> S -> T)
+             (x : T) := op x e = x.
+  
+  Definition left_inverse (e : R) (inv : T -> S) (op : S -> T -> R)
+             (x : T) := op (inv x) x = e.
+  Definition left_distributive (op : S -> T -> S) (add : S -> S -> S)
+             (x y : S) (z : T) := op (add x y) z = add (op x z) (op y z).
+  Definition right_distributive (op : S -> T -> T) (add : T -> T -> T)
+             (x : S) (y z : T) := op x (add y z) = add (op x y) (op x z).
+End Relations.
+
+(** eqType *)
 Module Equality.
-  Definition rel := fun T : Type => T -> pred T.
   
   Record mixin_of (T : Type) : Type :=
     Mixin {
         op : rel T;
-        ax : forall x y, reflect (x = y) (op x y)
+        a : forall x y, reflect (x = y) (op x y)
       }.
   
   Structure type : Type :=
@@ -44,34 +78,21 @@ Notation eqType := Equality.type.
 Notation EqType := Equality.Pack.
 
 Definition eq_op T := Equality.op (Equality.mixin T).
-(* @Equality.op (Equality.sort T) (Equality.mixin T). *)
-Check eq_op : forall T : eqType, Equality.rel (Equality.sort T).
+Check eq_op : forall T : eqType, rel (Equality.sort T).
+
 Notation "x == y" := (@eq_op _ x y) (at level 70, no associativity).
-(* T : eqType の部分がimplicitである。 *)
+Notation "x != y" := (negb (@eq_op _ x y)) (at level 70, no associativity).
 
-Print Graph.
-Definition isSome (T : Type) (u : option T) :=
-  match u return bool with
-  | Some _ => true
-  | None => false
-  end.
-Coercion isSome : option >-> bool.
-
+(** ChoiceType *)
 Module Choice.
   
-  Definition eqfun (A B : Type) (f g : B -> A) :=
-    forall x : B, f x = g x.
-  Print eqfun.
-  Notation "f1 =1 f2" := (eqfun f1 f2) (at level 70, no associativity).
-
   Record mixin_of (T : Type) :=
     Mixin {
         find : pred T -> nat -> option T;
-        fsm : forall P n x, find P n = Some x -> P x;
-        exf : forall P : pred T, (exists x, P x) -> exists n, find P n;
-        feq : forall P Q : pred T, P =1 Q -> find P =1 find Q
+        a1 : forall P n x, find P n = Some x -> P x;
+        a2 : forall P : pred T, (exists x, P x) -> exists n, find P n; (* isSome *)
+        a3 : forall P Q : pred T, P =1 Q -> find P =1 find Q
       }.
-  Print isSome.
   
   Record class_of (T : Type) :=
     Class {
@@ -86,11 +107,9 @@ Module Choice.
       }.
 End Choice.
 
+(** CountType *)
 Module Countable.
   
-  Definition pcancel (rT aT : Type) (f : aT -> rT) (g : rT -> option aT) :=
-    forall x : aT, g (f x) = Some x.
-
   Record mixin_of (T : Type) :=
     Mixin {
         pickle : T -> nat;
@@ -112,80 +131,174 @@ Module Countable.
 
 End Countable.
 
-Definition associative (S : Type) (op : S -> S -> S) (x y z : S) :=
-  op x (op y z) = op (op x y) z.
-Definition commutative (S T : Type) (op : S -> S -> T) (x y : S) :=
-  op x y = op y x.
-Definition left_id (S T : Type) (e : S) (op : S -> T -> T) (x : T) :=
-  op e x = x.
-Definition right_id (S T : Type) (e : S) (op : T -> S -> T) (x : T) :=
-  op x e = x.
 
-Definition left_inverse (S T R : Type) (e : R)
-           (inv : T -> S) (op : S -> T -> R) (x : T) := op (inv x) x = e.
+Delimit Scope ring_scope with R.
+Delimit Scope term_scope with T.
+Local Open Scope ring_scope.
 
-Definition left_distributive (S T : Type) (op : S -> T -> S) (add : S -> S -> S)
-           (x y : S) (z : T) := op (add x y) z = add (op x z) (op y z).
-Definition right_distributive (S T : Type) (op : S -> T -> T) (add : T -> T -> T)
-           (x : S) (y z : T) := op x (add y z) = add (op x y) (op x z).
+(* Module Import GRing. *)
+Module GRing.
+  Module Zmodule.
 
-Module Zmodule.
+    Record mixin_of (V : Type) : Type :=
+      Mixin {
+          zero : V;
+          opp : V -> V;
+          add : V -> V -> V;
+          assoc : forall (x y z : V), @associative V add x y z;
+          commu : forall (x y : V), @commutative V V add x y;
+          l_id : forall (x : V), @left_id V V zero add x;
+          linv : forall (x : V), @left_inverse V V V zero opp add x
+        }.
+Section ClassDef.
 
-  Record mixin_of (V : Type) : Type :=
-    Mixin {
-        zero : V;
-        opp : V -> V;
-        add : V -> V -> V;
-        assoc : forall (x y z : V), @associative V add x y z;
-        commu : forall (x y : V), @commutative V V add x y;
-        l_id : forall (x : V), @left_id V V zero add x;
-        linv : forall (x : V), @left_inverse V V V zero opp add x
-      }.
+Record class_of T := Class { base : Choice.class_of T; mixin : mixin_of T }.
+Local Coercion base : class_of >-> Choice.class_of.
 
-  Record class_of (T : Type) :=
-    Class {
-        base : Choice.class_of T;
-        mixin : mixin_of T
-      }.
-  
-  Structure type :=
-    Pack {
-        sort; _ : class_of sort;
-        _ : Type
-      }.
-End Zmodule.
+Structure type := Pack {sort; _ : class_of sort; _ : Type}.
+Local Coercion sort : type >-> Sortclass.
+Variables (T : Type) (cT : type).
+Definition class := let: Pack c _ as cT' := cT return class_of cT' in c.
 
-Notation zmodType := Zmodule.type.
-Notation addZ := (@Zmodule.add _).
 
-Module Ring.
-  Record mixin_of (R : zmodType) : Type :=
-    Mixin {
-        one : Zmodule.sort R;
-        mul : Zmodule.sort R -> Zmodule.sort R -> Zmodule.sort R;
-        assoc : forall (x y z : Zmodule.sort R), @associative (Zmodule.sort R) mul x y z;
-        l_id : forall (x : Zmodule.sort R),
-            @left_id (Zmodule.sort R) (Zmodule.sort R) one mul x;
-        r_id : forall (x : Zmodule.sort R),
-            @right_id (Zmodule.sort R) (Zmodule.sort R) one mul x;
+End ClassDef.
+
+Module Exports.
+Coercion base : class_of >-> Choice.class_of.
+Coercion mixin : class_of >-> mixin_of.
+Coercion sort : type >-> Sortclass.
+Bind Scope ring_scope with sort.
 (*
-        l_d : forall (x y z : Zmodule.sort R),
+Coercion eqType : type >-> Equality.type.
+Canonical eqType.
+Coercion choiceType : type >-> Choice.type.
+Canonical choiceType.
+*)
+Notation zmodType := type.
+Notation ZmodMixin := Mixin.
+End Exports.
+
+End Zmodule.
+Import Zmodule.Exports.
+
+Definition zero V := Zmodule.zero (Zmodule.class V).
+Definition opp V := Zmodule.opp (Zmodule.class V).
+Definition add V := Zmodule.add (Zmodule.class V).
+
+Local Notation "0" := (zero _) : ring_scope.
+Local Notation "-%R" := (@opp _) : ring_scope.
+Local Notation "- x" := (opp x) : ring_scope.
+Local Notation "+%R" := (@add _) : ring_scope.
+Local Notation "x + y" := (add x y) : ring_scope.
+Local Notation "x - y" := (x + - y) : ring_scope.
+
+(*
+
+Module GRing.
+  Module Zmodule.
+    
+    Record mixin_of (V : Type) : Type :=
+      Mixin {
+          zero : V;
+          opp : V -> V;
+          add : V -> V -> V;
+          assoc : forall (x y z : V), @associative V add x y z;
+          commu : forall (x y : V), @commutative V V add x y;
+          l_id : forall (x : V), @left_id V V zero add x;
+          linv : forall (x : V), @left_inverse V V V zero opp add x
+        }.
+    
+    Record class_of (T : Type) :=
+      Class {
+          base : Choice.class_of T;
+          mixin : mixin_of T
+        }.
+    
+    Structure type :=
+      Pack {
+          sort; _ : class_of sort;
+          _ : Type
+        }.
+    
+    Coercion sort : type >-> Sortclass.
+    Variables (T : Type) (cT : type).
+    Definition class := let: Pack c _ as cT' := cT return class_of cT' in c.
+  End Zmodule.
+
+Variable T : eqType.
+Variable a : (Equality.sort T).
+Variable a' : (Equality.sort T).
+Check a != a.
+
+Variable R : zmodType.
+Variable b : (Zmodule.sort R).
+Variable b' : R.
+Check b != b.
+Check b' != b'.
+ *)
+
+  Module Ring.
+    Record mixin_of (R : zmodType) : Type :=
+      Mixin {
+          one : R;
+          mul : R -> R -> R;
+          assoc : forall (x y z : R), @associative R mul x y z;
+          l_id : forall (x : R),
+              @left_id R R one mul x;
+          r_id : forall (x : R),
+              @right_id R R one mul x;
+          l_d : forall (x y z : R), @left_distributive R R mul +%R x y z;
+          r_d : forall (x y z : R), @right_distributive R R mul +%R x y z;
+          (* onez : one != 0 *)
+        }.
+    (* 
+          one : Zmodule.sort R;
+          mul : Zmodule.sort R -> Zmodule.sort R -> Zmodule.sort R;
+          assoc : forall (x y z : Zmodule.sort R), @associative (Zmodule.sort R) mul x y z;
+          l_id : forall (x : Zmodule.sort R),
+              @left_id (Zmodule.sort R) (Zmodule.sort R) one mul x;
+          r_id : forall (x : Zmodule.sort R),
+              @right_id (Zmodule.sort R) (Zmodule.sort R) one mul x;
+            l_d : forall (x y z : Zmodule.sort R),
             @left_distributive (Zmodule.sort R) (Zmodule.sort R) mul
-                               (addZ _ (Zmodule.sort R) (Zmodule.sort R)) x y z;
-        r_d : right_distributive mul Zmodule.add; *)
-        (* _ : one != 0 *)
-      }.
+            (addZ _ (Zmodule.sort R) (Zmodule.sort R)) x y z;
+            r_d : right_distributive mul Zmodule.add;
+            
+    Record class_of (R : Type) : Type :=
+      Class {
+          base : Zmodule.class_of R;
+          mixin : mixin_of (Zmodule.Pack base R)
+        }.
 
-  Record class_of (R : Type) : Type :=
-    Class {
-        base : Zmodule.class_of R;
-        mixin : mixin_of (Zmodule.Pack base R)
-      }.
-End Ring.
+     *)
+(*    
+    Variable R : Type.
+    Variable base : Zmodule.class_of R.
+    Check Zmodule.Pack base R : Zmodule.type.
+    Check Zmodule.Pack base R : zmodType.
+  *)  
+    Record class_of (R : Type) : Type :=
+      Class {
+          base : Zmodule.class_of R;
+          mixin : mixin_of (Zmodule.Pack base R)
+        }.
 
+    Structure type :=
+      Pack {
+          sort; _ : class_of sort;
+          _ : Type
+        }.
+    
+    Coercion sort : type >-> Sortclass.
+    Variables (T : Type) (cT : type).
+    Definition class := let: Pack c _ as cT' := cT return class_of cT' in c.
+    
+  End Ring.
+End GRing.
+  
 Definition nat_of_bool (b : bool) := if b then 1 else 0.
 Coercion nat_of_bool : bool >-> nat.
-
+  
 Module Finite.
   Fixpoint count (T : Type) (a : T -> bool) (s : list T) : nat :=
     match s with
