@@ -2,17 +2,19 @@
 (*
 From mathcomp Require Import all_ssreflect.
 
-Set Printing All.
 Print Choice.mixin_of.
 Print Countable.mixin_of.
 Print Finite.mixin_of.
 From mathcomp Require Import all_algebra.
 *)
+
 Require Import List.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+Set Printing All.               (* コアーションを省かずに表示する。 *)
 
 Definition negb (b : bool) := if b then false else true.
 Definition pred := fun T : Type => T -> bool.
@@ -64,18 +66,19 @@ Section Relations.
     forall (x y : S) (z : T), op (add x y) z = add (op x z) (op y z).
   Definition right_distributive (op : S -> T -> T) (add : T -> T -> T) :=
     forall (x : S) (y z : T), op x (add y z) = add (op x y) (op x z).
+  
 End Relations.
 
 (** eqType *)
 Module Equality.
   
-  Record mixin_of (T : Type) : Type :=
+  Record mixin_of (T : Type) :=
     Mixin {
         op : rel T;
         ax : forall x y, reflect (x = y) (op x y);
       }.
   
-  Structure type : Type :=
+  Structure type :=
     Pack {
         sort :> Type;
         mixin : mixin_of sort;
@@ -92,7 +95,7 @@ Check @eq_op : forall T : eqType, rel T.
 Notation "x == y" := (eq_op x y) (at level 70, no associativity).
 Notation "x != y" := (negb (@eq_op _ x y)) (at level 70, no associativity).
 
-(** ChoiceType *)
+(** ChoiceType 可算選択公理 *)
 Module Choice.
   
   Record mixin_of (T : Type) :=
@@ -116,6 +119,8 @@ Module Choice.
       }.
 End Choice.
 
+Coercion Choice.base : Choice.class_of >-> Equality.mixin_of.
+Coercion Choice.mixin : Choice.class_of >-> Choice.mixin_of.
 Coercion Choice.sort : Choice.type >-> Sortclass.
 Notation choiceType := Choice.type.
 Notation ChoiceType := Choice.Pack.
@@ -143,6 +148,8 @@ Module Countable.
       }.
 End Countable.
 
+Coercion Countable.base : Countable.class_of >-> Choice.class_of.
+Coercion Countable.mixin : Countable.class_of >-> Countable.mixin_of.
 Coercion Countable.sort : Countable.type >-> Sortclass.
 Notation countType := Countable.type.
 Notation CountType := Countable.Pack.
@@ -177,10 +184,11 @@ Module Finite.
       }.
 End Finite.
 
+Coercion Finite.base : Finite.class_of >-> Countable.class_of.
+Coercion Finite.mixin : Finite.class_of >-> Finite.mixin_of.
 Coercion Finite.sort : Finite.type >-> eqType. (* Sortclass *)
 Notation finType := Finite.type.
 Notation FinType := Finite.Pack.
-
 
 (** GRing *)
 Module GRing.
@@ -188,10 +196,10 @@ Module GRing.
   Delimit Scope ring_scope with R.
   Open Scope ring_scope.
   
-  (** Zmodule *)
+  (** Zmodule Z加群 *)
   Module Zmodule.
 
-    Record mixin_of (V : Type) : Type :=
+    Record mixin_of (V : Type) :=
       Mixin {
           zero : V;
           opp : V -> V;
@@ -202,7 +210,7 @@ Module GRing.
           ax4 : left_inverse zero opp add;
         }.
 
-    Record class_of (T : Type) : Type :=
+    Record class_of (T : Type) :=
       Class {
           base : Choice.class_of T;
           mixin : mixin_of T
@@ -210,67 +218,72 @@ Module GRing.
     
     Structure type :=
       Pack {
-          sort;
-          _ : class_of sort;
-          _ : Type
+          sort :> Type;
+          class : class_of sort;
         }.
     
-    Coercion sort : type >-> Sortclass.
-    Variables (cT : type).
-    (* Definition class := let: Pack c _ as cT' := cT return class_of cT' in c. *)
+    (* Pack の class メンバ関数とおなじなので、使わない。 *)
+    Definition class' (cT : type) :=
+      match cT as cT' return (class_of (sort cT')) with
+      | @Pack sort class => class
+      end.
+    (* Mathcomp の場合： *)
+    (* Definition class' := let: Pack s c as cT' := cT return class_of cT' in c. *)
   End Zmodule.
   
+  Coercion Zmodule.base : Zmodule.class_of >-> Choice.class_of.
+  Coercion Zmodule.mixin : Zmodule.class_of >-> Zmodule.mixin_of.
   Coercion Zmodule.sort : Zmodule.type >-> Sortclass.
   Notation zmodType := Zmodule.type.
   Notation ZmodType := Zmodule.Pack.
-
-  (*
+  
+  (* zero などの引数に、コアーション Zmodule.mixin が機能する。 *)
+  (* Zmodule.zero (Zmodule.mixin (Zmodule.class V)) *)
   Definition zero V := Zmodule.zero (Zmodule.class V).
   Definition opp V := Zmodule.opp (Zmodule.class V).
   Definition add V := Zmodule.add (Zmodule.class V).
-
+  
   Local Notation "0" := (zero _) : ring_scope.
   Local Notation "-%R" := (@opp _) : ring_scope.
   Local Notation "- x" := (opp x) : ring_scope.
   Local Notation "+%R" := (@add _) : ring_scope.
   Local Notation "x + y" := (add x y) : ring_scope.
   Local Notation "x - y" := (x + - y) : ring_scope.
-   *)
   
   (** Ring *)
   Module Ring.
     
-    Record mixin_of (R : zmodType) : Type :=
+    Record mixin_of (R : zmodType) :=
       Mixin {
           one : R;
           mul : R -> R -> R;
           ax1 : associative mul;
           ax2 : left_id one mul;
           ax3 : right_id one mul;
-(*
           ax4 : left_distributive mul +%R;
           ax5 : right_distributive mul +%R;
+          (*
           ax6 : one != 0;
-*)
+          The term "one" has type "Zmodule.sort R" while it is expected to have type
+          "Equality.sort ?T".
+           *)
         }.
     
-    Record class_of (R : Type) : Type :=
+    Record class_of (R : Type) :=
       Class {
           base : Zmodule.class_of R;
-          mixin : mixin_of (Zmodule.Pack base R)
+          mixin : mixin_of (Zmodule.Pack base);
         }.
     
     Structure type :=
       Pack {
-          sort; _ : class_of sort;
-          _ : Type
+          sort :> Type;
+          class : class_of sort;
         }.
-    
-    Coercion sort : type >-> Sortclass.
-    Variables (cT : type).
-    (* Definition class := let: Pack c _ as cT' := cT return class_of cT' in c. *)
   End Ring.
 
+  Coercion Ring.base : Ring.class_of >-> Zmodule.class_of.
+  Coercion Ring.mixin : Ring.class_of >-> Ring.mixin_of.
   Coercion Ring.sort : Ring.type >-> Sortclass.
   Notation ringType := Ring.type.
   Notation RingType := Ring.Pack.
