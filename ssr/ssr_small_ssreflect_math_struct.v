@@ -1,12 +1,4 @@
 (** SSReflect/Mathcomp の数学的構造 *)
-(*
-From mathcomp Require Import all_ssreflect.
-
-Print Choice.mixin_of.
-Print Countable.mixin_of.
-Print Finite.mixin_of.
-From mathcomp Require Import all_algebra.
-*)
 
 Require Import List.
 
@@ -117,6 +109,8 @@ Module Choice.
         sort :> Type;
         class : class_of sort;
       }.
+  
+  Coercion eqType (cT : type) := EqType (base (class cT)).
 End Choice.
 
 Coercion Choice.base : Choice.class_of >-> Equality.mixin_of.
@@ -124,6 +118,7 @@ Coercion Choice.mixin : Choice.class_of >-> Choice.mixin_of.
 Coercion Choice.sort : Choice.type >-> Sortclass.
 Notation choiceType := Choice.type.
 Notation ChoiceType := Choice.Pack.
+Canonical Structure Choice.eqType.
 
 (** CountType *)
 Module Countable.
@@ -146,6 +141,9 @@ Module Countable.
         sort :> Type;
         class : class_of sort;
       }.
+
+  Coercion eqType (cT : type) := EqType (base (class cT)).
+  Coercion choiceType (cT : type) := ChoiceType (base (class cT)).
 End Countable.
 
 Coercion Countable.base : Countable.class_of >-> Choice.class_of.
@@ -153,6 +151,8 @@ Coercion Countable.mixin : Countable.class_of >-> Countable.mixin_of.
 Coercion Countable.sort : Countable.type >-> Sortclass.
 Notation countType := Countable.type.
 Notation CountType := Countable.Pack.
+Canonical Structure Countable.eqType.
+Canonical Structure Countable.choiceType.
 
 (** finType *)
 Module Finite.
@@ -182,6 +182,10 @@ Module Finite.
         sort :> eqType;
         class : class_of sort
       }.
+  
+  Coercion eqType (cT : type) := EqType (base (class cT)).
+  Coercion choiceType (cT : type) := ChoiceType (base (class cT)).
+  Coercion countType (cT : type) := CountType (base (class cT)).  
 End Finite.
 
 Coercion Finite.base : Finite.class_of >-> Countable.class_of.
@@ -189,6 +193,9 @@ Coercion Finite.mixin : Finite.class_of >-> Finite.mixin_of.
 Coercion Finite.sort : Finite.type >-> eqType. (* Sortclass *)
 Notation finType := Finite.type.
 Notation FinType := Finite.Pack.
+Canonical Structure Finite.eqType.
+Canonical Structure Finite.choiceType.
+Canonical Structure Finite.countType.
 
 (** GRing *)
 Module GRing.
@@ -231,13 +238,14 @@ Module GRing.
     (* Mathcomp の場合： *)
     (* Definition class' := let: Pack s c as cT' := cT return class_of cT' in c. *)
     
-    Coercion eqType (cT : type) := EqType (base (class cT)).
-  (*
+    (*
     Coercion eqType (cT : type) :=
       @Equality.Pack (sort cT)
                      (@Choice.base (xT cT)
                                    (@base (xT cT) (class cT : class_of (xT cT)))).
-   *)
+     *)
+    Coercion eqType (cT : type) := EqType (base (class cT)).
+    Coercion choiceType (cT : type) := ChoiceType (base (class cT)).
   End Zmodule.
   
   Coercion Zmodule.base : Zmodule.class_of >-> Choice.class_of.
@@ -247,6 +255,7 @@ Module GRing.
   Notation ZmodType := Zmodule.Pack.
   (* zmodType に対して、== と != を使えるようにする。 *)
   Canonical Structure Zmodule.eqType.       (* one != 0 のため。 *)
+  Canonical Structure Zmodule.choiceType.
   
   (* zero などの引数に、コアーション Zmodule.mixin が機能する。 *)
   (* Zmodule.zero (Zmodule.mixin (Zmodule.class V)) *)
@@ -288,14 +297,21 @@ Module GRing.
           class : class_of sort;
           _ : Type;
         }.
+    
+    Coercion eqType (cT : type) := EqType (base (class cT)).
+    Coercion choiceType (cT : type) := ChoiceType (base (class cT)).
+    Coercion zmodType (cT : type) := ZmodType (base (class cT)) cT. (* 3引数 *)
   End Ring.
-
+  
   Coercion Ring.base : Ring.class_of >-> Zmodule.class_of.
   Coercion Ring.mixin : Ring.class_of >-> Ring.mixin_of.
   Coercion Ring.sort : Ring.type >-> Sortclass.
   Notation ringType := Ring.type.
   Notation RingType := Ring.Pack.
-
+  Canonical Structure Ring.eqType.
+  Canonical Structure Ring.choiceType.
+  Canonical Structure Ring.zmodType.
+  
 End GRing.
   
 (* END *)
