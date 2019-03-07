@@ -220,15 +220,37 @@ Module GRing.
       Pack {
           sort :> Type;
           class : class_of sort;
+          _ : Type;
         }.
     
     (* Pack の class メンバ関数とおなじなので、使わない。 *)
     Definition class' (cT : type) :=
       match cT as cT' return (class_of (sort cT')) with
-      | @Pack sort class => class
+      | @Pack sort class __ => class
       end.
     (* Mathcomp の場合： *)
     (* Definition class' := let: Pack s c as cT' := cT return class_of cT' in c. *)
+
+(*    Variables (T : Type) (cT : type). *)
+    Let xT (cT : type) := match cT with
+              | @Pack T _ _ => T
+              end.
+(*    Check class cT : class_of xT. *)
+    Definition eqType (cT : type) :=
+      @Equality.Pack (sort cT) (@Choice.base (xT cT)
+                                             (@base (xT cT) (class cT : class_of (xT cT)))).
+(*
+    Definition eqType :=
+      @Equality.Pack (sort cT) (@Choice.base xT (@base xT (class cT : class_of xT))).
+
+    Coercion eqType :=
+      @Equality.Pack (sort cT) (@Choice.base xT (@base xT (class cT : class_of xT))) xT.
+*)
+(*
+eqTypex = 
+@Equality.Pack (sort cT) (@Choice.base xT (@base xT (class : class_of xT))) xT
+     : Equality.type    
+*)
   End Zmodule.
   
   Coercion Zmodule.base : Zmodule.class_of >-> Choice.class_of.
@@ -236,6 +258,8 @@ Module GRing.
   Coercion Zmodule.sort : Zmodule.type >-> Sortclass.
   Notation zmodType := Zmodule.type.
   Notation ZmodType := Zmodule.Pack.
+
+  Canonical Structure Zmodule.eqType.
   
   (* zero などの引数に、コアーション Zmodule.mixin が機能する。 *)
   (* Zmodule.zero (Zmodule.mixin (Zmodule.class V)) *)
@@ -262,8 +286,8 @@ Module GRing.
           ax3 : right_id one mul;
           ax4 : left_distributive mul +%R;
           ax5 : right_distributive mul +%R;
-          (*
           ax6 : one != 0;
+          (*
           The term "one" has type "Zmodule.sort R" while it is expected to have type
           "Equality.sort ?T".
            *)
@@ -272,7 +296,7 @@ Module GRing.
     Record class_of (R : Type) :=
       Class {
           base : Zmodule.class_of R;
-          mixin : mixin_of (Zmodule.Pack base);
+          mixin : mixin_of (Zmodule.Pack base R);
         }.
     
     Structure type :=
