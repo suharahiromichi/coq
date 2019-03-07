@@ -226,31 +226,18 @@ Module GRing.
     (* Pack の class メンバ関数とおなじなので、使わない。 *)
     Definition class' (cT : type) :=
       match cT as cT' return (class_of (sort cT')) with
-      | @Pack sort class __ => class
+      | @Pack sort class _ => class
       end.
     (* Mathcomp の場合： *)
     (* Definition class' := let: Pack s c as cT' := cT return class_of cT' in c. *)
-
-(*    Variables (T : Type) (cT : type). *)
-    Let xT (cT : type) := match cT with
-              | @Pack T _ _ => T
-              end.
-(*    Check class cT : class_of xT. *)
-    Definition eqType (cT : type) :=
-      @Equality.Pack (sort cT) (@Choice.base (xT cT)
-                                             (@base (xT cT) (class cT : class_of (xT cT)))).
-(*
-    Definition eqType :=
-      @Equality.Pack (sort cT) (@Choice.base xT (@base xT (class cT : class_of xT))).
-
-    Coercion eqType :=
-      @Equality.Pack (sort cT) (@Choice.base xT (@base xT (class cT : class_of xT))) xT.
-*)
-(*
-eqTypex = 
-@Equality.Pack (sort cT) (@Choice.base xT (@base xT (class : class_of xT))) xT
-     : Equality.type    
-*)
+    
+    Coercion eqType (cT : type) := EqType (base (class cT)).
+  (*
+    Coercion eqType (cT : type) :=
+      @Equality.Pack (sort cT)
+                     (@Choice.base (xT cT)
+                                   (@base (xT cT) (class cT : class_of (xT cT)))).
+   *)
   End Zmodule.
   
   Coercion Zmodule.base : Zmodule.class_of >-> Choice.class_of.
@@ -258,8 +245,8 @@ eqTypex =
   Coercion Zmodule.sort : Zmodule.type >-> Sortclass.
   Notation zmodType := Zmodule.type.
   Notation ZmodType := Zmodule.Pack.
-
-  Canonical Structure Zmodule.eqType.
+  (* zmodType に対して、== と != を使えるようにする。 *)
+  Canonical Structure Zmodule.eqType.       (* one != 0 のため。 *)
   
   (* zero などの引数に、コアーション Zmodule.mixin が機能する。 *)
   (* Zmodule.zero (Zmodule.mixin (Zmodule.class V)) *)
@@ -287,10 +274,6 @@ eqTypex =
           ax4 : left_distributive mul +%R;
           ax5 : right_distributive mul +%R;
           ax6 : one != 0;
-          (*
-          The term "one" has type "Zmodule.sort R" while it is expected to have type
-          "Equality.sort ?T".
-           *)
         }.
     
     Record class_of (R : Type) :=
@@ -303,6 +286,7 @@ eqTypex =
       Pack {
           sort :> Type;
           class : class_of sort;
+          _ : Type;
         }.
   End Ring.
 
