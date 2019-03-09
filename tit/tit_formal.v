@@ -27,7 +27,7 @@ https://github.com/suharahiromichi/coq/blob/master/tit/tit_formal.v
 原則として説明は省くので、必要に応じてオリジナルを参照してください。
 *)
 
-Require Import ssreflect ssrbool eqtype ssrnat.
+From mathcomp Require Import ssreflect ssrbool eqtype ssrnat.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -41,8 +41,6 @@ Unset Printing Implicit Defensive.
 *)
 
 Require Import Coq.Logic.Decidable.
-Check contrapositive :
-  forall A B : Prop, decidable A -> ((A -> False) -> B -> False <-> B -> A).
 Require Import Coq.Logic.Classical.
 Check classic : forall P : Prop, P \/ ~ P.
 Check not_not : forall P : Prop, decidable P -> ~ ~ P -> P.
