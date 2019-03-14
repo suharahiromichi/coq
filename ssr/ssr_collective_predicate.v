@@ -1,61 +1,61 @@
 From mathcomp Require Import all_ssreflect.
 
-(* total predicate ある型の要素についてすべてtrueを返す関数。 *)
-Check fun _ => true.
-
-(* これを母関数としてもつ型 *)
-
-Inductive news : predArgType := n | e | w | s.
-
-Check predArgType : Type.
-Check Type : Type.
-
-Check nat : Type.
-Check nat : predArgType.
-
-(* 任意の型を Type から predType に変換する。 *)
-Check {: nat} : predArgType.
-
-
-(* Applicative Predicate *)
+(** ssrbool.v を参照のこと！ *)
 
 (* Set Printing All. *)
 
-Check SimplPred nat_eqType : simpl_pred nat. (* ************ *)
+(** # pred *)
 
+(** pred = T -> bool *)
+Compute pred nat.                           (* nat -> bool *)
+
+
+(** # simpl_pred *)
+
+Check SimplPred nat_eqType : simpl_pred nat.
+
+(** 自動で簡約される。 *)
 Goal SimplPred nat_eqType 1.
-Proof.
-  simpl.
-  done.
-Qed.
+Proof. move=> /=. done. Qed.
 
-Goal [pred x | nat_eqType x] 1.
-Proof.
-  simpl.
-  done.
-Qed.
+(** mem_pred は 中置記法を保存する simpl_pred の亜種である。  *)
+Check mem nat_eqType       : mem_pred nat.
 
-Check eq_op 1 =1 eq_op 1.
+(** 1 \in nat に簡約される。 *)
+Goal mem nat_eqType 1.
+Proof. move=> /=. done. Qed.
 
+(** x \in A は自動で簡約されない。明示的に apply inE で簡約する。 *)
 Goal 1 \in nat_eqType.
-Proof.
-  simpl.
-  done.
-Qed.
+Proof. apply inE. Qed.
 
 
-(* Collective Predicate の定義 *)
+(** # Applicative Predicate と Collective Predicate *)
+(** 前置記法 P x か、中置記法 x \in A の違いだが、 =1 と =i の違いでもある。 *)
 
-Fail Check (0,1) 1.
+(** ## Applicative Predicate *)
+(** [pred x | nat_eqType x] x = [pred x | nat_eqType x] x *)
+Goal [pred x | nat_eqType x] =1 [pred x | nat_eqType x].
+Proof. move => x. done. Qed.
+
+(** ## Collective Predicate *)
+(** (x \in mem nat_eqType) = (x \in mem nat_eqType) *)
+Goal mem nat_eqType =i mem nat_eqType.
+Proof. move=> x. done. Qed.
+
+
+(** # Collective Predicate を定義する。 *)
+
+(** ## predType のインスタンスとして、Collective Predicate を定義してみる。 *)
+
+Fail Check mem (0,1) : mem_pred nat_eqType.
 Fail Check mem (0,1) 1.
+Fail Check (0,1) 1.
 Fail Check 1 \in (0,1).
 Fail Check (0,1) =i (0,1).
 
-
 Section Pair.
-  
   Variable T : eqType.
-  
 (*
   Coercion pred_of_eq_pair (s : T * T) : pred_class :=
     fun (x : T) =>  (s.1 == x) || (s.2 == x).
@@ -64,49 +64,73 @@ Section Pair.
     xpredU (eq_op s.1) (eq_op s.2).
   
   Canonical pair_predType := @mkPredType T (T * T) pred_of_eq_pair.
-  
   Canonical mem_pair_predType := mkPredType pred_of_eq_pair.
-
+  Check pair_predType : predType T.
 End Pair.
+Check pair_predType : forall T : Equality.type, predType (Equality.sort T).
+Check pair_predType nat_eqType : predType nat.
 
-
-
-Check mem (0,1)  : mem_pred nat_eqType.     (* ************ *)
-
-Fail Check (0,1) 1.
+Check mem (0,1) : mem_pred nat_eqType.
 Check mem (0,1) 1.
+Fail Check (0,1) 1.                         (* これはだめ。 *)
 Check 1 \in (0,1).
 Check (0,1) =i (0,1).
 
 
-Compute mem (0,1) 1.
-Compute 1 \in (0,1).
+(** ## predArgType を使って、Collective Predicate を定義してみる。 *)
+(** total predicate ある型の要素についてすべてtrueを返す関数。これを母関数として持つ。 *)
+Check fun _ => true.
+
+(** ### 比較 Type で定義したもの。 *)
+Inductive news' : Type := n' | e' | w' | s'.
+
+Fail Check mem news' : mem_pred news'.
+Fail Check mem news' n'.
+Fail Check n' \in news'.
+Fail Check mem news'.
+Fail Check news' =i news'.
+
+(** ### {: T} を使えば、predArgType に cast できる。  *)
+Check mem {: news'} : mem_pred news'.
+Check mem {: news'} n'.
+Check n' \in {: news'}.
+Check mem {: news'}.
+Check {: news'} =i {: news'}.
+
+
+(** ### predArgType で定義したもの。 *)
+Inductive news : predArgType := n | e | w | s.
+
+Check mem news : mem_pred news.
+Check mem news n.
+Check news n.
+Check n \in news.
+Check news =i news.
+
+
+(** ### 任意の型を Type から predType に変換する。 *)
+Check {: news'} : predArgType.
+Check {: nat} : predArgType.
+
+
+(** # Collective Predicate の演算 *)
 
 Compute 1 \in [predU (0,1) & (0,2)].        (* union *)
 Compute 1 \in [predI (0,1) & (0,2)].        (* intersection *)
 Compute 1 \in [predD (0,1) & (0,2)].        (* difference *)
 
 
-Fail Check (0,1) =1 (0,1).                  (* applicative *)
-Check mem (0,1) =1 mem (0,1).               (* applicative *)
-Check (0,1) =i (0,1).                       (* collective *)
+
+(** # おまけ *)
+
+Check [pred x | nat_eqType x] : simpl_pred nat.
 
 
-Check 1 \in {: nat}.
-Fail Check 1 \in nat.
-
-Goal 1 \in {: nat}.
-Proof.
-  rewrite /mem /Mem /xpredT.
-  simpl.
-
-
-
-
-
+(* **************************** *)
+(* **************************** *)
+(* **************************** *)
 
 Check 1 == 1.
-
 
 Definition P (x : nat) := x == 1.
 
@@ -190,234 +214,5 @@ Check {: bool} true.
 Set Printing All.
 Check 1 \in nat_eqType.
 Check mem nat_eqType 1.
-
-
-
-
-Compute 1 \in nat_choiceType.
-
-Goal forall (A B C D : Prop),  A \/ B /\ C /\ D -> True.
-Proof.
-  move=> A B C D.
-  case=> [H1|[H2[H3]]].
-  
-  move=> [H1| H2].
-  
-
-Locate "_ \in _".
-(* "x \in A" := in_mem x (mem A) : bool_scope (default interpretation) *)
-About mem.
-About in_mem.
-
-Locate "_ >= _".
-Goal 1 >= 0.
-
-  Lemma test (m : nat)( n : bool) : True.
-    move: n.
-    move: m.
-    move=> m.
-    move=> n.
-    
-    move: m n.
-    move=> m n.
-    
-    move=> n m.
-    move: n.
-    move: m.
-
-  
-Check mem P.
-
-Check bool_eqType : eqType.
-Compute Equality.sort bool_eqType.           (* nat *)
-
-Check 1 \in nat_eqType.
-
-Check 1 \in 'I_2.
-
-Goal forall (m n : nat), True.
-Proof.
-  move=> m n.
-  case: (leqP m n).
-  case : leqP.
-
-Check eqb_id.
-Set Printing All.
-
-Check eqb_id.
-Variable a : nat.
-Check a : nat_eqType.
-Variable b : nat_eqType.
-Check b : nat.
-Check b.
-
-Variable S' : {: bool}.
-Variable s : S'.
-
-Check 1 \in {: nat}.
-Check mem {: nat}.
-Check mem {: bool}.
-Check P :  predArgType.
-Check {: bool}  : predArgType.
-Check [:: true] : predArgType.
-
-Check mem [:: true].
-Print mem.
-
-
-Check mem_pred.
-Check in_mem true.
-
-Check mem [:: 1].
-Locate "_ \in _".
-
-Set Printing All.
-Check mem [:: 1].
-Check mem P.
-Compute Equality.sort nat_eqType.
-Check in_mem 1.
-
-Check (mem P) : mem_pred nat.
-Check (mem P).
-(* @mem nat (predPredType nat) P *)
-
-Check in_mem 1 : mem_pred nat -> bool.
-
-Check in_mem 1 (mem [::]).
-
-Check (mem [:: 1]).
-(* @mem (Equality.sort nat_eqType) (seq_predType nat_eqType) (@cons nat (S O) (@nil nat)) *)
-Check 1 \in [:: 1].
-
-
-(* mathcomp/ssreflect 一式をインポートする。おすすめ。 *)
-
-  (**
-
-## 論理ゲーム(1)
-
-### goalsウィンドウの説明
-
-  X, Y : Prop
-  XtoY_is_true : X -> Y
-  X_is_true : X
-  ============================
-  Y
-
-===== の上がコンテキストで、変数の型や、前提である名前のついた命題があります。
-
-===== の下がゴールで、一般に A->B->C のかたちです。
-最も外側の->の左(A)をスタックトップといいます。
-->は右結合なので、A->(B->C)であることに注意してください。
-ゴールが(A->B)->Cなら、(A->B)がスタックトップです。
-
-
-### intro、generaralize、apply
-
-- move=> H スタックトップを前提Hに移す。intro とも。
-- move: H 前提Hをスタックトップに移す。generaralize とも。
-- apply スタックトップをゴールの残りの部分に適用する。
-
-- move: H1; apply; move=> H2 は apply: H1 => H2 とかける。
-
-
-### 適用について (その1)
-
-- ゴールへの適用
-ゴールが Y のとき、 (X -> Y) を適用して X を得る。
-
-- 前提への適用
-前提 H1が (X -> Y)、前提 H2が X のとき、(H1 H2) は Y である。関数と同じ。
-
-両者の違いは、同じ証明図を下から上のみるが、上から下にみるかの違いによる。
-
-  X     X -> Y
----------------
-             Y
-
-
-### 適用について (その2)
-
-- apply ゴールのスタックトップを残りの部分に適用する。通常は apply: H でつかう。
-
-- apply/H ゴール全体への適用、ビュー付き。
-
-- 前提を前提に適用する。 move: (H1 H2) など。括弧が必要。
-
-- move/H スタックトップ（=前提）への適用、ビュー付き。
-
-
-### 証明の終わり（ゴールの解消）
-
-ゴールが A -> A になったらdone。
-実際には、前提のどれかとゴールとが同じになったらでよい。
-
-
-### Section セクション
-
-Section のなかの宣言は、Section から出ると、
-
-- Variable X : Prop は、forall (X : Prop), 。。。。
-- Hypothesis H : X は、 X -> 。。。。 
-
-Section の中では、最初から intro されているといえる。
-   *)
-
-Section ModusPonens.
-
-  Variable X Y : Prop.
-
-  Hypothesis XtoY_is_true : X -> Y.
-  Hypothesis X_is_true : X.
-  
-  (* Goal を X -> Y にする例。 *)
-  
-  Theorem MP : Y.
-  Proof.
-    move: X_is_true.
-      by [].                                (* done *)
-  Qed.
-
-  (* Goal を X にする例。 *)
-  
-  Theorem MP2 : Y.
-  Proof.
-    move: XtoY_is_true.
-    apply.
-      by [].                                (* done *)
-  Qed.
-  
-  (* 一行にまとめられる。 *)
-  Theorem MP2' : Y.
-  Proof.
-    apply: XtoY_is_true.
-      by [].                                (* done *)
-  Qed.
-  
-  (* おまけ *)
-  Theorem MP2'': Y.
-  Proof.
-    debug auto.
-    (* 
-Debug: (* debug auto: *)
-Debug: * assumption. (*fail*)
-Debug: * intro. (*fail*)
-Debug: * simple apply XtoY_is_true. (*success*)
-Debug: ** assumption. (*success*)
-     *)
-  Qed.
-  
-  Check MP : Y.
-  Check MP2 : Y.
-  Check MP2' : Y.
-  Check MP2'' : Y.
-  
-End ModusPonens.
-
-(* セクションから出ると。 *)
-Check MP : forall X Y : Prop, (X -> Y) -> X -> Y.
-Check MP2 : forall X Y : Prop, (X -> Y) -> X -> Y.
-Check MP2' : forall X Y : Prop, (X -> Y) -> X -> Y.
-Check MP2'' : forall X Y : Prop, (X -> Y) -> X -> Y.
 
 (* END *)
