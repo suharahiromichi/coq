@@ -39,6 +39,8 @@ Inductive bird_red : relation birdterm :=
     bird_red (birdM @ x) (x @ x).           (* 物まね鳥 *)
 Infix "----->" := bird_red.
 
+Hint Resolve red_refl.
+
 (* 反射、対称、遷移性を満たすこと。 *)
 Instance route_equiv_Equiv : Equivalence bird_red.
 Proof.
@@ -62,15 +64,16 @@ Section ch_9_to_mock_a_mockingbird.
   
   Definition fond x y := x @ y -----> y.    (* X は Y が好き。 *)
   
+  Definition birdY := fun a => birdB @ a @ birdM. (* 不動点演算子 *)
+  
   (* すべての鳥は、少なくともひとつ好きな鳥がいる。 *)
   Lemma one : forall a, exists x, fond a x.
   Proof.
     move=> a.
-    exists ((birdB @ a @ birdM) @ (birdB @ a @ birdM)).
-    rewrite /fond {2}red_b red_m.
-      by apply: red_refl.
+    exists (birdY a @ birdY a).
+      by rewrite /fond {2}red_b red_m.      (* apply: red_refl *)
   Qed.
-
+  
 End ch_9_to_mock_a_mockingbird.
 
 (* END *)
