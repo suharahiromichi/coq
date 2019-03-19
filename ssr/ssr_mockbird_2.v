@@ -1,9 +1,11 @@
 (* ラムダ式をコンビネータに変換するα消去のプログラム *)
 (* 
    TODO:
-
+   
    SKI と x y z を項として分離する。
-   in_bird を \in を使えるようにする。
+   
+   eqType の定義を簡単な方法にする。
+
    α消去で与える変数を自動化する。
  *)
 
@@ -50,13 +52,24 @@ Fixpoint in_bird (v : var) (M : birdterm) : bool :=
   | M1 @ M2 => in_bird v M1 || in_bird v M2
   end.
 
+Fixpoint in_bird' (M : birdterm) (v : var) : bool :=
+  match M with
+  | bird u => v == u
+  | M1 @ M2 => in_bird v M1 || in_bird v M2
+  end.
+
+Canonical birdterm_predType := @mkPredType var birdterm in_bird'.
+Compute x \in bird x.
+Compute x \in (bird x @ bird y).            (* true *)
+Compute x \in (bird z @ bird y).            (* false *)
+
 Fixpoint lc_bird (v : var) (M : birdterm) : birdterm :=
   match M with
   | bird u =>
     if u == v then bird I else bird K @ bird u
   | M1 @ M2 =>
-    let M1' := if in_bird v M1 then lc_bird v M1 else bird K @ M1 in
-    let M2' := if in_bird v M2 then lc_bird v M2 else bird K @ M2 in
+    let M1' := if v \in M1 then lc_bird v M1 else bird K @ M1 in
+    let M2' := if v \in M2 then lc_bird v M2 else bird K @ M2 in
     bird S @ M1' @ M2'
   end.
 
