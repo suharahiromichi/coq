@@ -66,9 +66,9 @@ Proof.
         rewrite apply_eq => /andP.
           by case.
   (* u = v -> eqBirdterm u v *)
-  -  move=> ->.
-     elim: v => //= => u1 H1 v1 H2.
-     by apply/andP.
+  - move=> ->.
+    elim: v => //= => u1 H1 v1 H2.
+      by apply/andP.
 Qed.
 
 Definition birdterm_Mixin := @EqMixin birdterm eqBirdterm birdterm_eqP.
@@ -95,14 +95,14 @@ Fixpoint in_bird' (M N : birdterm) : bool := (* N \in M *)
 Canonical birdterm_predType' := @mkPredType birdterm birdterm in_bird'.
 *)
 
-Fixpoint lc_bird (v : string) (M : birdterm) : birdterm :=
-  match M with
-  | var u =>   if u == v then I else K @ var u
-  | bird _ => M
-  | M1 @ M2 =>
-    let M1' := if v \in M1 then lc_bird v M1 else K @ M1 in
-    let M2' := if v \in M2 then lc_bird v M2 else K @ M2 in
-            S @ M1' @ M2'
+Fixpoint lc_bird (v : string) (T : birdterm) : birdterm :=
+  match T with
+  | var u => if u == v then I else K @ var u
+  | bird _ => T
+  | T1 @ T2 =>
+    let T1' := if v \in T1 then lc_bird v T1 else K @ T1 in
+    let T2' := if v \in T2 then lc_bird v T2 else K @ T2 in
+            S @ T1' @ T2'
   end.
 
 (* 実行例 *)
@@ -128,6 +128,55 @@ Compute lc_bird "x" (lc_bird "y" (lc_bird "z" B)).
 
 Compute lc_bird "x" M.
 (* = bird S @ bird I @ bird I *)
+
+Lemma test1 (T1 T2 : birdterm) (v : string) :
+  (v \notin T1 @ T2) = (v \notin T1) && (v \notin T2).
+Proof.
+  rewrite /mem /in_mem /in_bird /=.
+  Search (~~ _ = ~~ _ && ~~ _).
+  by apply: negb_or.
+Qed.
+
+Lemma test2 (T1 T2 : birdterm) (v : string) :
+  (v \in T1 @ T2) = (v \in T1) || (v \in T2).
+Proof.
+  (* rewrite /inE. *)
+  by rewrite /mem /in_mem /in_bird /=.
+Qed.
+
+Lemma test3 (s v : string) : s <> v -> v \notin var s.
+Proof.
+  move=> H.
+  rewrite /mem /in_mem /in_bird /=.
+  apply/negP=> Hc.
+  apply H.
+  move/eqP in Hc.
+  done.
+Qed.
+
+Goal forall (T : birdterm) (v : string), v \notin lc_bird v T.
+Proof.
+  elim.
+  - rewrite /lc_bird // => s v.             (* v \in var u *)
+    case H : (s == v).
+    + done.
+    + rewrite test1.
+      apply/andP.
+      split.
+      * done.
+      * apply: test3.
+        Locate "_ <> _".                    (* note = *)
+        Locate "_ != _".                    (* negp == *)
+        Search _ ((_ == _) = _).
+        move/negP in H.
+        move=> Hc.
+        apply H.
+        apply/eqP.
+        done.
+  - by [].                                  (* v \in bird s *)
+  - move=> T1 H1 T2 H2 v /=.                (* v \in bird T1 @ T2 *)
+    by rewrite 2!test1.
+Qed.
 
 End BirdTerm.
 
