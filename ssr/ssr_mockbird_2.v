@@ -144,14 +144,23 @@ Proof.
   by rewrite /mem /in_mem /in_bird /=.
 Qed.
 
+Lemma test4 (T : eqType) (x y :T) : (x != y) = (y != x).
+Proof.
+  apply/idP/idP; by apply: contra_neq.
+Qed.
+
 Lemma test3 (s v : string) : s <> v -> v \notin var s.
 Proof.
   move=> H.
   rewrite /mem /in_mem /in_bird /=.
+  move/eqP in H.
+  by rewrite test4.
+  (*
   apply/negP=> Hc.
   apply H.
   move/eqP in Hc.
   done.
+  *)
 Qed.
 
 Goal forall (T : birdterm) (v : string), v \notin lc_bird v T.
@@ -165,14 +174,16 @@ Proof.
       split.
       * done.
       * apply: test3.
+        by move/eqP in H.
+        (*
         Locate "_ <> _".                    (* note = *)
         Locate "_ != _".                    (* negp == *)
-        Search _ ((_ == _) = _).
         move/negP in H.
         move=> Hc.
         apply H.
         apply/eqP.
         done.
+        *)
   - by [].                                  (* v \in bird s *)
   - move=> T1 H1 T2 H2 v /=.                (* v \in bird T1 @ T2 *)
     by rewrite 2!test1.
