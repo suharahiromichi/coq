@@ -154,13 +154,14 @@ Qed.
 
 Lemma neq__notin (s v : string) : s <> v -> v \notin var s.
 Proof.
+(*
   move=> H.
   Search _ (_ \notin _).
   apply/memPn => u.
   rewrite /mem /in_mem /in_bird /=.
   move/eqP => ->.
   by apply/eqP.
-  
+*)  
   Restart.
   move=> H.
   rewrite /mem /in_mem /in_bird /=.
@@ -168,8 +169,21 @@ Proof.
   by rewrite neq_sym.
 Qed.
 
+(* 泥縄の補題 *)
+Lemma notin_l (v : string) (T S1 S2 : birdterm) :
+  v \notin S1 -> v \notin S2 -> v \notin (if v \in T then S1 else S2 @ T).
+Proof.
+  case H : (v \in T) => HS1 HS2.
+  - done.
+  - rewrite apply_notinE.
+    apply/andP; split.
+    + done.
+    + move/eqP in H.
+      by rewrite eqbF_neg in H.
+Qed.
+
 (* α除去の証明 *)
-Goal forall (T : birdterm) (v : string), v \notin lc_bird v T.
+Theorem notin__lc_bird : forall (T : birdterm) (v : string), v \notin lc_bird v T.
 Proof.
   elim.
   - rewrite /lc_bird // => s v.             (* v \in var u *)
@@ -184,8 +198,9 @@ Proof.
   - by [].                                  (* v \in bird s *)
   - move=> T1 H1 T2 H2 v /=.                (* v \in bird T1 @ T2 *)
     rewrite 2!apply_notinE /=.
-    apply/andP.
-    split.
+    by apply/andP; split; apply: notin_l.
+    
+(*
     + case H : (v \in T1).
       * by apply H1.
       * rewrite apply_notinE.
@@ -202,8 +217,34 @@ Proof.
         ** done.
         ** move/negP in H.
            by apply/negP.
+ *)
 Qed.
 
 End BirdTerm.
 
 (* END *)
+
+
+(* おまけ *)
+
+Goal forall (b : bool), ~~b -> ~ b.
+Proof.
+  move=> b.
+  move/negP.
+  done.
+Qed.
+
+Goal forall (b : bool), b == false -> b = false.
+Proof.
+  move=> b.
+  move/eqP.
+  done.
+Qed.
+
+Goal forall (b : bool), ~~b -> b == false.
+  move=> b.
+  rewrite eqbF_neg.
+  done.
+Qed.
+
+(* おまけ。終わり。 *)
