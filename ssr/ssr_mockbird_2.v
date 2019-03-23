@@ -81,8 +81,8 @@ Fixpoint in_bird (M : birdterm) (v : string) : bool := (* v \in M *)
   match M with
   | var u => v == u
   | bird _ => false
-  | M1 @ M2 =>                 (* [predU in_bird M1 & in_bird M2] v *)
-    in_bird M1 v || in_bird M2 v
+  | M1 @ M2 =>
+    [predU in_bird M1 & in_bird M2] v (* in_bird M1 v || in_bird M2 v *)
 end.
 
 Canonical birdterm_predType := @mkPredType string birdterm in_bird.
@@ -132,7 +132,7 @@ Compute lc_bird "x" (lc_bird "y" (lc_bird "z" B)).
 Compute lc_bird "x" M.
 (* = bird S @ bird I @ bird I *)
 
-Lemma test1 (T1 T2 : birdterm) (v : string) :
+Lemma apply_notinE (T1 T2 : birdterm) (v : string) :
   (v \notin T1 @ T2) = (v \notin T1) && (v \notin T2).
 Proof.
   rewrite /mem /in_mem /in_bird /=.
@@ -140,30 +140,32 @@ Proof.
   by apply: negb_or.
 Qed.
 
-Lemma test2 (T1 T2 : birdterm) (v : string) :
+Lemma apply_inE (T1 T2 : birdterm) (v : string) :
   (v \in T1 @ T2) = (v \in T1) || (v \in T2).
 Proof.
   (* rewrite /inE. *)
   by rewrite /mem /in_mem /in_bird /=.
 Qed.
 
-Lemma test4 (T : eqType) (x y :T) : (x != y) = (y != x).
+Lemma neq_sym (T : eqType) (x y :T) : (x != y) = (y != x).
 Proof.
-  apply/idP/idP; by apply: contra_neq.
+  by apply/idP/idP; apply: contra_neq.
 Qed.
 
-Lemma test3 (s v : string) : s <> v -> v \notin var s.
+Lemma neq__notin (s v : string) : s <> v -> v \notin var s.
 Proof.
+  move=> H.
+  Search _ (_ \notin _).
+  apply/memPn => u.
+  rewrite /mem /in_mem /in_bird /=.
+  move/eqP => ->.
+  by apply/eqP.
+  
+  Restart.
   move=> H.
   rewrite /mem /in_mem /in_bird /=.
   move/eqP in H.
-  by rewrite test4.
-  (*
-  apply/negP=> Hc.
-  apply H.
-  move/eqP in Hc.
-  done.
-  *)
+  by rewrite neq_sym.
 Qed.
 
 (* α除去の証明 *)
@@ -172,49 +174,34 @@ Proof.
   elim.
   - rewrite /lc_bird // => s v.             (* v \in var u *)
     case H : (s == v).
-    + done.
-    + rewrite test1.
+    + by [].
+    + rewrite apply_notinE.
       apply/andP.
       split.
       * done.
-      * apply: test3.
+      * apply: neq__notin.
         by move/eqP in H.
-        (*
-        Locate "_ <> _".                    (* note = *)
-        Locate "_ != _".                    (* negp == *)
-        move/negP in H.
-        move=> Hc.
-        apply H.
-        apply/eqP.
-        done.
-        *)
   - by [].                                  (* v \in bird s *)
   - move=> T1 H1 T2 H2 v /=.                (* v \in bird T1 @ T2 *)
-    rewrite test1.
-    rewrite test1.
+    rewrite 2!apply_notinE /=.
     apply/andP.
     split.
-    + apply/andP.
-      split.
-      * done.
-      * case H : (v \in T1).
-        ** apply H1.
-           rewrite test1.
-           apply/andP.
-           split.
-           *** done.
-           *** move/negP in H.
-               apply/negP.
-               done.
-      * case H : (v \in T2).
-        ** apply H2.
-           rewrite test1.
-           apply/andP.
-           split.
-           *** done.
-           *** move/negP in H.
-               apply/negP.
-               done.
+    + case H : (v \in T1).
+      * by apply H1.
+      * rewrite apply_notinE.
+        apply/andP.
+        split.
+        ** done.
+        ** move/eqP in H.
+           by rewrite eqbF_neg in H.
+    + case H : (v \in T2).
+      * by apply H2.
+      * rewrite apply_notinE.
+        apply/andP.
+        split.
+        ** done.
+        ** move/negP in H.
+           by apply/negP.
 Qed.
 
 End BirdTerm.
