@@ -81,8 +81,10 @@ Fixpoint in_bird (M : birdterm) (v : string) : bool := (* v \in M *)
   match M with
   | var u => v == u
   | bird _ => false
-  | M1 @ M2 => in_bird M1 v || in_bird M2 v
-  end.
+  | M1 @ M2 =>                 (* [predU in_bird M1 & in_bird M2] v *)
+    in_bird M1 v || in_bird M2 v
+end.
+
 Canonical birdterm_predType := @mkPredType string birdterm in_bird.
 
 (*
@@ -95,6 +97,7 @@ Fixpoint in_bird' (M N : birdterm) : bool := (* N \in M *)
 Canonical birdterm_predType' := @mkPredType birdterm birdterm in_bird'.
 *)
 
+(* α除去のプログラム *)
 Fixpoint lc_bird (v : string) (T : birdterm) : birdterm :=
   match T with
   | var u => if u == v then I else K @ var u
@@ -163,6 +166,7 @@ Proof.
   *)
 Qed.
 
+(* α除去の証明 *)
 Goal forall (T : birdterm) (v : string), v \notin lc_bird v T.
 Proof.
   elim.
@@ -186,7 +190,31 @@ Proof.
         *)
   - by [].                                  (* v \in bird s *)
   - move=> T1 H1 T2 H2 v /=.                (* v \in bird T1 @ T2 *)
-    by rewrite 2!test1.
+    rewrite test1.
+    rewrite test1.
+    apply/andP.
+    split.
+    + apply/andP.
+      split.
+      * done.
+      * case H : (v \in T1).
+        ** apply H1.
+           rewrite test1.
+           apply/andP.
+           split.
+           *** done.
+           *** move/negP in H.
+               apply/negP.
+               done.
+      * case H : (v \in T2).
+        ** apply H2.
+           rewrite test1.
+           apply/andP.
+           split.
+           *** done.
+           *** move/negP in H.
+               apply/negP.
+               done.
 Qed.
 
 End BirdTerm.
