@@ -174,12 +174,15 @@ Lemma notin_l (v : string) (T S1 S2 : birdterm) :
   v \notin S1 -> v \notin S2 -> v \notin (if v \in T then S1 else S2 @ T).
 Proof.
   case H : (v \in T) => HS1 HS2.
+  (* v \in T *)
   - done.
-  - rewrite apply_notinE.
-    apply/andP; split.
-    + done.
-    + move/eqP in H.
-      by rewrite eqbF_neg in H.
+  (* v \notin T *)
+  (* 次の2行で、H : (v \in T) = false を
+     H : v \notin T に書き換える。 *)
+  - move/eqP in H.
+    rewrite eqbF_neg in H.
+    rewrite apply_notinE.
+    by apply/andP; split.
 Qed.
 
 (* α除去の証明 *)
@@ -188,13 +191,15 @@ Proof.
   elim.
   - rewrite /lc_bird // => s v.             (* v \in var u *)
     case H : (s == v).
+    (* s = v *)
     + by [].
-    + rewrite apply_notinE.
+    (* s <> v *)
+    + move/eqP in H.
+      rewrite apply_notinE.
       apply/andP.
       split.
       * done.
-      * apply: neq__notin.
-        by move/eqP in H.
+      * by apply: neq__notin.
   - by [].                                  (* v \in bird s *)
   - move=> T1 H1 T2 H2 v /=.                (* v \in bird T1 @ T2 *)
     rewrite 2!apply_notinE /=.
@@ -224,10 +229,9 @@ End BirdTerm.
 
 (* END *)
 
+(* おまけ。否定の表現は6種類ある。 *)
 
-(* おまけ *)
-
-Goal forall (b : bool), ~~b -> ~ b.
+Goal forall (b : bool), ~~ b -> ~ b.        (* negb と not *)
 Proof.
   move=> b.
   move/negP.
@@ -241,10 +245,86 @@ Proof.
   done.
 Qed.
 
-Goal forall (b : bool), ~~b -> b == false.
+Goal forall (b : bool), ~~ b -> b == false.
   move=> b.
   rewrite eqbF_neg.
   done.
 Qed.
 
+Goal forall (b : bool), b != true -> ~~ b.  (* negb eqb true *)
+Proof.
+  move=> b.
+  move/eqP/negP.
+  done.
+Qed.
+
+Goal forall (b : bool), b <> true -> ~~ b.  (* not eq true *)
+Proof.
+  move=> b.
+  move/negP.
+  done.
+Qed.
+
 (* おまけ。終わり。 *)
+
+(* おまけのおまけ。不等号は5種類ある。 *)
+(* ただし、= false を <> true にしたののは、上を参照のこと。 *)
+
+Goal forall (x y : nat), (x == y) == false -> (x == y) = false.
+  move=> x y.
+  (* 外側の 「== false」 に適用されている。上とおなじ。 *)
+  move/eqP.
+  Undo 1.
+  move/(elimT eqP).
+  done.
+Qed.
+
+Goal forall (x y : nat), (x == y) = false -> x <> y.
+  move=> x y.
+  move/eqP.
+  Undo 1.
+  move/(elimF eqP).
+  done.
+Qed.
+
+Goal forall (x y : nat), (x != y) -> x <> y. (* negb eqb *)
+  move=> x y.
+  move/eqP.
+  Undo 1.
+  move/(elimN eqP).
+  done.
+Qed.
+
+Goal forall (x y : nat), ~ (x == y) -> x != y. (* not eqb *)
+  move=> x y.
+  move/negP.
+  Undo 1.
+  move/(introT negP).
+  done.
+Qed.
+
+(* 等号も4種類あるが、ひとつだけ。 *)
+Goal forall (x y : nat), (x != y) = false -> x = y.
+  move=> x y.
+  move/eqP.
+  Undo 1.
+  move/(elimNf eqP).
+  done.
+Qed.
+
+
+Check elimT (@eqP _ x y) : x == y -> x = y.
+Check elimF (@eqP _ x y) : (x == y) = false -> x <> y.
+Check elimN (@eqP _ x y) : x != y -> x <> y.
+Check elimNf (@eqP _ x y) : (x != y) = false -> x = y.
+
+Check introT (@eqP _ x y) : x = y -> x == y.
+Check introF (@eqP _ x y) : x <> y -> (x == y) = false.
+Check introN (@eqP _ x y) : x <> y -> x != y.
+Check introNf (@eqP _ x y) : x = y -> (x != y) = false.
+  
+Check elimTn.               (* reflect 述語中に否定が含まれる場合。 *)
+Check elimFn.
+
+(* おまけのおまけ。終わり。 *)
+
