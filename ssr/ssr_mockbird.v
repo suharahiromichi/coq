@@ -14,7 +14,11 @@ Reserved Notation "x '@' y" (at level 50, left associativity).
 Inductive birdterm : Set :=
 | birdapp of birdterm & birdterm            (* x @ y *)
 | birdM                                     (* Mockingbird *)
-| birdB.                                    (* Bluebird *)
+| birdB                                     (* Bluebird *)
+| birdI
+| birdK
+| birdS
+.
 Notation "x @ y" := (birdapp x y).
 
 Reserved Notation "x '----->' y" (at level 70, no associativity).
@@ -36,7 +40,13 @@ Inductive bird_red : relation birdterm :=
 | red_b  : forall x y z,
     bird_red (birdB @ x @ y @ z) (x @ (y @ z)) (* 合成鳥 *)
 | red_m  : forall x,
-    bird_red (birdM @ x) (x @ x).           (* 物まね鳥 *)
+    bird_red (birdM @ x) (x @ x)            (* 物まね鳥 *)
+
+| red_i  : forall x, bird_red (birdI @ x) x
+| red_k  : forall x y, bird_red (birdK @ x @ y) x
+| red_s  : forall x y z, bird_red (birdS @ x @ y @ z) (x @ z @ (y @ z))
+.
+
 Infix "----->" := bird_red.
 
 Hint Resolve red_refl.
@@ -75,5 +85,36 @@ Section ch_9_to_mock_a_mockingbird.
   Qed.
   
 End ch_9_to_mock_a_mockingbird.
+
+(* α除去の結果を検算する。 *)
+(* see. ssr_mockbird_2.v *)
+
+Definition birdM' :=                        (* ものまね鳥 *)
+  birdS @ birdI @ birdI.
+
+Goal forall x, birdM' @ x -----> x @ x.
+Proof.
+  rewrite /birdM' => x.
+  rewrite red_s.
+  rewrite red_i.
+  done.
+Qed.
+
+Definition birdB' :=                       (* 合成鳥 *)
+  birdS @
+        (birdS @ (birdK @ birdS) @
+               (birdS @ (birdK @ birdK) @
+                      (birdS @ (birdK @ birdS) @ (birdS @ (birdK @ birdK) @ birdI)))) @
+        (birdK @
+               (birdS @ (birdS @ (birdK @ birdS) @ (birdS @ (birdK @ birdK) @ birdI)) @
+                      (birdK @ birdI))).
+
+Goal forall x y z, birdB' @ x @ y @ z -----> x @ (y @ z).
+  rewrite /birdB' => x y z.
+  rewrite !red_s !red_k !red_i.             (* for x *)
+  rewrite !red_s !red_k !red_i.             (* for y *)
+  rewrite !red_s !red_k !red_i.             (* for z *)
+  done.
+Qed.
 
 (* END *)
