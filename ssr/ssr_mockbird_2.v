@@ -77,15 +77,93 @@ Canonical birdterm_EqType := @EqType birdterm birdterm_Mixin.
 Compute x @ I == x @ I.                     (* true *)
 Compute x @ I == I @ x.                     (* false *)
 
-Fixpoint in_bird (M : birdterm) (v : string) : bool := (* v \in M *)
-  match M with
+(* in の定義 *)
+
+Inductive InBird (v : string) : birdterm -> Prop :=
+| InBird_Var : InBird v (var v)
+| InBird_T1  : forall T1 T2, InBird v T1 -> InBird v (T1 @ T2)
+| InBird_T2  : forall T1 T2, InBird v T2 -> InBird v (T1 @ T2).
+
+Fixpoint in_bird (T : birdterm) (v : string) : bool := (* v \in T *)
+  match T with
   | var u => v == u
   | bird _ => false
-  | M1 @ M2 =>
-    [predU in_bird M1 & in_bird M2] v (* in_bird M1 v || in_bird M2 v *)
+  | T1 @ T2 =>
+    [predU in_bird T1 & in_bird T2] v (* in_bird T1 v || in_bird T2 v *)
 end.
 
+(* \in を使えるようにする。 see. ssrbool.v *)
 Canonical birdterm_predType := @mkPredType string birdterm in_bird.
+
+(* Inductive な定義と Fixpoint の定義が一致することを証明する。 *)
+
+Lemma InBird__in_bird (v : string) (T : birdterm) : InBird v T <-> in_bird T v.
+Proof.
+  split.
+  - elim => //= T1 T2 Hp Hb; apply/orP.
+    + by left.
+    + by right.
+  - elim: T => //=.
+    + move=> s /eqP <-.
+        by apply: InBird_Var.
+    + move=> T1 HT1 T2 HT2 /orP.
+      case=> H.
+      * apply: InBird_T1.
+          by apply: HT1.
+      * apply: InBird_T2.
+          by apply: HT2.
+Qed.
+
+(* sumbool を使った定義 *)
+
+Definition InBird_dec : forall (T : birdterm) (v : string),
+    {InBird v T} + {~ InBird v T}.
+Proof.
+  refine (fix f (T : birdterm) (v : string) : {InBird v T} + {~ InBird v T} :=
+            match T with
+            | var u =>
+              match string_dec v u with
+              | left _ => left _
+              | right _ => right _
+              end
+            | bird _ => right _
+            | T1 @ T2 =>
+              match f T1 v with
+              | left _ => left _
+              | right _ =>                  (* T1 になければ T2 を調べる。 *)
+                match f T2 v with
+                | left _ => left _
+                | right _ => right _
+                end
+              end
+            end).
+  - rewrite -e.
+      by apply: InBird_Var.
+  - move=> Hc.
+    inversion Hc.
+    done.
+  - move=> Hc.
+    inversion Hc.
+  - by apply: InBird_T1.
+  - by apply: InBird_T2.
+  - move=> Hc.
+    by inversion Hc; subst.
+Defined.
+
+(* sumbool の定義と Fixpoint の定義が同じである証明。 *)
+(* sumboolP で、Inductive な定義を取り出しているだけ。 *)
+
+Goal forall v T, InBird_dec T v <-> in_bird T v.
+Proof.
+  move=> v T.
+  split.
+  - move/sumboolP.                     (* InBird v T -> in_bird T v *)
+      by move/InBird__in_bird.
+  - move=> Hb.
+    apply/sumboolP.
+    move: Hb.                          (* in_bird T v -> InBird v T *)
+      by move/InBird__in_bird.
+Qed.
 
 (*
 Fixpoint in_bird' (M N : birdterm) : bool := (* N \in M *)
@@ -295,6 +373,7 @@ Goal forall (x y : nat), (x != y) -> x <> y. (* negb eqb *)
   done.
 Qed.
 
+(* これだけ Prop -> bool であることに注意。 *)
 Goal forall (x y : nat), ~ (x == y) -> x != y. (* not eqb *)
   move=> x y.
   move/negP.
