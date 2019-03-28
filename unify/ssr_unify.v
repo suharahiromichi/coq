@@ -158,11 +158,9 @@ Module Types.
       rewrite /subst.
       case H : (x == y).
       + move/eqP in H.                      (* x \notin Var x *)
-        rewrite H.
-        move/negP => Hc.
-        exfalso.
-        apply: Hc.
-          by apply: eq_in_var.
+        rewrite -H.
+        move/negP.
+          by move: (eq_in_var x).           (* x \in Var x から矛盾 *)
       + done.                               (* x \notin Var x *)
     - move=> t11 H1 t21 H2.                 (* x \notin t11 @ t21 *)
       rewrite notIn_Fun.
@@ -231,6 +229,9 @@ Module Types.
       by apply: IH.
   Qed.
   
+  Definiton unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
+  
+
 End Types.
 
 (* END *)
