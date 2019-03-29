@@ -204,7 +204,7 @@ Module Types.
   
   Definition subst_list (subs : seq (nat * Term)) (t : Term) : Term :=
     foldl
-      (fun t1 (sub : nat * Term) => subst sub.1 sub.2 t1)
+      (fun t1 (sub : nat * Term) => let: (x, t0) := (sub.1, sub.2) in subst x t0 t1)
       t subs.
   
   Lemma subst_list_app subs1 subs2 t :
@@ -229,9 +229,81 @@ Module Types.
       by apply: IH.
   Qed.
   
-  Definiton unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
+(*
+  Definition unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
+*)
+  Notation unifies subs t1 t2 := (subst_list subs t1 = subst_list subs t2).
   
+  Lemma subst_preserves_unifies x t0 subs t :
+    unifies subs (Var x) t0 -> unifies subs t (subst x t0 t).
+  Proof.
+    elim: t.
+    - done.
+    - move=> y.
+      case H : (x == y) => /=.
+      + move: (H) => /eqP Hxy.
+          by rewrite -[in (Var y)]Hxy H.
+      + by rewrite H.
+    - move=> t1 IHt1 t2 IHt2 Hu.
+      rewrite subst_list_Fun /=.
+      rewrite subst_list_Fun /=.
+      f_equal.
+      + by apply: IHt1.
+      + by apply: IHt2.
+  Qed.
+  
+  Lemma test1 m n : ~(m + n < m).
+  Proof.
+  Admitted.
 
+  Lemma test2 m n : ~(m + n < n).
+  Proof.
+  Admitted.
+
+  Lemma test3 (t : Term) : 1 <= Size t.
+  Proof.
+    by elim: t.
+  Qed.
+  
+  Lemma test4 (m n p : nat) : 1 <= n -> m + n < p -> m <= p.
+  Proof.
+  Admitted.
+  
+  Lemma test5 (m n p : nat) : 1 <= m -> m + n < p -> n <= p.
+  Proof.
+  Admitted.
+  
+  Lemma unifies_occur x t :
+    Var x <> t -> x \in t -> forall subs, ~unifies subs (Var x) t.
+  Proof.
+    move=> Hneq Hoccur subs Hu.
+    have H : (Size (subst_list subs (Var x)) >= Size (subst_list subs t))
+      by rewrite Hu.
+    move/In_inb in Hoccur.
+    elim: Hoccur Hneq H => [ t1 t2 HIn IHHoccur | t1 t2 HIn IHHoccur | ] Hneq H.
+    - rewrite subst_list_Fun in H.
+      apply: IHHoccur.
+      + move=> Heq.
+        rewrite Heq /= in H.
+        move: (test1 (Size (subst_list subs t1)) (Size (subst_list subs t2))).
+        done.
+      + rewrite /= in H.
+        apply: (test4 _ (Size (subst_list subs t2)) _).
+        * by apply: test3.
+        * done.
+    - rewrite subst_list_Fun in H.
+      apply: IHHoccur.
+      + move=> Heq.
+        rewrite Heq /= in H.
+        move: (test2 (Size (subst_list subs t1)) (Size (subst_list subs t2))).
+        done.
+      + rewrite /= in H.
+        apply: (test5 (Size (subst_list subs t1)) _ _).
+        * by apply: test3.
+        * done.
+    - done.
+  Qed.
+  
 End Types.
 
 (* END *)
