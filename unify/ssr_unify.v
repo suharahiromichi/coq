@@ -14,7 +14,12 @@ Module Types.
     | Fun t1 t2 => (Size t1 + Size t2).+1
     | _ => 1
     end.
-
+  
+  Lemma size_gt0 (t : Term) : 0 < Size t.
+  Proof.
+      by elim: t.
+  Qed.
+  
   (* ** *)
   (* == *)
   (* ** *)
@@ -251,25 +256,33 @@ Module Types.
       + by apply: IHt1.
       + by apply: IHt2.
   Qed.
+
+  (*
+  leq_addr と leq_addl を使う。
   
-  Lemma test1 m n : ~(m + n < m).
+  Lemma test1' p n : p <= p + n.
   Proof.
-  Admitted.
-
-  Lemma test2 m n : ~(m + n < n).
-  Proof.
-  Admitted.
-
-  Lemma test3 (t : Term) : 1 <= Size t.
-  Proof.
-    by elim: t.
+    move: (leq_add2l p 0 n).
+    have H2 : p + 0 = p by [].
+    rewrite [p + 0]H2 => ->.
+    (* 0 <= n *)
+    done.
   Qed.
   
-  Lemma test4 (m n p : nat) : 1 <= n -> m + n < p -> m <= p.
+  (* ~(p + n < p) のときは、leqNgt で書き換える。実行例 *)
+  Lemma test1 p m : ~(p + m < p).
+  Proof.
+    move: (test1' p m).
+    rewrite leqNgt => /negP.
+    by apply.
+  Qed.
+   *)  
+  
+  Lemma lt_mpn__le_mn (p m n : nat) : 0 < p -> m + p < n -> m <= n.
   Proof.
   Admitted.
   
-  Lemma test5 (m n p : nat) : 1 <= m -> m + n < p -> n <= p.
+  Lemma lt_pmn__le_mn (p m n : nat) : 0 < p -> p + m < n -> m <= n.
   Proof.
   Admitted.
   
@@ -285,21 +298,23 @@ Module Types.
       apply: IHHoccur.
       + move=> Heq.
         rewrite Heq /= in H.
-        move: (test1 (Size (subst_list subs t1)) (Size (subst_list subs t2))).
-        done.
+        Search _ (_ <= _ + _).
+        (* leq_addr の引数の順番に注意せよ。 *)
+        move: (leq_addr (Size (subst_list subs t2)) (Size (subst_list subs t1))).
+        by rewrite leqNgt => /negP.         (* not lt にする。 *)
       + rewrite /= in H.
-        apply: (test4 _ (Size (subst_list subs t2)) _).
-        * by apply: test3.
+        apply: (test4 (Size (subst_list subs t2))).
+        * by apply: size_gt0.
         * done.
     - rewrite subst_list_Fun in H.
       apply: IHHoccur.
       + move=> Heq.
         rewrite Heq /= in H.
-        move: (test2 (Size (subst_list subs t1)) (Size (subst_list subs t2))).
-        done.
+        move: (leq_addl (Size (subst_list subs t1)) (Size (subst_list subs t2))).
+        by rewrite leqNgt => /negP.         (* not lt にする。 *)
       + rewrite /= in H.
-        apply: (test5 (Size (subst_list subs t1)) _ _).
-        * by apply: test3.
+        apply: (test5 (Size (subst_list subs t1))).
+        * by apply: size_gt0.
         * done.
     - done.
   Qed.
