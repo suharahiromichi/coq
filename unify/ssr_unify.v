@@ -119,7 +119,7 @@ Module Types.
     by rewrite /mem /in_mem /inb /=.
   Qed.
   
-  Theorem FV_Finite t : Finite nat (fun x => In x t).
+  Theorem FV_Finite t : Finite nat (In^~ t). (* fun x => In x t *)
   Proof.
     elim: t => [ | x | t1 IHt1 t2 IHt2 ].
     - rewrite (Extensionality_Ensembles nat (In^~ Base) (Empty_set nat)).
@@ -130,14 +130,15 @@ Module Types.
       + split=> [y H | y H]; inversion H.
         * done.
         * by apply: In_Var.                 (* constructor *)
-    - rewrite (Extensionality_Ensembles nat (In^~ (t1 @ t2))
-                                        (Union _ (fun x => In x t1) (fun x => In x t2))).
+    - rewrite (Extensionality_Ensembles
+                 nat (In^~ (t1 @ t2))
+                 (Union nat (fun x => In x t1) (fun x => In x t2))).
       + by apply: Union_preserves_Finite.
       + split=> x H; inversion H.
         * by left.
         * by right.
-        * by apply: In_Fun_dom.
-        * by apply: In_Fun_cod.
+        * by apply: In_Fun_dom.             (* constructor *)
+        * by apply: In_Fun_cod.             (* constructor *)
   Qed.
   
   (* ********** *)
@@ -231,8 +232,10 @@ Module Types.
   
   Definition subst_list (subs : seq (nat * Term)) (t : Term) : Term :=
     foldl
-      (fun t1 (sub : nat * Term) => let: (x, t0) := (sub.1, sub.2) in subst x t0 t1)
-      t subs.
+      (fun t1 (sub : nat * Term) =>
+         let: (x, t0) := (sub.1, sub.2) in subst x t0 t1)
+      t
+      subs.
   
   Lemma subst_list_app subs1 subs2 t :
       subst_list (subs1 ++ subs2) t = subst_list subs2 (subst_list subs1 t).
@@ -381,7 +384,64 @@ Module Types.
         * done.
     - done.
   Qed.
-  
 End Types.
+
+Module Constraint.
+  Definition Term := (Types.Term * Types.Term)%type.
+
+  Definition Size constraints :=
+    foldr
+      plus
+      0
+      (map
+         (fun c : Term =>
+            let: (t1, t2) := (c.1, c.2) in Types.Size t1 + Types.Size t2)
+         constraints).
+  
+  Inductive Exists (A : Type) (P : A -> Prop) : seq A -> Prop :=
+  | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists A P (x :: s)
+  | Exists_cons_tl : forall (x : A) (s : seq A), Exists A P s -> Exists A P (x :: s).
+  
+  Definition In (x : nat) (constraints : seq Term) : Prop :=
+    Exists Term
+           (fun c : Term =>
+              let: (t1, t2) := (c.1, c.2) in Types.In x t1 \/ Types.In x t2)
+           constraints.
+  
+  Definition inb (s : seq Term) (x : nat) : bool :=
+    has
+      (fun c : Term =>
+         let: (t1, t2) := (c.1, c.2) in Types.inb t1 x || Types.inb t2 x)
+      s.
+  
+  Lemma In_inb (x : nat) (s : seq Term) : In x s <-> inb s x.
+  Proof.
+    split.
+    - elim: s => /= [| a s IHs] H.
+      + by inversion H.
+      + inversion H; subst; clear H.
+        * case: H1 => H.
+          ** apply/orP/or_introl/orP/or_introl. (* left. left *)
+               by apply/Types.In_inb.
+          ** apply/orP/or_introl/orP/or_intror. (* left. right *)
+               by apply/Types.In_inb.
+        * apply/orP/or_intror.              (* right *)
+            by apply: IHs.
+    - elim: s => /= [| a s IHs] H.
+      + done.
+      + move/orP in H.
+        case: H => H.
+        * apply Exists_cons_hd.
+          move/orP in H.
+          case: H => H.
+          ** by apply/or_introl/Types.In_inb. (* left *)
+          ** by apply/or_intror/Types.In_inb. (* right *)
+        * apply Exists_cons_tl.
+            by move/IHs in H.
+  Qed.
+  
+  Lemma FV_Finite : forall constraints, Finite _ (fun x => In x constraints).
+  Proof.
+
 
 (* END *)
