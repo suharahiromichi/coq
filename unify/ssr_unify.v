@@ -642,23 +642,30 @@ Module Constraint.
                                      Union _ (fun x => Types.In x t1)
                                            (fun x => Types.In x t2))
                                   constraints))).
-    (* 見直すこと。 *)
-    - apply Exists_preserves_Finite.
-      apply Forall_map.
-      apply Forall_forall.
-      intros [t1 t2] HIn.
-      apply Union_preserves_Finite; apply Types.FV_Finite.
-      
-    - split;
-      intros x HIn;
-      [ apply Exists_map | apply Exists_map in HIn ];
-      apply Exists_exists in HIn;
-      apply Exists_exists;
-      destruct HIn as [[t1 t2] [HListIn HIn]];
-      exists (t1, t2);
-      (split;
-        [ auto
-        | destruct HIn; [left | right]; auto ]).
+    - apply: Exists_preserves_Finite.
+      apply/Forall_map.
+      apply/Forall_forall.
+      move=> [t1 t2] HIn.
+      apply: Union_preserves_Finite.
+      + by apply: Types.FV_Finite.
+      + by apply: Types.FV_Finite.
+        
+    - split=> x HIn.
+      + apply Exists_map.
+        apply Exists_exists in HIn.
+        apply Exists_exists.
+        case: HIn => [[t1 t2] [HListIn HIn]]; exists (t1, t2).
+        split.
+        * done.
+        * by case HIn; [left | right]; auto.
+          
+      + apply Exists_map in HIn.
+        apply Exists_exists in HIn.
+        apply Exists_exists.
+        case: HIn => [[t1 t2] [HListIn HIn]]; exists (t1, t2).
+        split.
+        * done.
+        * by case HIn; [left | right]; auto.
   Qed.
 
 End Constraint.
