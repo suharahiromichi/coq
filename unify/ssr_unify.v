@@ -278,13 +278,54 @@ Module Types.
   Qed.
    *)  
   
+  (* バニラCoq の同名の補題 *)
+  Lemma lt_succ_l m n : m.+1 < n -> m < n.
+  Proof.
+    move/ltP => H.
+    apply/ltP.
+    Check PeanoNat.Nat.lt_succ_l.
+      by apply: PeanoNat.Nat.lt_succ_l.
+  Qed.
+  
+  (* バニラCoq の同名の補題 *)
+  Lemma le_lt_add_lt n m p q :
+    n <= m -> p + m < q + n -> p < q.
+  Proof.
+    move=> /leP H /ltP Hpm.
+    apply/ltP.
+    move: H Hpm.
+      by apply: PeanoNat.Nat.le_lt_add_lt.
+  Qed.
+  
+  Lemma lt_mpn__lt_mn p m n : m + p < n -> m < n.
+  Proof.
+    elim: p => [| n' IHn H].
+    - have H2 : m + 0 = m by [].
+        by rewrite H2.
+    - apply: IHn.
+      rewrite addnS in H.
+        by apply: lt_succ_l.
+     Restart.
+
+     have H : n + 0 = n by [].
+     rewrite -[in m + p < n]H.
+       by apply: (le_lt_add_lt 0 p m n).
+  Qed.
+  
   Lemma lt_mpn__le_mn (p m n : nat) : 0 < p -> m + p < n -> m <= n.
   Proof.
-  Admitted.
+    elim: m n.
+    - done.
+    - move=> m' IHm => n H1 H2.
+      rewrite addSnnS in H2.
+        by move/lt_mpn__lt_mn in H2.
+  Qed.
   
   Lemma lt_pmn__le_mn (p m n : nat) : 0 < p -> p + m < n -> m <= n.
   Proof.
-  Admitted.
+    rewrite [p + m]addnC.
+      by apply: lt_mpn__le_mn.
+  Qed.
   
   Lemma unifies_occur x t :
     Var x <> t -> x \in t -> forall subs, ~unifies subs (Var x) t.
@@ -303,7 +344,7 @@ Module Types.
         move: (leq_addr (Size (subst_list subs t2)) (Size (subst_list subs t1))).
         by rewrite leqNgt => /negP.         (* not lt にする。 *)
       + rewrite /= in H.
-        apply: (test4 (Size (subst_list subs t2))).
+        apply: (lt_mpn__le_mn (Size (subst_list subs t2))).
         * by apply: size_gt0.
         * done.
     - rewrite subst_list_Fun in H.
@@ -313,7 +354,7 @@ Module Types.
         move: (leq_addl (Size (subst_list subs t1)) (Size (subst_list subs t2))).
         by rewrite leqNgt => /negP.         (* not lt にする。 *)
       + rewrite /= in H.
-        apply: (test5 (Size (subst_list subs t1))).
+        apply: (lt_pmn__le_mn (Size (subst_list subs t1))).
         * by apply: size_gt0.
         * done.
     - done.
