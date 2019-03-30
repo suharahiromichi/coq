@@ -1,4 +1,5 @@
 From mathcomp Require Import all_ssreflect.
+Require Import Finite_sets_facts.
 
 Module Types.
 
@@ -116,6 +117,27 @@ Module Types.
   Lemma In_Fun x t1 t2 : x \in t1 @ t2 = (x \in t1) || (x \in t2).
   Proof.
     by rewrite /mem /in_mem /inb /=.
+  Qed.
+  
+  Theorem FV_Finite t : Finite nat (fun x => In x t).
+  Proof.
+    elim: t => [ | x | t1 IHt1 t2 IHt2 ].
+    - rewrite (Extensionality_Ensembles nat (In^~ Base) (Empty_set nat)).
+      + by apply: Empty_is_finite.
+      + by split=> [x H | x H]; inversion H.
+    - rewrite (Extensionality_Ensembles nat (In^~ (Var x)) (Singleton nat x)).
+      + by apply: Singleton_is_finite.
+      + split=> [y H | y H]; inversion H.
+        * done.
+        * by apply: In_Var.                 (* constructor *)
+    - rewrite (Extensionality_Ensembles nat (In^~ (t1 @ t2))
+                                        (Union _ (fun x => In x t1) (fun x => In x t2))).
+      + by apply: Union_preserves_Finite.
+      + split=> x H; inversion H.
+        * by left.
+        * by right.
+        * by apply: In_Fun_dom.
+        * by apply: In_Fun_cod.
   Qed.
   
   (* ********** *)
