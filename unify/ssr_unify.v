@@ -11,7 +11,7 @@ Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
 | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
 
-(* List.v にある補題 *)
+(* List.In の定義のbool版 など *)
 (*
 List.In = 
 fun A : Type =>
@@ -22,6 +22,31 @@ fix In (a : A) (l : seq A) {struct l} : Prop :=
   end
      : forall A : Type, A -> seq A -> Prop
  *)
+
+Lemma In_inb {A : eqType} (x : A) (s : seq A) : List.In x s <-> x \in s.
+Proof.
+  elim: s.
+  - done.
+  - move=> a s IHs.
+    split=> /=; rewrite inE.
+    + case=> H.
+      * by apply/orP/or_introl/eqP.
+      * by apply/orP/or_intror/IHs.
+    + move/orP; case.
+      * move/eqP => ->. by left.
+      * move=> H.
+        move/IHs in H.
+        by right.
+Qed.
+
+Lemma InP {A : eqType} (x : A) (s : seq A) : reflect (List.In x s) (x \in s).
+Proof.
+  apply: (iffP idP) => H.
+    - by apply/In_inb.
+    - by apply/In_inb.
+Qed.
+
+(* List.v にある補題 *)
 
 Lemma Forall_forall (A : Type) (P : A -> Prop) (s : seq A) :
   Forall P s <-> (forall x : A, List.In x s -> P x).
@@ -255,6 +280,13 @@ Module Types.
             by apply: Ht1.
         * apply: In_Fun_cod.
             by apply: Ht2.
+  Qed.
+  
+  Lemma InP (x : nat) (t : Term) : reflect (In x t) (inb t x).
+  Proof.
+    apply: (iffP idP) => H.
+    - by apply/In_inb.
+    - by apply/In_inb.
   Qed.
   
   Canonical Term_predType := @mkPredType nat Term inb.
@@ -587,6 +619,13 @@ Module Constraint.
           ** by apply/or_intror/Types.In_inb. (* right *)
         * apply: Exists_cons_tl.
             by move/IHs in H.
+  Qed.
+
+  Lemma InP (x : nat) (s : seq Term) : reflect (In x s) (inb s x).
+  Proof.
+    apply: (iffP idP) => H.
+    - by apply/In_inb.
+    - by apply/In_inb.
   Qed.
   
   (* fun x => In x constraints *)
