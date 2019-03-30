@@ -1,6 +1,8 @@
 From mathcomp Require Import all_ssreflect.
 Require Import Finite_sets_facts.
 
+(* List.v にある定義 *)
+
 Inductive Forall {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Forall_nil : Forall P nil
 | Forall_cons : forall (x : A) (s : seq A), P x -> Forall P s -> Forall P (x :: s).
@@ -9,46 +11,83 @@ Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
 | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
 
+(* List.v にある補題 *)
+(*
+List.In = 
+fun A : Type =>
+fix In (a : A) (l : seq A) {struct l} : Prop :=
+  match l with
+  | [::] => False
+  | b :: m => b = a \/ In a m
+  end
+     : forall A : Type, A -> seq A -> Prop
+ *)
+
 Lemma Forall_forall (A : Type) (P : A -> Prop) (s : seq A) :
   Forall P s <-> (forall x : A, List.In x s -> P x).
 Proof.
-Admitted.
+  split.
+  - elim.
+    + move=> x H.
+        by inversion H.
+    + move=> // x s' HP H1 IHs y.
+      case=> H3.
+      * by rewrite -H3.
+      * by apply: IHs.
+  - elim: s => [| a s IHs] H.
+    + by apply: Forall_nil.
+    + apply: Forall_cons.
+      * apply: H => /=.
+          by left.
+      * apply: IHs => x H1 /=.
+        apply: H => /=.
+          by right.
+Qed.
 
 Lemma Exists_exists (A : Type) (P : A -> Prop) (s : seq A) :
   Exists P s <-> (exists x : A, List.In x s /\ P x).
 Proof.
-Admitted.
+  split.
+  - induction 1; firstorder.
+  - induction s; firstorder; subst; auto.
+    + by apply: Exists_cons_hd.
+    + apply: Exists_cons_tl.
+      apply: (H1 x).
+      by split.
+Qed.
 
-Lemma in_map (A B : Type) (f : A -> B) (l : list A) (x : A) :
-  List.In x l -> List.In (f x) (map f l).
+Lemma in_map (A B : Type) (f : A -> B) (s : seq A) (x : A) :
+  List.In x s -> List.In (f x) (map f s).
 Proof.
-Admitted.
+    by induction s; firstorder (subst; auto).
+Qed.
 
-Lemma in_map_iff (A B : Type) (f : A -> B) (l : list A) (y : B) :
-  List.In y (map f l) <-> (exists x : A, f x = y /\ List.In x l).
+Lemma in_map_iff (A B : Type) (f : A -> B) (s : list A) (y : B) :
+  List.In y (map f s) <-> (exists x : A, f x = y /\ List.In x s).
 Proof.
-Admitted.
+    by induction s; firstorder (subst; auto).
+Qed.
+(* List.v にある補題。ここまで *)
 
 Lemma Forall_map X Y (P : Y -> Prop) (f : X -> Y) l :
   Forall P (map f l) <-> Forall (fun x => P (f x)) l.
 Proof.
   split=> H.
   - apply/Forall_forall => x HListIn.
-    eapply Forall_forall in H.
-    + apply H.
-      by apply in_map; auto.
+    move/Forall_forall in H.
+    + apply: H.
+      by apply: in_map.
     + induction l as [| x l'];
-      simpl;
       inversion H;
       constructor;
-      auto.
+      by auto.
 Qed.
 
 Lemma Exists_map X Y (P : Y -> Prop) (f : X -> Y) s :
   Exists P (map f s) <-> Exists (fun x => P (f x)) s.
 Proof.
   split=> HExists.
-  - apply Exists_exists in HExists.
+  - move/Exists_exists in HExists.
     apply Exists_exists.
     destruct HExists as [x [HListIn HP]].
     apply in_map_iff in HListIn.
@@ -56,7 +95,7 @@ Proof.
     exists y.
     subst; auto.
 
-  - apply Exists_exists in HExists.
+  - move/Exists_exists in HExists.
     apply Exists_exists.
     destruct HExists as [x [HListIn HP]].
     exists (f x).
@@ -541,12 +580,12 @@ Module Constraint.
       + done.
       + move/orP in H.
         case: H => H.
-        * apply Exists_cons_hd.
+        * apply: Exists_cons_hd.
           move/orP in H.
           case: H => H.
           ** by apply/or_introl/Types.In_inb. (* left *)
           ** by apply/or_intror/Types.In_inb. (* right *)
-        * apply Exists_cons_tl.
+        * apply: Exists_cons_tl.
             by move/IHs in H.
   Qed.
   
