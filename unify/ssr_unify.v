@@ -479,10 +479,7 @@ Module Types.
       by apply: IH.
   Qed.
   
-(*
   Definition unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
-*)
-  Notation unifies subs t1 t2 := (subst_list subs t1 = subst_list subs t2).
   
   Lemma subst_preserves_unifies x t0 subs t :
     unifies subs (Var x) t0 -> unifies subs t (subst x t0 t).
@@ -495,6 +492,7 @@ Module Types.
           by rewrite -[in (Var y)]Hxy H.
       + by rewrite H.
     - move=> t1 IHt1 t2 IHt2 Hu.
+      rewrite /unifies.
       rewrite subst_list_Fun /=.
       rewrite subst_list_Fun /=.
       f_equal.
@@ -828,18 +826,20 @@ Module Constraint.
   Definition unifies subs constraints :=
     Forall (fun p : Term => Types.unifies subs p.1 p.2) constraints.
   
-  Theorem subst_preserves_unifies x t0 subs constraints :
+  Theorem subst_preserves_unifies'' x t0 subs constraints :
     Types.unifies subs (Types.Var x) t0 ->
     unifies subs constraints ->
     unifies subs (subst x t0 constraints).
   Proof.
+    rewrite /subst.
     move=> Hunifies Hunifies'.
-    rewrite /subst /unifies.
-    apply Forall_map.
-    eapply Forall_impl; [| apply Hunifies'].
-    intros [t1 t2] Hunifies''.
-    repeat rewrite <- (Types.subst_preserves_unifies _ _ _ _ Hunifies).
-    auto.
+    apply/Forall_map.
+    apply: (Forall_impl (fun a => Types.unifies subs a.1 a.2)).
+    - move=> [t1 t2] Hunifies'' /=.
+      rewrite /Types.unifies.
+      rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
+      done.
+    - by apply Hunifies'.
   Qed.
   
 End Constraint.
