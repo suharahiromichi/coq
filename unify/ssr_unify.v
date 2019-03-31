@@ -619,18 +619,18 @@ Module Constraint.
             let: (t1, t2) := (c.1, c.2) in Types.Size t1 + Types.Size t2)
          constraints).
   
-  Definition In (x : nat) (constraints : seq Term) : Prop :=
+  Definition In (x : nat) (constraints : Terms) : Prop :=
     Exists (fun c : Term =>
               let: (t1, t2) := (c.1, c.2) in Types.In x t1 \/ Types.In x t2)
            constraints.
   
-  Definition inb (s : seq Term) (x : nat) : bool :=
+  Definition inb (s : Terms) (x : nat) : bool :=
     has
       (fun c : Term =>
          let: (t1, t2) := (c.1, c.2) in (x \in t1) || (x \in t2))
       s.
   
-  Lemma In_inb (x : nat) (s : seq Term) : In x s <-> inb s x.
+  Lemma In_inb (x : nat) (s : Terms) : In x s <-> inb s x.
   Proof.
     split.
     - elim: s => /= [| a s IHs] H.
@@ -656,7 +656,7 @@ Module Constraint.
             by move/IHs in H.
   Qed.
   
-  Lemma InP (x : nat) (s : seq Term) : reflect (In x s) (inb s x).
+  Lemma InP (x : nat) (s : Terms) : reflect (In x s) (inb s x).
   Proof.
     apply: (iffP idP) => H.
     - by apply/In_inb.
@@ -699,7 +699,7 @@ Module Constraint.
                Exists (fun c : Term => Types.In x c.1 \/ Types.In x c.2) constraints)
             (fun x => Exists (fun s => s x)
                              (map (fun c : Term =>
-                                     let (t1, t2) := (c.1, c.2) in
+                                     let: (t1, t2) := (c.1, c.2) in
                                      Union _ (fun x => Types.In x t1)
                                            (fun x => Types.In x t2))
                                   constraints))).
@@ -732,18 +732,30 @@ Module Constraint.
   (* \in の右に書けるように EqType を返すようにする。 *)
   Definition subst x t constraints : Constraint_Terms_EqType :=
     map (fun c : Term => 
-           let (t1, t2) := (c.1, c.2) in (Types.subst x t t1, Types.subst x t t2))
+           let: (t1, t2) := (c.1, c.2) in (Types.subst x t t1, Types.subst x t t2))
         constraints.
   
   Theorem subst_In_occur x t constraints :
     x \in (subst x t constraints) -> x \in t.
   (* In x (subst x t constraints) -> Types.In x t *)
   Proof.
-    elim: constraints.
-    - done.
-    - 
+    elim: constraints => [ | [t1 t2] constraints IHconstraints' HIn] //=.
+    move/InP in HIn.
+    inversion HIn as [[t1' t2'] constraints'' Hor |]; subst.
+    - case: Hor => /= [HIn' | HIn'].
+      + apply: (@Types.subst_In_occur x t t1).
+          by apply/Types.InP.
+      + apply: (@Types.subst_In_occur x t t2).
+          by apply/Types.InP.
+    - apply: IHconstraints'.
+      by apply/InP.
+  Qed.    
   
-  
+  Theorem subst_In_or x y t (constraints : Constraint_Terms_EqType) :
+    x \in (subst y t constraints) -> (x \in t) || (x \in constraints).
+  Proof.
+    
+
 End Constraint.
 
 (* END *)
