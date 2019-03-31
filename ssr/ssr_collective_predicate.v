@@ -139,7 +139,7 @@ Check SimplPred P : simpl_pred nat.
 Check SimplPred P.
 Check predType nat.
 
-Variable n : nat.
+Variable m : nat.
 
 Check nat_eqType : pred nat.
 Check {: nat} : pred nat.
@@ -151,14 +151,14 @@ Goal SimplPred P 1.
   Goal 1 \in [predI [::1] & [::1]].
     simpl.
 
-  Goal n \in [pred x | nat_eqType x].
+  Goal m \in [pred x | nat_eqType x].
     simpl.
   
-Goal SimplPred nat_eqType n.
+Goal SimplPred nat_eqType m.
   simpl.
 Admitted.
 
-Goal mem nat_eqType n.
+Goal mem nat_eqType m.
   simpl.
 Admitted.
 
@@ -182,15 +182,16 @@ Goal SimplPred {: nat} 1.
   simpl.
   Admitted.
 
-Goal nat_eqType  =1 nat_eqType.
+Check nat_eqType  =1 nat_eqType.
 
-Goal {: nat} =1 {: nat}.
+Check {: nat} =1 {: nat}.
+Check {: nat} =i {: nat}.
 
-Goal [:: 1] =1 [:: 1].
-  
+Fail Check [:: 1] =1 [:: 1].
+Check [:: 1] =i [:: 1].
   
 Check mem P.
-Goal mem P n.
+Goal mem P m.
   simpl.
 
 About mem_pred.
@@ -201,11 +202,13 @@ Check 1 \in nat_eqType.
 
 Goal nat_eqType 1 .
   simpl.
+Admitted.
   
 Goal mem nat_eqType 1 .
   simpl.
   simpl.
-  
+Admitted.
+
 Check mem nat_eqType 1.
 Check nat_eqType 1.
 Check true \in {: bool}.
