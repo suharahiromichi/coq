@@ -588,8 +588,28 @@ Compute 1 \in (Var 1) @ (Var 2) @ Base.
 Compute 3 \notin (Var 1) @ (Var 2) @ Base.
 
 Module Constraint.
-  Definition Term := (Types.Term * Types.Term)%type.
+  Definition Term := (Types_Term_EqType * Types_Term_EqType)%type.
+  Definition Terms := (seq Term)%type.
 
+  Fixpoint eqt (t1 t2 : Term) : bool :=
+    (t1.1 == t2.1) && (t1.2 == t2.2).
+  
+  Lemma Term_eqP : forall (t1 t2 : Term), reflect (t1 = t2) (eqt t1 t2).
+  Proof.
+    move=> t1 t2.
+    apply: (iffP idP).
+    - case: t1 => t1_1 t2_1; case: t2 => t1_2 t2_2 /=.
+      move/andP.
+      case.
+      move/eqP => <-.
+      move/eqP => <-.
+      done.
+    - move=> <-.
+      case: t1 => t1' t2' /=.
+      apply/andP.
+      done.
+  Qed.
+  
   Definition Size constraints :=
     foldr
       plus
@@ -643,10 +663,36 @@ Module Constraint.
     - by apply/In_inb.
   Qed.
   
+  Definition Constraint_Term_Mixin :=
+    @EqMixin Constraint.Term Constraint.eqt Term_eqP.
+  Canonical Constraint_Term_EqType :=
+    @EqType Constraint.Term Constraint_Term_Mixin.
+
+  Check (Var 1 @ Var 2, Base) : Constraint.Term.
+  Check (Var 1 @ Var 2, Base) : Constraint_Term_EqType.
+  
+  Compute (Var 1 @ Var 2, Base) == (Var 1 @ Var 2, Base).
+
+  Definition Constraint_Terms_EqType := (seq Constraint_Term_EqType)%type.
+  
+  Canonical Constraint_Term_predType :=
+    @mkPredType nat (Constraint_Terms_EqType) Constraint.inb.
+
+  Check [:: (Var 1, Var 2)] : Constraint.Terms.
+  Check [:: (Var 1, Var 2)] : seq Constraint_Term_EqType.
+  Check [:: (Var 1, Var 2)] : Constraint_Terms_EqType.
+  
+  Definition sc := [:: (Var 1, Var 2)] : seq Constraint_Term_EqType.
+  Definition sc' := [:: (Var 1, Var 2)] : Constraint.Terms.
+  Definition sc'' := [:: (Var 1, Var 2)] : Constraint_Terms_EqType.
+  
+  Compute sc == sc''.
+  Compute Constraint.inb sc'' 1.
+  Compute 1 \in sc''.
+  
   (* fun x => In x constraints *)
-  Lemma FV_Finite : forall constraints, Finite nat (In ^~ constraints).
+  Lemma FV_Finite constraints : Finite nat (In ^~ constraints).
   Proof.
-    move=> constraints.
     rewrite /In.
     rewrite (Extensionality_Ensembles nat
             (fun x : nat =>
@@ -682,16 +728,20 @@ Module Constraint.
         * done.
         * by case HIn; [left | right]; auto.
   Qed.
-
-  Definition subst x t constraints :=
+  
+  (* \in の右に書けるように EqType を返すようにする。 *)
+  Definition subst x t constraints : Constraint_Terms_EqType :=
     map (fun c : Term => 
            let (t1, t2) := (c.1, c.2) in (Types.subst x t t1, Types.subst x t t2))
         constraints.
-
+  
   Theorem subst_In_occur x t constraints :
-    In x (subst x t constraints) -> x \in t. (* Types.In x t *)
+    x \in (subst x t constraints) -> x \in t.
+  (* In x (subst x t constraints) -> Types.In x t *)
   Proof.
-    
+    elim: constraints.
+    - done.
+    - 
   
   
 End Constraint.
