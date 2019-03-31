@@ -92,6 +92,40 @@ Lemma in_map_iff (A B : Type) (f : A -> B) (s : list A) (y : B) :
 Proof.
     by induction s; firstorder (subst; auto).
 Qed.
+
+Lemma Forall_impl {A : Type} (P Q : A -> Prop) :
+  (forall a, P a -> Q a) -> forall s, Forall P s -> Forall Q s.
+Proof.
+  move=> H s.
+  rewrite !Forall_forall.
+    by firstorder.
+Qed.
+
+Lemma map_id {A :Type} (s : seq A) : map (fun x => x) s = s.
+Proof.
+  induction s; simpl; auto; rewrite IHs; auto.
+Qed.
+
+Lemma map_map {A B C : Type} (f : A -> B) (g : B -> C) s :
+  map g (map f s) = map (fun x => g (f x)) s.
+Proof.
+  induction s; simpl; auto.
+  rewrite IHs; auto.
+Qed.
+
+Lemma map_ext_in {A B : Type} (f g : A -> B) s :
+  (forall a, List.In a s -> f a = g a) -> map f s = map g s.
+Proof.
+  induction s; simpl; auto.
+  intros; erewrite H by intuition; rewrite IHs; auto.
+Qed.
+
+Lemma map_ext {A B : Type} (f g : A -> B) :
+  (forall a, f a = g a) -> forall s, map f s = map g s.
+Proof.
+  intros; apply map_ext_in; auto.
+Qed.
+
 (* List.v にある補題。ここまで *)
 
 Lemma Forall_map X Y (P : Y -> Prop) (f : X -> Y) l :
@@ -615,19 +649,16 @@ Module Constraint.
       plus
       0
       (map
-         (fun c : Term =>
-            let: (t1, t2) := (c.1, c.2) in Types.Size t1 + Types.Size t2)
+         (fun c : Term => Types.Size c.1 + Types.Size c.2)
          constraints).
   
   Definition In (x : nat) (constraints : Terms) : Prop :=
-    Exists (fun c : Term =>
-              let: (t1, t2) := (c.1, c.2) in Types.In x t1 \/ Types.In x t2)
+    Exists (fun c : Term => Types.In x c.1 \/ Types.In x c.2)
            constraints.
   
   Definition inb (s : Terms) (x : nat) : bool :=
     has
-      (fun c : Term =>
-         let: (t1, t2) := (c.1, c.2) in (x \in t1) || (x \in t2))
+      (fun c : Term => (x \in c.1) || (x \in c.2))
       s.
   
   Lemma In_inb (x : nat) (s : Terms) : In x s <-> inb s x.
@@ -698,10 +729,8 @@ Module Constraint.
             (fun x : nat =>
                Exists (fun c : Term => Types.In x c.1 \/ Types.In x c.2) constraints)
             (fun x => Exists (fun s => s x)
-                             (map (fun c : Term =>
-                                     let: (t1, t2) := (c.1, c.2) in
-                                     Union _ (fun x => Types.In x t1)
-                                           (fun x => Types.In x t2))
+                             (map (fun c : Term => Union _ (fun x => Types.In x c.1)
+                                                         (fun x => Types.In x c.2))
                                   constraints))).
     - apply: Exists_preserves_Finite.
       apply/Forall_map.
@@ -730,29 +759,29 @@ Module Constraint.
   Qed.
   
   (* \in の右に書けるように EqType を返すようにする。 *)
-  Definition subst x t constraints : Constraint_Terms_EqType :=
-    map (fun c : Term => 
-           let: (t1, t2) := (c.1, c.2) in (Types.subst x t t1, Types.subst x t t2))
+  (* [x := t0](constraints) *)
+  Definition subst x t0 constraints : Constraint_Terms_EqType :=
+    map (fun c : Term => (Types.subst x t0 c.1, Types.subst x t0 c.2))
         constraints.
   
-  Theorem subst_In_occur x t constraints :
-    x \in (subst x t constraints) -> x \in t.
-  (* In x (subst x t constraints) -> Types.In x t *)
+  Theorem subst_In_occur x t0 constraints :
+    x \in (subst x t0 constraints) -> x \in t0.
+  (* In x (subst x t0 constraints) -> Types.In x t0 *)
   Proof.
     elim: constraints => [| [t1 t2] constraints IHconstraints' HIn] //=.
     move/InP in HIn.
     inversion HIn as [[t1' t2'] constraints'' Hor |]; subst.
     - case: Hor => /= [HIn' | HIn'].
-      + apply: (@Types.subst_In_occur x t t1).
+      + apply: (@Types.subst_In_occur x t0 t1).
           by apply/Types.InP.
-      + apply: (@Types.subst_In_occur x t t2).
+      + apply: (@Types.subst_In_occur x t0 t2).
           by apply/Types.InP.
     - apply: IHconstraints'.
-      by apply/InP.
+        by apply/InP.
   Qed.    
   
-  Theorem subst_In_or x y t (constraints : Constraint_Terms_EqType) :
-    x \in (subst y t constraints) -> (x \in t) || (x \in constraints).
+  Theorem subst_In_or x y t0 (constraints : Constraint_Terms_EqType) :
+    x \in (subst y t0 constraints) -> (x \in t0) || (x \in constraints).
   Proof.
     move=> HIn.
     apply/orP.                    (* 最初にゴールをPropにしておく。 *)
@@ -779,6 +808,38 @@ Module Constraint.
       * apply/or_intror/InP.
         right.
           by apply/InP.
+  Qed.
+  
+  Definition subst_list subs constraints :=
+    map (fun p : Term => (Types.subst_list subs p.1, Types.subst_list subs p.2))
+        constraints.
+  
+  Lemma subst_list_app subs1 subs2 constraints :
+    subst_list (subs1 ++ subs2) constraints =
+    subst_list subs2 (subst_list subs1 constraints).
+  Proof.
+    rewrite /subst_list map_map.
+    apply: map_ext => [[t1 t2]].
+    f_equal.
+    - by apply: Types.subst_list_app.
+    - by apply: Types.subst_list_app.
+  Qed.
+  
+  Definition unifies subs constraints :=
+    Forall (fun p : Term => Types.unifies subs p.1 p.2) constraints.
+  
+  Theorem subst_preserves_unifies x t0 subs constraints :
+    Types.unifies subs (Types.Var x) t0 ->
+    unifies subs constraints ->
+    unifies subs (subst x t0 constraints).
+  Proof.
+    move=> Hunifies Hunifies'.
+    rewrite /subst /unifies.
+    apply Forall_map.
+    eapply Forall_impl; [| apply Hunifies'].
+    intros [t1 t2] Hunifies''.
+    repeat rewrite <- (Types.subst_preserves_unifies _ _ _ _ Hunifies).
+    auto.
   Qed.
   
 End Constraint.
