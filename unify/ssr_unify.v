@@ -393,7 +393,7 @@ Module Types.
       + done.
       + move: H => /eqP /neq_notIn_var /negP.
         done.
-    - move=> t12 H1 t22 H2.
+    - move=> t21 IHt21 t22 IHt22.
       move/orP.
         by case.
   Qed.
@@ -410,12 +410,12 @@ Module Types.
         move/negP.
           by move: (eq_in_var x).           (* x \in Var x から矛盾 *)
       + done.                               (* x \notin Var x *)
-    - move=> t11 H1 t21 H2.                 (* x \notin t11 @ t21 *)
+    - move=> t21 IHt21 t22 IHt22.           (* x \notin t11 @ t21 *)
       rewrite notIn_Fun.
       move/andP => [H11 H21] /=.
-        by rewrite -{2}(H1 H11) -{2}(H2 H21).
+        by rewrite -{2}(IHt21 H11) -{2}(IHt22 H21).
   Qed.
-
+  
   Theorem subst_In_or x y t1 t2 : x \in (subst y t1 t2) -> (x \in t1) || (x \in t2).
   Proof.
     elim: t2.
@@ -475,8 +475,8 @@ Module Types.
   Proof.
     elim: subs t1 t2.
     + done.
-    + move=> a l IH t1 t2 /=.
-      by apply: IH.
+    + move=> [x t] subs' IHsubs' t1 t2 /=.
+      by apply: IHsubs'.
   Qed.
   
   Definition unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
@@ -577,7 +577,7 @@ Module Types.
     have H : (Size (subst_list subs (Var x)) >= Size (subst_list subs t))
       by rewrite Hu.
     move/In_inb in Hoccur.
-    elim: Hoccur Hneq H => [ t1 t2 HIn IHHoccur | t1 t2 HIn IHHoccur | ] Hneq H.
+    elim: Hoccur Hneq H => [t1 t2 HIn IHHoccur | t1 t2 HIn IHHoccur |] Hneq H.
     - rewrite subst_list_Fun in H.
       apply: IHHoccur.
       + move=> Heq.
