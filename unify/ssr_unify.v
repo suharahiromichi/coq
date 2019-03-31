@@ -572,6 +572,21 @@ Module Types.
   Qed.
 End Types.
 
+Notation "x @ y" := (Types.Fun x y) (at level 50, left associativity).
+Notation Var x := (Types.Var x).
+Notation Base := (Types.Base).
+
+Definition Types_Term_Mixin := @EqMixin Types.Term Types.eqt Types.Term_eqP.
+Canonical Types_Term_EqType := @EqType Types.Term Types_Term_Mixin.
+  
+Compute (Var 1) @ (Var 2) @ Base == (Var 1) @ (Var 2) @ Base.
+Compute (Var 1) @ Base @ (Var 2) == (Var 1) @ (Var 2) @ Base.
+
+Canonical Types_Term_predType := @mkPredType nat Types.Term Types.inb.
+  
+Compute 1 \in (Var 1) @ (Var 2) @ Base.
+Compute 3 \notin (Var 1) @ (Var 2) @ Base.
+
 Module Constraint.
   Definition Term := (Types.Term * Types.Term)%type.
 
@@ -592,7 +607,7 @@ Module Constraint.
   Definition inb (s : seq Term) (x : nat) : bool :=
     has
       (fun c : Term =>
-         let: (t1, t2) := (c.1, c.2) in Types.inb t1 x || Types.inb t2 x)
+         let: (t1, t2) := (c.1, c.2) in (x \in t1) || (x \in t2))
       s.
   
   Lemma In_inb (x : nat) (s : seq Term) : In x s <-> inb s x.
@@ -620,7 +635,7 @@ Module Constraint.
         * apply: Exists_cons_tl.
             by move/IHs in H.
   Qed.
-
+  
   Lemma InP (x : nat) (s : seq Term) : reflect (In x s) (inb s x).
   Proof.
     apply: (iffP idP) => H.
@@ -668,6 +683,17 @@ Module Constraint.
         * by case HIn; [left | right]; auto.
   Qed.
 
+  Definition subst x t constraints :=
+    map (fun c : Term => 
+           let (t1, t2) := (c.1, c.2) in (Types.subst x t t1, Types.subst x t t2))
+        constraints.
+
+  Theorem subst_In_occur x t constraints :
+    In x (subst x t constraints) -> x \in t. (* Types.In x t *)
+  Proof.
+    
+  
+  
 End Constraint.
 
 (* END *)
