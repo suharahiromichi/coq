@@ -307,7 +307,7 @@ Module Types.
   
   Theorem FV_Finite t : Finite nat (In ^~ t). (* fun x => In x t *)
   Proof.
-    elim: t => [ | x | t1 IHt1 t2 IHt2 ].
+    elim: t => [| x | t1 IHt1 t2 IHt2 ].
     - rewrite (Extensionality_Ensembles nat (In^~ Base) (Empty_set nat)).
       + by apply: Empty_is_finite.
       + by split=> [x H | x H]; inversion H.
@@ -739,7 +739,7 @@ Module Constraint.
     x \in (subst x t constraints) -> x \in t.
   (* In x (subst x t constraints) -> Types.In x t *)
   Proof.
-    elim: constraints => [ | [t1 t2] constraints IHconstraints' HIn] //=.
+    elim: constraints => [| [t1 t2] constraints IHconstraints' HIn] //=.
     move/InP in HIn.
     inversion HIn as [[t1' t2'] constraints'' Hor |]; subst.
     - case: Hor => /= [HIn' | HIn'].
@@ -754,8 +754,33 @@ Module Constraint.
   Theorem subst_In_or x y t (constraints : Constraint_Terms_EqType) :
     x \in (subst y t constraints) -> (x \in t) || (x \in constraints).
   Proof.
-    
-
+    move=> HIn.
+    apply/orP.                    (* 最初にゴールをPropにしておく。 *)
+    elim: constraints HIn => [| [t1 t2] constraints IHconstraints' HIn] //=.
+    move/InP in HIn.
+    inversion HIn as [[t1' t2'] constraints'' Hor | [t1' t2'] constraints'' HIn'].
+    subst. 
+    - case: Hor => //= /Types.InP HIn';
+                     case: (Types.subst_In_or _ _ _ _ HIn') => /orP [H | H].
+      + by left.
+      + apply/or_intror/InP.
+        left.                       (* apply/or_introl は使えない。 *)
+        left.
+          by apply/Types.InP.
+      + by left.
+      + apply/or_intror/InP.
+         left.
+         right.
+           by apply/Types.InP.
+            
+    - move/InP in HIn'.
+      case: (IHconstraints' HIn') => [H' | H'].
+      * by left.
+      * apply/or_intror/InP.
+        right.
+          by apply/InP.
+  Qed.
+  
 End Constraint.
 
 (* END *)
