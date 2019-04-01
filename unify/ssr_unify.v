@@ -11,6 +11,52 @@ Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
 | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
 
+Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
+  (forall (a : A), reflect (P a) (p a)) ->
+  forall (s : seq A), reflect (Forall P s) (all p s).
+Proof.
+  move=> H s.
+  apply/(iffP idP).
+  - elim: s => [Hp | a s IHs /= /andP].
+    + by apply: Forall_nil.
+    + case.
+      move/H => Hpa Hps.
+      apply: Forall_cons.
+      * done.
+      * by apply: IHs.
+  - elim: s => /= [| a s IHs].
+    + done.
+    + move=> HP.
+      apply/andP.
+      inversion HP; subst.
+      split.
+      * by apply/H.
+      * by apply IHs.
+Qed.
+
+Lemma ExistsP {A : Type} (P : A -> Prop) (p : A -> bool) :
+  (forall (a : A), reflect (P a) (p a)) ->
+  forall (s : seq A), reflect (Exists P s) (has p s).
+Proof.
+  move=> H s.
+  apply/(iffP idP).
+  - elim: s => [Hp | a s IHs /= /orP].
+    + done.
+    + case=> [Hpa | Hpa].
+      * apply: Exists_cons_hd.
+          by apply/H.
+      * apply: Exists_cons_tl.
+          by apply: IHs.
+  - elim: s => /= [| a s IHs] HP.
+    + by inversion HP.
+    + apply/orP.
+      inversion HP; subst.
+      * left.
+          by apply/H.
+      * right.
+          by apply: IHs.
+Qed.
+
 (* List.In の定義のbool版 など *)
 (*
 List.In = 
@@ -252,9 +298,8 @@ Module Types.
     done.
   Qed.
   
-  Lemma Term_eqP : forall (t1 t2 : Term), reflect (t1 = t2) (eqt t1 t2).
+  Lemma Term_eqP (t1 t2 : Term) : reflect (t1 = t2) (eqt t1 t2).
   Proof.
-    move=> t1 t2.
     apply: (iffP idP).
     (* eqt t1 t2 -> t1 = t2 *)
     - elim: t1 t2.
@@ -481,6 +526,13 @@ Module Types.
   
   Definition unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
   
+  Definition unifiesb subs t1 t2 := subst_list subs t1 == subst_list subs t2.
+
+  Lemma unifiesP subs t1 t2 : reflect (unifies subs t1 t2) (unifiesb subs t1 t2).
+  Proof.
+    by apply: eqP.
+  Qed.
+  
   Lemma subst_preserves_unifies x t0 subs t :
     unifies subs (Var x) t0 -> unifies subs t (subst x t0 t).
   Proof.
@@ -495,7 +547,7 @@ Module Types.
       rewrite /unifies.
       rewrite subst_list_Fun /=.
       rewrite subst_list_Fun /=.
-      f_equal.
+      f_equal.                              (* 両辺を @ で分ける。 *)
       + by apply: IHt1.
       + by apply: IHt2.
   Qed.
@@ -626,9 +678,8 @@ Module Constraint.
   Fixpoint eqt (t1 t2 : Term) : bool :=
     (t1.1 == t2.1) && (t1.2 == t2.2).
   
-  Lemma Term_eqP : forall (t1 t2 : Term), reflect (t1 = t2) (eqt t1 t2).
+  Lemma Term_eqP (t1 t2 : Term) : reflect (t1 = t2) (eqt t1 t2).
   Proof.
-    move=> t1 t2.
     apply: (iffP idP).
     - case: t1 => t1_1 t2_1; case: t2 => t1_2 t2_2 /=.
       move/andP.
@@ -655,9 +706,7 @@ Module Constraint.
            constraints.
   
   Definition inb (s : Terms) (x : nat) : bool :=
-    has
-      (fun c : Term => (x \in c.1) || (x \in c.2))
-      s.
+    has (fun c : Term => (x \in c.1) || (x \in c.2)) s.
   
   Lemma In_inb (x : nat) (s : Terms) : In x s <-> inb s x.
   Proof.
@@ -690,6 +739,21 @@ Module Constraint.
     apply: (iffP idP) => H.
     - by apply/In_inb.
     - by apply/In_inb.
+  Qed.
+  
+  (* In_inb を使わず、ExistsP を使った証明。 *)
+  Lemma InP' (x : nat) (s : Terms) : reflect (In x s) (inb s x).
+  Proof.
+    apply/ExistsP => a.
+    apply/(iffP idP).
+    - move/orP => [/Types.InP H1 | /Types.InP H2].
+      + by left.
+      + by right.
+    - case=> /Types.InP H.
+      + apply/orP.
+          by left.
+      + apply/orP.
+          by right.
   Qed.
   
   Definition Constraint_Term_Mixin :=
@@ -817,8 +881,8 @@ Module Constraint.
     subst_list subs2 (subst_list subs1 constraints).
   Proof.
     rewrite /subst_list map_map.
-    apply: map_ext => [[t1 t2]].
-    f_equal.
+    apply: map_ext => t /=.
+    f_equal.                          (* 両辺を直積の要素で分ける。 *)
     - by apply: Types.subst_list_app.
     - by apply: Types.subst_list_app.
   Qed.
@@ -826,7 +890,19 @@ Module Constraint.
   Definition unifies subs constraints :=
     Forall (fun p : Term => Types.unifies subs p.1 p.2) constraints.
   
-  Theorem subst_preserves_unifies'' x t0 subs constraints :
+  Definition unifiesb subs constraints :=
+    all (fun p : Term => Types.unifiesb subs p.1 p.2) constraints.
+
+  Lemma unifiesP subs constraints :
+    reflect (unifies subs constraints) (unifiesb subs constraints).  
+  Proof.
+    apply/ForallP => a.
+    apply/(iffP idP).
+    - by move/Types.unifiesP.
+    - by move/Types.unifiesP.
+  Qed.
+  
+  Theorem subst_preserves_unifies x t0 subs constraints :
     Types.unifies subs (Types.Var x) t0 ->
     unifies subs constraints ->
     unifies subs (subst x t0 constraints).
