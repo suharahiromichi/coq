@@ -741,7 +741,7 @@ Module Constraint.
     - by apply/In_inb.
   Qed.
   
-  (* In_inb を使わず、ExistsP を使った証明。 *)
+  (* In_inb を使わず、ExistsP を使った別証明。 *)
   Lemma InP' (x : nat) (s : Terms) : reflect (In x s) (inb s x).
   Proof.
     apply/ExistsP => a.
@@ -897,9 +897,7 @@ Module Constraint.
     reflect (unifies subs constraints) (unifiesb subs constraints).  
   Proof.
     apply/ForallP => a.
-    apply/(iffP idP).
-    - by move/Types.unifiesP.
-    - by move/Types.unifiesP.
+      by apply/(iffP idP) => /Types.unifiesP.
   Qed.
   
   Theorem subst_preserves_unifies x t0 subs constraints :
@@ -916,6 +914,47 @@ Module Constraint.
       rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
       done.
     - by apply Hunifies'.
+  Qed.
+  
+  Lemma unify_sound_same t subs constraints :
+    unifies subs constraints ->
+    unifies subs ((t, t) :: constraints).
+  Proof.
+    move=> Hunifies.
+    apply: Forall_cons.
+    - done.
+    - done.                                 (* apply Hunifies  *)
+  Qed.
+  
+  Lemma unify_complete_same t subs constraints :
+    unifies subs ((t, t) :: constraints) ->
+    unifies subs constraints.
+  Proof.
+    move=> Hunifies.
+    inversion Hunifies; subst.
+    done.                                   (* apply H2 *)
+  Qed.
+
+  Lemma unify_same t subs constraints :
+    unifiesb subs constraints = unifiesb subs ((t, t) :: constraints).
+  Proof.
+    apply/idP/idP => /=.
+    - move=> H.
+      apply/andP.
+      split.
+      + by apply/eqP.
+      + done.
+    - move/andP => [H1 H2].
+      done.
+  Qed.
+  
+  (* unifiesP を使って Prop に戻す別証明。 *)
+  Lemma unify_same' t subs constraints :
+    unifiesb subs constraints = unifiesb subs ((t, t) :: constraints).
+  Proof.
+    apply/idP/idP => /unifiesP H; apply/unifiesP.
+    - by apply: unify_sound_same.
+    - by apply: (unify_complete_same t).
   Qed.
   
 End Constraint.
