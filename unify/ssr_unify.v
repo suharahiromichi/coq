@@ -6,10 +6,12 @@ Require Import Finite_sets_facts.
 Inductive Forall {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Forall_nil : Forall P nil
 | Forall_cons : forall (x : A) (s : seq A), P x -> Forall P s -> Forall P (x :: s).
+Hint Constructors Forall.
 
 Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
 | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
+Hint Constructors Exists.
 
 Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
   (forall (a : A), reflect (P a) (p a)) ->
@@ -120,11 +122,8 @@ Lemma Exists_exists (A : Type) (P : A -> Prop) (s : seq A) :
 Proof.
   split.
   - induction 1; firstorder.
-  - induction s; firstorder; subst; auto.
-    + by apply: Exists_cons_hd.
-    + apply: Exists_cons_tl.
-      apply: (H1 x).
-      by split.
+  - induction s; firstorder; subst.
+      by apply: Exists_cons_hd.
 Qed.
 
 Lemma in_map (A B : Type) (f : A -> B) (s : seq A) (x : A) :
@@ -216,7 +215,7 @@ Proof.
   induction family as [| s family'].
   - rewrite (Extensionality_Ensembles U
              (fun x : U => Exists (@^~ x) [::]) (Empty_set _)).
-    by constructor.
+    by apply: Empty_is_finite.              (* constructor *)
   - by split; intros x H; inversion H.
   - inversion Hall.
     rewrite (Extensionality_Ensembles U
@@ -250,14 +249,13 @@ Lemma Forall_app X (P : X -> Prop) l1 l2 :
 Proof.
   intros HForall.
   induction l1.
-  - split; auto.
-    by apply: Forall_nil.
+  - by split.
   - inversion HForall.
     specialize (IHl1 H2).
     destruct IHl1.
     split.
-      constructor; auto.
-      auto.
+    + constructor; auto.
+    + auto.
 Qed.
 
 Module Types.
@@ -336,6 +334,7 @@ Module Types.
   | In_Fun_dom : forall t1 t2, In x t1 -> In x (Fun t1 t2)
   | In_Fun_cod : forall t1 t2, In x t2 -> In x (Fun t1 t2)
   | In_Var : In x (Var x).
+  Hint Constructors In.
   
   Fixpoint inb (t : Term) (x : nat) : bool :=
     match t with
@@ -394,7 +393,7 @@ Module Types.
       + by apply: Singleton_is_finite.
       + split=> [y H | y H]; inversion H.
         * done.
-        * by apply: In_Var.                 (* constructor *)
+        * done.                             (* apply: In_Var *)
     - rewrite (Extensionality_Ensembles
                  nat (In^~ (t1 @ t2))
                  (Union nat (fun x => In x t1) (fun x => In x t2))).
