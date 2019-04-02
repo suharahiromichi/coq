@@ -181,10 +181,12 @@ Proof.
     move/Forall_forall in H.
     + apply: H.
       by apply: in_map.
-    + induction l as [| x l'];
-      inversion H;
-      constructor;
-      by auto.
+    + induction l as [| x l'].
+      * by apply: Forall_nil.
+      * inversion H; subst.
+        apply: Forall_cons.
+        ** done.
+        ** by apply: IHl'.
 Qed.
 
 Lemma Exists_map X Y (P : Y -> Prop) (f : X -> Y) s :
@@ -215,7 +217,7 @@ Proof.
   induction family as [| s family'].
   - rewrite (Extensionality_Ensembles U
              (fun x : U => Exists (@^~ x) [::]) (Empty_set _)).
-    by apply: Empty_is_finite.              (* constructor *)
+    by apply: Empty_is_finite.
   - by split; intros x H; inversion H.
   - inversion Hall.
     rewrite (Extensionality_Ensembles U
@@ -254,8 +256,8 @@ Proof.
     specialize (IHl1 H2).
     destruct IHl1.
     split.
-    + constructor; auto.
-    + auto.
+    + by apply: Forall_cons.
+    + done.
 Qed.
 
 Module Types.
@@ -393,7 +395,7 @@ Module Types.
       + by apply: Singleton_is_finite.
       + split=> [y H | y H]; inversion H.
         * done.
-        * done.                             (* apply: In_Var *)
+        * done.
     - rewrite (Extensionality_Ensembles
                  nat (In^~ (t1 @ t2))
                  (Union nat (fun x => In x t1) (fun x => In x t2))).
@@ -401,8 +403,8 @@ Module Types.
       + split=> x H; inversion H.
         * by left.
         * by right.
-        * by apply: In_Fun_dom.             (* constructor *)
-        * by apply: In_Fun_cod.             (* constructor *)
+        * by apply: In_Fun_dom.
+        * by apply: In_Fun_cod.
   Qed.
   
   (* ********** *)
@@ -633,7 +635,6 @@ Module Types.
       apply: IHHoccur.
       + move=> Heq.
         rewrite Heq /= in H.
-        Search _ (_ <= _ + _).
         (* leq_addr の引数の順番に注意せよ。 *)
         move: (leq_addr (Size (subst_list subs t2)) (Size (subst_list subs t1))).
         by rewrite leqNgt => /negP.         (* not lt にする。 *)
