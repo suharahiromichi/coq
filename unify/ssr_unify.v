@@ -957,10 +957,10 @@ Module Constraint.
     - by apply: (unify_complete_same t).
   Qed.
   
-  Lemma unify_sound_subst x t l constraints :
+  Lemma unify_sound_subst x t subs constraints :
     x \notin t ->
-    unifies l (subst x t constraints) ->
-    unifies ((x, t) :: l) ((Types.Var x, t) :: constraints).
+    unifies subs (subst x t constraints) ->
+    unifies ((x, t) :: subs) ((Types.Var x, t) :: constraints).
   Proof.
     rewrite /mem /in_mem /inb /= => Hoccur Hunifies.
     apply: Forall_cons.
@@ -973,7 +973,7 @@ Module Constraint.
       rewrite /subst => /Forall_map Hunifies.
       apply/(Forall_impl
                (fun x0 : Term =>
-                  Types.unifies l (Types.subst x t x0.1) (Types.subst x t x0.2))).
+                  Types.unifies subs (Types.subst x t x0.1) (Types.subst x t x0.2))).
       + done. (* move=> a. by apply. *)
       + done.
   Qed.
@@ -1034,23 +1034,39 @@ Module Constraint.
         done.
       + done.
   Qed.
-  
-  Lemma unify_complete_fun : forall constraints t11 t12 t21 t22 subs,
+
+
+  Lemma unify_complete_fun' constraints t11 t12 t21 t22 subs :
     unifies subs ((Types.Fun t11 t12, Types.Fun t21 t22) :: constraints) ->
     unifies subs ((t11, t21) :: (t12, t22) :: constraints).
   Proof.
-    intros constraints t11 t12 t21 t22 subs Hunifies.
-    inversion Hunifies as [| [t1 t2] l Hunifies1 Hunifies'].
-    repeat rewrite Types.subst_list_Fun in Hunifies1.
-    inversion Hunifies1.
-    repeat (constructor; auto).
-  Qed.
-
-  Lemma unify_fun : forall constraints t11 t12 t21 t22 subs,
-      unifies subs ((t11, t21) :: (t12, t22) :: constraints) =
-      unifies subs ((Types.Fun t11 t12, Types.Fun t21 t22) :: constraints).
+    move=> Hunifies.
     
-
+    inversion Hunifies as [| [t1 t2] l Hunifies1 Hunifies']; subst.
+    rewrite /Types.unifies in Hunifies1.
+    inversion Hunifies1 as [Hunifies2].
+    
+    rewrite (Types.subst_list_Fun subs t11 t12) in Hunifies1.
+    rewrite (Types.subst_list_Fun subs t21 t22) in Hunifies2.
+    
+    apply/Forall_cons => /=.
+    - by case: Hunifies2.
+    - apply/Forall_cons.
+      + by case: Hunifies2.
+      + by case: Hunifies2.
+  Qed.
+  
+  Lemma unify_fun constraints t11 t12 t21 t22 subs :
+      unifiesb subs ((t11, t21) :: (t12, t22) :: constraints) =
+      unifiesb subs ((Types.Fun t11 t12, Types.Fun t21 t22) :: constraints).
+  Proof.
+    apply/idP/idP => /unifiesP H.
+    - apply/unifiesP.
+        by apply: unify_sound_fun.
+    - apply/unifiesP.
+        by apply: unify_complete_fun.
+  Qed.
+  
 End Constraint.
 
 (* END *)
