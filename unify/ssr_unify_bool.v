@@ -423,6 +423,16 @@ Module Types.
     by rewrite /mem /in_mem /inb /=.
   Qed.
   
+  Lemma eq_in_varE (x y : nat) : (x == y) = (x \in Var y).
+  Proof.
+    apply/idP/idP.
+    - move/eqP => H.
+      rewrite -H.
+        by apply: eq_in_var.
+    - move/InP => H.
+        by inversion H.
+  Qed.
+  
   Lemma neq_notIn_var (x y : nat) : x <> y -> x \notin Var y.
   Proof.
     rewrite /mem /in_mem /inb /=.
@@ -933,7 +943,7 @@ Module Constraint.
       by apply/(iffP idP) => /Types.unifiesP.
   Qed.
   
-  Theorem subst_preserves_unifies x t0 subs constraints :
+  Theorem subst_preserves_unifies' x t0 subs constraints :
     Types.unifies subs (Types.Var x) t0 ->
     unifies subs constraints ->
     unifies subs (subst x t0 constraints).
@@ -948,14 +958,16 @@ Module Constraint.
       done.
     - by apply Hunifies'.
   Qed.
-  
-  Lemma unify_same t subs constraints :     (* bool *)
+
+  (* unify_sound_same *)
+  (* unify_complete_same *)
+  Lemma unify_same t subs constraints :
     unifiesb subs constraints = unifiesb subs ((t, t) :: constraints).
   Proof.
     by rewrite /= Types.unify_same.
   Qed.
 
-  Lemma unify_sound_subst x t subs constraints :
+  Lemma unify_sound_subst' x t subs constraints :
     x \notin t ->
     unifies subs (subst x t constraints) ->
     unifies ((x, t) :: subs) ((Types.Var x, t) :: constraints).
@@ -975,7 +987,16 @@ Module Constraint.
       + done. (* move=> a. by apply. *)
       + done.
   Qed.
+
+  Lemma unify_sound_subst x t subs constraints :
+    x \notin t ->
+    unifiesb subs (subst x t constraints) =
+    unifiesb ((x, t) :: subs) ((Types.Var x, t) :: constraints).
+  Proof.
+    move=> H /=.
+  Admitted.
   
+  (* unify_sound_comm *)
   Lemma unify_comm t1 t2 subs constraints : (* bool *)
     unifiesb subs ((t2, t1) :: constraints) = unifiesb subs ((t1, t2) :: constraints).
   Proof.
@@ -983,6 +1004,8 @@ Module Constraint.
     by rewrite Types.unify_comm.
   Qed.
   
+  (* unify_sound_fun *)
+  (* unify_complete_fun *)
   Lemma unify_fun constraints t11 t12 t21 t22 subs : (* bool *)
       unifiesb subs ((t11, t21) :: (t12, t22) :: constraints) =
       unifiesb subs ((Types.Fun t11 t12, Types.Fun t21 t22) :: constraints).
