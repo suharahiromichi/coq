@@ -1023,31 +1023,6 @@ Module Constraint.
     
     inversion Hunifies1 as [Hunifies2].
     rewrite (Types.subst_list_Fun subs t21 t22) in Hunifies2.
-
-    apply/Forall_cons => /=.
-    - case: Hunifies2.
-      done.
-    - simpl.
-      apply/Forall_cons.
-      case: Hunifies2.
-      + simpl.
-        done.
-      + done.
-  Qed.
-
-
-  Lemma unify_complete_fun' constraints t11 t12 t21 t22 subs :
-    unifies subs ((Types.Fun t11 t12, Types.Fun t21 t22) :: constraints) ->
-    unifies subs ((t11, t21) :: (t12, t22) :: constraints).
-  Proof.
-    move=> Hunifies.
-    
-    inversion Hunifies as [| [t1 t2] l Hunifies1 Hunifies']; subst.
-    rewrite /Types.unifies in Hunifies1.
-    inversion Hunifies1 as [Hunifies2].
-    
-    rewrite (Types.subst_list_Fun subs t11 t12) in Hunifies1.
-    rewrite (Types.subst_list_Fun subs t21 t22) in Hunifies2.
     
     apply/Forall_cons => /=.
     - by case: Hunifies2.
