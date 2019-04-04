@@ -189,6 +189,8 @@ Proof.
         ** by apply: IHl'.
 Qed.
 
+Check all_map.
+
 Lemma Exists_map X Y (P : Y -> Prop) (f : X -> Y) s :
   Exists P (map f s) <-> Exists (fun x => P (f x)) s.
 Proof.
@@ -500,7 +502,7 @@ Module Types.
   
   (*
     (* simpl で let (_, _) = a in Base がただの Base にならない。 *)
-  Definition subst_list (subs : seq (nat * Term)) (t : Term) : Term :=
+    Definition subst_list (subs : seq (nat * Term)) (t : Term) : Term :=
     foldl
       (fun t1 (sub : nat * Term) => let: (x, t0) := sub in subst x t0 t1)
       t subs.
@@ -535,9 +537,9 @@ Module Types.
       by apply: IHsubs'.
   Qed.
   
-  Definition unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
+  Notation unifies subs t1 t2 := (subst_list subs t1 = subst_list subs t2).
   
-  Definition unifiesb subs t1 t2 := subst_list subs t1 == subst_list subs t2.
+  Notation unifiesb subs t1 t2 := (subst_list subs t1 == subst_list subs t2).
 
   Lemma unifiesP subs t1 t2 : reflect (unifies subs t1 t2) (unifiesb subs t1 t2).
   Proof.
@@ -555,7 +557,6 @@ Module Types.
           by rewrite -[in (Var y)]Hxy H.
       + by rewrite H.
     - move=> t1 IHt1 t2 IHt2 Hu.
-      rewrite /unifies.
       rewrite subst_list_Fun /=.
       rewrite subst_list_Fun /=.
       f_equal.                              (* 両辺を @ で分ける。 *)
@@ -667,12 +668,12 @@ Module Types.
 
   Lemma unify_same sub t : unifiesb sub t t. (* bool *)
   Proof.
-    by rewrite /unifiesb.
+    done.
   Qed.
 
   Lemma unify_comm sub t1 t2 : unifiesb sub t1 t2 = unifiesb sub t2 t1. (* bool *)
   Proof.
-    by rewrite /unifiesb.
+    done.
   Qed.
   
   Lemma unify_fun_equal subs t11 t12 t21 t22 : (* bool *)
@@ -694,7 +695,7 @@ Module Types.
     unifiesb subs t11 t21 && unifiesb subs t12 t22 =
     unifiesb subs (t11 @ t12) (t21 @ t22).
   Proof.
-    by rewrite /unifiesb !subst_list_Fun unify_fun_equal.
+    by rewrite !subst_list_Fun unify_fun_equal.
   Qed.
   
 End Types.
@@ -915,15 +916,15 @@ Module Constraint.
           by apply/InP.
   Qed.
   
-  Definition subst_list subs constraints :=
-    map (fun p : Term => (Types.subst_list subs p.1, Types.subst_list subs p.2))
-        constraints.
+  Notation subst_list subs constraints :=
+    (map (fun p : Term => (Types.subst_list subs p.1, Types.subst_list subs p.2))
+         constraints).
   
   Lemma subst_list_app subs1 subs2 constraints :
     subst_list (subs1 ++ subs2) constraints =
     subst_list subs2 (subst_list subs1 constraints).
   Proof.
-    rewrite /subst_list map_map.
+    rewrite map_map.
     apply: map_ext => t /=.
     f_equal.                          (* 両辺を直積の要素で分ける。 *)
     - by apply: Types.subst_list_app.
@@ -943,7 +944,7 @@ Module Constraint.
       by apply/(iffP idP) => /Types.unifiesP.
   Qed.
   
-  Theorem subst_preserves_unifies' x t0 subs constraints :
+  Theorem subst_preserves_unifies x t0 subs constraints :
     Types.unifies subs (Types.Var x) t0 ->
     unifies subs constraints ->
     unifies subs (subst x t0 constraints).
@@ -953,7 +954,6 @@ Module Constraint.
     apply/Forall_map.
     apply: (Forall_impl (fun a => Types.unifies subs a.1 a.2)).
     - move=> [t1 t2] Hunifies'' /=.
-      rewrite /Types.unifies.
       rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
       done.
     - by apply Hunifies'.
@@ -967,14 +967,14 @@ Module Constraint.
     by rewrite /= Types.unify_same.
   Qed.
 
-  Lemma unify_sound_subst' x t subs constraints :
+  Lemma unify_sound_subst x t subs constraints :
     x \notin t ->
     unifies subs (subst x t constraints) ->
     unifies ((x, t) :: subs) ((Types.Var x, t) :: constraints).
   Proof.
     rewrite /mem /in_mem /inb /= => Hoccur Hunifies.
     apply: Forall_cons.
-    - rewrite /Types.unifies /=.
+    - rewrite /=.
       case H : (x == x) => /=.
       + by rewrite Types.subst_notIn.
       + by move/eqP in H.
@@ -987,14 +987,6 @@ Module Constraint.
       + done. (* move=> a. by apply. *)
       + done.
   Qed.
-
-  Lemma unify_sound_subst x t subs constraints :
-    x \notin t ->
-    unifiesb subs (subst x t constraints) =
-    unifiesb ((x, t) :: subs) ((Types.Var x, t) :: constraints).
-  Proof.
-    move=> H /=.
-  Admitted.
   
   (* unify_sound_comm *)
   Lemma unify_comm t1 t2 subs constraints : (* bool *)

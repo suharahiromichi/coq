@@ -525,9 +525,9 @@ Module Types.
       by apply: IHsubs'.
   Qed.
   
-  Definition unifies subs t1 t2 := subst_list subs t1 = subst_list subs t2.
+  Notation unifies subs t1 t2 := (subst_list subs t1 = subst_list subs t2).
   
-  Definition unifiesb subs t1 t2 := subst_list subs t1 == subst_list subs t2.
+  Notation unifiesb subs t1 t2 := (subst_list subs t1 == subst_list subs t2).
 
   Lemma unifiesP subs t1 t2 : reflect (unifies subs t1 t2) (unifiesb subs t1 t2).
   Proof.
@@ -545,7 +545,6 @@ Module Types.
           by rewrite -[in (Var y)]Hxy H.
       + by rewrite H.
     - move=> t1 IHt1 t2 IHt2 Hu.
-      rewrite /unifies.
       rewrite subst_list_Fun /=.
       rewrite subst_list_Fun /=.
       f_equal.                              (* 両辺を @ で分ける。 *)
@@ -872,15 +871,15 @@ Module Constraint.
           by apply/InP.
   Qed.
   
-  Definition subst_list subs constraints :=
-    map (fun p : Term => (Types.subst_list subs p.1, Types.subst_list subs p.2))
-        constraints.
+  Notation subst_list subs constraints :=
+    (map (fun p : Term => (Types.subst_list subs p.1, Types.subst_list subs p.2))
+         constraints).
   
   Lemma subst_list_app subs1 subs2 constraints :
     subst_list (subs1 ++ subs2) constraints =
     subst_list subs2 (subst_list subs1 constraints).
   Proof.
-    rewrite /subst_list map_map.
+    rewrite map_map.
     apply: map_ext => t /=.
     f_equal.                          (* 両辺を直積の要素で分ける。 *)
     - by apply: Types.subst_list_app.
@@ -910,7 +909,6 @@ Module Constraint.
     apply/Forall_map.
     apply: (Forall_impl (fun a => Types.unifies subs a.1 a.2)).
     - move=> [t1 t2] Hunifies'' /=.
-      rewrite /Types.unifies.
       rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
       done.
     - by apply Hunifies'.
@@ -964,7 +962,7 @@ Module Constraint.
   Proof.
     rewrite /mem /in_mem /inb /= => Hoccur Hunifies.
     apply: Forall_cons.
-    - rewrite /Types.unifies /=.
+    - rewrite /=.
       case H : (x == x) => /=.
       + by rewrite Types.subst_notIn.
       + by move/eqP in H.
@@ -987,7 +985,7 @@ Module Constraint.
       by apply: Forall_cons.
   Qed.
   
-  Lemma unify_comm' t1 t2 subs constraints :
+  Lemma unify_comm t1 t2 subs constraints :
     unifiesb subs ((t2, t1) :: constraints) = unifiesb subs ((t1, t2) :: constraints).
   Proof.
     apply/idP/idP => /unifiesP H.
@@ -1005,8 +1003,7 @@ Module Constraint.
     inversion Hunifies as [| x l Hunifies1 Hunifies']; subst.
     inversion Hunifies' as [| x l Hunifies2 Hunifies'']; subst.
     apply/Forall_cons => /=.
-    - rewrite /Types.unifies.
-      rewrite (Types.subst_list_Fun subs t11 t12).
+    - rewrite (Types.subst_list_Fun subs t11 t12).
       rewrite (Types.subst_list_Fun subs t21 t22).
       by f_equal.
     - done.
@@ -1018,7 +1015,6 @@ Module Constraint.
   Proof.
     move=> Hunifies.
     inversion Hunifies as [| [t1 t2] l Hunifies1 Hunifies']; subst.
-    rewrite /Types.unifies in Hunifies1.
     rewrite (Types.subst_list_Fun subs t11 t12) in Hunifies1.
     
     inversion Hunifies1 as [Hunifies2].
