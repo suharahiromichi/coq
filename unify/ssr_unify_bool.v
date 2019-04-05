@@ -949,47 +949,9 @@ Module Constraint.
       by apply/(iffP idP) => /Types.unifiesP.
   Qed.
   
-  Theorem subst_preserves_unifies' x t0 subs constraints :
-    Types.unifies subs (Types.Var x) t0 ->
-    unifies subs constraints ->
-    unifies subs (subst x t0 constraints).
-  Proof.
-    move=> Hunifies Hunifies'.
-    rewrite /unifies.
-    rewrite /subst.
-    apply/Forall_map.
-    simpl.
-    (* 
-  Forall
-    (fun x0 : Term =>
-     Types.subst_list subs (Types.subst x t0 x0.1) =
-     Types.subst_list subs (Types.subst x t0 x0.2)) constraints
-     *)
-    Check (fun a => Types.unifies subs a.1 a.2).
-    Check @Forall_impl.
-
-    Check (Forall_impl (fun a => Types.unifies subs a.1 a.2)).
-    apply: (Forall_impl (fun a => Types.unifies subs a.1 a.2)).
-    (* 
-  forall a : Types.Term * Types.Term,
-   Types.subst_list subs a.1 = Types.subst_list subs a.2 ->
-   Types.subst_list subs (Types.subst x t0 a.1) =
-   Types.subst_list subs (Types.subst x t0 a.2)
-
-  Forall
-   (fun a : Types.Term * Types.Term =>
-    Types.subst_list subs a.1 = Types.subst_list subs a.2) constraints
-     *)
-    - move=> [t1 t2] Hunifies'' /=.
-      rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
-      done.
-    - by apply Hunifies'.
-  Qed.
-  
-  (* 上記における、Forall_map と Forall_impl の合わせ技の bool 版 *)
+  (* Forall_map と Forall_impl の合わせ技の bool 版 *)
   Lemma map_impl {A : Type} (p : pred A) (f : A -> A) (s : seq A) :
-    (forall a, preim f p a) -> all p s -> all p [seq f i | i <- s].
-(* (forall a, p a -> p (f a)) -> all p s -> all p (map f s) *)
+    (forall a, p a -> p (f a)) -> all p s -> all p [seq f i | i <- s].
   Proof.
     move=> Hp.
     elim: s.
@@ -1013,10 +975,9 @@ Module Constraint.
     all (fun p : Term => Types.subst_list subs p.1 == Types.subst_list subs p.2)
         [seq (Types.subst x t0 c.1, Types.subst x t0 c.2) | c <- constraints]
      *)
-    apply: map_impl.
+    apply: map_impl => /=.
     - move=> [t1 t2] Hunifies'' /=.
-      rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
-      done.
+        by rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
     - done.
   Qed.
   
@@ -1028,7 +989,7 @@ Module Constraint.
     by rewrite /= Types.unify_same.
   Qed.
 
-  Lemma unify_sound_subst x t subs constraints :
+  Lemma unify_sound_subst' x t subs constraints :
     x \notin t ->
     unifies subs (subst x t constraints) ->
     unifies ((x, t) :: subs) ((Types.Var x, t) :: constraints).
@@ -1036,17 +997,158 @@ Module Constraint.
     rewrite /mem /in_mem /inb /= => Hoccur Hunifies.
     apply: Forall_cons.
     - rewrite /=.
+(*
+  Types.subst_list subs (if x == x then t else Var x) =
+  Types.subst_list subs (Types.subst x t t)
+
+subgoal 2 (ID 524) is:
+ Forall
+   (fun p : Term =>
+    Types.subst_list ((x, t) :: subs) p.1 = Types.subst_list ((x, t) :: subs) p.2)
+   constraints
+*)
       case H : (x == x) => /=.
       + by rewrite Types.subst_notIn.
       + by move/eqP in H.
 
     - move: Hunifies.
       rewrite /subst => /Forall_map Hunifies.
+      (* 
+  x : nat
+  t : Types_Term_predType
+  subs : seq (nat * Types.Term)
+  constraints : seq (Types.Term * Types.Term)
+  Hoccur : ~~ Types.inb t x
+  Hunifies : Forall
+               (fun x0 : Types.Term * Types.Term =>
+                Types.subst_list subs (Types.subst x t x0.1, Types.subst x t x0.2).1 =
+                Types.subst_list subs (Types.subst x t x0.1, Types.subst x t x0.2).2)
+               constraints
+  ============================
+  Forall
+    (fun p : Term =>
+     Types.subst_list ((x, t) :: subs) p.1 = Types.subst_list ((x, t) :: subs) p.2)
+    constraints
+       *)
       apply/(Forall_impl
                (fun x0 : Term =>
                   Types.unifies subs (Types.subst x t x0.1) (Types.subst x t x0.2))).
+      (* 
+  forall a : Term,
+  Types.subst_list subs (Types.subst x t a.1) =
+  Types.subst_list subs (Types.subst x t a.2) ->
+  Types.subst_list ((x, t) :: subs) a.1 = Types.subst_list ((x, t) :: subs) a.2
+
+subgoal 2 (ID 998) is:
+ Forall
+   (fun x0 : Term =>
+    Types.subst_list subs (Types.subst x t x0.1) =
+    Types.subst_list subs (Types.subst x t x0.2)) constraints
+
+
+ *)
       + done. (* move=> a. by apply. *)
+      (* 
+  Hunifies : Forall
+               (fun x0 : Types.Term * Types.Term =>
+                Types.subst_list subs (Types.subst x t x0.1, Types.subst x t x0.2).1 =
+                Types.subst_list subs (Types.subst x t x0.1, Types.subst x t x0.2).2)
+               constraints
+  ============================
+  Forall
+    (fun x0 : Term =>
+     Types.subst_list subs (Types.subst x t x0.1) =
+     Types.subst_list subs (Types.subst x t x0.2)) constraints
+ *)
       + done.
+  Qed.
+  
+
+  Lemma map_impl' {A : Type} (p q : pred A) (s : seq A) :
+    (forall a, p a -> q a) -> all p s -> all q s.
+  Proof.
+    move=> Hp.
+    elim: s.
+    - done.
+    - move=> a s IHs /= /andP.
+      case=> Hpa Haps.
+      apply/andP.
+      split.
+      + by apply: Hp.
+      + by apply: IHs.
+  Qed.
+(*  
+  Hunifies : all
+               (fun p : Term => Types.subst_list subs p.1 == Types.subst_list subs p.2)
+               (subst x t constraints)
+  ============================
+  all
+    (fun p : Term =>
+     Types.subst_list subs (Types.subst x t p.1) ==
+     Types.subst_list subs (Types.subst x t p.2)) constraints == true
+*)
+
+  (* Forall_map と Forall_impl の合わせ技の bool 版 *)
+  Lemma map_impl''' {A : Type} (p : pred A) (f : A -> A) (s : seq A) :
+    (forall a, p a -> p (f a)) -> all p s -> all p [seq f i | i <- s].
+  Proof.
+    move=> Hp.
+    elim: s.
+    - done.
+    - move=> a s IHs /= /andP.
+      case=> Hpa Haps.
+      apply/andP.
+      split.
+      + by apply: Hp.
+      + by apply: IHs.
+  Qed.
+
+  Lemma all_impl'' {A : Type} (p : pred A) (f : A -> A) (s : seq A) :
+    all (fun a => p (f a)) s = all p [seq f i | i <- s].
+  Proof.
+    apply/idP/idP.
+    - elim: s.
+      + done.
+      + move=> a s IHs /= /andP => H.
+        case: H => H1 H2.
+        apply/andP.
+        split.
+        * done.
+        * apply: IHs.
+          done.
+    - elim: s.
+      + done.
+      + move=> a s IHs /= /andP H.
+        case: H => H1 H2.
+        apply/andP.
+        split.
+        * done.
+        * by apply: IHs.
+  Qed.
+  
+  Lemma unify_sound_subst x t subs constraints :
+    x \notin t ->
+    unifiesb subs (subst x t constraints) ->
+    unifiesb ((x, t) :: subs) ((Types.Var x, t) :: constraints).
+  Proof.
+    move => Hoccur Hunifies /=.
+    apply/andP.
+    split.
+    - case H : (x == x) => /=.
+      + by rewrite Types.subst_notIn.
+      + by move/eqP in H.
+    - rewrite /unifiesb.
+      rewrite /unifiesb in Hunifies.
+      apply: (map_impl'
+                (fun p : Term => Types.subst_list subs (Types.subst x t p.1) ==
+                                 Types.subst_list subs (Types.subst x t p.2))).
+
+      + done.
+      + rewrite /unifiesb in Hunifies.
+        Search _ (all _ _).
+        Check map_impl.
+        rewrite -all_impl'' in Hunifies.
+          by simpl in Hunifies.
   Qed.
   
   (* unify_sound_comm *)
