@@ -146,7 +146,7 @@ Proof.
     by firstorder.
 Qed.
 
-Lemma map_id {A :Type} (s : seq A) : map (fun x => x) s = s.
+Lemma map_id {A :Type} (s : seq A) : map id s = s.
 Proof.
   induction s; simpl; auto; rewrite IHs; auto.
 Qed.
@@ -664,17 +664,17 @@ Module Types.
     - done.
   Qed.
 
-  Lemma unify_same sub t : unifiesb sub t t. (* bool *)
+  Lemma unify_same sub t : unifiesb sub t t.
   Proof.
     done.
   Qed.
 
-  Lemma unify_comm sub t1 t2 : unifiesb sub t1 t2 = unifiesb sub t2 t1. (* bool *)
+  Lemma unify_comm sub t1 t2 : unifiesb sub t1 t2 = unifiesb sub t2 t1.
   Proof.
     done.
   Qed.
   
-  Lemma unify_fun_equal subs t11 t12 t21 t22 : (* bool *)
+  Lemma unify_fun_equal subs t11 t12 t21 t22 :
     (subst_list subs t11 @ subst_list subs t12) ==
     (subst_list subs t21 @ subst_list subs t22) =
     (subst_list subs t11 == subst_list subs t21) &&
@@ -689,7 +689,7 @@ Module Types.
         by apply/eqP; f_equal; apply/eqP.
   Qed.
   
-  Lemma unify_fun subs t11 t12 t21 t22 :    (* bool *)
+  Lemma unify_fun subs t11 t12 t21 t22 :
     unifiesb subs t11 t21 && unifiesb subs t12 t22 =
     unifiesb subs (t11 @ t12) (t21 @ t22).
   Proof.
@@ -753,11 +753,19 @@ Proof.
       * by apply: IHs.
 Qed.
 
-(* map_all でよい。 *)
+(* all_map でよい。 *)
+Check all_map
+  : forall (T1 T2 : Type) (f : T1 -> T2) (a : pred T2) (s : seq T1),
+    all a [seq f i | i <- s] = all (preim f a) s.
 (*
-Lemma all__all_mapE {A : Type} (p : pred A) (f : A -> A) (s : seq A) :
+Lemma all__all_map' {A : Type} (p : pred A) (f : A -> A) (s : seq A) :
   all (fun a => p (f a)) s = all p [seq f i | i <- s].
 Proof.
+  rewrite all_map.
+  rewrite /preim.
+  done.
+
+  Restart.
   apply/idP/idP.
   - elim: s.
     + done.
@@ -1060,7 +1068,7 @@ Module Constraint.
   Qed.
   
   (* unify_sound_comm *)
-  Lemma unify_comm t1 t2 subs constraints : (* bool *)
+  Lemma unify_comm t1 t2 subs constraints :
     unifiesb subs ((t2, t1) :: constraints) = unifiesb subs ((t1, t2) :: constraints).
   Proof.
     rewrite /=.
@@ -1069,7 +1077,7 @@ Module Constraint.
   
   (* unify_sound_fun *)
   (* unify_complete_fun *)
-  Lemma unify_fun constraints t11 t12 t21 t22 subs : (* bool *)
+  Lemma unify_fun constraints t11 t12 t21 t22 subs :
       unifiesb subs ((t11, t21) :: (t12, t22) :: constraints) =
       unifiesb subs ((Types.Fun t11 t12, Types.Fun t21 t22) :: constraints).
   Proof.
@@ -1077,5 +1085,19 @@ Module Constraint.
   Qed.
   
 End Constraint.
+
+(*
+← は、定義での参照をしめす。
+.                 Types                   Constraint
+.
+subst             [x := t0]t      ←      [x := t0]constraints
+.                 ↑
+subst_list        subs t          ←      subs     constraints
+.                 ↑
+unfies            subs t1 t2      ←      subs     constraints (要素間の=)
+                  ||                               ||
+(subst_list subs t1 = subst_list subs t2)          [::(t1,t2);.....;(tn1, tn2)]
+
+*)
 
 (* END *)
