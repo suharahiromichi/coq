@@ -3,6 +3,8 @@
 (* 2019_03_31 @suharahiromichi *)
 (* 変数をリテラルにする。 *)
 (* 2019_04_07 @suharahiromichi *)
+(* pcacel だけで、eqType choiceType countType finType を定義する。 *)
+(* 'I_9 を経由しており、 picke と unpicke の微妙な違いに注意すうこと。 *)
 
 From mathcomp Require Import all_ssreflect.
 Require Import Finite_sets_facts.
@@ -59,6 +61,7 @@ Module Literal.
     | _ => false
     end.
   
+  (*
   Lemma Literal_eqP (x y : Literal) : reflect (x = y) (eqLiteral x y).
   Proof.
     rewrite /eqLiteral.
@@ -67,10 +70,11 @@ Module Literal.
   
   Definition Literal_eqMixin := EqMixin Literal_eqP.
   Canonical Literal_eqType := EqType Literal Literal_eqMixin.
+  *)
   
   Definition Literal_enum := [:: a; b; c; f; g; h; x; y; z].
 
-  Definition Literal_pickle (x : Literal_eqType) : 'I_9 :=
+  Definition Literal_pickle (x : Literal) : 'I_9 :=
     match x with
     | a => inord 0
     | b => inord 1
@@ -83,7 +87,7 @@ Module Literal.
     | z => inord 8
     end.
   
-  Definition Literal_unpickle (n : 'I_9) : option Literal_eqType :=
+  Definition Literal_unpickle (n : 'I_9) : option Literal :=
     match val n with
     | 0 => Some a
     | 1 => Some b
@@ -99,25 +103,28 @@ Module Literal.
 
   Lemma Literal_pcancel : pcancel Literal_pickle Literal_unpickle.
   Proof.
-    Admitted.
+      by case; rewrite /Literal_unpickle /= inordK.
+  Qed.
   
+  (*
   Check Countable.Mixin.
   Lemma Literal_finiteP (x : Literal_eqType)  :
     (count_mem x) Literal_enum = 1.
   Proof.
     by case: x.
   Qed.
+   *)
   
 End Literal.
+
+Notation Literal := (Literal.Literal).
 
 (* Literal_pcancel だけで、eqType, choiceType, countType,
    finType のすべてが定義できる。 math-comp-book の
    suahra.ch7-windrose.v を参照せよ。*)
 
-Notation Literal := (Literal.Literal).
-
 Definition Literal_eqMixin := PcanEqMixin Literal.Literal_pcancel.
-Canonical Literal_eqType := EqType Literal Literal.Literal_eqMixin.
+Canonical Literal_eqType := EqType Literal Literal_eqMixin.
 Definition Literal_choiceMixin := PcanChoiceMixin Literal.Literal_pcancel.
 Canonical Literal_choiceType := ChoiceType Literal Literal_choiceMixin.
 Definition Literal_countMixin := PcanCountMixin Literal.Literal_pcancel.
