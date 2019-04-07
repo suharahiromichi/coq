@@ -103,35 +103,33 @@ Module Literal.
   Qed.
   
   Check Countable.Mixin.
-  Print Countable.Pack.
-  
-  Definition Literal_countMixin := CountMixin Literal_pcancel.
-  Definition Literal_choiceMixin := CountChoiceMixin Literal_countMixin.
-
-  Canonical Literal_choiceType := ChoiceType Literal Literal_choiceMixin.
-  Canonical Literal_countType := CountType Literal_choiceType Literal_countMixin.
-  
-  Check Literal_choiceType : choiceType.
-  Check Literal_countType : countType.
-  
   Lemma Literal_finiteP (x : Literal_eqType)  :
     (count_mem x) Literal_enum = 1.
   Proof.
     by case: x.
   Qed.
   
-  Definition Literal_finMixin :=
-    @FinMixin Literal_countType Literal_enum Literal_finiteP.
-  Canonical Literal_finType := FinType Literal Literal_finMixin.
-  
-  Check Literal_finType : finType.
-
 End Literal.
 
 Definition Literal_eqMixin := EqMixin Literal.Literal_eqP.
 Canonical Literal_eqType := EqType Literal.Literal Literal_eqMixin.
 Canonical Literal_eqType' := [eqType of Literal.Literal].
 Notation Literal := (Literal.Literal).
+
+Definition Literal_countMixin := CountMixin Literal.Literal_pcancel.
+Definition Literal_choiceMixin := CountChoiceMixin Literal_countMixin.
+
+Canonical Literal_choiceType := ChoiceType Literal Literal_choiceMixin.
+Canonical Literal_countType := CountType Literal_choiceType Literal_countMixin.
+  
+Definition Literal_finMixin :=
+  @FinMixin Literal_countType Literal.Literal_enum Literal.Literal_finiteP.
+Canonical Literal_finType := FinType Literal Literal_finMixin.
+
+(* ちゃんと定義できていことを確認する。 *)
+Check Literal_choiceType : choiceType.
+Check Literal_countType : countType.
+Check Literal_finType : finType.
 
 Module Types.
 
