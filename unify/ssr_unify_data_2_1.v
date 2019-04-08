@@ -88,7 +88,8 @@ Module Literal.
     end.
   
   Definition Literal_unpickle (n : 'I_9) : option Literal :=
-    match val n with
+(*  match var n with *)
+    match n in nat with               (* in で nat型 を指定できる。 *)
     | 0 => Some a
     | 1 => Some b
     | 2 => Some c
