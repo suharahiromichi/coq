@@ -102,34 +102,41 @@ Module Literal.
     by case.
   Qed.
   
-  Check Countable.Mixin.
   Lemma Literal_finiteP (x : Literal_eqType)  :
     (count_mem x) Literal_enum = 1.
   Proof.
     by case: x.
   Qed.
+
+  Lemma Literal_uniq : uniq Literal_enum.
+  Proof.
+    done.
+  Qed.
+  (* UniqFinMixin に使えるはずだが。。。 *)
   
 End Literal.
 
 Definition Literal_eqMixin := EqMixin Literal.Literal_eqP.
 Canonical Literal_eqType := EqType Literal.Literal Literal_eqMixin.
 Canonical Literal_eqType' := [eqType of Literal.Literal].
-Notation Literal := (Literal.Literal).
 
 Definition Literal_countMixin := CountMixin Literal.Literal_pcancel.
 Definition Literal_choiceMixin := CountChoiceMixin Literal_countMixin.
 
-Canonical Literal_choiceType := ChoiceType Literal Literal_choiceMixin.
+Canonical Literal_choiceType := ChoiceType Literal.Literal Literal_choiceMixin.
 Canonical Literal_countType := CountType Literal_choiceType Literal_countMixin.
-  
+
 Definition Literal_finMixin :=
   @FinMixin Literal_countType Literal.Literal_enum Literal.Literal_finiteP.
-Canonical Literal_finType := FinType Literal Literal_finMixin.
+Canonical Literal_finType := FinType Literal.Literal Literal_finMixin.
 
 (* ちゃんと定義できていことを確認する。 *)
+Check Literal_eqType : eqType.
 Check Literal_choiceType : choiceType.
 Check Literal_countType : countType.
 Check Literal_finType : finType.
+
+Notation Literal := Literal.Literal.        (* XXXXX *)
 
 Module Types.
 
@@ -250,6 +257,10 @@ Compute Types.inb (varx @ vary @ Base) Literal.x.
 Compute Literal.x \in varx @ vary @ Base.
 Compute Literal.y \notin varx @ vary @ Base.
 
+(* 変数の個数 cardinal *)
+(* Literal_finType を利用している。 *)
+Check #| Types.inb (varx @ vary @ Base) |.
+Compute #| Types.inb (varx @ vary @ Base) |.
 
 Module Constraint.
   Definition Term := (Types_Term_EqType * Types_Term_EqType)%type.
@@ -350,7 +361,15 @@ Definition sc'' := [:: (varx, vary)] : Constraint_Terms_EqType.
 
 Compute sc == sc''.
 
+Compute Constraint.inb sc Literal.x.
+Compute Constraint.inb sc' Literal.x.
 Compute Constraint.inb sc'' Literal.x.
-Compute Literal.x \in sc''.
+
+Compute Literal.x \in sc''.                 (* ちょっと制限がある？ *)
+
+(* 変数の個数 cardinal *)
+(* Literal_finType を利用している。 *)
+Check #| Constraint.inb sc |.
+Compute #| Constraint.inb sc |.
 
 (* END *)
