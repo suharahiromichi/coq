@@ -237,9 +237,10 @@ Module Types.
   
 End Types.
 
-Notation "x @ y" := (Types.Fun x y) (at level 50, left associativity).
+Notation Term := Types.Term.
 Notation Var x := (Types.Var x).
 Notation Base := (Types.Base).
+Notation "x @ y" := (Types.Fun x y) (at level 50, left associativity).
 
 Notation varx := (Types.Var (Literal.x)).
 Notation vary := (Types.Var (Literal.y)).
@@ -371,5 +372,30 @@ Compute Literal.x \in sc''.                 (* ちょっと制限がある？ *)
 (* Literal_finType を利用している。 *)
 Check #| Constraint.inb sc |.
 Compute #| Constraint.inb sc |.
+
+Notation inb := (Constraint.inb).
+
+Module Unify.
+
+  Lemma Base0 : #|Base| = 0.
+  Proof. by rewrite card0. Qed.
+  
+  Lemma Var1 (x : Literal) : #|Var x| = 1.
+  Proof. by rewrite card1. Qed.
+
+  Lemma Funs (x y : Term) : #|x @ y| <= #|x| + #|y|.
+  Proof.
+  Admitted.
+  
+  Lemma nil0 : #|inb [::]| = 0.
+  Proof.
+(*  rewrite /inb /Types.inb /=. *)
+    by rewrite card0.
+  Qed.
+  
+  Definition test_le constraints1 constraints2 :=
+    #|inb constraints1| <= #|inb constraints2|.
+  
+End Unify.
 
 (* END *)
