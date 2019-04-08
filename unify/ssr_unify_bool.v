@@ -1,264 +1,96 @@
 From mathcomp Require Import all_ssreflect.
-Require Import Finite_sets_facts.
 
-(* List.v にある定義 *)
-
-Inductive Forall {A : Type} (P : A -> Prop) : seq A -> Prop :=
-| Forall_nil : Forall P nil
-| Forall_cons : forall (x : A) (s : seq A), P x -> Forall P s -> Forall P (x :: s).
-Hint Constructors Forall.
-
-Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
-| Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
-| Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
-Hint Constructors Exists.
-
-Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
-  (forall (a : A), reflect (P a) (p a)) ->
-  forall (s : seq A), reflect (Forall P s) (all p s).
-Proof.
-  move=> H s.
-  apply/(iffP idP).
-  - elim: s => [Hp | a s IHs /= /andP].
-    + by apply: Forall_nil.
-    + case.
-      move/H => Hpa Hps.
-      apply: Forall_cons.
-      * done.
-      * by apply: IHs.
-  - elim: s => /= [| a s IHs].
-    + done.
-    + move=> HP.
-      apply/andP.
-      inversion HP; subst.
-      split.
-      * by apply/H.
-      * by apply IHs.
-Qed.
-
-Lemma ExistsP {A : Type} (P : A -> Prop) (p : A -> bool) :
-  (forall (a : A), reflect (P a) (p a)) ->
-  forall (s : seq A), reflect (Exists P s) (has p s).
-Proof.
-  move=> H s.
-  apply/(iffP idP).
-  - elim: s => [Hp | a s IHs /= /orP].
-    + done.
-    + case=> [Hpa | Hpa].
-      * apply: Exists_cons_hd.
-          by apply/H.
-      * apply: Exists_cons_tl.
-          by apply: IHs.
-  - elim: s => /= [| a s IHs] HP.
-    + by inversion HP.
-    + apply/orP.
-      inversion HP; subst.
-      * left.
-          by apply/H.
-      * right.
-          by apply: IHs.
-Qed.
-
-(* List.In の定義のbool版 など *)
-(*
-List.In = 
-fun A : Type =>
-fix In (a : A) (l : seq A) {struct l} : Prop :=
-  match l with
-  | [::] => False
-  | b :: m => b = a \/ In a m
-  end
-     : forall A : Type, A -> seq A -> Prop
- *)
-
-Lemma In_inb {A : eqType} (x : A) (s : seq A) : List.In x s <-> x \in s.
-Proof.
-  elim: s.
-  - done.
-  - move=> a s IHs.
-    split=> /=; rewrite inE.
-    + case=> H.
-      * by apply/orP/or_introl/eqP.
-      * by apply/orP/or_intror/IHs.
-    + move/orP; case.
-      * move/eqP => ->. by left.
-      * move=> H.
-        move/IHs in H.
-        by right.
-Qed.
-
-Lemma InP {A : eqType} (x : A) (s : seq A) : reflect (List.In x s) (x \in s).
-Proof.
-  apply: (iffP idP) => H.
-    - by apply/In_inb.
-    - by apply/In_inb.
-Qed.
-
-(* List.v にある補題 *)
-
-Lemma Forall_forall (A : Type) (P : A -> Prop) (s : seq A) :
-  Forall P s <-> (forall x : A, List.In x s -> P x).
-Proof.
-  split.
-  - elim.
-    + move=> x H.
-        by inversion H.
-    + move=> // x s' HP H1 IHs y.
-      case=> H3.
-      * by rewrite -H3.
-      * by apply: IHs.
-  - elim: s => [| a s IHs] H.
-    + by apply: Forall_nil.
-    + apply: Forall_cons.
-      * apply: H => /=.
-          by left.
-      * apply: IHs => x H1 /=.
-        apply: H => /=.
-          by right.
-Qed.
-
-Lemma Exists_exists (A : Type) (P : A -> Prop) (s : seq A) :
-  Exists P s <-> (exists x : A, List.In x s /\ P x).
-Proof.
-  split.
-  - induction 1; firstorder.
-  - induction s; firstorder; subst.
-      by apply: Exists_cons_hd.
-Qed.
-
-Lemma in_map (A B : Type) (f : A -> B) (s : seq A) (x : A) :
-  List.In x s -> List.In (f x) [seq f i | i <- s]. (* (map f s) *)
-Proof.
-    by induction s; firstorder (subst; auto).
-Qed.
-
-Lemma in_map_iff (A B : Type) (f : A -> B) (s : list A) (y : B) :
-  List.In y (map f s) <-> (exists x : A, f x = y /\ List.In x s).
-Proof.
-    by induction s; firstorder (subst; auto).
-Qed.
-
-Lemma Forall_impl {A : Type} (P Q : A -> Prop) :
-  (forall a, P a -> Q a) -> forall s, Forall P s -> Forall Q s.
-Proof.
-  move=> H s.
-  rewrite !Forall_forall.
-    by firstorder.
-Qed.
-
-Lemma map_id {A :Type} (s : seq A) : map id s = s.
-Proof.
-  induction s; simpl; auto; rewrite IHs; auto.
-Qed.
-
-Lemma map_map {A B C : Type} (f : A -> B) (g : B -> C) s :
-  map g (map f s) = map (fun x => g (f x)) s.
-Proof.
-  induction s; simpl; auto.
-  rewrite IHs; auto.
-Qed.
-
-Lemma map_ext_in {A B : Type} (f g : A -> B) s :
-  (forall a, List.In a s -> f a = g a) -> map f s = map g s.
-Proof.
-  induction s; simpl; auto.
-  intros; erewrite H by intuition; rewrite IHs; auto.
-Qed.
-
-Lemma map_ext {A B : Type} (f g : A -> B) :
-  (forall a, f a = g a) -> forall s, map f s = map g s.
-Proof.
-  intros; apply map_ext_in; auto.
-Qed.
-
-(* List.v にある補題。ここまで *)
-
-Lemma Forall_map X Y (P : Y -> Prop) (f : X -> Y) l :
-  Forall P (map f l) <-> Forall (fun x => P (f x)) l.
-Proof.
-  split=> H.
-  - apply/Forall_forall => x HListIn.
-    move/Forall_forall in H.
-    + apply: H.
-      by apply: in_map.
-    + induction l as [| x l'].
-      * by apply: Forall_nil.
-      * inversion H; subst.
+Module List.
+  (* List.v にある定義 *)
+  (* 互換のために、reflectとともに残してある。 *)
+  
+  Inductive Forall {A : Type} (P : A -> Prop) : seq A -> Prop :=
+  | Forall_nil : Forall P nil
+  | Forall_cons : forall (x : A) (s : seq A), P x -> Forall P s -> Forall P (x :: s).
+  Hint Constructors Forall.
+  
+  Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
+  | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
+  | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
+  Hint Constructors Exists.
+  
+  Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
+    (forall (a : A), reflect (P a) (p a)) ->
+    forall (s : seq A), reflect (Forall P s) (all p s).
+  Proof.
+    move=> H s.
+    apply/(iffP idP).
+    - elim: s => [Hp | a s IHs /= /andP].
+      + by apply: Forall_nil.
+      + case.
+        move/H => Hpa Hps.
         apply: Forall_cons.
-        ** done.
-        ** by apply: IHl'.
-Qed.
+        * done.
+        * by apply: IHs.
+    - elim: s => /= [| a s IHs].
+      + done.
+      + move=> HP.
+        apply/andP.
+        inversion HP; subst.
+        split.
+        * by apply/H.
+        * by apply IHs.
+  Qed.
+  
+  Lemma ExistsP {A : Type} (P : A -> Prop) (p : A -> bool) :
+    (forall (a : A), reflect (P a) (p a)) ->
+    forall (s : seq A), reflect (Exists P s) (has p s).
+  Proof.
+    move=> H s.
+    apply/(iffP idP).
+    - elim: s => [Hp | a s IHs /= /orP].
+      + done.
+      + case=> [Hpa | Hpa].
+        * apply: Exists_cons_hd.
+            by apply/H.
+        * apply: Exists_cons_tl.
+            by apply: IHs.
+    - elim: s => /= [| a s IHs] HP.
+      + by inversion HP.
+      + apply/orP.
+        inversion HP; subst.
+        * left.
+            by apply/H.
+        * right.
+            by apply: IHs.
+  Qed.
 
-Lemma Exists_map X Y (P : Y -> Prop) (f : X -> Y) s :
-  Exists P (map f s) <-> Exists (fun x => P (f x)) s.
-Proof.
-  split=> HExists.
-  - move/Exists_exists in HExists.
-    apply Exists_exists.
-    destruct HExists as [x [HListIn HP]].
-    apply in_map_iff in HListIn.
-    destruct HListIn as [y [Heq HListIn]].
-    exists y.
-    subst; auto.
 
-  - move/Exists_exists in HExists.
-    apply Exists_exists.
-    destruct HExists as [x [HListIn HP]].
-    exists (f x).
-    split; auto.
-    apply in_map; auto.
-Qed.
+  Fixpoint In {A : Type} (a : A) (s : seq A) : Prop :=
+    match s with
+    | [::] => False
+    | b :: m => b = a \/ In a m
+    end.
+  
+  Lemma In_inb {A : eqType} (x : A) (s : seq A) : In x s <-> x \in s.
+  Proof.
+    elim: s.
+    - done.
+    - move=> a s IHs.
+      split=> /=; rewrite inE.
+      + case=> H.
+        * by apply/orP/or_introl/eqP.
+        * by apply/orP/or_intror/IHs.
+      + move/orP; case.
+        * move/eqP => ->. by left.
+        * move=> H.
+          move/IHs in H.
+            by right.
+  Qed.
+  
+  Lemma InP {A : eqType} (x : A) (s : seq A) : reflect (In x s) (x \in s).
+  Proof.
+    apply: (iffP idP) => H.
+    - by apply/In_inb.
+    - by apply/In_inb.
+  Qed.
 
-Lemma Exists_preserves_Finite U family :
-  Forall (Finite _) family ->
-  Finite _ (fun x : U => Exists (fun s => s x) family).
-Proof.
-  intros Hall.
-  induction family as [| s family'].
-  - rewrite (Extensionality_Ensembles U
-             (fun x : U => Exists (@^~ x) [::]) (Empty_set _)).
-    by apply: Empty_is_finite.
-  - by split; intros x H; inversion H.
-  - inversion Hall.
-    rewrite (Extensionality_Ensembles U
-             (fun x0 : U => Exists (@^~ x0) (s :: family'))
-             (Union _ s (fun x : U => Exists (fun s => s x) family'))).
-      apply Union_preserves_Finite; auto.
-      split;
-        intros y HIn;
-        (inversion HIn; [ left | right ]);
-        auto.
-Qed.
-
-Lemma Exists_app X (P : X -> Prop) l1 l2 :
-  Exists P (l1 ++ l2) -> Exists P l1 \/ Exists P l2.
-Proof.
-  intros Hexists.
-  induction l1.
-  - auto.
-  - inversion Hexists.
-    + left. left. auto.
-    + assert (IHl1':  Exists P l1 \/ Exists P l2).
-      * apply IHl1.
-        auto.
-      * destruct IHl1' as [IHl1' | IHl1'].
-        left. right. auto.
-        right. auto.
-Qed.
-
-Lemma Forall_app X (P : X -> Prop) l1 l2 :
-  Forall P (l1 ++ l2) -> Forall P l1 /\ Forall P l2.
-Proof.
-  intros HForall.
-  induction l1.
-  - by split.
-  - inversion HForall.
-    specialize (IHl1 H2).
-    destruct IHl1.
-    split.
-    + by apply: Forall_cons.
-    + done.
-Qed.
+End List.
 
 Module Types.
 
@@ -383,28 +215,6 @@ Module Types.
   Lemma In_Fun x t1 t2 : x \in t1 @ t2 = (x \in t1) || (x \in t2).
   Proof.
     by rewrite /mem /in_mem /inb /=.
-  Qed.
-  
-  Theorem FV_Finite t : Finite nat (In ^~ t). (* fun x => In x t *)
-  Proof.
-    elim: t => [| x | t1 IHt1 t2 IHt2 ].
-    - rewrite (Extensionality_Ensembles nat (In^~ Base) (Empty_set nat)).
-      + by apply: Empty_is_finite.
-      + by split=> [x H | x H]; inversion H.
-    - rewrite (Extensionality_Ensembles nat (In^~ (Var x)) (Singleton nat x)).
-      + by apply: Singleton_is_finite.
-      + split=> [y H | y H]; inversion H.
-        * done.
-        * done.
-    - rewrite (Extensionality_Ensembles
-                 nat (In^~ (t1 @ t2))
-                 (Union nat (fun x => In x t1) (fun x => In x t2))).
-      + by apply: Union_preserves_Finite.
-      + split=> x H; inversion H.
-        * by left.
-        * by right.
-        * by apply: In_Fun_dom.
-        * by apply: In_Fun_cod.
   Qed.
   
   (* ********** *)
@@ -818,7 +628,7 @@ Module Constraint.
          constraints).
   
   Definition In (x : nat) (constraints : Terms) : Prop :=
-    Exists (fun c : Term => Types.In x c.1 \/ Types.In x c.2)
+    List.Exists (fun c : Term => Types.In x c.1 \/ Types.In x c.2)
            constraints.
   
   Definition inb (s : Terms) (x : nat) : bool :=
@@ -841,12 +651,12 @@ Module Constraint.
       + done.
       + move/orP in H.
         case: H => H.
-        * apply: Exists_cons_hd.
+        * apply: List.Exists_cons_hd.
           move/orP in H.
           case: H => H.
           ** by apply/or_introl/Types.In_inb. (* left *)
           ** by apply/or_intror/Types.In_inb. (* right *)
-        * apply: Exists_cons_tl.
+        * apply: List.Exists_cons_tl.
             by move/IHs in H.
   Qed.
   
@@ -860,7 +670,7 @@ Module Constraint.
   (* In_inb を使わず、ExistsP を使った別証明。 *)
   Lemma InP' (x : nat) (s : Terms) : reflect (In x s) (inb s x).
   Proof.
-    apply/ExistsP => a.
+    apply/List.ExistsP => a.
     apply/(iffP idP).
     - move/orP => [/Types.InP H1 | /Types.InP H2].
       + by left.
@@ -898,43 +708,6 @@ Module Constraint.
   Compute sc == sc''.
   Compute Constraint.inb sc'' 1.
   Compute 1 \in sc''.
-  
-  (* fun x => In x constraints *)
-  Lemma FV_Finite constraints : Finite nat (In ^~ constraints).
-  Proof.
-    rewrite /In.
-    rewrite (Extensionality_Ensembles nat
-            (fun x : nat =>
-               Exists (fun c : Term => Types.In x c.1 \/ Types.In x c.2) constraints)
-            (fun x => Exists (fun s => s x)
-                             (map (fun c : Term => Union _ (fun x => Types.In x c.1)
-                                                         (fun x => Types.In x c.2))
-                                  constraints))).
-    - apply: Exists_preserves_Finite.
-      apply/Forall_map.
-      apply/Forall_forall.
-      move=> [t1 t2] HIn.
-      apply: Union_preserves_Finite.
-      + by apply: Types.FV_Finite.
-      + by apply: Types.FV_Finite.
-        
-    - split=> x HIn.
-      + apply Exists_map.
-        apply Exists_exists in HIn.
-        apply Exists_exists.
-        case: HIn => [[t1 t2] [HListIn HIn]]; exists (t1, t2).
-        split.
-        * done.
-        * by case HIn; [left | right]; auto.
-          
-      + apply Exists_map in HIn.
-        apply Exists_exists in HIn.
-        apply Exists_exists.
-        case: HIn => [[t1 t2] [HListIn HIn]]; exists (t1, t2).
-        split.
-        * done.
-        * by case HIn; [left | right]; auto.
-  Qed.
   
   (* \in の右に書けるように EqType を返すようにする。 *)
   (* [x := t0](constraints) *)
@@ -999,19 +772,9 @@ Module Constraint.
     (map (fun p : Term => (Types.subst_list subs p.1, Types.subst_list subs p.2))
          constraints).
 *)  
-  Lemma subst_list_app subs1 subs2 constraints :
-    subst_list (subs1 ++ subs2) constraints =
-    subst_list subs2 (subst_list subs1 constraints).
-  Proof.
-    rewrite map_map.
-    apply: map_ext => t /=.
-    f_equal.                          (* 両辺を直積の要素で分ける。 *)
-    - by apply: Types.subst_list_app.
-    - by apply: Types.subst_list_app.
-  Qed.
   
   Definition unifies subs constraints :=
-    Forall (fun p : Term => Types.unifies subs p.1 p.2) constraints.
+    List.Forall (fun p : Term => Types.unifies subs p.1 p.2) constraints.
   
   Definition unifiesb subs constraints :=
     all (fun p : Term => Types.unifiesb subs p.1 p.2) constraints.
@@ -1019,7 +782,7 @@ Module Constraint.
   Lemma unifiesP subs constraints :
     reflect (unifies subs constraints) (unifiesb subs constraints).  
   Proof.
-    apply/ForallP => a.
+    apply/List.ForallP => a.
       by apply/(iffP idP) => /Types.unifiesP.
   Qed.
   
@@ -1083,7 +846,7 @@ Module Constraint.
   Proof.
       by rewrite /= -Types.unify_fun andbA.
   Qed.
-  
+
 End Constraint.
 
 (*
