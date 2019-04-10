@@ -1030,13 +1030,20 @@ Module Unify.
       #|inb constraints2| = m ->
       n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
   
-  Lemma test' constraints : exists i, #|inb  constraints| = i.
+  Lemma test' constraints : exists i, #|inb constraints| = i.
   Proof.
+    elim: constraints.
+    - exists 0.
+        by apply nil0.
+    - move=> t s IHs.
+      case: IHs.
+      move=> i H1.
+      exists 0.
   Admitted.
   
   Require Import Wf_nat.
   
-  Lemma lt_well_founded'' : well_founded lt'.
+  Lemma lt_well_founded' : well_founded lt'.
   Proof.
     move=> constraints1.
     case: (test' constraints1) => n Hcardinal1.
@@ -1075,24 +1082,21 @@ Module Unify.
   Defined.
   
   (* ****************************** *)
+  (* boolean の論理式 *)
   (* ****************************** *)
-  (* ****************************** *)
-  (* ****************************** *)
-  (* ****************************** *)
-
-
+  
   Definition lt constraints1 constraints2 :=
     let: n := #|inb constraints1| in
     let: m := #|inb constraints2| in
     (n <= m) && ((m <= n) ==> (Size constraints1 < Size constraints2)).
   
-  Lemma test constraints : exists i, #|inb  constraints| = i.
+  Lemma test constraints : exists i, #|inb constraints| = i.
   Proof.
   Admitted.
   
   Require Import Wf_nat.
   
-  Lemma lt_well_founded' : well_founded lt.
+  Lemma lt_well_founded : well_founded lt.
   Proof.
     move=> constraints1.
     case: (test constraints1) => n Hcardinal1.
@@ -1107,36 +1111,24 @@ Module Unify.
     case: Hlt => /andP [Hcard Hsize].
     case Heq : (m == n).
     - move/eqP in Heq.
-      subst.
       apply: IHconstraints1.
       move/implyP in Hsize.
       apply/ltP.
       apply: Hsize.
-      + admit.
-      + done.
+      + by rewrite Hcardinal1 Hcardinal2 Heq. (* subst ではいけない。 *)
+      + by rewrite -Heq Hcardinal2.         (* subst ではいけない。 *)
     - apply: (IHn m).
-      + subst.
-        apply/ltP.
+      + apply/ltP.
         rewrite ltn_neqAle.
         apply/andP.
           split.
         * move/eqP in Heq.
             by apply/eqP.
-        * done.
+        * by subst.
       + done.
-  Admitted.                                 (* Defined. *)
-
-
-
-  (* ****************************** *)
-  (* ****************************** *)
-  (* ****************************** *)
-  (* ****************************** *)
-  (* ****************************** *)
-  (* ****************************** *)
-
-
-  (*
+  Defined.
+  
+(*
   (* 素朴な条件式ではだめなようだ。 *)
 
   Definition lt constraints1 constraints2 :=
