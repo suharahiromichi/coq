@@ -1030,15 +1030,9 @@ Module Unify.
       #|inb constraints2| = m ->
       n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
   
-  Lemma test' constraints : exists i, #|inb constraints| = i.
+  (* finite_cardinal _ _ (FV_Finite constraints1) をまとめたもの。 *)
+  Lemma ex_inb' constraints : exists i, #|inb constraints| = i.
   Proof.
-    elim: constraints.
-    - exists 0.
-        by apply nil0.
-    - move=> t s IHs.
-      case: IHs.
-      move=> i H1.
-      exists 0.
   Admitted.
   
   Require Import Wf_nat.
@@ -1046,37 +1040,30 @@ Module Unify.
   Lemma lt_well_founded' : well_founded lt'.
   Proof.
     move=> constraints1.
-    case: (test' constraints1) => n Hcardinal1.
+    case: (ex_inb' constraints1) => n Hcardinal1.
     move: constraints1 Hcardinal1.
+    
     induction n as [n IHn] using lt_wf_ind.
     induction constraints1 as [constraints1 IHconstraints1]
                                 using (induction_ltof1 _ Size).
-    constructor.
-    move=> constraints2 Hlt.
-    case: (test' constraints2) => m Hcardinal2.
     
-    Check Hlt _ _ Hcardinal2 Hcardinal1.
-
-    case: (Hlt _ _ Hcardinal2 Hcardinal1) => [Hcard Hsize].
-
-    case Heq : (m == n).
-    - move/eqP in Heq.
-      apply: IHconstraints1.
-      apply/ltP.
-      apply: Hsize. (* size : n <= n -> size constraints2 < size constraints1 *)
-      + rewrite Heq.
-        rewrite Heq in Hcard.
-        done.
-      + rewrite -Heq.
-        done.
+    move=> Hcardinal1.
+    apply: Acc_intro => constraints2 Hlt.
+    case: (ex_inb' constraints2) => m Hcardinal2.
+    case: (Hlt m n Hcardinal2 Hcardinal1) => [Hcard Hsize].
+    
+    case Heq : (m == n); move/eqP in Heq.
+    - apply: IHconstraints1.
+      apply/ltP.                      (* coq_nat を ssrnat にする。 *)
+      apply: Hsize.
+      + by rewrite Heq in Hcard *.          (* gool も書き換える。 *)
+      + by rewrite -Heq.
     - apply: (IHn m).
-      + subst.
-        apply/ltP.
+      + apply/ltP.                    (* coq_nat を ssrnat にする。 *)
         rewrite ltn_neqAle.
         apply/andP.
-          split.
-        * move/eqP in Heq.
-            by apply/eqP.
+        split.
+        * by apply/eqP.
         * done.
       + done.
   Defined.
@@ -1090,7 +1077,7 @@ Module Unify.
     let: m := #|inb constraints2| in
     (n <= m) && ((m <= n) ==> (Size constraints1 < Size constraints2)).
   
-  Lemma test constraints : exists i, #|inb constraints| = i.
+  Lemma ex_inb constraints : exists i, #|inb constraints| = i.
   Proof.
   Admitted.
   
@@ -1099,32 +1086,32 @@ Module Unify.
   Lemma lt_well_founded : well_founded lt.
   Proof.
     move=> constraints1.
-    case: (test constraints1) => n Hcardinal1.
+    case: (ex_inb constraints1) => n Hcardinal1.
     move: constraints1 Hcardinal1.
+    
     induction n as [n IHn] using lt_wf_ind.
     induction constraints1 as [constraints1 IHconstraints1]
                                 using (induction_ltof1 _ Size).
-    constructor.
-    move=> constraints2 Hlt.
-    case: (test constraints2) => m Hcardinal2.
     
-    case: Hlt => /andP [Hcard Hsize].
-    case Heq : (m == n).
-    - move/eqP in Heq.
-      apply: IHconstraints1.
+    move=> Hcardinal1.
+    apply: Acc_intro => constraints2 Hlt.
+    case: (ex_inb constraints2) => m Hcardinal2.
+    case: Hlt => /andP [Hcard Hsize].       (* ここが異なる。 *)
+    
+    case Heq : (m == n); move/eqP in Heq.
+    - apply: IHconstraints1.
       move/implyP in Hsize.
-      apply/ltP.
+      apply/ltP.                      (* coq_nat を ssrnat にする。 *)
       apply: Hsize.
       + by rewrite Hcardinal1 Hcardinal2 Heq. (* subst ではいけない。 *)
       + by rewrite -Heq Hcardinal2.         (* subst ではいけない。 *)
     - apply: (IHn m).
-      + apply/ltP.
+      + apply/ltP.                    (* coq_nat を ssrnat にする。 *)
         rewrite ltn_neqAle.
         apply/andP.
-          split.
-        * move/eqP in Heq.
-            by apply/eqP.
-        * by subst.
+        split.
+        * by apply/eqP.
+        * by rewrite Hcardinal1 Hcardinal2 in Hcard. (* subst でもよい。 *)
       + done.
   Defined.
   
@@ -1135,47 +1122,8 @@ Module Unify.
     (#|inb constraints1| <= #|inb constraints2|)
     ||
     (Size constraints1 < Size constraints2).
-  
-  Require Import Wf_nat.
-  
-  Lemma test constraints : exists i, #|inb  constraints| = i.
-  Proof.
-  Admitted.
-  
-  Lemma lt_well_founded : well_founded lt.
-  Proof.
-    move=> constraints1.
-    case: (test constraints1) => n Hcardinal1.
-    move: constraints1 Hcardinal1.
-    induction n as [n IHn] using lt_wf_ind.
-    induction constraints1 as [constraints1 IHconstraints1]
-                                using (induction_ltof1 _ Size).
-    constructor.
-    move=> constraints2 Hlt.
-    case: (test constraints2) => m Hcardinal2.
-
-    case: Hlt => /orP [H | H].
-    - case Heq : (m == n).
-      + move/eqP in Heq.
-        subst.
-        apply: IHconstraints1.
-        * admit.
-        * done.
-      + apply: (IHn m).
-        * subst.
-          apply/ltP.
-          rewrite ltn_neqAle.
-          apply/andP.
-          split.
-          ** move/eqP in Heq.
-               by apply/eqP.
-          ** done.
-        * done.
-    - apply:  IHconstraints1.
-      + by apply/ltP.
-      + admit.
-        
-  Admitted.                                 (* Defined *)
+    
+    lt_well_founded の証明ができない。
 *)
 
 End Unify.
