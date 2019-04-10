@@ -1024,12 +1024,170 @@ Module Unify.
   
   (* 変数の数についての順序関係は、次のようにかける。 *)
   
+  Definition lt' constraints1 constraints2 :=
+    forall n m,
+      #|inb constraints1| = n ->
+      #|inb constraints2| = m ->
+      n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
+  
+  Lemma test' constraints : exists i, #|inb  constraints| = i.
+  Proof.
+  Admitted.
+  
+  Require Import Wf_nat.
+  
+  Lemma lt_well_founded'' : well_founded lt'.
+  Proof.
+    move=> constraints1.
+    case: (test' constraints1) => n Hcardinal1.
+    move: constraints1 Hcardinal1.
+    induction n as [n IHn] using lt_wf_ind.
+    induction constraints1 as [constraints1 IHconstraints1]
+                                using (induction_ltof1 _ Size).
+    constructor.
+    move=> constraints2 Hlt.
+    case: (test' constraints2) => m Hcardinal2.
+    
+    Check Hlt _ _ Hcardinal2 Hcardinal1.
+
+    case: (Hlt _ _ Hcardinal2 Hcardinal1) => [Hcard Hsize].
+
+    case Heq : (m == n).
+    - move/eqP in Heq.
+      apply: IHconstraints1.
+      apply/ltP.
+      apply: Hsize. (* size : n <= n -> size constraints2 < size constraints1 *)
+      + rewrite Heq.
+        rewrite Heq in Hcard.
+        done.
+      + rewrite -Heq.
+        done.
+    - apply: (IHn m).
+      + subst.
+        apply/ltP.
+        rewrite ltn_neqAle.
+        apply/andP.
+          split.
+        * move/eqP in Heq.
+            by apply/eqP.
+        * done.
+      + done.
+  Defined.
+  
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+
+
+  Definition lt constraints1 constraints2 :=
+    let: n := #|inb constraints1| in
+    let: m := #|inb constraints2| in
+    (n <= m) && ((m <= n) ==> (Size constraints1 < Size constraints2)).
+  
+  Lemma test constraints : exists i, #|inb  constraints| = i.
+  Proof.
+  Admitted.
+  
+  Require Import Wf_nat.
+  
+  Lemma lt_well_founded' : well_founded lt.
+  Proof.
+    move=> constraints1.
+    case: (test constraints1) => n Hcardinal1.
+    move: constraints1 Hcardinal1.
+    induction n as [n IHn] using lt_wf_ind.
+    induction constraints1 as [constraints1 IHconstraints1]
+                                using (induction_ltof1 _ Size).
+    constructor.
+    move=> constraints2 Hlt.
+    case: (test constraints2) => m Hcardinal2.
+    
+    case: Hlt => /andP [Hcard Hsize].
+    case Heq : (m == n).
+    - move/eqP in Heq.
+      subst.
+      apply: IHconstraints1.
+      move/implyP in Hsize.
+      apply/ltP.
+      apply: Hsize.
+      + admit.
+      + done.
+    - apply: (IHn m).
+      + subst.
+        apply/ltP.
+        rewrite ltn_neqAle.
+        apply/andP.
+          split.
+        * move/eqP in Heq.
+            by apply/eqP.
+        * done.
+      + done.
+  Admitted.                                 (* Defined. *)
+
+
+
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+  (* ****************************** *)
+
+
+  (*
+  (* 素朴な条件式ではだめなようだ。 *)
+
   Definition lt constraints1 constraints2 :=
     (#|inb constraints1| <= #|inb constraints2|)
     ||
     (Size constraints1 < Size constraints2).
   
+  Require Import Wf_nat.
+  
+  Lemma test constraints : exists i, #|inb  constraints| = i.
+  Proof.
+  Admitted.
+  
+  Lemma lt_well_founded : well_founded lt.
+  Proof.
+    move=> constraints1.
+    case: (test constraints1) => n Hcardinal1.
+    move: constraints1 Hcardinal1.
+    induction n as [n IHn] using lt_wf_ind.
+    induction constraints1 as [constraints1 IHconstraints1]
+                                using (induction_ltof1 _ Size).
+    constructor.
+    move=> constraints2 Hlt.
+    case: (test constraints2) => m Hcardinal2.
+
+    case: Hlt => /orP [H | H].
+    - case Heq : (m == n).
+      + move/eqP in Heq.
+        subst.
+        apply: IHconstraints1.
+        * admit.
+        * done.
+      + apply: (IHn m).
+        * subst.
+          apply/ltP.
+          rewrite ltn_neqAle.
+          apply/andP.
+          split.
+          ** move/eqP in Heq.
+               by apply/eqP.
+          ** done.
+        * done.
+    - apply:  IHconstraints1.
+      + by apply/ltP.
+      + admit.
+        
+  Admitted.                                 (* Defined *)
+*)
+
 End Unify.
+
 
 (* END *)
 
