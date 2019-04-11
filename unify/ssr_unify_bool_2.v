@@ -1139,7 +1139,7 @@ Module Unify.
     lt_well_founded の証明ができない。
 *)
 
-  Lemma test3 {T : finType} (p : pred T) :
+  Lemma test3 {T : finType} (p : pred T) :  (* XXXXXXXX *)
     (#|[pred x | p x]| == 0) = [forall x, ~~ p x].
   Proof.
     Search _ ([exists _ , _]).
@@ -1151,7 +1151,7 @@ Module Unify.
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
   Proof.
     rewrite unlock /predD /pred0b //=.
-    rewrite test3.
+    rewrite test3.                          (* XXXXXXXX *)
     apply: eq_forallb => x.
     rewrite implybE negb_and.
       (* ~~ (x \notin s) = ~~ ~~ (x \in s) なので ~~ ~~ b = b で消す。 *)
@@ -1171,6 +1171,41 @@ Module Unify.
     - rewrite /mem /in_mem /inb /=.
         by apply/orP/or_intror.
   Qed.
+  
+  Lemma lt_subst' constraints x t :         (* lt' を使用している。 *)
+      x \notin t ->
+      lt' (Constraint.subst x t constraints) ((Var x, t) :: constraints).
+  Proof.
+    move=> Hnot.
+    rewrite /lt' => n m Hc1 Hc2.
+    Check subset_leq_card (subst_subset x t constraints).
+    move: subset_leq_card (subst_subset x t constraints) => Hc H.
+    Check Hc _ (inb (Constraint.subst x t constraints))
+          (inb ((Var x, t) :: constraints)) H.
+    Check (Hc _ (inb (Constraint.subst x t constraints))
+              (inb ((Var x, t) :: constraints)) H).
+    have H' := (Hc _ (inb (Constraint.subst x t constraints))
+              (inb ((Var x, t) :: constraints)) H).
+    split.
+    - rewrite -Hc1 -Hc2.
+      apply: subset_leq_card.
+        by apply: subst_subset.
+    - rewrite Hc1 Hc2 in H'.
+      (* c1 \subset c2 から、矛盾を導く。 *)
+      move=> Hmn.
+
+      (* オリジナルでは、strict included を証明て、incl_st_card_lt を
+         つかって、n < m をもとめているが、 ここでは、 subset を証明たので、
+         subset_leq_card をつかって n <= m になってしまった。
+         
+         proper を証明しないといけなかった。
+       *)
+      Check subset_leq_card
+        : forall (T : finType) (A B : pred T), A \subset B -> #|A| <= #|B|.
+      Check proper_card
+        : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
+      admit.
+  Admitted.
 
 End Unify.
 
