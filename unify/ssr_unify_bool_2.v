@@ -4,6 +4,7 @@
 (* 互換性の部分とその reflect をのぞいて、Prop を削除した。 *)
 
 From mathcomp Require Import all_ssreflect.
+Require Import Wf_nat.
 
 Module List.
   (* List.v にある定義 *)
@@ -1016,6 +1017,19 @@ Module Unify.
   Proof.
   Admitted.
   
+  Lemma ex_inb_term term : exists i, #|Types.inb term| = i.
+  Proof.
+    rewrite /mem /in_mem /inb /=.
+    elim: term.
+    - exists 0.
+        by apply: Base0.
+    - exists 1.
+        by apply: Var1.
+    - move=> x [n Hx] y [m Hy].
+      exists (n + m).
+      simpl.
+  Admitted.
+  
   Lemma nil0 : #|inb [::]| = 0.
   Proof.
 (*  rewrite /inb /Types.inb /=. *)
@@ -1030,12 +1044,9 @@ Module Unify.
       #|inb constraints2| = m ->
       n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
   
-  (* finite_cardinal _ _ (FV_Finite constraints1) をまとめたもの。 *)
   Lemma ex_inb' constraints : exists i, #|inb constraints| = i.
   Proof.
   Admitted.
-  
-  Require Import Wf_nat.
   
   Lemma lt_well_founded' : well_founded lt'.
   Proof.
@@ -1079,9 +1090,11 @@ Module Unify.
   
   Lemma ex_inb constraints : exists i, #|inb constraints| = i.
   Proof.
+    elim: constraints => [| a c IHc].
+    - exists 0.
+        by rewrite card0.
+    - case: IHc => x IHc.
   Admitted.
-  
-  Require Import Wf_nat.
   
   Lemma lt_well_founded : well_founded lt.
   Proof.
@@ -1125,6 +1138,39 @@ Module Unify.
     
     lt_well_founded の証明ができない。
 *)
+
+  Lemma test3 {T : finType} (p : pred T) :
+    (#|[pred x | p x]| == 0) = [forall x, ~~ p x].
+  Proof.
+    Search _ ([exists _ , _]).
+    apply/idP/idP => H.
+    apply/negP.
+  Admitted.
+  
+  Lemma subsetE (s1 s2 : Constraint_Terms_EqType) :
+    s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
+  Proof.
+    rewrite unlock /predD /pred0b //=.
+    rewrite test3.
+    apply: eq_forallb => x.
+    rewrite implybE negb_and.
+      (* ~~ (x \notin s) = ~~ ~~ (x \in s) なので ~~ ~~ b = b で消す。 *)
+      by  rewrite Bool.negb_involutive orbC.
+  Qed.
+  
+  Lemma subst_subset x t constraints :
+    inb (Constraint.subst x t constraints) \subset (inb ((Var x, t) :: constraints)).
+  Proof.
+    rewrite subsetE.
+    apply/forallP => x'.
+    apply/implyP => HIn.
+    move/Constraint.subst_In_or in HIn.
+    case: HIn => /orP [HIn | HIn].
+    - rewrite /mem /in_mem /inb /=.
+        by apply/orP/or_introl/orP/or_intror.
+    - rewrite /mem /in_mem /inb /=.
+        by apply/orP/or_intror.
+  Qed.
 
 End Unify.
 
