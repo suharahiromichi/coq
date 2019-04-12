@@ -1038,20 +1038,20 @@ Module Unify.
   
   (* 変数の数についての順序関係は、次のようにかける。 *)
   
-  Definition lt' constraints1 constraints2 :=
+  Lemma ex_inb constraints : exists i, #|inb constraints| = i.
+  Proof.
+  Admitted.
+  
+  Definition lt constraints1 constraints2 :=
     forall n m,
       #|inb constraints1| = n ->
       #|inb constraints2| = m ->
       n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
   
-  Lemma ex_inb' constraints : exists i, #|inb constraints| = i.
-  Proof.
-  Admitted.
-  
-  Lemma lt_well_founded' : well_founded lt'.
+  Lemma lt_well_founded : well_founded lt.
   Proof.
     move=> constraints1.
-    case: (ex_inb' constraints1) => n Hcardinal1.
+    case: (ex_inb constraints1) => n Hcardinal1.
     move: constraints1 Hcardinal1.
     
     induction n as [n IHn] using lt_wf_ind.
@@ -1060,7 +1060,7 @@ Module Unify.
     
     move=> Hcardinal1.
     apply: Acc_intro => constraints2 Hlt.
-    case: (ex_inb' constraints2) => m Hcardinal2.
+    case: (ex_inb constraints2) => m Hcardinal2.
     case: (Hlt m n Hcardinal2 Hcardinal1) => [Hcard Hsize].
     
     case Heq : (m == n); move/eqP in Heq.
@@ -1083,20 +1083,12 @@ Module Unify.
   (* boolean の論理式 *)
   (* ****************************** *)
   
-  Definition lt constraints1 constraints2 :=
+  Definition lt' constraints1 constraints2 :=
     let: n := #|inb constraints1| in
     let: m := #|inb constraints2| in
     (n <= m) && ((m <= n) ==> (Size constraints1 < Size constraints2)).
   
-  Lemma ex_inb constraints : exists i, #|inb constraints| = i.
-  Proof.
-    elim: constraints => [| a c IHc].
-    - exists 0.
-        by rewrite card0.
-    - case: IHc => x IHc.
-  Admitted.
-  
-  Lemma lt_well_founded : well_founded lt.
+  Lemma lt_well_founded' : well_founded lt'.
   Proof.
     move=> constraints1.
     case: (ex_inb constraints1) => n Hcardinal1.
@@ -1128,17 +1120,6 @@ Module Unify.
       + done.
   Defined.
   
-(*
-  (* 素朴な条件式ではだめなようだ。 *)
-
-  Definition lt constraints1 constraints2 :=
-    (#|inb constraints1| <= #|inb constraints2|)
-    ||
-    (Size constraints1 < Size constraints2).
-    
-    lt_well_founded の証明ができない。
-*)
-
   Lemma test3 {T : finType} (p : pred T) :  (* XXXXXXXX *)
     (#|[pred x | p x]| == 0) = [forall x, ~~ p x].
   Proof.
@@ -1159,7 +1140,7 @@ Module Unify.
   Qed.
   
   Lemma subst_subset x t constraints :
-    inb (Constraint.subst x t constraints) \subset (inb ((Var x, t) :: constraints)).
+    inb (Constraint.subst x t constraints) \subset inb ((Var x, t) :: constraints).
   Proof.
     rewrite subsetE.
     apply/forallP => x'.
@@ -1171,42 +1152,53 @@ Module Unify.
     - rewrite /mem /in_mem /inb /=.
         by apply/orP/or_intror.
   Qed.
-  
-  Lemma lt_subst' constraints x t :         (* lt' を使用している。 *)
-      x \notin t ->
-      lt' (Constraint.subst x t constraints) ((Var x, t) :: constraints).
+
+  Lemma subst_not_subset x t constraints :
+    ~~ (inb ((Var x, t) :: constraints) \subset inb (Constraint.subst x t constraints)).
   Proof.
-    move=> Hnot.
-    rewrite /lt' => n m Hc1 Hc2.
-    Check subset_leq_card (subst_subset x t constraints).
-    move: subset_leq_card (subst_subset x t constraints) => Hc H.
-    Check Hc _ (inb (Constraint.subst x t constraints))
-          (inb ((Var x, t) :: constraints)) H.
-    Check (Hc _ (inb (Constraint.subst x t constraints))
-              (inb ((Var x, t) :: constraints)) H).
+  Admitted.
+  
+  Lemma subst_proper x t constraints :
+    inb (Constraint.subst x t constraints) \proper (inb ((Var x, t) :: constraints)).
+  Proof.
+    Check properEneq.          (* これは {set T} 用なので使えない。 *)
+    Check properE.
+      by rewrite properE subst_subset subst_not_subset.
+  Qed.    
+  
+  Lemma lt_subst_1 constraints x t :
+      x \notin t ->
+      lt (Constraint.subst x t constraints) ((Var x, t) :: constraints).
+  Proof.
+    move=> HnotIn.
+    rewrite /lt => m n Hcardinal1 Hcardinal2.
+    
+    Check subset_leq_card
+        : forall (T : finType) (A B : pred T), A \subset B -> #|A| <= #|B|.
+    Check proper_card
+      : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
+      
+    move: proper_card (subst_proper x t constraints) => Hc H.
     have H' := (Hc _ (inb (Constraint.subst x t constraints))
               (inb ((Var x, t) :: constraints)) H).
     split.
-    - rewrite -Hc1 -Hc2.
+    - rewrite -Hcardinal1 -Hcardinal2.
       apply: subset_leq_card.
         by apply: subst_subset.
-    - rewrite Hc1 Hc2 in H'.
-      (* c1 \subset c2 から、矛盾を導く。 *)
-      move=> Hmn.
-
-      (* オリジナルでは、strict included を証明て、incl_st_card_lt を
-         つかって、n < m をもとめているが、 ここでは、 subset を証明たので、
-         subset_leq_card をつかって n <= m になってしまった。
-         
-         proper を証明しないといけなかった。
-       *)
-      Check subset_leq_card
-        : forall (T : finType) (A B : pred T), A \subset B -> #|A| <= #|B|.
-      Check proper_card
-        : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
-      admit.
+    - rewrite Hcardinal1 Hcardinal2 in H'.
+      move=> Hnm.
+      rewrite leqNgt in Hnm.
+      exfalso.
+      move/negP in Hnm.
+      done.
+  Qed.
+  
+  Lemma lt_subst_2 constraints x t :
+      x \notin t ->
+      lt (Constraint.subst x t constraints) ((t, Var x) :: constraints).
+  Proof.
   Admitted.
-
+  
 End Unify.
 
 
