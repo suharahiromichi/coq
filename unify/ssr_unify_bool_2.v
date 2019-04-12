@@ -1173,8 +1173,10 @@ Module Unify.
   Qed.
   
   Lemma subst_proper x t constraints :
+    x \notin t ->
     inb (Constraint.subst x t constraints) \proper (inb ((Var x, t) :: constraints)).
   Proof.
+    move=> HnotIn.
     Check properEneq.          (* これは {set T} 用なので使えない。 *)
     Check properE.
       by rewrite properE subst_subset subst_not_subset.
@@ -1197,20 +1199,40 @@ Module Unify.
     Check proper_card
       : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
     
-    - move: (proper_card (subst_proper x t constraints)) => Hmn.
+    - move: (proper_card (subst_proper x t constraints HnotIn)) => Hmn.
       rewrite Hcardinal1 Hcardinal2 in Hmn.
         by rewrite leqNgt => /negP Hn_mn.
   Qed.
+  
+  Lemma term_comm x t constraints :
+    inb ((Var x, t) :: constraints) = inb ((t, Var x) :: constraints).
+  Proof.
+(*
+(* =1 なら証明できる。 *)
+    move=> x' /=.
+    by rewrite [(x' \in Var x) || (x' \in t)]Bool.orb_comm.
+  Qed.
+ *)
+  Admitted.
   
   Lemma lt_subst_2 constraints x t :
       x \notin t ->
       lt (Constraint.subst x t constraints) ((t, Var x) :: constraints).
   Proof.
-    (* 以下、すべてについて、(t. Var x) を証明する。 *)
-    Check subst_subset.
-    Check subst_not_subset.
-    Check subst_proper.
-  Admitted.
+    move=> HnotIn.
+    rewrite /lt => m n Hcardinal1 Hcardinal2.
+    
+    rewrite -term_comm in Hcardinal2.       (* !!! *)
+    
+    split.
+    - rewrite -Hcardinal1 -Hcardinal2.
+      apply: subset_leq_card.
+        by apply: subst_subset.
+
+    - move: (proper_card (subst_proper x t constraints HnotIn)) => Hmn.
+      rewrite Hcardinal1 Hcardinal2 in Hmn.
+        by rewrite leqNgt => /negP Hn_mn.
+  Qed.
   
 End Unify.
 
