@@ -1154,9 +1154,23 @@ Module Unify.
   Qed.
 
   Lemma subst_not_subset x t constraints :
+    x \notin t ->
     ~~ (inb ((Var x, t) :: constraints) \subset inb (Constraint.subst x t constraints)).
   Proof.
-  Admitted.
+    move=> HnotIn.
+    rewrite subsetE negb_forall.
+    apply/existsP.
+    exists x.
+    rewrite negb_imply.
+    apply/andP.
+    split.
+    - rewrite /mem /in_mem /inb /=.
+      apply/orP/or_introl/orP/or_introl.
+      by rewrite /mem /in_mem /inb /=.
+    - apply/negP=> Hc.
+      move/Constraint.subst_In_occur in Hc.
+      by move/negP in HnotIn.
+  Qed.
   
   Lemma subst_proper x t constraints :
     inb (Constraint.subst x t constraints) \proper (inb ((Var x, t) :: constraints)).
@@ -1173,30 +1187,29 @@ Module Unify.
     move=> HnotIn.
     rewrite /lt => m n Hcardinal1 Hcardinal2.
     
-    Check subset_leq_card
-        : forall (T : finType) (A B : pred T), A \subset B -> #|A| <= #|B|.
-    Check proper_card
-      : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
-      
-    move: proper_card (subst_proper x t constraints) => Hc H.
-    have H' := (Hc _ (inb (Constraint.subst x t constraints))
-              (inb ((Var x, t) :: constraints)) H).
     split.
     - rewrite -Hcardinal1 -Hcardinal2.
       apply: subset_leq_card.
         by apply: subst_subset.
-    - rewrite Hcardinal1 Hcardinal2 in H'.
-      move=> Hnm.
-      rewrite leqNgt in Hnm.
-      exfalso.
-      move/negP in Hnm.
-      done.
+
+    Check subset_leq_card
+      : forall (T : finType) (A B : pred T), A \subset B -> #|A| <= #|B|.
+    Check proper_card
+      : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
+    
+    - move: (proper_card (subst_proper x t constraints)) => Hmn.
+      rewrite Hcardinal1 Hcardinal2 in Hmn.
+        by rewrite leqNgt => /negP Hn_mn.
   Qed.
   
   Lemma lt_subst_2 constraints x t :
       x \notin t ->
       lt (Constraint.subst x t constraints) ((t, Var x) :: constraints).
   Proof.
+    (* 以下、すべてについて、(t. Var x) を証明する。 *)
+    Check subst_subset.
+    Check subst_not_subset.
+    Check subst_proper.
   Admitted.
   
 End Unify.
