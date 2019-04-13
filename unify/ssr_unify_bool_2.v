@@ -733,7 +733,7 @@ Module Constraint.
   
   Definition Size constraints :=
     foldr
-      plus
+      addn                    (* plus だと coq_nat になってしまう。 *)
       0
       (map
          (fun c : Term => Types.Size c.1 + Types.Size c.2)
@@ -1028,7 +1028,7 @@ Module Unify.
     - move=> x [n Hx] y [m Hy].
       exists (n + m).
       simpl.
-  Admitted.
+  Admitted.                                 (* XXXXX *)
   
   Lemma nil0 : #|inb [::]| = 0.
   Proof.
@@ -1126,7 +1126,7 @@ Module Unify.
     Search _ ([exists _ , _]).
     apply/idP/idP => H.
     apply/negP.
-  Admitted.
+  Admitted.                                 (* XXXXX *)
   
   Lemma subsetE (s1 s2 : Constraint_Terms_EqType) :
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
@@ -1210,10 +1210,12 @@ Module Unify.
 (*
 (* =1 なら証明できる。 *)
     move=> x' /=.
+
+
     by rewrite [(x' \in Var x) || (x' \in t)]Bool.orb_comm.
   Qed.
  *)
-  Admitted.
+  Admitted.                                 (* XXXX *)
   
   Lemma lt_subst_2 constraints x t :
       x \notin t ->
@@ -1234,13 +1236,47 @@ Module Unify.
         by rewrite leqNgt => /negP Hn_mn.
   Qed.
   
+  Lemma lt_fun t11 t12 t21 t22 constraints :
+    lt ((t11, t21) :: (t12, t22) :: constraints) ((t11 @ t12, t21 @ t22) :: constraints).
+  Proof.
+    move=> m n Hcardinal1 Hcardinal2.
+    split.
+    - rewrite -Hcardinal1 -Hcardinal2.
+      apply: subset_leq_card.
+
+      rewrite subsetE.
+      apply/forallP => x'.
+      apply/implyP.
+      rewrite /mem /in_mem /inb /=.
+      move/orP => [/orP [H11 | H21] | /orP [/orP [H12 | H22] | Hc]].
+      + apply/orP/or_introl/orP/or_introl.
+        rewrite Types.In_Fun.
+          by apply/orP; left.
+      + apply/orP/or_introl/orP/or_intror.
+        rewrite Types.In_Fun.
+          by apply/orP; left.
+      + apply/orP/or_introl/orP/or_introl.
+        rewrite Types.In_Fun.
+          by apply/orP; right.
+      + apply/orP/or_introl/orP/or_intror.
+        rewrite Types.In_Fun.
+          by apply/orP; right.
+      + apply/orP/or_intror.
+        done.
+
+    - move=> Hnm.
+      rewrite /Size /= addnA ltn_add2r addnS addSnnS ltnS addnS.
+      rewrite addnACA.      (* m + (n + (p + q)) = m + p + (n + q) *)
+      by rewrite leqnSn.
+  Qed.
+
 End Unify.
 
 
 (* END *)
 
 (*
-← は、定義での参照をしめす。
+ ← は、定義での参照をしめす。
 .                 Types                   Constraint
 .
 subst             [x := t0]t      ←      [x := t0]constraints
