@@ -364,7 +364,7 @@ Module Types.
       rewrite /subst.
       case H : (x == y).
       + done.
-      + move: H => /(introT eqP).
+      + move: H => /(introT eqP).  (* /eqP だと <> になってしまう。 *)
         rewrite eqbF_neg => /neq_notIn_var.
           by move/negP.
     - move=> t21 IHt21 t22 IHt22.
@@ -1006,6 +1006,7 @@ Compute #|Constraint.inb sc|.
 Notation subst := (Constraint.subst).
 Notation inb := (Constraint.inb).
 Notation Size := (Constraint.Size).
+Notation unifiesb := (Constraint.unifiesb).
 
 Module Unify.
 
@@ -1286,7 +1287,7 @@ Module Unify.
       apply/implyP.
       rewrite /mem /in_mem /inb /= => HIn.
         by apply/orP/or_intror.
-
+        
     - move=> Hnm.
       rewrite /Size /=.
       rewrite -{1}[foldr _ _ _]add0n ltn_add2r.
@@ -1333,7 +1334,7 @@ Module Unify.
       apply: lt_subst_1.
       apply: Types.neq_notIn_var.
       (* H1 : (x == y) = false を x != y にする。 *)
-      move: H1 => /(introT eqP).
+      move: H1 => /(introT eqP).   (* /eqP だと <> になってしまう。 *)
         by rewrite eqbF_neg.
         
     - move=> constraints1 t constraints2 t1 t2 x Ht1 t3 t4 Ht H H1 H2.
@@ -1349,10 +1350,66 @@ Module Unify.
         by move/negP.
         
     - move=> constraints1 t constraints2 t1 t2 t3 t4 Ht1 t5 t6 Ht2 Ht H1.
-      by apply: lt_fun.
+        by apply: lt_fun.
       
     - by apply lt_well_founded.
+  Qed.                                      (* Defined ? *)
+  (* unify_tcc is defined
+     unify_terminate is defined
+     unify_ind is defined
+     unify_rec is defined
+     unify_rect is defined
+     R_unify_correct is defined
+     R_unify_complete is defined
+   *)
+  
+  Theorem unify_sound constraints subs :
+    unify constraints = Some subs -> unifiesb subs constraints.
+  Proof.
+    move: subs.
+    functional induction (unify constraints) => subs Hunify.
+    
+    (* unifiesb subs [::] *)
+    - done.
+
+    (* unifiesb subs ((Base, Base) :: constraints') *)
+    - rewrite -Constraint.unify_same.
+        by apply: IHo.
+
+    (* unifiesb subs ((Var x, Var y) :: constraints') *)
+    - admit.
+
+    (* unifiesb subs ((Var x, Var y) :: constraints') *)
+    - destruct (unify (subst x (Types.Var y) constraints')).
+      + case H : (x == y).
+        * by rewrite H in y0.
+        * inversion Hunify.
+          apply: Constraint.unify_sound_subst.
+          ** apply: Types.neq_notIn_var.
+             move: H => /(introT eqP).   (* /eqP だと <> になってしまう。 *)
+               by rewrite eqbF_neg.
+          ** by apply: IHo.
+      + done.                               (* Hunify が矛盾 *)
+        
+    (* unifiesb subs ((Var x, t2) :: constraints') *)
+    - admit.
+
+    (* unifiesb subs ((Var x, t2) :: constraints') *)
+    - admit.
+
+    (* unifiesb subs ((t1, Var y) :: constraints') *)
+    - admit.
+
+    (* unifiesb subs ((t1, Var y) :: constraints') *)
+    - admit.
+
+    (* unifiesb subs ((t11 @ t12, t21 @ t22) :: constraints') *)
+    - rewrite -Constraint.unify_fun.
+        by apply IHo.
+
+    - done.
   Qed.
+
 
 End Unify.
 
