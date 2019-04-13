@@ -364,12 +364,13 @@ Module Types.
       rewrite /subst.
       case H : (x == y).
       + done.
-      + admit.
-    (* move: H => /eqP /neq_notIn_var /negP. *)
+      + move: H => /(introT eqP).
+        rewrite eqbF_neg => /neq_notIn_var.
+          by move/negP.
     - move=> t21 IHt21 t22 IHt22.
       move/orP.
         by case.
-  Admitted.
+  Qed.
   
   Theorem subst_notIn x t1 t2 : x \notin t2 -> subst x t1 t2 = t2.
   Proof.
@@ -1331,17 +1332,22 @@ Module Unify.
     - move=> constraints1 t constraints2 t1 t2 x Ht1 y Ht2 Ht H H1.
       apply: lt_subst_1.
       apply: Types.neq_notIn_var.
-      admit.                                (* XXXX *)
-      
+      (* H1 : (x == y) = false を x != y にする。 *)
+      move: H1 => /(introT eqP).
+        by rewrite eqbF_neg.
+        
     - move=> constraints1 t constraints2 t1 t2 x Ht1 t3 t4 Ht H H1 H2.
       apply: lt_subst_1.
-      move/eqP in H2.
-      admit.                                (* XXXX *)
-
+      (* H2 : (x \in t3 @ t4) = false を x \notin t3 @ t4 にする。 *)
+      move: H2 => /negP.
+        by move/negP.
+        
     - move=> constraints1 t constraints2 t1 t2 t3 t4 Ht1 x Ht2 Ht H H1.
       apply: lt_subst_2.
-      admit.                                (* XXXX *)
-      
+      (* H1 : (x \in t3 @ t4) = false を x \notin t3 @ t4 にする。 *)
+      move: H1 => /negP.
+        by move/negP.
+        
     - move=> constraints1 t constraints2 t1 t2 t3 t4 Ht1 t5 t6 Ht2 Ht H1.
       by apply: lt_fun.
       
