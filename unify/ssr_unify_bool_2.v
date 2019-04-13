@@ -1217,6 +1217,7 @@ Module Unify.
  *)
   Admitted.                                 (* XXXX *)
   
+  
   Lemma lt_subst_2 constraints x t :
       x \notin t ->
       lt (Constraint.subst x t constraints) ((t, Var x) :: constraints).
