@@ -1354,14 +1354,6 @@ Module Unify.
       
     - by apply lt_well_founded.
   Qed.                                      (* Defined ? *)
-  (* unify_tcc is defined
-     unify_terminate is defined
-     unify_ind is defined
-     unify_rec is defined
-     unify_rect is defined
-     R_unify_correct is defined
-     R_unify_complete is defined
-   *)
   
   Theorem unify_sound constraints subs :
     unify constraints = Some subs -> unifiesb subs constraints.
@@ -1377,8 +1369,11 @@ Module Unify.
         by apply: IHo.
 
     (* unifiesb subs ((Var x, Var y) :: constraints') *)
-    - admit.
-
+    - move/eqP in e0.
+      rewrite -e0.
+      rewrite -Constraint.unify_same.
+        by apply: IHo.
+      
     (* unifiesb subs ((Var x, Var y) :: constraints') *)
     - destruct (unify (subst x (Types.Var y) constraints')).
       + case H : (x == y).
@@ -1391,18 +1386,32 @@ Module Unify.
           ** by apply: IHo.
       + done.                               (* Hunify が矛盾 *)
         
+    - done.
+      
     (* unifiesb subs ((Var x, t2) :: constraints') *)
-    - admit.
-
-    (* unifiesb subs ((Var x, t2) :: constraints') *)
-    - admit.
-
-    (* unifiesb subs ((t1, Var y) :: constraints') *)
-    - admit.
-
-    (* unifiesb subs ((t1, Var y) :: constraints') *)
-    - admit.
-
+    - destruct (unify (subst x t2 constraints')).
+      + case H : (x \in t2).
+        * by rewrite H in y0.
+        * inversion Hunify.
+          apply: Constraint.unify_sound_subst.
+          ** apply/negP.
+             by move: H => /negP.
+          ** by apply: IHo.
+      + done.
+        
+    - done.      
+      
+    - rewrite Constraint.unify_comm.
+      destruct (unify (subst y t1 constraints')).
+      + case H : (y \in t1).
+        * by rewrite H in y1.
+        * inversion Hunify.
+          apply: Constraint.unify_sound_subst.
+          ** apply/negP.
+             by move: H => /negP.
+          ** by apply: IHo.
+      + done.
+        
     (* unifiesb subs ((t11 @ t12, t21 @ t22) :: constraints') *)
     - rewrite -Constraint.unify_fun.
         by apply IHo.
