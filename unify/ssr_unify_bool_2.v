@@ -4,7 +4,7 @@
 (* 互換性の部分とその reflect をのぞいて、Prop を削除した。 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import Wf_nat.
+Require Import Recdef Wf_nat.
 
 Module List.
   (* List.v にある定義 *)
@@ -350,10 +350,10 @@ Module Types.
         by inversion H.
   Qed.
   
-  Lemma neq_notIn_var (x y : Literal) : x <> y -> x \notin Var y.
+  Lemma neq_notIn_var (x y : Literal) : x != y -> x \notin Var y.
   Proof.
     rewrite /mem /in_mem /inb /=.
-    by move/eqP.
+    done.
   Qed.
   
   Theorem subst_In_occur x t1 t2 : x \in subst x t1 t2 -> x \in t1.
@@ -364,12 +364,12 @@ Module Types.
       rewrite /subst.
       case H : (x == y).
       + done.
-      + move: H => /eqP /neq_notIn_var /negP.
-        done.
+      + admit.
+    (* move: H => /eqP /neq_notIn_var /negP. *)
     - move=> t21 IHt21 t22 IHt22.
       move/orP.
         by case.
-  Qed.
+  Admitted.
   
   Theorem subst_notIn x t1 t2 : x \notin t2 -> subst x t1 t2 = t2.
   Proof.
@@ -1002,6 +1002,7 @@ Compute Literal.x \in sc''.                 (* ちょっと制限がある？ *)
 Check #|Constraint.inb sc|.
 Compute #|Constraint.inb sc|.
 
+Notation subst := (Constraint.subst).
 Notation inb := (Constraint.inb).
 Notation Size := (Constraint.Size).
 
@@ -1293,6 +1294,60 @@ Module Unify.
         by apply/orP/or_introl/Types.size_gt0.
   Qed.
   
+  Function unify constraints {wf lt constraints} :=
+    match constraints with
+    | nil => Some nil
+    | (Types.Base, Types.Base) :: constraints' =>
+      unify constraints'
+    | (Types.Var x, Types.Var y) :: constraints'  =>
+      if x == y then unify constraints'
+      else
+        option_map (cons (x, Types.Var y)) (unify (subst x (Types.Var y) constraints'))
+    | (Types.Var x, t2) :: constraints' =>
+      if x \in t2 then None
+      else
+        option_map (cons (x, t2)) (unify (subst x t2 constraints'))
+    | (t1, Types.Var y) :: constraints' =>
+      if y \in t1 then None
+      else
+        option_map (cons (y, t1)) (unify (subst y t1 constraints'))
+    | (Types.Fun t11 t12, Types.Fun t21 t22) :: constraints' =>
+      unify ((t11, t21) :: (t12, t22) :: constraints')
+    | _ => None
+    end.
+  Proof.
+    - move=> constraints1 t constraints2 t1 t2 Ht1 Ht2 Ht H.
+        by apply: lt_cons.
+      
+    - move=> constraints1 t constraints2 t1 t2 Ht1 Ht2 Ht H H1 H2.
+        by apply: lt_subst_2.
+        
+    - move=> constraints1 t constraints2 t1 t2 x Ht1 Ht2 Ht H H1.
+        by apply: lt_subst_1.
+        
+    - move=> constraints1 t constraints2 t1 t2 x Ht1 y Ht2 Ht H H1.
+        by apply lt_cons.
+        
+    - move=> constraints1 t constraints2 t1 t2 x Ht1 y Ht2 Ht H H1.
+      apply: lt_subst_1.
+      apply: Types.neq_notIn_var.
+      admit.                                (* XXXX *)
+      
+    - move=> constraints1 t constraints2 t1 t2 x Ht1 t3 t4 Ht H H1 H2.
+      apply: lt_subst_1.
+      move/eqP in H2.
+      admit.                                (* XXXX *)
+
+    - move=> constraints1 t constraints2 t1 t2 t3 t4 Ht1 x Ht2 Ht H H1.
+      apply: lt_subst_2.
+      admit.                                (* XXXX *)
+      
+    - move=> constraints1 t constraints2 t1 t2 t3 t4 Ht1 t5 t6 Ht2 Ht H1.
+      by apply: lt_fun.
+      
+    - by apply lt_well_founded.
+  Qed.
+
 End Unify.
 
 
