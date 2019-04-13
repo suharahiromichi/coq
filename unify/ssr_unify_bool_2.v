@@ -998,10 +998,19 @@ Compute Constraint.inb sc'' Literal.x.
 
 Compute Literal.x \in sc''.                 (* ちょっと制限がある？ *)
 
+(* コアーション *)
+(* Constraint_Terms_EqType への型推論のほうが便利なので、使わない。 *)
+Coercion card_constraints (constraints : Constraint_Terms_EqType) :
+  Literal -> bool := Constraint.inb constraints.
+
 (* 変数の個数 cardinal *)
 (* Literal_finType を利用している。 *)
 Check #|Constraint.inb sc|.
 Compute #|Constraint.inb sc|.
+
+(* コアーションの例 *)
+Check #|sc''|.
+Compute #|sc''|.
 
 Notation subst := (Constraint.subst).
 Notation inb := (Constraint.inb).
@@ -1018,19 +1027,6 @@ Module Unify.
 
   Lemma Funs (x y : Term) : #|x @ y| <= #|x| + #|y|.
   Proof.
-  Admitted.
-  
-  Lemma ex_inb_term term : exists i, #|Types.inb term| = i.
-  Proof.
-    rewrite /mem /in_mem /inb /=.
-    elim: term.
-    - exists 0.
-        by apply: Base0.
-    - exists 1.
-        by apply: Var1.
-    - move=> x [n Hx] y [m Hy].
-      exists (n + m).
-      simpl.
   Admitted.                                 (* XXXXX *)
   
   Lemma nil0 : #|inb [::]| = 0.
@@ -1039,11 +1035,11 @@ Module Unify.
     by rewrite card0.
   Qed.
   
-  (* 変数の数についての順序関係は、次のようにかける。 *)
-  
   Lemma ex_inb constraints : exists i, #|inb constraints| = i.
   Proof.
-  Admitted.
+  Admitted.                                 (* XXXX *)
+
+  (* 変数の数についての順序関係は、次のようにかける。 *)
   
   Definition lt constraints1 constraints2 :=
     forall n m,
