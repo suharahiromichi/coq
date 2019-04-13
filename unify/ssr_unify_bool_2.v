@@ -1268,9 +1268,31 @@ Module Unify.
     - move=> Hnm.
       rewrite /Size /= addnA ltn_add2r addnS addSnnS ltnS addnS.
       rewrite addnACA.      (* m + (n + (p + q)) = m + p + (n + q) *)
-      by rewrite leqnSn.
+        by rewrite leqnSn.
   Qed.
+  
+  Lemma lt_cons c constraints : lt constraints (c :: constraints).
+  Proof.
+    move: c => [t1 t2].
+    move=> m n Hcardinal1 Hcardinal2.
+    split.
+    - rewrite -Hcardinal1 -Hcardinal2.
+      apply: subset_leq_card.
+      
+      rewrite subsetE.
+      apply/forallP => x'.
+      apply/implyP.
+      rewrite /mem /in_mem /inb /= => HIn.
+        by apply/orP/or_intror.
 
+    - move=> Hnm.
+      rewrite /Size /=.
+      rewrite -{1}[foldr _ _ _]add0n ltn_add2r.
+      rewrite addn_gt0.
+        (* (0 < Types.Size t1) || (0 < Types.Size t2) *)
+        by apply/orP/or_introl/Types.size_gt0.
+  Qed.
+  
 End Unify.
 
 
