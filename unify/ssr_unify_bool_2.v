@@ -1539,10 +1539,13 @@ let rec unify = function
       move: H.
       move=> /andP [[/eqP Hunifies'] H].
       exfalso.
-      apply: (Types.unifies_occur x t2).
-      + by destruct t2; inversion y; intros Hcontra; inversion Hcontra.
+      
+      apply Types.unifies_occur with (x:=x) (t:=t2) (subs:=subs).
+      (* 最後の分岐で、eタクティクを使わなくてすむように、 *)
+      (* 結論の forall に値subsを与えるために、with を使う。 *)
+      + by case: t2 y e0 Hunifies Hunifies'.
       + done.
-      + by apply: Hunifies'.
+      + done.
         
     - apply unify_complete_subst.
       + case Hxy : (x \in t2).
@@ -1555,10 +1558,12 @@ let rec unify = function
       move: H.
       move=> /andP [[/eqP Hunifies'] H].
       exfalso.
-      apply: (Types.unifies_occur y t1).
-      + by destruct t1; inversion y; intros Hcontra; inversion Hcontra.
+      apply Types.unifies_occur with (x:=y) (t:=t1) (subs:=subs).
+      (* 最後の分岐で、eタクティクを使わなくてすむように、 *)
+      (* rewriteで書き換えられるよう、結論の forall に値subsを与えるために、with を使う。 *)
+      + by case: t1 y0 e0 Hunifies Hunifies'.
       + done.
-      + by erewrite Hunifies'.              (* XXXXX *)
+      + done.
         
     - rewrite Constraint.unify_comm in Hunifies.
       apply unify_complete_subst.
@@ -1569,16 +1574,38 @@ let rec unify = function
       + done.
         
     - rewrite -Constraint.unify_fun in Hunifies.
-      by apply: IHo.
+        by apply: IHo.
+        
+    - case: constraints y Hunifies => //= [[t1 t2]] constraints y H.
+      case: t1 y H; case: t2 => //= t1 t2 y H.
       
-    - destruct constraints as [| [t1 t2] ]; [ | destruct t1; destruct t2 ]; inversion y;
-        inversion Hunifies as [H].
-      + move: H => /andP [[/eqP Hcontra] Hunifies'].
+      (* 
+  t2_1, t2_2 : Term
+  constraints : seq (Term * Term)
+  y : True
+  subs : seq (Literal * Term)
+  Hunifies : unifiesb subs ((Base, t2_1 @ t2_2) :: constraints)
+  H : (Types.subst_list subs Base == Types.subst_list subs (t2_1 @ t2_2)) &&
+      unifiesb subs constraints = true
+  ============================
+  exists subs' : seq (Literal * Term), None = Some subs' /\ moregen subs' subs
+       *)
+      * move: H => /andP [[/eqP Hcontra] Hunifies'].
         rewrite Types.subst_list_Fun in Hcontra.
         rewrite Types.subst_list_Base in Hcontra.
         done.
-        
-      + move: H => /andP [[/eqP Hcontra] Hunifies'].
+        (* 
+  t1_1, t1_2 : Term
+  constraints : seq (Term * Term)
+  y : True
+  subs : seq (Literal * Term)
+  Hunifies : unifiesb subs ((t1_1 @ t1_2, Base) :: constraints)
+  H : (Types.subst_list subs (t1_1 @ t1_2) == Types.subst_list subs Base) &&
+      unifiesb subs constraints = true
+  ============================
+  exists subs' : seq (Literal * Term), None = Some subs' /\ moregen subs' subs
+       *)
+      * move: H => /andP [[/eqP Hcontra] Hunifies'].
         rewrite Types.subst_list_Fun in Hcontra.
         rewrite Types.subst_list_Base in Hcontra.
         done.
