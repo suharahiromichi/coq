@@ -1351,6 +1351,54 @@ Module Unify.
     - by apply lt_well_founded.
   Qed.                                      (* Defined ? *)
   
+  Extraction unify.
+(** val unify :
+    (Types.coq_Term, Types.coq_Term) prod list -> (Literal.coq_Literal, Types.coq_Term)
+    prod list option **)
+  
+  (*
+let rec unify = function
+| Nil -> Some Nil
+| Cons (p, constraints') ->
+  let Pair (t1, t2) = p in
+  (match t1 with
+   | Types.Base ->
+     (match t2 with
+      | Types.Base -> unify constraints'
+      | Types.Var y ->
+        (match in_mem y (mem types_Term_predType (Obj.magic Types.Base)) with
+         | True -> None
+         | False ->
+           option_map (fun x -> Cons ((Pair (y, Types.Base)), x))
+             (Obj.magic unify (Constraint.subst y Types.Base constraints')))
+      | Types.Fun (_, _) -> None)
+   | Types.Var x ->
+     (match t2 with
+      | Types.Var y ->
+        (match eq_op literal_eqType (Obj.magic x) (Obj.magic y) with
+         | True -> unify constraints'
+         | False ->
+           option_map (fun x0 -> Cons ((Pair (x, (Types.Var y))), x0))
+             (Obj.magic unify (Constraint.subst x (Types.Var y) constraints')))
+      | x0 ->
+        (match in_mem x (mem types_Term_predType (Obj.magic x0)) with
+         | True -> None
+         | False ->
+           option_map (fun x1 -> Cons ((Pair (x, x0)), x1))
+             (Obj.magic unify (Constraint.subst x x0 constraints'))))
+   | Types.Fun (t11, t12) ->
+     (match t2 with
+      | Types.Base -> None
+      | Types.Var y ->
+        (match in_mem y (mem types_Term_predType (Obj.magic (Types.Fun (t11, t12)))) with
+         | True -> None
+         | False ->
+           option_map (fun x -> Cons ((Pair (y, (Types.Fun (t11, t12)))), x))
+             (Obj.magic unify (Constraint.subst y (Types.Fun (t11, t12)) constraints')))
+      | Types.Fun (t21, t22) ->
+        unify (Cons ((Pair (t11, t21)), (Cons ((Pair (t12, t22)), constraints'))))))
+  *)
+    
   Theorem unify_sound constraints subs :
     unify constraints = Some subs -> unifiesb subs constraints.
   Proof.
@@ -1382,7 +1430,7 @@ Module Unify.
           ** by apply: IHo.
       + done.                               (* Hunify が矛盾 *)
         
-    - done.
+    - done.                                 (* Hunify が矛盾 *)
       
     (* unifiesb subs ((Var x, t2) :: constraints') *)
     - destruct (unify (subst x t2 constraints')).
@@ -1393,9 +1441,9 @@ Module Unify.
           ** apply/negP.
              by move: H => /negP.
           ** by apply: IHo.
-      + done.
+      + done.                               (* Hunify が矛盾 *)
         
-    - done.      
+    - done.                                 (* Hunify が矛盾 *)
       
     - rewrite Constraint.unify_comm.
       destruct (unify (subst y t1 constraints')).
@@ -1406,15 +1454,55 @@ Module Unify.
           ** apply/negP.
              by move: H => /negP.
           ** by apply: IHo.
-      + done.
+      + done.                               (* Hunify が矛盾 *)
         
     (* unifiesb subs ((t11 @ t12, t21 @ t22) :: constraints') *)
     - rewrite -Constraint.unify_fun.
         by apply IHo.
 
-    - done.
+    - done.                                 (* Hunify が矛盾 *)
   Qed.
 
+  Notation moregen subs subs' :=
+    (exists subs0, forall t,
+          Types.subst_list subs' t = Types.subst_list subs0 (Types.subst_list subs t)).
+
+  Lemma moregen_extend subs x t subs' :
+    Types.unifies subs (Var x) t ->
+    moregen subs' subs ->
+    moregen ((x, t) :: subs') subs.
+  Proof.
+    move=> Hunifies Hmoregen.
+    case: Hmoregen => [subs0 Hmoregen'].
+    exists subs0.
+    move=> t1 /=.
+      by rewrite -Hmoregen' -Types.subst_preserves_unifies.
+  Qed.
+  
+  Lemma unify_complete_subst x t subs constraints :
+    x \in t ->
+          (forall subs,
+              unifiesb subs (subst x t constraints) ->
+              exists subs',
+                unify (subst x t constraints) = Some subs' /\ moregen subs' subs) ->
+          unifiesb subs ((Types.Var x, t) :: constraints) ->
+          exists subs',
+            option_map (cons (x, t)) (unify (subst x t constraints)) = Some subs' /\
+            moregen subs' subs.
+  Proof.
+    move=> Hoccur IH Hunifies.
+    inversion Hunifies as [H].
+    move: H => /andP [[/eqP Hu] Hunifies'].
+    move/(Constraint.subst_preserves_unifiesb _ _ _ _ Hu) in Hunifies'.
+    case: (IH _ Hunifies') => [subs' [Heq Hmoregen]].
+    rewrite Heq.
+    exists ((x, t) :: subs').
+    split.
+    - done.
+    - by apply: moregen_extend.
+  Qed.
+
+  
 
 End Unify.
 
