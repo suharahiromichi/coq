@@ -40,7 +40,7 @@ Module List.
         inversion HP; subst.
         split.
         * by apply/H.
-        * by apply IHs.
+        * by apply: IHs.
   Qed.
   
   Lemma ExistsP {A : Type} (P : A -> Prop) (p : A -> bool) :
@@ -1324,7 +1324,7 @@ Module Unify.
         by apply: lt_subst_1.
         
     - move=> constraints1 t constraints2 t1 t2 x Ht1 y Ht2 Ht H H1.
-        by apply lt_cons.
+        by apply: lt_cons.
         
     - move=> constraints1 t constraints2 t1 t2 x Ht1 y Ht2 Ht H H1.
       apply: lt_subst_1.
@@ -1348,7 +1348,7 @@ Module Unify.
     - move=> constraints1 t constraints2 t1 t2 t3 t4 Ht1 t5 t6 Ht2 Ht H1.
         by apply: lt_fun.
       
-    - by apply lt_well_founded.
+    - by apply: lt_well_founded.
   Defined.
   
   Extraction unify.
@@ -1458,7 +1458,7 @@ let rec unify = function
         
     (* unifiesb subs ((t11 @ t12, t21 @ t22) :: constraints') *)
     - rewrite -Constraint.unify_fun.
-        by apply IHo.
+        by apply: IHo.
 
     - done.                                 (* Hunify が矛盾 *)
   Qed.
@@ -1547,7 +1547,7 @@ let rec unify = function
       + done.
       + done.
         
-    - apply unify_complete_subst.
+    - apply: unify_complete_subst.
       + case Hxy : (x \in t2).
         * by rewrite Hxy in y0.
         * done.
@@ -1566,7 +1566,7 @@ let rec unify = function
       + done.
         
     - rewrite Constraint.unify_comm in Hunifies.
-      apply unify_complete_subst.
+      apply: unify_complete_subst.
       + case Hxy : (y \in t1).
         * by rewrite Hxy in y1.
         * done.
