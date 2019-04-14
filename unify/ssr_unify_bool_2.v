@@ -1480,7 +1480,7 @@ let rec unify = function
   Qed.
   
   Lemma unify_complete_subst x t subs constraints :
-    x \in t ->
+    x \notin t ->                           (* これなくても、成立する。 *)
           (forall subs,
               unifiesb subs (subst x t constraints) ->
               exists subs',
@@ -1502,8 +1502,88 @@ let rec unify = function
     - by apply: moregen_extend.
   Qed.
 
-  
+  Theorem unify_complete constraints subs :
+    unifiesb subs constraints ->
+    exists subs', unify constraints = Some subs' /\ moregen subs' subs.
+  Proof.
+    move: subs.
+    functional induction (unify constraints) => subs Hunifies.
+    
+    - exists nil.
+      split.
+      + done.
+      + exists subs.
+        done.
+        
+    - rewrite -Constraint.unify_same in Hunifies.
+        by apply: IHo.
 
+    - move/eqP in e0.
+      subst.
+      rewrite -Constraint.unify_same in Hunifies.
+        by apply: IHo.
+
+    - apply: unify_complete_subst.
+      + inversion Hunifies as [H].
+        move: H.
+        move=> /andP [[/eqP Hunifies'] H].
+        case Hxy : (x == y).
+        * by rewrite Hxy in y0.
+        * move: Hxy => /(introT eqP).  (* /eqP だと <> になってしまう。 *)
+          rewrite -Types.eq_in_varE.
+            by rewrite eqbF_neg.
+      + done.
+      + done.
+        
+    - inversion Hunifies as [H].
+      move: H.
+      move=> /andP [[/eqP Hunifies'] H].
+      exfalso.
+      apply: (Types.unifies_occur x t2).
+      + by destruct t2; inversion y; intros Hcontra; inversion Hcontra.
+      + done.
+      + by apply: Hunifies'.
+        
+    - apply unify_complete_subst.
+      + case Hxy : (x \in t2).
+        * by rewrite Hxy in y0.
+        * done.
+      + done.
+      + done.
+        
+    - inversion Hunifies as [H].
+      move: H.
+      move=> /andP [[/eqP Hunifies'] H].
+      exfalso.
+      apply: (Types.unifies_occur y t1).
+      + by destruct t1; inversion y; intros Hcontra; inversion Hcontra.
+      + done.
+      + by erewrite Hunifies'.              (* XXXXX *)
+        
+    - rewrite Constraint.unify_comm in Hunifies.
+      apply unify_complete_subst.
+      + case Hxy : (y \in t1).
+        * by rewrite Hxy in y1.
+        * done.
+      + done.
+      + done.
+        
+    - rewrite -Constraint.unify_fun in Hunifies.
+      by apply: IHo.
+      
+    - destruct constraints as [| [t1 t2] ]; [ | destruct t1; destruct t2 ]; inversion y;
+        inversion Hunifies as [H].
+      + move: H => /andP [[/eqP Hcontra] Hunifies'].
+        rewrite Types.subst_list_Fun in Hcontra.
+        rewrite Types.subst_list_Base in Hcontra.
+        done.
+        
+      + move: H => /andP [[/eqP Hcontra] Hunifies'].
+        rewrite Types.subst_list_Fun in Hcontra.
+        rewrite Types.subst_list_Base in Hcontra.
+        done.
+  Qed.
+  
 End Unify.
 
 
