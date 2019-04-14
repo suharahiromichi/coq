@@ -1578,33 +1578,10 @@ let rec unify = function
         
     - case: constraints y Hunifies => //= [[t1 t2]] constraints y H.
       case: t1 y H; case: t2 => //= t1 t2 y H.
-      
-      (* 
-  t2_1, t2_2 : Term
-  constraints : seq (Term * Term)
-  y : True
-  subs : seq (Literal * Term)
-  Hunifies : unifiesb subs ((Base, t2_1 @ t2_2) :: constraints)
-  H : (Types.subst_list subs Base == Types.subst_list subs (t2_1 @ t2_2)) &&
-      unifiesb subs constraints = true
-  ============================
-  exists subs' : seq (Literal * Term), None = Some subs' /\ moregen subs' subs
-       *)
       * move: H => /andP [[/eqP Hcontra] Hunifies'].
         rewrite Types.subst_list_Fun in Hcontra.
         rewrite Types.subst_list_Base in Hcontra.
         done.
-        (* 
-  t1_1, t1_2 : Term
-  constraints : seq (Term * Term)
-  y : True
-  subs : seq (Literal * Term)
-  Hunifies : unifiesb subs ((t1_1 @ t1_2, Base) :: constraints)
-  H : (Types.subst_list subs (t1_1 @ t1_2) == Types.subst_list subs Base) &&
-      unifiesb subs constraints = true
-  ============================
-  exists subs' : seq (Literal * Term), None = Some subs' /\ moregen subs' subs
-       *)
       * move: H => /andP [[/eqP Hcontra] Hunifies'].
         rewrite Types.subst_list_Fun in Hcontra.
         rewrite Types.subst_list_Base in Hcontra.
@@ -1614,20 +1591,19 @@ let rec unify = function
   Definition unify' constraints :
     { subs | unifiesb subs constraints } + { ~exists subs, unifiesb subs constraints }.
   Proof.
-    remember (unify constraints) as o.
-    destruct o as [ subs |].
+    case Heqo : (unify constraints) => [subs |].
+    
     - left.
       exists subs.
-      apply unify_sound. auto.
-
+        by rewrite unify_sound.
+        
     - right.
-      intros Hcontra.
-      destruct Hcontra as [subs Hcontra].
-      apply unify_complete in Hcontra.
-      destruct Hcontra as [subs' [Hcontra]].
-      congruence.
+      case=> [subst].
+      move/unify_complete.
+      case=> [subs' [Hcontra]].
+        by rewrite Hcontra in Heqo.
   Defined.
-
+  
   Extraction unify'.
 (** val unify' :
     Constraint.coq_Term list -> (Literal.coq_Literal, Types.coq_Term) prod list sumor **)
