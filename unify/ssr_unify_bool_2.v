@@ -1349,7 +1349,7 @@ Module Unify.
         by apply: lt_fun.
       
     - by apply lt_well_founded.
-  Qed.                                      (* Defined ? *)
+  Defined.
   
   Extraction unify.
 (** val unify :
@@ -1584,6 +1584,35 @@ let rec unify = function
         done.
   Qed.
   
+  Definition unify' constraints :
+    { subs | unifiesb subs constraints } + { ~exists subs, unifiesb subs constraints }.
+  Proof.
+    remember (unify constraints) as o.
+    destruct o as [ subs |].
+    - left.
+      exists subs.
+      apply unify_sound. auto.
+
+    - right.
+      intros Hcontra.
+      destruct Hcontra as [subs Hcontra].
+      apply unify_complete in Hcontra.
+      destruct Hcontra as [subs' [Hcontra]].
+      congruence.
+  Defined.
+
+  Extraction unify'.
+(** val unify' :
+    Constraint.coq_Term list -> (Literal.coq_Literal, Types.coq_Term) prod list sumor **)
+
+  (* 
+let unify' constraints =
+  let o = unify (Obj.magic constraints) in
+  (match o with
+   | Some subs -> Inleft subs
+   | None -> Inright)
+   *)
+  
 End Unify.
 
 
@@ -1602,4 +1631,3 @@ unfies            subs t1 t2      ←      subs     constraints (要素間の=)
 (subst_list subs t1 = subst_list subs t2)          [::(t1,t2);.....;(tn1, tn2)]
 
 *)
-
