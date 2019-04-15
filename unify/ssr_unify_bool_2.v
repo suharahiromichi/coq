@@ -834,7 +834,6 @@ Module Constraint.
   
   Theorem subst_In_occur x t0 constraints :
     x \in (subst x t0 constraints) -> x \in t0.
-  (* In x (subst x t0 constraints) -> Types.In x t0 *)
   Proof.
     elim: constraints => [| [t1 t2] constraints IHconstraints' HIn] //=.
     move/InP in HIn.
@@ -849,10 +848,9 @@ Module Constraint.
   Qed.    
   
   Theorem subst_In_or x y t0 (constraints : Constraint_Terms_EqType) :
-    x \in (subst y t0 constraints) -> (x \in t0) || (x \in constraints).
+    x \in subst y t0 constraints -> x \in t0 \/ x \in constraints.
   Proof.
     move=> HIn.
-    apply/orP.                    (* 最初にゴールをPropにしておく。 *)
     elim: constraints HIn => [| [t1 t2] constraints IHconstraints' HIn] //=.
     move/InP in HIn.
     inversion HIn as [[t1' t2'] constraints'' Hor | [t1' t2'] constraints'' HIn'].
@@ -1145,7 +1143,7 @@ Module Unify.
     apply/forallP => x'.
     apply/implyP => HIn.
     move/Constraint.subst_In_or in HIn.
-    case: HIn => /orP [HIn | HIn].
+    case: HIn => [HIn | HIn].
     - rewrite /mem /in_mem /inb /=.
         by apply/orP/or_introl/orP/or_intror.
     - rewrite /mem /in_mem /inb /=.
@@ -1209,8 +1207,6 @@ Module Unify.
 (*
 (* =1 なら証明できる。 *)
     move=> x' /=.
-
-
     by rewrite [(x' \in Var x) || (x' \in t)]Bool.orb_comm.
   Qed.
  *)
@@ -1480,17 +1476,16 @@ let rec unify = function
   Qed.
   
   Lemma unify_complete_subst x t subs constraints :
-    x \notin t ->                           (* これなくても、成立する。 *)
-          (forall subs,
-              unifiesb subs (subst x t constraints) ->
-              exists subs',
-                unify (subst x t constraints) = Some subs' /\ moregen subs' subs) ->
-          unifiesb subs ((Types.Var x, t) :: constraints) ->
-          exists subs',
-            option_map (cons (x, t)) (unify (subst x t constraints)) = Some subs' /\
-            moregen subs' subs.
+    (* x \notin t ->  これなくても、成立する。 *)
+    (forall subs,
+        unifiesb subs (subst x t constraints) ->
+        exists subs', unify (subst x t constraints) = Some subs' /\ moregen subs' subs) ->
+    unifiesb subs ((Types.Var x, t) :: constraints) ->
+    (exists subs',
+        option_map (cons (x, t)) (unify (subst x t constraints)) =
+        Some subs' /\ moregen subs' subs).
   Proof.
-    move=> Hoccur IH Hunifies.
+    move=> IH Hunifies.
     inversion Hunifies as [H].
     move: H => /andP [[/eqP Hu] Hunifies'].
     move/(Constraint.subst_preserves_unifiesb _ _ _ _ Hu) in Hunifies'.
@@ -1501,7 +1496,7 @@ let rec unify = function
     - done.
     - by apply: moregen_extend.
   Qed.
-
+  
   Theorem unify_complete constraints subs :
     unifiesb subs constraints ->
     exists subs', unify constraints = Some subs' /\ moregen subs' subs.
@@ -1530,9 +1525,7 @@ let rec unify = function
         case Hxy : (x == y).
         * by rewrite Hxy in y0.
         * move: Hxy => /(introT eqP).  (* /eqP だと <> になってしまう。 *)
-          rewrite -Types.eq_in_varE.
             by rewrite eqbF_neg.
-      + done.
       + done.
         
     - inversion Hunifies as [H].
@@ -1552,7 +1545,6 @@ let rec unify = function
         * by rewrite Hxy in y0.
         * done.
       + done.
-      + done.
         
     - inversion Hunifies as [H].
       move: H.
@@ -1570,7 +1562,6 @@ let rec unify = function
       + case Hxy : (y \in t1).
         * by rewrite Hxy in y1.
         * done.
-      + done.
       + done.
         
     - rewrite -Constraint.unify_fun in Hunifies.
