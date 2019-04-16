@@ -1102,58 +1102,28 @@ Module Unify.
       + done.
   Defined.
   
-  Lemma test3 {T : finType} (p : pred T) :  (* XXXXXXXX *)
-    (#|[pred x | p x]| == 0) = [forall x, ~~ p x].
-  Proof.
-    Search _ ([exists _ , _]).
-    apply/idP/idP => H.
-    apply/negP.
-  Admitted.                                 (* XXXXX *)
-  
-
   Lemma subsetE (s1 s2 : Constraint_Terms_EqType) :
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
   Proof.
-    rewrite subset_disjoint.
-    apply/idP/idP => H.
-    - apply/forallP => x.
-      apply/implyP.
-      move=> H1.
-      rewrite /disjoint.
-      Search _ (pred0b _).
-      move/pred0P in H.
-      move: (H x) => /= H'.
-      rewrite inE in H'.
-      move/eqP in H'.
-      rewrite eqbF_neg in H'.
-      Search _ (~~ (_ && _)).
-      rewrite negb_and in H'.
-      simpl in H'.
-      move/orP in H'.
-      case: H'.
-      + move=> Hc.
-        move/negP in Hc.
-        done.
-      + move=> //= Hc.
-        rewrite Bool.negb_involutive in Hc.
-        by apply: Hc.
-    - move/forallP in H.
-      rewrite /disjoint.
-      Search _ (pred0b _).
-      apply/pred0P.
-      move=> x.
-      move: (H x) => H'.
-      simpl.
-      apply/andP.
-      move/implyP in H'.
-      move=> Hc.
-      case: Hc => Hc1 Hc2.
-      move: (H' Hc1) => Hc1'.
-      rewrite inE in Hc2.
-      move/negP in Hc2.
-      apply Hc2.
-      simpl.
-        by apply Hc1'.
+    rewrite subset_disjoint /disjoint.
+    apply/idP/idP.
+    - move/pred0P => H.
+      apply/forallP => x.
+      apply/implyP => Hs1.
+      move: (H x) => {H} /= /eqP.
+      rewrite inE eqbF_neg negb_and /=.
+      move/orP => [Hn1 | Hnn2].
+      + by move/negP in Hn1.
+      + by rewrite Bool.negb_involutive in Hnn2.
+        
+    - move/forallP => H.
+      apply/pred0P => x.
+      move: (H x) => {H} /implyP H /=.
+      apply/andP => [[H1 Hn2]].
+      rewrite inE /= in Hn2.
+      move/negP in Hn2.
+      apply: Hn2.
+        by apply: H.
   Qed.
   
   Lemma subst_subset x t constraints :
