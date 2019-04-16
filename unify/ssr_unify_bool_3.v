@@ -1069,6 +1069,7 @@ Module Unify.
     let: m := #|inb constraints2| in
     (n <= m) && ((m <= n) ==> (Size constraints1 < Size constraints2)).
   
+
   Lemma lt_well_founded' : well_founded lt'.
   Proof.
     move=> constraints1.
@@ -1109,15 +1110,50 @@ Module Unify.
     apply/negP.
   Admitted.                                 (* XXXXX *)
   
+
   Lemma subsetE (s1 s2 : Constraint_Terms_EqType) :
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
   Proof.
-    rewrite unlock /predD /pred0b //=.
-    rewrite test3.                          (* XXXXXXXX *)
-    apply: eq_forallb => x.
-    rewrite implybE negb_and.
-      (* ~~ (x \notin s) = ~~ ~~ (x \in s) なので ~~ ~~ b = b で消す。 *)
-      by  rewrite Bool.negb_involutive orbC.
+    rewrite subset_disjoint.
+    apply/idP/idP => H.
+    - apply/forallP => x.
+      apply/implyP.
+      move=> H1.
+      rewrite /disjoint.
+      Search _ (pred0b _).
+      move/pred0P in H.
+      move: (H x) => /= H'.
+      rewrite inE in H'.
+      move/eqP in H'.
+      rewrite eqbF_neg in H'.
+      Search _ (~~ (_ && _)).
+      rewrite negb_and in H'.
+      simpl in H'.
+      move/orP in H'.
+      case: H'.
+      + move=> Hc.
+        move/negP in Hc.
+        done.
+      + move=> //= Hc.
+        rewrite Bool.negb_involutive in Hc.
+        by apply: Hc.
+    - move/forallP in H.
+      rewrite /disjoint.
+      Search _ (pred0b _).
+      apply/pred0P.
+      move=> x.
+      move: (H x) => H'.
+      simpl.
+      apply/andP.
+      move/implyP in H'.
+      move=> Hc.
+      case: Hc => Hc1 Hc2.
+      move: (H' Hc1) => Hc1'.
+      rewrite inE in Hc2.
+      move/negP in Hc2.
+      apply Hc2.
+      simpl.
+        by apply Hc1'.
   Qed.
   
   Lemma subst_subset x t constraints :
