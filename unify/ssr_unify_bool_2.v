@@ -119,7 +119,7 @@ Module Literal.
   Lemma Literal_eqP (x y : Literal) : reflect (x = y) (eqLiteral x y).
   Proof.
     rewrite /eqLiteral.
-    by apply: (iffP idP); case: x; case: y.
+      by apply: (iffP idP); case: x; case: y.
   Qed.
   
   Definition Literal_eqMixin := EqMixin Literal_eqP.
@@ -1017,26 +1017,18 @@ Notation unifiesb := (Constraint.unifiesb).
 
 Module Unify.
 
-  Lemma Base0 : #|Base| = 0.
-  Proof. by rewrite card0. Qed.
-  
-  Lemma Var1 (x : Literal) : #|Var x| = 1.
-  Proof. by rewrite card1. Qed.
-
-  Lemma Funs (x y : Term) : #|x @ y| <= #|x| + #|y|.
-  Proof.
-  Admitted.                                 (* XXXXX *)
-  
-  Lemma nil0 : #|inb [::]| = 0.
-  Proof.
-(*  rewrite /inb /Types.inb /=. *)
-    by rewrite card0.
-  Qed.
-  
   Lemma ex_inb constraints : exists i, #|inb constraints| = i.
   Proof.
-  Admitted.                                 (* XXXX *)
-
+    rewrite unlock /card /enum_mem /=.
+    elim: (Finite.enum Literal_finType).
+    - by exists 0.
+    - move=> a s /= [i IHs].
+      case H : (a \in inb constraints) => /=.
+      + exists i.+1.
+        by rewrite IHs.
+      + by exists i.
+  Qed.
+  
   (* 変数の数についての順序関係は、次のようにかける。 *)
   
   Definition lt constraints1 constraints2 :=
@@ -1045,6 +1037,7 @@ Module Unify.
       #|inb constraints2| = m ->
       n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
   
+  Search _ (#| _ |).
   Lemma lt_well_founded : well_founded lt.
   Proof.
     move=> constraints1.
@@ -1085,6 +1078,7 @@ Module Unify.
     let: m := #|inb constraints2| in
     (n <= m) && ((m <= n) ==> (Size constraints1 < Size constraints2)).
   
+
   Lemma lt_well_founded' : well_founded lt'.
   Proof.
     move=> constraints1.
@@ -1117,23 +1111,28 @@ Module Unify.
       + done.
   Defined.
   
-  Lemma test3 {T : finType} (p : pred T) :  (* XXXXXXXX *)
-    (#|[pred x | p x]| == 0) = [forall x, ~~ p x].
-  Proof.
-    Search _ ([exists _ , _]).
-    apply/idP/idP => H.
-    apply/negP.
-  Admitted.                                 (* XXXXX *)
-  
   Lemma subsetE (s1 s2 : Constraint_Terms_EqType) :
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
   Proof.
-    rewrite unlock /predD /pred0b //=.
-    rewrite test3.                          (* XXXXXXXX *)
-    apply: eq_forallb => x.
-    rewrite implybE negb_and.
-      (* ~~ (x \notin s) = ~~ ~~ (x \in s) なので ~~ ~~ b = b で消す。 *)
-      by  rewrite Bool.negb_involutive orbC.
+    rewrite subset_disjoint /disjoint.
+    apply/idP/idP.
+    - move/pred0P => H.
+      apply/forallP => x.
+      apply/implyP => Hs1.
+      move: (H x) => {H} /= /eqP.
+      rewrite inE eqbF_neg negb_and /=.
+      move/orP => [Hn1 | Hnn2].
+      + by move/negP in Hn1.
+      + by rewrite Bool.negb_involutive in Hnn2.
+        
+    - move/forallP => H.
+      apply/pred0P => x.
+      move: (H x) => {H} /implyP H /=.
+      apply/andP => [[H1 Hn2]].
+      rewrite inE /= in Hn2.
+      move/negP in Hn2.
+      apply: Hn2.
+        by apply: H.
   Qed.
   
   Lemma subst_subset x t constraints :
@@ -1203,16 +1202,16 @@ Module Unify.
   
   Lemma term_comm x t constraints :
     inb ((Var x, t) :: constraints) = inb ((t, Var x) :: constraints).
+  Admitted.
+  
+  (* =1 なら、簡単に証明できる。 *)
+  Lemma term_comm' x t constraints :
+    inb ((Var x, t) :: constraints) =1 inb ((t, Var x) :: constraints).
   Proof.
-(*
-(* =1 なら証明できる。 *)
     move=> x' /=.
-    by rewrite [(x' \in Var x) || (x' \in t)]Bool.orb_comm.
+      by rewrite [(x' \in Var x) || (x' \in t)]Bool.orb_comm.
   Qed.
- *)
-  Admitted.                                 (* XXXX *)
-  
-  
+
   Lemma lt_subst_2 constraints x t :
       x \notin t ->
       lt (Constraint.subst x t constraints) ((t, Var x) :: constraints).
