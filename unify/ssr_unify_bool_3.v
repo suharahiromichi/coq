@@ -352,8 +352,7 @@ Module Types.
   
   Lemma neq_notIn_var (x y : Literal) : x != y -> x \notin Var y.
   Proof.
-    rewrite /mem /in_mem /inb /=.
-    done.
+    by rewrite /mem /in_mem /inb /=.
   Qed.
   
   Theorem subst_In_occur x t1 t2 : x \in subst x t1 t2 -> x \in t1.
@@ -1135,7 +1134,7 @@ Module Unify.
         by apply: H.
   Qed.
   
-  Lemma subst_subset x t constraints :
+  Lemma subst_subset_1 x t constraints :
     inb (Constraint.subst x t constraints) \subset inb ((Var x, t) :: constraints).
   Proof.
     rewrite subsetE.
@@ -1149,7 +1148,7 @@ Module Unify.
         by apply/orP/or_intror.
   Qed.
 
-  Lemma subst_not_subset x t constraints :
+  Lemma subst_not_subset_1 x t constraints :
     x \notin t ->
     ~~ (inb ((Var x, t) :: constraints) \subset inb (Constraint.subst x t constraints)).
   Proof.
@@ -1162,20 +1161,20 @@ Module Unify.
     split.
     - rewrite /mem /in_mem /inb /=.
       apply/orP/or_introl/orP/or_introl.
-      by rewrite /mem /in_mem /inb /=.
+        by rewrite /mem /in_mem /inb /=.
     - apply/negP=> Hc.
       move/Constraint.subst_In_occur in Hc.
-      by move/negP in HnotIn.
+        by move/negP in HnotIn.
   Qed.
   
-  Lemma subst_proper x t constraints :
+  Lemma subst_proper_1 x t constraints :
     x \notin t ->
     inb (Constraint.subst x t constraints) \proper (inb ((Var x, t) :: constraints)).
   Proof.
     move=> HnotIn.
     Check properEneq.          (* これは {set T} 用なので使えない。 *)
     Check properE.
-      by rewrite properE subst_subset subst_not_subset.
+      by rewrite properE subst_subset_1 subst_not_subset_1.
   Qed.    
   
   Lemma lt_subst_1 constraints x t :
@@ -1188,29 +1187,59 @@ Module Unify.
     split.
     - rewrite -Hcardinal1 -Hcardinal2.
       apply: subset_leq_card.
-        by apply: subst_subset.
+        by apply: subst_subset_1.
 
     Check subset_leq_card
       : forall (T : finType) (A B : pred T), A \subset B -> #|A| <= #|B|.
     Check proper_card
       : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
     
-    - move: (proper_card (subst_proper x t constraints HnotIn)) => Hmn.
+    - move: (proper_card (subst_proper_1 x t constraints HnotIn)) => Hmn.
       rewrite Hcardinal1 Hcardinal2 in Hmn.
         by rewrite leqNgt => /negP Hn_mn.
   Qed.
   
-  Lemma term_comm x t constraints :
-    inb ((Var x, t) :: constraints) = inb ((t, Var x) :: constraints).
+  (* (t, Var x) を swap できないため、補題のすべてについてそれぞれに証明する。 *)
+  Lemma subst_subset_2 x t constraints :
+    inb (Constraint.subst x t constraints) \subset inb ((t, Var x) :: constraints).
   Proof.
-(*
-(* =1 なら証明できる。 *)
-    move=> x' /=.
-    by rewrite [(x' \in Var x) || (x' \in t)]Bool.orb_comm.
+    rewrite subsetE.
+    apply/forallP => x'.
+    apply/implyP => HIn.
+    move/Constraint.subst_In_or in HIn.
+    case: HIn => [HIn | HIn].
+    - rewrite /mem /in_mem /inb /=.
+        by apply/orP/or_introl/orP/or_introl. (* *** *)
+    - rewrite /mem /in_mem /inb /=.
+        by apply/orP/or_intror.
   Qed.
- *)
-  Admitted.                                 (* XXXX *)
   
+  Lemma subst_not_subset_2 x t constraints :
+    x \notin t ->
+    ~~ (inb ((t, Var x) :: constraints) \subset inb (Constraint.subst x t constraints)).
+  Proof.
+    move=> HnotIn.
+    rewrite subsetE negb_forall.
+    apply/existsP.
+    exists x.
+    rewrite negb_imply.
+    apply/andP.
+    split.
+    - rewrite /mem /in_mem /inb /=.
+      apply/orP/or_introl/orP/or_intror.    (* *** *)
+        by rewrite /mem /in_mem /inb /=.
+    - apply/negP=> Hc.
+      move/Constraint.subst_In_occur in Hc.
+        by move/negP in HnotIn.
+  Qed.
+  
+  Lemma subst_proper_2 x t constraints :
+    x \notin t ->
+    inb (Constraint.subst x t constraints) \proper (inb ((t, Var x) :: constraints)).
+  Proof.
+    move=> HnotIn.
+      by rewrite properE subst_subset_2 subst_not_subset_2.
+  Qed.    
   
   Lemma lt_subst_2 constraints x t :
       x \notin t ->
@@ -1218,15 +1247,12 @@ Module Unify.
   Proof.
     move=> HnotIn.
     rewrite /lt => m n Hcardinal1 Hcardinal2.
-    
-    rewrite -term_comm in Hcardinal2.       (* !!! *)
-    
     split.
     - rewrite -Hcardinal1 -Hcardinal2.
       apply: subset_leq_card.
-        by apply: subst_subset.
-
-    - move: (proper_card (subst_proper x t constraints HnotIn)) => Hmn.
+        by apply: subst_subset_2.
+        
+    - move: (proper_card (subst_proper_2 x t constraints HnotIn)) => Hmn.
       rewrite Hcardinal1 Hcardinal2 in Hmn.
         by rewrite leqNgt => /negP Hn_mn.
   Qed.
