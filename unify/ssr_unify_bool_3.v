@@ -1019,8 +1019,16 @@ Module Unify.
 
   Lemma ex_inb constraints : exists i, #|inb constraints| = i.
   Proof.
-  Admitted.                                 (* XXXX *)
-
+    rewrite unlock /card /enum_mem /=.
+    elim: (Finite.enum Literal_finType).
+    - by exists 0.
+    - move=> a s /= [i IHs].
+      case H : (a \in inb constraints) => /=.
+      + exists i.+1.
+        by rewrite IHs.
+      + by exists i.
+  Qed.
+  
   (* 変数の数についての順序関係は、次のようにかける。 *)
   
   Definition lt constraints1 constraints2 :=
@@ -1029,6 +1037,7 @@ Module Unify.
       #|inb constraints2| = m ->
       n <= m /\ (m <= n -> Size constraints1 < Size constraints2).
   
+  Search _ (#| _ |).
   Lemma lt_well_founded : well_founded lt.
   Proof.
     move=> constraints1.
