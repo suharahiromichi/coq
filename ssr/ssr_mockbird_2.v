@@ -84,6 +84,7 @@ Inductive InBird (v : string) : birdterm -> Prop :=
 | InBird_T1  : forall T1 T2, InBird v T1 -> InBird v (T1 @ T2)
 | InBird_T2  : forall T1 T2, InBird v T2 -> InBird v (T1 @ T2).
 
+(* in_bird T と書けると便利なので、引数はこの順番になっている。 *)
 Fixpoint in_bird (T : birdterm) (v : string) : bool := (* v \in T *)
   match T with
   | var u => v == u
@@ -113,6 +114,12 @@ Proof.
       * apply: InBird_T2.
           by apply: HT2.
 Qed.
+
+Lemma InbirdP v T : reflect (InBird v T) (in_bird T v).
+Proof.
+  apply: (iffP idP) => H; by apply/InBird__in_bird.
+Qed.
+
 
 (* sumbool を使った定義 *)
 
@@ -153,9 +160,8 @@ Defined.
 (* sumbool の定義と Fixpoint の定義が同じである証明。 *)
 (* sumboolP で、Inductive な定義を取り出しているだけ。 *)
 
-Goal forall v T, InBird_dec T v <-> in_bird T v.
+Lemma InBard__in_bard v T : InBird_dec T v <-> in_bird T v.
 Proof.
-  move=> v T.
   split.
   - move/sumboolP.                     (* InBird v T -> in_bird T v *)
       by move/InBird__in_bird.
