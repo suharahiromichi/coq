@@ -1,3 +1,5 @@
+(* To Mock a Mocking Bird p.74 *)
+
 From mathcomp Require Import all_ssreflect.
 
 Inductive bird : Set :=
@@ -5,7 +7,7 @@ Inductive bird : Set :=
 
 (* ******* *)
 
-Theorem thm1_ssr' :
+Theorem thm1_ssr :
   (forall (A B : bird),
     exists (C : bird), forall (x : bird), app A (app B x) = app C x) ->
   (exists (M : bird), forall (x : bird), app M x = app x x) ->
@@ -27,16 +29,16 @@ Section Birds.
   
   Variable M : bird.              (* ものまね鳥 *)
   Variable P : bird.              (* 誰かを好きな鳥、誰かを求めたい *)
-
-  (* ものまね鳥の定義 *)
-  Hypothesis mock : forall (x : bird), app M x = app x x. (*  *)
-
+  
   (* 鳥の合成の定義（合成の作り方） *)
-  Hypothesis comp : forall (A B x : bird), app A (app B x) = app (app A B) x. (*  *)
-
+  Hypothesis compose : forall (A B x : bird), app A (app B x) = app (app A B) x. (* C1 *)
+  
+  (* ものまね鳥の定義 *)
+  Hypothesis mock : forall (x : bird), app M x = app x x. (* C2 *)
+  
   Goal exists (x : bird), app P x = x.
   Proof.
-    move: comp => Hc.
+    move: compose => Hc.
     move: mock => Hm.
     move: (Hc P M) => {Hc} Hc.
     exists (app M (app P M)).
@@ -47,9 +49,9 @@ Section Birds.
 
   (* さらにまとめる。 *)
 
-  Lemma thm1_ssr : exists (x : bird), app P x = x.
+  Lemma thm1_ssr' : exists (x : bird), app P x = x.
   Proof.
-    move: (comp P M) => Hc.
+    move: (compose P M) => Hc.
     exists (app M (app P M)).               (* M (P M) *)
       by rewrite Hc mock.
   Qed.
@@ -58,13 +60,32 @@ Section Birds.
 
 End Birds.
 
+(* Section の外で同じ証明をする。 *)
+Lemma thm1_ssr''
+  : forall M P : bird,
+    (forall x : bird, app M x = app x x) ->
+    (forall A B x : bird, app A (app B x) = app (app A B) x) ->
+    exists x : bird, app P x = x.
+Proof.
+  move=> M P mock Hc.
+    exists (app M (app P M)).               (* M (P M) *)
+      by rewrite Hc mock.
+Qed.
 
-Check thm1_ssr'
+(* ****** *)
+
+Check thm1_ssr
   : (forall A B : bird, exists C : bird, forall x : bird, app A (app B x) = app C x) ->
     (exists M : bird, forall x : bird, app M x = app x x) ->
     forall P : bird, exists x : bird, app P x = x.
 
-Check thm1_ssr
+Check thm1_ssr'
+  : forall M P : bird,
+    (forall x : bird, app M x = app x x) ->
+    (forall A B x : bird, app A (app B x) = app (app A B) x) ->
+    exists x : bird, app P x = x.
+
+Check thm1_ssr''
   : forall M P : bird,
     (forall x : bird, app M x = app x x) ->
     (forall A B x : bird, app A (app B x) = app (app A B) x) ->
