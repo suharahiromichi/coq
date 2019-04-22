@@ -474,7 +474,7 @@ Module Types.
     - move=> t1 IHt1 t2 IHt2 Hu.
       rewrite subst_list_Fun /=.
       rewrite subst_list_Fun /=.
-      f_equal.                              (* 両辺を @ で分ける。 *)
+      congr (_ @ _).                 (* f_equal 両辺を @ で分ける。 *)
       + by apply: IHt1.
       + by apply: IHt2.
   Qed.
@@ -603,7 +603,7 @@ Module Types.
       apply/andP.
         by split.
     - move=> /andP [H1 H2].
-        by apply/eqP; f_equal; apply/eqP.
+        by apply/eqP; congr (_ @ _); apply/eqP.
   Qed.
   
   Lemma unify_fun subs t11 t12 t21 t22 :
