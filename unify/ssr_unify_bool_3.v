@@ -6,6 +6,11 @@
 From mathcomp Require Import all_ssreflect.
 Require Import Recdef Wf_nat.
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+(* Set Print All. *)
+
 Module List.
   (* List.v にある定義 *)
   (* 互換のために、reflectとともに残してある。 *)
@@ -531,7 +536,7 @@ Module Types.
 
      have H : n + 0 = n by [].
      rewrite -[in m + p < n]H.
-       by apply: (le_lt_add_lt 0 p m n).
+       by apply: le_lt_add_lt.              (* le_lt_add_lt 0 p m n *)
   Qed.
   
   Lemma lt_mpn__le_mn (p m n : nat) : 0 < p -> m + p < n -> m <= n.
@@ -565,7 +570,7 @@ Module Types.
         move: (leq_addr (Size (subst_list subs t2)) (Size (subst_list subs t1))).
         by rewrite leqNgt => /negP.         (* not lt にする。 *)
       + rewrite /= in H.
-        apply: (lt_mpn__le_mn (Size (subst_list subs t2))).
+        apply: (@lt_mpn__le_mn (Size (subst_list subs t2))).
         * by apply: size_gt0.
         * done.
     - rewrite subst_list_Fun in H.
@@ -575,7 +580,7 @@ Module Types.
         move: (leq_addl (Size (subst_list subs t1)) (Size (subst_list subs t2))).
         by rewrite leqNgt => /negP.         (* not lt にする。 *)
       + rewrite /= in H.
-        apply: (lt_pmn__le_mn (Size (subst_list subs t1))).
+        apply: (@lt_pmn__le_mn (Size (subst_list subs t1))).
         * by apply: size_gt0.
         * done.
     - done.
@@ -855,7 +860,7 @@ Module Constraint.
     inversion HIn as [[t1' t2'] constraints'' Hor | [t1' t2'] constraints'' HIn'].
     subst. 
     - case: Hor => //= /Types.InP HIn';
-                     case: (Types.subst_In_or _ _ _ _ HIn') => /orP [H | H].
+                     case: (Types.subst_In_or HIn') => /orP [H | H].
       + by left.
       + apply/or_intror/InP.
         left.                       (* apply/or_introl は使えない。 *)
@@ -906,7 +911,7 @@ Module Constraint.
     rewrite -all__all_map => /=.
     - done.
     - move=> [t1 t2] /=.
-        by rewrite -!(Types.subst_preserves_unifies _ _ _ _ Hunifies).
+        by rewrite -!(Types.subst_preserves_unifies _ Hunifies).
   Qed.
   
   (* unify_sound_same *)
@@ -930,7 +935,7 @@ Module Constraint.
       + by move/eqP in H.
     - rewrite /unifiesb.
       rewrite /unifiesb in Hunifies.
-      apply: (all_impl
+      apply: (@all_impl _
                 (fun p : Term => Types.subst_list subs (Types.subst x t p.1) ==
                                  Types.subst_list subs (Types.subst x t p.2))).
 
@@ -1194,7 +1199,7 @@ Module Unify.
     Check proper_card
       : forall (T : finType) (A B : pred T), A \proper B -> #|A| < #|B|.
     
-    - move: (proper_card (subst_proper_1 x t constraints HnotIn)) => Hmn.
+    - move: (proper_card (subst_proper_1 constraints HnotIn)) => Hmn.
       rewrite Hcardinal1 Hcardinal2 in Hmn.
         by rewrite leqNgt => /negP Hn_mn.
   Qed.
@@ -1252,7 +1257,7 @@ Module Unify.
       apply: subset_leq_card.
         by apply: subst_subset_2.
         
-    - move: (proper_card (subst_proper_2 x t constraints HnotIn)) => Hmn.
+    - move: (proper_card (subst_proper_2 constraints HnotIn)) => Hmn.
       rewrite Hcardinal1 Hcardinal2 in Hmn.
         by rewrite leqNgt => /negP Hn_mn.
   Qed.
@@ -1513,7 +1518,7 @@ let rec unify = function
     move=> IH Hunifies.
     inversion Hunifies as [H].
     move: H => /andP [[/eqP Hu] Hunifies'].
-    move/(Constraint.subst_preserves_unifiesb _ _ _ _ Hu) in Hunifies'.
+    move/(Constraint.subst_preserves_unifiesb Hu) in Hunifies'.
     case: (IH _ Hunifies') => [subs' [Heq Hmoregen]].
     rewrite Heq.
     exists ((x, t) :: subs').
