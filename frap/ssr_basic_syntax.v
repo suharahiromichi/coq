@@ -55,15 +55,20 @@ Proof.
 Qed.
 
 (* frap/FrapWithoutSets.v *)
-Ltac linear_arithmetic :=
+Ltac linear_arithmetic' :=
   intros;
   repeat match goal with
-         | [ |- context[maxn ?a ?b] ] => rewrite /maxn; case: (a < b)
+         | [ |- context[maxn ?a ?b] ] => rewrite /maxn; case H' : (a < b)
          | [ _ : context[maxn ?a ?b] |- _ ] => rewrite /maxn; case: (a < b)
          | [ |- context[minn ?a ?b] ] => rewrite /maxn; case: (a < b)
          | [ _ : context[minn ?a ?b] |- _ ] => rewrite /maxn; case: (a < b)
-         end;
+         end.
+
+Ltac linear_arithmetic :=
+  linear_arithmetic';
   ssromega.
+
+(* ***** *)
 
 Section SSRAscii.
 
@@ -177,7 +182,7 @@ Module ArithWithVariables.
     - by ssromega.
 
     Restart.
-    linear_arithmetic.
+    by linear_arithmetic.
   Qed.
   
   Theorem depth_le_size e : depth e <= size e.
@@ -185,6 +190,9 @@ Module ArithWithVariables.
     elim: e => [n | x | e1 He1 e2 He2 | e1 He1 e2 He2] //=;
                rewrite -addnA leq_add2l;
                  by apply: max_le_add.
+    
+    Restart.
+      by elim: e => //=; linear_arithmetic.
   Qed.
   
   Fixpoint commuter (e : arith) : arith :=
@@ -197,6 +205,23 @@ Module ArithWithVariables.
 
   Compute commuter ex1.
   Compute commuter ex2.
+
+  Theorem size_commuter e : size (commuter e) = size e.
+  Proof.
+    by elim: e => //=; linear_arithmetic.
+  Qed.
+  
+  Theorem depth_commuter e : depth (commuter e) = depth e.
+  Proof.
+    elim: e => //= [e1 He1 e2 He2 | e1 He1 e2 He2];
+                 (* congr (_ + _) *)
+                 by rewrite He1 He2 maxnC.
+  Qed.
+  
+  Theorem commuter_inverse e : commuter (commuter e) = e.
+  Proof.
+      by elim: e => //= [e1 He1 e2 He2 | e1 He1 e2 He2]; rewrite He1 He2.
+  Qed.
 
 End ArithWithVariables.
 
