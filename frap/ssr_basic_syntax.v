@@ -50,9 +50,33 @@ with ssrnat2coqnat_goal :=
 
 Goal forall x y : nat, x + 4 - 2 > y + 4 -> (x + 2) + 2 >= y + 6.
 Proof.
-intros.
-ssromega.
+  intros.
+  ssromega.
 Qed.
+
+Ltac linear_arithmetic :=
+  intros;
+  repeat match goal with
+         | [ |- context[max ?a ?b] ] =>
+           let Heq := fresh "Heq" in
+           destruct (Max.max_spec a b) as [[? Heq] | [? Heq]];
+           rewrite Heq in *; clear Heq
+         | [ _ : context[max ?a ?b] |- _ ] =>
+           let Heq := fresh "Heq" in
+           destruct (Max.max_spec a b) as [[? Heq] | [? Heq]];
+           rewrite Heq in *; clear Heq
+         | [ |- context[min ?a ?b] ] =>
+           let Heq := fresh "Heq" in
+           destruct (Min.min_spec a b) as [[? Heq] | [? Heq]];
+           rewrite Heq in *; clear Heq
+         | [ _ : context[min ?a ?b] |- _ ] =>
+           let Heq := fresh "Heq" in
+           destruct (Min.min_spec a b) as [[? Heq] | [? Heq]];
+           rewrite Heq in *; clear Heq
+         end.
+(*         end;
+  omega.
+*)
 
 Section SSRAscii.
 
@@ -164,6 +188,9 @@ Module ArithWithVariables.
     case H : (m1 < n1) => Hm Hn.
     - by ssromega.
     - by ssromega.
+
+    Restart.
+    linear_arithmetic.
   Qed.
   
   Theorem depth_le_size e : depth e <= size e.
