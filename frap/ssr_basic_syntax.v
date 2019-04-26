@@ -1,5 +1,9 @@
 From mathcomp Require Import all_ssreflect.
+Require Import Omega.
+(*
+(* https://github.com/affeldt-aist/seplog/blob/master/lib/ssrnat_ext.v *)
 Require Import ssrnat_ext.                  (* ssromega *)
+*)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -9,6 +13,46 @@ Unset Printing Implicit Defensive.
 Require Import Ascii.
 Require Import String.
 Open Scope string_scope.
+
+Ltac ssromega :=
+  (repeat ssrnat2coqnat_hypo ;
+   ssrnat2coqnat_goal ;
+   omega)
+with ssrnat2coqnat_hypo :=
+  match goal with
+    | H : context [?L < ?R] |- _ => move/ltP: H => H
+    | H : context [?L <= ?R] |- _ => move/leP: H => H
+    | H : context [?L < ?M < ?R] |- _ => let H1 := fresh in case/andP: H => H H1
+    | H : context [?L <= ?M < ?R] |- _ => let H1 := fresh in case/andP: H => H H1
+    | H : context [?L <= ?M <= ?R] |- _ => let H1 := fresh in case/andP: H => H H1
+    | H : context [addn ?L ?R] |- _ => rewrite <- plusE in H
+    | H : context [muln ?L ?R] |- _ => rewrite <- multE in H
+    | H : context [subn ?L ?R] |- _ => rewrite <- minusE in H
+    | H : ?x == _ |- _ => match type of x with nat => move/eqP in H end; idtac x
+    | H : _ == ?x |- _ => match type of x with nat => move/eqP in H end; idtac x
+    | H : _ != ?x |- _ => match type of x with nat => move/eqP in H end
+
+  end
+with ssrnat2coqnat_goal :=
+  rewrite -?plusE -?minusE -?multE;
+  match goal with
+    | |- is_true (_ < _)%nat => apply/ltP
+    | |- is_true (_ <= _)%nat => apply/leP
+    | |- is_true (_ && _) => apply/andP; split; ssromega
+    | |- is_true (?x != _) => match type of x with nat => apply/eqP end
+    | |- is_true (_ != ?x) => match type of x with nat => apply/eqP end
+    | |- is_true (?x == _) => match type of x with nat => apply/eqP end
+    | |- is_true (_ == ?x) => match type of x with nat => apply/eqP end
+    | |- _ /\ _ => split; ssromega
+    | |- _ \/ _ => (left; ssromega) || (right; ssromega)
+    | |- _ => idtac
+  end.
+
+Goal forall x y : nat, x + 4 - 2 > y + 4 -> (x + 2) + 2 >= y + 6.
+Proof.
+intros.
+ssromega.
+Qed.
 
 Section SSRAscii.
 
@@ -112,12 +156,14 @@ Module ArithWithVariables.
   Proof.
     rewrite /maxn.
     case H : (m1 < n1) => Hm Hn.
-    - by ssromega.
-    - by ssromega.
-(*
     - rewrite -[n1]add0n. by apply: leq_add.
     - rewrite addnC -[m1]add0n. by apply: leq_add.
-*)
+
+    Restart.
+    rewrite /maxn.
+    case H : (m1 < n1) => Hm Hn.
+    - by ssromega.
+    - by ssromega.
   Qed.
   
   Theorem depth_le_size e : depth e <= size e.
@@ -137,3 +183,7 @@ Module ArithWithVariables.
 
   Compute commuter ex1.
   Compute commuter ex2.
+
+End ArithWithVariables.
+
+(* END *)
