@@ -79,6 +79,11 @@ Ltac linear_arithmetic' :=
          | _ => idtac
          end.
 (* case H' : (a < b) の H' が展開できないため、それを使うのを避ける。 *)
+(* destruct (a < b) eqn:H' としてもよい。 *)
+(*
+           let H' := fresh in
+           rewrite {1}/maxn; destruct (a < b) eqn:H'; intros
+*)
 
 Ltac linear_arithmetic :=
   linear_arithmetic';
@@ -260,7 +265,7 @@ Module ArithWithVariables.
                                  maxn m1 n1 <= m2 + n2.
   Proof.
     rewrite /maxn.
-    case H : (m1 < n1) => Hm Hn.
+    case H : (m1 < n1) => Hm Hn. (* destruct (m1 < n1) eqn:H => Hm Hn *)
     - rewrite -[n1]add0n. by apply: leq_add.
     - rewrite addnC -[m1]add0n. by apply: leq_add.
 
