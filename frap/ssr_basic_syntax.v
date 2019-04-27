@@ -377,7 +377,191 @@ Module ArithWithVariables.
     - by rewrite He1 He2.
   Qed.
   
-  (* *Constant folding* は難しいので、別途 *)
+  (* *Constant folding* is one of the classic compiler optimizations.
+   * We repeatedly find opportunities to replace fancier expressions
+   * with known constant values. *)
+  Fixpoint constantFold (e : arith) : arith :=
+    match e with
+    | Const _ => e
+    | Var _ => e
+    | Plus e1 e2 =>
+      let e1' := constantFold e1 in
+      let e2' := constantFold e2 in
+      match e1', e2' with
+      | Const n1, Const n2 => Const (n1 + n2)
+      | Const 0, _ => e2'
+      | _, Const 0 => e1'
+      | _, _ => Plus e1' e2'
+      end
+    | Times e1 e2 =>
+      let e1' := constantFold e1 in
+      let e2' := constantFold e2 in
+      match e1', e2' with
+      | Const n1, Const n2 => Const (n1 * n2)
+      | Const 1, _ => e2'
+      | _, Const 1 => e1'
+      | Const 0, _ => Const 0
+      | _, Const 0 => Const 0
+      | _, _ => Times e1' e2'
+      end
+    end.
+
+  (* This is supposed to be an *optimization*, so it had better not *increase*
+   * the size of an expression!
+   * There are enough cases to consider here that we skip straight to
+   * the automation.
+   * A new scripting construct is [match] patterns with dummy bodies.
+   * Such a pattern matches *any* [match] in a goal, over any type! *)
+  Theorem size_constantFold e : size (constantFold e) <= size e.
+  Proof.
+    induction e; simpl;
+      repeat match goal with
+             | [ |- context[match ?E with _ => _ end] ] =>
+               destruct E; simpl in *
+             end;
+        by ssromega.
+  Qed.
+  
+  Theorem commuter_constantFold e :
+    commuter (constantFold e) = constantFold (commuter e).
+  Proof.
+    (*
+    induction e; simpl;
+    repeat match goal with
+           | [ |- context[match ?E with _ => _ end] ] => destruct E; simpl; simpl in *
+           | [ H : ?f _ = ?f _ |- _ ] => inversion H
+           | [ |- ?f _ = ?f _ ] => f_equal
+           end.
+     *)
+    (* Error: Out of memory. *)
+    Admitted.
+
+  (* To define a further transformation, we first write a roundabout way of
+   * testing whether an expression is a constant.
+   * This detour happens to be useful to avoid overhead in concert with
+   * pattern matching, since Coq internally elaborates wildcard [_] patterns
+   * into separate cases for all constructors not considered beforehand.
+   * That expansion can create serious code blow-ups, leading to serious
+   * proof blow-ups! *)
+  Definition isConst (e : arith) : option nat :=
+    match e with
+    | Const n => Some n
+    | _ => None
+    end.
+  
+  (* Our next target is a function that finds multiplications by constants
+   * and pushes the multiplications to the leaves of syntax trees,
+   * ideally finding constants, which can be replaced by larger constants,
+   * not affecting the meanings of expressions.
+   * This helper function takes a coefficient [multiplyBy] that should be
+   * applied to an expression. *)
+  Fixpoint pushMultiplicationInside' (multiplyBy : nat) (e : arith) : arith :=
+    match e with
+    | Const n => Const (multiplyBy * n)
+    | Var _ => Times (Const multiplyBy) e
+    | Plus e1 e2 => Plus (pushMultiplicationInside' multiplyBy e1)
+                         (pushMultiplicationInside' multiplyBy e2)
+    | Times e1 e2 =>
+      match isConst e1 with
+      | Some k => pushMultiplicationInside' (k * multiplyBy) e2
+      | None => Times (pushMultiplicationInside' multiplyBy e1) e2
+      end
+    end.
+
+  (* The overall transformation just fixes the initial coefficient as [1]. *)
+  Definition pushMultiplicationInside (e : arith) : arith :=
+    pushMultiplicationInside' 1 e.
+
+  (* Let's prove this boring arithmetic property, so that we may use it below. *)
+  Lemma n_times_0 n : n * 0 = 0.
+  Proof.
+      by linear_arithmetic.
+  Qed.
+  
+  (* A fun fact about pushing multiplication inside:
+   * the coefficient has no effect on depth!
+   * Let's start by showing any coefficient is equivalent to coefficient 0. *)
+  Lemma depth_pushMultiplicationInside'_irrelevance0 e multiplyBy :
+    depth (pushMultiplicationInside' multiplyBy e)
+    = depth (pushMultiplicationInside' 0 e).
+  Proof.
+    elim: e multiplyBy => //= [e1 IHe1 e2 IHe2 n | e1 IHe1 e2 IHe2 n].
+    - move: (IHe1 n) (IHe2 n).
+        by linear_arithmetic.
+    - case H : (isConst e1) => /=.
+      + rewrite IHe2 n_times_0.
+        by linear_arithmetic.
+      + rewrite IHe1.
+        by linear_arithmetic.
+  Qed.
+  
+  (* It can be remarkably hard to get Coq's automation to be dumb enough to
+   * help us demonstrate all of the primitive tactics. ;-)
+   * In particular, we can redo the proof in an automated way, without the
+   * explicit rewrites. *)
+  Lemma depth_pushMultiplicationInside'_irrelevance0_snazzy e multiplyBy :
+    depth (pushMultiplicationInside' multiplyBy e)
+    = depth (pushMultiplicationInside' 0 e).
+  Proof.
+    elim: e multiplyBy => //= [e1 IHe1 e2 IHe2 n | e1 IHe1 e2 IHe2 n];
+    try match goal with
+        | [ |- context[match ?E with _ => _ end] ] => destruct E; simpl
+        end; intuition congruence.
+    (* オリジナルでは cases と simplify である。 *)
+  Qed.
+
+  (* Now the general corollary about irrelevance of coefficients for depth. *)
+  Lemma depth_pushMultiplicationInside'_irrelevance e multiplyBy1 multiplyBy2 :
+    depth (pushMultiplicationInside' multiplyBy1 e)
+    = depth (pushMultiplicationInside' multiplyBy2 e).
+  Proof.
+    transitivity (depth (pushMultiplicationInside' 0 e)).
+    (* [transitivity X]: when proving [Y = Z], switch to proving [Y = X]
+     * and [X = Z]. *)
+    apply: depth_pushMultiplicationInside'_irrelevance0.
+    (* [apply H]: for [H] a hypothesis or previously proved theorem,
+     *   establishing some fact that matches the structure of the current
+     *   conclusion, switch to proving [H]'s own hypotheses.
+     *   This is *backwards reasoning* via a known fact. *)
+    symmetry.
+    (* [symmetry]: when proving [X = Y], switch to proving [Y = X]. *)
+    by apply: depth_pushMultiplicationInside'_irrelevance0.
+  Qed.
+  
+  (* Let's prove that pushing-inside has only a small effect on depth,
+   * considering for now only coefficient 0. *)
+  Lemma depth_pushMultiplicationInside' e :
+    depth (pushMultiplicationInside' 0 e) <= (depth e).+1.
+  Proof.
+    elim: e => //= [e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2].
+    - by linear_arithmetic.
+    - case H : (isConst e1) => /=.
+      + rewrite n_times_0.
+          by linear_arithmetic.
+      + by linear_arithmetic.
+  Qed.
+  
+  Hint Rewrite n_times_0.
+  (* Registering rewrite hints will get [simplify] to apply them for us
+   * automatically! *)
+  
+  Lemma depth_pushMultiplicationInside'_snazzy e :
+    depth (pushMultiplicationInside' 0 e) <= (depth e).+1.
+  Proof.
+    elim: e => //= [e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2].
+    try match goal with
+        | [ |- context[match ?E with _ => _ end] ] => destruct E; simpl
+        end; linear_arithmetic.
+  Admitted.                                 (* XXXX *)
+  
+  Theorem depth_pushMultiplicationInside e :
+    depth (pushMultiplicationInside e) <= (depth e).+1.
+  Proof.
+    unfold pushMultiplicationInside.
+    (* [unfold X]: replace [X] by its definition. *)
+    rewrite depth_pushMultiplicationInside'_irrelevance0.
+    by apply depth_pushMultiplicationInside'.
+  Qed.
   
 End ArithWithVariables.
 
