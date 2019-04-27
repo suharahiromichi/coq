@@ -507,8 +507,9 @@ Module ArithWithVariables.
     elim: e multiplyBy => //= [e1 IHe1 e2 IHe2 n | e1 IHe1 e2 IHe2 n];
     try match goal with
         | [ |- context[match ?E with _ => _ end] ] => destruct E; simpl
-        end; intuition congruence.
-    (* オリジナルでは cases と simplify である。 *)
+        end; congruence.
+    (* オリジナルでは cases と simplify で、
+       最後は、equality (= intuition congruence) である。 *)
   Qed.
 
   (* Now the general corollary about irrelevance of coefficients for depth. *)
