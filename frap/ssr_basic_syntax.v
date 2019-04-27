@@ -64,28 +64,78 @@ Ltac linear_arithmetic' :=
   repeat match goal with
          | [ |- context[maxn ?a ?b] ] =>
            rewrite {1}/maxn; case: (leqP b a); intros
+
+         | [ H : context[maxn ?a ?b] |- _ ] =>
+           let H' := fresh in
+           rewrite {1}/maxn in H; case: (leqP b a) => H'; try rewrite H' in H
+
          | [ |- context[minn ?a ?b] ] =>
            rewrite {1}/minn; case: (leqP b a); intros
 
-(* case H' : (a < b) の H' が展開できないため、それを使うのを避ける。 *)
-(*
-           
-         | [ H : context[maxn ?a ?b] |- _ ] =>
-           let H' := fresh in
-           rewrite {1}/maxn in H; case H' : (a < b); rewrite H' in H
          | [ H : context[minn ?a ?b] |- _ ] =>
            let H' := fresh in
-           rewrite {1}/minn in H; case H' : (a < b); rewrite H' in H
-*)
+           rewrite {1}/minn in H; case: (leqP b a) => H';
+           try (rewrite leqNgt in H'; move/Bool.negb_true_iff in H'; rewrite H' in H)
+
          | _ => idtac
          end.
+(* case H' : (a < b) の H' が展開できないため、それを使うのを避ける。 *)
 
 Ltac linear_arithmetic :=
   linear_arithmetic';
-  ssromega.
+  try ssromega;
+  rewrite //=.
 
-Goal forall m1 n1 m2 n2, m1 <= m2 -> n1 <= n2 ->
-                         maxn m1 n1 <= m2 + n2.
+(* sample *)
+
+Goal forall n m, maxn n m = n <-> m <= n.
+Proof.
+  split.
+  - move=> H.
+    rewrite {1}/maxn in H.
+    case: (leqP m n) => H'.
+    + done.
+    + rewrite H' in H.
+      by ssromega.
+  - move=> H.
+    rewrite {1}/maxn.
+    case: (leqP m n) => H'.
+    + done.
+    + ssromega.
+
+  Restart.
+  
+  split.
+  - by linear_arithmetic.
+  - by linear_arithmetic.
+Qed.
+
+Goal forall n m, minn n m = n <-> n <= m.
+Proof.
+  split.
+  - move=> H.
+    rewrite {1}/minn in H.
+    case: (leqP m n) => H'.
+    + rewrite leqNgt in H'.
+      move/Bool.negb_true_iff in H'.
+      rewrite H' in H.
+      by ssromega.
+    + by ssromega.
+
+  - move=> H.
+    rewrite {1}/minn.
+    case: (leqP m n) => H'.
+    + by ssromega.
+    + done.
+    
+  Restart.
+    
+  split.
+  - by linear_arithmetic.
+  - by linear_arithmetic.
+Qed.
+
+Goal forall m1 n1 m2 n2, m1 <= m2 -> n1 <= n2 -> maxn m1 n1 <= m2 + n2.
 Proof.
   linear_arithmetic'.
   - ssromega.
