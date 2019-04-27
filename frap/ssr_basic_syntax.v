@@ -422,6 +422,7 @@ Module ArithWithVariables.
         by ssromega.
   Qed.
   
+  (* Business as usual, with another commuting law *)
   Theorem commuter_constantFold e :
     commuter (constantFold e) = constantFold (commuter e).
   Proof.
@@ -518,14 +519,14 @@ Module ArithWithVariables.
     transitivity (depth (pushMultiplicationInside' 0 e)).
     (* [transitivity X]: when proving [Y = Z], switch to proving [Y = X]
      * and [X = Z]. *)
-    apply: depth_pushMultiplicationInside'_irrelevance0.
+    - by apply: depth_pushMultiplicationInside'_irrelevance0.
     (* [apply H]: for [H] a hypothesis or previously proved theorem,
      *   establishing some fact that matches the structure of the current
      *   conclusion, switch to proving [H]'s own hypotheses.
      *   This is *backwards reasoning* via a known fact. *)
-    symmetry.
+    - symmetry.
     (* [symmetry]: when proving [X = Y], switch to proving [Y = X]. *)
-    by apply: depth_pushMultiplicationInside'_irrelevance0.
+        by apply: depth_pushMultiplicationInside'_irrelevance0.
   Qed.
   
   (* Let's prove that pushing-inside has only a small effect on depth,
