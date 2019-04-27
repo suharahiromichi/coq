@@ -110,14 +110,21 @@ Proof.
   - by linear_arithmetic.
 Qed.
 
+Lemma leq_ltF m n : m <= n <-> (n < m) = false.
+Proof.
+  rewrite leqNgt.
+  split.
+  - by move/Bool.negb_true_iff.
+  - by move=> H; apply/Bool.negb_true_iff.
+Qed.
+
 Goal forall n m, minn n m = n <-> n <= m.
 Proof.
   split.
   - move=> H.
     rewrite {1}/minn in H.
     case: (leqP m n) => H'.
-    + rewrite leqNgt in H'.
-      move/Bool.negb_true_iff in H'.
+    + move/leq_ltF in H'.
       rewrite H' in H.
       by ssromega.
     + by ssromega.
