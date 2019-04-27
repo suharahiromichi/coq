@@ -548,11 +548,13 @@ Module ArithWithVariables.
   Lemma depth_pushMultiplicationInside'_snazzy e :
     depth (pushMultiplicationInside' 0 e) <= (depth e).+1.
   Proof.
-    elim: e => //= [e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2].
+    elim: e => //= [e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2];
     try match goal with
-        | [ |- context[match ?E with _ => _ end] ] => destruct E; simpl
+        | [ |- context[match ?E with _ => _ end] ] =>
+          destruct E; try autorewrite with core; simpl
         end; linear_arithmetic.
-  Admitted.                                 (* XXXX *)
+    (* オリジナルでは、cases と simplify *)
+  Qed.
   
   Theorem depth_pushMultiplicationInside e :
     depth (pushMultiplicationInside e) <= (depth e).+1.
