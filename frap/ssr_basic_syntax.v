@@ -63,17 +63,12 @@ Ltac linear_arithmetic' :=
   intros;
   repeat match goal with
          | [ |- context[maxn ?a ?b] ] =>
-           rewrite {1}/maxn; case: (a < b)
+           rewrite {1}/maxn; case: (leqP b a); intros
          | [ |- context[minn ?a ?b] ] =>
-           rewrite {1}/minn; case: (a < b)
-(* case H' : (a < b) の H' が展開できないため、前提を作らない場合のみ。 *)
+           rewrite {1}/minn; case: (leqP b a); intros
+
+(* case H' : (a < b) の H' が展開できないため、それを使うのを避ける。 *)
 (*
-         | [ |- context[maxn ?a ?b] ] =>
-           let H' := fresh in
-           rewrite {1}/maxn; case H' : (a < b).
-         | [ |- context[minn ?a ?b] ] =>
-           let H' := fresh in
-           rewrite {1}/minn; case H' : (a < b).
            
          | [ H : context[maxn ?a ?b] |- _ ] =>
            let H' := fresh in
@@ -88,6 +83,23 @@ Ltac linear_arithmetic' :=
 Ltac linear_arithmetic :=
   linear_arithmetic';
   ssromega.
+
+Goal forall m1 n1 m2 n2, m1 <= m2 -> n1 <= n2 ->
+                         maxn m1 n1 <= m2 + n2.
+Proof.
+  linear_arithmetic'.
+  - ssromega.
+  - ssromega.
+
+  Restart.
+    
+  move=> m1 n1 m2 n2.
+  rewrite /maxn.
+  Check leqP n1 m1.
+  case: (leqP n1 m1) => H1 H2 H'.
+  - ssromega.
+  - ssromega.
+Qed.
 
 (* ***** *)
 
@@ -260,10 +272,10 @@ Module ArithWithVariables.
   Lemma max_le_add_c m1 n1 m2 n2 c : m1 <= m2 + c -> n1 <= n2 + c ->
                                  maxn m1 n1 <= maxn m2 n2 + c.
   Proof.
-    (* linear_arithmetic の repeat が効くのだが、
-       前提をユニークな名前で作れないので、うまくいかない。
-       やりたいのは、次のようなこと。
-     *)
+    by linear_arithmetic.
+    
+    Restart.
+    (* linear_arithemtic' の repeat が効いている例 *)
     move=> Hm Hn.
     rewrite {1}/maxn.
     case H1 : (m1 < n1).
