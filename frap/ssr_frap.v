@@ -160,6 +160,15 @@ Qed.
 
 (* ***** *)
 
+Ltac simplify := try autorewrite with core in *;
+                 simpl in *.
+
+Ltac equality := intuition congruence.
+
+Ltac cases E := destruct E.
+
+(* ***** *)
+
 Require Import Ascii.
 Require Import String.
 Open Scope string_scope.

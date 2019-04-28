@@ -289,10 +289,13 @@ Module ArithWithVariables.
   Proof.
     elim: e multiplyBy => //= [e1 IHe1 e2 IHe2 n | e1 IHe1 e2 IHe2 n];
     try match goal with
+        | [ |- context[match ?E with _ => _ end] ] => cases E; simplify
+        end; equality.
+(*
+    try match goal with
         | [ |- context[match ?E with _ => _ end] ] => destruct E; simpl
         end; congruence.
-    (* オリジナルでは cases と simplify で、
-       最後は、equality (= intuition congruence) である。 *)
+*)
   Qed.
 
   (* Now the general corollary about irrelevance of coefficients for depth. *)
@@ -336,9 +339,9 @@ Module ArithWithVariables.
     elim: e => //= [e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2];
     try match goal with
         | [ |- context[match ?E with _ => _ end] ] =>
-          destruct E; try autorewrite with core; simpl
+          cases E; simplify
+       (* destruct E; try autorewrite with core; simpl *)
         end; linear_arithmetic.
-    (* オリジナルでは、cases と simplify *)
   Qed.
   
   Theorem depth_pushMultiplicationInside e :
