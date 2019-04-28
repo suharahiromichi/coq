@@ -219,11 +219,102 @@ Module Algebraic.
       - by equality.
       - by equality.
     Qed.
-    
   End ReversedListQueue.
 
+  (* Let's take a look at some client code that is agnostic to queue
+   * implementation details.  We have been using Coq's *module system*, inspired
+   * by those of the ML programming languages, to encode interfaces and
+   * implementations.  Coq also adopts from ML the idea of *functors*, or
+   * functions from modules to modules. *)
+  Module DelayedSum (Q : QUEUE).
+    (* The code in this scope may refer to some unknown implementation [Q] of
+     * the [QUEUE] interface. *)
 
+    (* We will only use a simple example here: enqueue the first [n] natural
+     * numbers and then successively dequeue them, computing the sum as we
+     * go. *)
 
+    (* First, the function to enqueue the first [n] natural numbers. *)
+    Fixpoint makeQueue (n : nat) (q : Q.t nat) : Q.t nat :=
+      match n with
+      | 0 => q
+      | S n' => makeQueue n' (Q.enqueue q n')
+      end.
+
+    (* Next, the function to dequeue repeatedly, keeping a sum. *)
+    Fixpoint computeSum (n : nat) (q : Q.t nat) : nat :=
+      match n with
+      | 0 => 0
+      | S n' => match Q.dequeue q with
+                | None => 0
+                | Some (q', v) => v + computeSum n' q'
+                end
+      end.
+
+    (* This function gives the expected answer, in a simpler form, of
+     * [computeSum] after [makeQueue]. *)
+    Fixpoint sumUpto (n : nat) : nat :=
+      match n with
+      | 0 => 0
+      | S n' => n' + sumUpto n'
+      end.
+
+    (* A crucial lemma: what results from dequeuing out of a [makeQueue]
+     * call?  The answer depends on whether the initial queue [q] has anything
+     * to dequeue. *)
+    Lemma dequeue_makeQueue n q :
+      Q.dequeue (makeQueue n q)
+      = match Q.dequeue q with
+          | Some (q', v) =>
+            (* The queue we started with had content.  We dequeue from it. *)
+            Some (makeQueue n q', v)
+          | None =>
+            (* No content in initial queue.  We get [n-1] (unless [n = 0]). *)
+            match n with
+            | 0 => None
+            | S n' => Some (makeQueue n' q, n')
+            end
+          end.
+    Proof.
+      elim: n q => [| n IHn] q.
+
+      - simplify.
+        cases (Q.dequeue q).
+        + cases p.
+          by equality.
+        + by equality.
+
+      - simplify.
+        rewrite IHn.
+        rewrite Q.dequeue_enqueue.
+        (* ^-- Crucial step!  First use of a law from the interface. *)
+        cases (Q.dequeue q).
+        + cases p.
+            by equality.
+
+        + rewrite (Q.empty_dequeue (q := q)).
+          (* ^-- Another law! *)
+          * by equality.
+          * done.
+    Qed.
+    
+    (* Now we can tackle the final property directly by induction. *)
+    Theorem computeSum_ok n :
+      computeSum n (makeQueue n (Q.empty nat)) = sumUpto n.
+    Proof.
+      elim: n => [| n IHn].
+
+      - simplify.
+        by equality.
+
+      - simplify.
+        rewrite dequeue_makeQueue.
+        rewrite Q.dequeue_enqueue.
+        rewrite Q.dequeue_empty.
+        rewrite IHn.
+        by equality.
+    Qed.
+  End DelayedSum.
 End Algebraic.
     
 (* END *)
