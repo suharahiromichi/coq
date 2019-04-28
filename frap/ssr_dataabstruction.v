@@ -115,15 +115,17 @@ Module Algebraic.
 
     Theorem empty_dequeue {A} (q : t A) : dequeue q = None -> q = empty A.
     Proof.
-      simplify.
-      case: q => [| a q].                   (* cases *)
+      case: q => [H | a q H].
+      - by equality.                        (* done *)
       - simplify.
-        by equality.
-      - simplify.
-        case: (dequeue q) => p.             (* cases *)
-        + case: p.
-          by equality.
-        + by equality.
+        cases (dequeue q).                  (* destruct (dequeue q) eqn: H0 *)
+        (*  だと、p が _a_ になり、取り出せない。 *)
+        
+        (* dequeue q = Some p の場合 *)
+        + cases p.                          (* case: p H0 H *)
+            by equality.                    (* done *)
+        (* dequeue q = None の場合 *)
+        + by equality.                      (* done *)
     Qed.
     
     Theorem dequeue_enqueue {A} (q : t A) x :
@@ -138,5 +140,11 @@ Module Algebraic.
         by equality.
       - by equality.
     Qed.
+    
   End ListQueue.
-  
+
+
+
+End Algebraic.
+    
+(* END *)
