@@ -109,23 +109,102 @@ Module Algebraic.
 
     Theorem dequeue_empty {A} : dequeue (empty A) = None.
     Proof.
-      simplify.
-      by equality.
+      done.                               (* simplify. by equality. *)
+    Qed.
+    
+    Theorem empty_dequeue {A} (q : t A) : dequeue q = None -> q = empty A.
+    Proof.
+      case: q => [H | a q H].
+      - done.
+      - simpl in *.
+        destruct (dequeue q) eqn: H0.
+(*
+  case H0 : (dequeue q) だと、 p が _a_ になり、取り出せない。
+  
+  A : Set
+  a : A
+  q : seq A
+  H : match dequeue q with
+      | Some (q'', y) => Some (a :: q'', y)
+      | None => Some ([::], a)
+      end = None
+  _a_ : t A * A
+  H0 : dequeue q = Some _a_
+  ============================
+  a :: q = empty A
+*)
+        (* dequeue q = Some p の場合 *)
+        + case: p H0 H.
+          done.
+        (* dequeue q = None の場合 *)
+        + done.
+
+      Restart.
+      
+      case: q => [H | a q H].      (* cases q. だとうまくいかない。 *)
+      - by equality.
+      - simplify.
+        cases (dequeue q).
+        + cases p.
+          by equality.
+        + by equality.
+    Qed.
+    
+    Theorem dequeue_enqueue {A} (q : t A) x :
+      dequeue (enqueue q x) = Some (match dequeue q with
+                                    | None => (empty A, x)
+                                    | Some (q', y) => (enqueue q' x, y)
+                                    end).
+    Proof.
+      simpl.                                (* simplify *)
+      case: (dequeue q) => [p |].           (* cases *)
+      - case: p.                            (* cases *)
+        done.                               (* equality *)
+      - done.                               (* equality *)
+    Qed.
+    
+  End ListQueue.
+  
+  (* There are software-engineering benefits to interface-implementation
+   * separation even when one only bothers to build a single implementation.
+   * However, often there are naive and clever optimized versions of a single
+   * interface.  Queues are no exception.  Before we get to a truly clever
+   * version, we'll demonstrate with a less obviously better version:
+   * enqueuing at the back and dequeuing from the front. *)
+  Module ReversedListQueue : QUEUE.
+    Definition t : Set -> Set := list.
+    (* Still the same internal queue type, but note that Coq's type system
+     * prevents client code from knowing that fact!  [t] appears *opaque*
+     * or *abstract* from the outside, as we'll see shortly. *)
+
+    (* The first two operations are similar, but now we enqueue at the
+     * list end. *)
+    Definition empty A : t A := [::].
+    Definition enqueue A (q : t A) (x : A) : t A := q ++ [:: x].
+
+    (* [dequeue] is now constant time, with no recursion and just a single
+     * pattern match. *)
+    Definition dequeue A (q : t A) : option (t A * A) :=
+      match q with
+      | [::] => None
+      | x :: q' => Some (q', x)
+      end.
+
+    (* The proofs of the laws are still boring. *)
+
+    Theorem dequeue_empty {A} : dequeue (empty A) = None.
+    Proof.
+      done.                                 (* simplify. equality. *)
     Qed.
 
     Theorem empty_dequeue {A} (q : t A) : dequeue q = None -> q = empty A.
     Proof.
-      case: q => [H | a q H].
-      - by equality.                        (* done *)
+      simplify.
+      cases q.
       - simplify.
-        cases (dequeue q).                  (* destruct (dequeue q) eqn: H0 *)
-        (*  だと、p が _a_ になり、取り出せない。 *)
-        
-        (* dequeue q = Some p の場合 *)
-        + cases p.                          (* case: p H0 H *)
-            by equality.                    (* done *)
-        (* dequeue q = None の場合 *)
-        + by equality.                      (* done *)
+        by equality.
+      - simplify.
+        by equality.
     Qed.
     
     Theorem dequeue_enqueue {A} (q : t A) x :
@@ -135,13 +214,13 @@ Module Algebraic.
                                     end).
     Proof.
       simplify.
-      case: (dequeue q) => [p |].           (* cases *)
-      - case: p.                            (* cases *)
-        by equality.
+      unfold dequeue, enqueue.
+      cases q; simplify.
+      - by equality.
       - by equality.
     Qed.
     
-  End ListQueue.
+  End ReversedListQueue.
 
 
 
