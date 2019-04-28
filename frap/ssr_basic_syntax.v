@@ -43,7 +43,7 @@ Module ArithWithVariables.
                                  maxn m1 n1 <= m2 + n2.
   Proof.
     rewrite /maxn.
-    case H : (m1 < n1) => Hm Hn. (* destruct (m1 < n1) eqn:H => Hm Hn *)
+    case H : (m1 < n1) => Hm Hn. (* destruct (m1 < n1) eqn: H => Hm Hn *)
     - rewrite -[n1]add0n. by apply: leq_add.
     - rewrite addnC -[m1]add0n. by apply: leq_add.
 
@@ -138,6 +138,23 @@ Module ArithWithVariables.
         by apply: max_le_add_c.
   Qed.
 
+  (* Let's get fancier about automation, using [match goal] to pattern-match the goal
+   * and decide what to do next!
+   * The [|-] syntax separates hypotheses and conclusion in a goal.
+   * The [context] syntax is for matching against *any subterm* of a term.
+   * The construct [try] is also useful, for attempting a tactic and rolling back
+   * the effect if any error is encountered. *)
+  Theorem substitute_depth_snazzy replaceThis withThis inThis :
+    depth (substitute inThis replaceThis withThis) <= depth inThis + depth withThis.
+  Proof.
+    elim: inThis; simplify;
+    try match goal with
+        | [ |- context[if ?a == ?b then _ else _] ] => cases (a == b); simplify
+        end; linear_arithmetic.
+    Qed.
+  
+  (* A silly self-substitution has no effect. *)
+  
   Theorem substitute_self replaceThis inThis :
     substitute inThis replaceThis (Var replaceThis) = inThis.
   Proof.
@@ -150,6 +167,19 @@ Module ArithWithVariables.
     - by rewrite He1 He2.
   Qed.
   
+  Theorem substitute_self_snazzy replaceThis inThis :
+    substitute inThis replaceThis (Var replaceThis) = inThis.
+  Proof.
+    elim: inThis; simplify;
+    try match goal with
+        | [ |- context[if ?a == ?b then _ else _] ] => cases (a == b); simplify
+        end; try equality.
+    (* H : x == replaceThis が残ってしまう。 *)
+    by move/eqP in H; equality.
+  Qed.
+  
+  (* We can do substitution and commuting in either order. *)
+  
   Theorem substitute_commuter replaceThis withThis inThis :
     commuter (substitute inThis replaceThis withThis)
     = substitute (commuter inThis) replaceThis (commuter withThis).
@@ -158,6 +188,16 @@ Module ArithWithVariables.
     - by case H : (x == replaceThis).
     - by rewrite He1 He2.
     - by rewrite He1 He2.
+  Qed.
+  
+  Theorem substitute_commuter_snazzy replaceThis withThis inThis :
+    commuter (substitute inThis replaceThis withThis)
+    = substitute (commuter inThis) replaceThis (commuter withThis).
+  Proof.
+    elim: inThis; simplify;
+    try match goal with
+        | [ |- context[if ?a == ?b then _ else _] ] => cases (a == b); simplify
+        end; equality.
   Qed.
   
   (* *Constant folding* is one of the classic compiler optimizations.

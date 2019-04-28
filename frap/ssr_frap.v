@@ -78,7 +78,7 @@ Ltac linear_arithmetic' :=
 (* destruct (a < b) eqn:H' としてもよい。 *)
 (*
            let H' := fresh in
-           rewrite {1}/maxn; destruct (a < b) eqn:H'; intros
+           rewrite {1}/maxn; destruct (a < b) eqn: H'; intros
 *)
 
 Ltac linear_arithmetic :=
@@ -160,12 +160,14 @@ Qed.
 
 (* ***** *)
 
-Ltac simplify := try autorewrite with core in *;
+Ltac simplify := intros;
+                 try autorewrite with core in *;
                  simpl in *.
 
 Ltac equality := intuition congruence.
 
-Ltac cases E := destruct E.
+Ltac cases E := let H := fresh in
+                destruct E eqn: H. (* eqn: のスペースが要る。 *)
 
 (* ***** *)
 
