@@ -6,6 +6,11 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
+(* Let's shake things up a bit by adding variables to expressions.
+ * Note that all of the automated proof scripts from before will keep working
+ * with no changes!  That sort of "free" proof evolution is invaluable for
+ * theorems about real-world compilers, say. *)
+  
 Module ArithWithVariables.
 
   Inductive arith : Set :=
@@ -39,6 +44,7 @@ Module ArithWithVariables.
   Compute depth ex1.
   Compute depth ex2.
 
+  (* linear_arithmetic で解く補題のサンプル *)
   Lemma max_le_add m1 n1 m2 n2 : m1 <= m2 -> n1 <= n2 ->
                                  maxn m1 n1 <= m2 + n2.
   Proof.
@@ -59,14 +65,20 @@ Module ArithWithVariables.
   
   Theorem depth_le_size e : depth e <= size e.
   Proof.
-    elim: e => [n | x | e1 He1 e2 He2 | e1 He1 e2 He2] //=;
-      (* rewrite -addnA leq_add2l; *)
-      by apply: max_le_add.
-    
-    Restart.
-      by elim: e => //=; linear_arithmetic.
+    elim: e => [n | x | e1 He1 e2 He2 | e1 He1 e2 He2] //=.
+    - by linear_arithmetic.                (* by apply: max_le_add. *)
+    - by linear_arithmetic.                (* by apply: max_le_add. *)      
   Qed.
   
+  Theorem depth_le_size_snazzy e : depth e <= size e.
+  Proof.
+      by elim: e => //=; linear_arithmetic.
+    (* Oo, look at that!  Chaining tactics with semicolon, as in [t1; t2],
+     * asks to run [t1] on the goal, then run [t2] on *every*
+     * generated subgoal.  This is an essential ingredient for automation. *)
+  Qed.
+
+  (* A silly recursive function: swap the operand orders of all binary operators. *)
   Fixpoint commuter (e : arith) : arith :=
     match e with
     | Const _ => e
@@ -77,7 +89,9 @@ Module ArithWithVariables.
 
   Compute commuter ex1.
   Compute commuter ex2.
-
+  
+  (* [commuter] has all the appropriate interactions with other functions (and itself). *)
+  
   Theorem size_commuter e : size (commuter e) = size e.
   Proof.
     by elim: e => //=; linear_arithmetic.
@@ -92,11 +106,19 @@ Module ArithWithVariables.
   
   Theorem commuter_inverse e : commuter (commuter e) = e.
   Proof.
-      by elim: e => //= [e1 He1 e2 He2 | e1 He1 e2 He2]; rewrite He1 He2.
+      by elim: e => //= [e1 He1 e2 He2 | e1 He1 e2 He2]; equality. (* rewrite He1 He2. *)
+    (* [equality]: a complete decision procedure for the theory of equality
+     *   and uninterpreted functions.  That is, the goal must follow
+     *   from only reflexivity, symmetry, transitivity, and congruence
+     *   of equality, including that functions really do behave as functions. *)
   Qed.
 
-  (* **** *)
-  
+  (* Now that we have variables, we can consider new operations,
+   * like substituting an expression for a variable.
+   * We use an infix operator [==v] for equality tests on strings.
+   * It has a somewhat funny and very expressive type,
+   * whose details we will try to gloss over.
+   * (To dig into it more on your own, the appropriate keyword is "dependent types.") *)
   Fixpoint substitute (inThis : arith) (replaceThis : var) (withThis : arith) : arith :=
     match inThis with
     | Const _ => inThis
@@ -124,11 +146,16 @@ Module ArithWithVariables.
       case H2 : (m2 < n2); by ssromega.
   Qed.
   
+  (* An intuitive property about how much [substitute] might increase depth. *)
   Theorem substitute_depth replaceThis withThis inThis :
     depth (substitute inThis replaceThis withThis) <= depth inThis + depth withThis.
   Proof.
     elim: inThis => //= [x | e1 He1 e2 He2 | e1 He1 e2 He2].
     - case H : (x == replaceThis).
+      (* [cases e]: break the proof into one case for each constructor that might have
+       * been used to build the value of expression [e].  In the special case where
+       * [e] essentially has a Boolean type, we consider whether [e] is true or false. *)
+
       + by linear_arithmetic.
       + rewrite /depth.
         by linear_arithmetic.
@@ -144,6 +171,7 @@ Module ArithWithVariables.
    * The [context] syntax is for matching against *any subterm* of a term.
    * The construct [try] is also useful, for attempting a tactic and rolling back
    * the effect if any error is encountered. *)
+  
   Theorem substitute_depth_snazzy replaceThis withThis inThis :
     depth (substitute inThis replaceThis withThis) <= depth inThis + depth withThis.
   Proof.
