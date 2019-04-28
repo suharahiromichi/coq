@@ -115,39 +115,17 @@ Module Algebraic.
     Theorem empty_dequeue {A} (q : t A) : dequeue q = None -> q = empty A.
     Proof.
       case: q => [H | a q H].
-      - done.
-      - simpl in *.
-        destruct (dequeue q) eqn: H0.
+      - done.                               (* equality *)
+      - simpl in *.                         (* simplify *)
+        destruct (dequeue q) as [p |] eqn: H0.
 (*
   case H0 : (dequeue q) だと、 p が _a_ になり、取り出せない。
-  
-  A : Set
-  a : A
-  q : seq A
-  H : match dequeue q with
-      | Some (q'', y) => Some (a :: q'', y)
-      | None => Some ([::], a)
-      end = None
-  _a_ : t A * A
-  H0 : dequeue q = Some _a_
-  ============================
-  a :: q = empty A
-*)
+*)  
         (* dequeue q = Some p の場合 *)
         + case: p H0 H.
-          done.
+          done.                          (* equality *)
         (* dequeue q = None の場合 *)
-        + done.
-
-      Restart.
-      
-      case: q => [H | a q H].      (* cases q. だとうまくいかない。 *)
-      - by equality.
-      - simplify.
-        cases (dequeue q).
-        + cases p.
-          by equality.
-        + by equality.
+        + done.                             (* equality *)
     Qed.
     
     Theorem dequeue_enqueue {A} (q : t A) x :
@@ -200,7 +178,7 @@ Module Algebraic.
     Theorem empty_dequeue {A} (q : t A) : dequeue q = None -> q = empty A.
     Proof.
       simplify.
-      cases q.
+      case: q H.                            (* cases q *)
       - simplify.
         by equality.
       - simplify.
@@ -214,8 +192,8 @@ Module Algebraic.
                                     end).
     Proof.
       simplify.
-      unfold dequeue, enqueue.
-      cases q; simplify.
+      rewrite /dequeue /enqueue.
+      case: q; simplify.                    (* cases q; simplify. *)
       - by equality.
       - by equality.
     Qed.
@@ -316,5 +294,5 @@ Module Algebraic.
     Qed.
   End DelayedSum.
 End Algebraic.
-    
+
 (* END *)
