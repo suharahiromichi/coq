@@ -203,7 +203,7 @@ Module ArithWithVariables.
         | [ |- context[if ?a == ?b then _ else _] ] => cases (a == b); simplify
         end; try equality.
     (* H : x == replaceThis が残ってしまう。 *)
-    by move/eqP in H; equality.
+    by move/eqP in Heq; equality.
   Qed.
   
   (* We can do substitution and commuting in either order. *)

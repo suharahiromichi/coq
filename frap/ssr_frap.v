@@ -166,8 +166,8 @@ Ltac simplify := intros;
 
 Ltac equality := intuition congruence.
 
-Ltac cases E := let H := fresh in
-                destruct E eqn: H. (* eqn: のスペースが要る。 *)
+Ltac cases E := let Heq := fresh "Heq" in
+                destruct E eqn: Heq. (* eqn: のスペースが要る。 *)
 
 (* ***** *)
 
