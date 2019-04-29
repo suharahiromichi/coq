@@ -363,20 +363,20 @@ Module AlgebraicWithEquivalenceRelation.
             end.
   End QUEUE.
 
-  Ltac bool2prop :=
+  Ltac equality_new :=
     intros;
-    (repeat bool2prop_hypo; bool2prop_goal)
+    (repeat bool2prop_hypo; bool2prop_goal; equality)
     with bool2prop_hypo :=
       match goal with
       | H : is_true (_ == _) |- _ => move/eqP: H => H
-      | H : is_true (_ && _) |- _ => move/andP: H => H
-      | H : is_true (_ || _) |- _ => move/orP: H => H
+      | H : is_true (_ && _) |- _ => move/andP: H; case: H
+      | H : is_true (_ || _) |- _ => move/orP: H; case: H
       end
     with bool2prop_goal :=
       match goal with
       | |- is_true (_ == _) => apply/eqP
-      | |- is_true (_ && _) => apply/andP; split
-      | |- is_true (_ || _) => apply/orP
+      | |- is_true (_ && _) => apply/andP; split; equality_new
+      | |- is_true (_ || _) => apply/orP; try (left; ssromega); try (right; ssromega)
       | |- _ => idtac
       end.
 
@@ -405,22 +405,19 @@ Module AlgebraicWithEquivalenceRelation.
     Theorem equiv_refl (a : t A) : a ~= a.
     Proof.
       rewrite /equiv.
-      bool2prop.                            (* apply/eqP *)
-        by equality.
+        by equality_new.
     Qed.
 
     Theorem equiv_sym (a b : t A) : a ~= b -> b ~= a.
     Proof.
       rewrite /equiv.
-      bool2prop.                            (* move/eqP => H; apply/eqP *)
-        by equality.
+        by equality_new.
     Qed.
     
     Theorem equiv_trans (a b c : t A) : a ~= b -> b ~= c -> a ~= c.
     Proof.
       rewrite /equiv.
-      bool2prop.
-        by equality.
+        by equality_new.
     Qed.
 
     Theorem equiv_enqueue (a b : t A) (x : A) :
@@ -428,8 +425,7 @@ Module AlgebraicWithEquivalenceRelation.
       -> enqueue a x ~= enqueue b x.
     Proof.
       rewrite /equiv.
-      bool2prop.
-        by equality.
+        by equality_new.
     Qed.
 
     Definition dequeue_equiv (a b : option (t A * A)) : bool :=
@@ -445,21 +441,15 @@ Module AlgebraicWithEquivalenceRelation.
       a ~= b
       -> dequeue a ~~= dequeue b.
     Proof.
-      unfold equiv, dequeue_equiv; simplify.
-      unfold equiv, dequeue_equiv; simplify. (* 2回やる。 *)
-
-      bool2prop.
+      simplify.
+      rewrite /dequeue_equiv /equiv.        (* 順番は変えた。 *)
+      rewrite /equiv in H.                  (* Mathcomp では in * は使えない。 *)
+      move/eqP in H.
       rewrite H.
+      
       cases (dequeue b).
-
       - cases p.
-        bool2prop.
-        + bool2prop.
-          equality.
-
-        + bool2prop.
-          equality.
-          
+        by equality_new.
       - done.                               (* propositional. *)
     Qed.
     
@@ -473,17 +463,15 @@ Module AlgebraicWithEquivalenceRelation.
       dequeue q = None -> q ~= empty.
     Proof.
       simplify.
-      cases q.
-
+      destruct q as [| s p p'] eqn: H'.      (* cases q. *)
       - simplify.
         unfold equiv.
-        bool2prop.
-        equality.
-
+        by equality_new.
+        
       - simplify.
-        subst.
-        cases (dequeue l).
-        + by cases p.                       (* let 式を分解する。 *)
+        destruct (dequeue p) as [p' |].     (* cases (dequeue p)  *)
+        + cases p'.                         (* let 式を分解する。 *)
+            by equality_new.
         + done.
     Qed.
     
@@ -494,34 +482,19 @@ Module AlgebraicWithEquivalenceRelation.
             | Some (q', y) => Some (enqueue q' x, y)
             end.
     Proof.
-      unfold dequeue_equiv, equiv.
-      elim: q => /= [|p q IHq ].
-      - bool2prop.
-        equality.
-
-      - cases (dequeue q).
-        cases p0.                           (* cases p *)
-
-        + bool2prop.
-          bool2prop.
-          bool2prop.
-          case: IHq => H1 H2.
-          bool2prop.
-          equality.
-        + bool2prop.
-          equality.
-      - bool2prop.
-        +  bool2prop.
-           case: IHq => H1 H2.
-           bool2prop.
-           done.
-        + bool2prop.
-          equality.
+      rewrite /equiv /dequeue_equiv.
+      elim: q => /= [|p q IHq].
+      - by equality_new.
+      - destruct (dequeue q) as [p0 |] eqn: H'. (* cases (dequeue q) *)
+        + cases p0.
+          rewrite /equiv.
+          by equality_new.
+        + rewrite /equiv.
+          by equality_new.
     Qed.
     
   End ListQueue.
 
 End AlgebraicWithEquivalenceRelation.
-
 
 (* END *)
