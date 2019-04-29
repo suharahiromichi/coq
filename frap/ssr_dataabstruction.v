@@ -44,7 +44,7 @@ Module Algebraic.
    * short).  It's for purely functional queues, which follow first-in-first-out
    * disciplines. *)
   Module Type QUEUE.
-    Parameter t : Set -> Set.
+    Parameter t : eqType -> eqType.         (* Set -> Set. *)
     (* An implementation must include some data type [t].
      * Actually, it's more of a *type family*, e.g. like [list] and some other
      * polymorphic container types we looked at last time. *)
@@ -82,7 +82,7 @@ Module Algebraic.
 
   (* First, there is a fairly straightforward implementation with lists. *)
   Module ListQueue : QUEUE.
-    Definition t : Set -> Set := seq.
+    Definition t : eqType -> eqType := seq_eqType. (* Set -> Set *)
     (* Note that we use identifier [list] alone as a first-class type family,
      * without specifying a parameter explicitly. *)
 
@@ -150,7 +150,7 @@ Module Algebraic.
    * version, we'll demonstrate with a less obviously better version:
    * enqueuing at the back and dequeuing from the front. *)
   Module ReversedListQueue : QUEUE.
-    Definition t : Set -> Set := list.
+    Definition t : eqType -> eqType := seq_eqType. (* Set -> Set := list. *)
     (* Still the same internal queue type, but note that Coq's type system
      * prevents client code from knowing that fact!  [t] appears *opaque*
      * or *abstract* from the outside, as we'll see shortly. *)
@@ -213,14 +213,14 @@ Module Algebraic.
      * go. *)
 
     (* First, the function to enqueue the first [n] natural numbers. *)
-    Fixpoint makeQueue (n : nat) (q : Q.t nat) : Q.t nat :=
+    Fixpoint makeQueue (n : nat) (q : Q.t nat_eqType) : Q.t nat_eqType :=
       match n with
       | 0 => q
       | S n' => makeQueue n' (Q.enqueue q n')
       end.
 
     (* Next, the function to dequeue repeatedly, keeping a sum. *)
-    Fixpoint computeSum (n : nat) (q : Q.t nat) : nat :=
+    Fixpoint computeSum (n : nat_eqType) (q : Q.t nat_eqType) : nat_eqType :=
       match n with
       | 0 => 0
       | S n' => match Q.dequeue q with
@@ -231,7 +231,7 @@ Module Algebraic.
 
     (* This function gives the expected answer, in a simpler form, of
      * [computeSum] after [makeQueue]. *)
-    Fixpoint sumUpto (n : nat) : nat :=
+    Fixpoint sumUpto (n : nat_eqType) : nat_eqType :=
       match n with
       | 0 => 0
       | S n' => n' + sumUpto n'
@@ -278,7 +278,7 @@ Module Algebraic.
     
     (* Now we can tackle the final property directly by induction. *)
     Theorem computeSum_ok n :
-      computeSum n (makeQueue n (Q.empty nat)) = sumUpto n.
+      computeSum n (makeQueue n (Q.empty nat_eqType)) = sumUpto n.
     Proof.
       elim: n => [| n IHn].
 
@@ -294,5 +294,236 @@ Module Algebraic.
     Qed.
   End DelayedSum.
 End Algebraic.
+
+(* There is a famous implementation of queues with two stacks, achieving
+ * amortized constant time for all operations, in contrast to the worst-case
+ * quadratic time of both queue implementations we just saw.  However, to
+ * justify this fancy implementation, we will need to choose a more permissive
+ * interface, based on the idea of parameterizing over an arbitrary *equivalence
+ * relation* between queues, which need not be simple equality. *)
+Module AlgebraicWithEquivalenceRelation.
+  Module Type QUEUE.
+    (* We still have a type family of queues, plus the same three operations. *)
+    Parameter t : eqType -> eqType.         (* Set -> Set. *)
+    (* equiv を bool で定義するため。 *)
+
+    Variable A : eqType.
+    Parameter empty : t A.
+    Parameter enqueue : t A -> A -> t A.
+    Parameter dequeue : t A -> option (t A * A).
+
+    (* What's new?  This equivalence relation.  The type [Prop] stands for
+     * logical truth values, so a function returning it can be seen as a
+     * relation in the usual mathematical sense.  This is a *binary* relation,
+     * in particular, since it takes two arguments. *)
+    Parameter equiv : t A -> t A -> bool. (* Prop *)
+
+    (* Let's declare convenient syntax for the relation. *)
+    Infix "~=" := equiv (at level 70).
+
+    (* It really is an equivalence relation, as formalized by the usual three
+     * laws. *)
+    Axiom equiv_refl : forall (a : t A), a ~= a.
+    Axiom equiv_sym : forall (a b : t A), a ~= b -> b ~= a.
+    Axiom equiv_trans : forall (a b c : t A), a ~= b -> b ~= c -> a ~= c.
+
+    (* It must be the case that enqueuing elements preserves the relation. *)
+    Axiom equiv_enqueue : forall (a b : t A) (x : A),
+        a ~= b
+        -> enqueue a x ~= enqueue b x.
+
+    (* We define a derived relation for results of [dequeue]: either both
+     * [dequeue]s failed to return anything, or both returned the same data
+     * value along with new queues that are themselves related. *)
+    Definition dequeue_equiv (a b : option (t A * A)) : bool :=
+      match a, b with
+      | None, None => true                  (* True *)
+      | Some (qa, xa), Some (qb, xb) => (qa ~= qb) && (xa == xb)
+      | _, _ => false
+      end.
+
+    Infix "~~=" := dequeue_equiv (at level 70).
+
+    Axiom equiv_dequeue : forall (a b : t A),
+        a ~= b
+        -> dequeue a ~~= dequeue b.
+
+    (* We retain the three axioms from the prior interface, using our fancy
+     * relation instead of equality on queues. *)
+
+    Axiom dequeue_empty : dequeue (empty) = None.
+    Axiom empty_dequeue : forall (q : t A),
+        dequeue q = None -> q ~= empty.
+
+    Axiom dequeue_enqueue : forall (q : t A) x,
+        dequeue (enqueue q x)
+        ~~= match dequeue q with
+            | None => Some (empty, x)
+            | Some (q', y) => Some (enqueue q' x, y)
+            end.
+  End QUEUE.
+
+  Ltac bool2prop :=
+    intros;
+    (repeat bool2prop_hypo; bool2prop_goal)
+    with bool2prop_hypo :=
+      match goal with
+      | H : is_true (_ == _) |- _ => move/eqP: H => H
+      | H : is_true (_ && _) |- _ => move/andP: H => H
+      | H : is_true (_ || _) |- _ => move/orP: H => H
+      end
+    with bool2prop_goal :=
+      match goal with
+      | |- is_true (_ == _) => apply/eqP
+      | |- is_true (_ && _) => apply/andP; split
+      | |- is_true (_ || _) => apply/orP
+      | |- _ => idtac
+      end.
+
+  (* It's easy to redo [ListQueue], specifying normal equality for the
+   * equivalence relation. *)
+  Module ListQueue : QUEUE.
+    Variable A : eqType.          (* equiv を bool で定義するため。 *)
+
+    Definition t : eqType -> eqType := seq_eqType. (* Set -> Set := seq. *)
+
+    Definition empty : t A := nil.
+    Definition enqueue (q : t A) (x : A) : t A := x :: q.
+    Fixpoint dequeue (q : t A) : option (t A * A) :=
+      match q with
+      | [::] => None
+      | x :: q' =>
+        match dequeue q' with
+        | None => Some ([::], x)
+        | Some (q'', y) => Some (x :: q'', y)
+        end
+      end.
+
+    Definition equiv (a b : t A) := a == b.
+    Infix "~=" := equiv (at level 70).
+
+    Theorem equiv_refl (a : t A) : a ~= a.
+    Proof.
+      rewrite /equiv.
+      bool2prop.                            (* apply/eqP *)
+        by equality.
+    Qed.
+
+    Theorem equiv_sym (a b : t A) : a ~= b -> b ~= a.
+    Proof.
+      rewrite /equiv.
+      bool2prop.                            (* move/eqP => H; apply/eqP *)
+        by equality.
+    Qed.
+    
+    Theorem equiv_trans (a b c : t A) : a ~= b -> b ~= c -> a ~= c.
+    Proof.
+      rewrite /equiv.
+      bool2prop.
+        by equality.
+    Qed.
+
+    Theorem equiv_enqueue (a b : t A) (x : A) :
+      a ~= b
+      -> enqueue a x ~= enqueue b x.
+    Proof.
+      rewrite /equiv.
+      bool2prop.
+        by equality.
+    Qed.
+
+    Definition dequeue_equiv (a b : option (t A * A)) : bool :=
+      match a, b with
+      | None, None => true                  (* True *)
+      | Some (qa, xa), Some (qb, xb) => (qa ~= qb) && (xa == xb)
+      | _, _ => false                       (* False *)
+      end.
+
+    Infix "~~=" := dequeue_equiv (at level 70).
+
+    Theorem equiv_dequeue (a b : t A) :
+      a ~= b
+      -> dequeue a ~~= dequeue b.
+    Proof.
+      unfold equiv, dequeue_equiv; simplify.
+      unfold equiv, dequeue_equiv; simplify. (* 2回やる。 *)
+
+      bool2prop.
+      rewrite H.
+      cases (dequeue b).
+
+      - cases p.
+        bool2prop.
+        + bool2prop.
+          equality.
+
+        + bool2prop.
+          equality.
+          
+      - done.                               (* propositional. *)
+    Qed.
+    
+    Theorem dequeue_empty : dequeue empty = None.
+    Proof.
+      simplify.
+      equality.
+    Qed.
+
+    Theorem empty_dequeue (q : t A) :
+      dequeue q = None -> q ~= empty.
+    Proof.
+      simplify.
+      cases q.
+
+      - simplify.
+        unfold equiv.
+        bool2prop.
+        equality.
+
+      - simplify.
+        unfold equiv.
+        bool2prop.
+        cases (dequeue q).
+        + cases p.
+          admit.
+        + admit.
+    Admitted.
+
+    Theorem dequeue_enqueue (q : t A) x :
+        dequeue (enqueue q x)
+        ~~= match dequeue q with
+            | None => Some (empty, x)
+            | Some (q', y) => Some (enqueue q' x, y)
+            end.
+    Proof.
+      unfold dequeue_equiv, equiv.
+      elim: q => /= [|p q IHq ].
+      - bool2prop.
+        equality.
+
+      - cases (dequeue q).
+        cases p0.                           (* cases p *)
+
+        + bool2prop.
+          bool2prop.
+          bool2prop.
+          case: IHq => H1 H2.
+          bool2prop.
+          equality.
+        + bool2prop.
+          equality.
+      - bool2prop.
+        +  bool2prop.
+           case: IHq => H1 H2.
+           bool2prop.
+           done.
+        + bool2prop.
+          equality.
+    Qed.
+    
+  End ListQueue.
+
+End AlgebraicWithEquivalenceRelation.
+
 
 (* END *)
