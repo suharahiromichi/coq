@@ -525,12 +525,14 @@ Module AlgebraicWithEquivalenceRelation.
     Proof.
       rewrite /eqStackpair.
       apply: (iffP idP).
-      - admit.
+      - case: a => /= a1 a2.
+        case: b => /= b1 b2.
+          by move=> /andP [/eqP -> /eqP ->].
       - move=> H.
         rewrite -H.
-        by apply/andP.
-    Admitted.
-
+          by apply/andP.
+    Qed.
+    
     Definition stackpair_eqMixin (A : eqType) :=
       @EqMixin (@stackpair A) (@eqStackpair A) (@stackpair_eqP A).
     Canonical stackpair_eqType (A : eqType) :=
