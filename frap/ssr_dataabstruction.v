@@ -611,86 +611,101 @@ Module AlgebraicWithEquivalenceRelation.
 
     Infix "~~=" := dequeue_equiv (at level 70).
 
+    Lemma rev_a (A : eqType) (a : A) : rev [:: a] = [:: a].
+    Proof.
+      done.
+    Qed.
+    
     Theorem equiv_dequeue A (a b : t A) :
         a ~= b
         -> dequeue a ~~= dequeue b.
     Proof.
-(*
       unfold equiv, dequeue_equiv, elements, dequeue; simplify.
       cases (DequeueHere a); simplify.
-      cases (rev (EnqueueHere a)); simplify.
-      cases (DequeueHere b); simplify.
-      cases (rev (EnqueueHere b)); simplify.
-      propositional.
-      SearchRewrite (_ ++ []).
-      rewrite app_nil_r in H.
-      rewrite app_nil_r in H.
-      equality.
-      cases (EnqueueHere a); simplify.
-      cases (EnqueueHere b); simplify.
-      cases (rev l); simplify.
-      equality.
-      equality.
-      equality.
-      cases (rev l0); simplify.
-      equality.
-      equality.
-      cases (DequeueHere b); simplify.
-      cases (rev (EnqueueHere b)); simplify.
-      rewrite app_nil_r in H.
-      rewrite app_nil_r in H.
-      equality.
-      rewrite app_nil_r in H.
-      rewrite app_nil_r in H.
-      equality.
-      rewrite app_nil_r in H.
-      rewrite H in Heq0.
-      SearchRewrite (rev (_ ++ _)).
-      rewrite rev_app_distr in Heq0.
-      rewrite rev_app_distr in Heq0.
-      simplify.
-      invert Heq0.
-      unfold equiv, elements.
-      simplify.
-      rewrite rev_app_distr.
-      SearchRewrite (rev (rev _)).
-      rewrite rev_involutive.
-      rewrite rev_involutive.
-      equality.
-      cases (DequeueHere b); simplify.
-      cases (rev (EnqueueHere b)); simplify.
-      rewrite app_nil_r in H.
-      rewrite <- H in Heq1.
-      cases (EnqueueHere a); simplify.
-      cases (rev l); simplify.
-      equality.
-      rewrite rev_app_distr in Heq1.
-      simplify.
-      equality.
-      rewrite rev_app_distr in Heq1.
-      rewrite rev_app_distr in Heq1.
-      simplify.
-      equality.
-      unfold equiv, elements.
-      simplify.
-      rewrite app_nil_r in H.
-      rewrite <- H in Heq1.
-      rewrite rev_app_distr in Heq1.
-      rewrite rev_app_distr in Heq1.
-      simplify.
-      invert Heq1.
-      rewrite rev_involutive.
-      rewrite rev_app_distr.
-      rewrite rev_involutive.
-      equality.
-      unfold equiv, elements.
-      simplify.
-      SearchAbout app cons nil.
-      apply app_inj_tail.
-      rewrite <- app_assoc.
-      rewrite <- app_assoc.
-      assumption.
-    Qed.
+      - cases (rev (EnqueueHere a)); simplify.
+        + cases (DequeueHere b); simplify.
+          * cases (rev (EnqueueHere b)); simplify.
+            ** done.                        (* propositional. *)
+            ** SearchRewrite (_ ++ [::]).
+               rewrite !cats0 in H. (* rewrite app_nil_r in H. rewrite app_nil_r in H. *)
+                 by equality_new.
+          * cases (EnqueueHere a); simplify.
+            ** cases (EnqueueHere b); simplify.
+               *** rewrite -cat1s rev_cat in H. (* **** *)
+                   cases (rev s0); simplify.
+                   **** rewrite rev_a in H. (* **** *)
+                        done.
+                   **** done.
+               *** done.
+            ** rewrite rev_cons in Heq0.    (* **** *)
+               cases (rev s2); simplify.
+               *** done.
+               *** done.
+               
+        + cases (DequeueHere b); simplify.
+          * cases (rev (EnqueueHere b)); simplify.
+            ** rewrite !cats0 in H.
+               move/eqP in H.
+               rewrite H in Heq0.
+               rewrite Heq2 in Heq0.
+               done.
+            ** rewrite !cats0 in H.
+               move/eqP in H.
+               rewrite H in Heq0.
+               rewrite Heq2 in Heq0.
+               inversion Heq0.
+               rewrite /equiv.
+               equality_new.
+          * rewrite cats0 in H.           (* rewrite app_nil_r in H *)
+            move/eqP in H.
+            rewrite H in Heq0.
+            SearchRewrite (rev (_ ++ _)).
+            rewrite rev_cat in Heq0.
+            rewrite revK in Heq0.           (* rev rev *)
+            rewrite -cat1s in Heq0.
+            simplify.
+            inversion Heq0.
+            unfold equiv, elements.
+            simplify.
+            apply/andP.
+            split.
+            ** by rewrite rev_cat revK.
+            ** done.
+      -
+(*
+        cases (DequeueHere b); simplify.
+        + cases (rev (EnqueueHere b)); simplify.
+          * rewrite app_nil_r in H.
+            rewrite <- H in Heq1.
+            cases (EnqueueHere a); simplify.
+            *** cases (rev l); simplify.
+                **** equality.
+                **** rewrite rev_app_distr in Heq1.
+                     simplify.
+                     equality.
+            *** rewrite rev_app_distr in Heq1.
+                rewrite rev_app_distr in Heq1.
+                simplify.
+                equality.
+          * unfold equiv, elements.
+            simplify.
+            rewrite app_nil_r in H.
+            rewrite <- H in Heq1.
+            rewrite rev_app_distr in Heq1.
+            rewrite rev_app_distr in Heq1.
+            simplify.
+            invert Heq1.
+            rewrite rev_involutive.
+            rewrite rev_app_distr.
+            rewrite rev_involutive.
+            equality.
+        + unfold equiv, elements.
+          simplify.
+          SearchAbout app cons nil.
+          apply app_inj_tail.
+          rewrite <- app_assoc.
+          rewrite <- app_assoc.
+          assumption.
  *)
     Admitted.
 
