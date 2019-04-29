@@ -307,35 +307,34 @@ Module AlgebraicWithEquivalenceRelation.
     Parameter t : eqType -> eqType.         (* Set -> Set. *)
     (* equiv を bool で定義するため。 *)
 
-    Variable A : eqType.
-    Parameter empty : t A.
-    Parameter enqueue : t A -> A -> t A.
-    Parameter dequeue : t A -> option (t A * A).
+    Parameter empty : forall (A : eqType), t A.
+    Parameter enqueue : forall (A : eqType), t A -> A -> t A.
+    Parameter dequeue : forall (A : eqType), t A -> option (t A * A).
 
     (* What's new?  This equivalence relation.  The type [Prop] stands for
      * logical truth values, so a function returning it can be seen as a
      * relation in the usual mathematical sense.  This is a *binary* relation,
      * in particular, since it takes two arguments. *)
-    Parameter equiv : t A -> t A -> bool. (* Prop *)
+    Parameter equiv : forall (A : eqType), t A -> t A -> bool. (* Prop *)
 
     (* Let's declare convenient syntax for the relation. *)
     Infix "~=" := equiv (at level 70).
 
     (* It really is an equivalence relation, as formalized by the usual three
      * laws. *)
-    Axiom equiv_refl : forall (a : t A), a ~= a.
-    Axiom equiv_sym : forall (a b : t A), a ~= b -> b ~= a.
-    Axiom equiv_trans : forall (a b c : t A), a ~= b -> b ~= c -> a ~= c.
+    Axiom equiv_refl : forall (A : eqType) (a : t A), a ~= a.
+    Axiom equiv_sym : forall (A : eqType) (a b : t A), a ~= b -> b ~= a.
+    Axiom equiv_trans : forall (A : eqType) (a b c : t A), a ~= b -> b ~= c -> a ~= c.
 
     (* It must be the case that enqueuing elements preserves the relation. *)
-    Axiom equiv_enqueue : forall (a b : t A) (x : A),
+    Axiom equiv_enqueue : forall (A : eqType) (a b : t A) (x : A),
         a ~= b
         -> enqueue a x ~= enqueue b x.
 
     (* We define a derived relation for results of [dequeue]: either both
      * [dequeue]s failed to return anything, or both returned the same data
      * value along with new queues that are themselves related. *)
-    Definition dequeue_equiv (a b : option (t A * A)) : bool :=
+    Definition dequeue_equiv (A : eqType) (a b : option (t A * A)) : bool :=
       match a, b with
       | None, None => true                  (* True *)
       | Some (qa, xa), Some (qb, xb) => (qa ~= qb) && (xa == xb)
@@ -344,21 +343,21 @@ Module AlgebraicWithEquivalenceRelation.
 
     Infix "~~=" := dequeue_equiv (at level 70).
 
-    Axiom equiv_dequeue : forall (a b : t A),
+    Axiom equiv_dequeue : forall (A : eqType) (a b : t A),
         a ~= b
         -> dequeue a ~~= dequeue b.
 
     (* We retain the three axioms from the prior interface, using our fancy
      * relation instead of equality on queues. *)
 
-    Axiom dequeue_empty : dequeue (empty) = None.
-    Axiom empty_dequeue : forall (q : t A),
-        dequeue q = None -> q ~= empty.
+    Axiom dequeue_empty : forall (A : eqType), dequeue (empty A) = None.
+    Axiom empty_dequeue : forall(A : eqType) (q : t A),
+        dequeue q = None -> q ~= empty A.
 
-    Axiom dequeue_enqueue : forall (q : t A) x,
+    Axiom dequeue_enqueue : forall (A : eqType) (q : t A) x,
         dequeue (enqueue q x)
         ~~= match dequeue q with
-            | None => Some (empty, x)
+            | None => Some (empty A, x)
             | Some (q', y) => Some (enqueue q' x, y)
             end.
   End QUEUE.
@@ -383,13 +382,13 @@ Module AlgebraicWithEquivalenceRelation.
   (* It's easy to redo [ListQueue], specifying normal equality for the
    * equivalence relation. *)
   Module ListQueue : QUEUE.
-    Variable A : eqType.          (* equiv を bool で定義するため。 *)
+(*    Variable A : eqType.          (* equiv を bool で定義するため。 *) *)
 
-    Definition t : eqType -> eqType := seq_eqType. (* Set -> Set := seq. *)
+    Definition t (A : eqType) : eqType := seq_eqType A. (* Set -> Set := seq. *)
 
-    Definition empty : t A := nil.
-    Definition enqueue (q : t A) (x : A) : t A := x :: q.
-    Fixpoint dequeue (q : t A) : option (t A * A) :=
+    Definition empty (A : eqType) : t A := nil.
+    Definition enqueue (A : eqType) (q : t A) (x : A) : t A := x :: q.
+    Fixpoint dequeue (A : eqType) (q : t A) : option (t A * A) :=
       match q with
       | [::] => None
       | x :: q' =>
@@ -399,28 +398,28 @@ Module AlgebraicWithEquivalenceRelation.
         end
       end.
 
-    Definition equiv (a b : t A) := a == b.
+    Definition equiv (A : eqType) (a b : t A) := a == b.
     Infix "~=" := equiv (at level 70).
 
-    Theorem equiv_refl (a : t A) : a ~= a.
+    Theorem equiv_refl (A : eqType) (a : t A) : a ~= a.
     Proof.
       rewrite /equiv.
         by equality_new.
     Qed.
 
-    Theorem equiv_sym (a b : t A) : a ~= b -> b ~= a.
+    Theorem equiv_sym (A : eqType) (a b : t A) : a ~= b -> b ~= a.
     Proof.
       rewrite /equiv.
         by equality_new.
     Qed.
     
-    Theorem equiv_trans (a b c : t A) : a ~= b -> b ~= c -> a ~= c.
+    Theorem equiv_trans (A : eqType) (a b c : t A) : a ~= b -> b ~= c -> a ~= c.
     Proof.
       rewrite /equiv.
         by equality_new.
     Qed.
 
-    Theorem equiv_enqueue (a b : t A) (x : A) :
+    Theorem equiv_enqueue (A : eqType) (a b : t A) (x : A) :
       a ~= b
       -> enqueue a x ~= enqueue b x.
     Proof.
@@ -428,7 +427,7 @@ Module AlgebraicWithEquivalenceRelation.
         by equality_new.
     Qed.
 
-    Definition dequeue_equiv (a b : option (t A * A)) : bool :=
+    Definition dequeue_equiv (A : eqType) (a b : option (t A * A)) : bool :=
       match a, b with
       | None, None => true                  (* True *)
       | Some (qa, xa), Some (qb, xb) => (qa ~= qb) && (xa == xb)
@@ -437,7 +436,7 @@ Module AlgebraicWithEquivalenceRelation.
 
     Infix "~~=" := dequeue_equiv (at level 70).
 
-    Theorem equiv_dequeue (a b : t A) :
+    Theorem equiv_dequeue (A : eqType) (a b : t A) :
       a ~= b
       -> dequeue a ~~= dequeue b.
     Proof.
@@ -453,14 +452,14 @@ Module AlgebraicWithEquivalenceRelation.
       - done.                               (* propositional. *)
     Qed.
     
-    Theorem dequeue_empty : dequeue empty = None.
+    Theorem dequeue_empty (A : eqType) : dequeue (empty A) = None.
     Proof.
       simplify.
       equality.
     Qed.
 
-    Theorem empty_dequeue (q : t A) :
-      dequeue q = None -> q ~= empty.
+    Theorem empty_dequeue (A : eqType) (q : t A) :
+      dequeue q = None -> q ~= empty A.
     Proof.
       simplify.
       destruct q as [| s p p'] eqn: H'.      (* cases q. *)
@@ -475,10 +474,10 @@ Module AlgebraicWithEquivalenceRelation.
         + done.
     Qed.
     
-    Theorem dequeue_enqueue (q : t A) x :
+    Theorem dequeue_enqueue (A : eqType) (q : t A) x :
         dequeue (enqueue q x)
         ~~= match dequeue q with
-            | None => Some (empty, x)
+            | None => Some (empty A, x)
             | Some (q', y) => Some (enqueue q' x, y)
             end.
     Proof.
@@ -495,27 +494,306 @@ Module AlgebraicWithEquivalenceRelation.
     
   End ListQueue.
 
+  (* However, now we can implement the classic two-stacks optimized queue! *)
   Module TwoStacksQueue : QUEUE.
+    (* Every queue is a pair of stacks: one for enqueuing and one for
+     * dequeuing. *)
+    Record stackpair (A : eqType) := {
+      EnqueueHere : seq_eqType A;
+      (* This stack has more recently enqueued elements closer to the front,
+       * making enqueuing constant-time. *)
 
-    Variable A : eqType.
+      DequeueHere : seq_eqType A
+      (* This stack has least recently enqueued elements closer to the front,
+       * making dequeuing constant-time. *)
+    }.
+    (* What's the catch?  Sometimes we need to reverse [EnqueueHere] and
+     * transfer it to [DequeueHere], or otherwise there would never be anything
+     * to dequeue!  Luckily, the work we do in transfering is bounded
+     * asymptotically by the total number of enqueue/dequeue operations, so
+     * we get *amortized* constant time. *)
 
-    Record stackpair :=
-      {
-        EnqueueHere : seq A;
-        DequeueHere : seq A
-      }.
+    (* By the way, the [Record] feature we used above is similar to e.g. structs
+     * in C. *)
 
-    Definition t := stackpair.
+    Definition eqStackpair (A : eqType) (a b : stackpair A) : bool :=
+      (EnqueueHere a == EnqueueHere b)
+        && (DequeueHere a == DequeueHere b).
 
-    Definition empty : t := {|
+    Lemma stackpair_eqP (A : eqType) (a b : stackpair A) :
+      reflect (a = b) (eqStackpair a b).
+    Proof.
+      rewrite /eqStackpair.
+      apply: (iffP idP).
+      - admit.
+      - move=> H.
+        rewrite -H.
+        by apply/andP.
+    Admitted.
+
+    Definition stackpair_eqMixin (A : eqType) :=
+      @EqMixin (@stackpair A) (@eqStackpair A) (@stackpair_eqP A).
+    Canonical stackpair_eqType (A : eqType) :=
+      @EqType (@stackpair  A) (@stackpair_eqMixin A).
+
+    Definition t (A : eqType) := stackpair_eqType A.
+    Check t : eqType -> eqType.
+
+    Definition empty A : t A := {|
       EnqueueHere := [::];
       DequeueHere := [::]
     |}.
-    Definition enqueue (q : t) (x : A) : t := {|
+    Definition enqueue A (q : t A) (x : A) : t A := {|
       EnqueueHere := x :: q.(EnqueueHere);
       DequeueHere := q.(DequeueHere)
     |}.
-    Definition dequeue (q : t) : option (t * A) :=
+    Definition dequeue A (q : t A) : option (t A * A) :=
+      match q.(DequeueHere) with
+      | x :: dq => Some ({| EnqueueHere := q.(EnqueueHere);
+                            DequeueHere := dq |}, x)
+      | [::] =>
+        (* Out of dequeuable elements.  Reverse enqueued elements
+         * and transfer to the other stack. *)
+        match rev q.(EnqueueHere) with
+        | [::] => None
+        | x :: eq => Some ({| EnqueueHere := [::];
+                              DequeueHere := eq |}, x)
+        end
+      end.
+
+    (* This function explains which simple queue representation we have in mind,
+     * for each fancy two-stack representation. *)
+    Definition elements A (q : t A) : list A :=
+      q.(EnqueueHere) ++ rev q.(DequeueHere).
+
+    (* That function is useful to define our equivalence relation. *)
+    Definition equiv A (a b : t A) : bool :=
+      elements a == elements b.
+    Infix "~=" := equiv (at level 70).
+
+    Theorem equiv_refl A (a : t A) : a ~= a.
+    Proof.
+      rewrite /equiv.
+        by equality_new.
+    Qed.
+
+    Theorem equiv_sym A (a b : t A) : a ~= b -> b ~= a.
+    Proof.
+      rewrite /equiv.
+        by equality_new.
+    Qed.
+
+    Theorem equiv_trans A (a b c : t A) : a ~= b -> b ~= c -> a ~= c.
+    Proof.
+      rewrite /equiv.
+        by equality_new.
+    Qed.
+
+    (* Now it is mostly routine to prove the laws, though a few tricks may
+     * be worth reading through. *)
+
+    Theorem equiv_enqueue A (a b : t A) (x : A) :
+        a ~= b
+        -> enqueue a x ~= enqueue b x.
+    Proof.
+      unfold equiv, elements; simplify.
+        by equality_new.
+    Qed.
+
+    Definition dequeue_equiv A (a b : option (t A * A)) :=
+      match a, b with
+      | None, None => true
+      | Some (qa, xa), Some (qb, xb) => (qa ~= qb) && (xa == xb)
+      | _, _ => false
+      end.
+
+    Infix "~~=" := dequeue_equiv (at level 70).
+
+    Theorem equiv_dequeue A (a b : t A) :
+        a ~= b
+        -> dequeue a ~~= dequeue b.
+    Proof.
+(*
+      unfold equiv, dequeue_equiv, elements, dequeue; simplify.
+      cases (DequeueHere a); simplify.
+      cases (rev (EnqueueHere a)); simplify.
+      cases (DequeueHere b); simplify.
+      cases (rev (EnqueueHere b)); simplify.
+      propositional.
+      SearchRewrite (_ ++ []).
+      rewrite app_nil_r in H.
+      rewrite app_nil_r in H.
+      equality.
+      cases (EnqueueHere a); simplify.
+      cases (EnqueueHere b); simplify.
+      cases (rev l); simplify.
+      equality.
+      equality.
+      equality.
+      cases (rev l0); simplify.
+      equality.
+      equality.
+      cases (DequeueHere b); simplify.
+      cases (rev (EnqueueHere b)); simplify.
+      rewrite app_nil_r in H.
+      rewrite app_nil_r in H.
+      equality.
+      rewrite app_nil_r in H.
+      rewrite app_nil_r in H.
+      equality.
+      rewrite app_nil_r in H.
+      rewrite H in Heq0.
+      SearchRewrite (rev (_ ++ _)).
+      rewrite rev_app_distr in Heq0.
+      rewrite rev_app_distr in Heq0.
+      simplify.
+      invert Heq0.
+      unfold equiv, elements.
+      simplify.
+      rewrite rev_app_distr.
+      SearchRewrite (rev (rev _)).
+      rewrite rev_involutive.
+      rewrite rev_involutive.
+      equality.
+      cases (DequeueHere b); simplify.
+      cases (rev (EnqueueHere b)); simplify.
+      rewrite app_nil_r in H.
+      rewrite <- H in Heq1.
+      cases (EnqueueHere a); simplify.
+      cases (rev l); simplify.
+      equality.
+      rewrite rev_app_distr in Heq1.
+      simplify.
+      equality.
+      rewrite rev_app_distr in Heq1.
+      rewrite rev_app_distr in Heq1.
+      simplify.
+      equality.
+      unfold equiv, elements.
+      simplify.
+      rewrite app_nil_r in H.
+      rewrite <- H in Heq1.
+      rewrite rev_app_distr in Heq1.
+      rewrite rev_app_distr in Heq1.
+      simplify.
+      invert Heq1.
+      rewrite rev_involutive.
+      rewrite rev_app_distr.
+      rewrite rev_involutive.
+      equality.
+      unfold equiv, elements.
+      simplify.
+      SearchAbout app cons nil.
+      apply app_inj_tail.
+      rewrite <- app_assoc.
+      rewrite <- app_assoc.
+      assumption.
+    Qed.
+ *)
+    Admitted.
+
+    Theorem dequeue_empty A : dequeue (empty A) = None.
+    Proof.
+      simplify.
+      equality.
+    Qed.
+
+    Theorem empty_dequeue A (q : t A) :
+        dequeue q = None -> q ~= empty A.
+    Proof.
+(*
+      simplify.
+      cases q.
+      unfold dequeue in *.
+      simplify.
+      cases DequeueHere0.
+      cases (rev EnqueueHere0).
+      cases EnqueueHere0.
+      equality.
+      simplify.
+      cases (rev EnqueueHere0); simplify.
+      equality.
+      equality.
+      equality.
+      equality.
+    Qed.
+ *)
+    Admitted.
+
+    Theorem dequeue_enqueue A (q : t A) x :
+        dequeue (enqueue q x)
+        ~~= match dequeue q with
+            | None => Some (empty A, x)
+            | Some (q', y) => Some (enqueue q' x, y)
+            end.
+    Proof.
+(*
+      unfold dequeue_equiv, equiv; simplify.
+      cases q; simplify.
+      unfold dequeue, enqueue; simplify.
+      cases DequeueHere0; simplify.
+
+      cases (rev EnqueueHere0); simplify.
+
+      equality.
+
+      unfold elements; simplify.
+      SearchRewrite (rev (_ ++ _)).
+      rewrite rev_app_distr.
+      simplify.
+      equality.
+
+      equality.
+    Qed.
+ *)
+    Admitted.
+      
+  End TwoStacksQueue.
+
+(****************
+
+(* まちかったところから、とってきた *)
+
+  Module TwoStacksQueue : QUEUE.
+
+    Record stackpair (A : eqType) :=
+      {
+        EnqueueHere : seq_eqType A;
+        DequeueHere : seq_eqType A
+      }.
+
+    Definition eqStackpair (A : eqType) (a b : stackpair A) : bool :=
+      (EnqueueHere a == EnqueueHere b)
+        && (DequeueHere a == DequeueHere b).
+
+    Lemma stackpair_eqP (A : eqType) (a b : stackpair A) :
+      reflect (a = b) (eqStackpair a b).
+    Proof.
+      rewrite /eqStackpair.
+      apply: (iffP idP).
+      - admit.
+      - move=> H.
+        rewrite -H.
+        by apply/andP.
+    Admitted.
+
+    Definition stackpair_eqMixin (A : eqType) :=
+      @EqMixin (@stackpair A) (@eqStackpair A) (@stackpair_eqP A).
+    Canonical stackpair_eqType (A : eqType) :=
+      @EqType (@stackpair  A) (@stackpair_eqMixin A).
+
+    Definition t (A : eqType) := stackpair_eqType A.
+    Check t : eqType -> eqType.
+
+    Definition empty (A : eqType) : t A := {|
+      EnqueueHere := [::];
+      DequeueHere := [::]
+    |}.
+    Definition enqueue (A : eqType) (q : t A) (x : A) : t A := {|
+      EnqueueHere := x :: q.(EnqueueHere);
+      DequeueHere := q.(DequeueHere)
+    |}.
+    Definition dequeue (A : eqType) (q : t A) : option (t A * A) :=
       match q.(DequeueHere) with
       | x :: dq => Some ({| EnqueueHere := q.(EnqueueHere);
                             DequeueHere := dq |}, x)
@@ -527,28 +805,28 @@ Module AlgebraicWithEquivalenceRelation.
         end
       end.
 
-    Definition rep (q : t) : seq A :=
+    Definition rep (A : eqType) (q : t A) : seq A :=
       q.(EnqueueHere) ++ rev q.(DequeueHere).
 
-    Theorem empty_rep :
-        rep empty = [::].
+    Theorem empty_rep (A : eqType) :
+        rep (empty A) = [::].
     Proof.
       equality.
     Qed.
 
-    Theorem enqueue_rep : forall (q : t) x,
+    Theorem enqueue_rep (A : eqType) (q : t A) x :
         rep (enqueue q x) = x :: rep q.
     Proof.
       equality.
     Qed.
     
     (* notu *)
-    Lemma rev_a (a : A) : rev [:: a] = [:: a].
+    Lemma rev_a (A : eqType) (a : A) : rev [:: a] = [:: a].
     Proof.
       done.
     Qed.
     
-    Theorem dequeue_empty : forall (q : t),
+    Theorem dequeue_empty : forall (A : eqType) (q : t A),
         rep q = [::]
         -> dequeue q = None.
     Proof.
@@ -559,14 +837,14 @@ Module AlgebraicWithEquivalenceRelation.
         done.
       - cases (EnqueueHere q).
         + rewrite -cat1s rev_cat in H.      (* simplify *)
-          cases (rev l); simplify.
+          cases (rev s0); simplify.         (* XXXX *)
           * done.
           * done.
         + done.
           (* rewrite -cat1s -[s :: l]cat1s rev_cat rev_a in H. *)
     Qed.
     
-    Lemma app_inj_tail (x y : seq A) (a b : A) :
+    Lemma app_inj_tail (A : eqType) (x y : seq A) (a b : A) :
       x ++ [:: a] = y ++ [:: b] -> x = y /\ a = b.
     Proof.
       move/eqP.
@@ -578,7 +856,7 @@ Module AlgebraicWithEquivalenceRelation.
         by rewrite H1.
     Qed.
     
-    Lemma app_inj_head (a b : A) (x y : seq A) :
+    Lemma app_inj_head (A : eqType) (a b : A) (x y : seq A) :
       [:: a] ++ x = [:: b] ++ y -> a = b /\ x = y.
     Proof.
       move/eqP.
@@ -590,7 +868,7 @@ Module AlgebraicWithEquivalenceRelation.
         by rewrite H2.
     Qed.
     
-    Theorem dequeue_nonempty (q : t) xs x :
+    Theorem dequeue_nonempty (A : eqType) (q : t A) xs x :
         rep q = xs ++ [:: x]
         -> exists q', dequeue q = Some (q', x) /\ rep q' = xs.
     Proof.
@@ -606,89 +884,15 @@ Module AlgebraicWithEquivalenceRelation.
         rewrite revK.                    (* rewrite rev_involutive. *)
           by equality.
         
-      - exists {| EnqueueHere := EnqueueHere q; DequeueHere := l |}.
+      - exists {| EnqueueHere := EnqueueHere q; DequeueHere := s0 |}. (* XXXX *)
         simplify.
         rewrite -cat1s rev_cat catA rev_a in H. (* rewrite app_assoc in H. *)
         move/app_inj_tail: H => [H1 H2].
           by rewrite H1 H2.
     Qed.
+
   End TwoStacksQueue.
-  
-  (* XXXXXXXXXXXXXXXXXX *)
-  
-  Module DelayedSum (Q : QUEUE).
-    Fixpoint makeQueue (n : nat) (q : Q.t nat) : Q.t nat :=
-      match n with
-      | 0 => q
-      | S n' => makeQueue n' (Q.enqueue q n')
-      end.
 
-    Fixpoint computeSum (n : nat) (q : Q.t nat) : nat :=
-      match n with
-      | 0 => 0
-      | S n' => match Q.dequeue q with
-                | None => 0
-                | Some (q', v) => v + computeSum n' q'
-                end
-      end.
-
-    Fixpoint sumUpto (n : nat) : nat :=
-      match n with
-      | 0 => 0
-      | S n' => n' + sumUpto n'
-      end.
-
-    Fixpoint upto (n : nat) : list nat :=
-      match n with
-      | 0 => []
-      | S n' => upto n' ++ [n']
-      end.
-
-    Lemma makeQueue_rep : forall n q,
-        Q.rep (makeQueue n q) = upto n ++ Q.rep q.
-    Proof.
-      induct n.
-
-      simplify.
-      equality.
-
-      simplify.
-      rewrite IHn.
-      rewrite Q.enqueue_rep.
-      rewrite <- app_assoc.
-      simplify.
-      equality.
-    Qed.
-
-    Lemma computeSum_makeQueue' : forall n q,
-        Q.rep q = upto n
-        -> computeSum n q = sumUpto n.
-    Proof.
-      induct n.
-
-      simplify.
-      equality.
-
-      simplify.
-      pose proof (Q.dequeue_nonempty _ _ H).
-      first_order.
-      rewrite H0.
-      rewrite IHn.
-      equality.
-      assumption.
-    Qed.
-
-    Theorem computeSum_ok : forall n,
-        computeSum n (makeQueue n (Q.empty nat)) = sumUpto n.
-    Proof.
-      simplify.
-      apply computeSum_makeQueue'.
-      rewrite makeQueue_rep.
-      rewrite Q.empty_rep.
-      apply app_nil_r.
-    Qed.
-  End DelayedSum.
-End RepFunction.
-End AlgebraicWithEquivalenceRelation.
+**************)
 
 (* END *)
