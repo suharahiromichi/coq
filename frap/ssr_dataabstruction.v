@@ -481,14 +481,12 @@ Module AlgebraicWithEquivalenceRelation.
         equality.
 
       - simplify.
-        unfold equiv.
-        bool2prop.
-        cases (dequeue q).
-        + cases p.
-          admit.
-        + admit.
-    Admitted.
-
+        subst.
+        cases (dequeue l).
+        + by cases p.                       (* let 式を分解する。 *)
+        + done.
+    Qed.
+    
     Theorem dequeue_enqueue (q : t A) x :
         dequeue (enqueue q x)
         ~~= match dequeue q with
