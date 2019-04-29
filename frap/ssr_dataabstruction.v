@@ -495,6 +495,200 @@ Module AlgebraicWithEquivalenceRelation.
     
   End ListQueue.
 
+  Module TwoStacksQueue : QUEUE.
+
+    Variable A : eqType.
+
+    Record stackpair :=
+      {
+        EnqueueHere : seq A;
+        DequeueHere : seq A
+      }.
+
+    Definition t := stackpair.
+
+    Definition empty : t := {|
+      EnqueueHere := [::];
+      DequeueHere := [::]
+    |}.
+    Definition enqueue (q : t) (x : A) : t := {|
+      EnqueueHere := x :: q.(EnqueueHere);
+      DequeueHere := q.(DequeueHere)
+    |}.
+    Definition dequeue (q : t) : option (t * A) :=
+      match q.(DequeueHere) with
+      | x :: dq => Some ({| EnqueueHere := q.(EnqueueHere);
+                            DequeueHere := dq |}, x)
+      | [::] =>
+        match rev q.(EnqueueHere) with
+        | [::] => None
+        | x :: eq => Some ({| EnqueueHere := [::];
+                              DequeueHere := eq |}, x)
+        end
+      end.
+
+    Definition rep (q : t) : seq A :=
+      q.(EnqueueHere) ++ rev q.(DequeueHere).
+
+    Theorem empty_rep :
+        rep empty = [::].
+    Proof.
+      equality.
+    Qed.
+
+    Theorem enqueue_rep : forall (q : t) x,
+        rep (enqueue q x) = x :: rep q.
+    Proof.
+      equality.
+    Qed.
+    
+    (* notu *)
+    Lemma rev_a (a : A) : rev [:: a] = [:: a].
+    Proof.
+      done.
+    Qed.
+    
+    Theorem dequeue_empty : forall (q : t),
+        rep q = [::]
+        -> dequeue q = None.
+    Proof.
+      unfold rep, dequeue; simplify.
+      cases (DequeueHere q); simplify.
+      - rewrite cats0 in H.               (* rewrite app_nil_r in H *)
+        rewrite H.
+        done.
+      - cases (EnqueueHere q).
+        + rewrite -cat1s rev_cat in H.      (* simplify *)
+          cases (rev l); simplify.
+          * done.
+          * done.
+        + done.
+          (* rewrite -cat1s -[s :: l]cat1s rev_cat rev_a in H. *)
+    Qed.
+    
+    Lemma app_inj_tail (x y : seq A) (a b : A) :
+      x ++ [:: a] = y ++ [:: b] -> x = y /\ a = b.
+    Proof.
+      move/eqP.
+      rewrite 2!cats1 eqseq_rcons.
+      move/andP=> [H1 H2].
+      move/eqP in H1.
+      move/eqP in H2.
+      (* inversion H2. *)
+        by rewrite H1.
+    Qed.
+    
+    Lemma app_inj_head (a b : A) (x y : seq A) :
+      [:: a] ++ x = [:: b] ++ y -> a = b /\ x = y.
+    Proof.
+      move/eqP.
+      rewrite eqseq_cons.                   (* eqseq_cat *)
+      move/andP=> [H1 H2].
+      move/eqP in H1.
+      move/eqP in H2.
+      (* inversion H1. *)
+        by rewrite H2.
+    Qed.
+    
+    Theorem dequeue_nonempty (q : t) xs x :
+        rep q = xs ++ [:: x]
+        -> exists q', dequeue q = Some (q', x) /\ rep q' = xs.
+    Proof.
+      unfold rep, dequeue; simplify.
+
+      cases (DequeueHere q); simplify.
+
+      - rewrite cats0 in H.               (* rewrite app_nil_r in H *)
+        rewrite H.
+        rewrite rev_cat; simplify. (* rewrite rev_app_distr; simplify. *)
+        exists {| EnqueueHere := [::]; DequeueHere := rev xs |}.
+        simplify.
+        rewrite revK.                    (* rewrite rev_involutive. *)
+          by equality.
+        
+      - exists {| EnqueueHere := EnqueueHere q; DequeueHere := l |}.
+        simplify.
+        rewrite -cat1s rev_cat catA rev_a in H. (* rewrite app_assoc in H. *)
+        move/app_inj_tail: H => [H1 H2].
+          by rewrite H1 H2.
+    Qed.
+  End TwoStacksQueue.
+  
+  (* XXXXXXXXXXXXXXXXXX *)
+  
+  Module DelayedSum (Q : QUEUE).
+    Fixpoint makeQueue (n : nat) (q : Q.t nat) : Q.t nat :=
+      match n with
+      | 0 => q
+      | S n' => makeQueue n' (Q.enqueue q n')
+      end.
+
+    Fixpoint computeSum (n : nat) (q : Q.t nat) : nat :=
+      match n with
+      | 0 => 0
+      | S n' => match Q.dequeue q with
+                | None => 0
+                | Some (q', v) => v + computeSum n' q'
+                end
+      end.
+
+    Fixpoint sumUpto (n : nat) : nat :=
+      match n with
+      | 0 => 0
+      | S n' => n' + sumUpto n'
+      end.
+
+    Fixpoint upto (n : nat) : list nat :=
+      match n with
+      | 0 => []
+      | S n' => upto n' ++ [n']
+      end.
+
+    Lemma makeQueue_rep : forall n q,
+        Q.rep (makeQueue n q) = upto n ++ Q.rep q.
+    Proof.
+      induct n.
+
+      simplify.
+      equality.
+
+      simplify.
+      rewrite IHn.
+      rewrite Q.enqueue_rep.
+      rewrite <- app_assoc.
+      simplify.
+      equality.
+    Qed.
+
+    Lemma computeSum_makeQueue' : forall n q,
+        Q.rep q = upto n
+        -> computeSum n q = sumUpto n.
+    Proof.
+      induct n.
+
+      simplify.
+      equality.
+
+      simplify.
+      pose proof (Q.dequeue_nonempty _ _ H).
+      first_order.
+      rewrite H0.
+      rewrite IHn.
+      equality.
+      assumption.
+    Qed.
+
+    Theorem computeSum_ok : forall n,
+        computeSum n (makeQueue n (Q.empty nat)) = sumUpto n.
+    Proof.
+      simplify.
+      apply computeSum_makeQueue'.
+      rewrite makeQueue_rep.
+      rewrite Q.empty_rep.
+      apply app_nil_r.
+    Qed.
+  End DelayedSum.
+End RepFunction.
 End AlgebraicWithEquivalenceRelation.
 
 (* END *)
