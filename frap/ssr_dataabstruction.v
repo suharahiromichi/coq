@@ -691,26 +691,22 @@ Module AlgebraicWithEquivalenceRelation.
           * cases (rev (EnqueueHere b)); simplify.
             ** rewrite !cats0 in H.
                move/eqP in H.
-               rewrite H in Heq0.
-               rewrite Heq2 in Heq0.
+               rewrite H Heq2 in Heq0.
                done.
             ** rewrite !cats0 in H.
                move/eqP in H.
-               rewrite H in Heq0.
-               rewrite Heq2 in Heq0.
+               rewrite H Heq2 in Heq0.
                inversion Heq0.
                rewrite /equiv.
-               equality_new.
+                 by equality_new.
           * rewrite cats0 in H.           (* rewrite app_nil_r in H *)
             move/eqP in H.
             rewrite H in Heq0.
             SearchRewrite (rev (_ ++ _)).
-            rewrite rev_cat in Heq0.
-            rewrite revK in Heq0.           (* rev rev *)
-            rewrite -cat1s in Heq0.
+            rewrite rev_cat revK -cat1s in Heq0. (* rev rev *)
             simplify.
             inversion Heq0.
-            unfold equiv, elements.
+            rewrite /equiv /elements.
             simplify.
             apply/andP.
             split.
@@ -724,34 +720,21 @@ Module AlgebraicWithEquivalenceRelation.
             cases (EnqueueHere a); simplify.
             ** cases (rev s0); simplify.
                *** by rewrite revK in Heq1.
-               *** rewrite revK in Heq1.
-                   done.
-            ** rewrite rev_cons in Heq1.
-               rewrite rev_cons in Heq1.
-               rewrite -!cats1 in Heq1.
-               rewrite catA in Heq1.
-               rewrite rev_cat in Heq1.
-               rewrite rev_a in Heq1.
-               rewrite cat1s in Heq1.
-                   rewrite cat_cons in Heq1.
+               *** by rewrite revK in Heq1.
+            ** rewrite 2!rev_cons -2!cats1 catA rev_cat rev_a cat1s cat_cons in Heq1.
                done.
           * unfold equiv, elements.
             simplify.
             rewrite cats0 in H.
             move/eqP in H.
-            rewrite <- H in Heq1.
-            rewrite rev_cat in Heq1.
-            rewrite revK in Heq1.
-            rewrite cat_cons in Heq1.
+            rewrite -H rev_cat revK cat_cons in Heq1.
             inversion Heq1.
             rewrite rev_cat revK.
-            by equality_new.    (* apply/andP. by split; apply/eqP. *)
-        + unfold equiv, elements.
+              by equality_new.  (* apply/andP. by split; apply/eqP. *)
+        + rewrite /equiv /elements.
           simplify.
-          Check app_inj_tail.
           apply: app_inj_tail.
-          rewrite -2!catA.
-          rewrite 2!cats1 -2!rev_cons.
+          rewrite -2!catA 2!cats1 -2!rev_cons.
           done.
     Qed.
     
@@ -764,23 +747,26 @@ Module AlgebraicWithEquivalenceRelation.
     Theorem empty_dequeue A (q : t A) :
         dequeue q = None -> q ~= empty A.
     Proof.
-(*
       simplify.
       cases q.
       unfold dequeue in *.
       simplify.
       cases DequeueHere0.
-      cases (rev EnqueueHere0).
-      cases EnqueueHere0.
-      equality.
-      simplify.
-      cases (rev EnqueueHere0); simplify.
-      equality.
-      equality.
-      equality.
-      equality.
-    Qed.
- *)
+      - cases (rev EnqueueHere0).
+        + cases EnqueueHere0.
+          * rewrite /equiv.
+              by equality_new.
+          * simplify.
+            cases (rev EnqueueHere0); simplify.
+            ** subst.
+               rewrite /equiv /elements /=.
+               rewrite -cat_cons cats0.
+               apply/eqP.
+               simpl.
+               admit.                       (* ****** *)
+            ** equality_new.
+        + equality_new.
+      - equality_new.
     Admitted.
 
     Theorem dequeue_enqueue A (q : t A) x :
@@ -790,27 +776,22 @@ Module AlgebraicWithEquivalenceRelation.
             | Some (q', y) => Some (enqueue q' x, y)
             end.
     Proof.
-(*
       unfold dequeue_equiv, equiv; simplify.
       cases q; simplify.
       unfold dequeue, enqueue; simplify.
       cases DequeueHere0; simplify.
 
-      cases (rev EnqueueHere0); simplify.
-
-      equality.
-
-      unfold elements; simplify.
-      SearchRewrite (rev (_ ++ _)).
-      rewrite rev_app_distr.
-      simplify.
-      equality.
-
-      equality.
+      - cases (rev EnqueueHere0); simplify.
+        + rewrite rev_cons Heq1 //=.
+        + rewrite rev_cons Heq1 /=.
+          rewrite /elements /=.
+          rewrite rev_rcons.
+            by equality_new.               (* by apply/andP; split. *)
+            
+      - unfold elements; simplify.
+          by equality_new.                 (* by apply/andP; split. *)
     Qed.
- *)
-    Admitted.
-      
+    
   End TwoStacksQueue.
 
 (****************
