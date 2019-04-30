@@ -794,6 +794,154 @@ Module AlgebraicWithEquivalenceRelation.
     
   End TwoStacksQueue.
 
+  (* The exercise of the generic delayed sum may be repeated with equivalence
+   * relations. *)
+
+  Module DelayedSum (Q : QUEUE).
+    Fixpoint makeQueue (n : nat) (q : Q.t nat_eqType) : Q.t nat_eqType :=
+      match n with
+      | 0 => q
+      | S n' => makeQueue n' (Q.enqueue q n')
+      end.
+
+    Fixpoint computeSum (n : nat_eqType) (q : Q.t nat_eqType) : nat_eqType :=
+      match n with
+      | 0 => 0
+      | S n' => match Q.dequeue q with
+                | None => 0
+                | Some (q', v) => v + computeSum n' q'
+                end
+      end.
+
+    Fixpoint sumUpto (n : nat_eqType) : nat_eqType :=
+      match n with
+      | 0 => 0
+      | S n' => n' + sumUpto n'
+      end.
+
+    Infix "~=" := Q.equiv (at level 70).
+    Infix "~~=" := Q.dequeue_equiv (at level 70).
+
+    Lemma makeQueue_congruence n a b :
+        a ~= b
+        -> makeQueue n a ~= makeQueue n b.
+    Proof.
+      elim: n a b => [a b | n IHn a b] H; simplify.
+      - done.                               (* assumption. *)
+      - apply: IHn.
+        apply: Q.equiv_enqueue.
+        done.                               (* assumption. *)
+    Qed.
+    
+    Lemma dequeue_makeQueue n q :
+        Q.dequeue (makeQueue n q)
+        ~~= match Q.dequeue q with
+            | Some (q', v) => Some (makeQueue n q', v)
+            | None =>
+              match n with
+              | 0 => None
+              | S n' => Some (makeQueue n' q, n')
+              end
+            end.
+    Proof.
+      elim: n q => [| n IHn] q; simplify.
+
+      - simplify.
+        cases (Q.dequeue q).
+        + cases p.
+          unfold Q.dequeue_equiv.
+          apply/andP; split.
+          * by apply Q.equiv_refl.
+          * by apply/eqP.
+        + by rewrite /Q.dequeue_equiv.
+          
+      - simplify.
+        unfold Q.dequeue_equiv in *.
+        specialize (IHn (Q.enqueue q n)).
+        cases (Q.dequeue (makeQueue n (Q.enqueue q n))).
+    Admitted.
+    
+    Theorem computeSum_congruence : forall n a b,
+        a ~= b
+        -> computeSum n a = computeSum n b.
+    Proof.
+(*
+      induct n.
+
+      simplify.
+      equality.
+
+      simplify.
+      pose proof (Q.equiv_dequeue H).
+      unfold Q.dequeue_equiv in H0.
+      cases (Q.dequeue a).
+
+      cases p.
+      cases (Q.dequeue b).
+      cases p.
+      rewrite IHn with (b := t0).
+      equality.
+      equality.
+      propositional.
+
+      cases (Q.dequeue b).
+      propositional.
+      equality.
+    Qed.
+ *)
+    Admitted.
+    
+    Theorem computeSum_ok : forall n,
+        computeSum n (makeQueue n (Q.empty nat_eqType)) = sumUpto n.
+    Proof.
+(*
+      induct n.
+
+      simplify.
+      equality.
+
+      simplify.
+      pose proof (dequeue_makeQueue n (Q.enqueue (Q.empty nat_eqType) n)).
+      unfold Q.dequeue_equiv in H.
+      cases (Q.dequeue (makeQueue n (Q.enqueue (Q.empty nat_eqType) n))).
+
+      cases p.
+      pose proof (Q.dequeue_enqueue (Q.empty nat_eqType) n).
+      unfold Q.dequeue_equiv in H0.
+      cases (Q.dequeue (Q.enqueue (Q.empty nat_eqType) n)).
+
+      cases p.
+      rewrite Q.dequeue_empty in H0.
+      propositional.
+      f_equal.
+      equality.
+      rewrite <- IHn.
+      
+      apply computeSum_congruence.
+      apply Q.equiv_trans with (b := makeQueue n t0).
+      assumption.
+      apply makeQueue_congruence.
+      assumption.
+
+      rewrite Q.dequeue_empty in H0.
+      propositional.
+
+      pose proof (Q.dequeue_enqueue (Q.empty nat_eqType) n).
+      unfold Q.dequeue_equiv in H0.
+      cases (Q.dequeue (Q.enqueue (Q.empty nat_eqType) n)).
+
+      cases p.
+      propositional.
+
+      rewrite Q.dequeue_empty in H0.
+      propositional.
+    Qed.
+ *)
+      Admitted.
+  End DelayedSum.
+
+End AlgebraicWithEquivalenceRelation.
+
 (****************
 
 (* まちかったところから、とってきた *)
