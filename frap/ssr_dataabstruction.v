@@ -754,21 +754,21 @@ Module AlgebraicWithEquivalenceRelation.
       cases DequeueHere0.
       - cases (rev EnqueueHere0).
         + cases EnqueueHere0.
-          * rewrite /equiv.
-              by equality_new.
-          * simplify.
-            cases (rev EnqueueHere0); simplify.
-            ** subst.
-               rewrite /equiv /elements /=.
-               rewrite -cat_cons cats0.
-               apply/eqP.
-               simpl.
-               admit.                       (* ****** *)
-            ** equality_new.
-        + equality_new.
-      - equality_new.
-    Admitted.
+          subst.
+          * rewrite /equiv; by equality_new.
 
+          * simplify.
+            cases (rev l).              (* cases (rev EnqueueHere0) *)
+            ** rewrite rev_cons in Heq1.
+               rewrite Heq3 in Heq1.
+               done.
+            ** rewrite rev_cons in Heq1.
+               rewrite Heq3 in Heq1.
+               done.
+        + by equality_new.
+      - by equality_new.
+    Qed.
+    
     Theorem dequeue_enqueue A (q : t A) x :
         dequeue (enqueue q x)
         ~~= match dequeue q with
