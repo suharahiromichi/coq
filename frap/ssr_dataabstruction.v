@@ -616,6 +616,52 @@ Module AlgebraicWithEquivalenceRelation.
       done.
     Qed.
     
+(*
+    Lemma app_inj_tail (A : eqType) (x y : seq A) (a b : A) :
+      x ++ [:: a] = y ++ [:: b] -> x = y /\ a = b.
+    Proof.
+      move/eqP.
+      rewrite 2!cats1 eqseq_rcons.
+      move/andP=> [H1 H2].
+      move/eqP in H1.
+      move/eqP in H2.
+      (* inversion H2. *)
+        by rewrite H1.
+    Qed.
+*)
+    Lemma app_inj_tail (A : eqType) (x y : seq A) (a b : A) :
+      x ++ [:: a] == y ++ [:: b] -> (x == y) && (a == b).
+    Proof.
+      rewrite 2!cats1 eqseq_rcons.
+      move/andP=> [H1 H2].
+      move/eqP in H1.
+      move/eqP in H2.
+      rewrite H1 H2.
+        by apply/andP; split.
+    Qed.
+(*    
+    Lemma app_inj_head (A : eqType) (a b : A) (x y : seq A) :
+      [:: a] ++ x = [:: b] ++ y -> a = b /\ x = y.
+    Proof.
+      rewrite eqseq_cons.                   (* eqseq_cat *)
+      move/andP=> [H1 H2].
+      move/eqP in H1.
+      move/eqP in H2.
+      (* inversion H1. *)
+        by rewrite H2.
+    Qed.
+*)    
+    Lemma app_inj_head (A : eqType) (a b : A) (x y : seq A) :
+      [:: a] ++ x == [:: b] ++ y -> (a == b) && (x == y).
+    Proof.
+      rewrite eqseq_cons.                   (* eqseq_cat *)
+      move/andP=> [H1 H2].
+      move/eqP in H1.
+      move/eqP in H2.
+      rewrite H1 H2.
+        by apply/andP; split.
+    Qed.
+    
     Theorem equiv_dequeue A (a b : t A) :
         a ~= b
         -> dequeue a ~~= dequeue b.
@@ -626,8 +672,7 @@ Module AlgebraicWithEquivalenceRelation.
         + cases (DequeueHere b); simplify.
           * cases (rev (EnqueueHere b)); simplify.
             ** done.                        (* propositional. *)
-            ** SearchRewrite (_ ++ [::]).
-               rewrite !cats0 in H. (* rewrite app_nil_r in H. rewrite app_nil_r in H. *)
+            ** rewrite !cats0 in H.
                  by equality_new.
           * cases (EnqueueHere a); simplify.
             ** cases (EnqueueHere b); simplify.
@@ -671,44 +716,45 @@ Module AlgebraicWithEquivalenceRelation.
             split.
             ** by rewrite rev_cat revK.
             ** done.
-      -
-(*
-        cases (DequeueHere b); simplify.
+      - cases (DequeueHere b); simplify.
         + cases (rev (EnqueueHere b)); simplify.
-          * rewrite app_nil_r in H.
+          * rewrite cats0 in H.
+            move/eqP in H.
             rewrite <- H in Heq1.
             cases (EnqueueHere a); simplify.
-            *** cases (rev l); simplify.
-                **** equality.
-                **** rewrite rev_app_distr in Heq1.
-                     simplify.
-                     equality.
-            *** rewrite rev_app_distr in Heq1.
-                rewrite rev_app_distr in Heq1.
-                simplify.
-                equality.
+            ** cases (rev s0); simplify.
+               *** by rewrite revK in Heq1.
+               *** rewrite revK in Heq1.
+                   done.
+            ** rewrite rev_cons in Heq1.
+               rewrite rev_cons in Heq1.
+               rewrite -!cats1 in Heq1.
+               rewrite catA in Heq1.
+               rewrite rev_cat in Heq1.
+               rewrite rev_a in Heq1.
+               rewrite cat1s in Heq1.
+                   rewrite cat_cons in Heq1.
+               done.
           * unfold equiv, elements.
             simplify.
-            rewrite app_nil_r in H.
+            rewrite cats0 in H.
+            move/eqP in H.
             rewrite <- H in Heq1.
-            rewrite rev_app_distr in Heq1.
-            rewrite rev_app_distr in Heq1.
-            simplify.
-            invert Heq1.
-            rewrite rev_involutive.
-            rewrite rev_app_distr.
-            rewrite rev_involutive.
-            equality.
+            rewrite rev_cat in Heq1.
+            rewrite revK in Heq1.
+            rewrite cat_cons in Heq1.
+            inversion Heq1.
+            rewrite rev_cat revK.
+            by equality_new.    (* apply/andP. by split; apply/eqP. *)
         + unfold equiv, elements.
           simplify.
-          SearchAbout app cons nil.
-          apply app_inj_tail.
-          rewrite <- app_assoc.
-          rewrite <- app_assoc.
-          assumption.
- *)
-    Admitted.
-
+          Check app_inj_tail.
+          apply: app_inj_tail.
+          rewrite -2!catA.
+          rewrite 2!cats1 -2!rev_cons.
+          done.
+    Qed.
+    
     Theorem dequeue_empty A : dequeue (empty A) = None.
     Proof.
       simplify.
@@ -859,30 +905,6 @@ Module AlgebraicWithEquivalenceRelation.
           * done.
         + done.
           (* rewrite -cat1s -[s :: l]cat1s rev_cat rev_a in H. *)
-    Qed.
-    
-    Lemma app_inj_tail (A : eqType) (x y : seq A) (a b : A) :
-      x ++ [:: a] = y ++ [:: b] -> x = y /\ a = b.
-    Proof.
-      move/eqP.
-      rewrite 2!cats1 eqseq_rcons.
-      move/andP=> [H1 H2].
-      move/eqP in H1.
-      move/eqP in H2.
-      (* inversion H2. *)
-        by rewrite H1.
-    Qed.
-    
-    Lemma app_inj_head (A : eqType) (a b : A) (x y : seq A) :
-      [:: a] ++ x = [:: b] ++ y -> a = b /\ x = y.
-    Proof.
-      move/eqP.
-      rewrite eqseq_cons.                   (* eqseq_cat *)
-      move/andP=> [H1 H2].
-      move/eqP in H1.
-      move/eqP in H2.
-      (* inversion H1. *)
-        by rewrite H2.
     Qed.
     
     Theorem dequeue_nonempty (A : eqType) (q : t A) xs x :
