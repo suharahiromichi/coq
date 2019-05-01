@@ -363,115 +363,152 @@ Module M : S.
     - by auto.
   Qed.
 
-  (* ****** *)
-  
-  Theorem lookup_add_eq : forall A B (m : fmap A B) k1 k2 v,
+  Theorem lookup_add_eq A B (m : fmap A B) k1 k2 v :
     k1 = k2
     -> lookup (add m k1 v) k2 = Some v.
   Proof.
-    unfold lookup, add; intuition.
-    destruct (decide (k2 = k1)); try tauto.
-    congruence.
+    rewrite /lookup /add.
+    move=> Hk.
+    case H : (k2 == k1).
+    - done.
+    - rewrite Hk in H.
+        by move/eqP : H.                    (* 矛盾 *)
   Qed.
-
-  Theorem lookup_add_ne : forall A B (m : fmap A B) k k' v,
+  
+  Theorem lookup_add_ne A B (m : fmap A B) k k' v :
     k' <> k
     -> lookup (add m k v) k' = lookup m k'.
   Proof.
-    unfold lookup, add; intuition.
-    destruct (decide (k' = k)); intuition.
+    rewrite /lookup /add.
+    move=> Hk.
+    case H : (k' == k).
+    - move/eqP : H => H.
+        by rewrite H in Hk.                 (* 矛盾 *)
+    - done.
   Qed.
 
-  Theorem lookup_remove_eq : forall A B (m : fmap A B) k1 k2,
+  Theorem lookup_remove_eq A B (m : fmap A B) k1 k2 :
     k1 = k2
     -> lookup (remove m k1) k2 = None.
   Proof.
-    unfold lookup, remove; intuition.
-    destruct (decide (k2 = k1)); try tauto.
-    congruence.
+    rewrite /lookup /remove.
+    move=> Hk.
+    case H : (k2 == k1).
+    - done.
+    - move/eqP : H => H.
+        by rewrite Hk in H.                 (* 矛盾 *)
   Qed.
 
-  Theorem lookup_remove_ne : forall A B (m : fmap A B) k k',
+  Theorem lookup_remove_ne A B (m : fmap A B) k k' :
     k' <> k
     -> lookup (remove m k) k' = lookup m k'.
   Proof.
-    unfold lookup, remove; intuition.
-    destruct (decide (k' = k)); try tauto.
+    rewrite /lookup /remove.
+    move=> Hk.
+    case H : (k' == k).
+    - move/eqP : H => H.
+        by rewrite H in Hk.                 (* 矛盾 *)
+    - done.
   Qed.
 
-  Theorem lookup_join1 : forall A B (m1 m2 : fmap A B) k,
+  Theorem lookup_join1 A B (m1 m2 : fmap A B) k :
     k \in dom m1
     -> lookup (join m1 m2) k = lookup m1 k.
   Proof.
-    unfold lookup, join, dom, In; intros.
-    destruct (m1 k); congruence.
+    rewrite /lookup /join /dom.
+    move=> Hk.
+    case H : (m1 k).                     (* destruct (m1 k) eqn: H. *)
+    - done.
+    - by rewrite /option_dec inE H in Hk. (* これは、バッドノウハウ *)
   Qed.
-
-  Theorem lookup_join2 : forall A B (m1 m2 : fmap A B) k,
-    ~k \in dom m1
+  
+  Theorem lookup_join2 A B (m1 m2 : fmap A B) k :
+    k \notin dom m1
     -> lookup (join m1 m2) k = lookup m2 k.
   Proof.
-    unfold lookup, join, dom, In; intros.
-    destruct (m1 k); try congruence.
-    exfalso; apply H; congruence.
+    rewrite /lookup /join /dom.
+    move=> Hk.
+    case H : (m1 k).
+    - by rewrite /option_dec inE H in Hk. (* これは、バッドノウハウ *)
+    - done.
   Qed.
-
-  Theorem join_comm : forall A B (m1 m2 : fmap A B),
-    dom m1 \cap dom m2 = constant nil
+  
+  Theorem join_comm A B (m1 m2 : fmap A B) :
+    dom m1 :&: dom m2 = set0                (* cap *)
     -> join m1 m2 = join m2 m1.
   Proof.
+    move=> H.
+    Check fmap_ext.
+    apply: fmap_ext => k.
+    rewrite /join /lookup.
+    case H1 : (m1 k); case H2 : (m2 k) => //=.
+    move/eqP in H.
+    rewrite setI_eq0 in H.
+    rewrite /dom /option_dec in H.
+    
+    Compute [disjoint [set x | true] & [set x | true]].
+    (* m1 x と m2 x のどちらかは None であるべきなので、矛盾を導く。  *)
+
+    Search _ ([disjoint _ & _]).
+
+    (* XXXXXX *)
+(*
     intros; apply fmap_ext; unfold join, lookup; intros.
     apply (f_equal (fun f => f k)) in H.
     unfold dom, intersection, constant in H; simpl in H.
     destruct (m1 k), (m2 k); auto.
     exfalso; rewrite <- H.
     intuition congruence.
-  Qed.
+*)
 
-  Theorem join_assoc : forall A B (m1 m2 m3 : fmap A B),
+  Admitted.
+
+  Theorem join_assoc A B (m1 m2 m3 : fmap A B) :
     join (join m1 m2) m3 = join m1 (join m2 m3).
   Proof.
     intros; apply fmap_ext; unfold join, lookup; intros.
     destruct (m1 k); auto.
   Qed.
 
-  Theorem lookup_merge : forall A B f (m1 m2 : fmap A B) k,
+  Theorem lookup_merge A B f (m1 m2 : fmap A B) k :
       lookup (merge f m1 m2) k = f (m1 k) (m2 k).
   Proof.
     auto.
   Qed.
 
-  Theorem merge_empty1 : forall A B f (m : fmap A B),
+  Theorem merge_empty1 A B f (m : fmap A B) :
     (forall x, f None x = x)
     -> merge f (@empty _ _) m = m.
   Proof.
     intros; apply fmap_ext; unfold lookup, merge; auto.
   Qed.
 
-  Theorem merge_empty2 : forall A B f (m : fmap A B),
+  Theorem merge_empty2 A B f (m : fmap A B) :
     (forall x, f x None = x)
     -> merge f m (@empty _ _) = m.
   Proof.
     intros; apply fmap_ext; unfold lookup, merge; auto.
   Qed.
 
-  Theorem merge_empty1_alt : forall A B f (m : fmap A B),
+  Theorem merge_empty1_alt A B f (m : fmap A B) :
     (forall x, f None x = None)
     -> merge f (@empty _ _) m = @empty _ _.
   Proof.
     intros; apply fmap_ext; unfold lookup, merge; auto.
   Qed.
 
-  Theorem merge_empty2_alt : forall A B f (m : fmap A B),
+  Theorem merge_empty2_alt A B f (m : fmap A B) :
     (forall x, f x None = None)
     -> merge f m (@empty _ _) = @empty _ _.
   Proof.
     intros; apply fmap_ext; unfold lookup, merge; auto.
   Qed.
 
-  Theorem merge_add1 : forall A B f (m1 m2 : fmap A B) k v,
+  (* ***** *)
+
+  Theorem merge_add1 A B f (m1 m2 : fmap A B) k v :
     (forall x y, f (Some x) y = None -> False)
-    -> ~k \in dom m1
+    -> k \notin dom m1
     -> merge f (add m1 k v) m2 = match f (Some v) (lookup m2 k) with
                                  | None => merge f m1 m2
                                  | Some v => add (merge f m1 m2) k v
