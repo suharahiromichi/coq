@@ -432,6 +432,76 @@ Module M : S.
     - by rewrite /option_dec inE H in Hk. (* これは、バッドノウハウ *)
     - done.
   Qed.
+
+  Lemma set0_nP (A : finType) (p : pred A) :
+    ([set x | p x] == set0) = [forall x, ~~ p x].
+  Proof.
+    apply/idP/idP => H.
+    - apply/forallP => x.
+      apply/negP => Hpx.
+
+      move/eqP in H.
+      move/setP in H.
+      move: (H x) => {H} H.
+      rewrite 2!inE in H.
+      
+        by rewrite Hpx in H.
+
+    - apply/eqP/setP => x.
+      move/forallP in H.
+      move: (H x) => {H} H.
+      rewrite 2!inE.
+      apply/eqP.
+      rewrite eqbF_neg.
+      done.
+  Qed.
+
+  Lemma set0_nP' (A : finType) (p : pred A) :
+    ([set x in p] == set0) = [forall x, ~~ p x].
+  Proof.
+    apply: set0_nP.
+  Qed.
+
+  Lemma set0_nP'' (A : finType) (p : pred A) :
+    ([set x | x \in p] == set0) = [forall x, ~~ p x].
+  Proof.
+    apply: set0_nP.
+  Qed.
+  
+  
+  Lemma interE A B (m1 m2 : fmap A B) :
+    (dom m1 :&: dom m2 == set0) = 
+    ([forall k, option_dec (m1 k) && option_dec (m2 k) == false]).
+  Proof.
+    apply/idP/idP => H.
+    - rewrite /dom in H.
+      rewrite test in H.
+      apply/forallP => x.
+      rewrite eqbF_neg.
+      apply/negP => Hc.
+      move/andP : Hc => [Hc1 Hc2].
+      
+      move/forallP in H.
+      move: (H x) => {H} H.
+      move/negP in H.
+      apply: H.
+      apply/andP.
+      rewrite 2!inE.
+      done.
+
+    - rewrite /dom.
+      rewrite test.
+      apply/forallP => x.
+      rewrite 2!inE.
+      apply/negP => Hc.
+
+      move/forallP in H.
+      move: (H x) => {H} H.
+      rewrite eqbF_neg in H.
+      move/negP in H.
+      apply: H.
+      done.
+  Qed.
   
   Theorem join_comm A B (m1 m2 : fmap A B) :
     dom m1 :&: dom m2 = set0                (* cap *)
@@ -443,26 +513,13 @@ Module M : S.
     rewrite /join /lookup.
     case H1 : (m1 k); case H2 : (m2 k) => //=.
     move/eqP in H.
-    rewrite setI_eq0 in H.
-    rewrite /dom /option_dec in H.
     
-    Compute [disjoint [set x | true] & [set x | true]].
-    (* m1 x と m2 x のどちらかは None であるべきなので、矛盾を導く。  *)
-
-    Search _ ([disjoint _ & _]).
-
-    (* XXXXXX *)
-(*
-    intros; apply fmap_ext; unfold join, lookup; intros.
-    apply (f_equal (fun f => f k)) in H.
-    unfold dom, intersection, constant in H; simpl in H.
-    destruct (m1 k), (m2 k); auto.
-    exfalso; rewrite <- H.
-    intuition congruence.
-*)
-
-  Admitted.
-
+    (* dom m1 と dom m2 は重ならない、つまり、
+       m1 k と m2 k のどちらかは、None であるから、矛盾を導く。 *)
+    rewrite (interE _ _ k) in H.
+    by rewrite H1 H2 in H.
+  Qed.
+  
   Theorem join_assoc A B (m1 m2 m3 : fmap A B) :
     join (join m1 m2) m3 = join m1 (join m2 m3).
   Proof.
