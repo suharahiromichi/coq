@@ -475,7 +475,7 @@ Module M : S.
   Proof.
     apply/idP/idP => H.
     - rewrite /dom in H.
-      rewrite test in H.
+      rewrite set0_nP in H.
       apply/forallP => x.
       rewrite eqbF_neg.
       apply/negP => Hc.
@@ -490,7 +490,7 @@ Module M : S.
       done.
 
     - rewrite /dom.
-      rewrite test.
+      rewrite set0_nP.
       apply/forallP => x.
       rewrite 2!inE.
       apply/negP => Hc.
@@ -516,7 +516,9 @@ Module M : S.
     
     (* dom m1 と dom m2 は重ならない、つまり、
        m1 k と m2 k のどちらかは、None であるから、矛盾を導く。 *)
-    rewrite (interE _ _ k) in H.
+    rewrite interE in H.
+    move/forallP in H.
+    move: (H k) => {H} H.
     by rewrite H1 H2 in H.
   Qed.
   
