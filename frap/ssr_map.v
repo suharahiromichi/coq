@@ -432,30 +432,31 @@ Module M : S.
     - by rewrite /option_dec inE H in Hk. (* これは、バッドノウハウ *)
     - done.
   Qed.
-
+  
+  (* ~~ p x -> ~~ p x に変形する。 *)
   Lemma set0_nP (A : finType) (p : pred A) :
     ([set x | p x] == set0) = [forall x, ~~ p x].
   Proof.
     apply/idP/idP => H.
     - apply/forallP => x.
-      apply/negP => Hpx.
 
-      move/eqP in H.
-      move/setP in H.
+      move/eqP/setP in H.
       move: (H x) => {H} H.
       rewrite 2!inE in H.
-      
-        by rewrite Hpx in H.
+      move/eqP in H.
+      rewrite eqbF_neg in H.
+      done.
 
     - apply/eqP/setP => x.
-      move/forallP in H.
-      move: (H x) => {H} H.
       rewrite 2!inE.
       apply/eqP.
       rewrite eqbF_neg.
+      
+      move/forallP in H.
+      move: (H x) => {H} H.
       done.
   Qed.
-
+  
   Lemma set0_nP' (A : finType) (p : pred A) :
     ([set x in p] == set0) = [forall x, ~~ p x].
   Proof.
@@ -468,38 +469,30 @@ Module M : S.
     apply: set0_nP.
   Qed.
   
-  
+  (* ~~ (option_dec (m1 x) && option_dec (m2 x)) -> 
+     ~~ (option_dec (m1 x) && option_dec (m2 x)) に変形する。 *)
   Lemma interE A B (m1 m2 : fmap A B) :
     (dom m1 :&: dom m2 == set0) = 
     ([forall k, option_dec (m1 k) && option_dec (m2 k) == false]).
   Proof.
     apply/idP/idP => H.
-    - rewrite /dom in H.
-      rewrite set0_nP in H.
-      apply/forallP => x.
+    
+    - apply/forallP => x.
       rewrite eqbF_neg.
-      apply/negP => Hc.
-      move/andP : Hc => [Hc1 Hc2].
+
+      rewrite set0_nP in H.
+      move/forallP in H.
+      move: (H x) => {H} H.
+      rewrite 2!inE in H.
+      done.
+      
+    - rewrite set0_nP.
+      apply/forallP => x.
+      rewrite 2!inE.
       
       move/forallP in H.
       move: (H x) => {H} H.
-      move/negP in H.
-      apply: H.
-      apply/andP.
-      rewrite 2!inE.
-      done.
-
-    - rewrite /dom.
-      rewrite set0_nP.
-      apply/forallP => x.
-      rewrite 2!inE.
-      apply/negP => Hc.
-
-      move/forallP in H.
-      move: (H x) => {H} H.
       rewrite eqbF_neg in H.
-      move/negP in H.
-      apply: H.
       done.
   Qed.
   
