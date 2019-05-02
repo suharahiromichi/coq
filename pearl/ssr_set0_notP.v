@@ -115,24 +115,58 @@ Section Test.
 set0_notP' が直接証明できるための補題
 *)
 
-  Lemma test (A : finType) (p : pred A) :
-    forall x : A, ~ p x -> forall x, (x \in p) = false.  
+  Lemma test' (A : finType) (p : pred A) :
+    (forall x : A, p x) <-> (forall x, (x \in p)).
   Proof.
-    Admitted.
+    done.
+  Qed.
+  
+  Lemma test'' (A : finType) (p : pred A) :
+    forall x : A, (p x <-> x \in p).
+  Proof.
+    done.
+  Qed.
+  
+  Lemma test (A : finType) (p : pred A) :
+    (forall x : A, ~ p x) <-> (forall x, (x \in p) = false).
+  Proof.
+    Search _ (_ = false).
+    split => H x.
+    - Check (@contraFF (x \in p) (p x)).
+      apply: (@contraFF (x \in p) (p x)) => //=.
+        by apply/negbTE/negP.
+    - move: (H x) => {H} H.
+      Check (@contraFN (p x) (x \in p)).
+      move/(@contraFN (p x) (x \in p)) in H.
+      apply/negP.
+      apply/H.
 
+      apply test''.
+  Qed.
 
 (**
 # 最初に使った箇所
 
 FRAP Map.v の Mathcomp への移植
+
+https://github.com/suharahiromichi/coq/blob/master/frap/ssr_map.v
 *)
 
 
 (**
 # 例題
+
+option型を返す（部分）関数 m があるとします。
+そのドメイン（Some _ を返す引数）の集合 dom を考えます。
+
+このとき、
+option型は、eqType とは限らないので、Some _ か None かどうかで true か false を決定する
+関数 option_dec を用意しておきます。
+
+関数 m のドメインが空集合である場合、m はすべての引数に対して None を返す
+(option_dec が false) になることを証明ます。
 *)
   
-  (* 例題 *)
   Definition fmap (A : finType) (B : Type) := A -> option B.
 
   Definition option_dec B (x : option B) :=
