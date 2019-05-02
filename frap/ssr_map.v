@@ -554,15 +554,16 @@ Module M : S.
                                  | Some v => add (merge f m1 m2) k v
                                  end.
   Proof.
-    intros; apply fmap_ext; unfold lookup, merge, add; intros.
+    move=> H H0.
+    apply: fmap_ext.
+    rewrite /lookup /merge /add => k0.
     case Hk : (k0 == k).
     - case H1 : (f (Some v) (m2 k)).
       + rewrite Hk.
         move/eqP in Hk.
         rewrite Hk.
         done.
-      + exfalso; eauto.
-        move: (H v (m2 k)) => {H} H.
+      + move: (H v (m2 k)) => {H} H.
         done.                               (* 矛盾 *)
     - case H2 : (f (Some v) (m2 k)).
       + case H3 : (k0 == k).
@@ -572,46 +573,63 @@ Module M : S.
       + done.
   Qed.
 
-  Theorem merge_add2 : forall A B f (m1 m2 : fmap A B) k v,
-    (forall x y, f x (Some y) = None -> False)
-    -> ~k \in dom m2
+  Theorem merge_add2 A B f (m1 m2 : fmap A B) k v :
+    (forall x y, f x (Some y) <> None)
+    -> k \notin dom m2
     -> merge f m1 (add m2 k v) = match f (lookup m1 k) (Some v) with
                                  | None => merge f m1 m2
                                  | Some v => add (merge f m1 m2) k v
                                  end.
   Proof.
-    intros; apply fmap_ext; unfold lookup, merge, add; intros.
-    destruct (decide (k0 = k)); auto; subst.
-    case_eq (f (m1 k) (Some v)); intros.
-    case_eq (decide (k = k)); congruence.
-    exfalso; eauto.
-
-    case_eq (f (m1 k) (Some v)); intros.
-    destruct (decide (k0 = k)); congruence.
-    auto.
+    move=> H H0.
+    apply: fmap_ext.
+    rewrite /lookup /merge /add => k0.
+    case Hk : (k0 == k).
+    - case H1 : (f (m1 k) (Some v)).
+      + rewrite Hk.
+        move/eqP in Hk.
+        rewrite Hk.
+        done.
+      + move: (H (m1 k) v) => {H} H.
+        done.                               (* 矛盾 *)
+    - case H2 : (f (m1 k) (Some v)).
+      + case H3 : (k0 == k).
+        * rewrite H3 in Hk.
+          done.                             (* 矛盾 *)
+        * done.
+      + done.
   Qed.
 
-  Theorem merge_add1_alt : forall A B f (m1 m2 : fmap A B) k v,
-    (forall x y, f (Some x) (Some y) = None -> False)
-    -> ~k \in dom m1
+  Theorem merge_add1_alt A B f (m1 m2 : fmap A B) k v :
+    (forall x y, f (Some x) (Some y) <> None)
+    -> k \notin dom m1
     -> k \in dom m2
     -> merge f (add m1 k v) m2 = match f (Some v) (lookup m2 k) with
                                  | None => merge f m1 m2
                                  | Some v => add (merge f m1 m2) k v
                                  end.
   Proof.
-    intros; apply fmap_ext; unfold lookup, merge, add; intros.
-    destruct (decide (k0 = k)); auto; subst.
-    case_eq (f (Some v) (m2 k)); intros.
-    case_eq (decide (k = k)); congruence.
-    case_eq (m2 k); intros.
-    rewrite H3 in H2.
-    exfalso; eauto.
-    congruence.
-
-    case_eq (f (Some v) (m2 k)); intros.
-    destruct (decide (k0 = k)); congruence.
-    auto.
+    move=> H H0 H1.
+    apply: fmap_ext.
+    rewrite /lookup /merge /add => k0.
+    case Hk : (k0 == k).
+    - case H2 : (f (Some v) (m2 k)).
+      + rewrite Hk.
+        move/eqP in Hk.
+        rewrite Hk.
+        done.
+      + case_eq (m2 k); intros.
+        * rewrite H3 in H2.
+          move: (H v b) => {H} H.
+          done.                             (* 矛盾 *)
+        * admit.                       (* congruence で解いている。 *)
+          
+    - case H3 : (f (Some v) (m2 k)).
+      + case H4 : (k0 == k).
+        * rewrite H4 in Hk.
+          done.                             (* 矛盾 *)
+        * done.
+      + done.
   Qed.
 
   Theorem empty_includes : forall A B (m : fmap A B), includes (empty (A := A) B) m.
