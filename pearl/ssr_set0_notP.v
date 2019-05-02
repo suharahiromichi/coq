@@ -112,38 +112,27 @@ Section Test.
 (**
 ## 補足
 
-set0_notP' が直接証明できるための補題
+set0_notP' を直接証明するための補題
 *)
 
-  Lemma test' (A : finType) (p : pred A) :
+  Lemma p__inp (A : finType) (p : pred A) :
     (forall x : A, p x) <-> (forall x, (x \in p)).
   Proof.
     done.
   Qed.
   
-  Lemma test'' (A : finType) (p : pred A) :
-    forall x : A, (p x <-> x \in p).
-  Proof.
-    done.
-  Qed.
-  
-  Lemma test (A : finType) (p : pred A) :
+  Lemma np__ninp (A : finType) (p : pred A) :
     (forall x : A, ~ p x) <-> (forall x, (x \in p) = false).
   Proof.
-    Search _ (_ = false).
-    split => H x.
-    - Check (@contraFF (x \in p) (p x)).
-      apply: (@contraFF (x \in p) (p x)) => //=.
-        by apply/negbTE/negP.
-    - move: (H x) => {H} H.
-      Check (@contraFN (p x) (x \in p)).
-      move/(@contraFN (p x) (x \in p)) in H.
-      apply/negP.
-      apply/H.
-
-      apply test''.
+    split => H x; move: (H x) => {H} H.
+    - apply: (@contraFF (x \in p) (p x)).
+      + done.                               (* x \in p -> p x *)
+      + by apply/negbTE/negP.
+    - move/(@contraFN (p x) (x \in p)) in H.
+      apply/negP/H.
+      done.                                 (* p x -> x \in p *)
   Qed.
-
+  
 (**
 # 最初に使った箇所
 
@@ -202,4 +191,3 @@ option型は、eqType とは限らないので、Some _ か None かどうかで
 End Test.
 
 (* END *)
-
