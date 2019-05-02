@@ -433,6 +433,8 @@ Module M : S.
     - done.
   Qed.
   
+  (* join_comm のための補題 *)
+  
   (* ~~ p x -> ~~ p x に変形する。 *)
   Lemma set0_nP (A : finType) (p : pred A) :
     ([set x | p x] == set0) = [forall x, ~~ p x].
@@ -457,21 +459,9 @@ Module M : S.
       done.
   Qed.
   
-  Lemma set0_nP' (A : finType) (p : pred A) :
-    ([set x in p] == set0) = [forall x, ~~ p x].
-  Proof.
-    apply: set0_nP.
-  Qed.
-
-  Lemma set0_nP'' (A : finType) (p : pred A) :
-    ([set x | x \in p] == set0) = [forall x, ~~ p x].
-  Proof.
-    apply: set0_nP.
-  Qed.
-  
   (* ~~ (option_dec (m1 x) && option_dec (m2 x)) -> 
      ~~ (option_dec (m1 x) && option_dec (m2 x)) に変形する。 *)
-  Lemma interE A B (m1 m2 : fmap A B) :
+  Lemma inter_domE A B (m1 m2 : fmap A B) :
     (dom m1 :&: dom m2 == set0) = 
     ([forall k, option_dec (m1 k) && option_dec (m2 k) == false]).
   Proof.
@@ -509,7 +499,7 @@ Module M : S.
     
     (* dom m1 と dom m2 は重ならない、つまり、
        m1 k と m2 k のどちらかは、None であるから、矛盾を導く。 *)
-    rewrite interE in H.
+    rewrite inter_domE in H.
     move/forallP in H.
     move: (H k) => {H} H.
     by rewrite H1 H2 in H.
@@ -556,10 +546,8 @@ Module M : S.
     intros; apply fmap_ext; unfold lookup, merge; auto.
   Qed.
 
-  (* ***** *)
-
   Theorem merge_add1 A B f (m1 m2 : fmap A B) k v :
-    (forall x y, f (Some x) y = None -> False)
+    (forall x y, f (Some x) y <> None)
     -> k \notin dom m1
     -> merge f (add m1 k v) m2 = match f (Some v) (lookup m2 k) with
                                  | None => merge f m1 m2
@@ -567,14 +555,21 @@ Module M : S.
                                  end.
   Proof.
     intros; apply fmap_ext; unfold lookup, merge, add; intros.
-    destruct (decide (k0 = k)); auto; subst.
-    case_eq (f (Some v) (m2 k)); intros.
-    case_eq (decide (k = k)); congruence.
-    exfalso; eauto.
-
-    case_eq (f (Some v) (m2 k)); intros.
-    destruct (decide (k0 = k)); congruence.
-    auto.
+    case Hk : (k0 == k).
+    - case H1 : (f (Some v) (m2 k)).
+      + rewrite Hk.
+        move/eqP in Hk.
+        rewrite Hk.
+        done.
+      + exfalso; eauto.
+        move: (H v (m2 k)) => {H} H.
+        done.                               (* 矛盾 *)
+    - case H2 : (f (Some v) (m2 k)).
+      + case H3 : (k0 == k).
+        * rewrite H3 in Hk.
+          done.                             (* 矛盾 *)
+        * done.
+      + done.
   Qed.
 
   Theorem merge_add2 : forall A B f (m1 m2 : fmap A B) k v,
