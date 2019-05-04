@@ -45,19 +45,19 @@ Module Type S.
     -> add m k v $<= add m' k v.
 
   Axiom lookup_add_eq : forall A B (m : fmap A B) k1 k2 v,
-    k1 == k2
+    k1 = k2
     -> add m k1 v $? k2 = Some v.
 
   Axiom lookup_add_ne : forall A B (m : fmap A B) k k' v,
-    k' != k
+    k' <> k
     ->  add m k v $? k' = m $? k'.
 
   Axiom lookup_remove_eq : forall A B (m : fmap A B) k1 k2,
-    k1 == k2
+    k1 = k2
     -> remove m k1 $? k2 = None.
 
   Axiom lookup_remove_ne : forall A B (m : fmap A B) k k',
-    k' != k
+    k' <> k
     ->  remove m k $? k' = m $? k'.
 
   Axiom lookup_join1 : forall A B (m1 m2 : fmap A B) k,
@@ -69,7 +69,7 @@ Module Type S.
     -> (m1 $++ m2) $? k = m2 $? k.
 
   Axiom join_comm : forall A B (m1 m2 : fmap A B),
-    dom m1 :|: dom m2 = set0   (* dom m1 \cap dom m2 = constant nil *)
+    dom m1 :&: dom m2 = set0   (* dom m1 \cap dom m2 = constant nil *)
     -> m1 $++ m2 = m2 $++ m1.
 
   Axiom join_assoc : forall A B (m1 m2 m3 : fmap A B),
@@ -96,7 +96,7 @@ Module Type S.
 
   Axiom merge_add1 : forall A B f (m1 m2 : fmap A B) k v,
     (forall x y, f (Some x) y = None -> False)
-    -> ~k \in dom m1
+    -> k \notin dom m1
     -> merge f (add m1 k v) m2 = match f (Some v) (lookup m2 k) with
                                  | None => merge f m1 m2
                                  | Some v => add (merge f m1 m2) k v
@@ -104,7 +104,7 @@ Module Type S.
 
   Axiom merge_add2 : forall A B f (m1 m2 : fmap A B) k v,
     (forall x y, f x (Some y) = None -> False)
-    -> ~k \in dom m2
+    -> k \notin dom m2
     -> merge f m1 (add m2 k v) = match f (lookup m1 k) (Some v) with
                                  | None => merge f m1 m2
                                  | Some v => add (merge f m1 m2) k v
@@ -132,7 +132,7 @@ Module Type S.
     -> lookup (restrict P m) k = lookup m k.
 
   Axiom lookup_restrict_false : forall (A : finType) B (P : pred A) (m : fmap A B) k,
-    ~P k
+    ~~P k
     -> lookup (restrict P m) k = None.
 
   Axiom lookup_restrict_true_fwd : forall (A : finType) B (P : pred A) (m : fmap A B) k v,
@@ -183,7 +183,7 @@ Module Type S.
 
   Axiom lookup_None_dom : forall K V (m : fmap K V) k,
       m $? k = None
-      -> ~ k \in dom m.
+      -> k \notin dom m.
 
   (* Bits meant for separation logic *)
   Section splitting.
@@ -630,82 +630,103 @@ Module M : S.
           done.                             (* 矛盾 *)
         * done.
       + done.
-  Qed.
+  Admitted.
 
-  Theorem empty_includes : forall A B (m : fmap A B), includes (empty (A := A) B) m.
+  Theorem empty_includes A B (m : fmap A B) : includes (empty (A := A) B) m.
   Proof.
     unfold includes, empty; intuition congruence.
   Qed.
 
-  Theorem dom_empty : forall A B, dom (empty (A := A) B) = constant nil.
+  Theorem dom_empty A B : dom (empty (A := A) B) = set0.
   Proof.
-    unfold dom, empty; intros; sets idtac.
+    done.
   Qed.
 
   Theorem dom_add : forall A B (m : fmap A B) (k : A) (v : B),
-    dom (add m k v) = constant (k :: nil) \cup dom m.
+    dom (add m k v) = k |: dom m. (* constant (k :: nil) \cup dom m. *)
   Proof.
+(*
     unfold dom, add; simpl; intros.
     sets ltac:(simpl in *; try match goal with
-                                 | [ _ : context[if ?E then _ else _] |- _ ] => destruct E
+    | [ _ : context[if ?E then _ else _] |- _ ] => destruct E
                                end; intuition congruence).
+ *)
+    rewrite /dom /add => /= A B m k v.
+    apply/setP => x.
+    rewrite !inE.
+    by case H : (x == k).
   Qed.
 
-  Lemma lookup_split : forall A B (m : fmap A B) k v k' v',
+  Lemma lookup_split A B (m : fmap A B) k v k' v' :
     lookup (add m k v) k' = Some v'
     -> (k' <> k /\ lookup m k' = Some v') \/ (k' = k /\ v' = v).
   Proof.
-    unfold lookup, add; simpl; intros.
-    destruct (decide (k' = k)); intuition congruence.
+    rewrite /lookup /add => /= H1.
+    case H : (k' == k).
+    - right.
+      rewrite H in H1.
+      move/eqP in H.
+      inversion H1.
+      done.
+    - left.
+      rewrite H in H1.
+      move/eqP in H.
+      done.
   Qed.
 
-  Theorem lookup_restrict_true : forall A B (P : pred A) (m : fmap A B) k,
+  Theorem lookup_restrict_true (A : finType) B (P : pred A) (m : fmap A B) k :
     P k
     -> lookup (restrict P m) k = lookup m k.
   Proof.
-    unfold lookup, restrict; intros.
-    destruct (decide (P k)); tauto.
+    rewrite /lookup /restrict => H1.
+    case H : (P k) => //=.
+      by rewrite H in H1.
   Qed.
 
-  Theorem lookup_restrict_false : forall A B (P : pred A) (m : fmap A B) k,
-    ~P k
+  Theorem lookup_restrict_false (A : finType) B (P : pred A) (m : fmap A B) k :
+    ~~ P k
     -> lookup (restrict P m) k = None.
   Proof.
-    unfold lookup, restrict; intros.
-    destruct (decide (P k)); tauto.
+    rewrite /lookup /restrict => H1.
+    case H : (P k) => //=.
+      by rewrite H in H1.
   Qed.
 
-  Theorem lookup_restrict_true_fwd : forall A B (P : pred A) (m : fmap A B) k v,
+  Theorem lookup_restrict_true_fwd (A : finType) B (P : pred A) (m : fmap A B) k v :
     lookup (restrict P m) k = Some v
     -> P k.
   Proof.
-    unfold lookup, restrict; intros.
-    destruct (decide (P k)); intuition congruence.
+    rewrite /lookup /restrict => H1.
+    case H : (P k) => //=.
+      by rewrite H in H1.
   Qed.
 
-  Lemma includes_intro : forall K V (m1 m2 : fmap K V),
+  Lemma includes_intro K V (m1 m2 : fmap K V) :
       (forall k v, lookup m1 k = Some v -> lookup m2 k = Some v)
       -> includes m1 m2.
   Proof.
     auto.
   Qed.
   
-  Lemma lookup_Some_dom : forall K V (m : fmap K V) k v,
+  Lemma lookup_Some_dom K V (m : fmap K V) k v :
       lookup m k = Some v
       -> k \in dom m.
   Proof.
-    unfold lookup, dom, In; congruence.
+    rewrite /lookup /dom /option_dec => H1.
+      by rewrite inE H1.
   Qed.
 
-  Lemma lookup_None_dom : forall K V (m : fmap K V) k,
+  Lemma lookup_None_dom K V (m : fmap K V) k :
       lookup m k = None
-      -> ~ k \in dom m.
+      -> k \notin dom m.
   Proof.
-    unfold lookup, dom, In; congruence.
+    rewrite /lookup /dom => H1.
+      by rewrite inE H1.
   Qed.
 
   Section splitting.
-    Variables K V : Type.
+    Variables K : finType.                  (* Type *)
+    Variables V : Type.
 
     Notation "$0" := (@empty K V).
     Notation "m $+ ( k , v )" := (add m k v) (at level 50, left associativity).
@@ -722,20 +743,24 @@ Module M : S.
     Definition split (h h1 h2 : fmap K V) : Prop :=
       h = h1 $++ h2.
 
-    Hint Extern 2 (_ <> _) => congruence.
+(*  Hint Extern 2 (_ <> _) => congruence. *)
 
     Ltac splt := unfold disjoint, split, join, lookup in *; intros; subst;
                  try match goal with
-                     | [ |- @eq (fmap K V) _ _ ] => let a := fresh "a" in extensionality a; simpl
+                     | [ |- @eq (fmap K V) _ _ ] =>
+                       let a := fresh "a" in extensionality a; simpl
                      end;
                  repeat match goal with
                         | [ a : K, H : forall a : K, _ |- _ ] => specialize (H a)
                         end;
                  repeat match goal with
                         | [ H : _ |- _ ] => rewrite H
-                        | [ |- context[match ?E with Some _ => _ | None => _ end] ] => destruct E
-                        | [ _ : context[match ?E with Some _ => _ | None => _ end] |- _  ] => destruct E
-                        end; eauto; try solve [ exfalso; eauto ].
+                        | [ |- context[match ?E with Some _ => _ | None => _ end] ] =>
+                          destruct E
+                        | [ _ : context[match ?E with Some _ => _ | None => _ end] |- _  ] =>
+                          destruct E
+                        end; eauto;
+                 try solve [ exfalso; eauto ].
 
     Lemma split_empty_fwd : forall h h1,
         split h h1 $0
@@ -788,7 +813,8 @@ Module M : S.
       -> split h h2 h1.
     Proof.
       splt.
-    Qed.
+      (* Hint Extern 2 (_ <> _) => congruence. が機能しないので解けない。 *)
+    Admitted.
 
     Hint Immediate disjoint_comm split_comm.
 
@@ -808,7 +834,7 @@ Module M : S.
       -> split h h2 (join h3 h1).
     Proof.
       splt.
-    Qed.
+    Admitted.
 
     Lemma split_assoc2 : forall h h1 h' h2 h3,
       split h h' h1
@@ -828,7 +854,7 @@ Module M : S.
       -> disjoint (join h1 h2) h3.
     Proof.
       splt.
-    Qed.
+    Admitted.
 
     Lemma disjoint_assoc2 : forall h h1 h' h2 h3,
       split h h' h1
@@ -838,7 +864,7 @@ Module M : S.
       -> disjoint h2 (join h3 h1).
     Proof.
       splt.
-    Qed.
+    Admitted.
 
     Lemma split_join : forall h1 h2,
       split (join h1 h2) h1 h2.
@@ -854,7 +880,7 @@ Module M : S.
       -> disjoint h1 h2.
     Proof.
       splt.
-    Qed.
+    Admitted.
 
     Lemma disjoint_assoc3 : forall h h1 h2 h3,
       disjoint h h2
@@ -863,7 +889,8 @@ Module M : S.
       -> disjoint h3 h2.
     Proof.
       splt.
-    Qed.
+    Admitted.
+
   End splitting.
 End M.
 
