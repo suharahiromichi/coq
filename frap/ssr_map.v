@@ -6,6 +6,14 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
+
+(* option 型に対する、Some _ または None の判定 *)
+Definition option_dec B (x : option B) :=
+  match x with
+  | Some _ => true
+  | None => false
+  end.
+
 Module Type S.
   Parameter fmap : finType -> Type -> Type.
 
@@ -190,9 +198,15 @@ Module Type S.
     Variables (K : finType) (V : Type).
 
     Definition disjoint (h1 h2 : fmap K V) : Prop :=
+      forall a,
+        (~~ option_dec (h1 $? a)) || (~~ option_dec (h2 $? a)).
+(*
+  option_dec は冒頭を参照のこと。
+
       forall a, h1 $? a <> None
                 -> h2 $? a <> None
                 -> False.
+*)
 
     Definition split (h h1 h2 : fmap K V) : Prop :=
       h = h1 $++ h2.
@@ -320,14 +334,10 @@ Module M : S.
   Definition includes A B (m1 m2 : fmap A B) :=
     forall k v, m1 k = Some v -> m2 k = Some v.
 
-  Definition option_dec B (x : option B) :=
-    match x with
-    | Some _ => true
-    | None => false
-    end.
-  
   Definition dom A B (m : fmap A B) : {set A} := [set x | option_dec (m x)].
 (*
+  option_dec は冒頭を参照のこと。
+
   Definition dom A B (m : fmap A B) : {set A} := fun x => (m x != None).
  *)
   
@@ -601,7 +611,7 @@ Module M : S.
   Qed.
 
   Theorem merge_add1_alt A B f (m1 m2 : fmap A B) k v :
-    (forall x y, f (Some x) (Some y) <> None)
+    (forall x y, f (Some x) (Some y) <> None) (* option_dec にする？ *)
     -> k \notin dom m1
     -> k \in dom m2
     -> merge f (add m1 k v) m2 = match f (Some v) (lookup m2 k) with
@@ -735,15 +745,27 @@ Module M : S.
     Infix "$?" := lookup (at level 50, no associativity).
     Infix "$<=" := includes (at level 90).
 
+(*
     Definition disjoint (h1 h2 : fmap K V) : Prop :=
       forall a, h1 $? a <> None
                 -> h2 $? a <> None
                 -> False.
+*)
+(*
+  これの意味は、
+    h1 $? a = None \/ h2 $? a = None
+    任意の変数 a は、h1 と h2 のどちらかで未定義である。
+    すなわち、両方で定義されていない。
+*)
+    Definition disjoint (h1 h2 : fmap K V) :=
+      forall a,
+        (~~ option_dec (h1 $? a)) || (~~ option_dec (h2 $? a)).
 
     Definition split (h h1 h2 : fmap K V) : Prop :=
       h = h1 $++ h2.
 
-(*  Hint Extern 2 (_ <> _) => congruence. *)
+    (* Mathcomp および、disjoint の修正により、使えない。 *)
+    (* Hint Extern 2 (_ <> _) => congruence. *)
 
     Ltac splt := unfold disjoint, split, join, lookup in *; intros; subst;
                  try match goal with
@@ -792,6 +814,8 @@ Module M : S.
       disjoint h $0.
     Proof.
       splt.
+      apply/orP/or_intror.
+      done.
     Qed.
 
     Lemma disjoint_hemp' : forall h,
@@ -805,57 +829,30 @@ Module M : S.
       -> disjoint h2 h1.
     Proof.
       splt.
+      by rewrite Bool.orb_comm.
     Qed.
 
-    (* Hint Extern 2 (_ <> _) => congruence. が機能しないので、splt だけでは解けない。 *)
-    
-    Definition disjoint' (h1 h2 : fmap K V) :=
-      forall a,
-        (~~ option_dec (h1 $? a)) || (~~ option_dec (h2 $? a)).
-(*
-  h1 $? a <> None -> h2 $? a <> None -> False.
-  (h1 $? a <> None /\ h2 $? a <> None) -> False.
-  ~ (h1 $? a <> None /\ h2 $? a <> None)
-  h1 $? a = None \/ h2 $? a = None
-
-*)
-
-    (* h1 と h2 のどちらかだけに、ある変数のバインドがあるなら、
+    (* h1 と h2 の両方で定義されていないなら、
        h1とh2のjoin の順番でその変数の値は変わらない。
-       すなわち
-       h1 と h2 の両方に同じ変数のバインドがあると、
-       h1とh2のjoin の順番でその変数の値が変わる。 *)
-
-
+     *)
     Lemma split_comm : forall h h1 h2,
-        disjoint' h1 h2
+        disjoint h1 h2
       -> split h h1 h2
       -> split h h2 h1.
     Proof.
-      move=> h h1 h2 Hd Hs.
+      move=> h h1 h2 H Hs.
       rewrite Hs {Hs} /split.
-      extensionality k.
-      move: (Hd k) => {Hd} Hd.
-      rewrite /lookup in Hd.
-      case H1 : (h1 k).
-      - case H2 : (h2 k).
-        + rewrite /join.
-          rewrite H1 H2.
-          rewrite H1 H2 /= in Hd.
-          done.
-        + rewrite /join.
-            by rewrite H1 H2.
-      - case H2 : (h2 k).
-        + rewrite /join.
-          rewrite H1 H2.
-          rewrite H1 H2 /= in Hd.
-          done.
-        + rewrite /join.
-            by rewrite H1 H2.
+      (* extensionality k. *)
+      apply: functional_extensionality => k. (* 両辺に k を適用する。 *)
+      move: (H k) => {H} H.                  (* H に k を適用する。 *)
+      rewrite /lookup in H.
+      rewrite /join.
+      case H1 : (h1 k); case H2 : (h2 k) => //=.
+        by rewrite H1 H2 /= in H.           (* 矛盾 *)
     Qed.
     
     Hint Immediate disjoint_comm split_comm.
-
+    
     Lemma split_assoc1 : forall h h1 h' h2 h3,
       split h h1 h'
       -> split h' h2 h3
@@ -871,9 +868,27 @@ Module M : S.
       -> disjoint h2 h3
       -> split h h2 (join h3 h1).
     Proof.
-      splt.
-    Admitted.
+      move=> h h1 h' h2 h3 H H' Ha Hb.
+      rewrite H' in H => {H'}.
+      rewrite H {H} /split.
+      apply: functional_extensionality => k. (* 両辺に k を適用する。 *)
+      rewrite /join.
+      
+      move: (Ha k) => {Ha} Ha.              (* H1 に k を適用する。 *)
+      move: (Hb k) => {Hb} Hb.              (* H2 に k を適用する。 *)
+      rewrite /lookup in Ha Hb.
 
+      case H1 : (h1 k); case H2 : (h2 k);
+        case H3 : (h3 k); case H' : (h' k) => //=.
+
+      - by rewrite H1 H' /= in Ha.
+      - by rewrite H2 H3 /= in Hb.
+      - by rewrite H1 H' /= in Ha.
+      - admit.
+      - by rewrite H1 H' /= in Ha.
+      - admit.
+    Admitted.
+    
     Lemma split_assoc2 : forall h h1 h' h2 h3,
       split h h' h1
       -> split h' h2 h3
