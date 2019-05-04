@@ -237,6 +237,7 @@ Check "aaa" = "aaa" : Prop.
 Check "aaa" == "aaa" : bool.
 Check "aaa" == "aaa" : Prop.
 
-Notation var := string.
+(* Notation var := string. *)
 
 (* END *)
+
