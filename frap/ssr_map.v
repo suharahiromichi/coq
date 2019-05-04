@@ -807,15 +807,53 @@ Module M : S.
       splt.
     Qed.
 
+    (* Hint Extern 2 (_ <> _) => congruence. が機能しないので、splt だけでは解けない。 *)
+    
+    Definition disjoint' (h1 h2 : fmap K V) :=
+      forall a,
+        (~~ option_dec (h1 $? a)) || (~~ option_dec (h2 $? a)).
+(*
+  h1 $? a <> None -> h2 $? a <> None -> False.
+  (h1 $? a <> None /\ h2 $? a <> None) -> False.
+  ~ (h1 $? a <> None /\ h2 $? a <> None)
+  h1 $? a = None \/ h2 $? a = None
+
+*)
+
+    (* h1 と h2 のどちらかだけに、ある変数のバインドがあるなら、
+       h1とh2のjoin の順番でその変数の値は変わらない。
+       すなわち
+       h1 と h2 の両方に同じ変数のバインドがあると、
+       h1とh2のjoin の順番でその変数の値が変わる。 *)
+
+
     Lemma split_comm : forall h h1 h2,
-      disjoint h1 h2
+        disjoint' h1 h2
       -> split h h1 h2
       -> split h h2 h1.
     Proof.
-      splt.
-      (* Hint Extern 2 (_ <> _) => congruence. が機能しないので解けない。 *)
-    Admitted.
-
+      move=> h h1 h2 Hd Hs.
+      rewrite Hs {Hs} /split.
+      extensionality k.
+      move: (Hd k) => {Hd} Hd.
+      rewrite /lookup in Hd.
+      case H1 : (h1 k).
+      - case H2 : (h2 k).
+        + rewrite /join.
+          rewrite H1 H2.
+          rewrite H1 H2 /= in Hd.
+          done.
+        + rewrite /join.
+            by rewrite H1 H2.
+      - case H2 : (h2 k).
+        + rewrite /join.
+          rewrite H1 H2.
+          rewrite H1 H2 /= in Hd.
+          done.
+        + rewrite /join.
+            by rewrite H1 H2.
+    Qed.
+    
     Hint Immediate disjoint_comm split_comm.
 
     Lemma split_assoc1 : forall h h1 h' h2 h3,
