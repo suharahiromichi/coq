@@ -101,5 +101,6 @@ Check Literal_countType : countType.
 Check Literal_finType : finType.
 
 Notation Literal := Literal.Literal.        (* !!!!! *)
-
+Notation var := Literal_finType.            (* !!!!! *)
+  
 (* END *)

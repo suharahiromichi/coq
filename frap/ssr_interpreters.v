@@ -15,13 +15,13 @@ Require Import ssr_map.
  * *: good pun, right? *)
 Inductive arith : Set :=
 | Const (n : nat)
-| Var (x : var)
+| Var (x : Literal)
 | Plus (e1 e2 : arith)
 | Minus (e1 e2 : arith)
 | Times (e1 e2 : arith).
 
 Example ex1 := Const 42.
-Example ex2 := Plus (Var "y") (Times (Var "x") (Const 3)).
+Example ex2 := Plus (Var Literal.y) (Times (Var Literal.x) (Const 3)).
 
 (* The above definition only explains what programs *look like*.
  * We also care about what they *mean*.
@@ -53,7 +53,7 @@ Fixpoint interp (e : arith) (v : valuation) : nat :=
 
 (* Here's an example valuation, using an infix operator for map extension. *)
 Definition valuation0 : valuation :=
-  $0 $+ ("x", 17) $+ ("y", 3).
+  $0 $+ (Literal.x, 17) $+ (Literal.y, 3).
 
 (* Unfortunately, we can't execute code based on finite maps, since, for
  * convenience, they use uncomputable features.  The reason is that we need a
