@@ -118,15 +118,26 @@ Fixpoint substitute (inThis : arith) (replaceThis : var) (withThis : arith) : ar
     Times (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
   end.
 
-Theorem substitute_ok : forall v replaceThis withThis inThis,
+Theorem substitute_ok v replaceThis withThis inThis :
   interp (substitute inThis replaceThis withThis) v
   = interp inThis (v $+ (replaceThis, interp withThis v)).
 Proof.
+(*
   induct inThis; simplify; try equality.
 
   (* One case left after our basic heuristic:
    * the variable case, naturally! *)
   cases (x ==v replaceThis); simplify; try equality.
+ *)
+  elim: inThis => //= [x | e1 H1 e2 H2 | e1 H1 e2 H2 | e1 H1 e2 H2].
+  - case Heq : (x == replaceThis).
+    + rewrite lookup_add_eq //=.
+      by move/eqP in Heq.
+    + rewrite lookup_add_ne //=.
+      by move/eqP in Heq.
+  - by rewrite H1 H2.
+  - by rewrite H1 H2.
+  - by rewrite H1 H2.
 Qed.
 (* Great; we seem to have gotten that one right, too. *)
 
@@ -143,8 +154,19 @@ Fixpoint doSomeArithmetic (e : arith) : arith :=
   | Times e1 e2 => Times (doSomeArithmetic e1) (doSomeArithmetic e2)
   end.
 
-Theorem doSomeArithmetic_ok : forall e v, interp (doSomeArithmetic e) v = interp e v.
+Lemma interp_plusE e1 e2 v : interp (Plus e1 e2) v = interp e1 v + interp e2 v.
+Proof. done. Qed.
+
+Lemma interp_minusE e1 e2 v : interp (Minus e1 e2) v = interp e1 v - interp e2 v.
+Proof. done. Qed.
+
+Lemma interp_timesE e1 e2 v : interp (Times e1 e2) v = interp e1 v * interp e2 v.
+Proof. done. Qed.
+
+Theorem doSomeArithmetic_ok e v :
+  interp (doSomeArithmetic e) v = interp e v.
 Proof.
+(*
   induct e; simplify; try equality.
 
   cases e1; simplify; try equality.
@@ -152,6 +174,134 @@ Proof.
 
   cases e1; simplify; try equality.
   cases e2; simplify; equality.
+*)
+  elim: e => //=.
+  - case => [c1 | v1 | e11 e12 | e11 e12 | e11 e12] H1.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * done.
+      * done.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * done.
+      * done.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * rewrite interp_plusE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+  - move=> e1 H1 e2 H2.
+      by rewrite H1 H2.
+  - case => [c1 | v1 | e11 e12 | e11 e12 | e11 e12] H1.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * done.
+      * done.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * done.
+      * done.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_plusE.
+        rewrite interp_timesE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * rewrite interp_timesE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+        rewrite interp_minusE.
+          by rewrite H1 H2.
+    + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
+      * rewrite interp_timesE.
+          by rewrite H1 H2.
 Qed.
 
 (* Of course, we're going to get bored if we confine ourselves to arithmetic
