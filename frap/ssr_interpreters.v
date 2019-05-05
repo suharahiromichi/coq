@@ -72,7 +72,14 @@ Theorem interp_ex2 : interp ex2 valuation0 = 54.
 Proof.
   unfold valuation0.
   simplify.
-  equality.
+  (* FrapWithoutSets.v の simpl_map を見よ。 *)
+  rewrite lookup_add_eq.                    (* y = 3 を取り出す。 *)
+  rewrite lookup_add_ne.                    (* スキップする。 *)
+  rewrite lookup_add_eq.                    (* x = 17 を取り出す。 *)
+  - done.                                   (* 計算する。 *)
+  - done.                                   (* x = x *)
+  - done.                                   (* x <> y *)
+  - done.                                   (* y = y *)
 Qed.
 
 (* Here's the silly transformation we defined last time. *)
@@ -89,21 +96,12 @@ Fixpoint commuter (e : arith) : arith :=
 (* Instead of proving various odds-and-ends properties about it,
  * let's show what we *really* care about: it preserves the
  * *meanings* of expressions! *)
-Theorem commuter_ok : forall v e, interp (commuter e) v = interp e v.
+Theorem commuter_ok v e : interp (commuter e) v = interp e v.
 Proof.
-  induct e; simplify.
-
-  equality.
-
-  equality.
-
-  linear_arithmetic.
-
-  equality.
-
-  rewrite IHe1.
-  rewrite IHe2.
-  ring.
+  elim: e => //= [e1 H1 e2 H2 | e1 H1 e2 H2 | e1 H1 e2 H2].
+  - by linear_arithmetic.
+  - by linear_arithmetic.
+  - rewrite H1 H2. ring.
 Qed.
 (* Well, that's a relief! ;-) *)
 
@@ -111,10 +109,13 @@ Qed.
 Fixpoint substitute (inThis : arith) (replaceThis : var) (withThis : arith) : arith :=
   match inThis with
   | Const _ => inThis
-  | Var x => if x ==v replaceThis then withThis else inThis
-  | Plus e1 e2 => Plus (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
-  | Minus e1 e2 => Minus (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
-  | Times e1 e2 => Times (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
+  | Var x => if x == replaceThis then withThis else inThis
+  | Plus e1 e2 =>
+    Plus (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
+  | Minus e1 e2 =>
+    Minus (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
+  | Times e1 e2 =>
+    Times (substitute e1 replaceThis withThis) (substitute e2 replaceThis withThis)
   end.
 
 Theorem substitute_ok : forall v replaceThis withThis inThis,
