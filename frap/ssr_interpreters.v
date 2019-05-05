@@ -154,6 +154,7 @@ Fixpoint doSomeArithmetic (e : arith) : arith :=
   | Times e1 e2 => Times (doSomeArithmetic e1) (doSomeArithmetic e2)
   end.
 
+(* 補題を追加した。 suhara *)
 Lemma interp_plusE e1 e2 v : interp (Plus e1 e2) v = interp e1 v + interp e2 v.
 Proof. done. Qed.
 
@@ -175,6 +176,8 @@ Proof.
   cases e1; simplify; try equality.
   cases e2; simplify; equality.
 *)
+(* ***** *)
+(*
   elim: e => //=.
   - case => [c1 | v1 | e11 e12 | e11 e12 | e11 e12] H1.
     + case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2.
@@ -302,6 +305,19 @@ Proof.
           by rewrite H1 H2.
       * rewrite interp_timesE.
           by rewrite H1 H2.
+ *)
+  elim: e => //=.
+    by case => [c1 | v1 | e11 e12 | e11 e12 | e11 e12] H1;
+                 case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2;
+                           try rewrite interp_plusE;
+                           try rewrite interp_minusE;
+                           try rewrite H1 H2.
+    by move=> _ -> _ -> //=.
+    by case => [c1 | v1 | e11 e12 | e11 e12 | e11 e12] H1;
+                 case => [c2 | v2 | e21 e22 | e21 e22 | e21 e22] H2;
+                           try rewrite interp_timesE;
+                           try rewrite interp_minusE;
+                           try rewrite H1 H2.
 Qed.
 
 (* Of course, we're going to get bored if we confine ourselves to arithmetic
@@ -342,41 +358,43 @@ Definition run1 (i : instruction) (v : valuation) (stack : list nat) : list nat 
 
 (* That function explained how to run one instruction.
  * Here's how to run several of them. *)
-Fixpoint run (is : list instruction) (v : valuation) (stack : list nat) : list nat :=
-  match is with
+Fixpoint run (ins : seq instruction) (v : valuation) (stack : seq nat) : seq nat :=
+  match ins with
   | nil => stack
   | i :: is' => run is' v (run1 i v stack)
   end.
 
 (* Instead of writing fiddly stack programs ourselves, let's *compile*
  * arithmetic expressions into equivalent stack programs. *)
-Fixpoint compile (e : arith) : list instruction :=
+Fixpoint compile (e : arith) : seq instruction :=
   match e with
   | Const n => PushConst n :: nil
   | Var x => PushVar x :: nil
-  | Plus e1 e2 => compile e1 ++ compile e2 ++ Add :: nil
-  | Minus e1 e2 => compile e1 ++ compile e2 ++ Subtract :: nil
-  | Times e1 e2 => compile e1 ++ compile e2 ++ Multiply :: nil
+  | Plus e1 e2 => compile e1 ++ compile e2 ++ [:: Add]
+  | Minus e1 e2 => compile e1 ++ compile e2 ++ [:: Subtract]
+  | Times e1 e2 => compile e1 ++ compile e2 ++ [:: Multiply]
   end.
 
 (* Now, of course, we should prove our compiler correct.
  * Skip down to the next theorem to see the overall correctness statement.
  * It turns out that we need to strengthen the induction hypothesis with a
  * lemma, to push the proof through. *)
-Lemma compile_ok' : forall e v is stack, run (compile e ++ is) v stack = run is v (interp e v :: stack).
+Lemma compile_ok' e v ins stack :
+  run (compile e ++ ins) v stack = run ins v (interp e v :: stack).
 Proof.
-  induct e; simplify.
-
-  equality.
-
-  equality.
-
+  elim: e v ins stack =>
+  //= [e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2 | e1 IHe1 e2 IHe2] v ins stack.
+  (*
+    e1 と e2 をコンパイルしてAddと一緒にインストラクション列に追加したものを実行した結果は、
+    e1 と e2 を実行て+したものをスタックトップに追加したものと同じ。
+   *)
   (* Here we want to use associativity of [++], to get the conclusion to match
    * an induction hypothesis.  Let's ask Coq to search its library for lemmas
    * that would justify such a rewrite, giving a pattern with wildcards, to
    * specify the essential structure that the rewrite should match. *)
   SearchRewrite ((_ ++ _) ++ _).
   (* Ah, we see just the one! *)
+(*
   rewrite app_assoc_reverse.
   rewrite IHe1.
   rewrite app_assoc_reverse.
@@ -397,13 +415,19 @@ Proof.
   rewrite IHe2.
   simplify.
   equality.
+ *)
+  by rewrite -catA IHe1 -catA IHe2 /=.
+  by rewrite -catA IHe1 -catA IHe2 /=.
+  by rewrite -catA IHe1 -catA IHe2 /=.
 Qed.
 
 (* The overall theorem follows as a simple corollary. *)
-Theorem compile_ok : forall e v, run (compile e) v nil = interp e v :: nil.
+Theorem compile_ok e v : run (compile e) v nil = [:: interp e v].
 Proof.
+(*
   simplify.
-
+*)
+(*
   (* To match the form of our lemma, we need to replace [compile e] with
    * [compile e ++ nil], adding a "pointless" concatenation of the empty list.
    * [SearchRewrite] again helps us find a library lemma. *)
@@ -412,8 +436,10 @@ Proof.
   (* Note that we can use [rewrite] with explicit values of the first few
    * quantified variables of a lemma.  Otherwise, [rewrite] picks an
    * unhelpful place to rewrite.  (Try it and see!) *)
+   *)
+  rewrite -[compile e]cats0.
 
-  apply compile_ok'.
+  apply: compile_ok'.
   (* Direct appeal to a previously proved lemma *)
 Qed.
 
@@ -453,18 +479,18 @@ Fixpoint exec (c : cmd) (v : valuation) : valuation :=
 
 Example factorial_ugly :=
   Sequence
-    (Assign "output" (Const 1))
-    (Repeat (Var "input")
+    (Assign Literal.a (Const 1))            (* "output" *)
+    (Repeat (Var Literal.b)                 (* "input" *)
             (Sequence
-               (Assign "output" (Times (Var "output") (Var "input")))
-               (Assign "input" (Minus (Var "input") (Const 1))))).
+               (Assign Literal.a (Times (Var Literal.a) (Var Literal.b)))
+               (Assign Literal.b (Minus (Var Literal.b) (Const 1))))).
 
 (* Ouch; that code is hard to read.  Let's introduce some notations to make the
  * concrete syntax more palatable.  We won't explain the general mechanisms on
  * display here, but see the Coq manual for details, or try to reverse-engineer
  * them from our examples. *)
 Coercion Const : nat >-> arith.
-Coercion Var : var >-> arith.
+Coercion Var : Literal >-> arith.  (* Coercion Var : var >-> arith. *)
 Infix "+" := Plus : arith_scope.
 Infix "-" := Minus : arith_scope.
 Infix "*" := Times : arith_scope.
@@ -475,10 +501,10 @@ Notation "'repeat' e 'doing' body 'done'" := (Repeat e%arith body) (at level 75)
 
 (* OK, let's try that program again. *)
 Example factorial :=
-  "output" <- 1;
-  repeat "input" doing
-    "output" <- "output" * "input";
-    "input" <- "input" - 1
+  Literal.a <- 1;
+  repeat Literal.b doing
+    Literal.a <- Literal.a * Literal.b;
+    Literal.b <- Literal.b - 1
   done.
 
 (* Now we prove that it really computes factorial.
@@ -493,8 +519,8 @@ Fixpoint fact (n : nat) : nat :=
  * proved by induction, showing that the loop works correctly.  So, let's first
  * assign a name to the loop body alone. *)
 Definition factorial_body :=
-  "output" <- "output" * "input";
-  "input" <- "input" - 1.
+  Literal.a <- Literal.a * Literal.b;
+  Literal.b <- Literal.b - 1.
 
 (* Now for that lemma: self-composition of the body's semantics produces the
  * expected changes in the valuation.
@@ -502,12 +528,13 @@ Definition factorial_body :=
  * because the variables coming after it will need to *change* in the course of
  * the induction.  Try switching the order to see what goes wrong if we put
 e * [input] later. *)
-Lemma factorial_ok' : forall input output v,
-  v $? "input" = Some input
-  -> v $? "output" = Some output
+Lemma factorial_ok' input output v :
+  v $? Literal.b = Some input
+  -> v $? Literal.a = Some output
   -> selfCompose (exec factorial_body) input v
-     = v $+ ("input", 0) $+ ("output", output * fact input).
+     = v $+ (Literal.b, 0) $+ (Literal.a, output * fact input).
 Proof.
+(*
   induct input; simplify.
 
   maps_equal.
@@ -531,20 +558,35 @@ Proof.
   f_equal; ring.
   simplify; f_equal; linear_arithmetic.
   simplify; equality.
-Qed.
+ *)
+  elim: input output v => /= [|n IHn] output v H1 H2.
+  - apply: fmap_ext.
+    move=> k.
+Admitted.
 
 (* Finally, we have the natural correctness condition for factorial as a whole
  * program. *)
 Theorem factorial_ok : forall v input,
-  v $? "input" = Some input
-  -> exec factorial v $? "output" = Some (fact input).
+  v $? Literal.b = Some input
+  -> exec factorial v $? Literal.a = Some (fact input).
 Proof.
+(*
   simplify.
   rewrite H.
   rewrite (factorial_ok' input 1); simplify.
   f_equal; linear_arithmetic.
   trivial.
   trivial.
+*)
+  simplify.
+  rewrite lookup_add_ne.
+  rewrite H.
+  Check @factorial_ok' input 1.
+  rewrite (@factorial_ok' input 1); simplify.
+  - by f_equal; linear_arithmetic.
+  - by apply: H.
+  - reflexivity.
+  - by [].
 Qed.
 
 
@@ -571,29 +613,38 @@ Fixpoint unroll (c : cmd) : cmd :=
 (* This obvious-sounding fact will come in handy: self-composition gives the
  * same result, when passed two functions that map equal inputs to equal
  * outputs. *)
-Lemma selfCompose_extensional : forall {A} (f g : A -> A) n x,
+Lemma selfCompose_extensional {A} (f g : A -> A) n x :
   (forall y, f y = g y)
   -> selfCompose f n x = selfCompose g n x.
 Proof.
+(*
   induct n; simplify; try equality.
 
   rewrite H.
   apply IHn.
   trivial.
+ *)
+  elim: n x => //= [n IHn] x H.
+  rewrite H.
+  by apply: IHn.
 Qed.
 
 (* Crucial lemma: [seqself] is acting just like [selfCompose], in a suitable
  * sense. *)
-Lemma seqself_ok : forall c n v,
+Lemma seqself_ok c n v :
   exec (seqself c n) v = selfCompose (exec c) n v.
 Proof.
+(*
   induct n; simplify; equality.
+ *)
+  by elim: n v => //= [n IHn] v.
 Qed.
 
 (* The two lemmas we just proved are the main ingredients to prove the natural
  * correctness condition for [unroll]. *)
-Theorem unroll_ok : forall c v, exec (unroll c) v = exec c v.
+Theorem unroll_ok c v : exec (unroll c) v = exec c v.
 Proof.
+(*
   induct c; simplify; try equality.
 
   cases e; simplify; try equality.
@@ -613,4 +664,38 @@ Proof.
 
   apply selfCompose_extensional.
   trivial.
+ *)
+
+  elim: c v => //= [c1 IHc1 c2 IHc2 v | e c IHc v].
+  - by rewrite IHc1 IHc2.
+  - case: e => /= [n | x | e1 e2 | e1 e2 | e1 e2].
+    + rewrite seqself_ok.
+      by apply: selfCompose_extensional.
+    + by apply: selfCompose_extensional.
+    + by apply: selfCompose_extensional.
+    + by apply: selfCompose_extensional.
+    + by apply: selfCompose_extensional.
+(*
+  induct c; simplify; try equality.
+
+  cases e; simplify; try equality.
+
+  rewrite seqself_ok.
+  apply selfCompose_extensional.
+  trivial.
+
+  apply selfCompose_extensional.
+  trivial.
+
+  apply selfCompose_extensional.
+  trivial.
+
+  apply selfCompose_extensional.
+  trivial.
+
+  apply selfCompose_extensional.
+  trivial.
+*)
 Qed.
+
+(* END *)
