@@ -1048,10 +1048,12 @@ Module Unify.
     case: (ex_inb constraints1) => n Hcardinal1.
     move: constraints1 Hcardinal1.
     
-    induction n as [n IHn] using lt_wf_ind.
-    induction constraints1 as [constraints1 IHconstraints1]
+    elim/lt_wf_ind : n => [n IHn] constraints1.
+    (* induction n as [n IHn] using lt_wf_ind. *)
+    elim/(induction_ltof1 _ Size) : constraints1 => [constraints1 IHconstraints1].
+    (* induction constraints1 as [constraints1 IHconstraints1]
                                 using (induction_ltof1 _ Size).
-    
+    *)
     move=> Hcardinal1.
     apply: Acc_intro => constraints2 Hlt.
     case: (ex_inb constraints2) => m Hcardinal2.
@@ -1089,10 +1091,12 @@ Module Unify.
     case: (ex_inb constraints1) => n Hcardinal1.
     move: constraints1 Hcardinal1.
     
-    induction n as [n IHn] using lt_wf_ind.
-    induction constraints1 as [constraints1 IHconstraints1]
+    elim/lt_wf_ind : n => [n IHn] constraints1.
+    (* induction n as [n IHn] using lt_wf_ind. *)
+    elim/(induction_ltof1 _ Size) : constraints1 => [constraints1 IHconstraints1].
+    (* induction constraints1 as [constraints1 IHconstraints1]
                                 using (induction_ltof1 _ Size).
-    
+    *)
     move=> Hcardinal1.
     apply: Acc_intro => constraints2 Hlt.
     case: (ex_inb constraints2) => m Hcardinal2.
