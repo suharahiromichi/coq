@@ -357,6 +357,9 @@ Section Sample5.
   Variable m n : nat.
   Hypothesis eqP : reflect (m = n) (m == n).
   
+  Hypothesis negP : reflect (~ b) (~~ b).
+  Hypothesis negPn : reflect b (~~ ~~ b).
+  
 (**
 ## andPまたはnandP を使う例
 *)
@@ -433,6 +436,49 @@ Section Sample5.
   Check introN eqP           : m <> n -> m != n.
   (* apply//で使用： *)
   Check xorPif eqP (Q := Q)  : Q \/ m = n -> ~ (Q /\ m = n) -> if m == n then ~ Q else Q.
+
+(**
+## negPまたはnegPn を使う例
+*)
+  (* move/で使用： *)
+  Check elimTF negP (c := c) : ~~ b = c -> if c then ~ b else ~ ~ b.
+  Check elimTF negPn (c := c). (*  : ~~ ~~ b = c -> if c then b else ~ b *)
+  Check elimNTF negP (c := c) : ~~ ~~ b = c -> if c then ~ ~ b else ~ b.
+  Check elimNTF negPn (c := c) : ~~ ~~ ~~ b = c -> if c then ~ b else b.
+  Check elimTFn negP (c := c) : b = c -> if c then ~ ~ b else ~ b.
+  Check elimTFn negPn (c := c) : ~~ b = c -> if c then ~ b else b.
+  (* apply/で使用 ： *)
+  Check elimT negP            : ~~ b -> ~ b.
+  Check elimT negPn           : ~~ ~~ b -> b.
+  Check elimTn negP           : b -> ~ ~ b.
+  Check elimTn negPn          : ~~ b -> ~ b.
+  Check elimN negP            : ~~ ~~ b -> ~ ~ b.
+  Check elimN negPn           : ~~ ~~ ~~ b -> ~ b.
+  (* apply//で使用： *)
+  Check equivPif negP (Q := Q) : (Q -> ~ b) -> (~ b -> Q) -> if ~~ b then Q else ~ Q.
+  Check equivPif negPn (Q := Q) : (Q -> b) -> (b -> Q) -> if ~~ ~~ b then Q else ~ Q.
+  Check equivPifn negP (Q:=Q)  : (Q -> ~ b) -> (~ b -> Q) -> if b then ~ Q else Q.
+  Check equivPifn negPn (Q:=Q) : (Q -> b) -> (b -> Q) -> if ~~ b then ~ Q else Q.
+ 
+  (* move/で使用： *)
+  Check introTF negP (c:=c)   : (if c then ~ b else ~ ~ b) -> ~~ b = c.
+  Check introTF negPn (c:=c). (* (if c then b else ~ b) -> ~~ ~~ b = c. *)
+  Check introNTF negP (c:=c)  : (if c then ~ ~ b else ~ b) -> ~~ ~~ b = c.
+  Check introNTF negPn (c:=c) : (if c then ~ b else b) -> ~~ ~~ ~~ b = c.
+  Check introTFn negP (c:=c)  : (if c then ~ ~ b else ~ b) -> b = c.
+  Check introTFn negPn (c:=c) : (if c then ~ b else b) -> ~~ b = c.
+  (* apply/で使用： *)
+  Check introT negP           : ~ b -> ~~ b.
+  Check introT negPn          : b -> ~~ ~~ b.
+  Check introTn negP          : ~ ~ b -> b.
+  Check introTn negPn         : ~ b -> ~~ b.
+  Check introN negP           : ~ ~ b -> ~~ ~~ b.
+  Check introN negPn          : ~ b -> ~~ ~~ ~~ b.
+  (* apply//で使用： *)
+  Check xorPif negP (Q := Q)  : Q \/ ~ b -> ~ (Q /\ ~ b) -> if ~~ b then ~ Q else Q.
+  Check xorPif negPn (Q := Q) : Q \/ b -> ~ (Q /\ b) -> if ~~ ~~ b then ~ Q else Q.
+  Check xorPifn negP (Q := Q) (b := b) : Q \/ ~ b -> ~ (Q /\ ~ b) -> if b then Q else ~ Q.
+
 
 End Sample5.
 
