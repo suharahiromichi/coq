@@ -3,6 +3,7 @@ SSReflectのViewとView Hintについてのメモ
 =========
 
 2014_10_26 @suharahiromichi
+2019_5_7 @suharahiromichi
 *)
 
 (**
@@ -30,7 +31,7 @@ https://hal.inria.fr/inria-00515548/PDF/main-rr.pdf
 そのあたりについては、上記の文献を参照してください。
 *)
 
-Require Import ssreflect ssrfun ssrbool.
+From mathcomp Require Import all_ssreflect.
 
 (**
 # View
@@ -352,7 +353,10 @@ Section Sample5.
   Hypothesis andP : reflect (a /\ b) (a && b).
   Hypothesis nandP : reflect (~~ a \/ ~~ b) (~~ (a && b)).
   Hypothesis idP : reflect b b.
-
+  
+  Variable m n : nat.
+  Hypothesis eqP : reflect (m = n) (m == n).
+  
 (**
 ## andPまたはnandP を使う例
 *)
@@ -409,6 +413,27 @@ Section Sample5.
   (* apply//で使用： *)
   Check xorPif idP (Q := Q)  : Q \/ b -> ~ (Q /\ b) -> if b then ~ Q else Q.
   Check xorPifn idPn (Q := Q) (b := b) : Q \/ ~~ b -> ~ (Q /\ ~~ b) -> if b then Q else ~ Q.
+
+(**
+## eqP を使う例
+*)
+  (* move/で使用： *)
+  Check elimTF eqP (c := c)  : (m == n) = c -> if c then m = n else m <> n.
+  Check elimNTF eqP (c := c) : (m != n) = c -> if c then m <> n else m = n.
+  (* apply/で使用 ： *)
+  Check elimT eqP            : m == n -> m = n.
+  Check elimN eqP            : m != n -> m <> n.
+  (* apply//で使用： *)
+  Check equivPif eqP (Q := Q) : (Q -> m = n) -> (m = n -> Q) -> if m == n then Q else ~ Q.
+  (* move/で使用： *)
+  Check introTF eqP (c := c) : (if c then m = n else m <> n) -> (m == n) = c.
+  Check introNTF eqP (c := c) : (if c then m <> n else m = n) -> (m != n) = c.
+  (* apply/で使用： *)
+  Check introT eqP           : m = n -> m == n.
+  Check introN eqP           : m <> n -> m != n.
+  (* apply//で使用： *)
+  Check xorPif eqP (Q := Q)  : Q \/ m = n -> ~ (Q /\ m = n) -> if m == n then ~ Q else Q.
+
 End Sample5.
 
 (* END *)
