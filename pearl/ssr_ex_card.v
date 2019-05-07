@@ -61,7 +61,7 @@ Section Test.
     elim: (Finite.enum T).
     - by exists 0.
     - move=> x s /= [i IHs].
-      case H : (x \in p) => /=.
+      case: ifP => /=.                 (* case H : (x \in p) => /=. *)
       + exists i.+1.
         by rewrite IHs.
       + by exists i.
