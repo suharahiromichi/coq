@@ -20,174 +20,178 @@ From mathcomp Require Import all_ssreflect.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-(* Set Print All. *)
+(* Set Printing All. *)
 
 Section Negative.
 
-  (* 否定を意味する前提を正規なかたちにする。 *)
-  (* 一般のライプニッツの等式については、変換できるとは限らないので、
-     nat の不等式については、別に扱う。 *)
+  Check Bool.negb_involutive : forall b : bool, ~~ ~~ b = b.
   
-  Ltac neg2not :=
-    repeat
-      match goal with
-      | [ H : _ <> true                 |- _ ] => move/negP in H
-      | [ H : _ = false                 |- _ ] => move/negP in H
-      | [ H : ~ _                       |- _ ] => move/negP in H
-      | [ H : is_true (_ != true)       |- _ ] => move/eqP in H
-      | [ H : is_true (_ != _)          |- _ ] => move/eqP in H
-      | [ H : is_true (_ == false)      |- _ ] => rewrite eqbF_neg in H
-      | [ H : is_true (~~ (_ == true))  |- _ ] => rewrite Bool.negb_involutive in H
-      | [ H : is_true (~~ (_ == _))     |- _ ] => rewrite Bool.negb_involutive in H
-      | [ H : is_true (~~ (_ != false)) |- _ ] => rewrite Bool.negb_involutive in H
-      | [ H : is_true (~~ (~~ _))       |- _ ] => rewrite Bool.negb_involutive in H
-(*    | [ H : is_true (~~ _)            |- _ ] => move/negP in H *)
-      end.
-  
-  (* 前提 <> からは変換できない。 *)
-  Goal forall (a b : nat), a != b -> a <> b.
+  Ltac find_neg_hypo :=
+    match goal with
+    | [ H : _ =  true            |- _ ] => idtac H
+    | [ H : _ <> true            |- _ ] => idtac H; move/negP in H
+    | [ H : _ =  false           |- _ ] => idtac H; move/negbT in H
+    | [ H : _ <> false           |- _ ] => idtac H; move/negPf in H
+    | [ H : context [_ == true]  |- _ ] => idtac H; rewrite eqb_id in H
+    | [ H : context [_ == false] |- _ ] => idtac H; rewrite eqbF_neg in H
+    | [ H : context [~~ ~~ _ ]   |- _ ] => idtac H; rewrite Bool.negb_involutive in H
+    end.
+
+  Ltac find_neg_goal :=
+    match goal with
+    | [ |- _ =  true             ] => idtac
+    | [ |- _ <> true             ] => idtac; apply: negP
+    | [ |- _ =  false            ] => idtac; apply: negbTE
+    | [ |- _ <> false            ] => idtac; apply/Bool.not_false_iff_true
+    | [ |- context [_ == true]   ] => idtac; rewrite eqb_id
+    | [ |- context [_ == false]  ] => idtac; rewrite eqbF_neg
+    | [ |- context [~~ ~~ _ ]    ] => idtac; rewrite Bool.negb_involutive
+    end.
+
+  Ltac find_neg :=
+    repeat find_neg_hypo;
+    repeat find_neg_goal.
+
+
+(** 全体のテスト *)
+
+  Goal forall (a b : nat), ~ (~~ ~~ (a == b) = false) -> (~~ (a == b)) <> true.
+  Proof.
     move=> a b H1.
-      by neg2not.
+      by find_neg.
+  Qed.
+  
+    
+(** find_neg_goal のテスト *)
+
+  Goal forall (a b : nat), (a == b) -> (a == b) == true.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.
   Qed.
 
-  Goal forall (b : bool), ~ b -> ~~ b.
+  Goal forall (a b : nat), (a != b) -> (a == b) == false.
   Proof.
-    move=> b H1.
-      by neg2not.
+    move=> a b H1.
+    find_neg_goal.
+    done.
   Qed.
 
-  Goal forall (b : bool), ~~ (b != false) -> ~~ b.
+  Goal forall (a b : nat), (a == b) -> ~~ ~~ (a == b).
   Proof.
-    move=> b H1.
-      by neg2not.
+    move=> a b H1.
+    find_neg_goal.
+    done.
+  Qed.
+  
+  Goal forall (a b : nat), (a == b) -> (a == b) = true.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
   Qed.
 
-  Goal forall (b : bool), ~~ ~~ ~~ b -> ~~ b.
+  Goal forall (a b : nat), (a != b) -> (a == b) <> true.
   Proof.
-    move=> b H1.
-      by neg2not.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
   Qed.
-  
-  Goal forall (b : bool), b <> true -> ~~ b.
+
+  Goal forall (a b : nat), (a != b) -> ~((a == b) = true).
   Proof.
-    move=> b H1.
-      by neg2not.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
   Qed.
   
-  Goal forall (b : bool), b = false -> ~~ b.
+  Goal forall (a b : nat), (a != b) -> (a == b) = false.
   Proof.
-    move=> b H1.
-      by neg2not.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
   Qed.
   
-  Goal forall (b : bool), b != true -> ~~ b.
+  Goal forall (a b : nat), (a == b) -> (a == b) <> false.
   Proof.
-    move=> b H1.
-      by neg2not.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.
+
+  Goal forall (a b : nat), (a == b) -> ~ ((a == b) = false).
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.
+
+(** find_neg_hypo のテスト *)
+
+  Goal forall (a b : nat), (a == b) == true -> (a == b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.
+  Qed.
+
+  Goal forall (a b : nat), (a == b) == false -> (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.
+  Qed.
+
+  Goal forall (a b : nat), ~~ ~~ (a == b) -> (a == b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.
   Qed.
   
-  Goal forall (b : bool), b == false -> ~~ b.
-    move=> b H1.
-      by neg2not.
+  Goal forall (a b : nat), (a == b) = true -> (a == b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+
+  Goal forall (a b : nat), (a == b) <> true -> (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+
+  Goal forall (a b : nat), ~((a == b) = true) -> (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
   Qed.
   
+  Goal forall (a b : nat), (a == b) = false -> (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a == b) <> false -> (a == b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+
+  Goal forall (a b : nat), ~ ((a == b) = false) -> (a == b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+
 End Negative.
 
-
-Section Inequality.
-  
-  Ltac ineq2not :=
-    repeat
-      match goal with
-      | [ H : is_true ((_ == _) == false)  |- _ ] => move/(elimT eqP) in H
-      | [ H : (_ == _) = false             |- _ ] => move/(elimF eqP) in H
-      | [ H : is_true (_ != _)             |- _ ] => move/(elimN eqP) in H
-      | [ H : ~ (is_true (_ == _))         |- _ ] => move/(introT negP) in H
-      | [ H : (is_true (~~ (_ == _)))      |- _ ] => rewrite Bool.negb_involutive in H
-
-      | [ H : is_true ((_ != _) == false)  |- _ ] => move/eqP in H
-      | [ H : (_ != _) = false             |- _ ] => move/(elimNf eqP) in H
-      | [ H : is_true (_ == _)             |- _ ] => move/eqP in H
-      | [ H : ~ (is_true (_ != _))         |- _ ] => move/negP in H
-      | [ H : (is_true (~~ (_ != _)))      |- _ ] => rewrite Bool.negb_involutive in H
-      end.
-
-
-  (* おまけのおまけ。不等号は5種類ある。 *)
-  (* ただし、= false を <> true にしたののは、上を参照のこと。 *)
-  
-  Goal forall (x y : nat), (x == y) == false -> x <> y.
-    move=> x y H1.
-      by ineq2not.
-  Qed.
-  
-  Goal forall (x y : nat), (x == y) = false -> x <> y.
-    move=> x y.
-    move=> H1.
-      by ineq2not.
-  Qed.
-  
-  Goal forall (x y : nat), (x != y) -> x <> y. (* negb eqb *)
-    move=> x y H.
-    ineq2not.
-    done.
-  Qed.
-  
-  (* これだけ Prop -> bool であることに注意。 *)
-  Goal forall (x y : nat), ~ (x == y) -> x <> y. (* not eqb *)
-    move=> x y H.
-    ineq2not.
-    done.
-  Qed.
-  
-  (* ***** *)
-  
-  Goal forall (x y : nat), (x != y) == false -> x = y.
-    move=> x y H.
-      by ineq2not.
-  Qed.
-  
-  Goal forall (x y : nat), (x != y) = false -> x = y.
-    move=> x y H.
-      by ineq2not.
-  Qed.
-  
-  Goal forall (x y : nat), (x == y) -> x = y.
-    move=> x y H.
-      by ineq2not.
-  Qed.
-  
-  Goal forall (x y : nat), ~ (x != y) -> x = y.
-    move=> x y H.
-      by ineq2not.
-  Qed.
-  
-  Goal forall (x y : nat), ~~ (x != y) -> x = y.
-    move=> x y H.
-      by ineq2not.
-  Qed.
-  
-  Section TEST.
-    
-    Variable x y : nat.
-    
-    Check elimT (@eqP _ x y) : x == y -> x = y.
-    Check elimF (@eqP _ x y) : (x == y) = false -> x <> y.
-    Check elimN (@eqP _ x y) : x != y -> x <> y.
-    Check elimNf (@eqP _ x y) : (x != y) = false -> x = y.
-    
-    Check introT (@eqP _ x y) : x = y -> x == y.
-    Check introF (@eqP _ x y) : x <> y -> (x == y) = false.
-    Check introN (@eqP _ x y) : x <> y -> x != y.
-    Check introNf (@eqP _ x y) : x = y -> (x != y) = false.
-    
-    Check elimTn.               (* reflect 述語中に否定が含まれる場合。 *)
-    Check elimFn.
-    
-  End TEST.
-  
-End Inequality.
-
 (* END *)
-
-
