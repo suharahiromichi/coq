@@ -130,7 +130,7 @@ Proof.
   cases (x ==v replaceThis); simplify; try equality.
  *)
   elim: inThis => //= [x | e1 H1 e2 H2 | e1 H1 e2 H2 | e1 H1 e2 H2].
-  - case Heq : (x == replaceThis).
+  - case: ifP => Heq.              (* case Heq : (x == replaceThis) *)
     + rewrite lookup_add_eq //=.
       by move/eqP in Heq.
     + rewrite lookup_add_ne //=.
