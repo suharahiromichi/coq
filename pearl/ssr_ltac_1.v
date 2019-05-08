@@ -22,8 +22,6 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Printing All. *)
 
-Check Bool.negb_involutive : forall b : bool, ~~ ~~ b = b.
-
 Ltac find_neg_hypo :=
   match goal with
   | [ H : _ =  true            |- _ ] => idtac H
@@ -33,7 +31,7 @@ Ltac find_neg_hypo :=
   | [ H : ~ (is_true _)        |- _ ] => idtac H; move/negP in H
   | [ H : context [_ == true]  |- _ ] => idtac H; rewrite eqb_id in H
   | [ H : context [_ == false] |- _ ] => idtac H; rewrite eqbF_neg in H
-  | [ H : context [~~ ~~ _ ]   |- _ ] => idtac H; rewrite Bool.negb_involutive in H
+  | [ H : context [~~ ~~ _ ]   |- _ ] => idtac H; rewrite negbK in H
   end.
 
 Ltac find_neg_goal :=
@@ -45,7 +43,7 @@ Ltac find_neg_goal :=
   | [ |- ~ (is_true _)         ] => idtac; apply/negP
   | [ |- context [_ == true]   ] => idtac; rewrite eqb_id
   | [ |- context [_ == false]  ] => idtac; rewrite eqbF_neg
-  | [ |- context [~~ ~~ _ ]    ] => idtac; rewrite Bool.negb_involutive
+  | [ |- context [~~ ~~ _ ]    ] => idtac; rewrite negbK
   end.
 
 Ltac find_neg :=
