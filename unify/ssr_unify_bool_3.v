@@ -25,7 +25,7 @@ Module List.
   | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
   Hint Constructors Exists.
   
-  Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
+  Lemma ForallP {A : Type} (P : A -> Prop) (p : pred A) :
     (forall (a : A), reflect (P a) (p a)) ->
     forall (s : seq A), reflect (Forall P s) (all p s).
   Proof.
@@ -48,7 +48,7 @@ Module List.
         * by apply: IHs.
   Qed.
   
-  Lemma ExistsP {A : Type} (P : A -> Prop) (p : A -> bool) :
+  Lemma ExistsP {A : Type} (P : A -> Prop) (p : pred A) :
     (forall (a : A), reflect (P a) (p a)) ->
     forall (s : seq A), reflect (Exists P s) (has p s).
   Proof.
