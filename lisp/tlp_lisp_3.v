@@ -82,8 +82,8 @@ boolとPropの間での行き来ができるようになります。
  *)
 
 Inductive atomic : Type :=
-| ATOM_NAT (n : nat)
-| ATOM_SYM (s : string).
+| ATOM_NAT of nat
+| ATOM_SYM of string.
 
 Definition eqAtom (a b : atomic) : bool :=
   match (a, b) with
@@ -113,8 +113,8 @@ Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
 *)
 
 Inductive star : Type :=
-| S_ATOM (a : atomic)
-| S_CONS (x y : star).
+| S_ATOM of atomic
+| S_CONS of star & star.
 
 (**
 Coqはinductiveなデータ型に対して、inductionできるようになります。
@@ -252,7 +252,7 @@ Definition n2s (n : nat) : star :=
 
 Definition CONS (x y : star) := S_CONS x y.
 
-Definition CAR  (x : star) : star :=
+Definition CAR (x : star) : star :=
   match x with
   | S_ATOM _ => 'NIL
   | S_CONS x _ => x
@@ -334,7 +334,7 @@ Check ~ is_true (is_not_nil (ATOM 'T)) : Prop.
 のちの証明で便利なように、'NILに関する補題を証明しておきます。
 
 
-``_ != _`` は ``~~(_ = _)`` の略記なので、次はis_not_nil と同じことです。
+``_ != _`` は ``~~(_ == _)`` の略記なので、次はis_not_nil と同じことです。
 が、忘れがちなので定義しておきます。
  *)
 
