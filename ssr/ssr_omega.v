@@ -1,15 +1,76 @@
+Locate "_ <= _".                            (* le x y *)
+Print le.
+(*
+Inductive le (n : nat) : nat -> Prop :=
+| le_n : n <= n
+| le_S : forall m : nat, n <= m -> n <= S m.
+ *)
+
+Locate "_ + _".                             (* Nat.add *)
+
+Goal 1 + 1 = 2.
+Proof.
+  simpl.
+  (* Goal : 2 = 2 *)
+  reflexivity.
+Qed.
+
 From mathcomp Require Import all_ssreflect.
 Require Import Omega.
-
-(*
-(* https://github.com/affeldt-aist/seplog/blob/master/lib/ssrnat_ext.v *)
-Require Import ssrnat_ext.                  (* ssromega *)
-*)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Printing All. *)
+
+(* バニラCoqとMathcompでは、不等号の定義が異なる。 *)
+Locate "_ <= _".                     (* leq m n *)
+Print leq.                           (* fun m n : nat => m - n == 0 *)
+
+Goal forall n, n <= n.
+Proof.
+  move=> n.
+  (* Goal : leq n n *)
+  
+  Check introT leP : (_ <= _)%coq_nat -> (_ <= _).
+  apply/leP.                             (* apply: (introT leP). *)
+    (* Goal : le n n *)
+    (* Goal : (n <= n)%coq_nat *)
+    by apply le_n.
+Qed.
+
+(* バニラCoqとMathcompでは、加法の定義は同じ。MathcompもバニラCoqの定義を使っているが、
+   「ロック」されていているため、簡約 simplify できない。 *)
+Locate "_ + _".                             (* addn m n *)
+Print addn.                                 (* nosimpl addn_rec *)
+Print addn_rec.                             (* Init.Nat.add *)
+
+Goal 1 + 1 = 2.
+Proof.
+  simpl.
+  (* Goal : 1 + 1 = 2 *)
+  (* だたし、done や reflexivity はできる。 *)
+  
+  Check plusE : Init.Nat.add = addn.
+  rewrite -plusE.
+  (* Goal : (1 + 1)%coq_nat = 2 *)
+  simpl.
+  (* Goal : 2 = 2 *)
+  reflexivity.
+  
+  (* 参考：ロックを解除する方法。 *)
+  Restart.
+  rewrite /addn /addn_rec /lock.
+  simpl.
+  (* Goal : 2 = 2 *)
+  reflexivity.
+Qed.
+
+(* ********************* *)
+(* ********************* *)
+(* ********************* *)
+
+(* https://github.com/affeldt-aist/seplog/blob/master/lib/ssrnat_ext.v *)
 
 Ltac ssromega :=
   (repeat ssrnat2coqnat_hypo ;
@@ -22,9 +83,9 @@ with ssrnat2coqnat_hypo :=
     | H : context [?L < ?M < ?R] |- _ => let H1 := fresh in case/andP: H => H H1
     | H : context [?L <= ?M < ?R] |- _ => let H1 := fresh in case/andP: H => H H1
     | H : context [?L <= ?M <= ?R] |- _ => let H1 := fresh in case/andP: H => H H1
-    | H : context [addn ?L ?R] |- _ => rewrite <- plusE in H
-    | H : context [muln ?L ?R] |- _ => rewrite <- multE in H
-    | H : context [subn ?L ?R] |- _ => rewrite <- minusE in H
+    | H : context [?L + ?R] |- _ => rewrite <- plusE in H
+    | H : context [?L * ?R] |- _ => rewrite <- multE in H
+    | H : context [?L - ?R] |- _ => rewrite <- minusE in H
     | H : ?x == _ |- _ => match type of x with nat => move/eqP in H end; idtac x
     | H : _ == ?x |- _ => match type of x with nat => move/eqP in H end; idtac x
     | H : _ != ?x |- _ => match type of x with nat => move/eqP in H end
