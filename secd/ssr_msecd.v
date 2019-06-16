@@ -189,6 +189,22 @@ Section MiniML.
   Compute MML_NS_interpreter 10 [::] (eMuLam f x (ePlus (eVar x) (eNat 1))).
   Compute MML_NS_interpreter 10 [::] (eApp (eLam x (ePlus (eVar x) (eNat 2))) (eNat 3)).
 
+  Lemma MML_NS_interpreter_correctness:
+    forall g e v, MML_NS g e v -> exists dep, MML_NS_interpreter dep g e = Some v.
+  Proof.
+    move=> g e v.
+    elim.
+    - move=> g' n. by exists 10.
+    - move=> g' b. by exists 10.
+    - move=> g' e1 e2 m n H1 IH1 H2 IH2.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      exists dep1.+1.
+      rewrite /=.
+      rewrite IH1.
+      (* IH2 の dep2 が dep1 なら書き換えられる。 *)
+      Admitted.
+                                                                
 End MiniML.
 
 (** de Bruijn notation MiniMLdB *)
