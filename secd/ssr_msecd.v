@@ -1,12 +1,104 @@
 From mathcomp Require Import all_ssreflect.
 
-(* A Correct Compiler from Mini-ML to a Big-Step Machine 
+(** A Correct Compiler from Mini-ML to a Big-Step Machine 
    Verified Using Natural Semantics in Coq *)
-(* Angel Zuniga and Gemma Bel-Enguix *)
+(** Angel Zuniga and Gemma Bel-Enguix *)
+
+(** MiniML *)
+
+Section MiniML.
+  
+  (** variables *)
+  Inductive Var : Set :=
+  | x
+  | y
+  | z
+  | f
+  | g
+  | h.
+  
+  (** MiniML abstract syntax *)
+  Inductive MML_exp : Set :=
+  | eNat (n : nat)
+  | eBool (b : bool)
+  | ePlus (e1 e2 : MML_exp)
+  | eMinus (e1 e2 : MML_exp)
+  | eTimes (e1 e2 : MML_exp)
+  | eEq (e1 e2 : MML_exp)
+  | eVar (v : Var)
+  | eLet (v : Var) (e1 e2 : MML_exp)
+  | eIf (e1 e2 e3 : MML_exp)
+  | eLam (v : Var) (e : MML_exp)
+  | eMuLam (f : Var) (v : Var) (e : MML_exp)
+  | eApp (e1 e2 : MML_exp).
+  
+  (** values *)
+  Inductive MML_val : Set :=
+  | VNat (n : nat)
+  | VBool (b : bool)
+  | VClos (v : Var) (e : MML_exp) (g : seq (Var * MML_val))
+  | VClosRec (f : Var) (v : Var) (e : MML_exp) (g : seq (Var * MML_val)).
+
+  (** environments *)
+  Notation MML_env := (seq (Var * MML_val)).
+  Definition lookup (v : Var) (g : MML_env) := VNat 0. (** 仮 *)
+  
+  (** The natural semantics of MiniML *)
+  Inductive MML_NS : MML_env -> MML_exp -> MML_val -> Prop :=
+  | MML_NS_Nat   (g : MML_env) (n : nat) : MML_NS g (eNat n) (VNat n)
+  | MML_NS_Bool  (g : MML_env) (b : bool) : MML_NS g (eBool b) (VBool b)
+  | MML_NS_Plus  (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
+      MML_NS g e1 (VNat m) ->
+      MML_NS g e2 (VNat n) ->
+      MML_NS g (ePlus e1 e2) (VNat (m + n))
+  | MML_NS_Minus (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
+      MML_NS g e1 (VNat m) ->
+      MML_NS g e2 (VNat n) ->
+      MML_NS g (ePlus e1 e2) (VNat (m - n))
+  | MML_NS_Times (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
+      MML_NS g e1 (VNat m) ->
+      MML_NS g e2 (VNat n) ->
+      MML_NS g (ePlus e1 e2) (VNat (m * n))
+  | MML_NS_Eq    (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
+      MML_NS g e1 (VNat m) ->
+      MML_NS g e2 (VNat n) ->
+      MML_NS g (eEq e1 e2) (VBool (m == n))
+  | MML_NS_Var   (g : MML_env) (x : Var) (v : MML_val) :
+      lookup x g = v -> MML_NS g (eVar x) v
+  | MML_NS_Let   (g : MML_env) (x : Var) (e1 e2 : MML_exp) (v1 v2 : MML_val) :
+      MML_NS g e1 v1 ->
+      MML_NS ((x, v1) :: g) e2 v2 ->
+      MML_NS g (eLet x e1 e2) v2
+  | MML_NS_Iftrue (g : MML_env) (e1 e2 e3 : MML_exp) (v1 v2 : MML_val) :
+      MML_NS g e1 v1 -> v1 = VBool true ->
+      MML_NS g e2 v2 ->
+      MML_NS g (eIf e1 e2 e3) v2
+  | MML_NS_Iffalse (g : MML_env) (e1 e2 e3 : MML_exp) (v1 v3 : MML_val) :
+      MML_NS g e1 v1 -> v1 = VBool false ->
+      MML_NS g e3 v3 ->
+      MML_NS g (eIf e1 e2 e3) v3
+  | MML_NS_Lam   (g : MML_env) (x : Var) (e : MML_exp) :
+      MML_NS g (eLam x e) (VClos x e g)
+  | MML_NS_MuLam (g : MML_env) (f : Var) (x : Var) (e : MML_exp) :
+      MML_NS g (eMuLam f x e) (VClosRec f x e g)
+  | MML_NS_App (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v1 v2 v : MML_val) :
+      MML_NS g e1 v1 -> v1 = VClos x e g1 ->
+      MML_NS g e2 v2 ->
+      MML_NS ((x, v2) :: g1) e v ->
+      MML_NS g (eApp e1 e2) v
+  | MML_NS_AppRec (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v1 v2 v : MML_val) :
+      MML_NS g e1 v1 -> v1 = VClosRec f x e g1 ->
+      MML_NS g e2 v2 ->
+      MML_NS ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e v ->
+      MML_NS g (eApp e1 e2) v.
+  
+End MiniML.
+
+(** de Bruijn notation MiniMLdB *)
 
 Section MiniMLdB.
   
-  (* MiniMLdB abstract syntax *)
+  (** MiniMLdB abstract syntax *)
   Inductive MML_dB_exp : Set :=
   | dNat (n : nat)
   | dBool (b : bool)
@@ -18,64 +110,64 @@ Section MiniMLdB.
   | dLet (d1 d2 : MML_dB_exp)
   | dIf (d1 d2 d3 : MML_dB_exp)
   | dLam (d : MML_dB_exp)
-  | dMu (d : MML_dB_exp)
+  | dMuLam (d : MML_dB_exp)
   | dApp (d1 d2 : MML_dB_exp).
   
-  (* nameless values *)
+  (** nameless values *)
   Inductive MML_dB_val : Set :=
   | vNat (n : nat)
   | vBool (b : bool)
   | vClos (d : MML_dB_exp) (o : seq MML_dB_val)
   | vClosRec (d : MML_dB_exp) (o : seq MML_dB_val).
   
-  (* nameless environments *)
+  (** nameless environments *)
+  Notation MML_dB_env := (seq MML_dB_val).
   Definition lookup_dB (i : nat) (o : seq MML_dB_val) := nth (vBool false) o i.
   
-  (* The natural semantics of MiniMLdB *)
-  Inductive MML_dB_NS : seq MML_dB_val -> MML_dB_exp -> MML_dB_val -> Prop :=
-  | MML_dB_NS_Nat   (o : seq MML_dB_val) (n : nat) : MML_dB_NS o (dNat n) (vNat n)
-  | MML_dB_NS_Bool  (o : seq MML_dB_val) (b : bool) : MML_dB_NS o (dBool b) (vBool b)
-  | MML_dB_NS_Plus  (o : seq MML_dB_val) (d1 d2 : MML_dB_exp) (m n : nat) :
+  (** The natural semantics of MiniMLdB *)
+  Inductive MML_dB_NS : MML_dB_env -> MML_dB_exp -> MML_dB_val -> Prop :=
+  | MML_dB_NS_Nat   (o : MML_dB_env) (n : nat) : MML_dB_NS o (dNat n) (vNat n)
+  | MML_dB_NS_Bool  (o : MML_dB_env) (b : bool) : MML_dB_NS o (dBool b) (vBool b)
+  | MML_dB_NS_Plus  (o : MML_dB_env) (d1 d2 : MML_dB_exp) (m n : nat) :
       MML_dB_NS o d1 (vNat m) ->
       MML_dB_NS o d2 (vNat n) ->
       MML_dB_NS o (dPlus d1 d2) (vNat (m + n))
-  | MML_dB_NS_Minus (o : seq MML_dB_val) (d1 d2 : MML_dB_exp) (m n : nat) :
+  | MML_dB_NS_Minus (o : MML_dB_env) (d1 d2 : MML_dB_exp) (m n : nat) :
       MML_dB_NS o d1 (vNat m) ->
       MML_dB_NS o d2 (vNat n) ->
       MML_dB_NS o (dMinus d1 d2) (vNat (m - n))
-  | MML_dB_NS_Times (o : seq MML_dB_val) (d1 d2 : MML_dB_exp) (m n : nat) :
+  | MML_dB_NS_Times (o : MML_dB_env) (d1 d2 : MML_dB_exp) (m n : nat) :
       MML_dB_NS o d1 (vNat m) ->
       MML_dB_NS o d2 (vNat n) ->
       MML_dB_NS o (dTimes d1 d2) (vNat (m * n))
-  | MML_dB_NS_Eq    (o : seq MML_dB_val) (d1 d2 : MML_dB_exp) (m n : nat) :
+  | MML_dB_NS_Eq    (o : MML_dB_env) (d1 d2 : MML_dB_exp) (m n : nat) :
       MML_dB_NS o d1 (vNat m) ->
       MML_dB_NS o d2 (vNat n) ->
       MML_dB_NS o (dEq    d1 d2) (vBool (m == n))
-  | MML_dB_NS_Var   (o : seq MML_dB_val) (i : nat) (v : MML_dB_val) :
+  | MML_dB_NS_Var   (o : MML_dB_env) (i : nat) (v : MML_dB_val) :
       lookup_dB i o = v -> MML_dB_NS o (dVar i) v
-  | MML_dB_NS_Let   (o : seq MML_dB_val) (d1 d2 : MML_dB_exp) (v1 v2 : MML_dB_val) :
+  | MML_dB_NS_Let   (o : MML_dB_env) (d1 d2 : MML_dB_exp) (v1 v2 : MML_dB_val) :
       MML_dB_NS o d1 v1 ->
       MML_dB_NS (v1 :: o) d2 v2 ->
       MML_dB_NS o (dLet   d1 d2) v2
-  | MML_dB_NS_Iftrue (o : seq MML_dB_val) (d1 d2 d3 : MML_dB_exp) (v1 v2 : MML_dB_val) :
+  | MML_dB_NS_Iftrue (o : MML_dB_env) (d1 d2 d3 : MML_dB_exp) (v1 v2 : MML_dB_val) :
       MML_dB_NS o d1 v1 -> v1 = vBool true ->
       MML_dB_NS o d2 v2 ->
       MML_dB_NS o (dIf d1 d2 d3) v2
-  | MML_dB_NS_Iffalse (o : seq MML_dB_val) (d1 d2 d3 : MML_dB_exp) (v1 v3 : MML_dB_val) :
+  | MML_dB_NS_Iffalse (o : MML_dB_env) (d1 d2 d3 : MML_dB_exp) (v1 v3 : MML_dB_val) :
       MML_dB_NS o d1 v1 -> v1 = vBool false ->
       MML_dB_NS o d2 v3 ->
       MML_dB_NS o (dIf d1 d2 d3) v3
-  | MML_dB_NS_Lam   (o : seq MML_dB_val) (d : MML_dB_exp) :
+  | MML_dB_NS_Lam   (o : MML_dB_env) (d : MML_dB_exp) :
       MML_dB_NS o (dLam d) (vClos d o)
-  | MML_dB_NS_Mu    (o : seq MML_dB_val) (d : MML_dB_exp) :
-      MML_dB_NS o (dMu  d) (vClosRec d o)
-  | MML_dB_NS_App (o o1 : seq MML_dB_val) (d1 d2 d : MML_dB_exp) (v1 v2 v : MML_dB_val) :
+  | MML_dB_NS_MuLam (o : MML_dB_env) (d : MML_dB_exp) :
+      MML_dB_NS o (dMuLam d) (vClosRec d o)
+  | MML_dB_NS_App (o o1 : MML_dB_env) (d1 d2 d : MML_dB_exp) (v1 v2 v : MML_dB_val) :
       MML_dB_NS o d1 v1 -> v1 = vClos d o1 ->
       MML_dB_NS o d2 v2 ->
       MML_dB_NS (v2 :: o1) d v ->
       MML_dB_NS o (dApp d1 d2) v
-  | MML_dB_NS_AppRec (o o1 : seq MML_dB_val) (d1 d2 d : MML_dB_exp)
-                     (v1 v2 v : MML_dB_val) :
+  | MML_dB_NS_AppRec (o o1 : MML_dB_env) (d1 d2 d : MML_dB_exp) (v1 v2 v : MML_dB_val) :
       MML_dB_NS o d1 v1 -> v1 = vClosRec d o1 ->
       MML_dB_NS o d2 v2 ->
       MML_dB_NS (v2 :: (vClosRec d o1) :: o1) d v ->
@@ -83,51 +175,4 @@ Section MiniMLdB.
   
 End MiniMLdB.
 
-(*
-Inductive Var : Set :=
-| x
-| y
-| z.
-
-Inductive Fun : Set :=
-| f
-| g
-| h.
-
-Inductive MML_exp : Set :=
-| eNat (n : nat)
-| eBool (b : bool)
-| ePlus (e1 e2 : MML_exp)
-| eMinus (e1 e2 : MML_exp)
-| eTimes (e1 e2 : MML_exp)
-| eVar (v : Var)
-| eCond (e1 e2 e3 : MML_exp)
-| eLet (v : Var) (e1 e2 : MML_exp)
-| eAbs (v : Var) (e : MML_exp)
-| eFix (f : Fun) (v : Var) (e : MML_exp)
-| eApp (e1 e2 : MML_exp).
-
-Definition MML_env := seq (Var * MML_exp).
-
-Inductive MML_val : Set :=
-| vNat (n : nat)
-| vBool (b : bool)
-| vClos (v : Var) (e : MML_exp) (g : MML_env)
-| vClosRec (f : Fun) (v : Var) (e : MML_exp) (g : MML_env).
-
-Inductive MML_NS : MML_env -> MML_exp -> MML_val -> Prop :=
-| MML_NS_Nat : forall (g : MML_env) (n : nat), MML_NS g (eNat n) (vNat n)
-| MML_NS_Bool : forall (g : MML_env) (b : bool), MML_NS g (eBool b) (vBool b)
-| MML_NS_Plus : forall (g : MML_env) (e1 e2 : MML_exp) (m n : nat),
-    MML_NS g e1 (vNat m) -> MML_NS g e2 (vNat n) ->
-    MML_NS g (ePlus e1 e2) (vNat (m + n))
-| MML_NS_Minus : forall (g : MML_env) (e1 e2 : MML_exp) (m n : nat),
-    MML_NS g e1 (vNat m) -> MML_NS g e2 (vNat n) ->
-    MML_NS g (eMinus e1 e2) (vNat (m + n))
-| MML_NS_Times : forall (g : MML_env) (e1 e2 : MML_exp) (m n : nat),
-    MML_NS g e1 (vNat m) -> MML_NS g e2 (vNat n) ->
-    MML_NS g (eTimes e1 e2) (vNat (m + n))
-| MML_NS_Var : forall (g : MML_env) (v : Var),
-    MML_NS g (eVar v) 
-           
- *)
+(* END *)
