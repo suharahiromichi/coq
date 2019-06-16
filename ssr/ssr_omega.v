@@ -60,11 +60,14 @@ Proof.
   
   (* 参考：ロックを解除する方法。 *)
   Restart.
-  rewrite /addn /addn_rec /lock.
+  rewrite /addn.
+  unlock.                               (* rewrite /lock とおなじ。 *)
   simpl.
   (* Goal : 2 = 2 *)
   reflexivity.
 Qed.
+
+(* バニラcoqのPropと、Mathcompのboolの違いについては、csm_2_5_logic.v を参照のこと。 *)
 
 (* ********************* *)
 (* ********************* *)
