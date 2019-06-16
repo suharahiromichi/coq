@@ -59,40 +59,40 @@ Section MiniML.
   | MML_NS_Minus (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
       MML_NS g e1 (VNat m) ->
       MML_NS g e2 (VNat n) ->
-      MML_NS g (ePlus e1 e2) (VNat (m - n))
+      MML_NS g (eMinus e1 e2) (VNat (m - n))
   | MML_NS_Times (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
       MML_NS g e1 (VNat m) ->
       MML_NS g e2 (VNat n) ->
-      MML_NS g (ePlus e1 e2) (VNat (m * n))
+      MML_NS g (eTimes e1 e2) (VNat (m * n))
   | MML_NS_Eq    (g : MML_env) (e1 e2 : MML_exp) (m n : nat) :
       MML_NS g e1 (VNat m) ->
       MML_NS g e2 (VNat n) ->
       MML_NS g (eEq e1 e2) (VBool (m == n))
-  | MML_NS_Var   (g : MML_env) (x : Var) (v : MML_val) :
-      lookup x g = v -> MML_NS g (eVar x) v
+  | MML_NS_Var   (g : MML_env) (x : Var) :
+      MML_NS g (eVar x) (lookup x g)
   | MML_NS_Let   (g : MML_env) (x : Var) (e1 e2 : MML_exp) (v1 v2 : MML_val) :
       MML_NS g e1 v1 ->
       MML_NS ((x, v1) :: g) e2 v2 ->
       MML_NS g (eLet x e1 e2) v2
-  | MML_NS_Iftrue (g : MML_env) (e1 e2 e3 : MML_exp) (v1 v2 : MML_val) :
-      MML_NS g e1 v1 -> v1 = VBool true ->
+  | MML_NS_Iftrue (g : MML_env) (e1 e2 e3 : MML_exp) (v2 : MML_val) :
+      MML_NS g e1 (VBool true) ->
       MML_NS g e2 v2 ->
       MML_NS g (eIf e1 e2 e3) v2
-  | MML_NS_Iffalse (g : MML_env) (e1 e2 e3 : MML_exp) (v1 v3 : MML_val) :
-      MML_NS g e1 v1 -> v1 = VBool false ->
+  | MML_NS_Iffalse (g : MML_env) (e1 e2 e3 : MML_exp) (v3 : MML_val) :
+      MML_NS g e1 (VBool false) ->
       MML_NS g e3 v3 ->
       MML_NS g (eIf e1 e2 e3) v3
   | MML_NS_Lam   (g : MML_env) (x : Var) (e : MML_exp) :
       MML_NS g (eLam x e) (VClos x e g)
   | MML_NS_MuLam (g : MML_env) (f : Var) (x : Var) (e : MML_exp) :
       MML_NS g (eMuLam f x e) (VClosRec f x e g)
-  | MML_NS_App (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v1 v2 v : MML_val) :
-      MML_NS g e1 v1 -> v1 = VClos x e g1 ->
+  | MML_NS_App (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v2 v : MML_val) :
+      MML_NS g e1 (VClos x e g1) ->
       MML_NS g e2 v2 ->
       MML_NS ((x, v2) :: g1) e v ->
       MML_NS g (eApp e1 e2) v
-  | MML_NS_AppRec (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v1 v2 v : MML_val) :
-      MML_NS g e1 v1 -> v1 = VClosRec f x e g1 ->
+  | MML_NS_AppRec (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v2 v : MML_val) :
+      MML_NS g e1 (VClosRec f x e g1) ->
       MML_NS g e2 v2 ->
       MML_NS ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e v ->
       MML_NS g (eApp e1 e2) v.
@@ -149,31 +149,31 @@ Section MiniMLdB.
       MML_dB_NS o d1 (vNat m) ->
       MML_dB_NS o d2 (vNat n) ->
       MML_dB_NS o (dEq    d1 d2) (vBool (m == n))
-  | MML_dB_NS_Var   (o : MML_dB_env) (i : nat) (v : MML_dB_val) :
-      lookup_dB i o = v -> MML_dB_NS o (dVar i) v
+  | MML_dB_NS_Var   (o : MML_dB_env) (i : nat) :
+      MML_dB_NS o (dVar i) (lookup_dB i o)
   | MML_dB_NS_Let   (o : MML_dB_env) (d1 d2 : MML_dB_exp) (v1 v2 : MML_dB_val) :
       MML_dB_NS o d1 v1 ->
       MML_dB_NS (v1 :: o) d2 v2 ->
       MML_dB_NS o (dLet   d1 d2) v2
-  | MML_dB_NS_Iftrue (o : MML_dB_env) (d1 d2 d3 : MML_dB_exp) (v1 v2 : MML_dB_val) :
-      MML_dB_NS o d1 v1 -> v1 = vBool true ->
+  | MML_dB_NS_Iftrue (o : MML_dB_env) (d1 d2 d3 : MML_dB_exp) (v2 : MML_dB_val) :
+      MML_dB_NS o d1 (vBool true) ->
       MML_dB_NS o d2 v2 ->
       MML_dB_NS o (dIf d1 d2 d3) v2
-  | MML_dB_NS_Iffalse (o : MML_dB_env) (d1 d2 d3 : MML_dB_exp) (v1 v3 : MML_dB_val) :
-      MML_dB_NS o d1 v1 -> v1 = vBool false ->
-      MML_dB_NS o d2 v3 ->
+  | MML_dB_NS_Iffalse (o : MML_dB_env) (d1 d2 d3 : MML_dB_exp) (v3 : MML_dB_val) :
+      MML_dB_NS o d1 (vBool false) ->
+      MML_dB_NS o d3 v3 ->
       MML_dB_NS o (dIf d1 d2 d3) v3
   | MML_dB_NS_Lam   (o : MML_dB_env) (d : MML_dB_exp) :
       MML_dB_NS o (dLam d) (vClos d o)
   | MML_dB_NS_MuLam (o : MML_dB_env) (d : MML_dB_exp) :
       MML_dB_NS o (dMuLam d) (vClosRec d o)
-  | MML_dB_NS_App (o o1 : MML_dB_env) (d1 d2 d : MML_dB_exp) (v1 v2 v : MML_dB_val) :
-      MML_dB_NS o d1 v1 -> v1 = vClos d o1 ->
+  | MML_dB_NS_App (o o1 : MML_dB_env) (d1 d2 d : MML_dB_exp) (v2 v : MML_dB_val) :
+      MML_dB_NS o d1 (vClos d o1) ->
       MML_dB_NS o d2 v2 ->
       MML_dB_NS (v2 :: o1) d v ->
       MML_dB_NS o (dApp d1 d2) v
-  | MML_dB_NS_AppRec (o o1 : MML_dB_env) (d1 d2 d : MML_dB_exp) (v1 v2 v : MML_dB_val) :
-      MML_dB_NS o d1 v1 -> v1 = vClosRec d o1 ->
+  | MML_dB_NS_AppRec (o o1 : MML_dB_env) (d1 d2 d : MML_dB_exp) (v2 v : MML_dB_val) :
+      MML_dB_NS o d1 (vClosRec d o1) ->
       MML_dB_NS o d2 v2 ->
       MML_dB_NS (v2 :: (vClosRec d o1) :: o1) d v ->
       MML_dB_NS o (dApp d1 d2) v.
