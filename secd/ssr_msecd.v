@@ -41,7 +41,12 @@ Section MiniML.
 
   (** environments *)
   Notation MML_env := (seq (Var * MML_val)).
-  Definition lookup (v : Var) (g : MML_env) := VNat 0. (** 仮 *)
+  Fixpoint lookup (x : Var) (g : MML_env) : MML_val :=
+    match g with
+    | [::] => VBool false
+    | (x, v) :: _ => v
+    | _ :: g' => lookup x g'
+    end.
   
   (** The natural semantics of MiniML *)
   Inductive MML_NS : MML_env -> MML_exp -> MML_val -> Prop :=
