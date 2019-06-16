@@ -97,6 +97,98 @@ Section MiniML.
       MML_NS ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e v ->
       MML_NS g (eApp e1 e2) v.
   
+  Lemma MML_NS_deterministic (g : MML_env) (e : MML_exp) (v1 v2 : MML_val) :
+    MML_NS g e v1 -> MML_NS g e v2 -> v1 = v2.
+  Proof.
+    move=> H1.
+    move: v2.
+    elim: H1 => g'.
+    - move=> n v2 H2.
+        by inversion H2; subst.
+    - move=> b v2 H2.
+        by inversion H2; subst.
+    - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
+  Admitted.                                 (* XXXXX *)
+  
+  Fixpoint MML_NS_interpreter (dep : nat) (g : MML_env) (e : MML_exp)
+           {struct dep} : option MML_val :=
+    match dep with
+    | O => None
+    | dep.+1 =>
+      match e with
+      | eNat n => Some (VNat n)
+      | eBool b => Some (VBool b)
+      | ePlus  e1 e2 => match MML_NS_interpreter dep g e1 with
+                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                           | Some (VNat n) => Some (VNat (m + n))
+                                           | _ => None
+                                           end
+                        | _ => None
+                        end
+      | eMinus e1 e2 => match MML_NS_interpreter dep g e1 with
+                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                           | Some (VNat n) => Some (VNat (m - n))
+                                           | _ => None
+                                           end
+                        | _ => None
+                        end
+      | eTimes e1 e2 => match MML_NS_interpreter dep g e1 with
+                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                           | Some (VNat n) => Some (VNat (m * n))
+                                           | _ => None
+                                           end
+                        | _ => None
+                        end
+      | eEq    e1 e2 => match MML_NS_interpreter dep g e1 with
+                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                           | Some (VNat n) => Some (VBool (m == n))
+                                           | _ => None
+                                           end
+                        | _ => None
+                        end
+      | eVar v => Some (lookup v g)
+      | eLet x e1 e2 => match MML_NS_interpreter dep g e1 with
+                        | Some v1 =>
+                          MML_NS_interpreter dep ((x, v1) :: g) e2
+                        | _ => None
+        end
+      | eIf e1 e2 e3 => match MML_NS_interpreter dep g e1 with
+                        | Some (VBool true) => MML_NS_interpreter dep g e2
+                        | Some (VBool false) => MML_NS_interpreter dep g e3
+                        | _ => None
+                        end
+      | eLam x e => Some (VClos x e g)
+      | eMuLam f x e => Some (VClosRec f x e g)
+      | eApp e1 e2 => match MML_NS_interpreter dep g e2 with
+                      | Some v2 =>
+                        match MML_NS_interpreter dep g e1 with
+                        | Some (VClos x e g1) =>
+                          MML_NS_interpreter dep ((x, v2) :: g1) e
+                        | Some (VClosRec f x e g1) =>
+                          MML_NS_interpreter
+                            dep ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e
+                        | _ => None
+                        end
+                      | _ => None
+                      end
+      | _ => None
+      end
+    end.
+  
+  Compute MML_NS_interpreter 10 [::] (eNat 10). (* = Some (VNat 10) *)
+  Compute MML_NS_interpreter 10 [::] (eBool true). (* = Some (VBool true) *)
+  Compute MML_NS_interpreter 10 [::] (ePlus (eNat 2) (eNat 3)).
+  Compute MML_NS_interpreter 10 [::] (eMinus (eNat 3) (eNat 3)).
+  Compute MML_NS_interpreter 10 [::] (eTimes (eNat 2) (eNat 3)).
+  Compute MML_NS_interpreter 10 [::] (eEq    (eNat 2) (eNat 3)).
+  Compute MML_NS_interpreter 10 [:: (x, VNat 10)] (eVar x).
+  Compute MML_NS_interpreter 10 [::] (eLet x (eNat 2) (ePlus (eVar x) (eNat 3))).
+  Compute MML_NS_interpreter 10 [::] (eIf (eEq (eNat 2) (eNat 3)) (eNat 2) (eNat 3)).
+  Compute MML_NS_interpreter 10 [::] (eIf (eEq (eNat 2) (eNat 2)) (eBool true) (eNat 3)).
+  Compute MML_NS_interpreter 10 [::] (eLam x (ePlus (eVar x) (eNat 1))).
+  Compute MML_NS_interpreter 10 [::] (eMuLam f x (ePlus (eVar x) (eNat 1))).
+  Compute MML_NS_interpreter 10 [::] (eApp (eLam x (ePlus (eVar x) (eNat 2))) (eNat 3)).
+
 End MiniML.
 
 (** de Bruijn notation MiniMLdB *)
@@ -179,5 +271,7 @@ Section MiniMLdB.
       MML_dB_NS o (dApp d1 d2) v.
   
 End MiniMLdB.
+
+
 
 (* END *)
