@@ -9,13 +9,30 @@ From mathcomp Require Import all_ssreflect.
 Section MiniML.
   
   (** variables *)
-  Inductive Var : Set :=
-  | x
-  | y
-  | z
-  | f
-  | g
-  | h.
+  Inductive Var := A | B | C | F | G | H | X | Y | Z.
+  
+  Definition eqLiteral (x y : Var) :=
+    match (x, y) with
+    | (A, A) => true
+    | (B, B) => true
+    | (C, C) => true
+    | (F, F) => true
+    | (G, G) => true
+    | (H, H) => true
+    | (X, X) => true
+    | (Y, Y) => true
+    | (Z, Z) => true
+    | _ => false
+    end.
+  
+  Lemma Literal_eqP (x y : Var) : reflect (x = y) (eqLiteral x y).
+  Proof.
+    rewrite /eqLiteral.
+      by apply: (iffP idP); case: x; case: y.
+  Qed.
+  
+  Definition Literal_eqMixin := EqMixin Literal_eqP.
+  Canonical Literal_eqType := EqType Var Literal_eqMixin.
   
   (** MiniML abstract syntax *)
   Inductive MML_exp : Set :=
@@ -43,9 +60,8 @@ Section MiniML.
   Notation MML_env := (seq (Var * MML_val)).
   Fixpoint lookup (x : Var) (g : MML_env) : MML_val :=
     match g with
-    | [::] => VBool false
-    | (x, v) :: _ => v
-    | _ :: g' => lookup x g'
+    | (x', v) :: g' => if (x == x') then v else lookup x g'
+    | _ => VBool false
     end.
   
   (** The natural semantics of MiniML *)
@@ -91,7 +107,7 @@ Section MiniML.
       MML_NS g e2 v2 ->
       MML_NS ((x, v2) :: g1) e v ->
       MML_NS g (eApp e1 e2) v
-  | MML_NS_AppRec (g g1 : MML_env) (x : Var) (e1 e2 e : MML_exp) (v2 v : MML_val) :
+  | MML_NS_AppRec (g g1 : MML_env) (x f : Var) (e1 e2 e : MML_exp) (v2 v : MML_val) :
       MML_NS g e1 (VClosRec f x e g1) ->
       MML_NS g e2 v2 ->
       MML_NS ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e v ->
@@ -171,7 +187,6 @@ Section MiniML.
                         end
                       | _ => None
                       end
-      | _ => None
       end
     end.
   
@@ -181,27 +196,45 @@ Section MiniML.
   Compute MML_NS_interpreter 10 [::] (eMinus (eNat 3) (eNat 3)).
   Compute MML_NS_interpreter 10 [::] (eTimes (eNat 2) (eNat 3)).
   Compute MML_NS_interpreter 10 [::] (eEq    (eNat 2) (eNat 3)).
-  Compute MML_NS_interpreter 10 [:: (x, VNat 10)] (eVar x).
-  Compute MML_NS_interpreter 10 [::] (eLet x (eNat 2) (ePlus (eVar x) (eNat 3))).
+  Compute MML_NS_interpreter 10 [:: (X, VNat 10)] (eVar X).
+  Compute MML_NS_interpreter 10 [::] (eLet X (eNat 2) (ePlus (eVar X) (eNat 3))).
   Compute MML_NS_interpreter 10 [::] (eIf (eEq (eNat 2) (eNat 3)) (eNat 2) (eNat 3)).
   Compute MML_NS_interpreter 10 [::] (eIf (eEq (eNat 2) (eNat 2)) (eBool true) (eNat 3)).
-  Compute MML_NS_interpreter 10 [::] (eLam x (ePlus (eVar x) (eNat 1))).
-  Compute MML_NS_interpreter 10 [::] (eMuLam f x (ePlus (eVar x) (eNat 1))).
-  Compute MML_NS_interpreter 10 [::] (eApp (eLam x (ePlus (eVar x) (eNat 2))) (eNat 3)).
-
-  Lemma MML_NS_interpreter_correctness:
+  Compute MML_NS_interpreter 10 [::] (eLam X (ePlus (eVar X) (eNat 1))).
+  Compute MML_NS_interpreter 10 [::] (eMuLam F X (ePlus (eVar X) (eNat 1))).
+  Compute MML_NS_interpreter 10 [::] (eApp (eLam X (ePlus (eVar X) (eNat 2))) (eNat 3)).
+  
+  Definition clos :=
+    (VClosRec F X
+              (eIf (eEq (eVar X) (eNat 0)) (eNat 1)
+                   (eTimes (eVar X) (eApp (eVar F) (eMinus (eVar X) (eNat 1))))) [::]).
+  Compute MML_NS_interpreter 19 [:: (X, VNat 5); (F, clos)] (eApp (eVar F) (eNat 5)).
+  
+  Definition example :=
+    (eApp
+       (eMuLam F X
+               (eIf (eEq (eVar X) (eNat 0))
+                    (eNat 1)
+                    (eTimes (eVar X)
+                            (eApp (eVar F)
+                                  (eMinus (eVar X) (eNat 1))))))
+       (eNat 5)).
+  Compute MML_NS_interpreter 19 [::] example.
+  
+  Lemma MML_NS_interpreter_correctness :
     forall g e v, MML_NS g e v -> exists dep, MML_NS_interpreter dep g e = Some v.
   Proof.
     move=> g e v.
     elim.
-    - move=> g' n. by exists 10.
-    - move=> g' b. by exists 10.
+    - move=> g' n. by exists 1.
+    - move=> g' b. by exists 1.
     - move=> g' e1 e2 m n H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
       exists dep1.+1.
       rewrite /=.
       rewrite IH1.
+      Fail rewrite IH2.
       (* IH2 の dep2 が dep1 なら書き換えられる。 *)
       Admitted.
                                                                 
