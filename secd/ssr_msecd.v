@@ -126,6 +126,61 @@ Section MiniML.
     - move=> b v2 H2.
         by inversion H2; subst.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
+      inversion H12; subst.
+      congr (VNat (_ + _)).
+      + move: (IH1 (VNat m0)) => IH1'.
+        move: (IH1' H5) => IH1''.
+          by inversion IH1''.
+      + move: (IH2 (VNat n0)) => IH2'.
+        move: (IH2' H7) => IH2''.
+          by inversion IH2''.
+    - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
+      inversion H12; subst.
+      congr (VNat (_ - _)).
+      + move: (IH1 (VNat m0)) => IH1'.
+        move: (IH1' H5) => IH1''.
+          by inversion IH1''.
+      + move: (IH2 (VNat n0)) => IH2'.
+        move: (IH2' H7) => IH2''.
+          by inversion IH2''.
+    - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
+      inversion H12; subst.
+      congr (VNat (_ * _)).
+      + move: (IH1 (VNat m0)) => IH1'.
+        move: (IH1' H5) => IH1''.
+          by inversion IH1''.
+      + move: (IH2 (VNat n0)) => IH2'.
+        move: (IH2' H7) => IH2''.
+          by inversion IH2''.
+    - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
+      inversion H12; subst.
+      congr (VBool (_ == _)).
+      + move: (IH1 (VNat m0)) => IH1'.
+        move: (IH1' H5) => IH1''.
+          by inversion IH1''.
+      + move: (IH2 (VNat n0)) => IH2'.
+        move: (IH2' H7) => IH2''.
+          by inversion IH2''.
+    - move=> x v2 IH.
+        by inversion IH; subst.
+    - move=> x e1 e2 v v2 H1 IH1 H2 IH2 v' H.
+      inversion H; subst.
+      move: (IH1 v0) => IH1'.
+      move: (IH1' H7) => IH1''.
+      move: (IH2 v') => IH2'.
+      rewrite IH1'' in IH2'.
+      move: (IH2' H8).
+      done.
+    - move=> e1 e2 e3 v2 H1 IH1 H2 IH2 v H.
+      inversion H; subst.
+      + by apply: (IH2 v) H8.
+      + by move: (IH1 (VBool false) H7) => Hc. (* 前提の矛盾 *)
+    - move=> e1 e2 e3 v2 H1 IH1 H2 IH2 v H.
+      inversion H; subst.
+      + by move: (IH1 (VBool true) H7) => Hc. (* 前提の矛盾 *)
+      + by apply: (IH2 v) H8.
+    - 
+
   Admitted.                                 (* XXXXX *)
   
   Fixpoint MML_NS_interpreter (dep : nat) (g : MML_env) (e : MML_exp)
