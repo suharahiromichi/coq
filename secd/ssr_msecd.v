@@ -8,10 +8,9 @@ From mathcomp Require Import all_ssreflect.
 
 Section MiniML.
   
-  (** variables *)
-  Inductive Var := A | B | C | F | G | H | X | Y | Z.
+  Inductive Literal := A | B | C | F | G | H | X | Y | Z.
   
-  Definition eqLiteral (x y : Var) :=
+  Definition eqLiteral (x y : Literal) :=
     match (x, y) with
     | (A, A) => true
     | (B, B) => true
@@ -25,14 +24,17 @@ Section MiniML.
     | _ => false
     end.
   
-  Lemma Literal_eqP (x y : Var) : reflect (x = y) (eqLiteral x y).
+  Lemma Literal_eqP (x y : Literal) : reflect (x = y) (eqLiteral x y).
   Proof.
     rewrite /eqLiteral.
       by apply: (iffP idP); case: x; case: y.
   Qed.
   
   Definition Literal_eqMixin := EqMixin Literal_eqP.
-  Canonical Literal_eqType := EqType Var Literal_eqMixin.
+  Canonical Literal_eqType := EqType Literal Literal_eqMixin.
+  
+  (** variables *)
+  Definition Var := Literal.
   
   (** MiniML abstract syntax *)
   Inductive MML_exp : Set :=
@@ -203,7 +205,6 @@ Section MiniML.
   Compute MML_NS_interpreter 10 [::] (eLam X (ePlus (eVar X) (eNat 1))).
   Compute MML_NS_interpreter 10 [::] (eMuLam F X (ePlus (eVar X) (eNat 1))).
   Compute MML_NS_interpreter 10 [::] (eApp (eLam X (ePlus (eVar X) (eNat 2))) (eNat 3)).
-  
   Definition clos :=
     (VClosRec F X
               (eIf (eEq (eVar X) (eNat 0)) (eNat 1)
@@ -221,6 +222,12 @@ Section MiniML.
        (eNat 5)).
   Compute MML_NS_interpreter 19 [::] example.
   
+  Lemma MML_NS_same dep1 dep2 g e :
+    dep1 = dep2 ->
+    MML_NS_interpreter dep1 g e = MML_NS_interpreter dep2 g e.
+  Proof.
+  Admitted.
+  
   Lemma MML_NS_interpreter_correctness :
     forall g e v, MML_NS g e v -> exists dep, MML_NS_interpreter dep g e = Some v.
   Proof.
@@ -232,12 +239,82 @@ Section MiniML.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
       exists dep1.+1.
-      rewrite /=.
-      rewrite IH1.
-      Fail rewrite IH2.
-      (* IH2 の dep2 が dep1 なら書き換えられる。 *)
-      Admitted.
-                                                                
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
+      + by rewrite IH2.
+      + admit.          (* IH2 の dep2 が dep1 なら書き換えられる。 *)
+    - move=> g' e1 e2 m n H1 IH1 H2 IH2.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
+      + by rewrite IH2.
+      + admit.          (* IH2 の dep2 が dep1 なら書き換えられる。 *)
+    - move=> g' e1 e2 m n H1 IH1 H2 IH2.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
+      + by rewrite IH2.
+      + admit.
+    - move=> g' e1 e2 m n H1 IH1 H2 IH2.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
+      + by rewrite IH2.
+      + admit.
+    - move=> g' x.
+        by exists 1.
+    - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 ((x, v1) :: g') e2).
+      + by rewrite IH2.
+      + admit.
+    - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
+      + by rewrite IH2.
+      + admit.
+    - move=> g' e1 e2 e3 v3 H1 IH1 H3 IH3.
+      case: IH1 => dep1 IH1.
+      case: IH3 => dep3 IH3.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep3 g' e3).
+      + by rewrite IH3.
+      + admit.
+    - move=> g' x e1.
+      exists 1.
+        by rewrite /=.
+    - move=> g' x e1.
+      exists 1.
+        by rewrite /=.
+    - move=> g1 g2 x e1 e2 e' v2 v' H1 IH1 H2 IH2 H3 IH3.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      case: IH3 => dep3 IH3.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g1 e2).
+      rewrite /= IH2 (MML_NS_same dep1 dep3 ((x, v2) :: g2) e').
+      + by rewrite /= IH3.
+      + admit.
+      + admit.
+    - move=> g1 g2 x f e1 e2 e' v1 v' H1 IH1 H2 IH2 H3 IH3.
+      case: IH1 => dep1 IH1.
+      case: IH2 => dep2 IH2.
+      case: IH3 => dep3 IH3.
+      exists dep1.+1.
+      rewrite /= IH1 (MML_NS_same dep1 dep2 g1 e2).
+      rewrite IH2
+              (MML_NS_same dep1 dep3 [:: (x, v1), (f, VClosRec f x e' g2) & g2] e').
+      + by rewrite IH3.
+      + admit.
+      + admit.
+  Admitted.
+  
 End MiniML.
 
 (** de Bruijn notation MiniMLdB *)
@@ -320,7 +397,5 @@ Section MiniMLdB.
       MML_dB_NS o (dApp d1 d2) v.
   
 End MiniMLdB.
-
-
 
 (* END *)
