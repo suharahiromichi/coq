@@ -179,9 +179,29 @@ Section MiniML.
       inversion H; subst.
       + by move: (IH1 (VBool true) H7) => Hc. (* 前提の矛盾 *)
       + by apply: (IH2 v) H8.
-    - 
-
-  Admitted.                                 (* XXXXX *)
+    - move=> x e' v2 IH.
+      by inversion IH; subst.
+    - move=> f x e' v2 IH.
+      by inversion IH; subst.
+    - move=> g1 x e1 e2 e' v2 v H1 IH1 H2 IH2 H3 IH3 v' H.
+      inversion H; subst.
+      + move: (IH1 (VClos x0 e4 g2) H5) => IH1'.
+        inversion IH1'; subst.
+        move: (IH2 v0 H7) => IH2'; subst.
+        move: (IH3 v' H9) => IH3'; subst.
+        done.
+      + move: (IH1 (VClosRec f x0 e4 g2) H5) => IH1'.
+        by inversion IH1'.                  (* 矛盾 *)
+    - move=> g1 x x' e1 e2 e' v2 v H1 IH1 H2 IH2 H3 IH3 v' H.
+      inversion H; subst.
+      + move: (IH1 (VClos x0 e4 g2) H5) => IH1'.
+          by inversion IH1'.                  (* 矛盾 *)
+      + move: (IH1 (VClosRec f x0 e4 g2) H5) => IH1'.          
+        inversion IH1'; subst.
+        move: (IH2 v0 H7) => IH2'; subst.
+        move: (IH3 v' H9) => IH3'; subst.
+        done.
+  Qed.
   
   Fixpoint MML_NS_interpreter (dep : nat) (g : MML_env) (e : MML_exp)
            {struct dep} : option MML_val :=
