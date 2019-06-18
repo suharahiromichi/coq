@@ -517,11 +517,11 @@ Section MiniMLdB.
 
   Inductive dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
   | dB_translation_NS_env_nil : dB_translation_NS_env [::] [::]
-  | dB_translation_NS_env_cons (x : Var) (V : MML_val) (g : MML_env)
-                               (v : MML_dB_val) (o : MML_dB_env) :
-      dB_translation_NS_val V v ->
+  | dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
+                               (vd : MML_dB_val) (o : MML_dB_env) :
+      dB_translation_NS_val v vd ->
       dB_translation_NS_env g o ->
-      dB_translation_NS_env ((x, V) :: g) (v :: o)
+      dB_translation_NS_env ((x, v) :: g) (vd :: o)
   
   with dB_translation_NS_val : MML_val -> MML_dB_val -> Prop :=
   | dB_translation_NS_val_Nat  (n : nat) : dB_translation_NS_val (VNat n) (vNat n)
@@ -537,6 +537,62 @@ Section MiniMLdB.
       dB_translation_NS (f :: x :: (mkctx g)) e d ->
       dB_translation_NS_val (VClosRec f x e g) (vClosRec d o).
 
+
+  Theorem dB_translation_NS_correctness e v g :
+    MML_NS g e v ->
+    forall o, dB_translation_NS_env g o ->
+              forall d, dB_translation_NS (mkctx g) e d ->
+                        exists vd, dB_translation_NS_val v vd /\ MML_dB_NS o d vd.
+  Proof.
+    elim.
+    - move=> g' n o He d H.
+      inversion H; subst.
+      exists (vNat n).
+      split.
+      + by apply: dB_translation_NS_val_Nat.
+      + by apply: MML_dB_NS_Nat.
+    - move=> g' b o He d H.
+      inversion H; subst.
+      exists (vBool b).
+      split.
+      + by apply: dB_translation_NS_val_Bool.
+      + by apply: MML_dB_NS_Bool.
+    - move=> g' e1 e2 m n He1 IHe1 He2 IHe2 o' Hg d H.
+      inversion H; subst.
+      case: (IHe1 o' Hg d1 H3)=> v1 [H1' H1''].
+      case: (IHe2 o' Hg d2 H5)=> v2 [H2' H2''].
+      exists (vNat (m + n)).
+      split.
+      + by apply: dB_translation_NS_val_Nat.
+      + apply: MML_dB_NS_Plus.
+        * Check MML_dB_NS_Nat.
+          admit.
+        * admit.
+      Admitted.
+  
+
 End MiniMLdB.
 
 (* END *)
+
+(* TODO
+   
+   証明を見直す。inversion を使わないようにする。
+   
+   letrec をいれる。let + mu.lam と同じであることを証明する。
+   
+   big step を cofix にする？
+   
+   lazy eval を追加する。
+   
+   型と型推論を入れる。
+   
+   seq と pair を入れる。
+   
+   型のないlisp風のセマンティックスを入れる。
+   
+   lookup を Inductive な定義にする。
+   
+   パーサを作る。
+ *)
+
