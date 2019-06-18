@@ -57,9 +57,9 @@ Section MiniML.
   | VBool (b : bool)
   | VClos (v : Var) (e : MML_exp) (g : seq (Var * MML_val))
   | VClosRec (f : Var) (v : Var) (e : MML_exp) (g : seq (Var * MML_val)).
-
+  
   (** environments *)
-  Notation MML_env := (seq (Var * MML_val)).
+  Definition MML_env := (seq (Var * MML_val)).
   Fixpoint lookup (x : Var) (g : MML_env) : MML_val :=
     match g with
     | (x', v) :: g' => if (x == x') then v else lookup x g'
@@ -471,6 +471,72 @@ Section MiniMLdB.
       MML_dB_NS (v2 :: (vClosRec d o1) :: o1) d v ->
       MML_dB_NS o (dApp d1 d2) v.
   
+  (* translation MiniML to MinMLdB *)
+  Definition ctx := seq Var.
+  
+  Inductive dB_translation_NS : ctx -> MML_exp -> MML_dB_exp -> Prop :=
+  | dB_translation_NS_Nat   (p : ctx) (n : nat) : dB_translation_NS p (eNat n) (dNat n)
+  | dB_translation_NS_Bool  (p : ctx) (b : bool) : dB_translation_NS p (eBool b) (dBool b)
+  | dB_translation_NS_Plus  (p : ctx) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
+      dB_translation_NS p e1 d1 ->
+      dB_translation_NS p e2 d2 ->
+      dB_translation_NS p (ePlus e1 e2) (dPlus d1 d2)
+  | dB_translation_NS_Minus (p : ctx) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
+      dB_translation_NS p e1 d1 ->
+      dB_translation_NS p e2 d2 ->
+      dB_translation_NS p (eMinus e1 e2) (dMinus d1 d2)
+  | dB_translation_NS_Times (p : ctx) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
+      dB_translation_NS p e1 d1 ->
+      dB_translation_NS p e2 d2 ->
+      dB_translation_NS p (eTimes e1 e2) (dTimes d1 d2)
+  | dB_translation_NS_Var   (p : ctx) (x : Var) :
+      dB_translation_NS p (eVar x) (dVar (index x p))
+  | dB_translation_NS_Let   (p : ctx) (x : Var) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
+      dB_translation_NS p e1 d1 ->
+      dB_translation_NS (x :: p) e2 d2 ->
+      dB_translation_NS p (eLet x e1 e2) (dLet d1 d2)
+  | dB_translation_NS_If    (p : ctx) (e1 e2 e3 : MML_exp) (d1 d2 d3 : MML_dB_exp) :
+      dB_translation_NS p e1 d1 ->
+      dB_translation_NS p e2 d2 ->
+      dB_translation_NS p e3 d3 ->
+      dB_translation_NS p (eIf e1 e2 e3) (dIf d1 d2 d3)
+  | dB_translation_NS_Lam   (p : ctx) (x : Var) (e : MML_exp) (d : MML_dB_exp) :
+      dB_translation_NS (x :: p) e d ->
+      dB_translation_NS p (eLam x e) (dLam d)
+  | dB_translation_NS_MuLam (p : ctx) (f x : Var) (e : MML_exp) (d : MML_dB_exp) :
+      dB_translation_NS (x :: p) e d ->
+      dB_translation_NS p (eMuLam f x e) (dMuLam d)
+  | dB_translation_NS_App   (p : ctx) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
+      dB_translation_NS p e1 d1 ->
+      dB_translation_NS p e2 d2 ->
+      dB_translation_NS p (eApp e1 e2) (dApp d1 d2).
+
+  (* g から変数だけ取り出す。 *)
+  Fixpoint mkctx (g : MML_env) : ctx := [seq fst xv | xv <- g].
+  Compute mkctx [:: (X, VNat 1); (Y, VNat 2); (Z, VNat 3)]. (* [:: X; Y; Z] *)
+
+  Inductive dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
+  | dB_translation_NS_env_nil : dB_translation_NS_env [::] [::]
+  | dB_translation_NS_env_cons (x : Var) (V : MML_val) (g : MML_env)
+                               (v : MML_dB_val) (o : MML_dB_env) :
+      dB_translation_NS_val V v ->
+      dB_translation_NS_env g o ->
+      dB_translation_NS_env ((x, V) :: g) (v :: o)
+  
+  with dB_translation_NS_val : MML_val -> MML_dB_val -> Prop :=
+  | dB_translation_NS_val_Nat  (n : nat) : dB_translation_NS_val (VNat n) (vNat n)
+  | dB_translation_NS_val_Bool (b : bool) : dB_translation_NS_val (VBool b) (vBool b)
+  | db_translation_NS_val_Clos (x : Var) (e : MML_exp) (g : MML_env)
+                               (d : MML_dB_exp) (o : MML_dB_env) :
+      dB_translation_NS_env g o ->
+      dB_translation_NS (x :: (mkctx g)) e d ->
+      dB_translation_NS_val (VClos x e g) (vClos d o)
+  | db_translation_NS_val_ClosRec (f x : Var) (e : MML_exp) (g : MML_env)
+                               (d : MML_dB_exp) (o : MML_dB_env) :
+      dB_translation_NS_env g o ->
+      dB_translation_NS (f :: x :: (mkctx g)) e d ->
+      dB_translation_NS_val (VClosRec f x e g) (vClosRec d o).
+
 End MiniMLdB.
 
 (* END *)
