@@ -538,36 +538,60 @@ Section MiniMLdB.
       dB_translation_NS_val (VClosRec f x e g) (vClosRec d o).
 
 
-  Theorem dB_translation_NS_correctness e v g :
+  Theorem dB_translation_NS_correctness g e v :
     MML_NS g e v ->
     forall o, dB_translation_NS_env g o ->
               forall d, dB_translation_NS (mkctx g) e d ->
-                        exists vd, dB_translation_NS_val v vd /\ MML_dB_NS o d vd.
+                        forall vd, dB_translation_NS_val v vd -> MML_dB_NS o d vd.
   Proof.
     elim.
     - move=> g' n o He d H.
-      inversion H; subst.
-      exists (vNat n).
-      split.
-      + by apply: dB_translation_NS_val_Nat.
-      + by apply: MML_dB_NS_Nat.
-    - move=> g' b o He d H.
-      inversion H; subst.
-      exists (vBool b).
-      split.
-      + by apply: dB_translation_NS_val_Bool.
-      + by apply: MML_dB_NS_Bool.
-    - move=> g' e1 e2 m n He1 IHe1 He2 IHe2 o' Hg d H.
-      inversion H; subst.
-      case: (IHe1 o' Hg d1 H3)=> v1 [H1' H1''].
-      case: (IHe2 o' Hg d2 H5)=> v2 [H2' H2''].
-      exists (vNat (m + n)).
-      split.
-      + by apply: dB_translation_NS_val_Nat.
-      + apply: MML_dB_NS_Plus.
-        * Check MML_dB_NS_Nat.
-          admit.
+      inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+        by apply: MML_dB_NS_Nat.
+    - move=> g' n o He d H.
+      inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+        by apply: MML_dB_NS_Bool.
+    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
+      inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+      apply: MML_dB_NS_Plus.
+      + apply: IH1 => //.
+        by apply: dB_translation_NS_val_Nat.
+      + apply: IH2 => //.
+        by apply: dB_translation_NS_val_Nat.
+    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
+      inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+      apply: MML_dB_NS_Minus.
+      + apply: IH1 => //.
+        by apply: dB_translation_NS_val_Nat.
+      + apply: IH2 => //.
+        by apply: dB_translation_NS_val_Nat.
+    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
+      inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+      apply: MML_dB_NS_Times.
+      + apply: IH1 => //.
+        by apply: dB_translation_NS_val_Nat.
+      + apply: IH2 => //.
+        by apply: dB_translation_NS_val_Nat.
+    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
+        by inversion H.
+    - move=> g' x o He d H vd Hv.
+      
+      admit.
+    - move=> g' x d1 d2 v1 v2 H1 IH1 H2 IH2 o He d H.
+      inversion H; subst=> vd Hv.
+      Check MML_dB_NS_Let.
+      eapply MML_dB_NS_Let with (v1 := _).
+      + apply: IH1 => //.
+        admit.
+      + apply: IH2 => //.
         * admit.
+        * admit.
+    - move=> g' x d1 d2 v1 v2 H1 IH1 H2 IH2 o He d H.
       Admitted.
   
 
@@ -585,8 +609,10 @@ End MiniMLdB.
    
    lazy eval を追加する。
    
+   継続を入れる。
+
    型と型推論を入れる。
-   
+
    seq と pair を入れる。
    
    型のないlisp風のセマンティックスを入れる。
@@ -594,5 +620,6 @@ End MiniMLdB.
    lookup を Inductive な定義にする。
    
    パーサを作る。
+
  *)
 
