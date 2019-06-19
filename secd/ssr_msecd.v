@@ -419,7 +419,7 @@ Section MiniMLdB.
   | vClosRec (d : MML_dB_exp) (o : seq MML_dB_val).
   
   (** nameless environments *)
-  Notation MML_dB_env := (seq MML_dB_val).
+  Definition MML_dB_env := (seq MML_dB_val).
   Definition lookup_dB (i : nat) (o : seq MML_dB_val) := nth (vBool false) o i.
   
   (** The natural semantics of MiniMLdB *)
@@ -513,7 +513,8 @@ Section MiniMLdB.
 
   (* g から変数だけ取り出す。 *)
   Fixpoint mkctx (g : MML_env) : ctx := [seq fst xv | xv <- g].
-  Compute mkctx [:: (X, VNat 1); (Y, VNat 2); (Z, VNat 3)]. (* [:: X; Y; Z] *)
+  Compute mkctx [:: (X, VNat 1); (Y, VNat 2); (Z, VNat 3)].
+  (* ==> [:: X; Y; Z] *)
 
   Inductive dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
   | dB_translation_NS_env_nil : dB_translation_NS_env [::] [::]
@@ -536,7 +537,7 @@ Section MiniMLdB.
       dB_translation_NS_env g o ->
       dB_translation_NS (f :: x :: (mkctx g)) e d ->
       dB_translation_NS_val (VClosRec f x e g) (vClosRec d o).
-
+  
 
   Theorem dB_translation_NS_correctness g e v :
     MML_NS g e v ->
@@ -579,22 +580,58 @@ Section MiniMLdB.
         by apply: dB_translation_NS_val_Nat.
     - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
         by inversion H.
-    - move=> g' x o He d H vd Hv.
-      
-      admit.
-    - move=> g' x d1 d2 v1 v2 H1 IH1 H2 IH2 o He d H.
+    - move=> g' x o He d H.
       inversion H; subst=> vd Hv.
-      Check MML_dB_NS_Let.
-      eapply MML_dB_NS_Let with (v1 := _).
-      + apply: IH1 => //.
-        admit.
-      + apply: IH2 => //.
-        * admit.
-        * admit.
-    - move=> g' x d1 d2 v1 v2 H1 IH1 H2 IH2 o He d H.
-      Admitted.
-  
+      inversion Hv; subst.
+      + have test1 i : lookup_dB i o = vNat n by admit.
+        rewrite -(test1 (index x (mkctx g'))).
+          by apply: MML_dB_NS_Var.
+      + have test1 i : lookup_dB i o = vBool b by admit.
+        rewrite -(test1 (index x (mkctx g'))).
+        (* MML_dB_NS o (dVar (index x (mkctx g'))) (lookup_dB (index x (mkctx g')) o) *)
+          by apply: MML_dB_NS_Var.
+      + have test1 i : lookup_dB i o = vClos d o0 by admit.
+        rewrite -(test1 (index x (mkctx g'))).
+          by apply: MML_dB_NS_Var.
+      + have test1 i : lookup_dB i o = vClosRec d o0 by admit.
+        rewrite -(test1 (index x (mkctx g'))).
+          by apply: MML_dB_NS_Var.
+          
+      (* 
+  He : dB_translation_NS_env g' o
+  H : dB_translation_NS (mkctx g') (eVar x) d
+  Hv : dB_translation_NS_val (lookup x g') vd
+  ============================
+  MML_dB_NS o d vd
+       *)
 
+      (* 
+  He : dB_translation_NS_env g' o
+  H : dB_translation_NS (mkctx g') (eVar x) (dVar (index x (mkctx g')))
+  Hv : dB_translation_NS_val (lookup x g') vd
+  ============================
+  MML_dB_NS o (dVar (index x (mkctx g'))) vd
+       *)
+
+      
+    - admit.                                (* eLet *)
+    - admit.                                (* eIf *)
+    - admit.                                (* eIf *)
+    - admit.                                (* eLam *)
+    - admit.                                (* eMuLam *)
+    - admit.                                (* eApp *)
+    - admit.                                (* eApp *)
+
+
+
+      Check dB_translation_NS_val_Nat.
+
+
+      (* いつか使う！ *)
+      move/dB_translation_NS_env_cons in Hv.
+
+
+      
 End MiniMLdB.
 
 (* END *)
