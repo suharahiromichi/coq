@@ -616,10 +616,17 @@ Section MiniMLdB.
     (* Let *)
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o' He d H.
       inversion H; subst=> vd Hv.
-      apply: IH2.
-      + admit.
-      + admit.
-      + admit.
+      apply: MML_dB_NS_Let.
+      (* Let の代入部 *)
+      + apply: IH1.
+        * done.
+        * done.
+        * admit.
+      (* Let の本体部 *)          
+      + apply: IH2.
+        * admit.
+        * admit.
+        * done.
 
     (* If true *)
     - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2 o' He d H.
@@ -639,6 +646,7 @@ Section MiniMLdB.
     - move=> g' e1 e2 e3 v3 H1 IH1 H3 IH3 o' He d H.
       (* v3 は else 節 *)
       inversion H; subst=> vd Hv.
+      Check MML_dB_NS_Iffalse.
       apply: MML_dB_NS_Iffalse.
       + apply: IH1.
         * done.
@@ -653,6 +661,8 @@ Section MiniMLdB.
     - move=> g' x e' o' He d H.
       inversion H; subst=> vd Hv.
       inversion Hv; subst.
+      Check MML_dB_NS_Lam.
+      inversion Hv; subst.
       Check MML_dB_NS_Lam o' d.
       admit.
       
@@ -664,15 +674,23 @@ Section MiniMLdB.
       admit.
 
     (* eApp *)
-    - move=> g1 g2 x e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 g' He d H.
+    - move=> g1 g2 x e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 o He d H.
       inversion H; subst=> vd Hv.
-      apply: IH3.
-      + admit.
-      + rewrite (_ : e3 = eApp e1 e2).
+      apply: MML_dB_NS_App.
+      (* 関数部 *)
+      + apply: IH1.
+        * done.
+        * done.
+        * eapply db_translation_NS_val_Clos.
+          ** admit.
+          ** admit.
+      (* 引数部 *)
+      + apply: IH3.
         * admit.
         * admit.
-      + by apply: Hv.
-        
+        * by apply: Hv.
+        * admit.
+          
     (* eApp *)      
     - move=> g1 g2 x1 x2 e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 g' He d H.
       inversion H; subst=> vd Hv.
