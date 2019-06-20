@@ -538,7 +538,6 @@ Section MiniMLdB.
       dB_translation_NS (f :: x :: (mkctx g)) e d ->
       dB_translation_NS_val (VClosRec f x e g) (vClosRec d o).
   
-
   Theorem dB_translation_NS_correctness g e v :
     MML_NS g e v ->
     forall o, dB_translation_NS_env g o ->
@@ -617,53 +616,72 @@ Section MiniMLdB.
     (* Let *)
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o' He d H.
       inversion H; subst=> vd Hv.
-      + apply: IH2.
-        * move/dB_translation_NS_env_cons in Hv.
-          admit.
-        * admit.
-        * by apply: Hv.
+      apply: IH2.
+      + admit.
+      + admit.
+      + admit.
 
     (* If true *)
-    - move=> g' e1 e2 e3 v' H1 IH1 H2 IH2 o' He d H.
+    - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2 o' He d H.
+      (* v2 は then 節 *)
       inversion H; subst=> vd Hv.
+      apply: MML_dB_NS_Iftrue.
+      + apply: IH1.
+        * by apply: He.
+        * by apply: H6.
+        * by apply: dB_translation_NS_val_Bool.
       + apply: IH2.
-        * admit.
-        * admit.
-        * apply: Hv.
-
+        * by apply: He.
+        * by apply: H8.
+        * by apply: Hv.
+          
     (* If false *)
-    - move=> g' e1 e2 e3 v' H1 IH1 H2 IH2 o' He d H.
+    - move=> g' e1 e2 e3 v3 H1 IH1 H3 IH3 o' He d H.
+      (* v3 は else 節 *)
       inversion H; subst=> vd Hv.
-      + apply: IH2.
-        * admit.
-        * admit.
-        * apply: Hv.
-
+      apply: MML_dB_NS_Iffalse.
+      + apply: IH1.
+        * done.
+        * done.
+        * by apply: dB_translation_NS_val_Bool.
+      + apply: IH3.
+        * done.
+        * done.
+        * done.
+          
     (* eLam *)
     - move=> g' x e' o' He d H.
       inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+      Check MML_dB_NS_Lam o' d.
       admit.
-
+      
     (* eMuLam *)
     - move=> g' f x e' o' He d H.
       inversion H; subst=> vd Hv.
+      inversion Hv; subst.
+      Check MML_dB_NS_MuLam o' d.
       admit.
-      
-    (* eApp *)
-    - move=> g1 g2 x1 x2 e1 e2 e3 v' H1 IH1 H2 IH2 H3 IH3 g' He d H.
-      inversion H; subst=> vd Hv.
-      apply: IH1.
-      * admit.
-      * admit.
-      * admit.
 
+    (* eApp *)
+    - move=> g1 g2 x e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 g' He d H.
+      inversion H; subst=> vd Hv.
+      apply: IH3.
+      + admit.
+      + rewrite (_ : e3 = eApp e1 e2).
+        * admit.
+        * admit.
+      + by apply: Hv.
+        
     (* eApp *)      
     - move=> g1 g2 x1 x2 e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 g' He d H.
       inversion H; subst=> vd Hv.
-      apply: IH1.
-      * admit.
-      * admit.
-      * admit.
+      apply: IH3.
+      + rewrite (_ : e3 = eApp e1 e2).
+        * admit.
+        * admit.
+        * admit.
+      + by apply: Hv.
       
       (*
 
