@@ -543,7 +543,8 @@ Section MiniMLdB.
     MML_NS g e v ->
     forall o, dB_translation_NS_env g o ->
               forall d, dB_translation_NS (mkctx g) e d ->
-                        forall vd, dB_translation_NS_val v vd -> MML_dB_NS o d vd.
+                        forall vd, dB_translation_NS_val v vd ->
+                                   MML_dB_NS o d vd.
   Proof.
     elim.
     - move=> g' n o He d H.
@@ -613,25 +614,68 @@ Section MiniMLdB.
   MML_dB_NS o (dVar (index x (mkctx g'))) vd
        *)
 
+    (* Let *)
+    - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o' He d H.
+      inversion H; subst=> vd Hv.
+      + apply: IH2.
+        * move/dB_translation_NS_env_cons in Hv.
+          admit.
+        * admit.
+        * by apply: Hv.
+
+    (* If true *)
+    - move=> g' e1 e2 e3 v' H1 IH1 H2 IH2 o' He d H.
+      inversion H; subst=> vd Hv.
+      + apply: IH2.
+        * admit.
+        * admit.
+        * apply: Hv.
+
+    (* If false *)
+    - move=> g' e1 e2 e3 v' H1 IH1 H2 IH2 o' He d H.
+      inversion H; subst=> vd Hv.
+      + apply: IH2.
+        * admit.
+        * admit.
+        * apply: Hv.
+
+    (* eLam *)
+    - move=> g' x e' o' He d H.
+      inversion H; subst=> vd Hv.
+      admit.
+
+    (* eMuLam *)
+    - move=> g' f x e' o' He d H.
+      inversion H; subst=> vd Hv.
+      admit.
       
-    - admit.                                (* eLet *)
-    - admit.                                (* eIf *)
-    - admit.                                (* eIf *)
-    - admit.                                (* eLam *)
-    - admit.                                (* eMuLam *)
-    - admit.                                (* eApp *)
-    - admit.                                (* eApp *)
+    (* eApp *)
+    - move=> g1 g2 x1 x2 e1 e2 e3 v' H1 IH1 H2 IH2 H3 IH3 g' He d H.
+      inversion H; subst=> vd Hv.
+      apply: IH1.
+      * admit.
+      * admit.
+      * admit.
 
-
+    (* eApp *)      
+    - move=> g1 g2 x1 x2 e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 g' He d H.
+      inversion H; subst=> vd Hv.
+      apply: IH1.
+      * admit.
+      * admit.
+      * admit.
+      
+      (*
 
       Check dB_translation_NS_val_Nat.
 
 
       (* いつか使う！ *)
       move/dB_translation_NS_env_cons in Hv.
+       *)
 
+      Admitted.
 
-      
 End MiniMLdB.
 
 (* END *)
