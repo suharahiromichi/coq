@@ -542,6 +542,37 @@ Section MiniMLdB.
     MML_NS g e v ->
     forall o, dB_translation_NS_env g o ->
               forall d, dB_translation_NS (mkctx g) e d ->
+                        exists vd, dB_translation_NS_val v vd /\ MML_dB_NS o d vd.
+  Proof.
+    elim.
+    - move=> g' n o He d H.
+      exists (vNat n).
+      inversion H; subst.
+      split.
+      * by apply: dB_translation_NS_val_Nat.
+      * by apply: MML_dB_NS_Nat.
+    - move=> g' b o He d H.
+      exists (vBool b).
+      inversion H; subst.
+      split.
+      * by apply: dB_translation_NS_val_Bool.
+      * by apply: MML_dB_NS_Bool.
+    - move=> g' e1 e2 m n H1 IH1 H2 IH2 o He d H.
+      inversion H; subst.
+      case: (IH1 o He d1 H5) => d1' [H11 H12].
+      case: (IH2 o He d2 H7) => d2' [H21 H22].
+      exists (vNat (m + n)).
+      split.
+      + by apply: dB_translation_NS_val_Nat.
+      + apply: MML_dB_NS_Plus.
+        * admit.
+        * admit.
+  Admitted.
+  
+  Theorem dB_translation_NS_correctness' g e v :
+    MML_NS g e v ->
+    forall o, dB_translation_NS_env g o ->
+              forall d, dB_translation_NS (mkctx g) e d ->
                         forall vd, dB_translation_NS_val v vd ->
                                    MML_dB_NS o d vd.
   Proof.
@@ -737,6 +768,7 @@ End MiniMLdB.
    lookup を Inductive な定義にする。
    
    パーサを作る。
-
+   
+   クロージャーをCoqのライブラリを使用する。
  *)
 
