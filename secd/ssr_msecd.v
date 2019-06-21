@@ -655,6 +655,9 @@ Section MiniMLdB.
       split.
       + by apply: dB_translation_NS_val_Nat.
       + apply: MML_dB_NS_Plus.
+        * inversion H11; subst.
+          inversion H5; subst.
+
         * admit.
         * admit.
   Admitted.
@@ -977,8 +980,8 @@ Section Compiler.
       Compiler_SS (dApp d1 d2) (c1 ++ c2 ++ [:: iApp]).
 
   Inductive Compiler_SS_val : MML_dB_val -> MSECD_Val -> Prop :=
-  | Compier_SS_val_Nat n  : Compiler_SS_val (vNat n) (mNat n)
-  | Compier_SS_val_Bool n : Compiler_SS_val (vBool n) (mBool n)
+  | Compiler_SS_val_Nat n  : Compiler_SS_val (vNat n) (mNat n)
+  | Compiler_SS_val_Bool n : Compiler_SS_val (vBool n) (mBool n)
   | Compiler_SS_val_Clos d o c e :
       Compiler_SS d c ->
       Compiler_SS_env o e ->
@@ -1001,6 +1004,18 @@ Section Compiler.
                                    forall s k, RTC_MSECD_SS (c ++ k, d, s)
                                                             (k, d, (V mv) :: s).
   Proof.
+    elim.
+    - move=> o' n c H d' He.
+      exists (mNat n).
+      split.
+      + by apply: Compiler_SS_val_Nat.
+      + move=> s k.
+        apply: RTC_MSECD_SS_Transitivity.
+        * inversion H.
+          by apply: MSECD_SS_Nat.
+        * by apply: RTC_MSECD_SS_Reflexivity.
+          
+
   Admitted.
   
 End Compiler.
