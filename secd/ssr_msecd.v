@@ -852,6 +852,77 @@ Section Modern_SECD.
   
 End Modern_SECD.
 
+Section Compiler.
+
+  Inductive Compiler_SS : MML_dB_exp -> MSECD_Code -> Prop :=
+  | Compiler_SS_Nat n  : Compiler_SS (dNat n) [:: (iNat n)]
+  | Compiler_SS_Bool b : Compiler_SS (dBool b) [:: (iBool b)]
+  | Compiler_SS_Plus d1 d2 c1 c2 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS (dPlus d1 d2) (c1 ++ c2 ++ [:: iAdd])
+  | Compiler_SS_Minus d1 d2 c1 c2 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS (dMinus d1 d2) (c1 ++ c2 ++ [:: iSub])
+  | Compiler_SS_TImes d1 d2 c1 c2 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS (dTimes d1 d2) (c1 ++ c2 ++ [:: iMul])
+  | Compiler_SS_Eq d1 d2 c1 c2 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS (dEq d1 d2) (c1 ++ c2 ++ [:: iEq])
+  | Compiler_SS_Var i  : Compiler_SS (dVar i) [:: (iAcc i)]
+  | Compiler_SS_Let d1 d2 c1 c2 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS (dLet d1 d2) (c1 ++ [:: iLet] ++ c2 ++ [:: iEndLet])
+  | Compiler_SS_If d1 d2 d3 c1 c2 c3 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS d2 c3 ->
+      Compiler_SS (dIf d1 d2 d3) (c1 ++ [:: iSel (c2 ++ [:: iJoin]) (c3 ++ [:: iJoin])])
+  | Compiler_SS_Lam d c :
+      Compiler_SS d c ->
+      Compiler_SS (dLam d) ([:: iClos (c ++ [:: iRet])])
+  | Compiler_SS_MuLam d c :
+      Compiler_SS d c ->
+      Compiler_SS (dMuLam d) ([:: iClosRec (c ++ [:: iRet])])
+  | Compiler_SS_App d1 d2 c1 c2 :
+      Compiler_SS d1 c1 ->
+      Compiler_SS d2 c2 ->
+      Compiler_SS (dApp d1 d2) (c1 ++ c2 ++ [:: iApp]).
+
+  Inductive Compiler_SS_val : MML_dB_val -> MSECD_Val -> Prop :=
+  | Compier_SS_val_Nat n  : Compiler_SS_val (vNat n) (mNat n)
+  | Compier_SS_val_Bool n : Compiler_SS_val (vBool n) (mBool n)
+  | Compiler_SS_val_Clos d o c e :
+      Compiler_SS d c ->
+      Compiler_SS_env o e ->
+      Compiler_SS_val (vClos d o) (mClos c e)
+  | Compiler_SS_val_ClosRec d o c e :
+      Compiler_SS d c ->
+      Compiler_SS_env o e ->
+      Compiler_SS_val (vClosRec d o) (mClosRec c e)
+  with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
+       | Compiler_SS_env_nil : Compiler_SS_env [::] [::]
+       | Compiler_SS_env_cons v o m e :
+           Compiler_SS_val v m ->
+           Compiler_SS_env (v :: o) (m :: e).
+
+  Theorem CorrectnessSS o d v :
+    MML_dB_NS o d v ->
+    forall c, Compiler_SS d c ->
+              forall d, Compiler_SS_env o d ->
+                        exists mv, Compiler_SS_val v mv /\
+                                   forall s k, RTC_MSECD_SS (c ++ k, d, s)
+                                                            (k, d, (V mv) :: s).
+  Proof.
+  Admitted.
+  
+End Compiler.
+
 
 (* END *)
 
