@@ -295,7 +295,9 @@ Section MiniML.
                             (eApp (eVar F)
                                   (eMinus (eVar X) (eNat 1))))))
        (eNat 5)).
+  
   Compute MML_NS_interpreter 19 [::] example.
+  (* = Some (VNat 120) : option MML_val *)
   
   Lemma MML_NS_same dep1 dep2 g e :
     dep1 = dep2 ->
@@ -542,9 +544,89 @@ Section MiniMLdB.
   Fixpoint dB_translation_NS_compiler (p : ctx) (e : MML_exp) : option MML_dB_exp :=
     match e with
     | eNat n => Some (dNat n)
-    | _ => None                             (* XXXXX *)
+    | eBool b => Some (dBool b)
+    | ePlus e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dPlus d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eMinus e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dMinus d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eTimes e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dTimes d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eEq e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dEq d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eVar x => Some (dVar (index x p))        
+    | eLet x e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler (x :: p) e2 with
+                   | Some d2 => Some (dLet d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eIf e1 e2 e3 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => match dB_translation_NS_compiler p e3 with
+                                | Some d3 => Some (dIf d1 d2 d3)
+                                | _ => None
+                                end
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eLam x e =>
+      match dB_translation_NS_compiler (x :: p) e with
+      | Some d => Some (dLam d)
+      | _ => None
+      end
+    | eMuLam f x e =>
+      match dB_translation_NS_compiler (x :: f :: p) e with
+      | Some d => Some (dMuLam d)
+      | _ => None
+      end
+    | eApp e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dApp d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
     end.
-  
+
+  Compute dB_translation_NS_compiler [::] example.
+  (*
+     = Some
+         (dApp
+            (dMuLam
+               (dIf (dEq (dVar 0) (dNat 0)) (dNat 1)
+                  (dTimes (dVar 0) (dApp (dVar 1) (dMinus (dVar 0) (dNat 1))))))
+            (dNat 5)) : option MML_dB_exp
+   *)
+
   
   Theorem dB_translation_NS_correctness g e v :
     MML_NS g e v ->
