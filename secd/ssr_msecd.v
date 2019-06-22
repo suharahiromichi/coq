@@ -1170,9 +1170,30 @@ Section Compiler.
       inversion H; subst=> e He mv Hv s k.
       rewrite -catA.
       eapply AppendSS.
-      + admit.
-      + admit.
-        
+      (* Let 代入部 *)
+      + Check IH1 c1 H4 e He mv _ s (([:: iLet] ++ c2 ++ [:: iEndLet]) ++ k).
+        apply: (IH1 c1 H4 e He mv _ s (([:: iLet] ++ c2 ++ [:: iEndLet]) ++ k)).
+        (* apply: IH1 => //. *)
+        admit.                              (* Compiler_SS_val m mv *)
+      + rewrite -catA.
+        (* Let インストラクション  *)
+        * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          ** by apply: MSECD_SS_Let.
+          ** rewrite -catA.
+             eapply AppendSS.
+             (* Let 本体 *)
+             *** apply: IH2 => //.
+                 inversion He; subst.
+                 **** apply: Compiler_SS_env_cons.
+                      admit.                (* Compiler_SS_val m mv *)
+                 **** apply: Compiler_SS_env_cons.
+                      admit.                (* Compiler_SS_val m mv *)
+             *** by apply: Hv.
+          ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+             (* EndLet インストラクション  *)
+             *** apply: MSECD_SS_EndLet.
+             *** by apply: RTC_MSECD_SS_Reflexivity.
+                 
     - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
       inversion H; subst => e He mv Hv s k.
       rewrite -catA.
