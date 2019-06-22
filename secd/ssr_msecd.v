@@ -966,7 +966,7 @@ Section Compiler.
   | Compiler_SS_If d1 d2 d3 c1 c2 c3 :
       Compiler_SS d1 c1 ->
       Compiler_SS d2 c2 ->
-      Compiler_SS d2 c3 ->
+      Compiler_SS d3 c3 ->
       Compiler_SS (dIf d1 d2 d3) (c1 ++ [:: iSel (c2 ++ [:: iJoin]) (c3 ++ [:: iJoin])])
   | Compiler_SS_Lam d c :
       Compiler_SS d c ->
@@ -1077,7 +1077,7 @@ Section Compiler.
       + by apply: RTC_MSECD_SS_Reflexivity.
 
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inversion H; subst. move=> e He mv Hv.
+      inversion H; subst=> e He mv Hv.
       inversion Hv; subst=> s k.
       rewrite -catA.
       eapply AppendSS.
@@ -1100,7 +1100,7 @@ Section Compiler.
           ** by apply: RTC_MSECD_SS_Reflexivity.
 
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inversion H; subst. move=> e He mv Hv.
+      inversion H; subst=> e He mv Hv.
       inversion Hv; subst=> s k.
       rewrite -catA.
       eapply AppendSS.
@@ -1119,7 +1119,7 @@ Section Compiler.
           ** by apply: RTC_MSECD_SS_Reflexivity.
 
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inversion H; subst. move=> e He mv Hv.
+      inversion H; subst=> e He mv Hv.
       inversion Hv; subst=> s k.
       rewrite -catA.
       eapply AppendSS.
@@ -1138,7 +1138,7 @@ Section Compiler.
           ** by apply: RTC_MSECD_SS_Reflexivity.
               
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inversion H; subst. move=> e He mv Hv.
+      inversion H; subst=> e He mv Hv.
       inversion Hv; subst=> s k.
       rewrite -catA.
       eapply AppendSS.
@@ -1157,7 +1157,7 @@ Section Compiler.
           ** by apply: RTC_MSECD_SS_Reflexivity.
 
     - move=> o' i c H.
-      inversion H; subst. move=> e He mv Hv s k.
+      inversion H; subst=> e He mv Hv s k.
       (* inversion Hv; subst は不要。 NAT/BOOL/CLOS で分岐しない。 *)
       Check (k, e, V(dlookup i e) :: s).
       apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(dlookup i e) :: s) _).
@@ -1190,6 +1190,73 @@ Section Compiler.
           ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V mv :: s) _).
              *** by apply: MSECD_SS_Join.
              *** by apply: RTC_MSECD_SS_Reflexivity.
+
+    - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
+      inversion H; subst => e He mv Hv s k.
+      rewrite -catA.
+      eapply AppendSS.
+      (* If 節 *)
+      + apply: IH1 => //.
+          by apply: Compiler_SS_val_Bool.
+      (* Else 節 *)
+      + apply: (RTC_MSECD_SS_Transitivity _ (c3 ++ [:: iJoin], e, S (k, [::]) :: s) _).
+        * apply: MSECD_SS_Selfalse.
+        * apply: (RTC_MSECD_SS_Transitivity
+                    _ ([:: iJoin], e, (V(mv) :: S (k, [::]) :: s)) _).
+          ** apply: OneSS.
+             by apply: IH3.
+          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V mv :: s) _).
+             *** by apply: MSECD_SS_Join.
+             *** by apply: RTC_MSECD_SS_Reflexivity.
+
+    - move=> o' d' c H.
+      inversion H; subst=> e He mv Hv s k.
+      apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(mClos k e) :: s) _).
+      + by apply: MSECD_SS_Clos.
+      + rewrite (_ :mv =  mClos k e).
+        * by apply: RTC_MSECD_SS_Reflexivity.
+        * admit.                            (* mv = mClos k e *)
+          
+    - move=> o' d' c H.
+      inversion H; subst=> e He mv Hv s k.
+      apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(mClosRec k e) :: s) _).
+      + by apply: MSECD_SS_ClosRec.
+      + rewrite (_ :mv =  mClosRec k e).
+        * by apply: RTC_MSECD_SS_Reflexivity.
+        * admit.                            (* mv = mClosRec k e *)
+
+    - move=> o1 o2 d1 d2 d3 v1 v2 H1 IH1 H2 IH2 H3 IH3 c H.
+      inversion H; subst=> e He mv Hv s k.
+      rewrite -catA.
+      eapply AppendSS.
+      + apply: IH1 => //.
+        apply: Compiler_SS_val_Clos.
+        * admit.
+        * admit.
+      + rewrite -catA.
+        eapply AppendSS.
+        * apply: IH2 => //.
+          admit.
+        * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          ** by apply: MSECD_SS_App.
+          ** admit.
+
+    - move=> o1 o2 d1 d2 d3 v1 v2 H1 IH1 H2 IH2 H3 IH3 c H.
+      inversion H; subst=> e He mv Hv s k.
+      rewrite -catA.
+      eapply AppendSS.
+      + apply: IH1 => //.
+        apply: Compiler_SS_val_ClosRec.
+        * admit.
+        * admit.
+      + rewrite -catA.
+        eapply AppendSS.
+        * apply: IH2 => //.
+          admit.
+        * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          ** admit.
+          ** admit.
+
   Admitted.
   
 End Compiler.
