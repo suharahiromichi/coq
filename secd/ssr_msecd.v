@@ -995,18 +995,11 @@ Section Compiler.
        | Compiler_SS_env_cons v o m e :
            Compiler_SS_val v m ->
            Compiler_SS_env (v :: o) (m :: e).
-(*
-  Lemma AppendSS c11 c12 c21 c22 c3 d1 d2 d3 s1 s2 s3 :
-      RTC_MSECD_SS (c11 ++ c12, d1, s1) (c12, d2, s2) -> (* c11 を実行前後 *)
-      RTC_MSECD_SS (c21 ++ c22, d2, s2) (c22, d3, s3) -> (* c21 を実行前後 *)
-      RTC_MSECD_SS (c11 ++ c21 ++ c3, d1, s1) (c3, d3, s3). (* c11 と c21 を実行前後 *)
-  Proof.
-  Admitted.
-*)
+  
   Lemma AppendSS c1 c2 c3 d1 d2 d3 s1 s2 s3 :
       RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c2 ++ c3, d2, s2) -> (* c1 を実行前後 *)
-      RTC_MSECD_SS (      c2 ++ c3, d2, s2) (c3, d3, s3) -> (* c2 を実行前後 *)
-      RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c3, d3, s3). (* c1とc2 を実行前後 *)
+      RTC_MSECD_SS (      c2 ++ c3, d2, s2) (      c3, d3, s3) -> (* c2 を実行前後 *)
+      RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (      c3, d3, s3). (* c1とc2 を実行前後 *)
   Proof.
   Admitted.
   
@@ -1082,25 +1075,92 @@ Section Compiler.
       inversion Hv; subst=> s k.
       rewrite -catA.
       eapply AppendSS.
-      + apply: (RTC_MSECD_SS_Transitivity).
-        * admit.
-        (* 先に m を積む。 *)
-        * Check (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iAdd]) ++ k)).
-          apply: (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iAdd]) ++ k)).
+      (* 先に m を積む。 *)
+      + Check (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iAdd]) ++ k)).
+        apply: (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iAdd]) ++ k)).
           by apply: Compiler_SS_val_Nat.
       + rewrite -catA.
         eapply AppendSS.
+        (* m が積んであるところに n を積む。 *)
+        * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
+          apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
+            by apply: Compiler_SS_val_Nat.
+
         * apply: RTC_MSECD_SS_Transitivity.
-          ** admit.
-          (* m が積んであるところに n を積む。 *)
-          ** Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
-             apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
-             by apply: Compiler_SS_val_Nat.
-        * apply: (RTC_MSECD_SS_Transitivity).
           ** Check (MSECD_SS_Add m n).
-             by apply: (MSECD_SS_Add m n). (* m n を指定しないと n + n になってしまう。 *)
+               by apply: (MSECD_SS_Add m n).
+          (* m n を指定しないと n + n になってしまう。 *)
           ** by apply: RTC_MSECD_SS_Reflexivity.
-                                                                                                         
+
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst. move=> e He mv Hv.
+      inversion Hv; subst=> s k.
+      rewrite -catA.
+      eapply AppendSS.
+      (* 先に m を積む。 *)
+      + Check (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iSub]) ++ k)).
+        apply: (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iSub]) ++ k)).
+          by apply: Compiler_SS_val_Nat.
+      + rewrite -catA.
+        eapply AppendSS.
+        (* m が積んであるところに n を積む。 *)
+        * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iSub] ++ k)).
+          apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iSub] ++ k)).
+            by apply: Compiler_SS_val_Nat.
+
+        * apply: RTC_MSECD_SS_Transitivity.
+          ** Check (MSECD_SS_Sub m n).
+               by apply: (MSECD_SS_Sub m n).
+          (* m n を指定しないと n + n になってしまう。 *)
+          ** by apply: RTC_MSECD_SS_Reflexivity.
+
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst. move=> e He mv Hv.
+      inversion Hv; subst=> s k.
+      rewrite -catA.
+      eapply AppendSS.
+      (* 先に m を積む。 *)
+      + Check (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iMul]) ++ k)).
+        apply: (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iMul]) ++ k)).
+          by apply: Compiler_SS_val_Nat.
+      + rewrite -catA.
+        eapply AppendSS.
+        (* m が積んであるところに n を積む。 *)
+        * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iMul] ++ k)).
+          apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iMul] ++ k)).
+            by apply: Compiler_SS_val_Nat.
+
+        * apply: RTC_MSECD_SS_Transitivity.
+          ** Check (MSECD_SS_Mul m n).
+               by apply: (MSECD_SS_Mul m n).
+          (* m n を指定しないと n + n になってしまう。 *)
+          ** by apply: RTC_MSECD_SS_Reflexivity.
+              
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst. move=> e He mv Hv.
+      inversion Hv; subst=> s k.
+      rewrite -catA.
+      eapply AppendSS.
+      (* 先に m を積む。 *)
+      + Check (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iEq]) ++ k)).
+        apply: (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iEq]) ++ k)).
+          by apply: Compiler_SS_val_Nat.
+      + rewrite -catA.
+        eapply AppendSS.
+        (* m が積んであるところに n を積む。 *)
+        * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iEq] ++ k)).
+          apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iEq] ++ k)).
+            by apply: Compiler_SS_val_Nat.
+
+        * apply: RTC_MSECD_SS_Transitivity.
+          ** Check (MSECD_SS_Eq m n).
+               by apply: (MSECD_SS_Eq m n).
+          (* m n を指定しないと n + n になってしまう。 *)
+          ** by apply: RTC_MSECD_SS_Reflexivity.
+
+  Admitted.
+
+
 End Compiler.
 
 
