@@ -305,7 +305,7 @@ Section MiniML.
   Proof.
   Admitted.
   
-  Lemma MML_NS_interpreter_correctness :
+  Lemma MML_NS_interpreter_correctnes :
     forall g e v, MML_NS g e v -> exists dep, MML_NS_interpreter dep g e = Some v.
   Proof.
     move=> g e v.
@@ -995,7 +995,21 @@ Section Compiler.
        | Compiler_SS_env_cons v o m e :
            Compiler_SS_val v m ->
            Compiler_SS_env (v :: o) (m :: e).
-
+(*
+  Lemma AppendSS c11 c12 c21 c22 c3 d1 d2 d3 s1 s2 s3 :
+      RTC_MSECD_SS (c11 ++ c12, d1, s1) (c12, d2, s2) -> (* c11 を実行前後 *)
+      RTC_MSECD_SS (c21 ++ c22, d2, s2) (c22, d3, s3) -> (* c21 を実行前後 *)
+      RTC_MSECD_SS (c11 ++ c21 ++ c3, d1, s1) (c3, d3, s3). (* c11 と c21 を実行前後 *)
+  Proof.
+  Admitted.
+*)
+  Lemma AppendSS c1 c2 c3 d1 d2 d3 s1 s2 s3 :
+      RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c2 ++ c3, d2, s2) -> (* c1 を実行前後 *)
+      RTC_MSECD_SS (      c2 ++ c3, d2, s2) (c3, d3, s3) -> (* c2 を実行前後 *)
+      RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c3, d3, s3). (* c1とc2 を実行前後 *)
+  Proof.
+  Admitted.
+  
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
@@ -1009,15 +1023,84 @@ Section Compiler.
       exists (mNat n).
       split.
       + by apply: Compiler_SS_val_Nat.
-      + move=> s k.
-        apply: RTC_MSECD_SS_Transitivity.
-        * inversion H.
-          by apply: MSECD_SS_Nat.
+      + inversion H; subst=> s k.
+        Check RTC_MSECD_SS_Transitivity ([:: iNat n] ++ k, d', s)
+              (k, d', V (mNat n) :: s) (k, d', V (mNat n) :: s).
+        apply: (RTC_MSECD_SS_Transitivity _ (k, d', V (mNat n) :: s) _).
+        * by apply: MSECD_SS_Nat.
         * by apply: RTC_MSECD_SS_Reflexivity.
           
-
+    - move=> o' b c H d' He.
+      exists (mBool b).
+      split.
+      + by apply: Compiler_SS_val_Bool.
+      + move=> s k.
+        apply: (RTC_MSECD_SS_Transitivity _ (k, d', V (mBool b) :: s) _).
+        inversion H; subst.                 (* inv は後でもよい。 *)
+        * by apply: MSECD_SS_Bool.
+        * by apply: RTC_MSECD_SS_Reflexivity.
+          
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 c H d' He.
+      exists (mNat (m + n)).
+      split.
+      + by apply: Compiler_SS_val_Nat.
+      + inversion H; subst=> s k.
+        case: (IH1 c1 H4 d' He) => v1 [Hv11 Hv12].
+        case: (IH2 c2 H6 d' He) => v2 [Hv21 Hv22].
+        apply: RTC_MSECD_SS_Transitivity.
+        * admit.
+        * apply: (RTC_MSECD_SS_Transitivity).
+          ** admit.
+          ** by apply: RTC_MSECD_SS_Reflexivity.
   Admitted.
-  
+
+  Theorem CorrectnessSS' o d v :
+    MML_dB_NS o d v ->
+    forall c, Compiler_SS d c ->
+              forall d, Compiler_SS_env o d ->
+                        forall mv, Compiler_SS_val v mv ->
+                                   forall s k, RTC_MSECD_SS (c ++ k, d, s)
+                                                            (k, d, (V mv) :: s).
+  Proof.
+    elim.
+    - move=> o' n c H.
+      inversion H; subst=> d' He mv Hv.
+      inversion Hv; subst=> s k.
+      apply: (RTC_MSECD_SS_Transitivity _ (k, d', V (mNat n) :: s) _).
+      + by apply: MSECD_SS_Nat.
+      + by apply: RTC_MSECD_SS_Reflexivity.
+
+    - move=> o' b c H.
+      inversion H; subst=> d' He mv Hv.
+      inversion Hv; subst=> s k.
+      apply: (RTC_MSECD_SS_Transitivity _ (k, d', V (mBool b) :: s) _).
+      + by apply: MSECD_SS_Bool.
+      + by apply: RTC_MSECD_SS_Reflexivity.
+
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst. move=> e He mv Hv.
+      inversion Hv; subst=> s k.
+      rewrite -catA.
+      eapply AppendSS.
+      + apply: (RTC_MSECD_SS_Transitivity).
+        * admit.
+        (* 先に m を積む。 *)
+        * Check (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iAdd]) ++ k)).
+          apply: (IH1 c1 H4 e He (mNat m) _ s ((c2 ++ [:: iAdd]) ++ k)).
+          by apply: Compiler_SS_val_Nat.
+      + rewrite -catA.
+        eapply AppendSS.
+        * apply: RTC_MSECD_SS_Transitivity.
+          ** admit.
+          (* m が積んであるところに n を積む。 *)
+          ** Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
+             apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
+             by apply: Compiler_SS_val_Nat.
+        * apply: (RTC_MSECD_SS_Transitivity).
+          ** Check (MSECD_SS_Add m n).
+             by apply: (MSECD_SS_Add m n). (* m n を指定しないと n + n になってしまう。 *)
+          ** by apply: RTC_MSECD_SS_Reflexivity.
+                                                                                                         
 End Compiler.
 
 
