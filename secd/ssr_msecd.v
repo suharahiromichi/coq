@@ -1165,13 +1165,19 @@ Section Compiler.
       + rewrite (_ : mv = dlookup i e).
         * by apply: RTC_MSECD_SS_Reflexivity.
         * admit.                            (* mNat n = dlookup i e *)
-          
+
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He mv Hv s k.
       rewrite -catA.
       eapply AppendSS.
+      
       (* Let 代入部 *)
       + Check IH1 c1 H4 e He mv _ s (([:: iLet] ++ c2 ++ [:: iEndLet]) ++ k).
+
+        (* ここが間違っている。
+           mv は n のコンパイル結果である。
+           c1 の値は m なので、m のコンパイル結果であるべき *)
+        
         apply: (IH1 c1 H4 e He mv _ s (([:: iLet] ++ c2 ++ [:: iEndLet]) ++ k)).
         (* apply: IH1 => //. *)
         admit.                              (* Compiler_SS_val m mv *)
