@@ -911,7 +911,7 @@ Section Modern_SECD.
                (          c2,       d,                S(c, [::]) :: s)
   | MSECD_SS_Join (v : MSECD_Val) (c c1 : MSECD_Code) (d d1 : MSECD_Env)
                   (s : MSECD_Stack) :
-      MSECD_SS (  iJoin :: c,       d,         V(v) :: S(c1, d1) :: s)
+      MSECD_SS (  iJoin :: c,       d,         V(v) :: S(c1, d1) :: s) (* d1 捨てる *)
                (          c1,       d,                      V(v) :: s)
   | MSECD_SS_Clos (c c1 : MSECD_Code) (d : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iClos c1 :: c,      d,                              s)
@@ -1001,7 +1001,13 @@ Section Compiler.
       RTC_MSECD_SS (      c2 ++ c3, d2, s2) (      c3, d3, s3) -> (* c2 を実行前後 *)
       RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (      c3, d3, s3). (* c1とc2 を実行前後 *)
   Proof.
-  Admitted.
+  Admitted.                                 (* XXXX *)
+
+  Lemma OneSS c k e mv s :
+    RTC_MSECD_SS (c ++ k, e, s) (k, e, V mv :: s) ->
+    MSECD_SS (c ++ k, e, s) (k, e, V mv :: s).
+  Proof.
+  Admitted.                                 (* XXXX *)
   
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
@@ -1086,10 +1092,11 @@ Section Compiler.
           apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iAdd] ++ k)).
             by apply: Compiler_SS_val_Nat.
 
-        * apply: RTC_MSECD_SS_Transitivity.
+        * apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m + n)) :: s) _).
           ** Check (MSECD_SS_Add m n).
-               by apply: (MSECD_SS_Add m n).
-          (* m n を指定しないと n + n になってしまう。 *)
+             by apply: (MSECD_SS_Add m n).
+          (* m n を指定しないと n + n になってしまうかもしれない。 *)
+          (* Transitivity でメタ変数が無くなっているので、問題はないか。 *)
           ** by apply: RTC_MSECD_SS_Reflexivity.
 
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1107,11 +1114,8 @@ Section Compiler.
         * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iSub] ++ k)).
           apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iSub] ++ k)).
             by apply: Compiler_SS_val_Nat.
-
-        * apply: RTC_MSECD_SS_Transitivity.
-          ** Check (MSECD_SS_Sub m n).
-               by apply: (MSECD_SS_Sub m n).
-          (* m n を指定しないと n + n になってしまう。 *)
+        * apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m - n)) :: s) _).
+          ** by apply: MSECD_SS_Sub.
           ** by apply: RTC_MSECD_SS_Reflexivity.
 
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1129,11 +1133,8 @@ Section Compiler.
         * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iMul] ++ k)).
           apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iMul] ++ k)).
             by apply: Compiler_SS_val_Nat.
-
-        * apply: RTC_MSECD_SS_Transitivity.
-          ** Check (MSECD_SS_Mul m n).
-               by apply: (MSECD_SS_Mul m n).
-          (* m n を指定しないと n + n になってしまう。 *)
+        * apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m * n)) :: s) _).
+          ** by apply: MSECD_SS_Mul.
           ** by apply: RTC_MSECD_SS_Reflexivity.
               
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1151,16 +1152,46 @@ Section Compiler.
         * Check (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iEq] ++ k)).
           apply: (IH2 c2 H6 e He (mNat n) _ ([:: V(mNat m)] ++ s) ([:: iEq] ++ k)).
             by apply: Compiler_SS_val_Nat.
-
-        * apply: RTC_MSECD_SS_Transitivity.
-          ** Check (MSECD_SS_Eq m n).
-               by apply: (MSECD_SS_Eq m n).
-          (* m n を指定しないと n + n になってしまう。 *)
+        * apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(mBool (m == n)) :: s) _).
+          ** apply: MSECD_SS_Eq.
           ** by apply: RTC_MSECD_SS_Reflexivity.
 
+    - move=> o' i c H.
+      inversion H; subst. move=> e He mv Hv s k.
+      (* inversion Hv; subst は不要。 NAT/BOOL/CLOS で分岐しない。 *)
+      Check (k, e, V(dlookup i e) :: s).
+      apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(dlookup i e) :: s) _).
+      + by apply: MSECD_SS_Acc.
+      + rewrite (_ : mv = dlookup i e).
+        * by apply: RTC_MSECD_SS_Reflexivity.
+        * admit.                            (* mNat n = dlookup i e *)
+          
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst=> e He mv Hv s k.
+      rewrite -catA.
+      eapply AppendSS.
+      + admit.
+      + admit.
+        
+    - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
+      inversion H; subst => e He mv Hv s k.
+      rewrite -catA.
+      eapply AppendSS.
+      (* If 節 *)
+      + apply: IH1 => //.
+          by apply: Compiler_SS_val_Bool.
+      (* Then 節 *)
+      + apply: (RTC_MSECD_SS_Transitivity _ (c2 ++ [:: iJoin], e, S (k, [::]) :: s) _).
+        * apply: MSECD_SS_Seltrue.
+        * apply: (RTC_MSECD_SS_Transitivity
+                    _ ([:: iJoin], e, (V(mv) :: S (k, [::]) :: s)) _).
+          ** apply: OneSS.
+             by apply: IH2.
+          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V mv :: s) _).
+             *** by apply: MSECD_SS_Join.
+             *** by apply: RTC_MSECD_SS_Reflexivity.
   Admitted.
-
-
+  
 End Compiler.
 
 
