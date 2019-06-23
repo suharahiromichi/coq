@@ -1028,24 +1028,6 @@ Section Compiler.
     - elim => [| i' Hi] /=.
       * by apply: H0.
       * admit.
-        
-  Lemma EnvValSS o e :
-    (* Compiler_SS (dVar i) [:: iAcc i] *)
-    Compiler_SS_env o e ->
-    forall i, Compiler_SS_val (olookup i o) (dlookup i e).
-  Proof.
-    rewrite /olookup /dlookup.
-    move=> H.
-    inversion H; subst.
-    (* 環境が nil の場合 *)
-    - move=> i.
-      rewrite 2!nth_nil.
-        by apply: Compiler_SS_val_Bool.
-    (* 環境が nil ではない場合 *)
-    - elim => [| i' Hi] /=.
-      * by apply: H0.
-      * 
-
   Admitted.
   
 
@@ -1058,6 +1040,7 @@ Section Compiler.
                                                             (k, d, (V mv) :: s).
   Proof.
     elim.
+    (* Nat *)
     - move=> o' n c H d' He.
       exists (mNat n).
       split.
@@ -1069,6 +1052,7 @@ Section Compiler.
         * by apply: MSECD_SS_Nat.
         * by apply: RTC_MSECD_SS_Reflexivity.
           
+    (* Bool *)
     - move=> o' b c H d' He.
       exists (mBool b).
       split.
@@ -1079,6 +1063,7 @@ Section Compiler.
         * by apply: MSECD_SS_Bool.
         * by apply: RTC_MSECD_SS_Reflexivity.
           
+    (* Plus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
       
@@ -1101,6 +1086,7 @@ Section Compiler.
              *** by apply: MSECD_SS_Add.
              *** by apply: RTC_MSECD_SS_Reflexivity.
 
+    (* Minus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
@@ -1121,6 +1107,7 @@ Section Compiler.
              *** by apply: MSECD_SS_Sub.
              *** by apply: RTC_MSECD_SS_Reflexivity.
                  
+    (* Times *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
@@ -1141,6 +1128,7 @@ Section Compiler.
              *** by apply: MSECD_SS_Mul.
              *** by apply: RTC_MSECD_SS_Reflexivity.                 
                  
+    (* Eq *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
@@ -1161,6 +1149,7 @@ Section Compiler.
              *** by apply: MSECD_SS_Eq.
              *** by apply: RTC_MSECD_SS_Reflexivity.                 
                  
+    (* Var *)
     - move=> o' i c H.
       inversion H; subst=> e He.
       exists (dlookup i e).
@@ -1171,6 +1160,7 @@ Section Compiler.
         * by apply: MSECD_SS_Acc.
         * by apply: RTC_MSECD_SS_Reflexivity. 
           
+    (* Let *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
@@ -1193,6 +1183,7 @@ Section Compiler.
               *** by apply: MSECD_SS_EndLet.
               *** by apply: RTC_MSECD_SS_Reflexivity.
       
+      (* IF-THEN *)
       - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
         inversion H; subst => e He.
         case: (IH1 c1 H5 e He) => mv1 [Hc1 H1'].
@@ -1217,6 +1208,7 @@ Section Compiler.
                  *** by apply: MSECD_SS_Join.
                  *** by apply: RTC_MSECD_SS_Reflexivity.
                
+      (* IF-ELSE *)
       - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
         inversion H; subst => e He.
         case: (IH1 c1 H5 e He) => mv1 [Hc1 H1'].
@@ -1306,7 +1298,12 @@ Section Compiler.
       Check (mClosRec (c ++ [:: iRet]) e0).
       have He' : Compiler_SS_env (m :: (vClosRec d' o1) :: o1)
                                  (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
-        by apply: Compiler_SS_env_cons.
+      + apply: Compiler_SS_env_cons.
+        * done.
+        * apply: Compiler_SS_env_cons.
+          ** done.
+          ** done.
+
       Check IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He'.
       case: (IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He') => mv' [Hc' H''].
       exists mv'.
@@ -1330,8 +1327,7 @@ Section Compiler.
                  **** apply: (RTC_MSECD_SS_Transitivity _ _ _).
                       ***** by apply: MSECD_SS_Ret.
                       ***** by apply: RTC_MSECD_SS_Reflexivity.
-
-  Admitted.
+  Qed.
 
 End Compiler.
 
