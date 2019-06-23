@@ -4,7 +4,7 @@ From mathcomp Require Import all_ssreflect.
    Verified Using Natural Semantics in Coq *)
 (** Angel Zuniga and Gemma Bel-Enguix *)
 
-(** but, proof was written independently by @suharahiromichi *)
+(** proof was written independently by @suharahiromichi *)
 
 (** MiniML *)
 
@@ -1006,11 +1006,25 @@ Section Compiler.
   Proof.
   Admitted.                                 (* XXXX *)
 
-  Lemma OneSS c k e mv s :
-    RTC_MSECD_SS (c ++ k, e, s) (k, e, V mv :: s) ->
-    MSECD_SS (c ++ k, e, s) (k, e, V mv :: s).
+  Lemma OneSS i k e s mv :
+    RTC_MSECD_SS (i :: k, e, s) (k, e, V mv :: s) ->
+    MSECD_SS (i :: k, e, s) (k, e, V mv :: s).
   Proof.
-  Admitted.                                 (* XXXX *)
+    move=> H.
+    Check AppendSS [:: i] [::] k e e e s (V mv :: s) (V mv :: s).
+    have H1 : RTC_MSECD_SS ([:: i] ++ [::] ++ k, e, s) ([::] ++ k, e, V mv :: s) ->
+              RTC_MSECD_SS ([::] ++ k, e, V mv :: s) (k, e, V mv :: s) ->
+              RTC_MSECD_SS ([:: i] ++ [::] ++ k, e, s) (k, e, V mv :: s).
+      by apply: (AppendSS [:: i] [::] k e e e s (V mv :: s) (V mv :: s)).
+    rewrite /= in H1.
+    move/H1 in H.
+    have H2 i' k1 k2 e1 e2 s1 s2 :
+      RTC_MSECD_SS (i' :: k1, e1, s1) (k2, e2, s2) ->
+      MSECD_SS (i' :: k1, e1, s1) (k2, e2, s2) by admit.
+    apply/H2.
+    apply: H.
+    by apply: RTC_MSECD_SS_Reflexivity.
+  Admitted.
   
   Lemma EnvValSS o e :
     (* Compiler_SS (dVar i) [:: iAcc i] *)
@@ -1356,6 +1370,6 @@ End Compiler.
    
    パーサを作る。
    
-   クロージャーをCoqのライブラリを使用する。
+   RTC_MSECD_SSのクロージャーをCoqのライブラリを使用する。
  *)
 
