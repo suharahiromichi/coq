@@ -516,7 +516,7 @@ Section MiniMLdB.
       dB_translation_NS p (eApp e1 e2) (dApp d1 d2).
 
   (* g から変数だけ取り出す。 *)
-  Fixpoint mkctx (g : MML_env) : ctx := [seq fst xv | xv <- g].
+  Definition mkctx (g : MML_env) : ctx := [seq fst xv | xv <- g].
   Compute mkctx [:: (X, VNat 1); (Y, VNat 2); (Z, VNat 3)].
   (* ==> [:: X; Y; Z] *)
 
@@ -711,8 +711,23 @@ Section MiniMLdB.
     (* Let *)
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o He d H.
       inversion H; subst.
-      admit.
-
+      (* 定義部は、普通に評価する。その結果がv1' *)
+      case: (IH1 o He d1 H7) => v1' [H11 H12].
+      (* 本体は、(x,v1)を追加して評価する。その結果がv2' *)
+      have He2 : dB_translation_NS_env ((x, v1) :: g') (v1' :: o).
+      * apply: dB_translation_NS_env_cons.
+        ** by apply: H11.
+        ** by apply: He.
+      have H82 : dB_translation_NS (mkctx ((x, v1) :: g')) e2 d2 by apply: H8.
+      (* (mkctx ((x, v1) :: g') = x :: mkctx g') は、simpl で証明できる。 *)
+      case: (IH2 (v1' :: o) He2 d2 H82) => v2' [H21 H22].
+      exists v2'.
+      split.
+      * by apply: H21.
+      * apply: (MML_dB_NS_Let o d1 d2 v1' v2').
+        ** by apply: H12.                   (* 定義部 *)
+        ** by apply: H22.                   (* 本体 *)
+           
     (* If true *)
     - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2 o He d H.
       (* v2 は then 節 *)
