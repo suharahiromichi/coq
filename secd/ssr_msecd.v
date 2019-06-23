@@ -629,181 +629,6 @@ Section MiniMLdB.
             (dNat 5)) : option MML_dB_exp
    *)
 
-  
-  Theorem dB_translation_NS_correctness' g e v :
-    MML_NS g e v ->
-    forall o, dB_translation_NS_env g o ->
-              forall d, dB_translation_NS (mkctx g) e d ->
-                        forall vd, dB_translation_NS_val v vd ->
-                                   MML_dB_NS o d vd.
-  Proof.
-    elim.
-    - move=> g' n o He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-        by apply: MML_dB_NS_Nat.
-    - move=> g' n o He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-        by apply: MML_dB_NS_Bool.
-    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-      apply: MML_dB_NS_Plus.
-      + apply: IH1 => //.
-        by apply: dB_translation_NS_val_Nat.
-      + apply: IH2 => //.
-        by apply: dB_translation_NS_val_Nat.
-    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-      apply: MML_dB_NS_Minus.
-      + apply: IH1 => //.
-        by apply: dB_translation_NS_val_Nat.
-      + apply: IH2 => //.
-        by apply: dB_translation_NS_val_Nat.
-    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-      apply: MML_dB_NS_Times.
-      + apply: IH1 => //.
-        by apply: dB_translation_NS_val_Nat.
-      + apply: IH2 => //.
-        by apply: dB_translation_NS_val_Nat.
-    - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-        by inversion H.
-    - move=> g' x o He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-      + have test1 i : olookup i o = vNat n by admit.
-        rewrite -(test1 (index x (mkctx g'))).
-          by apply: MML_dB_NS_Var.
-      + have test1 i : olookup i o = vBool b by admit.
-        rewrite -(test1 (index x (mkctx g'))).
-        (* MML_dB_NS o (dVar (index x (mkctx g'))) (olookup (index x (mkctx g')) o) *)
-          by apply: MML_dB_NS_Var.
-      + have test1 i : olookup i o = vClos d o0 by admit.
-        rewrite -(test1 (index x (mkctx g'))).
-          by apply: MML_dB_NS_Var.
-      + have test1 i : olookup i o = vClosRec d o0 by admit.
-        rewrite -(test1 (index x (mkctx g'))).
-          by apply: MML_dB_NS_Var.
-          
-      (* 
-  He : dB_translation_NS_env g' o
-  H : dB_translation_NS (mkctx g') (eVar x) d
-  Hv : dB_translation_NS_val (lookup x g') vd
-  ============================
-  MML_dB_NS o d vd
-       *)
-
-      (* 
-  He : dB_translation_NS_env g' o
-  H : dB_translation_NS (mkctx g') (eVar x) (dVar (index x (mkctx g')))
-  Hv : dB_translation_NS_val (lookup x g') vd
-  ============================
-  MML_dB_NS o (dVar (index x (mkctx g'))) vd
-       *)
-
-    (* Let *)
-    - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o' He d H.
-      inversion H; subst=> vd Hv.
-      apply: MML_dB_NS_Let.
-      (* Let の代入部 *)
-      + apply: IH1.
-        * done.
-        * done.
-        * admit.
-      (* Let の本体部 *)          
-      + apply: IH2.
-        * admit.
-        * admit.
-        * done.
-
-    (* If true *)
-    - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2 o' He d H.
-      (* v2 は then 節 *)
-      inversion H; subst=> vd Hv.
-      apply: MML_dB_NS_Iftrue.
-      + apply: IH1.
-        * by apply: He.
-        * by apply: H6.
-        * by apply: dB_translation_NS_val_Bool.
-      + apply: IH2.
-        * by apply: He.
-        * by apply: H8.
-        * by apply: Hv.
-          
-    (* If false *)
-    - move=> g' e1 e2 e3 v3 H1 IH1 H3 IH3 o' He d H.
-      (* v3 は else 節 *)
-      inversion H; subst=> vd Hv.
-      Check MML_dB_NS_Iffalse.
-      apply: MML_dB_NS_Iffalse.
-      + apply: IH1.
-        * done.
-        * done.
-        * by apply: dB_translation_NS_val_Bool.
-      + apply: IH3.
-        * done.
-        * done.
-        * done.
-          
-    (* eLam *)
-    - move=> g' x e' o' He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-      Check MML_dB_NS_Lam.
-      inversion Hv; subst.
-      Check MML_dB_NS_Lam o' d.
-      admit.
-      
-    (* eMuLam *)
-    - move=> g' f x e' o' He d H.
-      inversion H; subst=> vd Hv.
-      inversion Hv; subst.
-      Check MML_dB_NS_MuLam o' d.
-      admit.
-
-    (* eApp *)
-    - move=> g1 g2 x e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 o He d H.
-      inversion H; subst=> vd Hv.
-      apply: MML_dB_NS_App.
-      (* 関数部 *)
-      + apply: IH1.
-        * done.
-        * done.
-        * eapply db_translation_NS_val_Clos.
-          ** admit.
-          ** admit.
-      (* 引数部 *)
-      + apply: IH3.
-        * admit.
-        * admit.
-        * by apply: Hv.
-        * admit.
-          
-    (* eApp *)      
-    - move=> g1 g2 x1 x2 e1 e2 e3 v1 v2 H1 IH1 H2 IH2 H3 IH3 g' He d H.
-      inversion H; subst=> vd Hv.
-      apply: IH3.
-      + rewrite (_ : e3 = eApp e1 e2).
-        * admit.
-        * admit.
-        * admit.
-      + by apply: Hv.
-      
-      (*
-
-      Check dB_translation_NS_val_Nat.
-
-
-      (* いつか使う！ *)
-      move/dB_translation_NS_env_cons in Hv.
-       *)
-
-      Admitted.
-
   Theorem dB_translation_NS_correctness g e v :
     MML_NS g e v ->
     forall o, dB_translation_NS_env g o ->
@@ -876,13 +701,16 @@ Section MiniMLdB.
     (* Var *)
     - move=> g' x o He d H.
       inversion H; subst.
-      inversion He; subst.
-      * admit.
-      * admit.
+      Check (olookup (index x (mkctx g')) o).
+      exists (olookup (index x (mkctx g')) o).
+      split.
+      *  (* dB_translation_NS_val (lookup x g') (olookup (index x (mkctx g')) o) *)
+        admit.
+      * by apply: MML_dB_NS_Var.
 
     (* Let *)
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o He d H.
-      inversion H.
+      inversion H; subst.
       admit.
 
     (* If true *)
@@ -1088,6 +916,12 @@ Section Compiler.
   Proof.
   Admitted.                                 (* XXXX *)
 
+  Lemma OneSS c k e mv s :
+    RTC_MSECD_SS (c ++ k, e, s) (k, e, V mv :: s) ->
+    MSECD_SS (c ++ k, e, s) (k, e, V mv :: s).
+  Proof.
+  Admitted.                                 (* XXXX *)
+(*
   Lemma OneSS i k e s mv :
     RTC_MSECD_SS (i :: k, e, s) (k, e, V mv :: s) ->
     MSECD_SS (i :: k, e, s) (k, e, V mv :: s).
@@ -1107,6 +941,7 @@ Section Compiler.
     apply: H.
     by apply: RTC_MSECD_SS_Reflexivity.
   Admitted.
+*)
   
   Lemma EnvValSS o e :
     (* Compiler_SS (dVar i) [:: iAcc i] *)
