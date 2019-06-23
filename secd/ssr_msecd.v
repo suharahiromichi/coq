@@ -915,10 +915,10 @@ Section Modern_SECD.
                (          c1,       d,                      V(v) :: s)
   | MSECD_SS_Clos (c c1 : MSECD_Code) (d : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iClos c1 :: c,      d,                              s)
-               (           c,       d,              V(mClos c d) :: s)
+               (           c,       d,             V(mClos c1 d) :: s)
   | MSECD_SS_ClosRec (c c1 : MSECD_Code) (d : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iClosRec c1 :: c,   d,                              s)
-               (           c,       d,           V(mClosRec c d) :: s)
+               (           c,       d,          V(mClosRec c1 d) :: s)
   | MSECD_SS_App (v : MSECD_Val) (c c1 : MSECD_Code) (d d1 : MSECD_Env)(s : MSECD_Stack) :
       MSECD_SS (   iApp :: c,       d,    V(v) :: V(mClos c1 d1) :: s)
                (          c1, v :: d1,                   S(c, d) :: s)
@@ -1196,7 +1196,7 @@ Section Compiler.
     - move=> o' d' c H.
       inversion H; subst=> e He mv Hv s k.
       apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(mClos k e) :: s) _).
-      + by apply: MSECD_SS_Clos.
+      + admit.
       + rewrite (_ :mv =  mClos k e).
         * by apply: RTC_MSECD_SS_Reflexivity.
         * admit.                            (* mv = mClos k e *)
@@ -1204,7 +1204,7 @@ Section Compiler.
     - move=> o' d' c H.
       inversion H; subst=> e He mv Hv s k.
       apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(mClosRec k e) :: s) _).
-      + by apply: MSECD_SS_ClosRec.
+      + admit.
       + rewrite (_ :mv =  mClosRec k e).
         * by apply: RTC_MSECD_SS_Reflexivity.
         * admit.                            (* mv = mClosRec k e *)
@@ -1443,11 +1443,11 @@ Section Compiler.
       split.
       + by inversion H1; subst; apply: Compiler_SS_val_Clos => //.
       + move=> s k.
-        apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mClos k e) :: s) _). (* ???? *)
-        ** by apply: MSECD_SS_Clos.
-        ** have -> : k = c0 ++ [:: iRet] by admit. (* XXXXX *)
-           by apply: RTC_MSECD_SS_Reflexivity.
-
+        apply: (RTC_MSECD_SS_Transitivity
+                  _ (k, e, V (mClos (c0 ++ [:: iRet]) e) :: s) _).
+        ** by apply MSECD_SS_Clos.
+        ** by apply: RTC_MSECD_SS_Reflexivity.
+           
     (* ClosRec *)
     - move=> o' d' c H.
       inversion H; subst=> e He.
@@ -1455,11 +1455,11 @@ Section Compiler.
       split.
       + by inversion H1; subst; apply: Compiler_SS_val_ClosRec => //.
       + move=> s k.
-        apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mClosRec k e) :: s) _). (* ???? *)
+        apply: (RTC_MSECD_SS_Transitivity
+                  _ (k, e, V (mClosRec (c0 ++ [:: iRet]) e) :: s) _).
         ** by apply: MSECD_SS_ClosRec.
-        ** have -> : k = c0 ++ [:: iRet] by admit. (* XXXXX *)
-             by apply: RTC_MSECD_SS_Reflexivity.
-
+        ** by apply: RTC_MSECD_SS_Reflexivity.
+           
     (* App *)
     - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
       inversion H; subst=> e He.
