@@ -1356,8 +1356,16 @@ Section Compiler.
              *** by apply: MSECD_SS_Eq.
              *** by apply: RTC_MSECD_SS_Reflexivity.                 
                  
-    - admit.                                (* var *)
-      
+    - move=> o' i c H.
+      inversion H; subst=> e He.
+      exists (dlookup i e).
+      split.
+      + admit.      (* Compiler_SS_val (olookup i o') (dlookup i e) *)
+      + move=> s k.
+        apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(dlookup i e) :: s) _).
+        * by apply: MSECD_SS_Acc.
+        * by apply: RTC_MSECD_SS_Reflexivity. 
+          
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
@@ -1377,8 +1385,58 @@ Section Compiler.
             eapply AppendSS.
             ** by apply: H2' => //.
             ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
-               *** by apply: MSECD_SS_EndLet.
-               *** by apply: RTC_MSECD_SS_Reflexivity.
+              *** by apply: MSECD_SS_EndLet.
+              *** by apply: RTC_MSECD_SS_Reflexivity.
+      
+      - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
+        inversion H; subst => e He.
+        case: (IH1 c1 H5 e He) => mv1 [Hc1 H1'].
+        inversion Hc1; subst.               (* mv1 を mBool にする。 *)
+        case: (IH2 c2 H7 e He) => mv2 [Hc2 H2'].
+        (* mv2 はそのまま *)
+        exists mv2.
+        split.
+        + done.
+        + move=> s k.
+          rewrite -catA.
+          eapply AppendSS.
+          (* If 節 *)
+          + by apply: H1'.
+          (* Then 節 *)
+          + apply: (RTC_MSECD_SS_Transitivity _ _ _).
+            * by apply: MSECD_SS_Seltrue.
+            * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+              ** apply: OneSS.              (* XXXX *)
+                   by apply: H2'.
+              ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                 *** by apply: MSECD_SS_Join.
+                 *** by apply: RTC_MSECD_SS_Reflexivity.
+               
+      - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
+        inversion H; subst => e He.
+        case: (IH1 c1 H5 e He) => mv1 [Hc1 H1'].
+        inversion Hc1; subst.               (* mv1 を mBool にする。 *)
+        case: (IH3 c3 H8 e He) => mv3 [Hc3 H3'].
+        (* mv3 はそのまま *)
+        exists mv3.
+        split.
+        + done.
+        + move=> s k.
+          rewrite -catA.
+          eapply AppendSS.
+          (* If 節 *)
+          + by apply: H1'.
+          (* Else 節 *)
+          + apply: (RTC_MSECD_SS_Transitivity _ _ _).
+            * by apply: MSECD_SS_Selfalse.
+            * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+              ** apply: OneSS.              (* XXXX *)
+                   by apply: H3'.
+              ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                 *** by apply: MSECD_SS_Join.
+                 *** by apply: RTC_MSECD_SS_Reflexivity.
+               
+
   Admitted.
   
 
