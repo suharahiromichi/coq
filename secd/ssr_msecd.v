@@ -927,7 +927,7 @@ Section Modern_SECD.
                (          c1,
             v :: mClosRec c1 d1 :: d1,                   S(c, d) :: s)
   | MSECD_SS_Ret (v : MSECD_Val)(c c1 : MSECD_Code)(d d1 : MSECD_Env)(s :MSECD_Stack) :
-      MSECD_SS (   iApp :: c,       d,         V(v) :: S(c1, d1) :: s)
+      MSECD_SS (   iRet :: c,       d,         V(v) :: S(c1, d1) :: s)
                (          c1,      d1,                      V(v) :: s).
                
   Inductive RTC_MSECD_SS : conf -> conf -> Prop :=
@@ -1425,17 +1425,18 @@ Section Compiler.
           rewrite -catA.
           eapply AppendSS.
           (* If 節 *)
-          + by apply: H1'.
+          * by apply: H1'.
           (* Else 節 *)
-          + apply: (RTC_MSECD_SS_Transitivity _ _ _).
-            * by apply: MSECD_SS_Selfalse.
-            * apply: (RTC_MSECD_SS_Transitivity _ _ _).
-              ** apply: OneSS.              (* XXXX *)
+          * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+            ** by apply: MSECD_SS_Selfalse.
+            ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+               *** apply: OneSS.              (* XXXX *)
                    by apply: H3'.
-              ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
-                 *** by apply: MSECD_SS_Join.
-                 *** by apply: RTC_MSECD_SS_Reflexivity.
+               *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                   **** by apply: MSECD_SS_Join.
+                   **** by apply: RTC_MSECD_SS_Reflexivity.
                
+    (* Clos *)
     - move=> o' d' c H.
       inversion H; subst=> e He.
       exists (mClos (c0 ++ [:: iRet]) e).
@@ -1447,6 +1448,7 @@ Section Compiler.
         ** have -> : k = c0 ++ [:: iRet] by admit. (* XXXXX *)
            by apply: RTC_MSECD_SS_Reflexivity.
 
+    (* ClosRec *)
     - move=> o' d' c H.
       inversion H; subst=> e He.
       exists (mClosRec (c0 ++ [:: iRet]) e).
@@ -1457,6 +1459,38 @@ Section Compiler.
         ** by apply: MSECD_SS_ClosRec.
         ** have -> : k = c0 ++ [:: iRet] by admit. (* XXXXX *)
              by apply: RTC_MSECD_SS_Reflexivity.
+
+    (* App *)
+    - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
+      inversion H; subst=> e He.
+      case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
+      inversion Hc1; subst.
+      case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'].
+      have He' : Compiler_SS_env (m :: o1) (mv2 :: e0)
+        by apply: Compiler_SS_env_cons.
+      case: (IH' c H5 (mv2 :: e0) He') => mv' [Hc' H''].
+      exists mv'.
+      move=> {H1} {H2} {IH1} {IH2}.
+      split.
+      + by apply: Hc'.
+      + move=> s k.
+        rewrite -catA.
+        eapply AppendSS.
+        (* 関数部 *)
+        * by apply: H1'.
+        (* 引数部 *)
+        * rewrite -catA.
+          eapply AppendSS.
+          ** by apply: H2'.
+          ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+             *** by apply: MSECD_SS_App.
+             *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                 (* 全体 *)
+                 **** apply OneSS.
+                        by apply: H''.
+                 **** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                      ***** by apply: MSECD_SS_Ret.
+                      ***** by apply: RTC_MSECD_SS_Reflexivity.
 
   Admitted.
   
