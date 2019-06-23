@@ -1276,8 +1276,12 @@ Section Compiler.
           
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       inversion H; subst=> e He.
+      
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
+      inversion Hc1; subst.               (* mv1 を mNat m にする。 *)
       case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'].
+      inversion Hc2; subst.               (* mv2 を mNat n にする。 *)
+      
       exists (mNat (m + n)).
       split.
       + by apply: Compiler_SS_val_Nat.
@@ -1289,16 +1293,69 @@ Section Compiler.
           eapply AppendSS.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m + n)) :: s) _).
-             *** rewrite (_ : mv1 = mNat m).
-                 rewrite (_ : mv2 = mNat n).
-                 by apply: MSECD_SS_Add.
-                 **** admit.
-                 **** admit.
+             *** by apply: MSECD_SS_Add.
              *** by apply: RTC_MSECD_SS_Reflexivity.
 
-    - admit.                                (* sub *)
-    - admit.                                (* mul *)
-    - admit.                                (* eq *)
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst=> e He.
+      case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
+      inversion Hc1; subst.
+      case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'].
+      inversion Hc2; subst.
+      exists (mNat (m - n)).
+      split.
+      + by apply: Compiler_SS_val_Nat.
+      + move=> s k.
+        rewrite -catA.
+        eapply AppendSS.
+        * by apply: H1'.
+        * rewrite -catA.
+          eapply AppendSS.
+          ** by apply: H2'.
+          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m - n)) :: s) _).
+             *** by apply: MSECD_SS_Sub.
+             *** by apply: RTC_MSECD_SS_Reflexivity.
+                 
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst=> e He.
+      case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
+      inversion Hc1; subst.
+      case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'].
+      inversion Hc2; subst.
+      exists (mNat (m * n)).
+      split.
+      + by apply: Compiler_SS_val_Nat.
+      + move=> s k.
+        rewrite -catA.
+        eapply AppendSS.
+        * by apply: H1'.
+        * rewrite -catA.
+          eapply AppendSS.
+          ** by apply: H2'.
+          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m * n)) :: s) _).
+             *** by apply: MSECD_SS_Mul.
+             *** by apply: RTC_MSECD_SS_Reflexivity.                 
+                 
+    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+      inversion H; subst=> e He.
+      case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
+      inversion Hc1; subst.
+      case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'].
+      inversion Hc2; subst.
+      exists (mBool (m == n)).
+      split.
+      + by apply: Compiler_SS_val_Bool.
+      + move=> s k.
+        rewrite -catA.
+        eapply AppendSS.
+        * by apply: H1'.
+        * rewrite -catA.
+          eapply AppendSS.
+          ** by apply: H2'.
+          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mBool (m == n)) :: s) _).
+             *** by apply: MSECD_SS_Eq.
+             *** by apply: RTC_MSECD_SS_Reflexivity.                 
+                 
     - admit.                                (* var *)
       
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
