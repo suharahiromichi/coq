@@ -950,7 +950,7 @@ Section Compiler.
       Compiler_SS d1 c1 ->
       Compiler_SS d2 c2 ->
       Compiler_SS (dMinus d1 d2) (c1 ++ c2 ++ [:: iSub])
-  | Compiler_SS_TImes d1 d2 c1 c2 :
+  | Compiler_SS_Times d1 d2 c1 c2 :
       Compiler_SS d1 c1 ->
       Compiler_SS d2 c2 ->
       Compiler_SS (dTimes d1 d2) (c1 ++ c2 ++ [:: iMul])
@@ -985,11 +985,11 @@ Section Compiler.
   | Compiler_SS_val_Clos d o c e :
       Compiler_SS d c ->
       Compiler_SS_env o e ->
-      Compiler_SS_val (vClos d o) (mClos c e)
+      Compiler_SS_val (vClos d o) (mClos (c ++ [:: iRet]) e)
   | Compiler_SS_val_ClosRec d o c e :
       Compiler_SS d c ->
       Compiler_SS_env o e ->
-      Compiler_SS_val (vClosRec d o) (mClosRec c e)
+      Compiler_SS_val (vClosRec d o) (mClosRec (c ++ [:: iRet]) e)
   with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
        | Compiler_SS_env_nil : Compiler_SS_env [::] [::]
        | Compiler_SS_env_cons v o m e :
@@ -1244,7 +1244,7 @@ Section Compiler.
   Admitted.
 
 
-    Theorem CorrectnessSS o d v :
+  Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
               forall d, Compiler_SS_env o d ->
@@ -1436,6 +1436,27 @@ Section Compiler.
                  *** by apply: MSECD_SS_Join.
                  *** by apply: RTC_MSECD_SS_Reflexivity.
                
+    - move=> o' d' c H.
+      inversion H; subst=> e He.
+      exists (mClos (c0 ++ [:: iRet]) e).
+      split.
+      + by inversion H1; subst; apply: Compiler_SS_val_Clos => //.
+      + move=> s k.
+        apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mClos k e) :: s) _). (* ???? *)
+        ** by apply: MSECD_SS_Clos.
+        ** have -> : k = c0 ++ [:: iRet] by admit. (* XXXXX *)
+           by apply: RTC_MSECD_SS_Reflexivity.
+
+    - move=> o' d' c H.
+      inversion H; subst=> e He.
+      exists (mClosRec (c0 ++ [:: iRet]) e).
+      split.
+      + by inversion H1; subst; apply: Compiler_SS_val_ClosRec => //.
+      + move=> s k.
+        apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mClosRec k e) :: s) _). (* ???? *)
+        ** by apply: MSECD_SS_ClosRec.
+        ** have -> : k = c0 ++ [:: iRet] by admit. (* XXXXX *)
+             by apply: RTC_MSECD_SS_Reflexivity.
 
   Admitted.
   
