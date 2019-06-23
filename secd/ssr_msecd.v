@@ -4,6 +4,8 @@ From mathcomp Require Import all_ssreflect.
    Verified Using Natural Semantics in Coq *)
 (** Angel Zuniga and Gemma Bel-Enguix *)
 
+(** but, proof was written independently by @suharahiromichi *)
+
 (** MiniML *)
 
 Section MiniML.
@@ -994,6 +996,7 @@ Section Compiler.
        | Compiler_SS_env_nil : Compiler_SS_env [::] [::]
        | Compiler_SS_env_cons v o m e :
            Compiler_SS_val v m ->
+           Compiler_SS_env o e ->
            Compiler_SS_env (v :: o) (m :: e).
   
   Lemma AppendSS c1 c2 c3 d1 d2 d3 s1 s2 s3 :
@@ -1009,7 +1012,43 @@ Section Compiler.
   Proof.
   Admitted.                                 (* XXXX *)
   
+  Lemma EnvValSS o e :
+    (* Compiler_SS (dVar i) [:: iAcc i] *)
+    Compiler_SS_env o e ->
+    forall i, Compiler_SS_val (olookup i o) (dlookup i e).
+  Proof.
+    rewrite /olookup /dlookup.
+    move=> H.
+    inversion H; subst.
+    (* 環境が nil の場合 *)
+    - move=> i.
+      rewrite 2!nth_nil.
+        by apply: Compiler_SS_val_Bool.
+    (* 環境が nil ではない場合 *)
+    - elim => [| i' Hi] /=.
+      * by apply: H0.
+      * admit.
+        
+  Lemma EnvValSS o e :
+    (* Compiler_SS (dVar i) [:: iAcc i] *)
+    Compiler_SS_env o e ->
+    forall i, Compiler_SS_val (olookup i o) (dlookup i e).
+  Proof.
+    rewrite /olookup /dlookup.
+    move=> H.
+    inversion H; subst.
+    (* 環境が nil の場合 *)
+    - move=> i.
+      rewrite 2!nth_nil.
+        by apply: Compiler_SS_val_Bool.
+    (* 環境が nil ではない場合 *)
+    - elim => [| i' Hi] /=.
+      * by apply: H0.
+      * 
+
+  Admitted.
   
+
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
@@ -1126,7 +1165,7 @@ Section Compiler.
       inversion H; subst=> e He.
       exists (dlookup i e).
       split.
-      + admit.      (* Compiler_SS_val (olookup i o') (dlookup i e) *)
+      + by apply: EnvValSS.                 (* XXXXX *)
       + move=> s k.
         apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(dlookup i e) :: s) _).
         * by apply: MSECD_SS_Acc.
@@ -1252,7 +1291,7 @@ Section Compiler.
              *** by apply: MSECD_SS_App.
              *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
                  (* 全体 *)
-                 **** apply OneSS.
+                 **** apply OneSS.          (* XXXX *)
                         by apply: H''.
                  **** apply: (RTC_MSECD_SS_Transitivity _ _ _).
                       ***** by apply: MSECD_SS_Ret.
@@ -1286,7 +1325,7 @@ Section Compiler.
              *** by apply: MSECD_SS_AppRec.
              *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
                  (* 全体 *)
-                 **** apply OneSS.
+                 **** apply OneSS.          (* XXXX *)
                         by apply: H''.
                  **** apply: (RTC_MSECD_SS_Transitivity _ _ _).
                       ***** by apply: MSECD_SS_Ret.
