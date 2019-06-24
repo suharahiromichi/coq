@@ -969,39 +969,17 @@ Section Compiler.
            Compiler_SS_env o e ->
            Compiler_SS_env (v :: o) (m :: e).
   
+  (* RTC_MSECD_SS_Trans を直接つかえばよい。  *)
   Lemma AppendSS c1 c2 c3 d1 d2 d3 s1 s2 s3 :
       RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c2 ++ c3, d2, s2) -> (* c1 を実行前後 *)
       RTC_MSECD_SS (      c2 ++ c3, d2, s2) (      c3, d3, s3) -> (* c2 を実行前後 *)
       RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (      c3, d3, s3). (* c1とc2 を実行前後 *)
   Proof.
-  Admitted.                                 (* XXXX *)
-
-  Lemma OneSS c k e mv s :
-    RTC_MSECD_SS (c ++ k, e, s) (k, e, V mv :: s) ->
-    MSECD_SS (c ++ k, e, s) (k, e, V mv :: s).
-  Proof.
-  Admitted.                                 (* XXXX *)
-(*
-  Lemma OneSS i k e s mv :
-    RTC_MSECD_SS (i :: k, e, s) (k, e, V mv :: s) ->
-    MSECD_SS (i :: k, e, s) (k, e, V mv :: s).
-  Proof.
-    move=> H.
-    Check AppendSS [:: i] [::] k e e e s (V mv :: s) (V mv :: s).
-    have H1 : RTC_MSECD_SS ([:: i] ++ [::] ++ k, e, s) ([::] ++ k, e, V mv :: s) ->
-              RTC_MSECD_SS ([::] ++ k, e, V mv :: s) (k, e, V mv :: s) ->
-              RTC_MSECD_SS ([:: i] ++ [::] ++ k, e, s) (k, e, V mv :: s).
-      by apply: (AppendSS [:: i] [::] k e e e s (V mv :: s) (V mv :: s)).
-    rewrite /= in H1.
-    move/H1 in H.
-    have H2 i' k1 k2 e1 e2 s1 s2 :
-      RTC_MSECD_SS (i' :: k1, e1, s1) (k2, e2, s2) ->
-      MSECD_SS (i' :: k1, e1, s1) (k2, e2, s2) by admit.
-    apply/H2.
-    apply: H.
-    by apply: RTC_MSECD_SS_Reflexivity.
-  Admitted.
-*)
+    move=> H1 H2.
+    apply: RTC_MSECD_SS_Trans.
+    - by apply: H1.
+    - by apply: H2.
+  Qed.
   
   Lemma EnvValSS o e :
     (* Compiler_SS (dVar i) [:: iAcc i] *)
@@ -1068,10 +1046,10 @@ Section Compiler.
       + by apply: Compiler_SS_val_Nat.
       + move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         * by apply: H1'.
         * rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mNat (m + n)) :: s) _).
              *** by apply: MSECD_SS_Add.
@@ -1089,10 +1067,10 @@ Section Compiler.
       + by apply: Compiler_SS_val_Nat.
       + move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         * by apply: H1'.
         * rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mNat (m - n)) :: s) _).
              *** by apply: MSECD_SS_Sub.
@@ -1110,10 +1088,10 @@ Section Compiler.
       + by apply: Compiler_SS_val_Nat.
       + move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         * by apply: H1'.
         * rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mNat (m * n)) :: s) _).
              *** by apply: MSECD_SS_Mul.
@@ -1131,10 +1109,10 @@ Section Compiler.
       + by apply: Compiler_SS_val_Bool.
       + move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         * by apply: H1'.
         * rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mBool (m == n)) :: s) _).
              *** by apply: MSECD_SS_Eq.
@@ -1163,12 +1141,12 @@ Section Compiler.
       - done.
       - move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         + by apply: H1' => //.
         + apply: (RTC_MSECD_SS_Step _ _ _).
           * by apply: MSECD_SS_Let.
           * rewrite -/cat -catA.            (* fold cat *)
-            eapply AppendSS.
+            eapply RTC_MSECD_SS_Trans.
             ** by apply: H2' => //.
             ** apply: (RTC_MSECD_SS_Step _ _ _).
               *** by apply: MSECD_SS_EndLet.
@@ -1186,19 +1164,18 @@ Section Compiler.
         + done.
         + move=> s k.
           rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           (* If 節 *)
           + by apply: H1'.
           (* Then 節 *)
           + apply: (RTC_MSECD_SS_Step _ _ _).
             * by apply: MSECD_SS_Seltrue.
-            * apply: (RTC_MSECD_SS_Step _ _ _).
-              ** apply: OneSS.              (* XXXX *)
-                   by apply: H2'.
+            * apply: RTC_MSECD_SS_Trans.
+              ** by apply: H2'.
               ** apply: (RTC_MSECD_SS_Step _ _ _).
                  *** by apply: MSECD_SS_Join.
                  *** by apply: RTC_MSECD_SS_Refl.
-               
+                     
       (* IF-ELSE *)
       - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
         inversion H; subst => e He.
@@ -1211,15 +1188,14 @@ Section Compiler.
         + done.
         + move=> s k.
           rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           (* If 節 *)
           * by apply: H1'.
           (* Else 節 *)
           * apply: (RTC_MSECD_SS_Step _ _ _).
             ** by apply: MSECD_SS_Selfalse.
-            ** apply: (RTC_MSECD_SS_Step _ _ _).
-               *** apply: OneSS.              (* XXXX *)
-                   by apply: H3'.
+            ** apply: RTC_MSECD_SS_Trans.
+               *** by apply: H3'.
                *** apply: (RTC_MSECD_SS_Step _ _ _).
                    **** by apply: MSECD_SS_Join.
                    **** by apply: RTC_MSECD_SS_Refl.
@@ -1263,19 +1239,18 @@ Section Compiler.
       + by apply: Hc'.
       + move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         (* 関数部 *)
         * by apply: H1'.
         (* 引数部 *)
         * rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Step _ _ _).
              *** by apply: MSECD_SS_App.
-             *** apply: (RTC_MSECD_SS_Step _ _ _).
+             *** apply: RTC_MSECD_SS_Trans.
                  (* 全体 *)
-                 **** apply OneSS.          (* XXXX *)
-                        by apply: H''.
+                 **** by apply: H''.
                  **** apply: (RTC_MSECD_SS_Step _ _ _).
                       ***** by apply: MSECD_SS_Ret.
                       ***** by apply: RTC_MSECD_SS_Refl.
@@ -1302,19 +1277,18 @@ Section Compiler.
       + by apply: Hc'.
       + move=> s k.
         rewrite -catA.
-        eapply AppendSS.
+        eapply RTC_MSECD_SS_Trans.
         (* 関数部 *)
         * by apply: H1'.
         (* 引数部 *)
         * rewrite -catA.
-          eapply AppendSS.
+          eapply RTC_MSECD_SS_Trans.
           ** by apply: H2'.
           ** apply: (RTC_MSECD_SS_Step _ _ _).
              *** by apply: MSECD_SS_AppRec.
-             *** apply: (RTC_MSECD_SS_Step _ _ _).
+             *** apply: RTC_MSECD_SS_Trans.
                  (* 全体 *)
-                 **** apply OneSS.          (* XXXX *)
-                        by apply: H''.
+                 **** by apply: H''.
                  **** apply: (RTC_MSECD_SS_Step _ _ _).
                       ***** by apply: MSECD_SS_Ret.
                       ***** by apply: RTC_MSECD_SS_Refl.
