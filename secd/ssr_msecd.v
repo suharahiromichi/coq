@@ -704,7 +704,7 @@ Section MiniMLdB.
       Check (olookup (index x (mkctx g')) o).
       exists (olookup (index x (mkctx g')) o).
       split.
-      *  (* dB_translation_NS_val (lookup x g') (olookup (index x (mkctx g')) o) *)
+      * (* dB_translation_NS_val (lookup x g') (olookup (index x (mkctx g')) o) *)
         admit.
       * by apply: MML_dB_NS_Var.
 
@@ -856,11 +856,56 @@ Section Modern_SECD.
   | MSECD_SS_Ret (v : MSECD_Val)(c c1 : MSECD_Code)(d d1 : MSECD_Env)(s :MSECD_Stack) :
       MSECD_SS (   iRet :: c,       d,         V(v) :: S(c1, d1) :: s)
                (          c1,      d1,                      V(v) :: s).
-               
+  (*           
   Inductive RTC_MSECD_SS : conf -> conf -> Prop :=
   | RTC_MSECD_SS_Reflexivity (cf : conf) : RTC_MSECD_SS cf cf
   | RTC_MSECD_SS_Transitivity (cf1 cf2 cf3 : conf) :
       MSECD_SS cf1 cf2 -> RTC_MSECD_SS cf2 cf3 ->  RTC_MSECD_SS cf1 cf3.
+   *)
+  
+  Definition relation (X : Type) := X -> X -> Prop.  
+  
+  Inductive refl_step_closure {X : Type} (R : relation X)  : X -> X -> Prop :=
+  | rsc_refl  : forall (x : X), refl_step_closure R x x
+  | rsc_step : forall (x y z : X), R x y ->
+                                   refl_step_closure R y z ->
+                                   refl_step_closure R x z.
+  
+  Theorem rsc_R : forall {X : Type} (R : relation X) (x y : X),
+      R x y -> refl_step_closure R x y.
+  Proof.
+    intros X R x y r.
+    apply rsc_step with y.
+    apply r.
+    apply rsc_refl.
+  Qed.
+  
+  Theorem rsc_trans : forall {X : Type} (R : relation X) (x y z : X),
+      refl_step_closure R x y ->
+      refl_step_closure R y z ->
+      refl_step_closure R x z.
+  Proof.
+    intros X R x y z.
+    intros HRxy HRyz.
+    induction HRxy as [|z' x y].
+    - apply HRyz.
+    - apply (rsc_step R z' x z).
+      apply H0.
+      apply IHHRxy.
+      apply HRyz.
+  Qed.
+
+  Definition RTC_MSECD_SS := refl_step_closure MSECD_SS.
+  
+  (* RTC_MSECD_SS_Reflexivity *)
+  Definition RTC_MSECD_SS_Refl (cf : conf) := rsc_refl MSECD_SS cf.
+
+  (* RTC_MSECD_SS_Transitivity *)
+  Definition RTC_MSECD_SS_Step (cf1 cf2 cf3 : conf) :=
+    rsc_step MSECD_SS cf1 cf2 cf3.
+  
+  Definition RTC_MSECD_SS_Trans (cf1 cf2 cf3 : conf) :=
+    rsc_trans MSECD_SS cf1 cf2 cf3.
   
 End Modern_SECD.
 
@@ -992,11 +1037,11 @@ Section Compiler.
       split.
       + by apply: Compiler_SS_val_Nat.
       + inversion H; subst=> s k.
-        Check RTC_MSECD_SS_Transitivity ([:: iNat n] ++ k, d', s)
+        Check RTC_MSECD_SS_Step ([:: iNat n] ++ k, d', s)
               (k, d', V (mNat n) :: s) (k, d', V (mNat n) :: s).
-        apply: (RTC_MSECD_SS_Transitivity _ (k, d', V (mNat n) :: s) _).
+        apply: (RTC_MSECD_SS_Step _ (k, d', V (mNat n) :: s) _).
         * by apply: MSECD_SS_Nat.
-        * by apply: RTC_MSECD_SS_Reflexivity.
+        * by apply: RTC_MSECD_SS_Refl.
           
     (* Bool *)
     - move=> o' b c H d' He.
@@ -1004,10 +1049,10 @@ Section Compiler.
       split.
       + by apply: Compiler_SS_val_Bool.
       + move=> s k.
-        apply: (RTC_MSECD_SS_Transitivity _ (k, d', V (mBool b) :: s) _).
+        apply: (RTC_MSECD_SS_Step _ (k, d', V (mBool b) :: s) _).
         inversion H; subst.                 (* inv は後でもよい。 *)
         * by apply: MSECD_SS_Bool.
-        * by apply: RTC_MSECD_SS_Reflexivity.
+        * by apply: RTC_MSECD_SS_Refl.
           
     (* Plus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1028,9 +1073,9 @@ Section Compiler.
         * rewrite -catA.
           eapply AppendSS.
           ** by apply: H2'.
-          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m + n)) :: s) _).
+          ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mNat (m + n)) :: s) _).
              *** by apply: MSECD_SS_Add.
-             *** by apply: RTC_MSECD_SS_Reflexivity.
+             *** by apply: RTC_MSECD_SS_Refl.
 
     (* Minus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1049,9 +1094,9 @@ Section Compiler.
         * rewrite -catA.
           eapply AppendSS.
           ** by apply: H2'.
-          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m - n)) :: s) _).
+          ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mNat (m - n)) :: s) _).
              *** by apply: MSECD_SS_Sub.
-             *** by apply: RTC_MSECD_SS_Reflexivity.
+             *** by apply: RTC_MSECD_SS_Refl.
                  
     (* Times *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1070,9 +1115,9 @@ Section Compiler.
         * rewrite -catA.
           eapply AppendSS.
           ** by apply: H2'.
-          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mNat (m * n)) :: s) _).
+          ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mNat (m * n)) :: s) _).
              *** by apply: MSECD_SS_Mul.
-             *** by apply: RTC_MSECD_SS_Reflexivity.                 
+             *** by apply: RTC_MSECD_SS_Refl.                 
                  
     (* Eq *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1091,9 +1136,9 @@ Section Compiler.
         * rewrite -catA.
           eapply AppendSS.
           ** by apply: H2'.
-          ** apply: (RTC_MSECD_SS_Transitivity _ (k, e, V (mBool (m == n)) :: s) _).
+          ** apply: (RTC_MSECD_SS_Step _ (k, e, V (mBool (m == n)) :: s) _).
              *** by apply: MSECD_SS_Eq.
-             *** by apply: RTC_MSECD_SS_Reflexivity.                 
+             *** by apply: RTC_MSECD_SS_Refl.                 
                  
     (* Var *)
     - move=> o' i c H.
@@ -1102,9 +1147,9 @@ Section Compiler.
       split.
       + by apply: EnvValSS.                 (* XXXXX *)
       + move=> s k.
-        apply: (RTC_MSECD_SS_Transitivity _ (k, e, V(dlookup i e) :: s) _).
+        apply: (RTC_MSECD_SS_Step _ (k, e, V(dlookup i e) :: s) _).
         * by apply: MSECD_SS_Acc.
-        * by apply: RTC_MSECD_SS_Reflexivity. 
+        * by apply: RTC_MSECD_SS_Refl. 
           
     (* Let *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -1120,14 +1165,14 @@ Section Compiler.
         rewrite -catA.
         eapply AppendSS.
         + by apply: H1' => //.
-        + apply: (RTC_MSECD_SS_Transitivity _ _ _).
+        + apply: (RTC_MSECD_SS_Step _ _ _).
           * by apply: MSECD_SS_Let.
           * rewrite -/cat -catA.            (* fold cat *)
             eapply AppendSS.
             ** by apply: H2' => //.
-            ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+            ** apply: (RTC_MSECD_SS_Step _ _ _).
               *** by apply: MSECD_SS_EndLet.
-              *** by apply: RTC_MSECD_SS_Reflexivity.
+              *** by apply: RTC_MSECD_SS_Refl.
       
       (* IF-THEN *)
       - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
@@ -1145,14 +1190,14 @@ Section Compiler.
           (* If 節 *)
           + by apply: H1'.
           (* Then 節 *)
-          + apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          + apply: (RTC_MSECD_SS_Step _ _ _).
             * by apply: MSECD_SS_Seltrue.
-            * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+            * apply: (RTC_MSECD_SS_Step _ _ _).
               ** apply: OneSS.              (* XXXX *)
                    by apply: H2'.
-              ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+              ** apply: (RTC_MSECD_SS_Step _ _ _).
                  *** by apply: MSECD_SS_Join.
-                 *** by apply: RTC_MSECD_SS_Reflexivity.
+                 *** by apply: RTC_MSECD_SS_Refl.
                
       (* IF-ELSE *)
       - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
@@ -1170,14 +1215,14 @@ Section Compiler.
           (* If 節 *)
           * by apply: H1'.
           (* Else 節 *)
-          * apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          * apply: (RTC_MSECD_SS_Step _ _ _).
             ** by apply: MSECD_SS_Selfalse.
-            ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+            ** apply: (RTC_MSECD_SS_Step _ _ _).
                *** apply: OneSS.              (* XXXX *)
                    by apply: H3'.
-               *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+               *** apply: (RTC_MSECD_SS_Step _ _ _).
                    **** by apply: MSECD_SS_Join.
-                   **** by apply: RTC_MSECD_SS_Reflexivity.
+                   **** by apply: RTC_MSECD_SS_Refl.
                
     (* Clos *)
     - move=> o' d' c H.
@@ -1186,10 +1231,10 @@ Section Compiler.
       split.
       + by inversion H1; subst; apply: Compiler_SS_val_Clos => //.
       + move=> s k.
-        apply: (RTC_MSECD_SS_Transitivity
+        apply: (RTC_MSECD_SS_Step
                   _ (k, e, V (mClos (c0 ++ [:: iRet]) e) :: s) _).
         ** by apply MSECD_SS_Clos.
-        ** by apply: RTC_MSECD_SS_Reflexivity.
+        ** by apply: RTC_MSECD_SS_Refl.
            
     (* ClosRec *)
     - move=> o' d' c H.
@@ -1198,10 +1243,10 @@ Section Compiler.
       split.
       + by inversion H1; subst; apply: Compiler_SS_val_ClosRec => //.
       + move=> s k.
-        apply: (RTC_MSECD_SS_Transitivity
+        apply: (RTC_MSECD_SS_Step
                   _ (k, e, V (mClosRec (c0 ++ [:: iRet]) e) :: s) _).
         ** by apply: MSECD_SS_ClosRec.
-        ** by apply: RTC_MSECD_SS_Reflexivity.
+        ** by apply: RTC_MSECD_SS_Refl.
            
     (* App *)
     - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
@@ -1225,15 +1270,15 @@ Section Compiler.
         * rewrite -catA.
           eapply AppendSS.
           ** by apply: H2'.
-          ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          ** apply: (RTC_MSECD_SS_Step _ _ _).
              *** by apply: MSECD_SS_App.
-             *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+             *** apply: (RTC_MSECD_SS_Step _ _ _).
                  (* 全体 *)
                  **** apply OneSS.          (* XXXX *)
                         by apply: H''.
-                 **** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                 **** apply: (RTC_MSECD_SS_Step _ _ _).
                       ***** by apply: MSECD_SS_Ret.
-                      ***** by apply: RTC_MSECD_SS_Reflexivity.
+                      ***** by apply: RTC_MSECD_SS_Refl.
     (* AppRec *)
     - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
       inversion H; subst=> e He.
@@ -1264,15 +1309,15 @@ Section Compiler.
         * rewrite -catA.
           eapply AppendSS.
           ** by apply: H2'.
-          ** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+          ** apply: (RTC_MSECD_SS_Step _ _ _).
              *** by apply: MSECD_SS_AppRec.
-             *** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+             *** apply: (RTC_MSECD_SS_Step _ _ _).
                  (* 全体 *)
                  **** apply OneSS.          (* XXXX *)
                         by apply: H''.
-                 **** apply: (RTC_MSECD_SS_Transitivity _ _ _).
+                 **** apply: (RTC_MSECD_SS_Step _ _ _).
                       ***** by apply: MSECD_SS_Ret.
-                      ***** by apply: RTC_MSECD_SS_Reflexivity.
+                      ***** by apply: RTC_MSECD_SS_Refl.
   Qed.
 
 End Compiler.
@@ -1303,5 +1348,9 @@ End Compiler.
    パーサを作る。
    
    RTC_MSECD_SSのクロージャーをCoqのライブラリを使用する。
+   
+   変数の使い方を統一する。
+
+   コンパイラやシムレータの関数を作成する。Propとの完全性健全性を証明する。
  *)
 
