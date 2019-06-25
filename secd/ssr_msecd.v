@@ -424,7 +424,11 @@ Section MiniMLdB.
   
   (** nameless environments *)
   Definition MML_dB_env := (seq MML_dB_val).
+
   Definition olookup (i : nat) (o : MML_dB_env) := nth (vBool false) o i.
+  Inductive olkup  : nat -> MML_dB_env -> MML_dB_val -> Prop := 
+  | olkup_0 o v : olkup 0 (v :: o) v
+  | olkup_i i o v v' : olkup i o v -> olkup i.+1 (v' :: o) v.
   
   (** The natural semantics of MiniMLdB *)
   Inductive MML_dB_NS : MML_dB_env -> MML_dB_exp -> MML_dB_val -> Prop :=
@@ -793,7 +797,10 @@ Section Modern_SECD.
   Definition MSECD_Env := seq MSECD_Val.
   
   Definition dlookup (i : nat) (d : MSECD_Env) := nth (mBool false) d i.
-  
+  Inductive dlkup  : nat -> MSECD_Env -> MSECD_Val -> Prop := 
+  | dlkup_0 e v : dlkup 0 (v :: e) v
+  | dlkup_i i e v v' : dlkup i e v -> dlkup i.+1 (v' :: e) v.
+
   Inductive MSECD_SVal : Set :=
   | V (v : MSECD_Val)                       (* Machine Value *)
   | S (s : MSECD_Code * MSECD_Env).         (* Stack Frame *)
@@ -963,12 +970,18 @@ Section Compiler.
       Compiler_SS_env o e ->
       Compiler_SS_val (vClosRec d o) (mClosRec (c ++ [:: iRet]) e)
   with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
+       | Compiler_SS_env_all o e :
+           (forall i, Compiler_SS_val (olookup i o) (dlookup i e)) ->
+           Compiler_SS_env o e.
+(*
+  with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
        | Compiler_SS_env_nil : Compiler_SS_env [::] [::]
        | Compiler_SS_env_cons v o m e :
            Compiler_SS_val v m ->
            Compiler_SS_env o e ->
            Compiler_SS_env (v :: o) (m :: e).
-  
+ *)
+                      
   (* RTC_MSECD_SS_Trans を直接つかえばよい。  *)
   Lemma AppendSS c1 c2 c3 d1 d2 d3 s1 s2 s3 :
       RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c2 ++ c3, d2, s2) -> (* c1 を実行前後 *)
@@ -980,7 +993,22 @@ Section Compiler.
     - by apply: H1.
     - by apply: H2.
   Qed.
+
+  Lemma Compiler_SS_env_cons m o' mv1 e :
+    Compiler_SS_env o' e ->
+    Compiler_SS_val m mv1 ->
+    Compiler_SS_env (m :: o') (mv1 :: e).
+  Proof.
+    move=> He Hv.
+    apply: Compiler_SS_env_all.
+    inversion He; subst.
+    elim=> [| i IHi].                       (* i *)
+    - by rewrite /=.
+    - rewrite /=.
+        by apply: H0.
+  Qed.
   
+(*
   Lemma EnvValSS o e :
     (* Compiler_SS (dVar i) [:: iAcc i] *)
     Compiler_SS_env o e ->
@@ -998,7 +1026,7 @@ Section Compiler.
       * by apply: H0.
       * admit.
   Admitted.
-  
+*)  
 
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
@@ -1123,7 +1151,8 @@ Section Compiler.
       inversion H; subst=> e He.
       exists (dlookup i e).
       split.
-      + by apply: EnvValSS.                 (* XXXXX *)
+      + inversion He; subst.
+          by apply: H0.
       + move=> s k.
         apply: (RTC_MSECD_SS_Step _ (k, e, V(dlookup i e) :: s) _).
         * by apply: MSECD_SS_Acc.
@@ -1138,19 +1167,19 @@ Section Compiler.
       case: (IH2 c2 H6 (mv1 :: e) He2) => mv2 [Hc2 H2'].
       exists mv2.
       split.
-      - done.
-      - move=> s k.
+      + done.
+      + move=> s k.
         rewrite -catA.
         apply: RTC_MSECD_SS_Trans.
-        + by apply: H1' => //.
-        + apply: RTC_MSECD_SS_Step.
-          * by apply: MSECD_SS_Let.
-          * rewrite -/cat -catA.            (* fold cat *)
+        * by apply: H1' => //.
+        * apply: RTC_MSECD_SS_Step.
+          ** by apply: MSECD_SS_Let.
+          ** rewrite -/cat -catA.            (* fold cat *)
             apply: RTC_MSECD_SS_Trans.
-            ** by apply: H2' => //.
-            ** apply: RTC_MSECD_SS_Step.
-              *** by apply: MSECD_SS_EndLet.
-              *** by apply: RTC_MSECD_SS_Refl.
+             *** by apply: H2' => //.
+             *** apply: RTC_MSECD_SS_Step.
+              **** by apply: MSECD_SS_EndLet.
+              **** by apply: RTC_MSECD_SS_Refl.
       
       (* IF-THEN *)
       - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
@@ -1265,11 +1294,11 @@ Section Compiler.
       have He' : Compiler_SS_env (m :: (vClosRec d' o1) :: o1)
                                  (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
       + apply: Compiler_SS_env_cons.
-        * done.
         * apply: Compiler_SS_env_cons.
           ** done.
           ** done.
-
+        * done.
+          
       Check IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He'.
       case: (IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He') => mv' [Hc' H''].
       exists mv'.
@@ -1328,3 +1357,4 @@ End Compiler.
    コンパイラやシムレータの関数を作成する。Propとの完全性健全性を証明する。
  *)
 
+  
