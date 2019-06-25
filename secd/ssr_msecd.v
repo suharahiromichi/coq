@@ -64,7 +64,7 @@ Section MiniML.
   Definition MML_env := (seq (Var * MML_val)).
   Fixpoint lookup (x : Var) (g : MML_env) : MML_val :=
     match g with
-    | (x', v) :: g' => if (x == x') then v else lookup x g'
+    | (x', v) :: g' => if (x' == x) then v else lookup x g'
     | _ => VBool false
     end.
   
@@ -524,15 +524,7 @@ Section MiniMLdB.
   Compute mkctx [:: (X, VNat 1); (Y, VNat 2); (Z, VNat 3)].
   (* ==> [:: X; Y; Z] *)
 
-  Inductive dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
-  | dB_translation_NS_env_nil : dB_translation_NS_env [::] [::]
-  | dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
-                               (vd : MML_dB_val) (o : MML_dB_env) :
-      dB_translation_NS_val v vd ->
-      dB_translation_NS_env g o ->
-      dB_translation_NS_env ((x, v) :: g) (vd :: o)
-  
-  with dB_translation_NS_val : MML_val -> MML_dB_val -> Prop :=
+  Inductive dB_translation_NS_val : MML_val -> MML_dB_val -> Prop :=
   | dB_translation_NS_val_Nat  (n : nat) : dB_translation_NS_val (VNat n) (vNat n)
   | dB_translation_NS_val_Bool (b : bool) : dB_translation_NS_val (VBool b) (vBool b)
   | db_translation_NS_val_Clos (x : Var) (e : MML_exp) (g : MML_env)
@@ -544,8 +536,61 @@ Section MiniMLdB.
                                (d : MML_dB_exp) (o : MML_dB_env) :
       dB_translation_NS_env g o ->
       dB_translation_NS (f :: x :: (mkctx g)) e d ->
-      dB_translation_NS_val (VClosRec f x e g) (vClosRec d o).
+      dB_translation_NS_val (VClosRec f x e g) (vClosRec d o)
 
+  with dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
+       | dB_translation_NS_env_all (g : MML_env) (o : MML_dB_env) :
+           (forall (x : Var),
+               dB_translation_NS_val (lookup x g) (olookup (index x (mkctx g)) o)) ->
+           dB_translation_NS_env g o.
+(*
+  with dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
+  | dB_translation_NS_env_nil : dB_translation_NS_env [::] [::]
+  | dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
+                               (vd : MML_dB_val) (o : MML_dB_env) :
+      dB_translation_NS_val v vd ->
+      dB_translation_NS_env g o ->
+      dB_translation_NS_env ((x, v) :: g) (vd :: o).
+ *)
+
+  Lemma dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
+        (vd : MML_dB_val) (o : MML_dB_env) :
+    dB_translation_NS_env g o ->
+    dB_translation_NS_val v vd ->
+    dB_translation_NS_env ((x, v) :: g) (vd :: o).
+  Proof.
+    move=> He Hv.
+    apply: dB_translation_NS_env_all.
+    inversion He; subst.
+    case.                                   (* x0 *)
+    - case H : (x == A).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == B).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == C).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == F).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == G).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == H).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == X).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == Y).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+    - case H : (x == Z).
+      + by rewrite /= H /=.
+      + by rewrite /= H /=.
+  Qed.
   
   Fixpoint dB_translation_NS_compiler (p : ctx) (e : MML_exp) : option MML_dB_exp :=
     match e with
@@ -705,23 +750,20 @@ Section MiniMLdB.
     (* Var *)
     - move=> g' x o He d H.
       inversion H; subst.
-      Check (olookup (index x (mkctx g')) o).
       exists (olookup (index x (mkctx g')) o).
       split.
-      * (* dB_translation_NS_val (lookup x g') (olookup (index x (mkctx g')) o) *)
-        admit.
+      * inversion He; subst.
+        by apply: H0.
       * by apply: MML_dB_NS_Var.
-
+        
     (* Let *)
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o He d H.
       inversion H; subst.
       (* 定義部は、普通に評価する。その結果がv1' *)
       case: (IH1 o He d1 H7) => v1' [H11 H12].
       (* 本体は、(x,v1)を追加して評価する。その結果がv2' *)
-      have He2 : dB_translation_NS_env ((x, v1) :: g') (v1' :: o).
-      * apply: dB_translation_NS_env_cons.
-        ** by apply: H11.
-        ** by apply: He.
+      have He2 : dB_translation_NS_env ((x, v1) :: g') (v1' :: o)
+        by apply: dB_translation_NS_env_cons.
       have H82 : dB_translation_NS (mkctx ((x, v1) :: g')) e2 d2 by apply: H8.
       (* (mkctx ((x, v1) :: g') = x :: mkctx g') は、simpl で証明できる。 *)
       case: (IH2 (v1' :: o) He2 d2 H82) => v2' [H21 H22].
@@ -1008,26 +1050,6 @@ Section Compiler.
         by apply: H0.
   Qed.
   
-(*
-  Lemma EnvValSS o e :
-    (* Compiler_SS (dVar i) [:: iAcc i] *)
-    Compiler_SS_env o e ->
-    forall i, Compiler_SS_val (olookup i o) (dlookup i e).
-  Proof.
-    rewrite /olookup /dlookup.
-    move=> H.
-    inversion H; subst.
-    (* 環境が nil の場合 *)
-    - move=> i.
-      rewrite 2!nth_nil.
-        by apply: Compiler_SS_val_Bool.
-    (* 環境が nil ではない場合 *)
-    - elim => [| i' Hi] /=.
-      * by apply: H0.
-      * admit.
-  Admitted.
-*)  
-
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
@@ -1357,4 +1379,3 @@ End Compiler.
    コンパイラやシムレータの関数を作成する。Propとの完全性健全性を証明する。
  *)
 
-  
