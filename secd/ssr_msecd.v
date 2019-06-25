@@ -824,11 +824,37 @@ Section MiniMLdB.
         * by apply: H5.
       + by apply: MML_dB_NS_MuLam.
 
-     (* App *)
-    - 
-
+    (* App *)
+    - move=> g' g3 x e1 e2 e3 v2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
+      inversion H; subst.
+      case: (IH1 o He d1 H6) => v1' [H11 H12] {IH1}. (* 関数部 *)
+      inversion H11; subst.
+      case: (IH2 o He d2 H8) => v2' [H21 H22] {IH2}. (* 引数部 *)
+      
+      (* クロージャの中身を評価する環境 *)
+      Check dB_translation_NS_env ((x, v2) :: g3) (v2' :: o0).
+      have He3 : dB_translation_NS_env ((x, v2) :: g3) (v2' :: o0).
+      + apply: dB_translation_NS_env_cons.
+        * by apply: H9.
+        * by apply: H21.
+          
+      (* クロージャの中身を変換する。 *)
+      Check (IH3 (v2' :: o0) He3).
+      have H30 : dB_translation_NS (mkctx ((x, v2) :: g3)) e3 d by apply: H10.
+      
+      Check (IH3 (v2' :: o0) He3 d H30).
+      case: (IH3 (v2' :: o0) He3 d H30) => v3' [H31 H32] {IH3}.
+      
+      exists v3'.
+      split.
+      + by apply: H31.
+      + apply: MML_dB_NS_App.
+        * by apply: H12.
+        * by apply: H22.
+        * by apply: H32.
+          
   Admitted.
-  
+
 
 End MiniMLdB.
 
