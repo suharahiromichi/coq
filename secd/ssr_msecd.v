@@ -512,7 +512,7 @@ Section MiniMLdB.
       dB_translation_NS (x :: p) e d ->
       dB_translation_NS p (eLam x e) (dLam d)
   | dB_translation_NS_MuLam (p : ctx) (f x : Var) (e : MML_exp) (d : MML_dB_exp) :
-      dB_translation_NS (x :: p) e d ->
+      dB_translation_NS (f :: x :: p) e d ->
       dB_translation_NS p (eMuLam f x e) (dMuLam d)
   | dB_translation_NS_App   (p : ctx) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
       dB_translation_NS p e1 d1 ->
@@ -806,6 +806,27 @@ Section MiniMLdB.
           ** by apply: MML_dB_NS_Var.
         * by apply: H32.
           
+    (* Lam *)
+    - move=> g' x e' o He d H.
+      inversion H; subst.
+      exists (vClos d0 o).
+      split.
+      + by apply: db_translation_NS_val_Clos.
+      + by apply: MML_dB_NS_Lam.
+
+    (* MuLam *)
+    - move=> g' f x e' o He d H.
+      inversion H; subst.
+      exists (vClosRec d0 o).
+      split.
+      + apply: db_translation_NS_val_ClosRec.
+        * by apply: He.
+        * by apply: H5.
+      + by apply: MML_dB_NS_MuLam.
+
+     (* App *)
+    - 
+
   Admitted.
   
 
