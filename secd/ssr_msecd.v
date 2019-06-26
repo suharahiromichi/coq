@@ -512,7 +512,7 @@ Section MiniMLdB.
       dB_translation_NS (x :: p) e d ->
       dB_translation_NS p (eLam x e) (dLam d)
   | dB_translation_NS_MuLam (p : ctx) (f x : Var) (e : MML_exp) (d : MML_dB_exp) :
-      dB_translation_NS (f :: x :: p) e d ->
+      dB_translation_NS (x :: f :: p) e d ->
       dB_translation_NS p (eMuLam f x e) (dMuLam d)
   | dB_translation_NS_App   (p : ctx) (e1 e2 : MML_exp) (d1 d2 : MML_dB_exp) :
       dB_translation_NS p e1 d1 ->
@@ -535,7 +535,7 @@ Section MiniMLdB.
   | db_translation_NS_val_ClosRec (f x : Var) (e : MML_exp) (g : MML_env)
                                (d : MML_dB_exp) (o : MML_dB_env) :
       dB_translation_NS_env g o ->
-      dB_translation_NS (f :: x :: (mkctx g)) e d ->
+      dB_translation_NS (x :: f :: (mkctx g)) e d ->
       dB_translation_NS_val (VClosRec f x e g) (vClosRec d o)
 
   with dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
@@ -824,7 +824,7 @@ Section MiniMLdB.
         * by apply: H5.
       + by apply: MML_dB_NS_MuLam.
 
-    (* App *)
+    (* App Clos *)
     - move=> g' g3 x e1 e2 e3 v2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
       inversion H; subst.
       case: (IH1 o He d1 H6) => v1' [H11 H12] {IH1}. (* 関数部 *)
@@ -852,9 +852,42 @@ Section MiniMLdB.
         * by apply: H12.
         * by apply: H22.
         * by apply: H32.
-          
-  Admitted.
 
+    (* App ClosRec *)
+    - move=> g' g3 x f e1 e2 e3 v2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
+      inversion H; subst.
+      case: (IH1 o He d1 H6) => v1' [H11 H12] {IH1}. (* 関数部 *)
+      inversion H11; subst.
+      case: (IH2 o He d2 H8) => v2' [H21 H22] {IH2}. (* 引数部 *)
+      
+      (* クロージャの中身を評価する環境 *)
+      Check (VClosRec f x e3 g3).
+      have He3 : dB_translation_NS_env
+                   ((x, v2) :: (f, (VClosRec f x e3 g3)) :: g3)
+                   (v2' :: (vClosRec d o0) :: o0).
+      + apply: dB_translation_NS_env_cons.
+        * apply: dB_translation_NS_env_cons.
+          ** by apply: H10.
+          ** by apply: H11.
+        * by apply: H21.
+          
+      (* クロージャの中身を変換する。 *)
+      Check (IH3 (v2' :: (vClosRec d o0) :: o0) He3 d).
+      have H30 : dB_translation_NS
+                   (mkctx ((x, v2) :: (f, VClosRec f x e3 g3) :: g3)) e3 d
+        by apply: H13.
+      
+      Check (IH3 (v2' :: (vClosRec d o0) :: o0) He3 d H30).
+      case: (IH3 (v2' :: (vClosRec d o0) :: o0) He3 d H30) => v3' [H31 H32] {IH3}.
+      
+      exists v3'.
+      split.
+      + by apply: H31.
+      + apply: MML_dB_NS_AppRec.
+        * by apply: H12.
+        * by apply: H22.
+        * by apply: H32.
+  Qed.
 
 End MiniMLdB.
 
@@ -1424,5 +1457,10 @@ End Compiler.
    変数の使い方を統一する。
 
    コンパイラやシムレータの関数を作成する。Propとの完全性健全性を証明する。
+
+   ド・ブラウンの扱いに習熟するために：
+   リストの要素それぞれが関係Rを満たすことと、nth i のすべてで満たすことの証明。
+   AllR は Indextive な定義の場合と、Fixpoint Prop の場合の両方について。
+   AllR R s1 s2 <-> forall i, R (nth i s1) (nth i s2)
  *)
 
