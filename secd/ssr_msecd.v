@@ -1000,30 +1000,30 @@ Section Modern_SECD.
                                    refl_step_closure R y z ->
                                    refl_step_closure R x z.
   
-  Theorem rsc_R : forall {X : Type} (R : relation X) (x y : X),
+  Lemma rsc_R : forall {X : Type} (R : relation X) (x y : X),
       R x y -> refl_step_closure R x y.
   Proof.
     intros X R x y r.
     apply rsc_step with y.
     apply r.
-    apply rsc_refl.
+    by apply rsc_refl.
   Qed.
   
-  Theorem rsc_trans : forall {X : Type} (R : relation X) (x y z : X),
+  Lemma rsc_trans : forall {X : Type} (R : relation X) (x y z : X),
       refl_step_closure R x y ->
       refl_step_closure R y z ->
       refl_step_closure R x z.
   Proof.
     intros X R x y z.
     intros HRxy HRyz.
-    induction HRxy as [|z' x y].
-    - apply HRyz.
+    induction HRxy as [|z' x y Rxy].
+    - by apply HRyz.
     - apply (rsc_step R z' x z).
-      apply H0.
+      apply Rxy.
       apply IHHRxy.
-      apply HRyz.
+      by apply HRyz.
   Qed.
-
+  
   Definition RTC_MSECD_SS := refl_step_closure MSECD_SS.
   
   (* RTC_MSECD_SS_Reflexivity *)
