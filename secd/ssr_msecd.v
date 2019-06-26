@@ -301,13 +301,25 @@ Section MiniML.
   Compute MML_NS_interpreter 19 [::] example.
   (* = Some (VNat 120) : option MML_val *)
   
-  Lemma MML_NS_same dep1 dep2 g e :
-    dep1 = dep2 ->
-    MML_NS_interpreter dep1 g e = MML_NS_interpreter dep2 g e.
+  Lemma MML_NS_maxl dep1 dep2 g e :
+    MML_NS_interpreter dep1 g e =
+    MML_NS_interpreter (maxn dep1 dep2) g e.
+  Proof.
+    elim: dep2 => [|n IHn].
+    - by rewrite maxn0.
+    - rewrite /maxn.
+      case: (leqP n.+1 dep1) => H.
+      + done.
+      + admit.
+  Admitted.
+
+  Lemma MML_NS_maxr dep1 dep2 g e :
+    MML_NS_interpreter dep2 g e =
+    MML_NS_interpreter (maxn dep1 dep2) g e.
   Proof.
   Admitted.
   
-  Lemma MML_NS_interpreter_correctnes :
+  Theorem MML_NS_interpreter_correctnes :
     forall g e v, MML_NS g e v -> exists dep, MML_NS_interpreter dep g e = Some v.
   Proof.
     move=> g e v.
@@ -317,82 +329,77 @@ Section MiniML.
     - move=> g' e1 e2 m n H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
-      + by rewrite IH2.
-      + admit.          (* IH2 の dep2 が dep1 なら書き換えられる。 *)
+      exists (maxn dep1 dep2).+1.
+      by rewrite /= -MML_NS_maxl -MML_NS_maxr IH1 IH2.
+      
     - move=> g' e1 e2 m n H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
-      + by rewrite IH2.
-      + admit.          (* IH2 の dep2 が dep1 なら書き換えられる。 *)
+      exists (maxn dep1 dep2).+1.
+      by rewrite /= -MML_NS_maxl -MML_NS_maxr IH1 IH2.
+      
     - move=> g' e1 e2 m n H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
-      + by rewrite IH2.
-      + admit.
+      exists (maxn dep1 dep2).+1.
+      by rewrite /= -MML_NS_maxl -MML_NS_maxr IH1 IH2.
+
     - move=> g' e1 e2 m n H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
-      + by rewrite IH2.
-      + admit.
+      exists (maxn dep1 dep2).+1.
+      by rewrite /= -MML_NS_maxl -MML_NS_maxr IH1 IH2.
+
     - move=> g' x.
         by exists 1.
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 ((x, v1) :: g') e2).
-      + by rewrite IH2.
-      + admit.
+      exists (maxn dep1 dep2).+1.
+      rewrite /=.
+      by rewrite -MML_NS_maxl IH1 -MML_NS_maxr IH2.
+      
     - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g' e2).
-      + by rewrite IH2.
-      + admit.
+      exists (maxn dep1 dep2).+1.
+      rewrite /=.
+      by rewrite -MML_NS_maxl IH1 -MML_NS_maxr IH2.
+      
     - move=> g' e1 e2 e3 v3 H1 IH1 H3 IH3.
       case: IH1 => dep1 IH1.
       case: IH3 => dep3 IH3.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep3 g' e3).
-      + by rewrite IH3.
-      + admit.
+      exists (maxn dep1 dep3).+1.
+      rewrite /=.
+      by rewrite -MML_NS_maxl IH1 -MML_NS_maxr IH3.
+      
     - move=> g' x e1.
       exists 1.
         by rewrite /=.
     - move=> g' x e1.
       exists 1.
         by rewrite /=.
+
     - move=> g1 g2 x e1 e2 e' v2 v' H1 IH1 H2 IH2 H3 IH3.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
       case: IH3 => dep3 IH3.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g1 e2).
-      rewrite /= IH2 (MML_NS_same dep1 dep3 ((x, v2) :: g2) e').
-      + by rewrite /= IH3.
-      + admit.
-      + admit.
+      exists (maxn (maxn dep1 dep2) dep3).+1.
+      rewrite /=.
+      rewrite -MML_NS_maxl -MML_NS_maxr IH2.
+      rewrite -MML_NS_maxl -MML_NS_maxl IH1.
+      by rewrite -MML_NS_maxr IH3.
+
     - move=> g1 g2 x f e1 e2 e' v1 v' H1 IH1 H2 IH2 H3 IH3.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
       case: IH3 => dep3 IH3.
-      exists dep1.+1.
-      rewrite /= IH1 (MML_NS_same dep1 dep2 g1 e2).
-      rewrite IH2
-              (MML_NS_same dep1 dep3 [:: (x, v1), (f, VClosRec f x e' g2) & g2] e').
-      + by rewrite IH3.
-      + admit.
-      + admit.
-  Admitted.
+      exists (maxn (maxn dep1 dep2) dep3).+1.
+      rewrite /=.
+      rewrite -MML_NS_maxl -MML_NS_maxr IH2.
+      rewrite -MML_NS_maxl -MML_NS_maxl IH1.
+      by rewrite -MML_NS_maxr IH3.
+  Qed.
   
 End MiniML.
 
