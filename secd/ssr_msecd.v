@@ -301,34 +301,26 @@ Section MiniML.
   Compute MML_NS_interpreter 19 [::] example.
   (* = Some (VNat 120) : option MML_val *)
 
-(*
-  Lemma test {dep1 g e v} :
+  Lemma MML_NS_lt {dep1 dep2 g e v} :
+    dep1 < dep2 ->
     MML_NS_interpreter dep1 g e = Some v ->
-    MML_NS_interpreter (dep1 + 1) g e = Some v.
+    MML_NS_interpreter dep2 g e = Some v.
   Proof.
-    move=> H.
-    rewrite addn1.
-    simpl.
-    inversion H.
-
-  Lemma test {dep1 n g e v} :
-    MML_NS_interpreter dep1 g e = Some v ->
-    MML_NS_interpreter (dep1 + n) g e = Some v.
-  Proof.
-    elim: n => [|n IHn H].
-    - by rewrite addn0.
-    - Check (IHn H).
-      rewrite addnS.
-*)
+    elim: dep1; elim: dep2 => //.
+    move=> m IHm n IHn Hle H.
+  Admitted.
+  
   Lemma MML_NS_maxl {dep1 dep2 g e v} :
     MML_NS_interpreter dep1 g e = Some v ->
     MML_NS_interpreter (maxn dep1 dep2) g e = Some v.
   Proof.
-    elim: dep2 => [|n IHn].
-    - by rewrite maxn0.
-    - 
-  Admitted.
-
+    move=> H.
+    rewrite /maxn.
+    case: (leqP dep2 dep1) => Hlt.
+    - done.
+    - by apply: (MML_NS_lt Hlt).
+  Qed.
+  
   Lemma MML_NS_maxr {dep1 dep2 g e v} :
     MML_NS_interpreter dep2 g e = Some v ->
     MML_NS_interpreter (maxn dep1 dep2) g e = Some v.
