@@ -56,9 +56,29 @@ Tactic Notation "invert" "keep" hyp(H) :=
 (* ********************************************************************** *)
 
 (* !! NEW !! *)
+
 (* subst を行ってから、残った前提を generalize する。 *)
 Tactic Notation "inv:" hyp(H) :=
   pose ltac_mark; inversion H; subst; gen_until_mark; clear H.
+
+Tactic Notation "inv" :=
+  let H := fresh in intro H; inv: H.
+
+(*
+Tactic Notation "inv:" hyp(H) simple_intropattern(I1) :=
+  generalize I1;
+  inv: H.
+
+Tactic Notation "inv:" hyp(H)
+       simple_intropattern(I1) simple_intropattern(I2) :=
+  generalize I2; generalize I1;
+  inv: H.
+
+Tactic Notation "inv:" hyp(H)
+       simple_intropattern(I1) simple_intropattern(I2) simple_intropattern(I3) :=
+  generalize I3; generalize I2; generalize I1;
+  inv: H.
+*)
 
 (* ********************************************************************** *)
 (* ********************************************************************** *)
@@ -191,16 +211,16 @@ Section MiniML.
     move=> H1.
     move: v2.
     elim: H1 => g'.
-    - move=> n v2 H2.
-        by inv: H2.
+    - move=> n v2.
+        by inv.
     - move=> b v2 H2.
         by inv: H2.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inv: H12 => H5 H7.                   (* xxxxx *)
       congr (VNat (_ + _)).
       + move: (IH1 (VNat m0)) => IH1'.
-        move: (IH1' H5) => IH1''.
-          by inv: IH1''.
+        move: (IH1' H5).
+          by inv.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
           by inv: IH2''.
@@ -241,8 +261,8 @@ Section MiniML.
       rewrite IH1'' in IH2'.
       move: (IH2' H8).
       done.
-    - move=> e1 e2 e3 v2 H1 IH1 H2 IH2 v H.
-      inv: H => H7 H8.
+    - move=> e1 e2 e3 v2 H1 IH1 H2 IH2 v.
+      inv=> H7 H8.
       + by apply: (IH2 v) H8.
       + by move: (IH1 (VBool false) H7) => Hc. (* 前提の矛盾 *)
     - move=> e1 e2 e3 v2 H1 IH1 H2 IH2 v H.
