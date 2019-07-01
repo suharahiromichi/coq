@@ -16,7 +16,7 @@ Section MiniMLdB.
     (* Nat *)
     - move=> g' n o He d H.
       exists (vNat n).
-      inversion H; subst.
+      inv: H.
       split.
       * by apply: dB_translation_NS_val_Nat.
       * by apply: MML_dB_NS_Nat.
@@ -24,18 +24,18 @@ Section MiniMLdB.
     (* Bool *)
     - move=> g' b o He d H.
       exists (vBool b).
-      inversion H; subst.
+      inv: H.
       split.
       * by apply: dB_translation_NS_val_Bool.
       * by apply: MML_dB_NS_Bool.
 
     (* Plus *)
     - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      inversion H; subst.
+      inv: H => H5 H7.
       case: (IH1 o He d0 H5) => d1' [H11 H12].
-      inversion H11; subst.
+      inv: H11.
       case: (IH2 o He d3 H7) => d2' [H21 H22].
-      inversion H21; subst.
+      inv: H21.
       exists (vNat (m + n)).
       split.
       + by apply: dB_translation_NS_val_Nat.
@@ -45,11 +45,11 @@ Section MiniMLdB.
 
     (* Minus *)
     - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      inversion H; subst.
+      inv: H => H5 H7.
       case: (IH1 o He d0 H5) => d1' [H11 H12].
-      inversion H11; subst.
+      inv: H11.
       case: (IH2 o He d3 H7) => d2' [H21 H22].
-      inversion H21; subst.
+      inv: H21.
       exists (vNat (m - n)).
       split.
       + by apply: dB_translation_NS_val_Nat.
@@ -59,11 +59,11 @@ Section MiniMLdB.
 
     (* Times *)
     - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      inversion H; subst.
+      inv: H => H5 H7.
       case: (IH1 o He d0 H5) => d1' [H11 H12].
-      inversion H11; subst.
+      inv: H11.
       case: (IH2 o He d3 H7) => d2' [H21 H22].
-      inversion H21; subst.
+      inv: H21.
       exists (vNat (m * n)).
       split.
       + by apply: dB_translation_NS_val_Nat.
@@ -73,20 +73,20 @@ Section MiniMLdB.
 
     (* Eq *)
     - move=> g' d1 d2 m n H1 IH1 H2 IH2 o He d H.
-      by inversion H.
+      by inv: H.
 
     (* Var *)
     - move=> g' x o He d H.
-      inversion H; subst.
+      inv: H.
       exists (olookup (index x (mkctx g')) o).
       split.
-      * inversion He; subst.
+      * inv: He => H0.
         by apply: H0.
       * by apply: MML_dB_NS_Var.
         
     (* Let *)
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2 o He d H.
-      inversion H; subst.
+      inv: H => H7 H8.
       (* 定義部は、普通に評価する。その結果がv1' *)
       case: (IH1 o He d1 H7) => v1' [H11 H12].
       (* 本体は、(x,v1)を追加して評価する。その結果がv2' *)
@@ -105,15 +105,15 @@ Section MiniMLdB.
     (* If true *)
     - move=> g' e1 e2 e3 v2 H1 IH1 H2 IH2 o He d H.
       (* v2 は then 節 *)
-      inversion H; subst.
+      inv: H => H6 H8 H9.
       case: (IH1 o He d1 H6) => v1' [H11 H12].
-      inversion H11; subst.
+      inv: H11.
       case: (IH2 o He d2 H8) => v2' [H21 H22].
       exists v2'.
       split.
       + by apply: H21.
       + apply: MML_dB_NS_Iftrue.
-        * inversion H12; subst => //.
+        * inversion H12; subst => //.       (* XXXXX *)
           ** by apply: MML_dB_NS_Eq.
           ** by apply: MML_dB_NS_Var.
         * by apply: H22.
@@ -121,22 +121,22 @@ Section MiniMLdB.
     (* If false *)
     - move=> g' e1 e2 e3 v3 H1 IH1 H3 IH3 o He d H.
       (* v3 は else 節 *)
-      inversion H; subst.
+      inv: H => H6 H8 H9.
       case: (IH1 o He d1 H6) => v1' [H11 H12].
-      inversion H11; subst.
+      inv: H11.
       case: (IH3 o He d3 H9) => v3' [H31 H32].
       exists v3'.
       split.
       + by apply: H31.
       + apply: MML_dB_NS_Iffalse.
-        * inversion H12; subst => //.
+        * inversion H12; subst => //.       (* XXXXX *)
           ** by apply: MML_dB_NS_Eq.
           ** by apply: MML_dB_NS_Var.
         * by apply: H32.
           
     (* Lam *)
     - move=> g' x e' o He d H.
-      inversion H; subst.
+      inv: H.
       exists (vClos d0 o).
       split.
       + by apply: db_translation_NS_val_Clos.
@@ -144,7 +144,7 @@ Section MiniMLdB.
 
     (* MuLam *)
     - move=> g' f x e' o He d H.
-      inversion H; subst.
+      inv: H.
       exists (vClosRec d0 o).
       split.
       + apply: db_translation_NS_val_ClosRec.
@@ -154,9 +154,9 @@ Section MiniMLdB.
 
     (* App Clos *)
     - move=> g' g3 x e1 e2 e3 v2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
-      inversion H; subst.
+      inv: H => H6 H8.
       case: (IH1 o He d1 H6) => v1' [H11 H12] {IH1}. (* 関数部 *)
-      inversion H11; subst.
+      inv: H11 => H9 H10.
       case: (IH2 o He d2 H8) => v2' [H21 H22] {IH2}. (* 引数部 *)
       
       (* クロージャの中身を評価する環境 *)
@@ -183,9 +183,10 @@ Section MiniMLdB.
 
     (* App ClosRec *)
     - move=> g' g3 x f e1 e2 e3 v2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
-      inversion H; subst.
+      inv: H => H6 H8.
       case: (IH1 o He d1 H6) => v1' [H11 H12] {IH1}. (* 関数部 *)
-      inversion H11; subst.
+      move: (H11) => H11'.                           (* 複製 duplicate *)
+      inv: H11 => H10 H13.
       case: (IH2 o He d2 H8) => v2' [H21 H22] {IH2}. (* 引数部 *)
       
       (* クロージャの中身を評価する環境 *)
@@ -196,7 +197,7 @@ Section MiniMLdB.
       + apply: dB_translation_NS_env_cons.
         * apply: dB_translation_NS_env_cons.
           ** by apply: H10.
-          ** by apply: H11.
+          ** by apply: H11'.
         * by apply: H21.
           
       (* クロージャの中身を変換する。 *)
