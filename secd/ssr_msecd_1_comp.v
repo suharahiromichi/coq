@@ -5,7 +5,7 @@ Require Import ssr_msecd_1_defs.
 Require Import ssr_msecd_1_db.
 *)
 
-Section MiniMLdB.
+Section Compiler.
 
   Lemma Compiler_SS_env_cons m o' mv1 e :
     Compiler_SS_env o' e ->
@@ -19,7 +19,8 @@ Section MiniMLdB.
     - by rewrite /=.
     - rewrite /=.
         by apply: H0.
-        
+  Qed.
+  
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
