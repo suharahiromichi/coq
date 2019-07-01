@@ -187,8 +187,7 @@ Section MiniMLdB.
     - move=> g' g3 x f e1 e2 e3 v2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
       inv: H => H6 H8.
       case: (IH1 o He d1 H6) => v1' [H11 H12] {IH1}. (* 関数部 *)
-      move: (H11) => H11'.                           (* 複製 duplicate *)
-      inv: H11 => H10 H13.
+      move: (H11); inv=> H10 H13. (* keep、 あらかじめ複製 duplicate *)
       case: (IH2 o He d2 H8) => v2' [H21 H22] {IH2}. (* 引数部 *)
       
       (* クロージャの中身を評価する環境 *)
@@ -199,7 +198,7 @@ Section MiniMLdB.
       + apply: dB_translation_NS_env_cons.
         * apply: dB_translation_NS_env_cons.
           ** by apply: H10.
-          ** by apply: H11'.
+          ** by apply: H11.
         * by apply: H21.
           
       (* クロージャの中身を変換する。 *)

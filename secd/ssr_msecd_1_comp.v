@@ -56,7 +56,7 @@ Section Compiler.
     (* Plus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
       (* pose ltac_mark; inversion H; subst; gen_until_mark. *)
-      inv: H => H'1 H'2 e He.                    (* xxxx *)
+      inv: H => H'1 H'2 e He.
       case: (IH1 c1 H'1 e He) => mv1 [Hc1 H1'].
       inv: Hc1.                        (* mv1 を mNat m にする。 *)
       case: (IH2 c2 H'2 e He) => mv2 [Hc2 H2'].
@@ -78,7 +78,7 @@ Section Compiler.
 
     (* Minus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.                    (* xxxx *)
+      inv: H => H'1 H'2 e He.
       (* inverts keep H as H'1 H'2; subst=> e He. *)
       case: (IH1 c1 H'1 e He) => mv1 [Hc1 H1'].
       inv: Hc1.
@@ -100,7 +100,7 @@ Section Compiler.
                  
     (* Times *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.                    (* xxxx *)
+      inv: H => H'1 H'2 e He.
       case: (IH1 c1 H'1 e He) => mv1 [Hc1 H1'].
       inv: Hc1.
       case: (IH2 c2 H'2 e He) => mv2 [Hc2 H2'].
@@ -121,7 +121,7 @@ Section Compiler.
                  
     (* Eq *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.                    (* xxxx *)
+      inv: H => H'1 H'2 e He.
       case: (IH1 c1 H'1 e He) => mv1 [Hc1 H1'].
       inv: Hc1.
       case: (IH2 c2 H'2 e He) => mv2 [Hc2 H2'].
@@ -281,8 +281,7 @@ Section Compiler.
     - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
       inv: H => H4 H6 e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
-      move: (Hc1) => Hc1'.                  (* XXXX 複製する。 *)
-      inv: Hc1 => H5 H8.
+      move: (Hc1); inv=> H5 H8.             (* dup 複製する。 *)
       case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'].
       move=> {H1} {H2} {IH1} {IH2}.
       Check (mClosRec (c ++ [:: iRet]) e0).
@@ -290,9 +289,9 @@ Section Compiler.
                                  (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
       + apply: Compiler_SS_env_cons.
         * apply: Compiler_SS_env_cons.
-          ** done.
-          ** done.
-        * done.
+          ** by apply: H8.
+          ** by apply: Hc1.                 (* 複製を使う。 *)
+        * by apply: Hc2.
           
       Check IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He'.
       case: (IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He') => mv' [Hc' H''].
