@@ -113,7 +113,7 @@ Section MiniMLdB.
       split.
       + by apply: H21.
       + apply: MML_dB_NS_Iftrue.
-        * inversion H12; subst => //.       (* XXXXX *)
+        * invs: H12 => [m n H0 H5 H | H].
           ** by apply: MML_dB_NS_Eq.
           ** by apply: MML_dB_NS_Var.
         * by apply: H22.
@@ -129,9 +129,11 @@ Section MiniMLdB.
       split.
       + by apply: H31.
       + apply: MML_dB_NS_Iffalse.
-        * inversion H12; subst => //.       (* XXXXX *)
-          ** by apply: MML_dB_NS_Eq.
-          ** by apply: MML_dB_NS_Var.
+        * invs: H12.
+          ** move=> m n H0 H5 H.
+               by apply: MML_dB_NS_Eq.
+          ** move=> H.
+               by apply: MML_dB_NS_Var.
         * by apply: H32.
           
     (* Lam *)

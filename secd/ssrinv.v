@@ -1,3 +1,5 @@
+From mathcomp Require Import all_ssreflect.
+
 (* ---------------------------------------------------------------------- *)
 (* ** Position markers *)
 (** ** ポジションマーカ *)
@@ -64,6 +66,12 @@ Tactic Notation "inv:" hyp(H) :=
 Tactic Notation "inv" :=
   let H := fresh in intro H; inv: H.
 
+Tactic Notation "invs:" hyp(H) :=
+  pose ltac_mark; inversion H; subst; try done; gen_until_mark; clear H.
+
+Tactic Notation "invs" :=
+  let H := fresh in intro H; invs: H.
+
 (*
 Tactic Notation "inv:" hyp(H) simple_intropattern(I1) :=
   generalize I1;
@@ -81,5 +89,3 @@ Tactic Notation "inv:" hyp(H)
 *)
 
 (* END *)
-
-
