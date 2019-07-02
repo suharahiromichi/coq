@@ -6,20 +6,6 @@ Require Import ssr_msecd_1_db.
 *)
 
 Section Compiler.
-
-  Lemma Compiler_SS_env_cons m o' mv1 e :
-    Compiler_SS_env o' e ->
-    Compiler_SS_val m mv1 ->
-    Compiler_SS_env (m :: o') (mv1 :: e).
-  Proof.
-    move=> He Hv.
-    apply: Compiler_SS_env_all.
-    inv: He => H0.
-    elim=> [| i IHi].
-    - by rewrite /=.
-    - rewrite /=.
-        by apply: H0.
-  Qed.
   
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->

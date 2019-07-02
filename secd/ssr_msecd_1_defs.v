@@ -251,22 +251,13 @@ Section MiniMLdB.
       dB_translation_NS_env g o ->
       dB_translation_NS (x :: f :: (mkctx g)) e d ->
       dB_translation_NS_val (VClosRec f x e g) (vClosRec d o)
-
+                            
   with dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
        | dB_translation_NS_env_all (g : MML_env) (o : MML_dB_env) :
            (forall (x : Var),
                dB_translation_NS_val (lookup x g) (olookup (index x (mkctx g)) o)) ->
            dB_translation_NS_env g o.
-(*
-  with dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
-  | dB_translation_NS_env_nil : dB_translation_NS_env [::] [::]
-  | dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
-                               (vd : MML_dB_val) (o : MML_dB_env) :
-      dB_translation_NS_val v vd ->
-      dB_translation_NS_env g o ->
-      dB_translation_NS_env ((x, v) :: g) (vd :: o).
- *)
-
+  
   Lemma dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
         (vd : MML_dB_val) (o : MML_dB_env) :
     dB_translation_NS_env g o ->
@@ -399,12 +390,6 @@ Section Modern_SECD.
   | MSECD_SS_Ret (v : MSECD_Val)(c c1 : MSECD_Code)(d d1 : MSECD_Env)(s :MSECD_Stack) :
       MSECD_SS (   iRet :: c,       d,         V(v) :: S(c1, d1) :: s)
                (          c1,      d1,                      V(v) :: s).
-  (*           
-  Inductive RTC_MSECD_SS : conf -> conf -> Prop :=
-  | RTC_MSECD_SS_Reflexivity (cf : conf) : RTC_MSECD_SS cf cf
-  | RTC_MSECD_SS_Transitivity (cf1 cf2 cf3 : conf) :
-      MSECD_SS cf1 cf2 -> RTC_MSECD_SS cf2 cf3 ->  RTC_MSECD_SS cf1 cf3.
-   *)
   
   Definition relation (X : Type) := X -> X -> Prop.  
   
@@ -505,31 +490,26 @@ Section Compiler.
       Compiler_SS d c ->
       Compiler_SS_env o e ->
       Compiler_SS_val (vClosRec d o) (mClosRec (c ++ [:: iRet]) e)
+                      
   with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
        | Compiler_SS_env_all o e :
            (forall i, Compiler_SS_val (olookup i o) (dlookup i e)) ->
            Compiler_SS_env o e.
-(*
-  with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
-       | Compiler_SS_env_nil : Compiler_SS_env [::] [::]
-       | Compiler_SS_env_cons v o m e :
-           Compiler_SS_val v m ->
-           Compiler_SS_env o e ->
-           Compiler_SS_env (v :: o) (m :: e).
- *)
-                      
-  (* RTC_MSECD_SS_Trans を直接つかえばよい。  *)
-  Lemma AppendSS c1 c2 c3 d1 d2 d3 s1 s2 s3 :
-      RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (c2 ++ c3, d2, s2) -> (* c1 を実行前後 *)
-      RTC_MSECD_SS (      c2 ++ c3, d2, s2) (      c3, d3, s3) -> (* c2 を実行前後 *)
-      RTC_MSECD_SS (c1 ++ c2 ++ c3, d1, s1) (      c3, d3, s3). (* c1とc2 を実行前後 *)
-  Proof.
-    move=> H1 H2.
-    apply: RTC_MSECD_SS_Trans.
-    - by apply: H1.
-    - by apply: H2.
-  Qed.
 
+  Lemma Compiler_SS_env_cons m o' mv1 e :
+    Compiler_SS_env o' e ->
+    Compiler_SS_val m mv1 ->
+    Compiler_SS_env (m :: o') (mv1 :: e).
+  Proof.
+    move=> He Hv.
+    apply: Compiler_SS_env_all.
+    inv: He => H0.
+    elim=> [| i IHi].
+    - by rewrite /=.
+    - rewrite /=.
+        by apply: H0.
+  Qed.
+  
 End Compiler.
 
 (* END *)
