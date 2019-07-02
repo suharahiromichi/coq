@@ -228,7 +228,7 @@ Section Compiler.
       inv: H => H1 e He.
       exists (mClos (c0 ++ [:: iRet]) e).
       split.
-      + by inversion H1; subst; apply: Compiler_SS_val_Clos => //. (* XXXX *)
+      + by apply: Compiler_SS_val_Clos.
       + move=> s k.
         apply: (RTC_MSECD_SS_Step
                   _ (k, e, V (mClos (c0 ++ [:: iRet]) e) :: s) _).
@@ -240,7 +240,7 @@ Section Compiler.
       inv: H => H1 e He.
       exists (mClosRec (c0 ++ [:: iRet]) e).
       split.
-      + by inversion H1; subst; apply: Compiler_SS_val_ClosRec => //. (* XXXXX *)
+      + by apply: Compiler_SS_val_ClosRec.
       + move=> s k.
         apply: (RTC_MSECD_SS_Step
                   _ (k, e, V (mClosRec (c0 ++ [:: iRet]) e) :: s) _).
