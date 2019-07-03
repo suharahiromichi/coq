@@ -113,9 +113,9 @@ Section MiniMLdB.
       split.
       + by apply: H21.
       + apply: MML_dB_NS_Iftrue.
-        * invs: H12 => [m n H0 H5 H | H].
+        * invs: H12 => [m n H0 H5 H].
           ** by apply: MML_dB_NS_Eq.
-          ** by apply: MML_dB_NS_Var.
+(*        ** by apply: MML_dB_NS_Var. *)
         * by apply: H22.
           
     (* If false *)
@@ -132,8 +132,10 @@ Section MiniMLdB.
         * invs: H12.
           ** move=> m n H0 H5 H.
                by apply: MML_dB_NS_Eq.
+(*
           ** move=> H.
                by apply: MML_dB_NS_Var.
+*)
         * by apply: H32.
           
     (* Lam *)
@@ -222,10 +224,6 @@ Section MiniMLdB.
   (* ***************************************** *)
   (* ***************************************** *)
   (* ***************************************** *)
-  
-  (* done に効き目のあるヒント *)
-  Hint Constructors MML_dB_NS.
-  Hint Constructors dB_translation_NS_val.
   
   Theorem dB_translation_NS_correctness g t v :
     MML_NS g t v ->

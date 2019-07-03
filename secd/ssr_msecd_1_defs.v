@@ -482,7 +482,18 @@ Section Compiler.
     - rewrite /=.
         by apply: H0.
   Qed.
-  
+
 End Compiler.
+
+(* HINT *)
+(* done に効果のあるもの。 *)
+
+Hint Constructors MML_dB_NS.
+Hint Constructors dB_translation_NS_val.
+
+Hint Constructors MSECD_SS.
+Hint Resolve RTC_MSECD_SS_Refl.
+
+Hint Constructors Compiler_SS_val.
 
 (* END *)

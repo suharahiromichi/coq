@@ -306,11 +306,6 @@ Section Compiler.
   (* ***************************************** *)
   (* ***************************************** *)
   
-  (* done に効き目のあるヒント *)
-  Hint Constructors Compiler_SS_val.
-  Hint Constructors MSECD_SS.
-  Hint Resolve RTC_MSECD_SS_Refl.
-  
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
