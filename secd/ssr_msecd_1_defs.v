@@ -266,35 +266,8 @@ Section MiniMLdB.
   Proof.
     move=> He Hv.
     apply: dB_translation_NS_env_all.
-    inv: He => H0.
-    case.                                   (* x0 *)
-    - case H : (x == A).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == B).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == C).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == F).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == G).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == H).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == X).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == Y).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
-    - case H : (x == Z).
-      + by rewrite /= H /=.
-      + by rewrite /= H /=.
+    inv: He => H0 x0.
+    case H: (x == x0); by rewrite /= H /=.
   Qed.
   
 End MiniMLdB.
@@ -427,7 +400,7 @@ Section Modern_SECD.
   
   (* RTC_MSECD_SS_Reflexivity *)
   Definition RTC_MSECD_SS_Refl (cf : conf) := rsc_refl MSECD_SS cf.
-
+  
   (* RTC_MSECD_SS_Transitivity *)
   Definition RTC_MSECD_SS_Step (cf1 cf2 cf3 : conf) :=
     rsc_step MSECD_SS cf1 cf2 cf3.
