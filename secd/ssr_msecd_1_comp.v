@@ -128,12 +128,12 @@ Section Compiler.
     (* Var *)
     - move=> o' i c H.
       inv: H => e He.
-      exists (dlookup i e).
+      exists (elookup i e).
       split.
       + inv: He => H0.
           by apply: H0.
       + move=> s k.
-        apply: (RTC_MSECD_SS_Step _ (k, e, V(dlookup i e) :: s) _).
+        apply: (RTC_MSECD_SS_Step _ (k, e, V(elookup i e) :: s) _).
         * by apply: MSECD_SS_Acc.
         * by apply: RTC_MSECD_SS_Refl. 
           
@@ -314,21 +314,21 @@ Section Compiler.
   Theorem CorrectnessSS o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
-              forall d, Compiler_SS_env o d ->
+              forall e, Compiler_SS_env o e ->
                         exists mv, Compiler_SS_val v mv /\
                                    forall s k,
-                                     RTC_MSECD_SS (c ++ k, d, s) (k, d, (V mv) :: s).
+                                     RTC_MSECD_SS (c ++ k, e, s) (k, e, (V mv) :: s).
   Proof.
     elim.
     (* Nat *)
-    - move=> o' n c H d' He.
+    - move=> o' n c H e' He.
       exists (mNat n).
       split=> // s k.
       inv: H.
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* Bool *)
-    - move=> o' b c H d' He.
+    - move=> o' b c H e' He.
       exists (mBool b).
       split=> // s k.
       inv: H.
@@ -397,17 +397,17 @@ Section Compiler.
     (* Var *)
     - move=> o' i c H.
       inv: H => e He.
-      exists (dlookup i e).
+      exists (elookup i e).
       split.
       + by inv: He => H0.
       + move=> s k.
           by apply: RTC_MSECD_SS_Step => /=.
           
     (* Let *)
-    - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
+    - move=> o' d1 d2 v1 v2 H1 IH1 H2 IH2 k H.
       inv: H => H4 H6 e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'].
-      have He2 : Compiler_SS_env (m :: o') (mv1 :: e)
+      have He2 : Compiler_SS_env (v1 :: o') (mv1 :: e)
         by apply: Compiler_SS_env_cons.
       case: (IH2 c2 H6 (mv1 :: e) He2) => mv2 [Hc2 H2'].
       exists mv2.
@@ -467,12 +467,12 @@ Section Compiler.
           by apply: RTC_MSECD_SS_Step => /=.
         
     (* App *)
-    - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
+    - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
       inv: H => H4 H6 e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'] {H1 H4 IH1}.
       inv: Hc1 => H5 H8.
       case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'] {H2 H6 IH2}.
-      have He' : Compiler_SS_env (m :: o1) (mv2 :: e0)
+      have He' : Compiler_SS_env (v1 :: o1) (mv2 :: e0)
         by apply: Compiler_SS_env_cons.
       case: (IH' c H5 (mv2 :: e0) He') => mv' [Hc' H''] {H5 IH'}.
       exists mv'.
@@ -486,12 +486,12 @@ Section Compiler.
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* AppRec *)
-    - move=> o' o1 d1 d2 d' m n H1 IH1 H2 IH2 H' IH' k H.
+    - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
       inv: H => H4 H6 e He.
       case: (IH1 c1 H4 e He) => mv1 [Hc1 H1'] {H1 H4 IH1}.
       move: (Hc1); inv=> H5 H8.             (* dup 複製する。 *)
       case: (IH2 c2 H6 e He) => mv2 [Hc2 H2'] {H2 H6 IH2}.
-      have He' : Compiler_SS_env (m :: (vClosRec d' o1) :: o1)
+      have He' : Compiler_SS_env (v1 :: (vClosRec d' o1) :: o1)
                                  (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
         by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |].
       case: (IH' c H5 (mv2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He')

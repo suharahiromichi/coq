@@ -326,7 +326,7 @@ Section Modern_SECD.
   | mClosRec (c : MSECD_Code) (e : seq MSECD_Val).
   Definition MSECD_Env := seq MSECD_Val.
   
-  Definition dlookup (i : nat) (e : MSECD_Env) := nth (mBool false) e i.
+  Definition elookup (i : nat) (e : MSECD_Env) := nth (mBool false) e i.
   
   Inductive MSECD_SVal : Set :=
   | V (v : MSECD_Val)                       (* Machine Value *)
@@ -357,7 +357,7 @@ Section Modern_SECD.
                (           c,       e,         V(mBool (m == n)) :: s)
   | MSECD_SS_Acc  (i : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS ( iAcc i :: c,       e,                              s)
-               (           c,       e,            V(dlookup i e) :: s)
+               (           c,       e,            V(elookup i e) :: s)
   | MSECD_SS_Let  (v : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (   iLet :: c,       e,                      V(v) :: s)
                (           c,  v :: e,                              s)
@@ -493,7 +493,7 @@ Section Compiler.
                       
   with Compiler_SS_env : MML_dB_env -> MSECD_Env -> Prop :=
        | Compiler_SS_env_all o e :
-           (forall i, Compiler_SS_val (olookup i o) (dlookup i e)) ->
+           (forall i, Compiler_SS_val (olookup i o) (elookup i e)) ->
            Compiler_SS_env o e.
   
   Lemma Compiler_SS_env_cons m o' mv1 e :
