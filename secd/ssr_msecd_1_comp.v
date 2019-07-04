@@ -331,62 +331,62 @@ Section Compiler.
       
     (* Plus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.
-      case: (IH1 c1 H'1 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       inv: Hc1.                        (* m1 を mNat m にする。 *)
-      case: (IH2 c2 H'2 e He) => m2 [Hc2 H2'].
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22].
       inv: Hc2.                        (* m2 を mNat n にする。 *)
       exists (mNat (m + n)).
       split=> // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* Minus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.
-      case: (IH1 c1 H'1 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       inv: Hc1.
-      case: (IH2 c2 H'2 e He) => m2 [Hc2 H2'].
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22].
       inv: Hc2.
       exists (mNat (m - n)).
       split=> // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* Times *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.
-      case: (IH1 c1 H'1 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       inv: Hc1.
-      case: (IH2 c2 H'2 e He) => m2 [Hc2 H2'].
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22].
       inv: Hc2.
       exists (mNat (m * n)).
       split=> // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* Eq *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
-      inv: H => H'1 H'2 e He.
-      case: (IH1 c1 H'1 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       inv: Hc1.
-      case: (IH2 c2 H'2 e He) => m2 [Hc2 H2'].
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22].
       inv: Hc2.
       exists (mBool (m == n)).
       split=> // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* Var *)
@@ -400,47 +400,47 @@ Section Compiler.
           
     (* Let *)
     - move=> o' d1 d2 v1 v2 H1 IH1 H2 IH2 k H.
-      inv: H => H4 H6 e He.
-      case: (IH1 c1 H4 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       have He2 : Compiler_SS_env (v1 :: o') (m1 :: e)
         by apply: Compiler_SS_env_cons.
-      case: (IH2 c2 H6 (m1 :: e) He2) => m2 [Hc2 H2'].
+      case: (IH2 c2 H12 (m1 :: e) He2) => m2 [Hc2 H22].
       exists m2.
       split => // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       apply: RTC_MSECD_SS_Step => //=.
       rewrite -/cat -catA.                  (* fold cat *)
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* IF-THEN *)
     - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
-      inv: H => H5 H7 H8 e He.
-      case: (IH1 c1 H5 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 H13 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       inv: Hc1.                          (* m1 を mBool にする。 *)
-      case: (IH2 c2 H7 e He) => m2 [Hc2 H2'].
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22].
       (* m2 はそのまま *)
       exists m2.
       split => // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       apply: RTC_MSECD_SS_Step => //=.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* IF-ELSE *)
     - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
-      inv: H => H5 H7 H8 e He.
-      case: (IH1 c1 H5 e He) => m1 [Hc1 H1'].
+      inv: H => H11 H12 H13 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21].
       inv: Hc1.
-      case: (IH3 c3 H8 e He) => m3 [Hc3 H3'].
+      case: (IH3 c3 H13 e He) => m3 [Hc3 H23].
       exists m3.
       split => // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       apply: RTC_MSECD_SS_Step => //=.
-      apply: RTC_MSECD_SS_Trans; [apply: H3' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H23 |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* Clos *)
@@ -463,40 +463,40 @@ Section Compiler.
         
     (* App *)
     - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
-      inv: H => H4 H6 e He.
-      case: (IH1 c1 H4 e He) => m1 [Hc1 H1'] {H1 H4 IH1}.
-      inv: Hc1 => H5 H8.
-      case: (IH2 c2 H6 e He) => m2 [Hc2 H2'] {H2 H6 IH2}.
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21] {H1 H11 IH1}.
+      inv: Hc1 => Hv1 He1.
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22] {H2 H12 IH2}.
       have He' : Compiler_SS_env (v1 :: o1) (m2 :: e0)
         by apply: Compiler_SS_env_cons.
-      case: (IH' c H5 (m2 :: e0) He') => m' [Hc' H''] {H5 IH'}.
+      case: (IH' c Hv1 (m2 :: e0) He') => m' [Hc' H''] {Hv1 IH'}.
       exists m'.
       split => // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
       apply: RTC_MSECD_SS_Step => //=.
       apply: RTC_MSECD_SS_Trans; [apply: H'' |].
         by apply: RTC_MSECD_SS_Step => /=.
         
     (* AppRec *)
     - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
-      inv: H => H4 H6 e He.
-      case: (IH1 c1 H4 e He) => m1 [Hc1 H1'] {H1 H4 IH1}.
-      move: (Hc1); inv=> H5 H8.             (* dup 複製する。 *)
-      case: (IH2 c2 H6 e He) => m2 [Hc2 H2'] {H2 H6 IH2}.
+      inv: H => H11 H12 e He.
+      case: (IH1 c1 H11 e He) => m1 [Hc1 H21] {H1 H11 IH1}.
+      move: (Hc1); inv=> Hv1 He1.           (* dup 複製する。 *)
+      case: (IH2 c2 H12 e He) => m2 [Hc2 H22] {H2 H12 IH2}.
       have He' : Compiler_SS_env (v1 :: (vClosRec d' o1) :: o1)
                                  (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
         by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |].
-      case: (IH' c H5 (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He')
-        => m' [Hc' H''] {H5 IH'}.
+      case: (IH' c Hv1 (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He')
+        => m' [Hc' H''] {Hv1 IH'}.
       exists m'.
       split => // s k.
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H1' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
-      apply: RTC_MSECD_SS_Trans; [apply: H2' |].
+      apply: RTC_MSECD_SS_Trans; [apply: H22 |].
       apply: RTC_MSECD_SS_Step => //=.
       apply: RTC_MSECD_SS_Trans; [apply: H'' |].
         by apply: RTC_MSECD_SS_Step => /=.
