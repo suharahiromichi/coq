@@ -302,7 +302,7 @@ Section Modern_SECD.
   Definition elookup (i : nat) (e : MSECD_Env) := nth (mBool false) e i.
   
   Inductive MSECD_SVal : Set :=
-  | V (w : MSECD_Val)                       (* Machine Value *)
+  | V (m : MSECD_Val)                       (* Machine Value *)
   | S (s : MSECD_Code * MSECD_Env).         (* Stack Frame *)
   Definition MSECD_Stack := seq MSECD_SVal.
 
