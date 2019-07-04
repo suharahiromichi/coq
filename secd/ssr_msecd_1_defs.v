@@ -50,67 +50,67 @@ Section MiniML.
   
   (** values *)
   Inductive MML_val : Set :=
-  | VNat (n : nat)
-  | VBool (b : bool)
-  | VClos (v : Var) (e : MML_exp) (g : seq (Var * MML_val))
-  | VClosRec (f : Var) (v : Var) (e : MML_exp) (g : seq (Var * MML_val)).
+  | uNat (n : nat)
+  | uBool (b : bool)
+  | uClos (v : Var) (e : MML_exp) (g : seq (Var * MML_val))
+  | uClosRec (f : Var) (v : Var) (e : MML_exp) (g : seq (Var * MML_val)).
   
   (** environments *)
   Definition MML_env := (seq (Var * MML_val)).
   Fixpoint lookup (x : Var) (g : MML_env) : MML_val :=
     match g with
     | (x', v) :: g' => if (x' == x) then v else lookup x g'
-    | _ => VBool false
+    | _ => uBool false
     end.
   
   (** The natural semantics of MiniML *)
   Inductive MML_NS : MML_env -> MML_exp -> MML_val -> Prop :=
-  | MML_NS_Nat   (g : MML_env) (n : nat) : MML_NS g (eNat n) (VNat n)
-  | MML_NS_Bool  (g : MML_env) (b : bool) : MML_NS g (eBool b) (VBool b)
+  | MML_NS_Nat   (g : MML_env) (n : nat) : MML_NS g (eNat n) (uNat n)
+  | MML_NS_Bool  (g : MML_env) (b : bool) : MML_NS g (eBool b) (uBool b)
   | MML_NS_Plus  (g : MML_env) (t1 t2 : MML_exp) (m n : nat) :
-      MML_NS g t1 (VNat m) ->
-      MML_NS g t2 (VNat n) ->
-      MML_NS g (ePlus t1 t2) (VNat (m + n))
+      MML_NS g t1 (uNat m) ->
+      MML_NS g t2 (uNat n) ->
+      MML_NS g (ePlus t1 t2) (uNat (m + n))
   | MML_NS_Minus (g : MML_env) (t1 t2 : MML_exp) (m n : nat) :
-      MML_NS g t1 (VNat m) ->
-      MML_NS g t2 (VNat n) ->
-      MML_NS g (eMinus t1 t2) (VNat (m - n))
+      MML_NS g t1 (uNat m) ->
+      MML_NS g t2 (uNat n) ->
+      MML_NS g (eMinus t1 t2) (uNat (m - n))
   | MML_NS_Times (g : MML_env) (t1 t2 : MML_exp) (m n : nat) :
-      MML_NS g t1 (VNat m) ->
-      MML_NS g t2 (VNat n) ->
-      MML_NS g (eTimes t1 t2) (VNat (m * n))
+      MML_NS g t1 (uNat m) ->
+      MML_NS g t2 (uNat n) ->
+      MML_NS g (eTimes t1 t2) (uNat (m * n))
   | MML_NS_Eq    (g : MML_env) (t1 t2 : MML_exp) (m n : nat) :
-      MML_NS g t1 (VNat m) ->
-      MML_NS g t2 (VNat n) ->
-      MML_NS g (eEq t1 t2) (VBool (m == n))
+      MML_NS g t1 (uNat m) ->
+      MML_NS g t2 (uNat n) ->
+      MML_NS g (eEq t1 t2) (uBool (m == n))
   | MML_NS_Var   (g : MML_env) (x : Var) :
       MML_NS g (eVar x) (lookup x g)
-  | MML_NS_Let   (g : MML_env) (x : Var) (t1 t2 : MML_exp) (v1 v2 : MML_val) :
-      MML_NS g t1 v1 ->
-      MML_NS ((x, v1) :: g) t2 v2 ->
-      MML_NS g (eLet x t1 t2) v2
-  | MML_NS_Iftrue (g : MML_env) (t1 t2 e3 : MML_exp) (v2 : MML_val) :
-      MML_NS g t1 (VBool true) ->
-      MML_NS g t2 v2 ->
-      MML_NS g (eIf t1 t2 e3) v2
-  | MML_NS_Iffalse (g : MML_env) (t1 t2 e3 : MML_exp) (v3 : MML_val) :
-      MML_NS g t1 (VBool false) ->
-      MML_NS g e3 v3 ->
-      MML_NS g (eIf t1 t2 e3) v3
+  | MML_NS_Let   (g : MML_env) (x : Var) (t1 t2 : MML_exp) (u1 u2 : MML_val) :
+      MML_NS g t1 u1 ->
+      MML_NS ((x, u1) :: g) t2 u2 ->
+      MML_NS g (eLet x t1 t2) u2
+  | MML_NS_Iftrue (g : MML_env) (t1 t2 e3 : MML_exp) (u2 : MML_val) :
+      MML_NS g t1 (uBool true) ->
+      MML_NS g t2 u2 ->
+      MML_NS g (eIf t1 t2 e3) u2
+  | MML_NS_Iffalse (g : MML_env) (t1 t2 e3 : MML_exp) (u3 : MML_val) :
+      MML_NS g t1 (uBool false) ->
+      MML_NS g e3 u3 ->
+      MML_NS g (eIf t1 t2 e3) u3
   | MML_NS_Lam   (g : MML_env) (x : Var) (e : MML_exp) :
-      MML_NS g (eLam x e) (VClos x e g)
+      MML_NS g (eLam x e) (uClos x e g)
   | MML_NS_MuLam (g : MML_env) (f : Var) (x : Var) (e : MML_exp) :
-      MML_NS g (eMuLam f x e) (VClosRec f x e g)
-  | MML_NS_App (g g1 : MML_env) (x : Var) (t1 t2 e : MML_exp) (v2 v : MML_val) :
-      MML_NS g t1 (VClos x e g1) ->
-      MML_NS g t2 v2 ->
-      MML_NS ((x, v2) :: g1) e v ->
-      MML_NS g (eApp t1 t2) v
-  | MML_NS_AppRec (g g1 : MML_env) (x f : Var) (t1 t2 e : MML_exp) (v2 v : MML_val) :
-      MML_NS g t1 (VClosRec f x e g1) ->
-      MML_NS g t2 v2 ->
-      MML_NS ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e v ->
-      MML_NS g (eApp t1 t2) v.
+      MML_NS g (eMuLam f x e) (uClosRec f x e g)
+  | MML_NS_App (g g1 : MML_env) (x : Var) (t1 t2 e : MML_exp) (u2 u : MML_val) :
+     MML_NS g t1 (uClos x e g1) ->
+      MML_NS g t2 u2 ->
+      MML_NS ((x, u2) :: g1) e u ->
+      MML_NS g (eApp t1 t2) u
+  | MML_NS_AppRec (g g1 : MML_env) (x f : Var) (t1 t2 e : MML_exp) (u2 u : MML_val) :
+      MML_NS g t1 (uClosRec f x e g1) ->
+      MML_NS g t2 u2 ->
+      MML_NS ((x, u2) :: (f, (uClosRec f x e g1)) :: g1) e u ->
+      MML_NS g (eApp t1 t2) u.
   
 End MiniML.
 
@@ -235,22 +235,22 @@ Section MiniMLdB.
 
   (* g から変数だけ取り出す。 *)
   Definition mkctx (g : MML_env) : ctx := [seq fst xv | xv <- g].
-  Compute mkctx [:: (X, VNat 1); (Y, VNat 2); (Z, VNat 3)].
+  Compute mkctx [:: (X, uNat 1); (Y, uNat 2); (Z, uNat 3)].
   (* ==> [:: X; Y; Z] *)
 
   Inductive dB_translation_NS_val : MML_val -> MML_dB_val -> Prop :=
-  | dB_translation_NS_val_Nat  (n : nat) : dB_translation_NS_val (VNat n) (vNat n)
-  | dB_translation_NS_val_Bool (b : bool) : dB_translation_NS_val (VBool b) (vBool b)
+  | dB_translation_NS_val_Nat  (n : nat) : dB_translation_NS_val (uNat n) (vNat n)
+  | dB_translation_NS_val_Bool (b : bool) : dB_translation_NS_val (uBool b) (vBool b)
   | db_translation_NS_val_Clos (x : Var) (e : MML_exp) (g : MML_env)
                                (d : MML_dB_exp) (o : MML_dB_env) :
       dB_translation_NS_env g o ->
       dB_translation_NS (x :: (mkctx g)) e d ->
-      dB_translation_NS_val (VClos x e g) (vClos d o)
+      dB_translation_NS_val (uClos x e g) (vClos d o)
   | db_translation_NS_val_ClosRec (f x : Var) (e : MML_exp) (g : MML_env)
                                (d : MML_dB_exp) (o : MML_dB_env) :
       dB_translation_NS_env g o ->
       dB_translation_NS (x :: f :: (mkctx g)) e d ->
-      dB_translation_NS_val (VClosRec f x e g) (vClosRec d o)
+      dB_translation_NS_val (uClosRec f x e g) (vClosRec d o)
                             
   with dB_translation_NS_env : MML_env -> MML_dB_env -> Prop :=
        | dB_translation_NS_env_all (g : MML_env) (o : MML_dB_env) :
@@ -302,7 +302,7 @@ Section Modern_SECD.
   Definition elookup (i : nat) (e : MSECD_Env) := nth (mBool false) e i.
   
   Inductive MSECD_SVal : Set :=
-  | V (v : MSECD_Val)                       (* Machine Value *)
+  | V (w : MSECD_Val)                       (* Machine Value *)
   | S (s : MSECD_Code * MSECD_Env).         (* Stack Frame *)
   Definition MSECD_Stack := seq MSECD_SVal.
 
@@ -331,11 +331,11 @@ Section Modern_SECD.
   | MSECD_SS_Acc  (i : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS ( iAcc i :: c,       e,                              s)
                (           c,       e,            V(elookup i e) :: s)
-  | MSECD_SS_Let  (v : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
-      MSECD_SS (   iLet :: c,       e,                      V(v) :: s)
-               (           c,  v :: e,                              s)
-  | MSECD_SS_EndLet (v : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
-      MSECD_SS (iEndLet :: c,  v :: e,                              s)
+  | MSECD_SS_Let  (m : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+      MSECD_SS (   iLet :: c,       e,                      V(m) :: s)
+               (           c,  m :: e,                              s)
+  | MSECD_SS_EndLet (m : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+      MSECD_SS (iEndLet :: c,  m :: e,                              s)
                (           c,       e,                              s)
   | MSECD_SS_Seltrue (c c1 c2 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iSel c1 c2 :: c,    e,             V(mBool true) :: s)
@@ -343,26 +343,26 @@ Section Modern_SECD.
   | MSECD_SS_Selfalse (c c1 c2 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iSel c1 c2 :: c,    e,            V(mBool false) :: s)
                (          c2,       e,                S(c, [::]) :: s)
-  | MSECD_SS_Join (v : MSECD_Val) (c c1 : MSECD_Code) (e e1 : MSECD_Env)
+  | MSECD_SS_Join (m : MSECD_Val) (c c1 : MSECD_Code) (e e1 : MSECD_Env)
                   (s : MSECD_Stack) :
-      MSECD_SS (  iJoin :: c,       e,         V(v) :: S(c1, e1) :: s) (* e1 捨てる *)
-               (          c1,       e,                      V(v) :: s)
+      MSECD_SS (  iJoin :: c,       e,         V(m) :: S(c1, e1) :: s) (* e1 捨てる *)
+               (          c1,       e,                      V(m) :: s)
   | MSECD_SS_Clos (c c1 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iClos c1 :: c,      e,                              s)
                (           c,       e,             V(mClos c1 e) :: s)
   | MSECD_SS_ClosRec (c c1 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
       MSECD_SS (iClosRec c1 :: c,   e,                              s)
                (           c,       e,          V(mClosRec c1 e) :: s)
-  | MSECD_SS_App (v : MSECD_Val) (c c1 : MSECD_Code) (e e1 : MSECD_Env)(s : MSECD_Stack) :
-      MSECD_SS (   iApp :: c,       e,    V(v) :: V(mClos c1 e1) :: s)
-               (          c1, v :: e1,                   S(c, e) :: s)
-  | MSECD_SS_AppRec (v : MSECD_Val)(c c1 : MSECD_Code)(e e1 : MSECD_Env)(s :MSECD_Stack) :
-      MSECD_SS (   iApp :: c,       e, V(v) :: V(mClosRec c1 e1) :: s)
+  | MSECD_SS_App (m : MSECD_Val) (c c1 : MSECD_Code) (e e1 : MSECD_Env)(s : MSECD_Stack) :
+      MSECD_SS (   iApp :: c,       e,    V(m) :: V(mClos c1 e1) :: s)
+               (          c1, m :: e1,                   S(c, e) :: s)
+  | MSECD_SS_AppRec (m : MSECD_Val)(c c1 : MSECD_Code)(e e1 : MSECD_Env)(s :MSECD_Stack) :
+      MSECD_SS (   iApp :: c,       e, V(m) :: V(mClosRec c1 e1) :: s)
                (          c1,
-            v :: mClosRec c1 e1 :: e1,                   S(c, e) :: s)
-  | MSECD_SS_Ret (v : MSECD_Val)(c c1 : MSECD_Code)(e e1 : MSECD_Env)(s :MSECD_Stack) :
-      MSECD_SS (   iRet :: c,       e,         V(v) :: S(c1, e1) :: s)
-               (          c1,      e1,                      V(v) :: s).
+            m :: mClosRec c1 e1 :: e1,                   S(c, e) :: s)
+  | MSECD_SS_Ret (m : MSECD_Val)(c c1 : MSECD_Code)(e e1 : MSECD_Env)(s :MSECD_Stack) :
+      MSECD_SS (   iRet :: c,       e,         V(m) :: S(c1, e1) :: s)
+               (          c1,      e1,                      V(m) :: s).
   
   Definition relation (X : Type) := X -> X -> Prop.  
   
@@ -469,10 +469,10 @@ Section Compiler.
            (forall i, Compiler_SS_val (olookup i o) (elookup i e)) ->
            Compiler_SS_env o e.
   
-  Lemma Compiler_SS_env_cons m o' mv1 e :
+  Lemma Compiler_SS_env_cons v o' m1 e :
     Compiler_SS_env o' e ->
-    Compiler_SS_val m mv1 ->
-    Compiler_SS_env (m :: o') (mv1 :: e).
+    Compiler_SS_val v m1 ->
+    Compiler_SS_env (v :: o') (m1 :: e).
   Proof.
     move=> He Hv.
     apply: Compiler_SS_env_all.
@@ -489,11 +489,15 @@ End Compiler.
 (* done に効果のあるもの。 *)
 
 Hint Constructors MML_dB_NS.
+Hint Constructors dB_translation_NS.
 Hint Constructors dB_translation_NS_val.
+Hint Constructors dB_translation_NS_env.
 
 Hint Constructors MSECD_SS.
 Hint Resolve RTC_MSECD_SS_Refl.
 
+Hint Constructors Compiler_SS.
 Hint Constructors Compiler_SS_val.
+Hint Constructors Compiler_SS_env.
 
 (* END *)
