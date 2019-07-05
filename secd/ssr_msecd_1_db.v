@@ -252,7 +252,7 @@ Section MiniMLdB.
       case: (IH2 o He d2 H2') => v2 [H21 H22].
       inv: H21.
       exists (vNat (m + n)).
-      split => //.
+      split=> //.
         by apply: MML_dB_NS_Plus.
         
     (* Minus *)
@@ -263,7 +263,7 @@ Section MiniMLdB.
       case: (IH2 o He d2 H2') => v2 [H21 H22].
       inv: H21.
       exists (vNat (m - n)).
-      split => //.
+      split=> //.
         by apply: MML_dB_NS_Minus.
         
     (* Times *)
@@ -274,7 +274,7 @@ Section MiniMLdB.
       case: (IH2 o He d2 H2') => v2 [H21 H22].
       inv: H21.
       exists (vNat (m * n)).
-      split => //.
+      split=> //.
         by apply: MML_dB_NS_Times.
 
     (* Eq *)
@@ -285,9 +285,8 @@ Section MiniMLdB.
     - move=> g' x o He d H.
       inv: H.
       exists (olookup (index x (mkctx g')) o).
-      split.
-      + by inv: He => H0.
-      + by [].
+      split=> //.
+        by inv: He => H0.
         
     (* Let *)
     - move=> g' x g1 g2 u1 u2 H1 IH1 H2 IH2 o He d H.
@@ -309,10 +308,7 @@ Section MiniMLdB.
       case: (IH2 o He d2 H2') => v2 [H21 H22].
       exists v2.
       split=> //.
-      apply: MML_dB_NS_Iftrue.
-      invs: H12 => [m n Hm Hn H].
-      + by apply: MML_dB_NS_Eq.
-      + by [].
+        by apply: MML_dB_NS_Iftrue.
         
     (* If false *)
     - move=> g' t1 t2 t3 u3 H1 IH1 H3 IH3 o He d H.
@@ -322,26 +318,21 @@ Section MiniMLdB.
       case: (IH3 o He d3 H3') => v3 [H31 H32].
       exists v3.
       split=> //.
-      apply: MML_dB_NS_Iffalse.
-      invs: H12 => [m n Hm Hn H].
-      + by apply: MML_dB_NS_Eq.
-      + by [].
+        by apply: MML_dB_NS_Iffalse.
         
     (* Lam *)
     - move=> g' x t' o He d H.
       inv: H.
       exists (vClos d0 o).
-      split.
-      + by apply: db_translation_NS_val_Clos.
-      + by [].
+      split=> //.
+        by apply: db_translation_NS_val_Clos.
         
     (* MuLam *)
     - move=> g' f x t' o He d H.
       inv: H.
       exists (vClosRec d0 o).
-      split.
-      + by apply: db_translation_NS_val_ClosRec.
-      + by [].
+      split=> //.
+        by apply: db_translation_NS_val_ClosRec.
         
     (* App Clos *)
     - move=> g' g3 x t1 t2 t3 u2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
@@ -357,6 +348,7 @@ Section MiniMLdB.
       case: (IH3 (v2 :: o0) He2 d H'') => u3 [H31 H32] {IH3}.
       exists u3.
       split=> //.
+        (* eauto でもよい。 *)
         by apply: MML_dB_NS_App; [apply: H12 | apply: H22 | apply: H32].
         
     (* App ClosRec *)
