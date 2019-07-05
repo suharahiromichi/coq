@@ -310,7 +310,7 @@ Section MiniMLdB.
       exists v2.
       split=> //.
       apply: MML_dB_NS_Iftrue.
-      invs: H12 => [m n H0 H5 H].
+      invs: H12 => [m n Hm Hn H].
       + by apply: MML_dB_NS_Eq.
       + by [].
         
@@ -323,7 +323,7 @@ Section MiniMLdB.
       exists v3.
       split=> //.
       apply: MML_dB_NS_Iffalse.
-      invs: H12 => [m n H0 H5 H].
+      invs: H12 => [m n Hm Hn H].
       + by apply: MML_dB_NS_Eq.
       + by [].
         
