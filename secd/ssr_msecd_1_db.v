@@ -294,7 +294,7 @@ Section MiniMLdB.
       case: (IH1 o He d1 H1') => v1 [H11 H12].
       have He1 : dB_translation_NS_env ((x, u1) :: g') (v1 :: o)
         by apply: dB_translation_NS_env_cons.
-      have H'' : dB_translation_NS (mkctx ((x, u1) :: g')) g2 d2 by apply: H2'.
+      have H'' : dB_translation_NS (mkctx ((x, u1) :: g')) g2 d2 by [].
       case: (IH2 (v1 :: o) He1 d2 H'') => v2 [H21 H22].
       exists v2.
       split=> //.
