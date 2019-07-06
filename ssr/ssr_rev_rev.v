@@ -1,7 +1,7 @@
 (**
 Coq/SSReflect/MathComp による証明の例
 
-2018_05_19 OSC名古屋2018 [ProofCafe www.proofcafe.org]
+2018_07_13 OSC名古屋2018 [ProofCafe proofcafe.commpass.com]
 
 線形リストを反転(reverse)するプログラムについて：
 
@@ -104,7 +104,7 @@ Section Rev.
     elim: l => [| a l IHl] /=.
     - done.
     - rewrite (l_rev2_cat_r l [::] [:: a]).
-      rewrite (l_rev2_cat_l (revsub l [::]) [::a] [::]).
+      rewrite (l_rev2_cat_l (revsub l [::]) [:: a] [::]).
       rewrite IHl.
       done.
   Qed.
@@ -113,9 +113,9 @@ End Rev.
 (** * 参考文献 *)
 (**
 [1.] "Mathematical Components"
-[https://math-comp.github.io/math-comp/]
+[https://math-comp.github.io]
 
-一次配布元。
+一次配布元。日本語情報へのリンクもある。
 *)
 
 (**
@@ -143,8 +143,10 @@ MCB。MathCompライブラリのしくみの説明が詳しい。
 [5.] Georges Gonthier, Assia Mahboubi, Enrico Tassi,
 "A Small Scale Reflection Extension for the Coq system"
 [https://hal.inria.fr/inria-00258384v17/document]
+GMT。SSReflect拡張部分のリファレンスマニュアル。PDF。
 
-GMT。SSReflect拡張部分のリファレンスマニュアル。
+[https://coq.inria.fr/distrib/current/refman/proof-engine/ssreflect-proof-language.html]
+同。オンライン判
  *)
 (**
 [------------]
