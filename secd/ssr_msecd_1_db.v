@@ -150,6 +150,125 @@ Section MiniMLdB.
         by apply: MML_dB_NS_AppRec; [apply: H12 | apply: H22 | apply: H32].
   Qed.
   
+  Fixpoint dB_translation_NS_compiler (p : ctx) (e : MML_exp) : option MML_dB_exp :=
+    match e with
+    | eNat n => Some (dNat n)
+    | eBool b => Some (dBool b)
+    | ePlus e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dPlus d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eMinus e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dMinus d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eTimes e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dTimes d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eEq e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dEq d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eVar x => Some (dVar (index x p))        
+    | eLet x e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler (x :: p) e2 with
+                   | Some d2 => Some (dLet d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eIf e1 e2 e3 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => match dB_translation_NS_compiler p e3 with
+                                | Some d3 => Some (dIf d1 d2 d3)
+                                | _ => None
+                                end
+                   | _ => None
+                   end
+      | _ => None
+      end
+    | eLam x e =>
+      match dB_translation_NS_compiler (x :: p) e with
+      | Some d => Some (dLam d)
+      | _ => None
+      end
+    | eMuLam f x e =>
+      match dB_translation_NS_compiler (x :: f :: p) e with
+      | Some d => Some (dMuLam d)
+      | _ => None
+      end
+    | eApp e1 e2 =>
+      match dB_translation_NS_compiler p e1 with
+      | Some d1 => match dB_translation_NS_compiler p e2 with
+                   | Some d2 => Some (dApp d1 d2)
+                   | _ => None
+                   end
+      | _ => None
+      end
+    end.
+  
+  Theorem dB_translation_NS_compiler_correctness ctx t d :
+    dB_translation_NS ctx t d -> 
+    dB_translation_NS_compiler ctx t = Some d.
+  Proof.
+    elim=> //=.
+    - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* plus *)
+        by rewrite IH1 IH2.
+    - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* minus *)
+        by rewrite IH1 IH2.
+    - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* times *)
+        by rewrite IH1 IH2.
+    - move=> p x t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* let *)
+        by rewrite IH1 IH2.
+    - move=> p t1 t2 t3 d1 d2 d3 H1 IH1 H2 IH2 H3 IH3. (* if *)
+        by rewrite IH1 IH2 IH3.
+    - move=> p x e d' H IH.                 (* lam *)
+        by rewrite IH.
+    - move=> p f x e d' H IH.
+        by rewrite IH.
+    - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+  Qed.
+  
+  Definition example :=
+    (eApp
+       (eMuLam F X
+               (eIf (eEq (eVar X) (eNat 0))
+                    (eNat 1)
+                    (eTimes (eVar X)
+                            (eApp (eVar F)
+                                  (eMinus (eVar X) (eNat 1))))))
+       (eNat 5)).
+  
+  Compute dB_translation_NS_compiler [::] example.
+  (*
+     = Some
+         (dApp
+            (dMuLam
+               (dIf (dEq (dVar 0) (dNat 0)) (dNat 1)
+                  (dTimes (dVar 0) (dApp (dVar 1) (dMinus (dVar 0) (dNat 1))))))
+            (dNat 5)) : option MML_dB_exp
+   *)
+
 End MiniMLdB.
 
 (* END *)
