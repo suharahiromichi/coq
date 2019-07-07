@@ -510,6 +510,130 @@ Section Compiler.
                       ***** by apply: RTC_MSECD_SS_Refl.
   Qed.
 
+  (** ******** *)
+  (** compiler *)
+  (** ******** *)
+  
+  Fixpoint compile (d : MML_dB_exp) : option MSECD_Code :=
+    match d with
+    | dNat n => Some [:: iNat n]
+    | dBool b => Some [:: iBool b]
+    | dPlus d1 d2 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 => Some (c1 ++ c2 ++ [:: iAdd])
+                   | None => None
+                   end
+      | None => None
+      end
+    | dMinus d1 d2 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 => Some (c1 ++ c2 ++ [:: iSub])
+                   | None => None
+                   end
+      | None => None
+      end
+    | dTimes d1 d2 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 => Some (c1 ++ c2 ++ [:: iMul])
+                   | None => None
+                   end
+      | None => None
+      end
+    | dEq d1 d2 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 => Some (c1 ++ c2 ++ [:: iEq])
+                   | None => None
+                   end
+      | None => None
+      end
+    | dVar i => Some [:: iAcc i]
+    | dLet d1 d2 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 => Some (c1 ++ [:: iLet] ++ c2 ++ [:: iEndLet])
+                   | None => None
+                   end
+      | None => None
+      end
+    | dIf d1 d2 d3 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 =>
+                     match compile d3 with
+                     | Some c3 =>
+                       Some (c1 ++ [:: iSel (c2 ++ [:: iJoin]) (c3 ++ [:: iJoin])])
+                     | None => None
+                     end
+                   | None => None
+                   end
+      | None => None
+      end
+    | dLam d =>
+      match compile d with
+      | Some c => Some [:: iClos (c ++ [:: iRet])]
+      | None => None
+      end
+    | dMuLam d =>
+      match compile d with
+      | Some c => Some [:: iClosRec (c ++ [:: iRet])]
+      | None => None
+      end
+    | dApp d1 d2 =>
+      match compile d1 with
+      | Some c1 => match compile d2 with
+                   | Some c2 => Some (c1 ++ c2 ++ [:: iApp])
+                   | None => None
+                   end
+      | None => None
+      end
+    end.
+  
+  Theorem compiler_correctness d c :
+    Compiler_SS d c -> compile d = Some c.
+  Proof.
+    elim=> //=.
+    - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+    - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+    - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+    - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+    - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+    - move=> d1 d2 d3 c1 c2 c3 H1 IH1 H2 IH2 H3 IH3.
+        by rewrite IH1 IH2 IH3.
+    - move=> d' c' H IH.
+        by rewrite IH.
+    - move=> d' c' H IH.
+        by rewrite IH.
+    - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
+        by rewrite IH1 IH2.
+  Qed.
+  
+  Definition example_db :=
+    (dApp
+       (dMuLam
+          (dIf (dEq (dVar 0) (dNat 0)) (dNat 1)
+               (dTimes (dVar 0) (dApp (dVar 1) (dMinus (dVar 0) (dNat 1))))))
+       (dNat 5)).
+  
+  Compute compile example_db.
+  (* 
+     = Some
+         [:: iClosRec
+               [:: iAcc 0; iNat 0; iEq;
+                   iSel [:: iNat 1; iJoin]
+                     [:: iAcc 0; iAcc 1; iAcc 0; iNat 1; iSub; iApp; iMul; iJoin]; iRet];
+             iNat 5; iApp]
+     : option MSECD_Code
+   *)
+  
 End Compiler.
 
 (* END *)
