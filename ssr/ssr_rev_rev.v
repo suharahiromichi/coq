@@ -1,7 +1,7 @@
 (**
 Coq/SSReflect/MathComp による証明の例
 
-2018_07_13 OSC名古屋2018 [ProofCafe proofcafe.commpass.com]
+2018_07_13 OSC名古屋2018 [ProofCafe proofcafe.connpass.com]
 
 線形リストを反転(reverse)するプログラムについて：
 
@@ -115,39 +115,30 @@ End Rev.
 [1.] "Mathematical Components"
 [https://math-comp.github.io]
 
-一次配布元。日本語情報へのリンクもある。
+本家・一次配布元。日本語情報へのリンクもある。
 *)
 
 (**
 [2.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
 [http://www.morikita.co.jp/books/book/3287]
-
-SSReflect本。おすすめ。数学の定理の証明がテーマである。
 *)
 
+(** * ProofCafe - 名古屋Coq勉強会 について *)
 (**
-[3.] Ilya Sergey, "Programs and Proofs"
-[http://ilyasergey.net/pnp/]
+Mathcomp/Coq などの定理証明器（定理証明支援システム）の使い方と、
+プログラムや数学の問題の証明のしかたを勉強する会です。
+あらかじめ指定したテキストをもとに、実際に証明をしながら進めていきます。
 
-PnP。プログラムの証明をテーマにしている。
- *)
+第3土曜日の午後、名古屋市内で開催します。
+参加費は無料です。できるだけPCを持参してください。
 
-(**
-[4.] Assia Mahboubi, Enrico Tassi, "Mathematical Components"
-[https://math-comp.github.io/mcb/]
+[https://proofcafe.connpass.com] 開催案内
 
-MCB。MathCompライブラリのしくみの説明が詳しい。
+##ProofCafe
+
+[https://twitter.com/ProofCafe] (bot)
 *)
 
-(**
-[5.] Georges Gonthier, Assia Mahboubi, Enrico Tassi,
-"A Small Scale Reflection Extension for the Coq system"
-[https://hal.inria.fr/inria-00258384v17/document]
-GMT。SSReflect拡張部分のリファレンスマニュアル。PDF。
-
-[https://coq.inria.fr/distrib/current/refman/proof-engine/ssreflect-proof-language.html]
-同。オンライン判
- *)
 (**
 [------------]
 
