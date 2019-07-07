@@ -310,59 +310,58 @@ Section Modern_SECD.
   Definition conf := (MSECD_Code * MSECD_Env * MSECD_Stack)%type.
   
   Inductive MSECD_SS : conf -> conf -> Prop :=
-  | MSECD_SS_Nat  (n : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Nat  n c e s :
       MSECD_SS ( iNat n :: c,       e,                              s)
                (           c,       e,                 V(mNat n) :: s)
-  | MSECD_SS_Bool (b : bool) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Bool b c e s :
       MSECD_SS (iBool b :: c,       e,                              s)
                (           c,       e,                V(mBool b) :: s)
-  | MSECD_SS_Add  (m n : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Add  m n c e s :
       MSECD_SS (   iAdd :: c,       e,    V(mNat n) :: V(mNat m) :: s)
                (           c,       e,           V(mNat (m + n)) :: s)
-  | MSECD_SS_Sub  (m n : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Sub  m n c e s :
       MSECD_SS (   iSub :: c,       e,    V(mNat n) :: V(mNat m) :: s)
                (           c,       e,           V(mNat (m - n)) :: s)  
-  | MSECD_SS_Mul  (m n : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Mul  m n c e s :
       MSECD_SS (   iMul :: c,       e,    V(mNat n) :: V(mNat m) :: s)
                (           c,       e,           V(mNat (m * n)) :: s)
-  | MSECD_SS_Eq   (m n : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Eq   m n c e s :
       MSECD_SS (    iEq :: c,       e,    V(mNat n) :: V(mNat m) :: s)
                (           c,       e,         V(mBool (m == n)) :: s)
-  | MSECD_SS_Acc  (i : nat) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Acc  i c e s :
       MSECD_SS ( iAcc i :: c,       e,                              s)
                (           c,       e,            V(elookup i e) :: s)
-  | MSECD_SS_Let  (m : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_Let  m c e s :
       MSECD_SS (   iLet :: c,       e,                      V(m) :: s)
                (           c,  m :: e,                              s)
-  | MSECD_SS_EndLet (m : MSECD_Val) (c : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
+  | MSECD_SS_EndLet m c e s :
       MSECD_SS (iEndLet :: c,  m :: e,                              s)
                (           c,       e,                              s)
-  | MSECD_SS_Seltrue (c c1 c2 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
-      MSECD_SS (iSel c1 c2 :: c,    e,             V(mBool true) :: s)
-               (          c1,       e,                S(c, [::]) :: s)
-  | MSECD_SS_Selfalse (c c1 c2 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
-      MSECD_SS (iSel c1 c2 :: c,    e,            V(mBool false) :: s)
-               (          c2,       e,                S(c, [::]) :: s)
-  | MSECD_SS_Join (m : MSECD_Val) (c c1 : MSECD_Code) (e e1 : MSECD_Env)
-                  (s : MSECD_Stack) :
-      MSECD_SS (  iJoin :: c,       e,         V(m) :: S(c1, e1) :: s) (* e1 捨てる *)
-               (          c1,       e,                      V(m) :: s)
-  | MSECD_SS_Clos (c c1 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
-      MSECD_SS (iClos c1 :: c,      e,                              s)
-               (           c,       e,             V(mClos c1 e) :: s)
-  | MSECD_SS_ClosRec (c c1 : MSECD_Code) (e : MSECD_Env) (s : MSECD_Stack) :
-      MSECD_SS (iClosRec c1 :: c,   e,                              s)
-               (           c,       e,          V(mClosRec c1 e) :: s)
-  | MSECD_SS_App (m : MSECD_Val) (c c1 : MSECD_Code) (e e1 : MSECD_Env)(s : MSECD_Stack) :
-      MSECD_SS (   iApp :: c,       e,    V(m) :: V(mClos c1 e1) :: s)
-               (          c1, m :: e1,                   S(c, e) :: s)
-  | MSECD_SS_AppRec (m : MSECD_Val)(c c1 : MSECD_Code)(e e1 : MSECD_Env)(s :MSECD_Stack) :
-      MSECD_SS (   iApp :: c,       e, V(m) :: V(mClosRec c1 e1) :: s)
-               (          c1,
-            m :: mClosRec c1 e1 :: e1,                   S(c, e) :: s)
-  | MSECD_SS_Ret (m : MSECD_Val)(c c1 : MSECD_Code)(e e1 : MSECD_Env)(s :MSECD_Stack) :
-      MSECD_SS (   iRet :: c,       e,         V(m) :: S(c1, e1) :: s)
-               (          c1,      e1,                      V(m) :: s).
+  | MSECD_SS_Seltrue c1 c2 c3 e s :
+      MSECD_SS (iSel c2 c3 :: c1,   e,             V(mBool true) :: s)
+               (          c2,       e,               S(c1, [::]) :: s)
+  | MSECD_SS_Selfalse c1 c2 c3 e s :
+      MSECD_SS (iSel c2 c3 :: c1,   e,            V(mBool false) :: s)
+               (          c3,       e,               S(c1, [::]) :: s)
+  | MSECD_SS_Join m c1 c2 e1 e2 s :
+      MSECD_SS ( iJoin :: c1,      e1,         V(m) :: S(c2, e2) :: s) (* e2 捨てる *)
+               (          c2,      e1,                      V(m) :: s)
+  | MSECD_SS_Clos c1 c2 e1 s :
+      MSECD_SS (iClos c2 :: c1,    e1,                              s)
+               (          c1,      e1,            V(mClos c2 e1) :: s)
+  | MSECD_SS_ClosRec c1 c2 e1 s :
+      MSECD_SS (iClosRec c2 :: c1, e1,                              s)
+               (          c1,      e1,         V(mClosRec c2 e1) :: s)
+  | MSECD_SS_App m c1 c2 e1 e2 s :
+      MSECD_SS (  iApp :: c1,     e1,     V(m) :: V(mClos c2 e2) :: s)
+               (          c2, m :: e2,                 S(c1, e1) :: s)
+  | MSECD_SS_AppRec m c1 c2 e1 e2 s :
+      MSECD_SS (  iApp :: c1,       e1, V(m) :: V(mClosRec c2 e2) :: s)
+               (          c2,
+            m :: mClosRec c2 e2 :: e2,                 S(c1, e1) :: s)
+  | MSECD_SS_Ret m c1 c2 e1 e2 s :
+      MSECD_SS (  iRet :: c1,     e1,          V(m) :: S(c2, e2) :: s)
+               (          c2,     e2,                       V(m) :: s).
   
   Definition relation (X : Type) := X -> X -> Prop.  
   
