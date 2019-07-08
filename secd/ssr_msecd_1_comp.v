@@ -185,11 +185,11 @@ Section Compiler.
     - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
       inv: H => H11 H12 e He.
       case: (IH1 c1 H11 e He) => m1 [Hc1 H21] {H1 H11 IH1}.
-      move: (Hc1); inv=> Hv1 He1.           (* dup 複製する。 *)
+      inv: Hc1 => Hv1 He1.
       case: (IH2 c2 H12 e He) => m2 [Hc2 H22] {H2 H12 IH2}.
       have He' : Compiler_SS_env (v1 :: (vClosRec d' o1) :: o1)
                                  (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
-        by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |].
+        by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |]. (* Hc1 使う *)
       case: (IH' c Hv1 (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He')
         => m' [Hc' H''] {Hv1 IH'}.
       exists m'.
@@ -475,11 +475,11 @@ Section Compiler.
     - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
       inv: H => H11 H12 e He.
       case: (IH1 c1 H11 e He) => m1 [Hc1 H21] {H1 H11 IH1}.
-      move: (Hc1); inv=> Hv1 He1.           (* dup 複製する。 *)
+      inv: Hc1 => Hv1 He1.
       case: (IH2 c2 H12 e He) => m2 [Hc2 H22] {H2 H12 IH2}.
       have He' : Compiler_SS_env (v1 :: (vClosRec d' o1) :: o1)
                                  (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
-        by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |].
+        by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |]. (* Hc1 使う *)
       case: (IH' c Hv1 (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He')
         => m' [Hc' H''] {Hv1 IH'}.
       exists m'.

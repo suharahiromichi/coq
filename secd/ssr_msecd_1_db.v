@@ -136,7 +136,7 @@ Section MiniMLdB.
     - move=> g' g3 x f t1 t2 t3 u2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
       inv: H => H1' H2'.
       case: (IH1 o He d1 H1') => v1 [H11 H12] {IH1}.
-      move: (H11); inv=> He3 H3'.  (* keepのために duplicate する。 *)
+      inv: H11 => He3 H3'.                  (* keep する。 *)
       case: (IH2 o He d2 H2') => v2 [H21 H22] {IH2}.
       have He2 : dB_translation_NS_env
                    ((x, u2) :: (f, (uClosRec f x t3 g3)) :: g3)
@@ -243,9 +243,9 @@ Section MiniMLdB.
         by rewrite IH1 IH2 IH3.
     - move=> p x e d' H IH.                 (* lam *)
         by rewrite IH.
-    - move=> p f x e d' H IH.
+    - move=> p f x e d' H IH.               (* mulam *)
         by rewrite IH.
-    - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2.
+    - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2.   (* app *)
         by rewrite IH1 IH2.
   Qed.
   

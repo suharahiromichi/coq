@@ -61,16 +61,16 @@ Tactic Notation "invert" "keep" hyp(H) :=
 
 (* subst を行ってから、残った前提を generalize する。 *)
 Tactic Notation "inv:" hyp(H) :=
-  pose ltac_mark; inversion H; subst; gen_until_mark; clear H.
+  pose ltac_mark; inversion H; subst; gen_until_mark.
 
 Tactic Notation "inv" :=
-  let H := fresh in intro H; inv: H.
+  let H := fresh in intro H; inv: H; clear H.
 
 Tactic Notation "invs:" hyp(H) :=
-  pose ltac_mark; inversion H; subst; try done; gen_until_mark; clear H.
+  pose ltac_mark; inversion H; subst; try done; gen_until_mark.
 
 Tactic Notation "invs" :=
-  let H := fresh in intro H; invs: H.
+  let H := fresh in intro H; invs: H; clear H.
 
 (*
 Tactic Notation "inv:" hyp(H) simple_intropattern(I1) :=
