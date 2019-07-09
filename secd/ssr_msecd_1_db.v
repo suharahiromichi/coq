@@ -158,8 +158,7 @@ Section MiniMLdB.
     move=> H d Hd.
     have He : dB_translation_NS_env [::] [::].
     - apply: dB_translation_NS_env_all => x.
-      rewrite /lookup /olookup /mkctx /=.
-        by apply dB_translation_NS_val_Bool.
+        by rewrite /lookup /olookup /mkctx /=.
     case: (dB_translation_NS_correctness [::] t u H [::] He d Hd) => x Hvs.
     exists x.
     case: Hvs => Hv Hs.
