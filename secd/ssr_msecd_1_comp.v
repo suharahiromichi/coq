@@ -7,7 +7,7 @@ Require Import ssr_msecd_1_db.
 
 Section Compiler.
   
-  Theorem CorrectnessSS o d v :
+  Theorem Correctnessss o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
               forall e, Compiler_SS_env o e ->
@@ -208,7 +208,7 @@ Section Compiler.
   (* とくに、メタ変数の使用を回避して、すべて埋めた。 *)
   (* ********************************************* *)
   
-  Theorem CorrectnessSS' o d v :
+  Theorem Correctnessss' o d v :
     MML_dB_NS o d v ->
     forall c, Compiler_SS d c ->
               forall e, Compiler_SS_env o e ->
@@ -509,7 +509,29 @@ Section Compiler.
                       ***** by apply: MSECD_SS_Ret.
                       ***** by apply: RTC_MSECD_SS_Refl.
   Qed.
-
+  
+  (** 本来の定理を証明する。 *)
+  (** スタックと環境の初期状態をnilとし、終了時にcodeが空である。 *)
+  
+  Corollary c_Correctnessss d v :
+    MML_dB_NS [::] d v ->
+    forall c, Compiler_SS d c ->
+              exists m, Compiler_SS_val v m /\
+                        RTC_MSECD_SS (c, [::], [::]) ([::], [::], [:: (V m)]).
+  Proof.
+    move=> Hd c H.
+    have He : Compiler_SS_env [::] [::].
+    - apply: Compiler_SS_env_all => i.
+      rewrite /olookup /elookup /=.
+        by rewrite 2!nth_nil.
+    case: (Correctnessss [::] d v Hd c H [::] He) => x Hvs.
+    exists x.
+    case: Hvs => Hv Hs.
+    split=> //=.
+    move: (Hs [::] [::]).
+      by rewrite cats0.
+  Qed.
+  
   (** ******** *)
   (** compiler *)
   (** ******** *)

@@ -150,6 +150,23 @@ Section MiniMLdB.
         by apply: MML_dB_NS_AppRec; [apply: H12 | apply: H22 | apply: H32].
   Qed.
   
+  Corollary c_dB_translation_NS_correctness t u :
+    MML_NS [::] t u ->
+    forall d, dB_translation_NS [::] t d ->
+              exists v, dB_translation_NS_val u v /\ MML_dB_NS [::] d v.  
+  Proof.
+    move=> H d Hd.
+    have He : dB_translation_NS_env [::] [::].
+    - apply: dB_translation_NS_env_all => x.
+      rewrite /lookup /olookup /mkctx /=.
+        by apply dB_translation_NS_val_Bool.
+    case: (dB_translation_NS_correctness [::] t u H [::] He d Hd) => x Hvs.
+    exists x.
+    case: Hvs => Hv Hs.
+      by split.
+  Qed.
+  
+  
   Fixpoint dB_translation_NS_compiler (p : ctx) (e : MML_exp) : option MML_dB_exp :=
     match e with
     | eNat n => Some (dNat n)
