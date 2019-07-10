@@ -520,11 +520,7 @@ Section Compiler.
                         RTC_MSECD_SS (c, [::], [::]) ([::], [::], [:: (V m)]).
   Proof.
     move=> Hd c H.
-    have He : Compiler_SS_env [::] [::].
-    - apply: Compiler_SS_env_all => i.
-      rewrite /olookup /elookup /=.
-        by rewrite 2!nth_nil.
-    case: (Correctnessss [::] d v Hd c H [::] He) => x Hvs.
+    case: (Correctnessss [::] d v Hd c H [::] Compiler_SS_env_nil) => x Hvs.
     exists x.
     case: Hvs => Hv Hs.
     split=> //=.

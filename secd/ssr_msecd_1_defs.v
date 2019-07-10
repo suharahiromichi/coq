@@ -258,6 +258,13 @@ Section MiniMLdB.
                dB_translation_NS_val (lookup x g) (olookup (index x (mkctx g)) o)) ->
            dB_translation_NS_env g o.
   
+  Lemma dB_translation_NS_env_nil : dB_translation_NS_env [::] [::].
+  Proof.
+    apply: dB_translation_NS_env_all => x.
+    rewrite /lookup /olookup /mkctx /=.
+      by apply: dB_translation_NS_val_Bool.
+  Qed.
+  
   Lemma dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
         (vd : MML_dB_val) (o : MML_dB_env) :
     dB_translation_NS_env g o ->
@@ -467,6 +474,14 @@ Section Compiler.
        | Compiler_SS_env_all o e :
            (forall i, Compiler_SS_val (olookup i o) (elookup i e)) ->
            Compiler_SS_env o e.
+  
+  Lemma Compiler_SS_env_nil : Compiler_SS_env [::] [::].
+  Proof.
+    apply: Compiler_SS_env_all => i.
+    rewrite /olookup /elookup /=.
+    rewrite 2!nth_nil.
+      by apply: Compiler_SS_val_Bool.
+  Qed.
   
   Lemma Compiler_SS_env_cons v o' m1 e :
     Compiler_SS_env o' e ->

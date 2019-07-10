@@ -156,10 +156,8 @@ Section MiniMLdB.
               exists v, dB_translation_NS_val u v /\ MML_dB_NS [::] d v.  
   Proof.
     move=> H d Hd.
-    have He : dB_translation_NS_env [::] [::].
-    - apply: dB_translation_NS_env_all => x.
-        by rewrite /lookup /olookup /mkctx /=.
-    case: (dB_translation_NS_correctness [::] t u H [::] He d Hd) => x Hvs.
+    case: (dB_translation_NS_correctness
+             [::] t u H [::] dB_translation_NS_env_nil d Hd) => x Hvs.
     exists x.
     case: Hvs => Hv Hs.
       by split.
