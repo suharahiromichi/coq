@@ -458,13 +458,10 @@ Section Compiler.
   Proof.
     move=> He Hv.
     apply: Compiler_SS_env_all.
-    inv: He => H0.
-    elim=> [| i IHi].
-    - by rewrite /=.
-    - rewrite /=.
-        by apply: H0.
+    inv: He => {He} Hv'.
+      by elim=> [| i IHi] /=.
   Qed.
-
+  
 End Compiler.
 
 (* HINT *)
