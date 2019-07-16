@@ -1,6 +1,20 @@
+(**
+ProofCafe 名古屋 補足資料
+
+萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+
+[http://www.morikita.co.jp/books/book/3287]
+
+3.5 elim タクティク で取り上げられていない 帰納法についての多少高度な使い方を説明します。
+
+@suharahiromichi
+
+2019_07_20
+*)
+
 From mathcomp Require Import all_ssreflect.
 
-(** ProofCafe のための追加の問題 *)
+(** ProofCafe のための追加の説明 *)
 
 Section Even.
 
@@ -64,7 +78,7 @@ Section Even.
                            | 1 => P1
                            | n'.+2 => PSS n' (f n')
                            end.
-
+  
   Check nat_ind2 : forall P : nat -> Prop,
       P 0 -> P 1 -> (forall n : nat, P n -> P n.+2) -> forall n : nat, P n.
   

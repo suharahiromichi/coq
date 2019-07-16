@@ -1,3 +1,17 @@
+(**
+ProofCafe 名古屋 補足資料
+
+萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+
+[http://www.morikita.co.jp/books/book/3287]
+
+3.4 case タクティク で取り上げられていない case の便利な使い方も説明します。
+
+@suharahiromichi
+
+2019_07_20
+*)
+
 From mathcomp Require Import all_ssreflect.
 
 (**
