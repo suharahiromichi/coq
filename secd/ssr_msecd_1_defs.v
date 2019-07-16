@@ -106,7 +106,7 @@ Section MiniML.
       MML_NS g t2 u2 ->
       MML_NS ((x, u2) :: g1) e u ->
       MML_NS g (eApp t1 t2) u
-  | MML_NS_AppRec (g g1 : MML_env) (x f : Var) (t1 t2 e : MML_exp) (u2 u : MML_val) :
+  | MML_NS_AppRec (g g1 : MML_env) (f x : Var) (t1 t2 e : MML_exp) (u2 u : MML_val) :
       MML_NS g t1 (uClosRec f x e g1) ->
       MML_NS g t2 u2 ->
       MML_NS ((x, u2) :: (f, (uClosRec f x e g1)) :: g1) e u ->

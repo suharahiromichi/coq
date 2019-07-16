@@ -133,7 +133,7 @@ Section MiniMLdB.
         by apply: MML_dB_NS_App; [apply: H12 | apply: H22 | apply: H32].
         
     (* App ClosRec *)
-    - move=> g' g3 x f t1 t2 t3 u2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
+    - move=> g' g3 f x t1 t2 t3 u2 v3 H1 IH1 H2 IH2 H3 IH3 o He d H.
       inv: H => H1' H2'.
       case: (IH1 o He d1 H1') => v1 [H11 H12] {IH1}.
       inv: H11 => He3 H3'.                  (* keep する。 *)
