@@ -41,19 +41,19 @@ Section MiniML.
   | eMinus (t1 e2 : MML_exp)
   | eTimes (t1 e2 : MML_exp)
   | eEq (t1 e2 : MML_exp)
-  | eVar (v : Var)
-  | eLet (v : Var) (t1 e2 : MML_exp)
+  | eVar (x : Var)
+  | eLet (x : Var) (t1 e2 : MML_exp)
   | eIf (t1 e2 e3 : MML_exp)
-  | eLam (v : Var) (e : MML_exp)
-  | eMuLam (f : Var) (v : Var) (e : MML_exp)
+  | eLam (x : Var) (e : MML_exp)
+  | eMuLam (f x : Var) (e : MML_exp)
   | eApp (t1 e2 : MML_exp).
   
   (** values *)
   Inductive MML_val : Set :=
   | uNat (n : nat)
   | uBool (b : bool)
-  | uClos (v : Var) (e : MML_exp) (g : seq (Var * MML_val))
-  | uClosRec (f : Var) (v : Var) (e : MML_exp) (g : seq (Var * MML_val)).
+  | uClos (x : Var) (e : MML_exp) (g : seq (Var * MML_val))
+  | uClosRec (f x : Var) (e : MML_exp) (g : seq (Var * MML_val)).
   
   (** environments *)
   Definition MML_env := (seq (Var * MML_val)).
@@ -99,7 +99,7 @@ Section MiniML.
       MML_NS g (eIf t1 t2 e3) u3
   | MML_NS_Lam   (g : MML_env) (x : Var) (e : MML_exp) :
       MML_NS g (eLam x e) (uClos x e g)
-  | MML_NS_MuLam (g : MML_env) (f : Var) (x : Var) (e : MML_exp) :
+  | MML_NS_MuLam (g : MML_env) (f x : Var) (e : MML_exp) :
       MML_NS g (eMuLam f x e) (uClosRec f x e g)
   | MML_NS_App (g g1 : MML_env) (x : Var) (t1 t2 e : MML_exp) (u2 u : MML_val) :
      MML_NS g t1 (uClos x e g1) ->
