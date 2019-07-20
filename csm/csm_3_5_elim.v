@@ -100,7 +100,8 @@ Section Even.
       forall n : nat, ev n -> evenb n.
   (*
     任意のnについて、ev n -> evenb n が成り立つとしても、
-    n+1 について成り立つわけではない。 ゆえに、使えない。
+    n+1 について成り立つわけではない。 
+    XXX この説明は適切か確認せよ。XXX
    *)
   
   Theorem ev_even_1' (n : nat) : ev n -> evenb n.
@@ -216,14 +217,36 @@ Section Even.
   Qed.
   
   (** もうひとつの例 *)
-  Theorem even_ev'' (n : nat) :
+  Theorem even_ev_ev1 (n : nat) :
     (evenb n -> ev n) /\ (evenb n.+1 -> ev n.+1).
   Proof.
-    - elim: n => [| n [IHn1 IHn2]]; split => /= H.
-      + by apply: ev_O.
-      + by [].
-      + by apply/IHn2.
-      + by apply/ev_SS/IHn1.
+    elim: n => [| n [IHn1 IHn2]]; split => /= H.
+    - by apply: ev_O.
+    - by [].
+    - by apply/IHn2.
+    - by apply/ev_SS/IHn1.
+  Qed.
+  
+  (* これから、even_ev を求めることができる。 *)
+  (* 結果として、nat についての帰納法だけで証明できた。 *)
+  Lemma l_even_ev : (forall n, (evenb n -> ev n) /\ (evenb n.+1 -> ev n.+1)) <->
+                    (forall n, evenb n -> ev n).
+  Proof.
+    split.
+    - move=> H n.
+      move: (H n) => {H}.
+      case=> Hn Hn1 Heven.
+        by apply/Hn/Heven.
+    - move=> H n.
+      split.
+      + by apply: (H n).
+      + by apply: (H n.+1).
+  Qed.
+  
+  Theorem even_ev'' (n : nat) : evenb n -> ev n.
+  Proof.
+    apply/l_even_ev : n.
+      by apply: even_ev_ev1.
   Qed.
   
 End Even.

@@ -74,7 +74,11 @@ Proof.
   - done.
 Qed.
 
-(** 同じ命題をPropで定義した場合。次節以降を参照してください。  *)
+(** Mathcomp での証明が簡単になる理由のひとつに、bool計算で済ますことである。
+   （証明より計算の原理）
+    同じ命題をPropで定義した場合。boolの場合より複雑な証明になる。
+ *)
+(* 詳細は、 次節以降を参照してください。 *)
 
 Goal forall P1, forall P2, forall P3,
         P1 /\ (P3 \/ P2) <-> P1 /\ P3 \/ P1 /\ P2.
@@ -211,8 +215,8 @@ End Case2.
 Goal forall n : nat, n + 1 = 1 + n.
 Proof.
   Print nat.                             (* O と S で場合分けする。 *)
-  (* 再帰的に定義された型については、elimを使うべき。帰納法の仮定を残してくれるから。 *)
   (* 再帰的でない型については、elimとcaseは同じになる。 *)
+  (* 再帰的に定義された型については、elimを使うべき。帰納法の仮定を残してくれるから。 *)
   case.
   (**
      subgoal 1 is: 0 + 1 = 1 + 0
@@ -229,7 +233,7 @@ Section Case3.
 
 Variable n : nat.
 
-(** bool の場合を同じだが、場合を前提として覚えておく。 *)
+(** bool の場合を同じだが、場合を前提として覚えておいてくれる。 *)
 Goal if n == 42 then true else true.
 Proof.
   (* (n == 42) = true と (n == 42) = false で場合分けする。 *)
