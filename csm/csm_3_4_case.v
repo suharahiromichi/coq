@@ -56,6 +56,9 @@ End Test.
 (**
 ## 3.4.1 bool
  *)
+Print bool.
+(* Inductive bool : Set :=  true : bool | false : bool *)
+
 Goal forall b1, forall b2, forall b3,
         b1 && (b3 || b2) = b1 && b3 || b1 && b2.
 Proof.
@@ -69,6 +72,25 @@ Proof.
     subgoal 2 is: forall b2 b3 : bool, false && (b3 || b2) = false && b3 || false && b2
    *)
   - done.
+Qed.
+
+(** 同じ命題をPropで定義した場合。次節以降を参照してください。  *)
+
+Goal forall P1, forall P2, forall P3,
+        P1 /\ (P3 \/ P2) <-> P1 /\ P3 \/ P1 /\ P2.
+Proof.
+  move=> P1 P2 P3.
+  split.
+  - case=> HP1 [HP3 | HP2].
+    + left.
+        by split.
+    + right.
+        by split.
+  - case=> [[H1 H3] | [H1 H3]].
+    + split=> //.
+        by left.
+    + split=> //.
+        by right.
 Qed.
 
 Section Case1.
@@ -174,7 +196,7 @@ Proof.
   
   case.
   (**
-     goal is: forall x : A, P x -> ~ (exists a : A, ~ P a)
+     goal is: forall x : A, P x -> ~ (forall a : A, ~ P a)
    *)
   move=> x HP Hc.
   apply: (Hc x).
@@ -189,7 +211,7 @@ End Case2.
 Goal forall n : nat, n + 1 = 1 + n.
 Proof.
   Print nat.                             (* O と S で場合分けする。 *)
-  (* 再帰的に定義された型については、elimを使うべき。 *)
+  (* 再帰的に定義された型については、elimを使うべき。帰納法の仮定を残してくれるから。 *)
   (* 再帰的でない型については、elimとcaseは同じになる。 *)
   case.
   (**
