@@ -15,12 +15,14 @@ ProofCafe 名古屋 補足資料
 
 参考資料
 
-[1] Coq Reflencr Manual simpl tactic
+[1] CRM simpl tactic
 https://coq.inria.fr/refman/proof-engine/tactics.html#coq:tacn.simpl
 
 [2] "Simple Simpl"
 https://hal.archives-ouvertes.fr/hal-00816918/document
 
+[3] CRM, The SSReflect proof language, locking unlocking
+https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html#locking-unlocking
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -101,6 +103,8 @@ bs と (1,2) の pair。
 (3) match の場合分け（ιイオタ簡約）をする。 (bs.1, (1,2).1) を得る。
 
 (4) first の引数である (1, 2) に対して、以下同様にする。
+
+[2]
 *)
 
 (** fixpoint で定義された関数についても、同様に処理され、再帰的に行われる。
@@ -163,7 +167,7 @@ Qed.
 
 (**
 バニラCoqと異なり、Mathcomp では、simpl では自然数の計算は行えない。
-これは、ゴールが大きくなることを避けるため、とされている。
+これは、ゴールが大きくなることを避けるため、とされている。[3]
 
 Mathcomp で、simpl では自然数の計算は行えないことは、
 Mathcomp で omega が使えない理由のひとつ。もうひとつは le の定義の違い。
@@ -184,7 +188,7 @@ Definition double := nosimpl double_rec.
 
 
 (**
-lock を解除するには、以下のどれかを使う。
+lock を解除するには、以下のどれかを使う。[3]
 
 unlockをunfold する。 rewrite /unlock
 lockをfold する。     rewrite -/lock
