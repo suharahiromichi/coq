@@ -53,12 +53,17 @@ Qed.
 
 (** * simpl タクティクはなにをするのか
 
-まずは、β簡約をする、と覚えて間違いない。
+まずは、βベータ簡約をする、と覚えて間違いない。
  *)
 
-Fixpoint pair1 (s : (bool * bool) * (nat * nat)) :=
+Definition first {T1 T2} (s : T1 * T2) :=
   match s with
-  | (bs, ns) => (bs.1, ns.1)
+  | (x, y) => x
+  end.
+
+Definition pair1 (s : (bool * bool) * (nat * nat)) :=
+  match s with
+  | (bs, ns) => (first bs, first ns)
   end.
 (* 説明の都合から、回りくどい書き方をしています。 *)
 
@@ -72,13 +77,19 @@ Qed.
     とβ簡約されている。 *)
 
 (** 実際にはもうすこし複雑である。 *)
-Goal forall bs, pair1 (bs, (1, 2)) = (bs.1, 1).
+Goal forall bs, pair1 (bs, (1, 2)) = (first bs, 1).
 Proof.
   move=> bs.
+  simpl.
+  (* pair1 (bs, (1, 2)) ==>  (first bs, 1) *)
+
+  Restart.
+  move=> bs.
   rewrite /pair1.
-  rewrite [(1, 2).1]/=.
+  rewrite [first (1, 2)]/=.
   done.
 Qed.
+
 
 (** 3段階を踏んでいる：
     
@@ -89,11 +100,11 @@ bs と (1,2) の pair。
 
 (3) match の場合分け（ιイオタ簡約）をする。 (bs.1, (1,2).1) を得る。
 
-(4) fst (.1) の引数である (1, 2) に対して、以下同様にする。
+(4) first の引数である (1, 2) に対して、以下同様にする。
 *)
 
-(** fixpoint で定義された関数についても、同様に処理される。  *)
-
+(** fixpoint で定義された関数についても、同様に処理され、再帰的に行われる。
+    Coqなので必ず停止する。  *)
 Fixpoint bsize (s : seq bool) : nat := if s is _ :: s' then (bsize s').+1 else 0.
 
 Goal bsize [:: true; false; true] = 3.
@@ -132,8 +143,35 @@ Qed.
 (** * simpl の lock について
 
 Mathcomp の自然数の加・減・乗・累乗・階乗 はlockされている。
+そのため、simpl では、自然数の計算は行われない。
+*)
 
-ssrnat.v
+Fixpoint fact n :=
+  match n with
+  | 0 => 1
+  | n'.+1 => n * fact n'
+  end.
+
+Goal fact 3 = 6.
+Proof.
+  simpl.
+  (* Goal : 3 * (2 * (1 * 1)) = 6 *)
+  (* fact は簡約されるが、掛け算はそのまま。 *)
+  
+  apply: refl_equal.                        (* reflexivity *)
+Qed.
+
+(**
+バニラCoqと異なり、Mathcomp では、simpl では自然数の計算は行えない。
+これは、ゴールが大きくなることを避けるため、とされている。
+
+Mathcomp で、simpl では自然数の計算は行えないことは、
+Mathcomp で omega が使えない理由のひとつ。もうひとつは le の定義の違い。
+ *)
+
+(* 
+参考： ssrnat.v
+
 Definition addn := nosimpl addn_rec.
 Definition subn := nosimpl subn_rec.
 Definition muln := nosimpl muln_rec.
@@ -141,9 +179,29 @@ Definition expn := nosimpl expn_rec.
 Definition factorial := nosimpl fact_rec.
 Definition double := nosimpl double_rec.
 
-そのため、バニラCoqと異なり、simpl では自然数の計算は行えない。
-これが、Mathcomp で omega が使えない理由のひとつ。もうひとつは le の定義の違い。
+なお、.+1 や .*2 は計算される。
  *)
 
 
+(**
+lock を解除するには、以下のどれかを使う。
 
+unlockをunfold する。 rewrite /unlock
+lockをfold する。     rewrite -/lock
+unlock タクティクを使う。
+
+実際には、ssromegaタクティクの定義の中以外では、unlock する必要はないであろう。
+ *)
+
+Goal fact 3 = 6.
+Proof.
+  simpl.
+  (* Goal : 3 * (2 * (1 * 1)) = 6 *)
+
+  rewrite /muln /unlock /=.
+  (* Goal : 6 = 6 *)
+  
+  done.
+Qed.
+
+(* END *)
