@@ -5,7 +5,7 @@ ProofCafe 名古屋 補足資料
 
 [http://www.morikita.co.jp/books/book/3287]
 
-3.6.3 rewrite /= または simpl (simplifies コマンド) の説明をします。
+3.6.3 rewrite /= または simpl (simplifies タクティク) の説明をします。
 
 本書 p.135 注記2 にも関連する記述があり、それについても言及します。
 
@@ -29,7 +29,15 @@ From mathcomp Require Import all_ssreflect.
 
 (** * simpl タクティク
 
-ゴールに対して、bool値の計算などの「簡単な計算」をおこなう。
+Mathcomp で、rewrite /= または move=> /= を実行したとき、
+バニラCoq の simpl タクティクが実行される。
+Mathcomp で simpl をコマンドしてもよい。
+
+simpl は、（ゴールに対して）項の簡約をするタクティクで、
+simplification または simplify の略である。
+多少駄洒落はあるかもしれないが[2]、「簡単な」計算を行うコマンドという説明は適切ではない。
+簡約のことを計算と呼ぶのは、支障ないだろう。
+
 計算はできる限り、繰り返し、行われる。
 Coqなので必ず停止する。また、2回以上繰り返す意味はない。
  *)
