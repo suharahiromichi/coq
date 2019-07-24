@@ -49,8 +49,8 @@ bool値 b について ``b = true`` を補ってProp型として考えます
 （これをコアーションといいます）。
 
 リフレクト補題は、通常、型毎に証明をする必要がありますが、
-String については、Standard Coqのライブラリで証明されていたものを使っています。
-(Standard CoqがMathCompの一部を取り込んだ、ということでしょうか）
+今回String型については、Standard Coqのライブラリで証明されていたものを使っています。
+(Standard CoqがMathCompの一部を取り込んだ、ということでしょうか。）
 
 (4) は、(3)のMixinから、``eqType``のインスタンスである``string_eqType``を生成します。
 このとき、Definition ではなく、Canonical を使うことで、
@@ -68,21 +68,29 @@ Open Scope string_scope.                    (* (5) *)
 (**
 # カノニカル宣言の補足説明
 
-「==」は、関数eq_opのNotationです。そして本来ならば3引数で、引数の型の指定が省かれています。
+「==」は、関数eq_opのNotationです。eq_opは、本来ならば3引数なのですが、
+通常、その第1引数である型の指定を省略します（省略しなければならない）。
 *)
-
+Check "abc" == "abc" : bool.
 Check eq_op : _ -> _ -> bool.
+Check eq_op "abc" "abc" : bool.
+
+(**
+そこで、「@」を使って、引数を省略せずに指定すると次のようになります。
+ *)
 Check @eq_op : forall T : eqType, T -> T -> bool.
 Check @eq_op string_eqType "abc" "abc".
-Check eq_op "abc" "abc".
 
 (**
 eq_op は、eqType型で定義された関数ですから、型の指定は string_eqType とする必要があります。
-しかしながら、``"abc" == "abc"`` あるいは eq_op "abc" "abc"`` とした場合、
-"abc"はstring型であることが判っても、string_eqType であることがわかりません。
+しかしながら、``"abc" == "abc"`` あるいは ``eq_op "abc" "abc"`` とした場合、
+eq_op は、自分が"はstring型の引数をとっていることは判っても、
+それから string_eqType を連想することができません。
+（逆に、string_eqType から string を連想することはできます。
+eqType構造体を調べればそのsortフィールドに string型 が格納されているからです。）
 
 Canonical 宣言によって、string から string_eqType への連想（Projection）を登録することで、
-Coqにそれを教えてあげるわけです。そのProjectionは次のコマンドで確認することができます。
+そのことを教えてあげるわけです。そのProjectionは次のコマンドで確認することができます。
 *)
 
 Print Canonical Projections. (* string <- Equality.sort ( string_eqType ) *)
@@ -123,7 +131,7 @@ bool値の等式の場合、ひとたびfalseまたはtrueが決まれば、
 これに対して、Prop型の等式に場合は、連言と選言を分解して証明する必要があります。
 *)
 
-Goal "abc" = "abc" /\ "xyz" == "xyz" \/ "abc" = "abcd".
+Goal "abc" = "abc" /\ "xyz" = "xyz" \/ "abc" = "abcd".
 Proof.
   left.
   split.
