@@ -1,5 +1,5 @@
 (**
-リストの命題のリフレクト補題
+リストのリフレクション補題
 ======
 2019/07/25
 
@@ -17,15 +17,25 @@ Mathcomp の seq は、seq.v の中で、
 
 ``Notation seq := list``
 
-list のNotation (構文糖）として定義されえていて、
-Standard Coq の list と同じものです。
 
-なので、Mathcomp の中から、Standard Coq で定義されたリストの命題を使用することができます。
+という具合に、list のNotation (構文糖）として定義されていて、
+Standard Coq の list と同じものであることが判ります。
+
+（注記）
+
+括弧による表記については、``[::]`` など、MathcompのNotationで上書きされるので、
+かなり変わったものになりますが、支障にはなりません。
+ここでは、型としてはseqを、括弧の表記はMathcompの表記を使いますが、
+データ型として「リスト」と呼ぶことにします。
+
+（注記終わり）
+
+Mathcomp の中から、Standard Coq で定義されたリストの命題を使用することができます。
 当然、おなじ意味（同値）な命題もあります。
 
-実際には、Standard Coqでは Prop型の命題として、
+実際には、Standard Coqでは Prop型の命題（述語）として、
 Mathcompではbool型を返す関数として定義されているわけですが、
-それらの間でリフレクション補題を証明しておくと、
+それらの間で同値性を示すリフレクション補題を証明することで、
 相互の変換ができ（リフレクションですね）、証明が捗ることがあるかもしれません。
 *)
 
@@ -39,12 +49,9 @@ From mathcomp Require Import all_ssreflect.
 Section List_1_1.
 
 (**
-最初の例は、Standard Coq の Lists/List.v で定義されている、Forall と Exists です。
+最初の例は、Standard Coq の Lists/List.v で定義されている Forall と Exists です。
 述語Pが、リストの要素のすべてで成り立つ、あるいは、ある要素で成り立つ、
 ことを示す命題です。（∀と∃の意味の、forallとexists とは別な意味です。）
-
-また、ForallとExistsは、Starndard Coqで定義されていますが、
-その後からMathcompをインポートしているので、seq と表示されます。
  *)
 
   Check Forall : forall A : Type, (A -> Prop) -> seq A -> Prop.
@@ -264,7 +271,9 @@ Qed.
 # 参考文献
 
 [1.] リフレクションのしくみをつくる
+
 https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
+
 
 [2.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
 
