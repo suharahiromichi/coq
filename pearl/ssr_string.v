@@ -46,13 +46,13 @@ Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 String.eqb（bool値の等式）が同値であることを示す補題
 
 
-後者はリフレクト補題と呼ばれるものです。Prop型とbool値では型が違うわけですが、
-bool値 b について ``b = true`` を補ってProp型として考えます
+後者はリフレクション補題と呼ばれるものです。Prop型とbool値では型が違うわけですが、
+``is_true b := (b = true)`` という関数を補って、bool値をProp型にして考えます
 （これをコアーションといいます）。
 
-リフレクト補題は、通常、型毎に証明をする必要がありますが、
+リフレクション補題は、通常、それぞれにの型ごとに証明をする必要がありますが、
 今回String型については、Standard Coqのライブラリで証明されていたものを使っています。
-(Standard CoqがMathCompの一部を取り込んだ、ということでしょうか。）
+(Standard CoqがMathCompに歩み寄った、ということでしょうか。）
 
 (4) は、(3)のMixinから、``eqType``のインスタンスである``string_eqType``を生成します。
 このとき、Definition ではなく、Canonical を使うことで、
@@ -160,5 +160,16 @@ Proof.
   - move=> H; by apply/eqP.
   - by move/eqP.
 Qed.
+
+(**
+# まとめ
+
+Mathcomp で文字列を使う方法をのべました。実質2行なので、ぜひお試しください。
+これを応用した証明の例として、以下も合わせて読んでいただけると幸いです。
+
+「The Little Prover」のCoqでの実現---「定理証明手習い」の「公理」をCoqで証明してみた
+
+https://qiita.com/suharahiromichi/items/723896ebfbc332f9d3dd
+ *)
 
 (* END *)
