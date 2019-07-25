@@ -1,5 +1,5 @@
 (**
-Mathcomp で文字列を扱う
+Mathcomp で文字列を使う
 ======
 2019/07/24
 
@@ -14,13 +14,15 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_string.v
 # 説明
 
 たとえばプログラムの証明をCoq/SSReflect/MathCompでおこなうとき、
-プログラムに文字列を使いたい場合があります。
+プログラムに文字列をデータとして使いたい場合があります。
 
 Mathcompのライブラリには文字列がないため、Standard Coqの String型 を使うことになります。
 
 さらに、Mathcomp に含まれる 決定性のある等式 (decidable equality) の型クラス
 である eqType のインスタンスとすることで、
-Mathcomp の bool値を返す等号「==」を使ってbool値の等式が使えるようになります。
+Mathcomp の bool値を返す等号演算子「==」を使って、
+natやseq (list) などの他のデータ型と同様に、
+bool値の等式が使えるようになります。
 *)
 
 (**
@@ -37,7 +39,7 @@ Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec. (* (3) 
 Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
 (**
-(3) は、つぎのふたつから、string のMixinをつくります。
+(3) は、つぎのふたつから、Mixinをつくります。
 
 - String.eqb、String型の決定性のある（bool値を返す）等式の関数
 - String.eqb_spec、Coqの通常の等式（Prop型の等式、ライプニッツの等式）と、
@@ -66,9 +68,10 @@ Open Scope string_scope.                    (* (5) *)
 *)
 
 (**
-# カノニカル宣言の補足説明
+# Canonical宣言の補足説明
 
-「==」は、関数eq_opのNotationです。eq_opは、本来ならば3引数なのですが、
+演算子「==」は、関数eq_opのNotation （構文糖衣）です。
+関数としてのeq_opは、本来ならば3引数なのですが、
 通常、その第1引数である型の指定を省略します（省略しなければならない）。
 *)
 Check "abc" == "abc" : bool.
@@ -85,32 +88,35 @@ Check @eq_op string_eqType "abc" "abc".
 eq_op は、eqType型で定義された関数ですから、型の指定は string_eqType とする必要があります。
 しかしながら、``"abc" == "abc"`` あるいは ``eq_op "abc" "abc"`` とした場合、
 eq_op は、自分が"はstring型の引数をとっていることは判っても、
-それから string_eqType を連想することができません。
-（逆に、string_eqType から string を連想することはできます。
+それから string_eqType を対応付けすることができません。
+（逆に、string_eqType から string を対応付けすることはできます。
 eqType構造体を調べればそのsortフィールドに string型 が格納されているからです。）
 
-Canonical 宣言によって、string から string_eqType への連想（Projection）を登録することで、
+Canonical 宣言によって、string から string_eqType への対応付け（Projection）
+を登録することで、
 そのことを教えてあげるわけです。そのProjectionは次のコマンドで確認することができます。
 *)
 
-Print Canonical Projections. (* string <- Equality.sort ( string_eqType ) *)
+Print Canonical Projections.
+
+(* string <- Equality.sort ( string_eqType ) *)
 
 (**
 # テストコード
  *)
 
 (**
-## true または false が計算できる
+## true または false の決定
 *)
 
 (**
-「==」の等式は、計算によって真偽が決まります。
+bool値の演算子「==」の等式は、計算によって真偽が決まります。
  *)
 Compute "abc" == "abc".                     (* true *)
 Compute "abc" == "abcd".                    (* false *)
 
 (**
-これに対して、「=」の等式は、変化がありません。
+これに対して、Prop型の演算子「=」の等式は、変化がありません。
 *)
 Compute "abc" = "abc".                      (* "abc" = "abc" *)
 Compute "abc" = "abcd".                     (* "abc" = "abcd" *)
@@ -126,7 +132,7 @@ Qed.
 
 (**
 bool値の等式の場合、ひとたびfalseまたはtrueが決まれば、
-どんな複雑な式であっても、bool値の計算で済ますことができます。
+どんな複雑な式であっても、bool値の計算で全体の真偽を求めることができます。
 
 これに対して、Prop型の等式に場合は、連言と選言を分解して証明する必要があります。
 *)
