@@ -6,7 +6,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Set Printing All.               (* コアーションを省かずに表示する。 *)
+(* Set Printing All. *)               (* コアーションを省かずに表示する。 *)
 
 Definition negb (b : bool) := if b then false else true.
 Definition pred := fun T : Type => T -> bool.
@@ -41,6 +41,7 @@ Notation "f1 =1 f2" := (eqfun f1 f2) (at level 70, no associativity).
 Definition pcancel (rT aT : Type) (f : aT -> rT) (g : rT -> option aT) :=
   forall x : aT, g (f x) = Some x.
 
+(*
 Section Relations.
   Variable S T R : Type.
   
@@ -58,8 +59,8 @@ Section Relations.
     forall (x y : S) (z : T), op (add x y) z = add (op x z) (op y z).
   Definition right_distributive (op : S -> T -> T) (add : T -> T -> T) :=
     forall (x : S) (y z : T), op x (add y z) = add (op x y) (op x z).
-  
 End Relations.
+*)
 
 (** eqType *)
 Module Equality.
@@ -67,7 +68,7 @@ Module Equality.
   Record mixin_of (T : Type) :=
     Mixin {
         op : rel T;
-        ax : forall x y, reflect (x = y) (op x y);
+        ax : forall x y : T, reflect (x = y) (op x y);
       }.
   
   Structure type :=
@@ -78,6 +79,7 @@ Module Equality.
 End Equality.
 
 Coercion Equality.sort : Equality.type >-> Sortclass.
+Notation EqMixin := Equality.Mixin.
 Notation eqType := Equality.type.
 Notation EqType := Equality.Pack.
 
@@ -116,6 +118,8 @@ End Choice.
 Coercion Choice.base : Choice.class_of >-> Equality.mixin_of.
 Coercion Choice.mixin : Choice.class_of >-> Choice.mixin_of.
 Coercion Choice.sort : Choice.type >-> Sortclass.
+Notation ChoiceMixin := Choice.Mixin.
+Notation ChoiceClass := Choice.Class.
 Notation choiceType := Choice.type.
 Notation ChoiceType := Choice.Pack.
 Canonical Structure Choice.eqType.
@@ -149,6 +153,8 @@ End Countable.
 Coercion Countable.base : Countable.class_of >-> Choice.class_of.
 Coercion Countable.mixin : Countable.class_of >-> Countable.mixin_of.
 Coercion Countable.sort : Countable.type >-> Sortclass.
+Notation CountMixin := Countable.Mixin.
+Notation CountClass := Countable.Class.
 Notation countType := Countable.type.
 Notation CountType := Countable.Pack.
 Canonical Structure Countable.eqType.
@@ -159,7 +165,7 @@ Module Finite.
   
   (* T : Equality.sort T *)
   Definition count_mem (T : eqType) (x : T) (e : list T) :=
-    count (fun y => x == x) e.
+    count (fun y => y == x) e.
   
   Definition axiom (T : eqType) (e : list T) :=
     forall x : T, (count_mem x) e = 1.
@@ -191,6 +197,8 @@ End Finite.
 Coercion Finite.base : Finite.class_of >-> Countable.class_of.
 Coercion Finite.mixin : Finite.class_of >-> Finite.mixin_of.
 Coercion Finite.sort : Finite.type >-> eqType. (* Sortclass *)
+Notation FinMixin := Finite.Mixin.
+Notation FinClass := Finite.Class.
 Notation finType := Finite.type.
 Notation FinType := Finite.Pack.
 Canonical Structure Finite.eqType.
@@ -198,7 +206,7 @@ Canonical Structure Finite.choiceType.
 Canonical Structure Finite.countType.
 
 (** GRing *)
-Module GRing.
+(* Module GRing. *)
 
   Delimit Scope ring_scope with R.
   Open Scope ring_scope.
@@ -211,10 +219,12 @@ Module GRing.
           zero : V;
           opp : V -> V;
           add : V -> V -> V;
-          ax1 : associative add;
-          ax2 : commutative add;
-          ax3 : left_id zero add;
-          ax4 : left_inverse zero opp add;
+          ax1 : forall (x y z : V),
+              add x (add y z) = add (add x y) z; (* associative add *)
+          ax2 : forall (x y : V),
+              add x y = add y x;                (* commutative add *)
+          ax3 : forall (x : V), add zero x = x; (* left_id zero add *)
+          ax4 : forall (x : V), add (opp x) x = zero; (* left_inverse zero opp add *)
         }.
 
     Record class_of (T : Type) :=
@@ -251,6 +261,8 @@ Module GRing.
   Coercion Zmodule.base : Zmodule.class_of >-> Choice.class_of.
   Coercion Zmodule.mixin : Zmodule.class_of >-> Zmodule.mixin_of.
   Coercion Zmodule.sort : Zmodule.type >-> Sortclass.
+  Notation ZmodMixin := Zmodule.Mixin.
+  Notation ZmodClass := Zmodule.Class.
   Notation zmodType := Zmodule.type.
   Notation ZmodType := Zmodule.Pack.
   (* zmodType に対して、== と != を使えるようにする。 *)
@@ -277,11 +289,14 @@ Module GRing.
       Mixin {
           one : R;
           mul : R -> R -> R;
-          ax1 : associative mul;
-          ax2 : left_id one mul;
-          ax3 : right_id one mul;
-          ax4 : left_distributive mul +%R;
-          ax5 : right_distributive mul +%R;
+          ax1 : forall (x y z : R),
+              mul x (mul y z) = mul (mul x y) z; (* associative mul *)
+          ax2 : forall (x : R), mul one x = x;   (* left_id one mul *)
+          ax3 : forall (x : R), mul x one = x; (* right_id one mul *)
+          ax4 : forall (x y : R) (z : R),
+              mul (add x y) z = add (mul x z) (mul y z); (* left_distributive mul +%R *)
+          ax5 : forall (x : R) (y z : R),
+              mul x (add y z) = add (mul x y) (mul x z); (* right_distributive mul +%R *)
           ax6 : one != 0;
         }.
     
@@ -312,6 +327,102 @@ Module GRing.
   Canonical Structure Ring.choiceType.
   Canonical Structure Ring.zmodType.
   
-End GRing.
+(* End GRing. *)
+
+(** ****** *)
+(** sample *)
+(** ****** *)
+
+Require Import Bool.
+
+(** eqType *)
+Fail Check true == true.
+Fail Check true != false.
+
+(* Bool のなかにも、reflect があるため。 *)
+Lemma eqb_spec : forall b1 b2, Top.reflect (b1 = b2) (eqb b1 b2).
+Proof.
+  intros b1 b2.
+  destruct b1, b2; now constructor.
+Qed.
+
+Definition bool_eqMixin := EqMixin eqb_spec.
+Canonical Structure bool_eqType := EqType bool_eqMixin.
+
+Check bool_eqType : eqType.
+Check true == true.
+Check true != false.
+
+(** choiceType *)
+
+Definition choose (P : pred bool) (n : nat) :=
+  match n with
+  | 0 => Some false
+  | 1 => Some true
+  | _ => None
+  end.
+
+Lemma chooseP (P : pred bool) n x : choose P n = Some x -> P x.
+Proof.
+  intro H.
+Admitted.
   
+Lemma choose_id (P : pred bool) :
+  (exists x, P x) -> exists n, choose P n. (* isSome *)
+Proof.
+Admitted.
+  
+Lemma eq_choose P Q : P =1 Q -> choose P =1 choose Q.
+Proof.
+  easy.
+Qed.  
+
+Definition bool_choiceMixin := ChoiceMixin chooseP choose_id eq_choose.
+Canonical Structure bool_choiceClass := ChoiceClass bool_eqMixin bool_choiceMixin.
+Canonical Structure bool_choiceType := ChoiceType bool_choiceClass.
+
+Check bool_choiceType : choiceType.
+
+(** countType *)
+
+Definition bool_pickle : bool -> nat := nat_of_bool.
+
+Definition bool_unpickle : nat -> option bool :=
+  fun n => match n with
+           | 0 => Some false
+           | 1 => Some true
+           | _ => None
+           end.
+
+Lemma bool_pickleK : pcancel bool_pickle bool_unpickle.
+Proof.
+  intros b.
+  now destruct b.
+Qed.  
+
+Definition bool_countMixin := CountMixin bool_pickleK.
+Canonical Structure bool_countClass := CountClass bool_choiceClass bool_countMixin.
+Canonical Structure bool_countType := CountType bool_countClass.
+
+Check bool_countType : countType.
+
+(** finType *)
+
+Definition bool_fin_enum := false :: true :: nil.
+
+Lemma bool_fin_ax (x : bool) : (Finite.count_mem x) bool_fin_enum = 1.
+Proof.
+  unfold Finite.count_mem, bool_fin_enum.
+  now destruct x.
+Qed.
+
+Definition bool_finMixin := FinMixin bool_countMixin bool_fin_ax.
+Canonical Structure bool_finClass := FinClass bool_countClass bool_finMixin.
+Canonical Structure bool_finType := FinType bool_finClass.
+
+Check bool_finType : finType.
+
+(** Zmodule *)
+(** Ring *)
+
 (* END *)
