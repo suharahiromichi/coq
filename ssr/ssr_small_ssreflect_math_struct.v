@@ -95,9 +95,9 @@ Module Choice.
   Record mixin_of (T : Type) :=
     Mixin {
         find : pred T -> nat -> option T;
-        ax1 : forall P n x, find P n = Some x -> P x;
-        ax2 : forall P : pred T, (exists x, P x) -> exists n, find P n; (* isSome *)
-        ax3 : forall P Q : pred T, P =1 Q -> find P =1 find Q;
+        correct : forall P n x, find P n = Some x -> P x;
+        complete : forall P : pred T, (exists x, P x) -> exists n, find P n; (* isSome *)
+        extension : forall P Q : pred T, P =1 Q -> find P =1 find Q;
       }.
   
   Record class_of (T : Type) :=
@@ -219,12 +219,14 @@ Canonical Structure Finite.countType.
           zero : V;
           opp : V -> V;
           add : V -> V -> V;
-          ax1 : forall (x y z : V),
-              add x (add y z) = add (add x y) z; (* associative add *)
-          ax2 : forall (x y : V),
-              add x y = add y x;                (* commutative add *)
-          ax3 : forall (x : V), add zero x = x; (* left_id zero add *)
-          ax4 : forall (x : V), add (opp x) x = zero; (* left_inverse zero opp add *)
+          (* associative add *)
+          ax1 : forall (x y z : V), add x (add y z) = add (add x y) z;
+          (* commutative add *)
+          ax2 : forall (x y : V), add x y = add y x;
+          (* left_id zero add *)
+          ax3 : forall (x : V), add zero x = x;
+          (* left_inverse zero opp add *)
+          ax4 : forall (x : V), add (opp x) x = zero;
         }.
 
     Record class_of (T : Type) :=
@@ -289,14 +291,16 @@ Canonical Structure Finite.countType.
       Mixin {
           one : R;
           mul : R -> R -> R;
-          ax1 : forall (x y z : R),
-              mul x (mul y z) = mul (mul x y) z; (* associative mul *)
-          ax2 : forall (x : R), mul one x = x;   (* left_id one mul *)
-          ax3 : forall (x : R), mul x one = x; (* right_id one mul *)
-          ax4 : forall (x y : R) (z : R),
-              mul (add x y) z = add (mul x z) (mul y z); (* left_distributive mul +%R *)
-          ax5 : forall (x : R) (y z : R),
-              mul x (add y z) = add (mul x y) (mul x z); (* right_distributive mul +%R *)
+          (* associative mul *)
+          ax1 : forall (x y z : R), mul x (mul y z) = mul (mul x y) z;
+          (* left_id one mul *)
+          ax2 : forall (x : R), mul one x = x;
+          (* right_id one mul *)
+          ax3 : forall (x : R), mul x one = x;
+          (* left_distributive mul +%R *)
+          ax4 : forall (x y : R) (z : R), mul (x + y) z = (mul x z) + (mul y z);
+          (* right_distributive mul +%R *)
+          ax5 : forall (x : R) (y z : R), mul x (y + z) = (mul x y) + (mul x z);
           ax6 : one != 0;
         }.
     
@@ -421,8 +425,5 @@ Canonical Structure bool_finClass := FinClass bool_countClass bool_finMixin.
 Canonical Structure bool_finType := FinType bool_finClass.
 
 Check bool_finType : finType.
-
-(** Zmodule *)
-(** Ring *)
 
 (* END *)
