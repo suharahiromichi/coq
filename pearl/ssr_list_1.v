@@ -78,6 +78,9 @@ Mathcop の allと has は、(A->bool)型の関数と、A型のリストをと�
 全体としてbool型を返します。
 *)
 
+(**
+Forall と all の間のリフレクション補題を次に示します。
+*)
   Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
     (forall (a : A), reflect (P a) (p a)) ->
     forall (s : seq A), reflect (Forall P s) (all p s).
@@ -116,6 +119,9 @@ ssreflect/ssrbool.v にある定義か、
 文献 [1.] を参照してください。
 *)
   
+(**
+Exists についても同様です。
+*)
   Lemma ExistsP {A : Type} (P : A -> Prop) (p : A -> bool) :
     (forall (a : A), reflect (P a) (p a)) ->
     forall (s : seq A), reflect (Exists P s) (has p s).
@@ -139,9 +145,6 @@ ssreflect/ssrbool.v にある定義か、
             by apply: IHs.
   Qed.
 
-(**
-Exists についても同様です。
-*)
 End List_1_1.
 
 (**
@@ -171,9 +174,12 @@ Check eqP : reflect (_ = _) (_ == _).
 
 (**
 残った
+
 ``all (fun a => (a == 1) == true) [:: 1; 1; 1; 1]``
+
+
 については、「計算」で真偽を決定することができるので、
-done で終了します。
+done で証明を終了することができます。
 *)
   - done.
 Qed.
