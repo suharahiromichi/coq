@@ -11,6 +11,10 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_set0_notP.v
  *)
 
 (**
+OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
+ *)
+
+(**
 # 説明
 
 Mathcomp で、型 ``T : finType`` を全体集合とするとき、
