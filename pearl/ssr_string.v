@@ -3,11 +3,16 @@ Mathcomp で文字列を使う
 ======
 2019/07/24
 
+
 この文書のソースコードは以下にあります。
 
 
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_string.v
 
+ *)
+
+(**
+OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
  *)
 
 (**
