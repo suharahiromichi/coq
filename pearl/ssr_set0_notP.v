@@ -53,12 +53,12 @@ Section Test.
     - move/setP => H x.
       move: (H x) => {H}.
       rewrite 2!inE.
-        by move/negP.
+        by move/idP.
       
     - move=> H.
       apply/setP => x.
       rewrite 2!inE.
-        by apply/negP.
+        by apply/idP.
   Qed.
 
 (**
@@ -98,10 +98,28 @@ Coq本来のProp型の等式 ``=`` が同値であるこを示します。
 (**
 ``2!`` をつけることで、等式の左辺と右辺の両方に適用します。
 
-あとは、``p x = false -> ~ p x`` のような「否定の問題」を解決することで証明は終了です。
-「否定の問題」については、TBD by suhara を参照してください。
+最後は、``p x = false`` を idP を使って ``~ (p x)`` に変換することで、
+証明か終わります。
+ *)
+
+  Check @idP : forall b1 : bool, reflect (b1 = true) b1.
+
+(**
+idP は、Prop型とbool型の間で（なにもしない）リフレクト補題ですが、
+これを、前提に対して ``move/idP`` とviewとして使うことで、elimF が補われて、
+前提の ``p x = false`` が ``~ p x`` となります。
+ *)
+
+  Check elimF idP : _ = false -> ~ _.
+
+(**
+同様に、ゴールの対して ``apply/idP`` とviewとして使うことで、introF が補われて、
+ゴールの ``p x = false`` が ``~ p x`` となります。
  *)
   
+  Check introF idP : ~ _ -> _ = false.
+
+
 (**
 ## Mathcomp 風の補題
 
