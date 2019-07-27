@@ -1,12 +1,12 @@
 (**
-Mathcomp の subset について (Proof Pearl ##3)
+Mathcomp の 空集合 について
 ======
 2019/05/02
 
 この文書のソースコードは以下にあります。
 
 
-https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_set0_nP.v
+https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_set0_notP.v
 
  *)
 
@@ -18,11 +18,13 @@ Mathcomp で、型 ``T : finType`` を全体集合とするとき、
 で決まる部分集合を考えます。
 
 その部分集合が空集合、あるいは、濃度が0である場合、
-述語 p は常に false を返すはずです。
-その補題を証明してみます。
+述語 ``p`` は常に ``false`` を返すはずです。
+それを証明してみます。
+
+Mathcomp では、空集合は``set0``、集合の濃度は ``#|_|`` で表現します。
 *)
 
-(*
+(**
 # コード例
 
 ## 空集合の場合についての証明
@@ -45,7 +47,7 @@ Section Test.
   Proof.
     split.
     - move/setP => H x.
-      move: (H x).
+      move: (H x) => {H}.
       rewrite 2!inE.
         by move/negP.
       
@@ -54,7 +56,55 @@ Section Test.
       rewrite 2!inE.
         by apply/negP.
   Qed.
+
+(**
+setP は、ふたつの集合が等しいときにbool値のtrueを返す ``=i`` と、
+Coq本来のProp型の等式 ``=`` が同値であるこを示します。
+ *)
   
+  Check setP : forall (T : finType) (A B : {set T}), A =i B <-> A = B.
+
+(**
+これをつかって、
+``[set x | p x] = set0`` を ``[set x | p x] =i set0``
+ に書き換えています。
+
+このように書き換えると、x を適用する（前提の場合）、
+または、x を introする（ゴールの場合）と
+``(x \in [set x0 | p x0]) = (x \in set0)``
+のように、``\in`` （∈) の表記に直すことができます。
+*)
+
+(**
+inE は、複雑で中をみてもよくわかりませんが、
+
+``x \in [set x0 | p x0]`` を ``p x`` 
+に書き換えます。
+
+- ``\in`` の右は、述語 p （実際は A -> bool の関数）が true となる値の集合
+- ``\in`` の左の ``x`` は、上記の要素
+
+であるので、x は 述語 p が true となります。すなわち ``p x`` になるわけです。
+ *)
+
+(**
+一方、空集合 ``set0`` は、``[set x0 | false]`` で定義されていますから、
+``x \in set0`` は、単に ``false`` になります。
+ *)
+
+(**
+``2!`` をつけることで、等式の左辺と右辺の両方に適用します。
+
+あとは、``p x = false -> ~ p x`` のような「否定の問題」を解決することで証明は終了です。
+「否定の問題」については、TBD by suhara を参照してください。
+ *)
+  
+(**
+## Mathcomp 風の補題
+
+Mathcomp 風に、booelan の等式にした補題も証明してみます。
+ *)
+
   Lemma set0_notPE (A : finType) (p : pred A) :
     ([set x | p x] == set0) = [forall x, ~~ p x].
   Proof.
@@ -73,9 +123,9 @@ Section Test.
   Qed.
   
 (**
-## 集合表記のバリエーション
+## 応用
 
-集合風な表記の場合についても、証明しておきます。
+上記の補題を使用して、別なな表記の場合についても証明しておきます。
  *)
   
   Lemma set0_notP' (A : finType) (p : pred A) :
@@ -112,7 +162,7 @@ Section Test.
 (**
 ## 補足
 
-set0_notP' を直接証明するための補題
+set0_notP' を直接証明する
 *)
 
   Lemma p__inp (A : finType) (p : pred A) :
