@@ -30,20 +30,21 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 
 でも、すこし考えてみると、
 Mathcomp の場合、集合は有限型(finType)をドメインとするbooleanな関数で
-表されます。すなわち、
+表されます。すなわち、``T : finType`` とすると、
 
-``T : finType`` のとき、 ``p : pred T``
+``p : pred T``
 
 
-なお、``pred T` は単に ``T -> bool`` の表記です。
+なお、``pred T`` は単に ``T -> bool`` の Notation (構文糖衣) です。
 
-集合pと関数pが同一視されるので、集合pの濃度は、
+pが、常にtrueを返す場合が全集合、常にfalseを返す場合が空集合になります。
+このように、集合pと関数pが同一視されるので、集合pの濃度は、
 「型Tの要素の全体を関数pでフィルタリングして残った要素の数」
-になります。
+ということになります。
 
 このことから、
 型Tの要素の全体をしめす finType の enum フィールドの中身、
-すなわち seq に対する帰納法で解くことかできることがわかります。
+すなわち、リスト (seq型) に対する帰納法で解くことかできることがわかります。
 
 
 型 T からその enum フィールドの中身を取り出すのは、次のようにします。
@@ -71,9 +72,9 @@ Section Test.
   Variable T : finType.
   Variable p : pred T.                      (* T -> bool *)
 
-  Lemma ex_card : exists i, #| p | = i.
+  Lemma ex_card : exists (i : nat), #| p | = i.
   Proof.
-    rewrite unlock /card /enum_mem /=.
+    rewrite unlock /card /enum_mem.
     elim: (Finite.enum T).
     - by exists 0.
     - move=> x s /= [i IHs].
