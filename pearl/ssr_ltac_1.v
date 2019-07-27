@@ -25,7 +25,7 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 を略した形（コアーション）で、``(a == b) <> false`` もあり、という具合に
 百花繚乱の状態です。二重否定も普通に出現することも事態を複雑にます。
 
-これを、Mathcompの「不等式問題」と呼ばれています（提唱者は私です）。
+このことは Mathcomp の「不等式問題」と呼ばれています（提唱者は私です）。
 
 Mathcomp ライブラリには、これらを解消するための補題
 （ビューまたrewriteで使う）
@@ -48,6 +48,10 @@ is_true を明示する必要があります。
 ``Definition is_true b := (b = true)``
 
 でした。
+
+また、``_ != true`` が出現しないののは、``~~ (_ == true)`` として、
+括弧の中身がコンテキストにマッチして、先に処理されるからです。
+``_ != false`` も同様です。
 *)
 
 
@@ -129,7 +133,7 @@ Ltac の定義のなかで何をしているか見てみましょう。
 
 | ~~ ~~ (a == b)     | rewrite negbK    | a == b         |
 
-| ~~ (a != b)        | rewrite negbK    | (a == b) = true |
+| ~~ (a != b)        | rewrite negbK    | a == b        |
 
  *)
 
@@ -198,71 +202,113 @@ Section Negative.
 (**
 前提部 find_neg_hypo の単体のテスト
  *)
-
-  Goal forall (a b : nat), (a == b) = true -> (a == b).
-  Proof.
-    move=> a b H1.
-    find_neg_hypo.
-    done.    
-  Qed.
-
-  Goal forall (a b : nat), (a == b) <> true -> (a != b).
-  Proof.
-    move=> a b H1.
-    find_neg_hypo.
-    done.    
-  Qed.
-
-  Goal forall (a b : nat), ~((a == b) = true) -> (a != b).
+  
+  Goal forall (a b : nat), (a == b) = true -> a == b.
   Proof.
     move=> a b H1.
     find_neg_hypo.
     done.    
   Qed.
   
-  Goal forall (a b : nat), (a == b) = false -> (a != b).
+  Goal forall (a b : nat), (a != b) = true -> a != b.
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+
+  Goal forall (a b : nat), (a == b) <> true -> a != b.
   Proof.
     move=> a b H1.
     find_neg_hypo.
     done.    
   Qed.
   
-  Goal forall (a b : nat), (a == b) <> false -> (a == b).
-  Proof.
-    move=> a b H1.
-    find_neg_hypo.
-    done.    
-  Qed.
-
-  Goal forall (a b : nat), ~ ((a == b) = false) -> (a == b).
-  Proof.
-    move=> a b H1.
-    find_neg_hypo.
-    done.    
-  Qed.
-
-  Goal forall (a b : nat), ~ (a == b) -> (a != b).
+  Goal forall (a b : nat), (a != b) <> true -> ~~ (a != b).
   Proof.
     move=> a b H1.
     find_neg_hypo.
     done.    
   Qed.
   
-  Goal forall (a b : nat), (a == b) == true -> (a == b).
+  Goal forall (a b : nat), (a == b) = false -> a != b.
   Proof.
     move=> a b H1.
     find_neg_hypo.
-    done.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a != b) = false -> ~~ (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a == b) <> false -> a == b.
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a != b) <> false -> a != b.
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), ~ (a == b) -> a != b.
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), ~ (a != b) -> ~~ (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a == b) == true -> a == b.
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a != b) == true -> a != b.
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
   Qed.
 
-  Goal forall (a b : nat), (a == b) == false -> (a != b).
+  Goal forall (a b : nat), (a == b) == false -> a != b.
   Proof.
     move=> a b H1.
     find_neg_hypo.
-    done.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a != b) == false -> ~~ (a != b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.    
   Qed.
 
   Goal forall (a b : nat), ~~ ~~ (a == b) -> (a == b).
+  Proof.
+    move=> a b H1.
+    find_neg_hypo.
+    done.
+  Qed.
+  
+  Goal forall (a b : nat), ~~ (a != b) -> (a == b).
   Proof.
     move=> a b H1.
     find_neg_hypo.
@@ -273,48 +319,62 @@ Section Negative.
 ゴール部 find_neg_goal の単体のテスト
  *)
 
-  Goal forall (a b : nat), (a == b) -> (a == b) = true.
+  Goal forall (a b : nat), a == b -> (a == b) = true.
   Proof.
     move=> a b H1.
     find_neg_goal.
     done.    
   Qed.
 
-  Goal forall (a b : nat), (a != b) -> (a == b) <> true.
+  Goal forall (a b : nat), a != b -> (a != b) = true.
   Proof.
     move=> a b H1.
     find_neg_goal.
     done.    
   Qed.
 
-  Goal forall (a b : nat), (a != b) -> ~((a == b) = true).
+  Goal forall (a b : nat), a != b -> (a == b) <> true.
   Proof.
     move=> a b H1.
     find_neg_goal.
     done.    
   Qed.
   
-  Goal forall (a b : nat), (a != b) -> (a == b) = false.
+  Goal forall (a b : nat), ~~ (a != b) -> (a != b) <> true.
   Proof.
     move=> a b H1.
     find_neg_goal.
     done.    
   Qed.
   
-  Goal forall (a b : nat), (a == b) -> (a == b) <> false.
+  Goal forall (a b : nat), a != b -> (a == b) = false.
   Proof.
     move=> a b H1.
     find_neg_goal.
     done.    
-  Qed.
-
-  Goal forall (a b : nat), (a == b) -> ~ ((a == b) = false).
+  Qed.  
+  
+  Goal forall (a b : nat), ~~ (a != b) -> (a != b) = false.
   Proof.
     move=> a b H1.
     find_neg_goal.
     done.    
-  Qed.
-
+  Qed.  
+  
+  Goal forall (a b : nat), a == b -> (a == b) <> false.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.  
+  
+  Goal forall (a b : nat), a != b -> (a != b) <> false.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.  
+  
   Goal forall (a b : nat), (a != b) -> ~ (a == b).
   Proof.
     move=> a b H1.
@@ -322,14 +382,42 @@ Section Negative.
     done.    
   Qed.
   
-  Goal forall (a b : nat), (a == b) -> (a == b) == true.
+  Goal forall (a b : nat), ~~ (a != b) -> ~ (a != b).
   Proof.
     move=> a b H1.
     find_neg_goal.
-    done.
+    done.    
   Qed.
-
-  Goal forall (a b : nat), (a != b) -> (a == b) == false.
+  
+  Goal forall (a b : nat), a == b -> (a == b) == true.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), a != b -> (a != b) == true.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), a != b -> (a == b) == false.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), ~~ (a != b) -> (a != b) == false.
+  Proof.
+    move=> a b H1.
+    find_neg_goal.
+    done.    
+  Qed.
+  
+  Goal forall (a b : nat), (a == b) -> ~~ (a != b).
   Proof.
     move=> a b H1.
     find_neg_goal.
