@@ -1,13 +1,18 @@
 (**
-Mathcomp の subset について (Proof Pearl ##1)
+Mathcomp の subset について
 ======
 2019/05/01
+
 
 この文書のソースコードは以下にあります。
 
 
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_subset.v
 
+ *)
+
+(**
+OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
  *)
 
 (**
