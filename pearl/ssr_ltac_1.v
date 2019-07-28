@@ -190,7 +190,7 @@ repeat で繰り返し適用すると、``a != b`` と ``~ (a == b)`` の間を
 
 | ~~ ~~ (a == b)     | rewrite negbK    | a == b         |
 
-| ~~ (a != b)        | rewrite negbK    | (a == b) = true |
+| ~~ (a != b)        | rewrite negbK    | a == b         |
 
 *)
 
