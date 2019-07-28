@@ -87,7 +87,7 @@ Coq本来のProp型の等式 ``=`` が同値であるこを示します。
 - ``\in`` の右は、述語 p （実際は A -> bool の関数）が true となる値の集合
 - ``\in`` の左の ``x`` は、上記の要素
 
-であるので、x は 述語 p が true となります。すなわち ``p x`` になるわけです。
+であるので、x について 述語 p が true となります。すなわち ``p x`` になるわけです。
  *)
 
 (**
@@ -224,7 +224,7 @@ option型は、eqType とは限らないので、Some _ か None かどうかで
 関数 option_dec を用意しておきます。
 
 関数 m のドメインが空集合である場合、m はすべての引数に対して None を返す
-(option_dec が false) になることを証明ます。
+(option_dec が false) になることを証明します。
 *)
   
   Definition fmap (A : finType) (B : Type) := A -> option B.
