@@ -24,7 +24,7 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 Mathcompのライブラリには文字列がないため、
 Standard Coqの String型 ([2.]) を使うことになります。
 
-さらに、Mathcomp に含まれる eqType ([3.]) という
+さらに、Mathcomp に含まれる eqType ([3.]) という、
 決定性のある等式 (decidable equality) の型クラス
 のインスタンスとすることで、
 （Mathcompらしく）bool値を返す等号演算子「==」を使ったり、
@@ -68,10 +68,32 @@ Prop型とbool値では型が違うわけですが、``is_true b := (b = true)``
 （これをコアーションといいます）。
 
 (4) は、(3)のMixinから、``eqType``のインスタンスである``string_eqType``を生成します。
-このとき、Definition ではなく、Canonical を使うことで、
-string_eqType を (sortにおける）string の正準解(canonical solution)になります。
-sort は、eqType の構造体において、型stringが格納されるフィールドの名前です。
+string_eqType を構成する EqTypeの構造体のsortフィールドに、string型が格納されます。
  *)
+
+Compute @Equality.sort string_eqType.       (* string. *)
+
+(**
+さらに、Definition ではなく、Canonical を使うことで、
+string_eqType が  string に、対応づけ(Canonical Projection)されます。
+これにより、string型の値をstring_eqType型とみなして処理をすることができるようになります
+（後述）。
+ *)
+
+(**
+
+```
+   型（のインスタンス） : 型の型
+-----------------------------------------
+    string             :   Type
+
+sort↑   ↓canonical projection
+    string_eqType      :   eqType
+```
+
+つまり、string_eqType → string の対応関係は、string_eqType 内部に保持されるのに対して、
+string → string_eqType の対応関係は、Coqの処理系のデータベースに保持されます。
+*)
 
 Open Scope string_scope.                    (* (5) *)
 
@@ -81,31 +103,31 @@ Open Scope string_scope.                    (* (5) *)
 *)
 
 (**
-# string_eqType でなにがうれしいか
+# string_eqType を定義すると、なにがうれしいか
 
 以上で、string_eqType を定義し、
 string型に対してbool型の等号「==」が使えるようになりました。
 これでなにがうれしいのでしょうか。ここでできるのは以下のことです。
 
-1. string型の値どうしが、等しいことが証明できる。また、等しくないことが証明できる。
+- string型の値どうしが、等しいことが証明できる。また、等しくないことが証明できる。
 （これは、Prop型の等号「=」でも証明できる）
 
-2. string型の値どうしが、等しいか等しくないか、で場合わけできる。
+- string型の値どうしが、等しいか等しくないか、で場合わけできる。
 （これは、String.string_dec (standard coq の sumbool) でも可能である）
 
-3. ひとたび bool値の false/true が決まれば、
+- ひとたび bool値の false/true が決まれば、
 bool値の計算によって証明を進めることができる。
 （これは、String.eqb だけでも可能である）
 
 
 これらに加えて、
 
-4. Mathcomp のnat型のように、bool値の等号「==」が使える。
+1. Mathcomp のnat型のように、bool値の等号「==」が使える。
 
-5. Mathcomp のnat型のように、eqType に関する補題がつかえるようになる。
+2. Mathcomp のnat型のように、eqType に関する補題がつかえるようになる。
 
-6. Mathcomp のnat型のように、直積型(prod型) や、リスト型(seq型)の中で使った場合、
-それに対して、1.〜5. のことが可能になる。
+3. Mathcomp のnat型のように、直積型(prod型)や、リスト型(seq型)の中で使った場合、
+それに対して、1.〜2. のことが可能になる。
  *)
 
 
@@ -202,7 +224,7 @@ string型に 「==」 ができないのと同様に、``string * string``型に
 
 また、pair_eqP は eqType型についての補題です。
 
-eqType 型に使える補題については [4.] も参照してください。
+eqType型に使える補題については [4.] も参照してください。
 *)
 
 Goal forall x y : string,
