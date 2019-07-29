@@ -69,7 +69,7 @@ Prop型とbool値では型が違うわけですが、``is_true b := (b = true)``
 
 (4) は、(3)のMixinから、``eqType``のインスタンスである``string_eqType``を生成します。
 このとき、Definition ではなく、Canonical を使うことで、
-string_eqType を (sortにおける）string の正準解になります。
+string_eqType を (sortにおける）string の正準解(canonical solution)になります。
 sort は、eqType の構造体において、型stringが格納されるフィールドの名前です。
  *)
 
@@ -97,13 +97,14 @@ string型に対してbool型の等号「==」が使えるようになりまし�
 bool値の計算によって証明を進めることができる。
 （これは、String.eqb だけでも可能である）
 
+
 これらに加えて、
 
 4. Mathcomp のnat型のように、bool値の等号「==」が使える。
 
 5. Mathcomp のnat型のように、eqType に関する補題がつかえるようになる。
 
-6. Mathcomp のnat型のように、pair型 や seq型（リスト）の中で使った場合、
+6. Mathcomp のnat型のように、直積型(prod型) や、リスト型(seq型)の中で使った場合、
 それに対して、1.〜5. のことが可能になる。
  *)
 
@@ -134,7 +135,7 @@ eq_op は、自分が"はstring型の引数をとっていることは判って�
 （逆に、string_eqType から string を対応付けすることはできます。
 eqType構造体を調べればそのsortフィールドに string型 が格納されているからです。）
 
-Canonical 宣言によって、string から string_eqType への対応付け（Projection）
+Canonical 宣言によって、string から string_eqType への対応付け（Canonical Projection）
 を登録することで、
 そのことを教えてあげるわけです。そのProjectionは次のコマンドで確認することができます。
 *)
@@ -190,11 +191,15 @@ Qed.
 (**
 ## 証明の例
 
-string型どうしからなるPair型 ``string * string`` の ``(x, y) == ("abc", "xyz")``
+string型どうしからなる直積型 ``string * string``型
+の ``(x, y) == ("abc", "xyz")``
 を ``x == "abc" /\ y == "xyz"`` に変形して証明する例です。
 
-本来 ``string * string`` 型には 「==」は適用できず、
-実は、``string_eqType * string_eqType`` になっていることの注意してください。
+実は、``string * string`` 型ではなく、``prod_eqType string_eqType string_eqType``型
+になっている（Canonical Projection）ことに注意してください。
+string型に 「==」 ができないのと同様に、``string * string``型にも、
+「==」 を適用できません。
+
 また、pair_eqP は eqType型についての補題です。
 
 eqType 型に使える補題については [4.] も参照してください。
