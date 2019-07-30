@@ -24,11 +24,12 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 Mathcompのライブラリには文字列がないため、
 Standard Coqの String型 ([2.]) を使うことになります。
 
+これだけでも十分なのですが、
 さらに、Mathcomp に含まれる eqType ([3.]) という、
 決定性のある等式 (decidable equality) の型クラス
-のインスタンスとすることで、
+のインスタンスとしてあらたな型(string_eqType)を定義することで、
 （Mathcompらしく）bool値を返す等号演算子「==」を使ったり、
-Mathcompん等式についての補題が使えるようになります。
+Mathcompの等式についての補題が使えるようになります。
 *)
 
 (**
@@ -76,24 +77,9 @@ Compute @Equality.sort string_eqType.       (* string. *)
 (**
 さらに、Definition ではなく、Canonical を使うことで、
 string_eqType が  string に、対応づけ(Canonical Projection)されます。
-これにより、string型の値をstring_eqType型とみなして処理をすることができるようになります
+これにより、string型の値をstring_eqType型とみなして処理をすることができるようになります。
 （後述）。
  *)
-
-(**
-
-```
-   型（のインスタンス） : 型の型
------------------------------------------
-    string             :   Type
-
-sort↑   ↓canonical projection
-    string_eqType      :   eqType
-```
-
-つまり、string_eqType → string の対応関係は、string_eqType 内部に保持されるのに対して、
-string → string_eqType の対応関係は、Coqの処理系のデータベースに保持されます。
-*)
 
 Open Scope string_scope.                    (* (5) *)
 
@@ -103,9 +89,9 @@ Open Scope string_scope.                    (* (5) *)
 *)
 
 (**
-# string_eqType を定義すると、なにがうれしいか
+# string_eqType型を定義すると、なにがうれしいか
 
-以上で、string_eqType を定義し、
+以上で、string_eqType型を定義し、
 string型に対してbool型の等号「==」が使えるようになりました。
 これでなにがうれしいのでしょうか。ここでできるのは以下のことです。
 
@@ -130,16 +116,41 @@ bool値の計算によって証明を進めることができる。
 それに対して、1.〜2. のことが可能になる。
  *)
 
-
-
 (**
 # Canonical宣言の補足説明
+
+## ここまでで、なにが起きているか
+
+(6)に加えて(7)が成り立つようになります。
+ *)
+
+Check "abc" : string        : Type.
+Check "abc" : string_eqType : eqType.       (* (6) *)
+
+(**
+これをもって、「string型の値をstring_eqType型とみなす」といっても構わないわけですが。。。
+
+(6)をコアーションを省略せずに書くと次のようになります。
+EqualityはeqTypeの正式なModule名です。
+ *)
+Check "abc" : Equality.sort string_eqType.
+
+(**
+Coqといえど、特定の値が複数種類の型を持つことができるわけではなく、
+string_eqType型を定義する eqType の構造体の sort フィールドに格納された
+string型への参照を取り出しているわけで、
+取り出すためのキーが省略されているだけです。
+*)
+
+(**
+## 演算子「==」について
 
 演算子「==」は、関数eq_opのNotation （構文糖衣）です。
 関数としてのeq_opは、本来ならば3引数なのですが、
 通常、その第1引数である型の指定を省略します（省略しなければならない）。
 *)
-Check "abc" == "abc" : bool.
+
+Check "abc" == "abc" : bool.                (* (7) *)
 Check eq_op : _ -> _ -> bool.
 Check eq_op "abc" "abc" : bool.
 
@@ -150,12 +161,27 @@ Check @eq_op : forall T : eqType, T -> T -> bool.
 Check @eq_op string_eqType "abc" "abc".
 
 (**
-eq_op は、eqType型で定義された関数ですから、型の指定は string_eqType とする必要があります。
+eq_op は、「eqType型の型の値」をとる関数ですから、
+引数の型は string_eqType型 でなければなりません。
+ *)
+
+(**
+
 しかしながら、``"abc" == "abc"`` あるいは ``eq_op "abc" "abc"`` とした場合、
-eq_op は、自分が"はstring型の引数をとっていることは判っても、
+eq_op は、自分が"はstring型の引数を取っているは判っても、
 それから string_eqType を対応付けすることができません。
-（逆に、string_eqType から string を対応付けすることはできます。
-eqType構造体を調べればそのsortフィールドに string型 が格納されているからです。）
+
+(6)の場合は、string_eqType が書かれるべきと判っていたので、
+string型が与えれてもコアーションで補うことができました。
+しかし、(7)はeqTypeのインスタンスならなんでもよいので、
+string型が与えれてもstring_eqType型に対応づけることができません。
+（これは、1からnat型を対応できますが、nat型からかならずしも1を対応できないのと同じことです）
+それで、そのことをCoqの処理系に教えておいてあげるわけです。
+これを、
+
+string_eqType型 は sring型 の sort についての Canonical Solution である
+
+といいます。
 
 Canonical 宣言によって、string から string_eqType への対応付け（Canonical Projection）
 を登録することで、
@@ -165,6 +191,15 @@ Canonical 宣言によって、string から string_eqType への対応付け（
 Print Canonical Projections.
 
 (* string <- Equality.sort ( string_eqType ) *)
+
+(**
+繰り返しになりますが、
+
+string_eqType → string の対応関係は、string_eqType 内部に保持されるのに対して、
+string → string_eqType の対応関係は、Coqの処理系のデータベースに保持されます。
+
+あとは、コアーションでうまく処理されます。
+ *)
 
 (**
 # テストコード
@@ -213,19 +248,8 @@ Qed.
 (**
 ## 証明の例
 
-string型どうしからなる直積型 ``string * string``型
-の ``(x, y) == ("abc", "xyz")``
-を ``x == "abc" /\ y == "xyz"`` に変形して証明する例です。
-
-実は、``string * string`` 型ではなく、``prod_eqType string_eqType string_eqType``型
-になっている（Canonical Projection）ことに注意してください。
-string型に 「==」 ができないのと同様に、``string * string``型にも、
-「==」 を適用できません。
-
-また、pair_eqP は eqType型についての補題です。
-
-eqType型に使える補題については [4.] も参照してください。
-*)
+eqType型で定義された補題pair_eqPを使ってみた例です。
+ *)
 
 Goal forall x y : string,
     x == "abc" -> y == "xyz" -> (x, y) == ("abc", "xyz").
@@ -236,13 +260,39 @@ Proof.
 Qed.  
 
 (**
+string型どうしからなる直積型 ``string * string``型
+の ``(x, y) == ("abc", "xyz")``
+を ``x == "abc" /\ y == "xyz"`` に変形して証明する例です。
+
+実は、``string * string`` 型ではなく、``prod_eqType string_eqType string_eqType``型
+になっている（Canonical Projection）ことに注意してください。
+string型に 「==」 ができないのと同様に、``string * string``型にも、
+「==」 を適用できません。
+
+eqType型に使える補題については [6.]の4.2節を参照してください。
+*)
+
+(**
 # まとめ
 
 Mathcomp で文字列を使う方法をのべました。実質2行なので、ぜひお試しください。
 
 これを使って Lisp のプログラムを証明した例が[1.]です。あわせてご覧ください。
 
+コアーションについてのもうすこし詳しい説明は[4.]にあります。これもあわせてご覧ください。
+
+Mathcomp の公式サイトは[0.]です。
+解説書は [5.] です。入門から内部構造まで広くカバーしています。
+5.3節に詳しい説明があります。
+ *)
+
+(**
 # 文献
+
+[0.] Mathematical Components 公式
+
+https://math-comp.github.io/
+
 
 [1.] 「The Little Prover」のCoqでの実現---「定理証明手習い」の「公理」をCoqで証明してみた
 
@@ -259,7 +309,18 @@ https://coq.inria.fr/library/Coq.Strings.String.html
 https://math-comp.github.io/htmldoc/mathcomp.ssreflect.eqtype.html
 
 
-[4.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+[4.] リフレクションのしくみをつくる
+
+https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
+
+
+[5.] Mathematical Components Book
+
+https://math-comp.github.io/mcb/
+
+
+[6.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+
  *)
 
 (* END *)
