@@ -24,12 +24,15 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 Mathcompのライブラリには文字列がないため、
 Standard Coqの String型 ([2.]) を使うことになります。
 
-これだけでも十分なのですが、
-さらに、Mathcomp に含まれる eqType ([3.]) という、
-決定性のある等式 (decidable equality) の型クラス
-のインスタンスとしてあらたな型(string_eqType)を定義することで、
-（Mathcompらしく）bool値を返す等号演算子「==」を使ったり、
-Mathcompの等式についての補題が使えるようになります。
+一方、自然数(nat型)などのMathcompで使うデータ型は、
+eqTypeという、決定性のある等式 (decidable equality) の型クラス
+のインスタンスとしても定義されています(nat型に対してnat_eqType型、[3.])。
+
+これによって、（Mathcompらしく）bool値を返す等号演算子「==」を使ったり、
+Mathcompの等式についての補題が使えるようになっています。
+
+ここでは、あらたな型(string_eqType型)を定義することで、
+文字列をMathcompらしく使えるようにしたいとおもいます。
 *)
 
 (**
