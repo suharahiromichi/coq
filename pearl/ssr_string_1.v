@@ -52,12 +52,13 @@ Check 1 : nat        : Type.
 ```
         nat_eqType ← eqType
          V            ↑
+
 1    ← nat        ← Type
 
-
-← : 型の要素の関係
-＜ : 型
 ```
+- ← : 型の要素の関係
+- ＜ : 型
+
  *)
 
 (**
@@ -72,18 +73,18 @@ Check 1 : Equality.sort nat_eqType.
  *)
 
 Check [:: 1] : seq_eqType nat_eqType : eqType : Type.
-Check [:: 1] : seq        nat        : Type.
+Check [:: 1] : seq nat               : Type.
 
 (**
 ```
          seq_eqType nat_eqType ← eqType
           V                        ↑
-[:: 1]← seq  nat               ← Type
 
+[:: 1]← seq nat                ← Type
 
-← : 型の要素の関係
-＜ : 型
 ```
+- ← : 型の要素の関係
+- ＜ : 型
  *)
 
 Compute Equality.sort (seq_eqType nat_eqType). (* seq nat *)
@@ -140,12 +141,12 @@ Check "abc" : string        : Type.
 ```
          string_eqType ← eqType
           V            ↑
+
 "abc" ← string        ← Type
 
-
-← : 型の要素の関係
-＜ : 型
 ```
+- ← : 型の要素の関係
+- ＜ : 型
  *)
 
 (**
@@ -166,12 +167,12 @@ Check [:: "abc"] : seq        string        : Type.
 ```
          seq_eqType string_eqType ← eqType
           V                        ↑
+
 [:: 1]← seq  string               ← Type
 
-
-← : 型の要素の関係
-＜ : 型
 ```
+- ← : 型の要素の関係
+- ＜ : 型
  *)
 
 (**
