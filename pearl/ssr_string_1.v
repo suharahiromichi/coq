@@ -174,9 +174,8 @@ Check [:: "abc"] : seq        string        : Type.
 ```
  *)
 
-
 (**
-# まとめ
+# 証明例とまとめ
  *)
 
 From mathcomp Require Import all_ssreflect. (* (1) *)
@@ -185,6 +184,13 @@ Require Import String.                      (* (2) *)
 Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec. (* (3) *)
 Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
+Lemma list_s_eq_noteq (s t : seq string) : (s == t) || (s != t).
+Proof.
+  case: (s == t).     (* destruct (s == t) でもおなじ。 *)
+  - done.             (* s == t が成り立つ。 *)
+  - done.             (* s == t が成り立たない。s != t が成り立つ。 *)
+Qed.
+
 (**
 1. 決定性のある bool値 の等号「==」が使える。
 
@@ -192,8 +198,8 @@ Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
 3. 直積型(prod型)や、リスト型(seq型)などの中で使った場合、
 それに対して、1.〜2. のことが可能になる。
-
 *)
+
 
 (**
 # 文献
