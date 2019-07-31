@@ -53,22 +53,24 @@ Check 1 : nat        : Type.
 
 (**
 ```
-        nat_eqType ← eqType
-         V            ↑
-
 1    ← nat        ← Type
+         ^            ↓
+
+        nat_eqType ← eqType
 
 ```
 - ← : 型の要素の関係
-- ＜ : 型
+- ＜ : 型を保持 (sortフィールド)
 
  *)
 
-(**
-ただし、1 : nat_eqType の部分は、sort の呼び出しが省略されたもの。
-*)
 Compute Equality.sort nat_eqType.       (* nat *)
 Check 1 : Equality.sort nat_eqType.
+(**
+ただし、1 : nat_eqType の部分は、sort の呼び出しが省略されたもの。
+
+Equality は eqType のモジュール名で、Equality.sort はフルネーム。
+*)
 
 
 (**
@@ -81,16 +83,22 @@ Check [:: 1] : seq nat               : Type.
 
 (**
 ```
-         seq_eqType nat_eqType ← eqType
-          V                        ↑
-
 [:: 1]← seq nat                ← Type
+          ^                        ↓
+
+         seq_eqType nat_eqType ← eqType
 
 ```
 - ← : 型の要素の関係
-- ＜ : 型
+- ＜ : 型を保持 (sortフィールド)
  *)
 
+Compute Equality.sort (seq_eqType nat_eqType). (* seq nat *)
+Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
+
+(**
+ただし、"[:: 1]" : seq nat の部分は、sort の呼び出しが省略されたもの。
+*)
 Compute Equality.sort (seq_eqType nat_eqType). (* seq nat *)
 Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
 
@@ -145,21 +153,21 @@ Check "abc" : string        : Type.
 
 (**
 ```
-         string_eqType ← eqType
-          V            ↑
-
 "abc" ← string        ← Type
+          ^                ↓
+
+         string_eqType ← eqType
 
 ```
 - ← : 型の要素の関係
-- ＜ : 型
+- ＜ : 型を保持 (sortフィールド)
  *)
 
 (**
 ただし、"abc" : string_eqType の部分は、sort の呼び出しが省略されたもの。
 *)
-Compute Equality.sort string_eqType.       (* string *)
-Check "abc" : Equality.sort string_eqType.
+Compute Equality.sort (seq_eqType string_eqType). (* seq string *)
+Check [:: "abc"] : Equality.sort (seq_eqType string_eqType).
 
 
 (**
@@ -172,15 +180,21 @@ Check [:: "abc"] : seq        string        : Type.
 
 (**
 ```
-         seq_eqType string_eqType ← eqType
-          V                        ↑
+[:: 1]← seq string                ← Type
+          ^                            ↓
 
-[:: 1]← seq  string               ← Type
+         seq_eqType string_eqType ← eqType
 
 ```
 - ← : 型の要素の関係
-- ＜ : 型
+- ＜ : 型を保持 (sortフィールド)
  *)
+
+(**
+ただし、"abc" : string_eqType の部分は、sort の呼び出しが省略されたもの。
+*)
+Compute Equality.sort string_eqType.       (* string *)
+Check "abc" : Equality.sort string_eqType.
 
 (**
 ---------------
@@ -246,6 +260,11 @@ https://math-comp.github.io/mcb/
 
 
 [6.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+
+
+[7.] Kazuhiko Sakaguchi "Validating Mathematical Structures"
+
+http://www.logic.cs.tsukuba.ac.jp/~sakaguchi/papers/coq-workshop-2019.pdf
 
  *)
 
