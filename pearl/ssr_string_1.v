@@ -53,12 +53,14 @@ Check 1 : nat        : Type.
 
 (**
 ```
+
 1    ← nat        ← Type
          ^            ↓
 
         nat_eqType ← eqType
 
 ```
+
 - ← : 型の要素の関係
 - ＜ : 型を保持 (sortフィールド)
 
@@ -83,12 +85,14 @@ Check [:: 1] : seq nat               : Type.
 
 (**
 ```
+
 [:: 1]← seq nat                ← Type
           ^                        ↓
 
          seq_eqType nat_eqType ← eqType
 
 ```
+
 - ← : 型の要素の関係
 - ＜ : 型を保持 (sortフィールド)
  *)
@@ -153,12 +157,14 @@ Check "abc" : string        : Type.
 
 (**
 ```
+
 "abc" ← string        ← Type
           ^                ↓
 
          string_eqType ← eqType
 
 ```
+
 - ← : 型の要素の関係
 - ＜ : 型を保持 (sortフィールド)
  *)
@@ -180,12 +186,14 @@ Check [:: "abc"] : seq        string        : Type.
 
 (**
 ```
+
 [:: 1]← seq string                ← Type
           ^                            ↓
 
          seq_eqType string_eqType ← eqType
 
 ```
+
 - ← : 型の要素の関係
 - ＜ : 型を保持 (sortフィールド)
  *)
