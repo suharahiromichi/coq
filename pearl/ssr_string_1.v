@@ -17,12 +17,14 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 
 
 (**
+----------------
 # Mathcomp の証明の例
  *)
 From mathcomp Require Import all_ssreflect. (* (1) *)
 
-Lemma nat_eq_noteq (m n : nat) : (m == n) || (m != n).
+Goal forall (m n : nat), (m == n) || (m != n).
 Proof.
+  move=> m n.
   case: (m == n).     (* destruct (m == n) でもおなじ。 *)
   - done.             (* m == n が成り立つ。 *)
   - done.             (* m == n が成り立たない。m != n が成り立つ。 *)
@@ -42,6 +44,7 @@ Software FoundationsではBasic.vで定義されている。beq_nat。
 
 
 (**
+---------------
 # Mathcomp の型クラス構造（自然数）
  *)
 
@@ -69,6 +72,7 @@ Check 1 : Equality.sort nat_eqType.
 
 
 (**
+---------------
 # Mathcomp の型クラス構造（自然数のリスト）
  *)
 
@@ -92,6 +96,7 @@ Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
 
 
 (**
+---------------
 # String型
 
 Starndard Coqのライブラリを使う。
@@ -122,8 +127,8 @@ String (Ascii.Ascii true false false false false true true false)
 
 
 (**
+---------------
 # String を Mathcomp のクラス構造に組み込む
-
  *)
 
 Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec. (* (3) *)
@@ -131,6 +136,7 @@ Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
 
 (**
+---------------
 # Mathcomp の型クラス構造（文字列）
  *)
 
@@ -157,6 +163,7 @@ Check "abc" : Equality.sort string_eqType.
 
 
 (**
+---------------
 # Mathcomp の型クラス構造（リスト）
  *)
 
@@ -176,6 +183,7 @@ Check [:: "abc"] : seq        string        : Type.
  *)
 
 (**
+---------------
 # 証明例とまとめ
  *)
 
@@ -185,8 +193,9 @@ Require Import String.                      (* (2) *)
 Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec. (* (3) *)
 Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
-Lemma list_s_eq_noteq (s t : seq string) : (s == t) || (s != t).
+Goal forall (s t : seq string), (s == t) || (s != t).
 Proof.
+  move=> s t.
   case: (s == t).     (* destruct (s == t) でもおなじ。 *)
   - done.             (* s == t が成り立つ。 *)
   - done.             (* s == t が成り立たない。s != t が成り立つ。 *)
@@ -195,7 +204,7 @@ Qed.
 (**
 1. 決定性のある bool値 の等号「==」が使える。
 
-2. eqType に関する補題がつかえるようになる。
+2. eqType に関する補題がつかえるようになる（説明略）。
 
 3. 直積型(prod型)や、リスト型(seq型)などの中で使った場合、
 それに対して、1.〜2. のことが可能になる。
@@ -203,6 +212,7 @@ Qed.
 
 
 (**
+---------------
 # 文献
 
 [0.] Mathematical Components 公式
