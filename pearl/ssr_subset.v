@@ -1,5 +1,5 @@
 (**
-Mathcomp の subset について
+MathComp の subset について
 ======
 2019/05/01
 
@@ -18,7 +18,7 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 (**
 # 説明
 
-Mathcomp では、``∈`` を示す `\in` は広く使われるために、``ssrbool.v`` で導入されますが、
+MathComp では、``∈`` を示す `\in` は広く使われるために、``ssrbool.v`` で導入されますが、
 部分集合 ``⊆`` を示す、``\subset`` は、fintype.v で導入されています。
 
 要素がすべて列挙できる有限型 ``T : finType`` の上で、そのT の enumを全集合とすることで、
@@ -51,13 +51,13 @@ T の enum に対してPでフィルタすることで、Pの要素がすべて�
 
 
 集合Aが集合Bの部分集合 ``A ⊆ B`` であるとは、A の任意の要素が B の要素であることです。
-``\subset`` 演算子が定義されている Mathcomp の finset.v のコメントには、
+``\subset`` 演算子が定義されている MathComp の finset.v のコメントには、
 実際、そのように記載されています。
 
 ``A \subset B == all x \in A satisfy x \in B.`` ..................... (1)
 
 
-しかし、Mathcomp の実際の定義は、
+しかし、MathComp の実際の定義は、
 
 ``pred0b [predI A & [predC B]]`` .................................... (2)
 
@@ -77,7 +77,7 @@ T の enum に対してPでフィルタすることで、Pの要素がすべて�
 
  ``s1 ⊆ s2 <-> ∀x. x ⊆ s1 -> x ⊆ s2``
 
-その後、（Mathcomp らしく）boolean な論理式について真偽値が一致することを証明します。
+その後、（MathComp らしく）boolean な論理式について真偽値が一致することを証明します。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -135,7 +135,7 @@ Section Test.
 
 単一化の証明 http://fetburner.hatenablog.com/entry/2015/12/06/224619
 
-Unify.v を Mathcomp への移植するときに必要になりました。移植例：
+Unify.v を MathComp への移植するときに必要になりました。移植例：
 
 https://github.com/suharahiromichi/coq/blob/master/unify/ssr_unify_bool_3.v
 *)
