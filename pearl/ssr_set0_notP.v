@@ -1,5 +1,5 @@
 (**
-Mathcomp の 空集合 について
+MathComp の 空集合 について
 ======
 2019/05/02
 
@@ -17,7 +17,7 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 (**
 # 説明
 
-Mathcomp で、型 ``T : finType`` を全体集合とするとき、
+MathComp で、型 ``T : finType`` を全体集合とするとき、
 型 ``T -> bool`` の関数、すなわち述語 ``p : pred T`` 
 で決まる部分集合を考えます。
 
@@ -25,7 +25,7 @@ Mathcomp で、型 ``T : finType`` を全体集合とするとき、
 述語 ``p`` は常に ``false`` を返すはずです。
 それを証明してみます。
 
-Mathcomp では、空集合は``set0``、集合の濃度は ``#|_|`` で表現します。
+MathComp では、空集合は``set0``、集合の濃度は ``#|_|`` で表現します。
 *)
 
 (**
@@ -121,9 +121,9 @@ idP は、Prop型とbool型の間で（なにもしない）リフレクト補�
 
 
 (**
-## Mathcomp 風の補題
+## MathComp 風の補題
 
-Mathcomp 風に、booelan の等式にした補題も証明してみます。
+MathComp 風に、booelan の等式にした補題も証明してみます。
  *)
 
   Lemma set0_notPE (A : finType) (p : pred A) :
@@ -207,7 +207,7 @@ set0_notP' を直接証明する
 (**
 # 最初に使った箇所
 
-FRAP Map.v の Mathcomp への移植
+FRAP Map.v の MathComp への移植
 
 https://github.com/suharahiromichi/coq/blob/master/frap/ssr_map.v
 *)
