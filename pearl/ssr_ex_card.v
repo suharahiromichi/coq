@@ -17,7 +17,7 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 (**
 # 説明
 
-へんなタイトルですが、Mathcomp を使った定理の証明の問題です。
+へんなタイトルですが、MathComp を使った定理の証明の問題です。
 
 有限集合の濃度、すなわち要素の個数は、適当な自然数に一意的に決まります。
 濃度を ``#| _ |`` で表すとすると、
@@ -25,11 +25,11 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 ``∃ i : nat, #| p | = i``
 
 
-ですね。これ自体は自明なのですが、Mathcomp で証明しようとすると、
+ですね。これ自体は自明なのですが、MathComp で証明しようとすると、
 取り付く島もないように見えます。
 
 でも、すこし考えてみると、
-Mathcomp の場合、集合は有限型(finType)をドメインとするbooleanな関数で
+MathComp の場合、集合は有限型(finType)をドメインとするbooleanな関数で
 表されます。すなわち、``T : finType`` とすると、
 
 ``p : pred T``
@@ -54,7 +54,7 @@ pが、常にtrueを返す場合が全集合、常にfalseを返す場合が空�
 後の証明は、単にリストの要素についての帰納法です。
 
 ほとんど自明であるがゆえに、
-Mathcompにおける実装の裏側を知らないと解けない問題の例といえるでしょうか。
+MathCompにおける実装の裏側を知らないと解けない問題の例といえるでしょうか。
  *)
 
 (**
@@ -92,7 +92,7 @@ End Test.
 
 単一化の証明 http://fetburner.hatenablog.com/entry/2015/12/06/224619
 
-Unify.v を Mathcomp への移植するときに必要になりました。移植例：
+Unify.v を MathComp への移植するときに必要になりました。移植例：
 
 https://github.com/suharahiromichi/coq/blob/master/unify/ssr_unify_bool_3.v
 *)
