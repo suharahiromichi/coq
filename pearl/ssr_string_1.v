@@ -1,5 +1,5 @@
 (**
-Mathcomp で文字列を使う (スライド版)
+MathComp で文字列を使う (スライド版)
 ======
 2019/07/24
 
@@ -18,7 +18,7 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 
 (**
 ----------------
-# Mathcomp の証明の例
+# MathComp の証明の例
  *)
 From mathcomp Require Import all_ssreflect. (* (1) *)
 
@@ -34,7 +34,7 @@ Qed.
 ``case: (m == n)`` で、``m == n`` が成り立つ場合と、
 成り立たない場合に場合分けする。
 
-Mathcomp では自然数について、
+MathComp では自然数について、
 かならず真偽どちらかに決まる、
 決定性のある等式「==」が定義されている。
 
@@ -45,7 +45,7 @@ Software FoundationsではBasic.vで定義されている。beq_nat。
 
 (**
 ---------------
-# Mathcomp の型クラス構造（自然数）
+# MathComp の型クラス構造（自然数）
  *)
 
 Check 1 : nat_eqType : eqType : Type.
@@ -77,7 +77,7 @@ Equality は eqType のモジュール名で、Equality.sort はフルネーム�
 
 (**
 ---------------
-# Mathcomp の型クラス構造（自然数のリスト）
+# MathComp の型クラス構造（自然数のリスト）
  *)
 
 Check [:: 1] : seq_eqType nat_eqType : eqType : Type.
@@ -140,7 +140,7 @@ String (Ascii.Ascii true false false false false true true false)
 
 (**
 ---------------
-# String を Mathcomp のクラス構造に組み込む
+# String を MathComp のクラス構造に組み込む
  *)
 
 Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec. (* (3) *)
@@ -149,7 +149,7 @@ Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
 (**
 ---------------
-# Mathcomp の型クラス構造（文字列）
+# MathComp の型クラス構造（文字列）
  *)
 
 Check "abc" : string_eqType : eqType : Type.
@@ -178,7 +178,7 @@ Check [:: "abc"] : Equality.sort (seq_eqType string_eqType).
 
 (**
 ---------------
-# Mathcomp の型クラス構造（リスト）
+# MathComp の型クラス構造（リスト）
  *)
 
 Check [:: "abc"] : seq_eqType string_eqType : eqType : Type.
@@ -232,6 +232,21 @@ Qed.
 それに対して、1.〜2. のことが可能になる。
 *)
 
+
+(**
+---------------
+# （補足）MathComp の型の関係
+
+
+- choiceType型 は eqType型を継承する。
+
+- nat_eqType型 は eqType型のインスタンスである。
+
+- Ordinal型 は nat型のサブクラスである。
+Tuple型 は seq型のサブクラスである。
+
+
+ *)
 
 (**
 ---------------
