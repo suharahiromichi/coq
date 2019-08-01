@@ -13,7 +13,7 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
 (**
 # 説明
 
-Mathcomp の seq は、seq.v の中で、
+MathComp の seq は、seq.v の中で、
 
 ``Notation seq := list``
 
@@ -23,18 +23,18 @@ Standard Coq の list と同じものであることが判ります。
 
 （注記）
 
-括弧による表記については、``[::]`` など、MathcompのNotationで上書きされるので、
+括弧による表記については、``[::]`` など、MathCompのNotationで上書きされるので、
 かなり変わったものになりますが、支障にはなりません。
-ここでは、型としてはseqを、括弧の表記はMathcompの表記を使いますが、
+ここでは、型としてはseqを、括弧の表記はMathCompの表記を使いますが、
 データ型として「リスト」と呼ぶことにします。
 
 （注記終わり）
 
-Mathcomp の中から、Standard Coq で定義されたリストの命題を使用することができます。
+MathComp の中から、Standard Coq で定義されたリストの命題を使用することができます。
 当然、おなじ意味（同値）な命題もあります。
 
 実際には、Standard Coqでは Prop型の命題（述語）として、
-Mathcompではbool型を返す関数として定義されているわけですが、
+MathCompではbool型を返す関数として定義されているわけですが、
 それらの間で同値性を示すリフレクション補題を証明することで、
 相互の変換ができ（リフレクションですね）、証明が捗ることがあるかもしれません。
 *)
@@ -58,7 +58,7 @@ Section List_1_1.
   Check Exists : forall A : Type, (A -> Prop) -> seq A -> Prop.
 
 (**
-これらに対して、Mathcomp では、
+これらに対して、MathComp では、
 ssreflect/seq.v で all と has という関数が定義されています。
 
 @は、implicitな引数を表示するために使っています。
@@ -227,7 +227,7 @@ Section List_1_2.
 (**
 次の例は、指定の値と同じ値がリストの中に存在することを示す In です。
 Starndard Coq の場合は、値とリストをとる述語 In、
-Mathcomp の場合は、\in という中置記法の演算子を使います。
+MathComp の場合は、\in という中置記法の演算子を使います。
 *)  
 
   Lemma In_inb {A : eqType} (x : A) (s : seq A) : In x s <-> x \in s.
