@@ -22,16 +22,16 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
  *)
 From mathcomp Require Import all_ssreflect. (* (1) *)
 
-Goal forall (m n : nat), (m == n) || (m != n).
+Goal forall (s t : seq nat), (s == t) || (s != t).
 Proof.
-  move=> m n.
-  case: (m == n).     (* destruct (m == n) でもおなじ。 *)
-  - done.             (* m == n が成り立つ。 *)
-  - done.             (* m == n が成り立たない。m != n が成り立つ。 *)
+  move=> s t.
+  case: (s == t).     (* destruct (s == t) でもおなじ。 *)
+  - done.             (* s == t が成り立つ。 *)
+  - done.             (* s == t が成り立たない。s != t が成り立つ。 *)
 Qed.
 
 (**
-``case: (m == n)`` で、``m == n`` が成り立つ場合と、
+``case: (s == t)`` で、``s == t`` が成り立つ場合と、
 成り立たない場合に場合分けする。
 
 MathComp では自然数について、
@@ -68,6 +68,7 @@ Check 1 : nat        : Type.
 
 Compute Equality.sort nat_eqType.       (* nat *)
 Check 1 : Equality.sort nat_eqType.
+
 (**
 ただし、1 : nat_eqType の部分は、sort の呼び出しが省略されたもの。
 
@@ -103,8 +104,6 @@ Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
 (**
 ただし、"[:: 1]" : seq nat の部分は、sort の呼び出しが省略されたもの。
 *)
-Compute Equality.sort (seq_eqType nat_eqType). (* seq nat *)
-Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
 
 
 (**
@@ -125,12 +124,18 @@ Check "abc" : string.
 (**
 - Ascii は bool をコンストラクタで組み立てたもの。
 - String は Ascii をコンストラクタで組み立てたもの。
+ *)
+
+(**
+```
 
 "abc" =
 String (Ascii.Ascii true false false false false true true false)
        (String (Ascii.Ascii false true false false false true true false)
                (String (Ascii.Ascii true true false false false true true false)
                        EmptyString))
+
+```
 *)
 
 (**
@@ -169,11 +174,12 @@ Check "abc" : string        : Type.
 - ＜ : 型を保持 (sortフィールド)
  *)
 
+Compute Equality.sort string_eqType.       (* string *)
+Check "abc" : Equality.sort string_eqType.
+
 (**
 ただし、"abc" : string_eqType の部分は、sort の呼び出しが省略されたもの。
 *)
-Compute Equality.sort (seq_eqType string_eqType). (* seq string *)
-Check [:: "abc"] : Equality.sort (seq_eqType string_eqType).
 
 
 (**
@@ -198,11 +204,12 @@ Check [:: "abc"] : seq        string        : Type.
 - ＜ : 型を保持 (sortフィールド)
  *)
 
+Compute Equality.sort (seq_eqType string_eqType). (* seq string *)
+Check [:: "abc"] : Equality.sort (seq_eqType string_eqType).
+
 (**
 ただし、"abc" : string_eqType の部分は、sort の呼び出しが省略されたもの。
 *)
-Compute Equality.sort string_eqType.       (* string *)
-Check "abc" : Equality.sort string_eqType.
 
 (**
 ---------------
