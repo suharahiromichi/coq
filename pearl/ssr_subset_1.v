@@ -21,14 +21,14 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 # はじめに
 
 この小文は、「補題がMathCompに無かったから自分で証明した」というストーリー
-だったのですが、その補題は存在する旨の指摘をいただきました。
+だったのですが、その補題は存在する旨の指摘をいただきました。ありがとうございます。
 そのため、MathCompの定義とは無関係に自分で証明を試みたものとして、
 文言を修正すると同時に、独自の補題であることを示すために、補題名を変更しました。
 
 また、MathComp側の定義についての説明に間違いがあったため、該当箇所の解説も修正しました。
 
 以上の修正については、証明のコードは変更していません。
-最後に、MathCompにある補題を使う場合の説明を追記しました。
+最後に、MathCompにある補題を使う場合の説明を補足しました。
 *)
 
 (**
@@ -84,7 +84,7 @@ T の enum に対してPでフィルタすることで、Pの要素がすべて�
 
 そこで、(1)と(2)は同値であることを証明してみました。
 これは、MathComp の ``fintype.v`` にも類似の補題が証明されているため、
-それを使う場合の証明については、末尾を参照してください。
+それを使う場合の証明については、補足を参照してください。
 *)
 
 (**
@@ -186,6 +186,116 @@ https://github.com/suharahiromichi/coq/blob/master/unify/ssr_unify_bool_3.v
         by apply/Hn2/H.
   Qed.
   
+(**
+# 補足
+
+## 補足1 \subsetの定義について
+
+MathComp での \subset の定義と同じものを ``mySubset1`` とします。
+*)
+  Definition mySubset1 (s1 s2 : pred T) := pred0b [predD s1 & s2].
+
+(**
+\subset は simplify タクティクが使えないようにロックされているので、
+unlock する必要があります。``rewrite unlock`` すると判ります。
+*)
+
+  Goal forall  (s1 s2 : pred T),  s1 \subset s2 = mySubset1 s1 s2.
+  Proof.
+    move=> s1 s2.
+    rewrite unlock /mySubset1.
+    done.
+  Qed.
+  
+(**
+   predD は差集合を意味して、
+
+``[predD A & B] == difference of collective predicates A and B.``
+
+です。しかし、積集合 ``predI`` と、補集合 ``predC`` を使っても定義できるはずです。
+``mySubset2`` に示します。
+*)
+  Definition mySubset2 (s1 s2 : pred T) := pred0b [predI s1 & [predC s2]].
+  
+(**
+mySubset1 と mySubset2 が同じなのは自明ですが、
+それを証明するためには、predI の可換性が必要になります。
+その証明には、FunctionalExtension が必要になってしまいました。
+*)
+  Require Import Coq.Logic.FunctionalExtensionality.
+  Goal forall (s1 s2 : pred T), predI s1 s2 = predI s2 s1.
+  Proof.
+    move=> s1 s2.
+    rewrite /predI.
+    rewrite /SimplPred.
+    f_equal.
+    apply: functional_extensionality => x.
+      by rewrite Bool.andb_comm.
+  Qed.
+
+(**
+FunctionalExtension を使わないで済ますために、pred0b までを含めて、
+次の補題を証明してみました。あるいは、もっとよい方法があるかもしれません。
+ *)
+  Lemma predIComm (A B : pred T) : pred0b [predI A & B] = pred0b [predI B & A].
+    apply/idP/idP.
+    - move/pred0P => H.
+      apply/pred0P.
+      move=> x.
+      move: (H x) => {H} /=.
+        by rewrite Bool.andb_comm.
+    - move/pred0P => H.
+      apply/pred0P.
+      move=> x.
+      move: (H x) => {H}/=.
+        by rewrite Bool.andb_comm.
+  Qed.
+  
+  Goal forall  (s1 s2 : pred T),  mySubset1 s1 s2 = mySubset2 s1 s2.
+  Proof.
+    move=> s1 s2.
+    rewrite /mySubset1 /mySubset2.
+    by rewrite predIComm.
+  Qed.
+
+(**
+## 補足2 MathComp の補題を使う
+
+fintype で定義された subsetP は、リフレクティブ補題ですから、
+``apply/`` と ``move/`` で適用します。[1.]の3.7節を参照してください。
+*)
+
+  Check @fintype.subsetP : forall (T : finType) (s1 s2 : pred T),
+      reflect (forall x, x \in s1 -> x \in s2) (s1 \subset s2).
+  
+  Lemma mySubsetP' (s1 s2 : pred T) :
+    s1 \subset s2 <-> (forall x, x \in s1 -> x \in s2).
+  Proof.
+    split.
+    - by apply/subsetP.                     (* fintype.subsetP *)
+    - by move/subsetP.                      (* fintype.subsetP *)
+  Qed.
+
+(**
+fintype で定義された subsetE は、\subset の定義を展開したものでしかないので、
+あまり使いではありません。
+
+そこで、ここでも subsetP を使います。
+*)  
+  Check @fintype.subsetE : forall (T : finType) (A B : pred T),
+      (A \subset B) = pred0b [predD A & B].
+
+  Lemma mySubsetE'' (s1 s2 : pred T) :
+    s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
+  Proof.
+      by apply/subsetP/forallP => H x; move/implyP: (H x).
+  Qed.
+
+(**
+これは首記の御指摘のなかで教えていただいたものを使わせていただきました。
+重ねて感謝します。
+*)
+  
 End Test.
 
 (**
@@ -196,9 +306,3 @@ End Test.
 *)
 
 (* END *)
-
-
-  Lemma mySubsetP (s1 s2 : pred T) :
-    s1 \subset s2 <-> (forall x, x \in s1 -> x \in s2).
-  Proof.
-    rewrite unlock /subset.          (* 左辺は pred0b [predD s1 & s2] *)
