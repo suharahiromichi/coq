@@ -21,14 +21,17 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 # はじめに
 
 この小文は、「補題がMathCompに無かったから自分で証明した」というストーリー
-だったのですが、その補題は存在する旨の指摘をいただきました。ありがとうございます。
-そのため、MathCompの定義とは無関係に自分で証明を試みたものとして、
+だったのですが、Qiitaに公開した後で、「その補題は存在する」旨の指摘をいただきました。
+
+御指摘ありがとうございます。
+
+そこで、MathCompの定義とは無関係に自分で証明を試みたものとして、
 文言を修正すると同時に、独自の補題であることを示すために、補題名を変更しました。
 
 また、MathComp側の定義についての説明に間違いがあったため、該当箇所の解説も修正しました。
 
-以上の修正については、証明のコードは変更していません。
-最後に、MathCompにある補題を使う場合の説明を補足しました。
+以上については、証明のコードは自体は修正していません。
+追記のかたちで、MathCompにある補題を使う場合の説明を補足しました。
 *)
 
 (**
@@ -189,7 +192,7 @@ https://github.com/suharahiromichi/coq/blob/master/unify/ssr_unify_bool_3.v
 (**
 # 補足
 
-## 補足1 \subsetの定義について
+## 補足1. \subsetの定義について
 
 MathComp での \subset の定義と同じものを ``mySubset1`` とします。
 *)
@@ -247,7 +250,7 @@ FunctionalExtension を使わないで済ますために、pred0b までを含�
     - move/pred0P => H.
       apply/pred0P.
       move=> x.
-      move: (H x) => {H}/=.
+      move: (H x) => {H} /=.
         by rewrite Bool.andb_comm.
   Qed.
   
@@ -259,7 +262,7 @@ FunctionalExtension を使わないで済ますために、pred0b までを含�
   Qed.
 
 (**
-## 補足2 MathComp の補題を使う
+## 補足2. MathComp の補題を使う
 
 fintype で定義された subsetP は、リフレクティブ補題ですから、
 ``apply/`` と ``move/`` で適用します。[1.]の3.7節を参照してください。
