@@ -1,7 +1,7 @@
 (**
 MathComp で文字列を使う (スライド版)
 ======
-2019/07/24
+2019/08/04
 
 
 - 概要
@@ -57,10 +57,20 @@ Qed.
  *)
 
 Goal forall (n1 n2 : nat), (n1 == n2) || (n1 != n2).
-Proof. move=> n1 n2. case: (n1 == n2); done. Qed.
+Proof.
+  move=> n1 n2.
+  case: (n1 == n2).
+  - done.                                   (* n1 == n2 の場合 *)
+  - done.                                   (* n1 != n2 の場合 *)
+Qed.
 
 Goal forall (l1 l2 : seq nat), (l1 == l2) || (l1 != l2).
-Proof. move=> l1 l2. case: (l1 == l2); done. Qed.
+Proof.
+  move=> l1 l2.
+  case: (l1 == l2).
+  - done.                                   (* l1 == l2 の場合 *)
+  - done.                                   (* l1 != l2 の場合 *)
+Qed.
 
 (**
 - 自然数型は、決定性のある等式が使える。
@@ -121,7 +131,12 @@ String (Ascii.Ascii true false false false false true true false)
  *)
 
 Goal forall (s1 s2 : string), (String.eqb s1 s2) || (~~ String.eqb s1 s2).
-Proof. move=> s1 s2. case: (String.eqb s1 s2); done. Qed.
+Proof.
+  move=> s1 s2.
+  case: (String.eqb s1 s2).
+  - done.
+  - done.
+Qed.
 
 (**
 - string のリストか可能だが、それに対して「==」が使えない。
@@ -141,10 +156,21 @@ Fail Check [:: "abc"] == [:: "abcd"].
 Canonical string_eqType := EqType string (EqMixin String.eqb_spec).
 
 Goal forall (s1 s2 : string), (s1 == s2) || (s1 != s2).
-Proof. move=> s1 s2. case: (s1 == s2); done. Qed.
+Proof.
+  move=> s1 s2.
+  case: (s1 == s2).
+  - done.                                   (* s1 == s2 の場合 *)
+  - done.                                   (* s1 != s2 の場合 *)
+Qed.
 
 Goal forall (l1 l2 : seq string), (l1 == l2) || (l1 != l2).
-Proof. move=> l1 l2. case: (l1 == l2); done. Qed.
+Proof.
+  move=> l1 l2.
+  case: (l1 == l2).
+  - done.                                   (* l1 == l2 の場合 *)
+  - done.                                   (* l1 != l2 の場合 *)
+Qed.
+
 
 (**
 - 文字列型は、決定性のある等式が使える（「==」が使えるようになった）。
@@ -193,6 +219,8 @@ Check @EqMixin
 (3) (2)が、「=」と同値であることの証明を与える。ただし、bool型のtrueなら証明可能とみなす。
 
 String型については、(1)(2)(3)とも、String.v で定義されてりるので、それを使う。
+
+より詳しい説明は、[4.][5.]。
   *)
 
 (**
@@ -223,7 +251,7 @@ Fixpoint eqb s1 s2 : bool :=
 *)
 
 (**
-(3) の証明、リフレクティブ補題 ([4.][5.][6.]参照)
+(3) の証明、リフレクティブ補題 ([4.])
 *)
 
 Check String.eqb_spec
@@ -249,17 +277,12 @@ https://coq.inria.fr/library/Coq.Strings.String.html
 https://qiita.com/suharahiromichi/items/723896ebfbc332f9d3dd
 
 
-[4.] リフレクションのしくみをつくる
-
-https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
+[4.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
 
 
 [5.] Mathematical Components Book
 
 https://math-comp.github.io/mcb/
-
-
-[6.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
 
  *)
 
