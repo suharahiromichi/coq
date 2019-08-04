@@ -22,24 +22,29 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
  *)
 From mathcomp Require Import all_ssreflect. (* (1) *)
 
-Goal forall (s t : seq nat), (s == t) || (s != t).
+Goal forall (s1 s2 : seq nat), (s1 == s2) || (s1 != s2).
 Proof.
-  move=> s t.
-  case: (s == t).     (* destruct (s == t) でもおなじ。 *)
-  - done.             (* s == t が成り立つ。 *)
-  - done.             (* s == t が成り立たない。s != t が成り立つ。 *)
+  move=> s1 s2.
+  case: (s1 == s2).             (* destruct (s1 == s2) でもおなじ。 *)
+  - done.                       (* s1 == s2 が成り立つ。 *)
+  - done.         (* s1 == s2 が成り立たない。s1 != s2 が成り立つ。 *)
 Qed.
 
 (**
-``case: (s == t)`` で、``s == t`` が成り立つ場合と、
+``case: (s1 == s2)`` で、``s1 == s2`` が成り立つ場合と、
 成り立たない場合に場合分けする。
 
-MathComp では自然数について、
-かならず真偽どちらかに決まる、
-決定性のある等式「==」が定義されている。
+MathComp では、自然数についてかならず真偽どちらかに決まる、
+決定性のある等式「==」が定義している。
+さらに、それを要素とするリストや直積型、オプション型も定義されている。
 
-Standard Coqでは定義されていない。通常sumboolを使う。
-Software FoundationsではBasic.vで定義されている。beq_nat。
+
+それ：決定性のある等式が定義された型
+
+
+（Standard Coq では、Arith/EqNat.v で beq_nat を定義する。
+
+Software Fundations はこれを使っている。list nat については独自に定義している。）
 *)
 
 
@@ -188,7 +193,7 @@ Check "abc" : Equality.sort string_eqType.
  *)
 
 Check [:: "abc"] : seq_eqType string_eqType : eqType : Type.
-Check [:: "abc"] : seq        string        : Type.
+Check [:: "abc"] : seq string               : Type.
 
 (**
 ```
@@ -222,12 +227,12 @@ Require Import String.                      (* (2) *)
 Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec. (* (3) *)
 Canonical string_eqType := EqType string string_eqMixin. (* (4) *)
 
-Goal forall (s t : seq string), (s == t) || (s != t).
+Goal forall (s1 s2 : seq string), (s1 == s2) || (s1 != s2).
 Proof.
-  move=> s t.
-  case: (s == t).     (* destruct (s == t) でもおなじ。 *)
-  - done.             (* s == t が成り立つ。 *)
-  - done.             (* s == t が成り立たない。s != t が成り立つ。 *)
+  move=> s1 s2.
+  case: (s1 == s2).             (* destruct (s1 == s2) でもおなじ。 *)
+  - done.                       (* s1 == s2 が成り立つ。 *)
+  - done.         (* s1 == s2 が成り立たない。s1 != s2 が成り立つ。 *)
 Qed.
 
 (**
