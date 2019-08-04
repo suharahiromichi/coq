@@ -42,7 +42,10 @@ Qed.
 
 (**
 - bool値を返す等式（「==」）が使える。
+ *)
+Check @eq_op : forall T : eqType, T -> T -> bool. (* 「==」 *)
 
+(**
 - bool値を返す等式は、決定性のあるので、
 成り立つ場合(true)と、成り立たない場合(false) で場合分けできる。case または destruct。
 
@@ -80,21 +83,36 @@ Qed.
 
 (**
 ---------------
-# MathComp の自然数型クラス構造
+# MathComp の自然数型（続き）
  *)
 
 Check 1      : nat                   : Type.
 Check 1      : nat_eqType            : eqType.
 Check 1      : Equality.sort nat_eqType.
+(* 「==」 *)
+Check 1 == 1                : bool.
+Check @eq_op nat_eqType 1 1 : bool.
+Fail Check @eq_op nat 1 1.
 
 Check [:: 1] : seq nat               : Type.
 Check [:: 1] : seq_eqType nat_eqType : eqType.
 Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
+(* 「==」 *)
+Check [:: 1] == [:: 1]                             : bool.
+Check @eq_op (seq_eqType nat_eqType) [:: 1] [:: 1] : bool.
+Fail Check @eq_op (seq nat) [:: 1] [:: 1].
 
+(**
+- nat_eqType は、eqType (決定性のある等式のある型）のインスタンスである。
+
+- 1 は、nat型 であると同時に、nat_eqType型である（と見える）。コアーション。
+
+- 「==」の引数の 1 は、nat_eqType であると対応づけできる。カノニカル・プロジェクション
+*)
 
 (**
 ---------------
-# String型
+# Coq の String型
 
 Starndard Coqのライブラリ ``String.v`` [2.] を使う。
  *)
@@ -123,7 +141,7 @@ String (Ascii.Ascii true false false false false true true false)
 
 (**
 ---------------
-# String型 (続き)
+# Coq の String型 (続き)
 
 決定性のある等式は、Starndard Coqでも定義されている。ただし、
 
@@ -150,7 +168,7 @@ Fail Check [:: "abc"] == [:: "abcd"].
 
 (**
 ---------------
-# String を MathComp のクラス構造に組み込む
+# MathComp の文字列型
  *)
 
 Canonical string_eqType := EqType string (EqMixin String.eqb_spec).
@@ -173,24 +191,41 @@ Qed.
 
 
 (**
-- 文字列型は、決定性のある等式が使える（「==」が使えるようになった）。
+- 文字列型は、決定性のある等式が使える。「==」が使えるようになった。
 
-- 文字列型を要素とするリストや直積型などでも、決定性のある等式が使える（ようになった）。
+- 文字列型を要素とするリストや直積型などでも、決定性のある等式が使える、ようになった。
 *)
 
 
 (**
 ---------------
-# MathComp の文字列型クラス構造
+# MathComp の文字列型（続き）
  *)
 
 Check "abc"      : string                   : Type.
 Check "abc"      : string_eqType            : eqType.
 Check "abc"      : Equality.sort string_eqType.
+(* 「==」 *)
+Check "abc" == "abc"                   : bool.
+Check @eq_op string_eqType "abc" "abc" : bool.
+Fail Check @eq_op string "abc" "abc".
+
 
 Check [:: "abc"] : seq string               : Type.
 Check [:: "abc"] : seq_eqType string_eqType : eqType.
 Check [:: "abc"] : Equality.sort (seq_eqType string_eqType).
+(* 「==」 *)
+Check [:: "abc"] == [:: "abc"]                                : bool.
+Check @eq_op (seq_eqType string_eqType) [:: "abc"] [:: "abc"] : bool.
+Fail Check @eq_op (seq string) [:: "abc"] [:: "abc"].
+
+(**
+- string_eqType は、eqType (決定性のある等式のある型）のインスタンスである、ようになった。
+
+- "abc" は、string型 であると同時に、string_eqType型である（と見える）、ようにになった。
+
+- 「==」の引数の "abc" は、string_eqType であると対応づけできる、ようになった。
+*)
 
 (**
 ---------------
