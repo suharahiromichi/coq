@@ -265,7 +265,7 @@ Check @EqMixin (seq string)
 
 String型については、(1)(2)(3)とも、String.v で定義されてりるので、それを使う。
 
-より詳しい説明は、[4.][5.]。
+より詳しい説明は、[4.][5.][6.]。
   *)
 
 (**
@@ -296,7 +296,7 @@ Fixpoint eqb s1 s2 : bool :=
 *)
 
 (**
-(3) の証明、リフレクティブ補題 ([4.])
+(3) の証明、リフレクティブ補題 ([5.])
 *)
 
 Check String.eqb_spec
@@ -322,10 +322,15 @@ https://coq.inria.fr/library/Coq.Strings.String.html
 https://qiita.com/suharahiromichi/items/723896ebfbc332f9d3dd
 
 
-[4.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+[4.] リフレクションのしくみをつくる
+
+https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
 
 
-[5.] Mathematical Components Book
+[5.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+
+
+[6.] Mathematical Components Book
 
 https://math-comp.github.io/mcb/
 
