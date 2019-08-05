@@ -28,16 +28,16 @@ OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
 
 (**
 ----------------
-# MathComp の自然数型
+# MathComp で自然数型を使う
  *)
 From mathcomp Require Import all_ssreflect.
 
-Goal forall (n1 n2 : nat), (n1 == n2) || (n1 != n2).
+Goal forall (n : nat), (n == 42) || (n != 42).
 Proof.
-  move=> n1 n2.
-  case H : (n1 == n2). (* 「==」が成りたつか成り立たないかで、場合分けできる。 *)
-  - done.              (* 「==」が成り立つ場合。 *)
-  - done.           (* 「==」が成り立たない。「!=」が成り立つ場合。 *)
+  move=> n.
+  case H : (n == 42). (* n が 42 か、そうでないか、で場合分けする。 *)
+  - done.             (* n が 42 の場合 *)
+  - done.             (* n が 42 でない場合 *)
 Qed.
 
 (**
@@ -56,23 +56,23 @@ Check @eq_op : forall T : eqType, T -> T -> bool. (* 「==」 *)
 
 (**
 ----------------
-# MathComp の自然数型（続き）
+# MathComp で自然数型を使う（続き）
  *)
 
-Goal forall (n1 n2 : nat), (n1 == n2) || (n1 != n2).
+Goal forall (n : nat), (n == 42) || (n != 42).
 Proof.
-  move=> n1 n2.
-  case: (n1 == n2).
-  - done.                                   (* n1 == n2 の場合 *)
-  - done.                                   (* n1 != n2 の場合 *)
+  move=> n.
+  case: (n == 42).
+  - done.                                   (* n == 42 の場合 *)
+  - done.                                   (* n != 42 の場合 *)
 Qed.
 
-Goal forall (l1 l2 : seq nat), (l1 == l2) || (l1 != l2).
+Goal forall (l : seq nat), (l == [:: 42]) || (l != [:: 42]).
 Proof.
-  move=> l1 l2.
-  case: (l1 == l2).
-  - done.                                   (* l1 == l2 の場合 *)
-  - done.                                   (* l1 != l2 の場合 *)
+  move=> l.
+  case: (l == [:: 42]).
+  - done.                                   (* l == [:: 42] の場合 *)
+  - done.                                   (* l != [:: 42] の場合 *)
 Qed.
 
 (**
@@ -83,7 +83,7 @@ Qed.
 
 (**
 ---------------
-# MathComp の自然数型（続き）
+# MathComp で自然数型を使う（続き）
  *)
 
 Check 1      : nat                   : Type.
@@ -127,17 +127,13 @@ Check "abc" : string.
 - String は Ascii をコンストラクタで組み立てたもの。
  *)
 
-(**
-```
+Import Ascii.
+Set Printing All.
 
-"abc" =
-String (Ascii.Ascii true false false false false true true false)
-       (String (Ascii.Ascii false true false false false true true false)
-               (String (Ascii.Ascii true true false false false true true false)
-                       EmptyString))
+Check "A"%char. (* Ascii true false false false false false true false *) (* 41H *)
+Check "ABC"%string. (* String "A" (String "B" (String "C" EmptyString)) *)
 
-```
-*)
+Unset Printng All.
 
 (**
 ---------------
@@ -160,33 +156,33 @@ Qed.
 - string のリストか可能だが、それに対して「==」が使えない。
 *)
 
-Check [:: "abc"] : seq string.
-Fail Check [:: "abc"] : seq_eqType string.
-Fail Check [:: "abc"] == [:: "abcd"].
+Check [:: "ABC"] : seq string.
+Fail Check [:: "ABC"] : seq_eqType string.
+Fail Check [:: "ABC"] == [:: "ABC"].
 
 
 
 (**
 ---------------
-# MathComp の文字列型
+# MathComp で文字列型を使う
  *)
 
 Canonical string_eqType := EqType string (EqMixin String.eqb_spec).
 
-Goal forall (s1 s2 : string), (s1 == s2) || (s1 != s2).
+Goal forall (l : string), (l == "ABC") || (l != "ABC").
 Proof.
-  move=> s1 s2.
-  case: (s1 == s2).
-  - done.                                   (* s1 == s2 の場合 *)
-  - done.                                   (* s1 != s2 の場合 *)
+  move=> l.
+  case: (l == "ABC").
+  - done.                                   (* l == "ABC" の場合 *)
+  - done.                                   (* l != "ABC" の場合 *)
 Qed.
 
-Goal forall (l1 l2 : seq string), (l1 == l2) || (l1 != l2).
+Goal forall (l : seq string), (l == [:: "ABC"]) || (l != [:: "ABC"]).
 Proof.
-  move=> l1 l2.
-  case: (l1 == l2).
-  - done.                                   (* l1 == l2 の場合 *)
-  - done.                                   (* l1 != l2 の場合 *)
+  move=> l.
+  case: (l == [:: "ABC"]).
+  - done.                                   (* l == [:: "ABC"] の場合 *)
+  - done.                                   (* l != [:: "ABC"] の場合 *)
 Qed.
 
 
@@ -199,32 +195,32 @@ Qed.
 
 (**
 ---------------
-# MathComp の文字列型（続き）
+# MathComp で文字列型を使う（続き）
  *)
 
-Check "abc"      : string                   : Type.
-Check "abc"      : string_eqType            : eqType.
-Check "abc"      : Equality.sort string_eqType.
+Check "ABC"      : string                   : Type.
+Check "ABC"      : string_eqType            : eqType.
+Check "ABC"      : Equality.sort string_eqType.
 (* 「==」 *)
-Check "abc" == "abc"                   : bool.
-Check @eq_op string_eqType "abc" "abc" : bool.
-Fail Check @eq_op string "abc" "abc".
+Check "ABC" == "ABC"                   : bool.
+Check @eq_op string_eqType "ABC" "ABC" : bool.
+Fail Check @eq_op string "ABC" "ABC".
 
 
-Check [:: "abc"] : seq string               : Type.
-Check [:: "abc"] : seq_eqType string_eqType : eqType.
-Check [:: "abc"] : Equality.sort (seq_eqType string_eqType).
+Check [:: "ABC"] : seq string               : Type.
+Check [:: "ABC"] : seq_eqType string_eqType : eqType.
+Check [:: "ABC"] : Equality.sort (seq_eqType string_eqType).
 (* 「==」 *)
-Check [:: "abc"] == [:: "abc"]                                : bool.
-Check @eq_op (seq_eqType string_eqType) [:: "abc"] [:: "abc"] : bool.
-Fail Check @eq_op (seq string) [:: "abc"] [:: "abc"].
+Check [:: "ABC"] == [:: "ABC"]                                : bool.
+Check @eq_op (seq_eqType string_eqType) [:: "ABC"] [:: "ABC"] : bool.
+Fail Check @eq_op (seq string) [:: "ABC"] [:: "ABC"].
 
 (**
 - string_eqType は、eqType (決定性のある等式のある型）のインスタンスである、ようになった。
 
-- "abc" は、string型 であると同時に、string_eqType型である（と見える）、ようにになった。
+- "ABC" は、string型 であると同時に、string_eqType型である（と見える）、ようにになった。
 
-- 「==」の引数の "abc" は、string_eqType であると対応づけできる、ようになった。
+- 「==」の引数の "ABC" は、string_eqType であると対応づけできる、ようになった。
 *)
 
 (**
@@ -240,11 +236,25 @@ Check @EqMixin
     (forall x y, reflect (x = y) (op x y))  (* (3) *)
     -> Equality.mixin_of T.
 
-Check @EqMixin
-      string                              (* (1) *)
-      String.eqb                          (* (2) *)
-      String.eqb_spec                     (* (3) *)
+Check @EqMixin nat                          (* (1) *)
+      eqn                                   (* (2) *)
+      (@eqnP)                               (* (3) *)
+  : Equality.mixin_of nat.
+
+Check @EqMixin (seq nat)
+      eqseq
+      (@eqseqP nat_eqType)
+  : Equality.mixin_of (seq nat).
+
+Check @EqMixin string                       (* (1) *)
+      String.eqb                            (* (2) *)
+      String.eqb_spec                       (* (3) *)
   : Equality.mixin_of string.
+
+Check @EqMixin (seq string)
+      eqseq
+      (@eqseqP string_eqType)
+  : Equality.mixin_of (seq string).
 
 (**
 (1) ベースとなる型、ここでは string
