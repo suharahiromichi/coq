@@ -128,12 +128,10 @@ Check "abc" : string.
  *)
 
 Import Ascii.
-Set Printing All.
+(* Set Printing All. *)
 
 Check "A"%char. (* Ascii true false false false false false true false *) (* 41H *)
 Check "ABC"%string. (* String "A" (String "B" (String "C" EmptyString)) *)
-
-Unset Printng All.
 
 (**
 ---------------
@@ -301,6 +299,229 @@ Fixpoint eqb s1 s2 : bool :=
 
 Check String.eqb_spec
   : forall s1 s2 : string, reflect (s1 = s2) (String.eqb s1 s2).
+
+
+(**
+-------------------
+# 定理証明手習い（ATOMIC型)
+
+アトムどうしのbooleanの等式を定義したうえで、それが、
+論理式(ライプニッツの等式、Propの等式)と同値であることを証明することで、
+boolとPropの間での行き来ができるようになります。
+つまり、「==」と「=」の両方を使うことができるようになります。
+これをリフレクションといいます[4]。
+
+アトムとしては、シンボルの他に自然数もとれるようにします。
+ *)
+
+Inductive atomic : Type :=
+| ATOM_NAT (n : nat)
+| ATOM_SYM (s : string).
+
+Definition eqAtom (a b : atomic) : bool :=
+  match (a, b) with
+  | (ATOM_NAT n, ATOM_NAT m) => n == m
+  | (ATOM_SYM s, ATOM_SYM t) => s == t      (* eqString *)
+  | _ => false
+  end.
+
+Lemma atomic_eqP : forall (x y : atomic), reflect (x = y) (eqAtom x y).
+Proof.
+  move=> x y.
+  apply: (iffP idP).
+  - case: x; case: y; rewrite /eqAtom => x y; move/eqP => H;
+    by [rewrite H | | | rewrite H].
+  - move=> H; rewrite H.
+    case: y H => n H1;
+    by rewrite /eqAtom.
+Qed.
+
+Definition atomic_eqMixin := @EqMixin atomic eqAtom atomic_eqP.
+Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
+
+(**
+------------------
+# 定理証明手習い（STAR型)
+
+「Star型は、アトム、または、Star型のふたつ要素を連結(Cons)したもの」
+と再帰的に定義できます。これがinductiveなデータ型です。
+*)
+
+Inductive star : Type :=
+| S_ATOM of atomic
+| S_CONS of star & star.
+
+(**
+Coqはinductiveなデータ型に対して、inductionできるようになります。
+そのために、star_ind という公理が自動的に定義されます。
+これは、TLPの第7賞で説明されている "star induction" と同じものです。
+
+Coqによる証明でも、この公理を直接使用することはなく、
+star型のデータに対して、
+inductionタクティクまたはelimタクティクを使用すると、
+この公理が適用されます。
+ *)
+
+(**
+Star型についても、booleanの等号を定義して、論理式の等号にリフレク
+ションできるようにします。
+*)
+
+Fixpoint eqStar (x y : star) : bool :=
+  match (x, y) with
+  | (S_ATOM a, S_ATOM b) => a == b          (* eqAtom *)
+  | (S_CONS x1 y1, S_CONS x2 y2) =>
+    eqStar x1 x2 && eqStar y1 y2
+  | _ => false
+  end.
+
+Lemma eqCons x y x' y' : (x = x' /\ y = y') -> S_CONS x y = S_CONS x' y'.
+Proof.
+  case=> Hx Hy.
+  by rewrite Hx Hy.
+Qed.
+
+Lemma star_eqP_1 : forall (x y : star), eqStar x y -> x = y.
+Proof.
+  elim.
+  - move=> a.
+    elim=> b.
+    + move/eqP=> H.                         (* ATOM どうし *)
+        by rewrite H.  
+    + done.                                 (* ATOM と CONS *)
+  - move=> x Hx y Hy.
+    elim.
+    + done.                                 (* CONS と ATOM *)
+    + move=> x' IHx y' IHy.                 (* CONS と CONS *)
+      move/andP.
+      case=> Hxx' Hyy'.
+      apply: eqCons.
+      split.
+      * by apply: (Hx x').
+      * by apply: (Hy y').
+Qed.
+
+Lemma star_eqP_2 : forall (x y : star), x = y -> eqStar x y.
+Proof.
+  move=> x y H; rewrite -H {H}.
+  elim: x.
+  - by move=> a /=.
+  - move=> x Hx y' Hy /=.
+    by apply/andP; split.
+Qed.
+
+Lemma star_eqP : forall (x y : star), reflect (x = y) (eqStar x y).
+Proof.
+  move=> x y.
+  apply: (iffP idP).
+  - by apply: star_eqP_1.
+  - by apply: star_eqP_2.
+Qed.
+
+Definition star_eqMixin := @EqMixin star eqStar star_eqP.
+Canonical star_eqType := @EqType star star_eqMixin.
+
+(**
+------------------
+# 定理証明手習い（TとNIL）
+
+
+シンボルをS式の中に書くときに簡単になるような略記法を導入します。
+「'T」などと書くことができるので、quoted literal のように見えますが、
+「'」は記法(notation)の一部であることに注意してください。
+ *)
+
+Definition s_quote (s : string) : star :=
+  (S_ATOM (ATOM_SYM s)).
+Notation "\' s" := (S_ATOM (ATOM_SYM s)) (at level 60).
+
+Notation "'T" := (S_ATOM (ATOM_SYM "T")).
+Notation "'NIL" := (S_ATOM (ATOM_SYM "NIL")).
+
+(**
+------------------
+# 定理証明手習い（埋め込み）
+
+S式を論理式(Prop)に埋め込めるようにします。このとき、Lispの真偽の定義から、
+
+「真」 iff 「'NILでないS式」
+
+としなければいけません。
+実際には、S式からbooleanの等式 (x != 'NIL) へのコアーションを定義します。
+これは、一旦boolを経由することで、論理式(Prop)の否定も扱えるようにするためです。
+*)
+             
+Coercion is_not_nil (x : star) : bool := x != 'NIL. (* ~~ eqStar x 'NIL *)
+
+(**
+------------------
+# 定理証明手習い（組み込み関数）
+*)
+
+Definition CONS (x y : star) := S_CONS x y.
+
+Definition CAR (x : star) : star :=
+  match x with
+  | S_ATOM _ => 'NIL
+  | S_CONS x _ => x
+  end.
+
+Definition CDR (x : star) : star :=
+  match x with
+  | S_ATOM _ => 'NIL
+  | S_CONS _ y => y
+  end.
+
+Definition ATOM (x : star) : star :=
+  match x with
+  | S_ATOM _ => 'T
+  | S_CONS _ _ => 'NIL
+  end.
+
+Definition EQUAL (x y : star) : star :=
+  if x == y then 'T else 'NIL.
+
+(**
+------------------
+# 定理証明手習い（「公理」の証明）
+
+ここまでに用意した道具を使って、証明をおこないます。
+*)
+
+Theorem atom_cons (x y : star) :
+  (EQUAL (ATOM (CONS x y)) 'NIL).
+Proof.
+  rewrite /EQUAL /=.
+  done.
+Qed.
+
+Theorem car_cons (x y : star) :
+  (EQUAL (CAR (CONS x y)) x).
+Proof.
+  rewrite /EQUAL /=.
+  case H : (x == x).
+  - done.                              (* x == x の場合、'T *)
+  - move/negbT/eqP in H.               (* x != x の場合、'NIL *)
+    done.                              (* 前提が矛盾 *)
+Qed.
+
+
+(**
+----------------
+# まとめ
+
+1. 文字列型を例に、MathComp の型定義について説明した。
+
+2. 「定理証明手習い」のLispの Star型を定義して、これから「公理」を証明してみた。
+
+3. eqType のインスタンスとして型を定義すると、決定性のあるbooleanの等号が使えるので、
+いろいろ捗る。実は49個あるクラス（algebric Structure)の最初のひとつ。
+
+4. MathComp でデータ型を定義して、証明しよう。
+
+5. MathComp でプログラムの証明しよう。
+
+*)
 
 
 (**
