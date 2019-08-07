@@ -376,22 +376,6 @@ Definition star_eqMixin (T : eqType) := EqMixin (star_eqP T).
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
 (**
-------------------
-# 定理証明手習い（補題）
-*)
-
-Lemma refl_eqStar (T : eqType) (x : star T) : (x == x).
-Proof.
-  by apply/eqP.
-Qed.
-
-Lemma symm_eqStar (T : eqType) (x y : star T) : (x == y) = (y == x).
-Proof.
-  by apply/idP/idP; move/eqP=> H; rewrite H.
-Qed.
-
-
-(**
 # 定理証明手習い（埋め込み）
 
 以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
@@ -466,7 +450,9 @@ Theorem equal_same (x : star_string) :
   (EQUAL x x).
 Proof.
   rewrite /EQUAL.
-    by rewrite refl_eqStar.
+  case H : (x == x).
+  - done.
+  - by move/negbT/eqP in H.                 (* x != x の場合、'NIL *)
 Qed.
 
 Theorem atom_cons (x y : star_string) :
@@ -489,11 +475,11 @@ Qed.
 Theorem equal_swap (x y : star_string) :
   (EQUAL (EQUAL x y) (EQUAL y x)).
 Proof.
-  rewrite {3}/EQUAL {2}/EQUAL.
-  rewrite {1}symm_eqStar.
-    by rewrite equal_same.
+  rewrite {3}/EQUAL {2}/EQUAL eq_sym.     (* eq_sym は eqType の補題 *)
+  case: (y == x).                         (* まとめて場合分けする。 *)
+  - done.
+  - done.
 Qed.
-
 
 (**
 ----------------
@@ -564,5 +550,20 @@ https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
 https://math-comp.github.io/mcb/
 
  *)
+
+(**
+---------------
+# 補足説明
+*)
+
+Theorem equal_swap' (x y : star_string) :
+  (EQUAL (EQUAL x y) (EQUAL y x)).
+Proof.
+  rewrite {1}/EQUAL.
+  case H : (EQUAL x y == EQUAL y x).
+  - done.
+  - rewrite /EQUAL [y == x]eq_sym in H.
+      by move/negbT/eqP in H.
+Qed.
 
 (* END *)
