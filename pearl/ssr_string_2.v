@@ -343,42 +343,30 @@ Proof.
     by rewrite Hx Hy.
 Qed.
 
-Lemma star_eqP_1 : forall (T : eqType) (x y : star T), eqStar x y -> x = y.
-Proof.
-  move=> T.
-  elim.
-  - move=> a.
-    elim=> b.
-    + move/eqP => H.                        (* ATOM どうし *)
-        by rewrite H.  
-    + done.                                 (* ATOM と CONS *)
-  - move=> x Hx y Hy.
-    elim.
-    + done.                                 (* CONS と ATOM *)
-    + move=> x' IHx y' IHy.                 (* CONS と CONS *)
-      move/andP.
-      case=> Hxx' Hyy'.
-      apply: eqCons.
-      split.
-      * by apply: (Hx x').
-      * by apply: (Hy y').
-Qed.
-
-Lemma star_eqP_2 : forall (T : eqType) (x y : star T), x = y -> eqStar x y.
-Proof.
-  move=> T x y H; rewrite -H {H}.
-  elim: x.
-  - by move=> a /=.
-  - move=> x Hx y' Hy /=.
-      by apply/andP; split.
-Qed.
-
 Lemma star_eqP : forall (T : eqType) (x y : star T), reflect (x = y) (eqStar x y).
 Proof.
   move=> T x y.
   apply: (iffP idP).
-  - by apply: star_eqP_1.
-  - by apply: star_eqP_2.
+  - elim: x y.
+    + move=> x'.
+      elim=> y.
+      * by move/eqP => <-.                  (* ATOM どうし *)
+      * done.                               (* ATOM と CONS *)
+    + move=> x Hx y Hy.
+      elim.
+      * done.                               (* CONS と ATOM *)
+      * move=> x' IHx y' IHy.               (* CONS と CONS *)
+        move/andP.
+        case=> Hxx' Hyy'.
+        apply: eqCons.
+        split.
+        ** by apply: (Hx x').
+        ** by apply: (Hy y').
+  -  move=> <-.
+     elim: x.
+     * by move=> a /=.
+     * move=> x Hx y' Hy /=.
+         by apply/andP; split.
 Qed.
 
 (*
