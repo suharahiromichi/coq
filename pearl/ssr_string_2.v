@@ -376,6 +376,22 @@ Definition star_eqMixin (T : eqType) := EqMixin (star_eqP T).
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
 (**
+------------------
+# 定理証明手習い（補題）
+*)
+
+Lemma refl_eqStar (T : eqType) (x : star T) : (x == x).
+Proof.
+  by apply/eqP.
+Qed.
+
+Lemma symm_eqStar (T : eqType) (x y : star T) : (x == y) = (y == x).
+Proof.
+  by apply/idP/idP; move/eqP=> H; rewrite H.
+Qed.
+
+
+(**
 # 定理証明手習い（埋め込み）
 
 以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
@@ -446,6 +462,13 @@ Definition EQUAL (x y : star_string) : star_string :=
 ここまでに用意した道具を使って、証明をおこないます。
 *)
 
+Theorem equal_same (x : star_string) :
+  (EQUAL x x).
+Proof.
+  rewrite /EQUAL.
+    by rewrite refl_eqStar.
+Qed.
+
 Theorem atom_cons (x y : star_string) :
   (EQUAL (ATOM (CONS x y)) "NIL").
 Proof.
@@ -461,6 +484,14 @@ Proof.
   - done.                              (* x == x の場合、'T *)
   - move/negbT/eqP in H.               (* x != x の場合、'NIL *)
     done.                              (* 前提が矛盾 *)
+Qed.
+
+Theorem equal_swap (x y : star_string) :
+  (EQUAL (EQUAL x y) (EQUAL y x)).
+Proof.
+  rewrite {3}/EQUAL {2}/EQUAL.
+  rewrite {1}symm_eqStar.
+    by rewrite equal_same.
 Qed.
 
 
