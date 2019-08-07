@@ -302,44 +302,6 @@ Check String.eqb_spec
 
 
 (**
--------------------
-# 定理証明手習い（ATOMIC型)
-
-アトムどうしのbooleanの等式を定義したうえで、それが、
-論理式(ライプニッツの等式、Propの等式)と同値であることを証明することで、
-boolとPropの間での行き来ができるようになります。
-つまり、「==」と「=」の両方を使うことができるようになります。
-これをリフレクションといいます[4]。
-
-アトムとしては、シンボルの他に自然数もとれるようにします。
- *)
-
-Inductive atomic : Type :=
-| ATOM_NAT (n : nat)
-| ATOM_SYM (s : string).
-
-Definition eqAtom (a b : atomic) : bool :=
-  match (a, b) with
-  | (ATOM_NAT n, ATOM_NAT m) => n == m
-  | (ATOM_SYM s, ATOM_SYM t) => s == t      (* eqString *)
-  | _ => false
-  end.
-
-Lemma atomic_eqP : forall (x y : atomic), reflect (x = y) (eqAtom x y).
-Proof.
-  move=> x y.
-  apply: (iffP idP).
-  - case: x; case: y; rewrite /eqAtom => x y; move/eqP => H;
-    by [rewrite H | | | rewrite H].
-  - move=> H; rewrite H.
-    case: y H => n H1;
-    by rewrite /eqAtom.
-Qed.
-
-Definition atomic_eqMixin := @EqMixin atomic eqAtom atomic_eqP.
-Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
-
-(**
 ------------------
 # 定理証明手習い（STAR型)
 
@@ -347,9 +309,12 @@ Canonical atomic_eqType := @EqType atomic atomic_eqMixin.
 と再帰的に定義できます。これがinductiveなデータ型です。
 *)
 
-Inductive star : Type :=
-| S_ATOM of atomic
-| S_CONS of star & star.
+Inductive star T : Type :=
+| S_ATOM of T
+| S_CONS of star T & star T.
+
+Check star string.
+Check star string_eqType.
 
 (**
 Coqはinductiveなデータ型に対して、inductionできるようになります。
@@ -367,7 +332,7 @@ Star型についても、booleanの等号を定義して、論理式の等号に
 ションできるようにします。
 *)
 
-Fixpoint eqStar (x y : star) : bool :=
+Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
   match (x, y) with
   | (S_ATOM a, S_ATOM b) => a == b          (* eqAtom *)
   | (S_CONS x1 y1, S_CONS x2 y2) =>
@@ -375,14 +340,16 @@ Fixpoint eqStar (x y : star) : bool :=
   | _ => false
   end.
 
-Lemma eqCons x y x' y' : (x = x' /\ y = y') -> S_CONS x y = S_CONS x' y'.
+Lemma eqCons {T : eqType} (x y x' y' : star T) :
+  (x = x' /\ y = y') -> @S_CONS T x y = @S_CONS T x' y'.
 Proof.
   case=> Hx Hy.
   by rewrite Hx Hy.
 Qed.
 
-Lemma star_eqP_1 : forall (x y : star), eqStar x y -> x = y.
+Lemma star_eqP_1 : forall (T : eqType) (x y : star T), eqStar x y -> x = y.
 Proof.
+  move=> T.
   elim.
   - move=> a.
     elim=> b.
@@ -401,25 +368,28 @@ Proof.
       * by apply: (Hy y').
 Qed.
 
-Lemma star_eqP_2 : forall (x y : star), x = y -> eqStar x y.
+Lemma star_eqP_2 : forall (T : eqType) (x y : star T), x = y -> eqStar x y.
 Proof.
-  move=> x y H; rewrite -H {H}.
+  move=> T x y H; rewrite -H {H}.
   elim: x.
   - by move=> a /=.
   - move=> x Hx y' Hy /=.
     by apply/andP; split.
 Qed.
 
-Lemma star_eqP : forall (x y : star), reflect (x = y) (eqStar x y).
+Lemma star_eqP : forall (T : eqType) (x y : star T), reflect (x = y) (eqStar x y).
 Proof.
-  move=> x y.
+  move=> T x y.
   apply: (iffP idP).
   - by apply: star_eqP_1.
   - by apply: star_eqP_2.
 Qed.
 
-Definition star_eqMixin := @EqMixin star eqStar star_eqP.
-Canonical star_eqType := @EqType star star_eqMixin.
+(*
+Definition star_eqMixin (T : eqType) := @EqMixin star (@eqStar T) (star_eqP T).
+ *)
+Definition star_eqMixin (T : eqType) := EqMixin (star_eqP T).
+Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
 (**
 ------------------
@@ -431,12 +401,13 @@ Canonical star_eqType := @EqType star star_eqMixin.
 「'」は記法(notation)の一部であることに注意してください。
  *)
 
-Definition s_quote (s : string) : star :=
-  (S_ATOM (ATOM_SYM s)).
-Notation "\' s" := (S_ATOM (ATOM_SYM s)) (at level 60).
+Definition s_quote (s : string) : star string := (@S_ATOM string s).
+Notation "\' s" := (s_quote s) (at level 60).
 
-Notation "'T" := (S_ATOM (ATOM_SYM "T")).
-Notation "'NIL" := (S_ATOM (ATOM_SYM "NIL")).
+Notation "'T" := (s_quote "T").
+Notation "'NIL" := (s_quote "NIL").
+
+Coercion c_s_quote (s : string) : @star string := s_quote s.
 
 (**
 ------------------
@@ -451,35 +422,40 @@ S式を論理式(Prop)に埋め込めるようにします。このとき、Lisp
 これは、一旦boolを経由することで、論理式(Prop)の否定も扱えるようにするためです。
 *)
              
-Coercion is_not_nil (x : star) : bool := x != 'NIL. (* ~~ eqStar x 'NIL *)
+Definition star_string := star string.
+Print Graph.
+Coercion is_not_nil (x : star_string) : bool := x != "NIL".
+(* ~~ eqStar x 'NIL *)
+Print Graph.
+
 
 (**
 ------------------
 # 定理証明手習い（組み込み関数）
 *)
 
-Definition CONS (x y : star) := S_CONS x y.
+Definition CONS (x y : star_string) : star_string := @S_CONS string x y.
 
-Definition CAR (x : star) : star :=
+Definition CAR (x : star_string) : star_string :=
   match x with
-  | S_ATOM _ => 'NIL
+  | S_ATOM _ => "NIL"
   | S_CONS x _ => x
   end.
 
-Definition CDR (x : star) : star :=
+Definition CDR (x : star_string) : star_string :=
   match x with
-  | S_ATOM _ => 'NIL
+  | S_ATOM _ => "NIL"
   | S_CONS _ y => y
   end.
 
-Definition ATOM (x : star) : star :=
+Definition ATOM (x : star_string) : star_string :=
   match x with
-  | S_ATOM _ => 'T
-  | S_CONS _ _ => 'NIL
+  | S_ATOM _ => "T"
+  | S_CONS _ _ => "NIL"
   end.
 
-Definition EQUAL (x y : star) : star :=
-  if x == y then 'T else 'NIL.
+Definition EQUAL (x y : star_string) : star_string :=
+  if x == y then "T" else "NIL".
 
 (**
 ------------------
@@ -488,14 +464,18 @@ Definition EQUAL (x y : star) : star :=
 ここまでに用意した道具を使って、証明をおこないます。
 *)
 
-Theorem atom_cons (x y : star) :
-  (EQUAL (ATOM (CONS x y)) 'NIL).
+Variables (x y : star string).
+Check ATOM (CONS x y).
+Check (EQUAL (ATOM (CONS x y)) (s_quote "NIL")) : bool.
+
+Theorem atom_cons (x y : star string) :
+  (EQUAL (ATOM (CONS x y)) "NIL").
 Proof.
   rewrite /EQUAL /=.
   done.
 Qed.
 
-Theorem car_cons (x y : star) :
+Theorem car_cons (x y : @star string) :
   (EQUAL (CAR (CONS x y)) x).
 Proof.
   rewrite /EQUAL /=.
