@@ -313,9 +313,6 @@ Inductive star T : Type :=
 | S_ATOM of T
 | S_CONS of star T & star T.
 
-Check star string.
-Check star string_eqType.
-
 (**
 Coqはinductiveなデータ型に対して、inductionできるようになります。
 そのために、star_ind という公理が自動的に定義されます。
@@ -334,9 +331,8 @@ Star型についても、booleanの等号を定義して、論理式の等号に
 
 Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
   match (x, y) with
-  | (S_ATOM a, S_ATOM b) => a == b          (* eqAtom *)
-  | (S_CONS x1 y1, S_CONS x2 y2) =>
-    eqStar x1 x2 && eqStar y1 y2
+  | (S_ATOM a, S_ATOM b) => a == b          (* eqType *)
+  | (S_CONS x1 y1, S_CONS x2 y2) => eqStar x1 x2 && eqStar y1 y2
   | _ => false
   end.
 
@@ -344,7 +340,7 @@ Lemma eqCons {T : eqType} (x y x' y' : star T) :
   (x = x' /\ y = y') -> @S_CONS T x y = @S_CONS T x' y'.
 Proof.
   case=> Hx Hy.
-  by rewrite Hx Hy.
+    by rewrite Hx Hy.
 Qed.
 
 Lemma star_eqP_1 : forall (T : eqType) (x y : star T), eqStar x y -> x = y.
@@ -353,7 +349,7 @@ Proof.
   elim.
   - move=> a.
     elim=> b.
-    + move/eqP=> H.                         (* ATOM どうし *)
+    + move/eqP => H.                        (* ATOM どうし *)
         by rewrite H.  
     + done.                                 (* ATOM と CONS *)
   - move=> x Hx y Hy.
@@ -374,7 +370,7 @@ Proof.
   elim: x.
   - by move=> a /=.
   - move=> x Hx y' Hy /=.
-    by apply/andP; split.
+      by apply/andP; split.
 Qed.
 
 Lemma star_eqP : forall (T : eqType) (x y : star T), reflect (x = y) (eqStar x y).
@@ -392,27 +388,14 @@ Definition star_eqMixin (T : eqType) := EqMixin (star_eqP T).
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
 (**
-------------------
-# 定理証明手習い（TとNIL）
-
-
-シンボルをS式の中に書くときに簡単になるような略記法を導入します。
-「'T」などと書くことができるので、quoted literal のように見えますが、
-「'」は記法(notation)の一部であることに注意してください。
- *)
-
-Definition s_quote (s : string) : star string := (@S_ATOM string s).
-Notation "\' s" := (s_quote s) (at level 60).
-
-Notation "'T" := (s_quote "T").
-Notation "'NIL" := (s_quote "NIL").
-
-Coercion c_s_quote (s : string) : @star string := s_quote s.
-
-(**
-------------------
 # 定理証明手習い（埋め込み）
 
+以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
+*)
+
+Definition star_string := star string.
+
+(**
 S式を論理式(Prop)に埋め込めるようにします。このとき、Lispの真偽の定義から、
 
 「真」 iff 「'NILでないS式」
@@ -420,13 +403,23 @@ S式を論理式(Prop)に埋め込めるようにします。このとき、Lisp
 としなければいけません。
 実際には、S式からbooleanの等式 (x != 'NIL) へのコアーションを定義します。
 これは、一旦boolを経由することで、論理式(Prop)の否定も扱えるようにするためです。
+
+なお、コアーションを実現するためには、``star string`` では駄目で、
+star_sring型が必須となるようです。
 *)
-             
-Definition star_string := star string.
-Print Graph.
-Coercion is_not_nil (x : star_string) : bool := x != "NIL".
-(* ~~ eqStar x 'NIL *)
-Print Graph.
+
+Coercion is_not_nil (x : star_string) : bool := x != (@S_ATOM string "NIL").
+
+(**
+さらに、S式の文脈でシンボルを直接書けるようにします。
+次のコアーションで、S式のなかで、S_ATOM "ABC" の S_ATOM を省けるようになります。
+
+これは、Lispの評価規則として正しくないかもしれませんが、
+eval-quote式のLispの評価規則を実装することはTLPの範囲外と考え、
+ここでは、書きやすさを優先することにします。
+*)
+
+Coercion s_quote (s : string) : star_string := (@S_ATOM string s).
 
 
 (**
@@ -434,7 +427,8 @@ Print Graph.
 # 定理証明手習い（組み込み関数）
 *)
 
-Definition CONS (x y : star_string) : star_string := @S_CONS string x y.
+Definition CONS (x y : star_string) : star_string :=
+  @S_CONS string x y.
 
 Definition CAR (x : star_string) : star_string :=
   match x with
@@ -464,18 +458,14 @@ Definition EQUAL (x y : star_string) : star_string :=
 ここまでに用意した道具を使って、証明をおこないます。
 *)
 
-Variables (x y : star string).
-Check ATOM (CONS x y).
-Check (EQUAL (ATOM (CONS x y)) (s_quote "NIL")) : bool.
-
-Theorem atom_cons (x y : star string) :
+Theorem atom_cons (x y : star_string) :
   (EQUAL (ATOM (CONS x y)) "NIL").
 Proof.
   rewrite /EQUAL /=.
   done.
 Qed.
 
-Theorem car_cons (x y : @star string) :
+Theorem car_cons (x y : star_string) :
   (EQUAL (CAR (CONS x y)) x).
 Proof.
   rewrite /EQUAL /=.
@@ -484,6 +474,25 @@ Proof.
   - move/negbT/eqP in H.               (* x != x の場合、'NIL *)
     done.                              (* 前提が矛盾 *)
 Qed.
+
+
+(**
+----------------
+# 定理証明手習い（まとめ）
+
+以上のようにすると、TLPで「公理」として与えられた命題の大半をを証明することができます。
+残りの部分は、[3.]を参照してください。
+
+S式（二分木のリスト）をもち、特定のATOMINCな要素(NIL)以外を真とするような、
+Lispの意味を形式化したといえます。
+
+TLPの前半では線形なリストを扱っていますが、それは、空リスト([])以外を真とする
+ものですから、まったく異なったものになると思います。試みてください！
+
+前述のとおり、評価規則についてはCoqに依存しています。
+Eval-Quoteの評価規則を厳密に実装するには、なんらかのバーチャルマシンを定義する
+ことになるのだろうとおもいます。これも試みてください！！
+ *)
 
 
 (**
