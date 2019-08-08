@@ -13,12 +13,19 @@
 
 @suharahiromichi
 
-この文書のソースコードは以下にあります。
+- この文書のソースコードは以下にあります。
 
 
 https://github.com/suharahiromichi/coq/blob/master/lisp/tlp_lisp_6.v
 
 
+- バージョン
+
+
+OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
+ *)
+
+(**
 # はじめに
 
 「The Little Prover」（以下 TLP）[1] を読んで、
@@ -188,24 +195,6 @@ Qed.
 
 Definition star_eqMixin (T : eqType) := EqMixin (@star_eqP T).
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
-
-(**
-Star型のboolの等式について、反射律と対称律が成立することを証明ておきます。
-リフレクションを使用してPropの等式に変換することで、簡単に証明できます。
-
-この補題はあとで使用します。
- *)
-
-Lemma refl_eqStar (T : eqType) (x : star T) : (x == x).
-Proof.
-  by apply/eqP.
-Qed.
-
-Lemma symm_eqStar (T : eqType) (x y : star T) : (x == y) = (y == x).
-Proof.
-  by apply/idP/idP; move/eqP=> H; rewrite H.
-Qed.
-
 
 (**
 # 埋め込み
@@ -461,8 +450,7 @@ Qed.
 Theorem equal_same (x : star_exp) :
   (Equal x x).
 Proof.
-  rewrite /Equal.
-    by rewrite refl_eqStar.
+    by rewrite /Equal eq_refl.
 Qed.
 
 Theorem atom_cons (x y : star_exp) :
@@ -488,8 +476,8 @@ Qed.
 Theorem equal_swap (x y : star_exp) :
   (Equal (Equal x y) (Equal y x)).
 Proof.
-  rewrite {3}/Equal {2}/Equal {1}symm_eqStar.
-    by rewrite equal_same.
+  rewrite {3}/Equal {2}/Equal {1}eq_sym.
+    by rewrite /Equal eq_refl.
 Qed.
 
 Theorem equal_if (x y : star_exp) :
@@ -525,21 +513,21 @@ Theorem if_same (x y : star_exp) :
   (Equal (If x y y) y).
 Proof.
   rewrite l_if_same.
-    by rewrite equal_same.
+    by rewrite /Equal eq_refl.
 Qed.
 
 Theorem if_nest_A (x y z : star_exp) :
   (If x (Equal (If x y z) y) "T").
 Proof.
   rewrite /If; case: eqP => //.
-    by rewrite equal_same.
+    by rewrite /Equal eq_refl.
 Qed.
 
 Theorem if_nest_E (x y z : star_exp) :
   (If x "T" (Equal (If x y z) z)).
 Proof.
   rewrite /If; case: eqP => //.
-    by rewrite equal_same.
+    by rewrite /Equal eq_refl.
 Qed.
 
 Lemma l_cons_car_cdr (x : star_exp) :
@@ -555,7 +543,7 @@ Theorem cons_car_cdr (x : star_exp) :
 Proof.
   rewrite /If; case: eqP => Hq //.
   rewrite l_cons_car_cdr //.
-  by rewrite equal_same.
+    by rewrite /Equal eq_refl.
 Qed.
 
 Lemma l_size_car (x : star_exp) :
