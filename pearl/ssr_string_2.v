@@ -381,7 +381,7 @@ Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
 *)
 
-Definition star_string := star string.
+Definition star_exp := star string.
 
 (**
 S式を論理式(Prop)に埋め込めるようにします。このとき、Lispの真偽の定義から、
@@ -396,7 +396,7 @@ S式を論理式(Prop)に埋め込めるようにします。このとき、Lisp
 star_sring型が必須となるようです。
 *)
 
-Coercion is_not_nil (x : star_string) : bool := x != (@S_ATOM string "NIL").
+Coercion is_not_nil (x : star_exp) : bool := x != (@S_ATOM string "NIL").
 
 (**
 さらに、S式の文脈でシンボルを直接書けるようにします。
@@ -407,7 +407,7 @@ eval-quote式のLispの評価規則を実装することはTLPの範囲外と考
 ここでは、書きやすさを優先することにします。
 *)
 
-Coercion s_quote (s : string) : star_string := (@S_ATOM string s).
+Coercion s_quote (s : string) : star_exp := (@S_ATOM string s).
 
 
 (**
@@ -415,28 +415,28 @@ Coercion s_quote (s : string) : star_string := (@S_ATOM string s).
 # 定理証明手習い（組み込み関数）
 *)
 
-Definition CONS (x y : star_string) : star_string :=
+Definition Cons (x y : star_exp) : star_exp :=
   @S_CONS string x y.
 
-Definition CAR (x : star_string) : star_string :=
+Definition Car (x : star_exp) : star_exp :=
   match x with
   | S_ATOM _ => "NIL"
   | S_CONS x _ => x
   end.
 
-Definition CDR (x : star_string) : star_string :=
+Definition Cdr (x : star_exp) : star_exp :=
   match x with
   | S_ATOM _ => "NIL"
   | S_CONS _ y => y
   end.
 
-Definition ATOM (x : star_string) : star_string :=
+Definition Atom (x : star_exp) : star_exp :=
   match x with
   | S_ATOM _ => "T"
   | S_CONS _ _ => "NIL"
   end.
 
-Definition EQUAL (x y : star_string) : star_string :=
+Definition Equal (x y : star_exp) : star_exp :=
   if x == y then "T" else "NIL".
 
 (**
@@ -446,36 +446,33 @@ Definition EQUAL (x y : star_string) : star_string :=
 ここまでに用意した道具を使って、証明をおこないます。
 *)
 
-Theorem equal_same (x : star_string) :
-  (EQUAL x x).
+Theorem equal_same (x : star_exp) :
+  (Equal x x).
 Proof.
-  rewrite /EQUAL.
-  case H : (x == x).
-  - done.
-  - by move/negbT/eqP in H.                 (* x != x の場合、'NIL *)
-Qed.
-
-Theorem atom_cons (x y : star_string) :
-  (EQUAL (ATOM (CONS x y)) "NIL").
-Proof.
-  rewrite /EQUAL /=.
+  rewrite /Equal.
+  rewrite eq_refl.                      (* eq_refl は eqType の補題 *)
   done.
 Qed.
 
-Theorem car_cons (x y : star_string) :
-  (EQUAL (CAR (CONS x y)) x).
+Theorem atom_cons (x y : star_exp) :
+  (Equal (Atom (Cons x y)) "NIL").
 Proof.
-  rewrite /EQUAL /=.
-  case H : (x == x).
-  - done.                              (* x == x の場合、'T *)
-  - move/negbT/eqP in H.               (* x != x の場合、'NIL *)
-    done.                              (* 前提が矛盾 *)
+  rewrite /Equal /=.
+  done.
 Qed.
 
-Theorem equal_swap (x y : star_string) :
-  (EQUAL (EQUAL x y) (EQUAL y x)).
+Theorem car_cons (x y : star_exp) :
+  (Equal (Car (Cons x y)) x).
 Proof.
-  rewrite {3}/EQUAL {2}/EQUAL eq_sym.     (* eq_sym は eqType の補題 *)
+  rewrite /Equal /=.
+  rewrite eq_refl.                          (* eq_refl は eqType の補題 *)
+  done.
+Qed.
+
+Theorem equal_swap (x y : star_exp) :
+  (Equal (Equal x y) (Equal y x)).
+Proof.
+  rewrite {3}/Equal {2}/Equal eq_sym.     (* eq_sym は eqType の補題 *)
   case: (y == x).                         (* まとめて場合分けする。 *)
   - done.
   - done.
@@ -556,13 +553,13 @@ https://math-comp.github.io/mcb/
 # 補足説明
 *)
 
-Theorem equal_swap' (x y : star_string) :
-  (EQUAL (EQUAL x y) (EQUAL y x)).
+Theorem equal_swap' (x y : star_exp) :
+  (Equal (Equal x y) (Equal y x)).
 Proof.
-  rewrite {1}/EQUAL.
-  case H : (EQUAL x y == EQUAL y x).
+  rewrite {1}/Equal.
+  case H : (Equal x y == Equal y x).
   - done.
-  - rewrite /EQUAL [y == x]eq_sym in H.
+  - rewrite /Equal [y == x]eq_sym in H.
       by move/negbT/eqP in H.
 Qed.
 
