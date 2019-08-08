@@ -272,34 +272,35 @@ Definition s2s (x : star_exp) : string :=
 # 組込関数の定義
 *)
 
-Definition CONS (x y : star_exp) : star_exp := S_CONS x y.
+Definition Cons (x y : star_exp) : star_exp := S_CONS x y.
 
-Definition CAR (x : star_exp) : star_exp :=
+Definition Car (x : star_exp) : star_exp :=
   match x with
   | S_ATOM _ => "NIL"
   | S_CONS x _ => x
   end.
 
-Definition CDR (x : star_exp) : star_exp :=
+Definition Cdr (x : star_exp) : star_exp :=
   match x with
   | S_ATOM _ => "NIL"
   | S_CONS _ y => y
   end.
 
-Definition ATOM (x : star_exp) : star_exp :=
+Definition Atom (x : star_exp) : star_exp :=
   match x with
   | S_ATOM _ => "T"
   | S_CONS _ _ => "NIL"
   end.
 
 (**
-IFとEQUALは、booleanの等式で判定します。
+If と Equalは、booleanの等式で判定します。
  *)
 
 Definition If (q a e : star_exp) : star_exp :=
   if q == s_quote "NIL" then e else a.
+(* コアーションが機能しないので、左辺右辺どちらの型にあわせればよいか、指定する。 *)
 
-Definition EQUAL (x y : star_exp) : star_exp :=
+Definition Equal (x y : star_exp) : star_exp :=
   if x == y then "T" else "NIL".
 
 Fixpoint s_size (x : star_exp) : nat :=
@@ -308,12 +309,12 @@ Fixpoint s_size (x : star_exp) : nat :=
   | _ => 0
   end.
 
-Definition SIZE (x : star_exp) : star_exp := s_size x.
-Eval compute in SIZE (CONS "T" (CONS "T" "T")). (* = S_ATOM (ATOM_NAT 2) *)
+Definition Size (x : star_exp) : star_exp := s_size x.
+Eval compute in Size (Cons "T" (Cons "T" "T")). (* = S_ATOM (ATOM_NAT 2) *)
 
-Definition LT (x y : star_exp) : star_exp :=
+Definition Lt (x y : star_exp) : star_exp :=
   if s2n x < s2n y then "T" else "NIL".
-Eval compute in LT 2 3.                     (* = S_ATOM (ATOM_SYM "T") *)
+Eval compute in Lt 2 3.                     (* = S_ATOM (ATOM_SYM "T") *)
 
 Definition PLUS (x y : star_exp) : star_exp := s2n x + s2n y.
 Eval compute in PLUS 2 3.                   (* = S_ATOM (ATOM_NAT 5) *)
@@ -338,7 +339,8 @@ Qed.
 *)
 
 Lemma not_not_nil__nil_E (q : star_exp) :
-  ~~ (q != s_quote "NIL") = (q == s_quote "NIL"). (* ここはコアーションが機能しない。 *)
+  ~~ (q != s_quote "NIL") = (q == s_quote "NIL").
+(* コアーションが機能しないので、左辺右辺どちらの型にあわせればよいか、指定する。 *)
 Proof.
   by case: eqP.
 Qed.
@@ -348,7 +350,7 @@ Proof.
   split.
   - rewrite /is_not_nil => /negP H.
     apply/eqP.
-    by rewrite -not_not_nil__nil_E.
+      by rewrite -not_not_nil__nil_E.
   - by move=> Hq; rewrite Hq.
 Qed.
 
@@ -399,16 +401,16 @@ TLPの定理は、(EQUAL X Y) または (IF Q 'T (EQUAL X Y)) または (IF Q (E
 これらは、TLPの定理の証明や、その定理を使うときに使用します。
  *)
 
-Lemma equal_eq {x y : star_exp} : (EQUAL x y) -> x = y.
+Lemma equal_eq {x y : star_exp} : (Equal x y) -> x = y.
 Proof.
-  rewrite /EQUAL.
+  rewrite /Equal.
     by case: eqP.
 Qed.
 
-Lemma ifAP {q x y : star_exp} : (If q (EQUAL x y) "T") <-> (q -> x = y).
+Lemma ifAP {q x y : star_exp} : (If q (Equal x y) "T") <-> (q -> x = y).
 Proof.
   split.
-  - rewrite /If /EQUAL.
+  - rewrite /If /Equal.
     case: eqP => Hq_nil.
     + move=> _ Hq.
       by prove_nil.
@@ -416,7 +418,7 @@ Proof.
       
   - move=> H.
     rewrite /If; case: eqP => // Hnot_nil_q.   (* q <> NIL *)
-    rewrite /EQUAL; case: ifP => // => Hx_ne_y. (* x <> y) *)
+    rewrite /Equal; case: ifP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
     
     apply negbT in Hx_ne_y.
@@ -427,10 +429,10 @@ Proof.
       by prove_nil.
 Qed.
 
-Lemma ifEP {q x y : star_exp} : (If q "T" (EQUAL x y)) <-> (~q -> x = y).
+Lemma ifEP {q x y : star_exp} : (If q "T" (Equal x y)) <-> (~q -> x = y).
 Proof.
   split.
-  - rewrite /If /EQUAL.
+  - rewrite /If /Equal.
     case: eqP => Hq_nil.
     + by case: eqP.
     + move=> _ Hnq.
@@ -438,7 +440,7 @@ Proof.
     
   - move=> H.
     rewrite /If; case: eqP => // Hq_nil.        (* q = NIL  *)
-    rewrite /EQUAL; case: eqP => // => Hx_ne_y. (* x <> y) *)
+    rewrite /Equal; case: eqP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
     apply: Hx_ne_y.
     apply: H.
@@ -456,56 +458,55 @@ Qed.
 *)
 
 Theorem equal_same (x : star_exp) :
-  (EQUAL x x).
+  (Equal x x).
 Proof.
-  rewrite /EQUAL.
+  rewrite /Equal.
     by rewrite refl_eqStar.
 Qed.
 
 Theorem atom_cons (x y : star_exp) :
-  (EQUAL (ATOM (CONS x y)) "NIL").
+  (Equal (Atom (Cons x y)) "NIL").
 Proof.
   done.
 Qed.
 
 Theorem car_cons (x y : star_exp) :
-  (EQUAL (CAR (CONS x y)) x).
+  (Equal (Car (Cons x y)) x).
 Proof.
-  rewrite /EQUAL.
+  rewrite /Equal.
   by case: eqP.
 Qed.
 
 Theorem cdr_cons (x y : star_exp) :
-  (EQUAL (CDR (CONS x y)) y).
+  (Equal (Cdr (Cons x y)) y).
 Proof.
-  rewrite /EQUAL.
+  rewrite /Equal.
   by case: eqP.
 Qed.
 
 Theorem equal_swap (x y : star_exp) :
-  (EQUAL (EQUAL x y) (EQUAL y x)).
+  (Equal (Equal x y) (Equal y x)).
 Proof.
-  rewrite {2}/EQUAL {2}/EQUAL.
-  rewrite {1}symm_eqStar.
+  rewrite {3}/Equal {2}/Equal {1}symm_eqStar.
     by rewrite equal_same.
 Qed.
 
 Theorem equal_if (x y : star_exp) :
-  (If (EQUAL x y) (EQUAL x y) "T").
+  (If (Equal x y) (Equal x y) "T").
 Proof.
     by rewrite /If; case: eqP; move/eqP.
 Qed.
 
 Theorem if_true (x y : star_exp) :
-  (EQUAL (If "T" x y) x).
+  (Equal (If "T" x y) x).
 Proof.
-    by rewrite /EQUAL; case: eqP.
+    by rewrite /Equal; case: eqP.
 Qed.
 
 Theorem if_false (x y : star_exp) :
-  (EQUAL (If "NIL" x y) y).
+  (Equal (If "NIL" x y) y).
 Proof.
-    by rewrite /EQUAL; case: eqP.
+    by rewrite /Equal; case: eqP.
 Qed.
 
 Lemma l_if_same (x y : star_exp) :
@@ -520,36 +521,36 @@ Proof.
 Qed.
 
 Theorem if_same (x y : star_exp) :
-  (EQUAL (If x y y) y).
+  (Equal (If x y y) y).
 Proof.
   rewrite l_if_same.
     by rewrite equal_same.
 Qed.
 
 Theorem if_nest_A (x y z : star_exp) :
-  (If x (EQUAL (If x y z) y) "T").
+  (If x (Equal (If x y z) y) "T").
 Proof.
   rewrite /If; case: eqP => //.
   by rewrite equal_same.
 Qed.
 
 Theorem if_nest_E (x y z : star_exp) :
-  (If x "T" (EQUAL (If x y z) z)).
+  (If x "T" (Equal (If x y z) z)).
 Proof.
   rewrite /If; case: eqP => //.
   by rewrite equal_same.
 Qed.
 
 Lemma l_cons_car_cdr (x : star_exp) :
-  (ATOM x) = "NIL" -> (CONS (CAR x) (CDR x)) = x.
+  (Atom x) = "NIL" -> (Cons (Car x) (Cdr x)) = x.
 Proof.
   move=> Hn.
-  case Hc: x; rewrite /CONS => //.
+  case Hc: x; rewrite /Cons => //.
   by rewrite Hc in Hn.                      (* 前提の矛盾 *)
 Qed.
 
 Theorem cons_car_cdr (x : star_exp) :
-  (If (ATOM x) "T" (EQUAL (CONS (CAR x) (CDR x)) x)).
+  (If (Atom x) "T" (Equal (Cons (Car x) (Cdr x)) x)).
 Proof.
   rewrite /If; case: eqP => Hq //.
   rewrite l_cons_car_cdr //.
@@ -557,7 +558,7 @@ Proof.
 Qed.
 
 Lemma l_size_car (x : star_exp) :
-  ATOM x = "NIL" -> s_size (CAR x) < s_size x.
+  Atom x = "NIL" -> s_size (Car x) < s_size x.
 Proof.
   elim: x.
   - by move=> a Hc //.
@@ -567,7 +568,7 @@ Proof.
 Qed.
 
 Lemma l_size_cdr (x : star_exp) :
-  ATOM x = "NIL" -> s_size (CDR x) < s_size x.
+  Atom x = "NIL" -> s_size (Cdr x) < s_size x.
 Proof.
   elim: x.
   - by move=> a Hc //.
@@ -578,19 +579,19 @@ Proof.
 Qed.
 
 Theorem size_car (x : star_exp) :
-  (If (ATOM x) "T" (EQUAL (LT (SIZE (CAR x)) (SIZE x)) "T")).
+  (If (Atom x) "T" (Equal (Lt (Size (Car x)) (Size x)) "T")).
 Proof.
   apply/ifEP => Hq.
-  rewrite /LT /= l_size_car.
+  rewrite /Lt /= l_size_car.
   - by [].
   - by apply/not_q__q_nil_E.
 Qed.
 
 Theorem size_cdr (x : star_exp) :
-  (If (ATOM x) "T" (EQUAL (LT (SIZE (CDR x)) (SIZE x)) "T")).
+  (If (Atom x) "T" (Equal (Lt (Size (Cdr x)) (Size x)) "T")).
 Proof.
   apply/ifEP => Hq.
-  rewrite /LT /= l_size_cdr.
+  rewrite /Lt /= l_size_cdr.
   - by [].
   - by apply/not_q__q_nil_E.
 Qed.
@@ -604,7 +605,7 @@ Coqの場合、書換 は、X = Y または Q -> (X = Y) のかたちでなけ�
 
 ## 「公理」の書換への変換
 
-EQUALのかたちをした「公理」を等式に変換するには、equal_eq を使います。
+Equalのかたちをした「公理」を等式に変換するには、equal_eq を使います。
  *)
 Section TLP_REWRITE_CHECK.
   
@@ -612,7 +613,7 @@ Section TLP_REWRITE_CHECK.
 
   Section TLP_REWRITE_CHECK_0.
     
-    Variable e : (EQUAL x y).
+    Variable e : (Equal x y).
     Check equal_eq e : x = y.
   End TLP_REWRITE_CHECK_0.
 
@@ -621,17 +622,17 @@ If式かたちをした「公理」を等式に変換するには、
 (iffLR ifAP) または (iffLR ifEP) を使います。
  *)
   Section TLP_REWRITE_CHECK_1.
-    (** (If Q (EQUAL X Y) "T") の場合。 *)
+    (** (If Q (Equal X Y) "T") の場合。 *)
     
-    Variable ifa : (If q (EQUAL x y) "T").
+    Variable ifa : (If q (Equal x y) "T").
     Check iffLR ifAP ifa : q -> x = y.
     
   End TLP_REWRITE_CHECK_1.
   
   Section TLP_REWRITE_CHECK_2.
-    (** (If Q "T" (EQUAL X Y)) の場合。 *)
+    (** (If Q "T" (Equal X Y)) の場合。 *)
     
-    Variable ife : (If q "T" (EQUAL x y)).
+    Variable ife : (If q "T" (Equal x y)).
     Check iffLR ifEP ife : ~ q -> x = y.
     
   End TLP_REWRITE_CHECK_2.
@@ -646,7 +647,7 @@ Section TLP_REWRITE_SAMPLE.
   
   Check equal_eq (equal_same x)      : x = x.
   Check iffLR ifAP (if_nest_A x y z) : x -> (If x y z) = y.
-  Check iffLR ifEP (size_cdr x)      : ~ ATOM x -> (LT (SIZE (CDR x)) (SIZE x)) = "T".
+  Check iffLR ifEP (size_cdr x)      : ~ Atom x -> (Lt (Size (Cdr x)) (Size x)) = "T".
   
 End TLP_REWRITE_SAMPLE.
 
