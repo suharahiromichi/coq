@@ -521,17 +521,6 @@ Qed.
 Theorem if_nest_A (x y z : star_exp) :
   (If x (Equal (If x y z) y) "T").
 Proof.
-(*
-  rewrite /If.
-  case Hx : (x == s_quote "NIL").
-  - done.
-  - rewrite /Equal.
-    case Hy : (y == y).
-    + done.
-    + move/eqP in Hy.                       (* 前提の矛盾 *)
-      done.
-   Restart.
-*)
   rewrite /If; case: eqP => //.
     by rewrite /Equal eq_refl.
 Qed.
