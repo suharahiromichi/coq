@@ -240,7 +240,6 @@ Set Printing Coercions.
 *)
 
 Coercion n_quote (n : nat) : star_exp := S_ATOM (ATOM_NAT n).
-
 Coercion s_quote (s : string) : star_exp := S_ATOM (ATOM_SYM s).
 
 
@@ -338,21 +337,20 @@ Qed.
 二重否定を解消するための補題です。
 *)
 
-Lemma not_not_nil__nil_E q : ~~ (q != "NIL") = (q == "NIL").
+Lemma not_not_nil__nil_E (q : star_exp) :
+  ~~ (q != s_quote "NIL") = (q == s_quote "NIL"). (* ここはコアーションが機能しない。 *)
 Proof.
-  by case: (q == "NIL").
+  by case: eqP.
 Qed.
 
 Lemma not_q__q_nil_E (q : star_exp) : ~q <-> q = "NIL".
 Proof.
   split.
-  - admit.
-(*
-  - rewrite /is_not_nil => /negP.
-      by rewrite not_not_nil__nil_E => /eqP.
-*)
+  - rewrite /is_not_nil => /negP H.
+    apply/eqP.
+    by rewrite -not_not_nil__nil_E.
   - by move=> Hq; rewrite Hq.
-Admitted.
+Qed.
 
 Lemma q__q_not_nil_E (q : star_exp) : q <-> q <> "NIL".
 Proof.
