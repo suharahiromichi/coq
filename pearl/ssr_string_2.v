@@ -78,7 +78,8 @@ Qed.
 (**
 - 自然数型は、決定性のある等式が使える。
 
-- 自然数型を要素とするリストや直積型などでも、決定性のある等式が使える。
+- 自然数型を要素とするリストや直積型などでも、決定性のある等式が使える
+（リストや直積型に、その準備がされているため）。
 *)
 
 (**
@@ -436,6 +437,9 @@ Definition Atom (x : star_exp) : star_exp :=
   | S_CONS _ _ => "NIL"
   end.
 
+Definition If (q a e : star_exp) : star_exp :=
+  if q == s_quote "NIL" then e else a.
+
 Definition Equal (x y : star_exp) : star_exp :=
   if x == y then "T" else "NIL".
 
@@ -444,14 +448,24 @@ Definition Equal (x y : star_exp) : star_exp :=
 # 定理証明手習い（「公理」の証明）
 
 ここまでに用意した道具を使って、証明をおこないます。
+証明スクリプトは説明のためのものであり、もっとも短いなど最適化されたものではありません。
 *)
 
 Theorem equal_same (x : star_exp) :
   (Equal x x).
 Proof.
   rewrite /Equal.
+  Check eq_refl x : (x == x) = true.
   rewrite eq_refl.                      (* eq_refl は eqType の補題 *)
   done.
+
+  Restart.
+  Show.
+  rewrite /Equal.
+  case H : (x == x).
+  - done.
+  - move/eqP in H.                          (* 前提の矛盾 *)
+    done.
 Qed.
 
 Theorem atom_cons (x y : star_exp) :
@@ -465,18 +479,80 @@ Theorem car_cons (x y : star_exp) :
   (Equal (Car (Cons x y)) x).
 Proof.
   rewrite /Equal /=.
-  rewrite eq_refl.                          (* eq_refl は eqType の補題 *)
+  rewrite eq_refl.                      (* eq_refl は eqType の補題 *)
   done.
 Qed.
 
 Theorem equal_swap (x y : star_exp) :
   (Equal (Equal x y) (Equal y x)).
 Proof.
-  rewrite {3}/Equal {2}/Equal eq_sym.     (* eq_sym は eqType の補題 *)
-  case: (y == x).                         (* まとめて場合分けする。 *)
+  rewrite {3}/Equal {2}/Equal.
+  Check eq_sym x y : (x == y) = (y == x). (* eq_sym は eqType の補題 *)
+  rewrite eq_sym.
+  case: (y == x).                        (* まとめて場合分けする。 *)
   - done.
   - done.
 Qed.
+
+Theorem equal_if (x y : star_exp) :
+  (If (Equal x y) (Equal x y) "T").
+Proof.
+    by rewrite /If; case: eqP; move/eqP.
+Qed.
+
+Theorem if_true (x y : star_exp) :
+  (Equal (If "T" x y) x).
+Proof.
+    by rewrite /Equal; case: eqP.
+Qed.
+
+Theorem if_false (x y : star_exp) :
+  (Equal (If "NIL" x y) y).
+Proof.
+    by rewrite /Equal; case: eqP.
+Qed.
+
+Theorem if_same (x y : star_exp) :
+  (Equal (If x y y) y).
+Proof.
+  rewrite /If.
+  case H : (x == s_quote "NIL").
+  - by rewrite equal_same.               (* rewrite /Equal eq_refl. *)
+  - by rewrite equal_same.               (* rewrite /Equal eq_refl. *)
+Qed.
+
+Theorem if_nest_A (x y z : star_exp) :
+  (If x (Equal (If x y z) y) "T").
+Proof.
+  rewrite /If.
+  case Hx : (x == s_quote "NIL").
+  - done.
+  - rewrite /Equal.
+    case Hy : (y == y).
+    + done.
+    + move/eqP in Hy.                       (* 前提の矛盾 *)
+      done.
+Qed.
+
+Lemma l_cons_car_cdr (x : star_exp) :
+  (Atom x) = "NIL" -> (Cons (Car x) (Cdr x)) = x.
+Proof.
+  move=> Hn.
+  case Hc: x; rewrite /Cons => //.
+    by rewrite Hc in Hn.                    (* 前提の矛盾 *)
+Qed.
+
+Theorem cons_car_cdr (x : star_exp) :
+  (If (Atom x) "T" (Equal (Cons (Car x) (Cdr x)) x)).
+Proof.
+  rewrite /If.
+  case Hq : (Atom x == s_quote "NIL").
+  - rewrite l_cons_car_cdr.
+    + by rewrite equal_same.             (* rewrite /Equal eq_refl. *)
+    + by move/eqP in Hq.
+  - done.
+Qed.
+
 
 (**
 ----------------
