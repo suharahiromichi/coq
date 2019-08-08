@@ -232,10 +232,12 @@ Coercion n_quote (n : nat) : star_exp := S_ATOM (ATOM_NAT n).
 Coercion s_quote (s : string) : star_exp := S_ATOM (ATOM_SYM s).
 
 
+Check "T" : string.
 Check "T" : star_exp.
 Check "T" : bool.
 Check "T" : Prop.
 
+Check 1 : nat.
 Check 1 : star_exp.
 Check 1 : bool.
 Check 1 : Prop.
@@ -305,8 +307,8 @@ Definition Lt (x y : star_exp) : star_exp :=
   if s2n x < s2n y then "T" else "NIL".
 Eval compute in Lt 2 3.                     (* = S_ATOM (ATOM_SYM "T") *)
 
-Definition PLUS (x y : star_exp) : star_exp := s2n x + s2n y.
-Eval compute in PLUS 2 3.                   (* = S_ATOM (ATOM_NAT 5) *)
+Definition Plus (x y : star_exp) : star_exp := s2n x + s2n y.
+Eval compute in Plus 2 3.                   (* = S_ATOM (ATOM_NAT 5) *)
 
 (**
 # 補題
@@ -340,7 +342,7 @@ Proof.
   - rewrite /is_not_nil => /negP H.
     apply/eqP.
       by rewrite -not_not_nil__nil_E.
-  - by move=> Hq; rewrite Hq.
+  - by move=> ->.
 Qed.
 
 Lemma q__q_not_nil_E (q : star_exp) : q <-> q <> "NIL".
@@ -519,6 +521,17 @@ Qed.
 Theorem if_nest_A (x y z : star_exp) :
   (If x (Equal (If x y z) y) "T").
 Proof.
+(*
+  rewrite /If.
+  case Hx : (x == s_quote "NIL").
+  - done.
+  - rewrite /Equal.
+    case Hy : (y == y).
+    + done.
+    + move/eqP in Hy.                       (* 前提の矛盾 *)
+      done.
+   Restart.
+*)
   rewrite /If; case: eqP => //.
     by rewrite /Equal eq_refl.
 Qed.
