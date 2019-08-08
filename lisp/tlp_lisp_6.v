@@ -500,21 +500,11 @@ Proof.
     by rewrite /Equal; case: eqP.
 Qed.
 
-Lemma l_if_same (x y : star_exp) :
-  (If x y y) = y.
-Proof.
-  case: x.
-  - case.
-    + done.                                 (* NAT *)
-    + rewrite /If => s.
-        by case: eqP.                       (* SYM *)
-  - done.                                   (* CONS *)
-Qed.
-
 Theorem if_same (x y : star_exp) :
   (Equal (If x y y) y).
 Proof.
-  rewrite l_if_same.
+  rewrite /If.
+  case: ifP;
     by rewrite /Equal eq_refl.
 Qed.
 
