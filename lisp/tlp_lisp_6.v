@@ -342,7 +342,7 @@ Lemma not_not_nil__nil_E (q : star_exp) :
   ~~ (q != s_quote "NIL") = (q == s_quote "NIL").
 (* コアーションが機能しないので、左辺右辺どちらの型にあわせればよいか、指定する。 *)
 Proof.
-  by case: eqP.
+    by case: eqP.
 Qed.
 
 Lemma not_q__q_nil_E (q : star_exp) : ~q <-> q = "NIL".
@@ -358,7 +358,8 @@ Lemma q__q_not_nil_E (q : star_exp) : q <-> q <> "NIL".
 Proof.
   rewrite /is_not_nil.
   split.
-  - move=> H. by apply/eqP.
+  - move=> H.
+      by apply/eqP.
   - by move/eqP.
 Qed.
 
@@ -413,16 +414,15 @@ Proof.
   - rewrite /If /Equal.
     case: eqP => Hq_nil.
     + move=> _ Hq.
-      by prove_nil.
+        by prove_nil.
     + by case: eqP.
       
   - move=> H.
-    rewrite /If; case: eqP => // Hnot_nil_q.   (* q <> NIL *)
+    rewrite /If; case: eqP => // Hnot_nil_q.    (* q <> NIL *)
     rewrite /Equal; case: ifP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
     
-    apply negbT in Hx_ne_y.
-    move/negP in Hx_ne_y.
+    move/negbT/negP in Hx_ne_y.
     apply: Hx_ne_y.
     apply/eqP.
     apply: H.
@@ -436,12 +436,13 @@ Proof.
     case: eqP => Hq_nil.
     + by case: eqP.
     + move=> _ Hnq.
-      by prove_nil.
+        by prove_nil.
     
   - move=> H.
     rewrite /If; case: eqP => // Hq_nil.        (* q = NIL  *)
     rewrite /Equal; case: eqP => // => Hx_ne_y. (* x <> y) *)
     exfalso.
+    
     apply: Hx_ne_y.
     apply: H.
       by prove_nil.
@@ -474,14 +475,14 @@ Theorem car_cons (x y : star_exp) :
   (Equal (Car (Cons x y)) x).
 Proof.
   rewrite /Equal.
-  by case: eqP.
+    by case: eqP.
 Qed.
 
 Theorem cdr_cons (x y : star_exp) :
   (Equal (Cdr (Cons x y)) y).
 Proof.
   rewrite /Equal.
-  by case: eqP.
+    by case: eqP.
 Qed.
 
 Theorem equal_swap (x y : star_exp) :
@@ -516,7 +517,7 @@ Proof.
   - case.
     + done.                                 (* NAT *)
     + rewrite /If => s.
-      by case: eqP.                         (* SYM *)
+        by case: eqP.                       (* SYM *)
   - done.                                   (* CONS *)
 Qed.
 
@@ -531,14 +532,14 @@ Theorem if_nest_A (x y z : star_exp) :
   (If x (Equal (If x y z) y) "T").
 Proof.
   rewrite /If; case: eqP => //.
-  by rewrite equal_same.
+    by rewrite equal_same.
 Qed.
 
 Theorem if_nest_E (x y z : star_exp) :
   (If x "T" (Equal (If x y z) z)).
 Proof.
   rewrite /If; case: eqP => //.
-  by rewrite equal_same.
+    by rewrite equal_same.
 Qed.
 
 Lemma l_cons_car_cdr (x : star_exp) :
@@ -546,7 +547,7 @@ Lemma l_cons_car_cdr (x : star_exp) :
 Proof.
   move=> Hn.
   case Hc: x; rewrite /Cons => //.
-  by rewrite Hc in Hn.                      (* 前提の矛盾 *)
+    by rewrite Hc in Hn.                    (* 前提の矛盾 *)
 Qed.
 
 Theorem cons_car_cdr (x : star_exp) :
@@ -564,7 +565,7 @@ Proof.
   - by move=> a Hc //.
   - move=> x Hx y Hy Hc /=.
     (* s_size x < s_size x + s_size y + 1 *)
-    by rewrite addn1 ltnS leq_addr.
+      by rewrite addn1 ltnS leq_addr.
 Qed.
 
 Lemma l_size_cdr (x : star_exp) :
@@ -575,7 +576,7 @@ Proof.
   - move=> x Hx y Hy Hc /=.
     (* s_size y < s_size x + s_size y + 1 *)
     rewrite [s_size x + s_size y]addnC.
-    by rewrite addn1 ltnS leq_addr.
+      by rewrite addn1 ltnS leq_addr.
 Qed.
 
 Theorem size_car (x : star_exp) :
