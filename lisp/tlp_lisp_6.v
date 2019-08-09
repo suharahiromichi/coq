@@ -599,7 +599,7 @@ Section TLP_REWRITE_CHECK.
   End TLP_REWRITE_CHECK_0.
 
 (**
-If式かたちをした「公理」を等式に変換するには、
+If式のかたちをした「公理」を等式に変換するには、
 (iffLR ifAP) または (iffLR ifEP) を使います。
  *)
   Section TLP_REWRITE_CHECK_1.
@@ -631,6 +631,94 @@ Section TLP_REWRITE_SAMPLE.
   Check iffLR ifEP (size_cdr x)      : ~ Atom x -> (Lt (Size (Cdr x)) (Size x)) = "T".
   
 End TLP_REWRITE_SAMPLE.
+
+(**
+# 定理の証明の例
+*)
+
+Require Import Program.
+Require Import Recdef.
+
+Function Ctxp (x : star_exp) {measure s_size x} : star_exp :=
+  if (Atom x) then
+    (Equal x "?")
+  else
+    (If (Ctxp (Car x)) "t" (Ctxp (Cdr x))).
+Proof.
+  - move=> x H.
+    apply/ltP.
+    apply: l_size_cdr.
+    apply/eqP.
+    move/eqP/eqP in H.
+    done.
+  - move=> x H.
+    apply/ltP.
+    apply: l_size_car.
+    apply/eqP.
+    move/eqP/eqP in H.
+    done.
+Defined.
+
+Function Sub (x y : star_exp) {measure s_size y} : star_exp :=
+  if (Atom y) then
+    (If (Equal y "?") x y)
+  else
+    (Cons (Sub x (Car y))
+          (Sub x (Cdr y))).
+Proof.
+  - move=> x y H.
+    apply/ltP.
+    apply: l_size_cdr.
+    apply/eqP.
+    move/eqP/eqP in H.
+    done.
+  - move=> x y H.
+    apply/ltP.
+    apply: l_size_car.
+    apply/eqP.
+    move/eqP/eqP in H.
+    done.
+Defined.
+
+Lemma test1 (s1 s2 : star_exp) :
+  (Ctxp s1) || (Ctxp s2) = (Ctxp (Cons s1 s2)).
+Proof.
+Admitted.
+
+Lemma test (x s1 s2 : star_exp) :
+  (Sub x (S_CONS s1 s2)) = (Cons (Sub x s1) (Sub x s2)).
+Proof.
+Admitted.
+
+Lemma ctxp_sub (x y : star_exp) :
+  (Ctxp x) -> (Ctxp y) -> (Ctxp (Sub x y)).
+Proof.
+  elim: y.
+  - move=> t H1 H2.
+    rewrite /Ctxp /= in H2.
+    rewrite (equal_eq H2).
+    rewrite /Sub /=.
+    rewrite /Equal /=.
+    rewrite /If /=.
+    done.
+  - move=> s1 IH1 s2 IH2 H4 H5.
+    rewrite -test1 in H5.
+    move/orP in H5.
+    rewrite test.
+    move: (IH1 H4)  => {IH1} IH1.
+    move: (IH2 H4)  => {IH2} IH2.
+    case: H5.
+    + move=> Hs1.
+      move: (IH1 Hs1) => {IH1} IH1.
+      rewrite -test1.
+      apply/orP.
+      by left.
+    + move=> Hs2.
+      move: (IH2 Hs2) => {IH2} IH2.
+      rewrite -test1.
+      apply/orP.
+      by right.
+Qed.
 
 End TLP.
 
