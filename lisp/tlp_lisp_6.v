@@ -690,7 +690,7 @@ Lemma test (x s1 s2 : star_exp) :
 Proof.
 Admitted.
 
-Lemma ctxp_sub (x y : star_exp) :
+Lemma Ctxp_Sub (x y : star_exp) :
   (Ctxp x) -> (Ctxp y) -> (Ctxp (Sub x y)).
 Proof.
   elim: y.
@@ -718,6 +718,67 @@ Proof.
       rewrite -test1.
       apply/orP.
       by right.
+Qed.
+
+(**
+## より Gallina 風の定義
+
+公理も組み込み関数も使わない。
+*)
+
+Fixpoint ctxp (x : star_exp) : star_exp :=
+  match x with
+  | S_CONS x1 x2 => if (ctxp x1) then (s_quote "T") else (ctxp x2)
+  | _ => if x == (s_quote "?") then "T" else "F"
+  end.
+
+Fixpoint sub (x y : star_exp) : star_exp :=
+  match y with
+  | S_CONS y1 y2 => S_CONS (sub x y1) (sub x y2)
+  | _ => if y == (s_quote "?") then x else y
+  end.
+
+Lemma test1' (s1 s2 : star_exp) :
+  (ctxp s1) || (ctxp s2) = (ctxp (S_CONS s1 s2)).
+Proof.
+  rewrite /=.
+    by case: ifP.
+Qed.
+
+Lemma test' (x s1 s2 : star_exp) :
+  (sub x (S_CONS s1 s2)) = (S_CONS (sub x s1) (sub x s2)).
+Proof.
+  done.
+Qed.
+
+Lemma ctxp_sub (x y : star_exp) :
+  (ctxp x) -> (ctxp y) -> (ctxp (sub x y)).
+Proof.
+  elim: y.
+  - move=> t Hx Ht /=.
+    by case: ifP.
+  - move=> s1 IHs1 s2 IHs2 H4 H5 /=.
+    rewrite -test1' in H5.
+    move/orP in H5.
+    move: (IHs1 H4)  => {IHs1} IHs1.
+    move: (IHs2 H4)  => {IHs2} IHs2.
+    case: H5.
+    + move=> Hs1.
+      move: (IHs1 Hs1) => {IHs1} IHs1.
+      case: ifP.
+      * done.
+      * move=> H1.
+        move/negbT in H1.
+        move/negP in H1.
+        done.
+    + move=> Hs2.
+      move: (IHs2 Hs2) => {IHs2} IHs2.
+      case: ifP.
+      * done.
+      * move=> H2.
+        move/negbT in H2.
+        move/negP in H2.
+        done.
 Qed.
 
 End TLP.
