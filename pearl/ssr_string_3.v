@@ -58,7 +58,7 @@ Proof.
   (* Goal : (n == 42) = false -> false *)
   - move/eqP.                     (* n <> 42 に「リフレクト」する。 *)
   (* Goal : n <> 42 -> false *)
-    done.                         (* 前提どうしが矛盾する。 *)
+    done.                                 (* 前提どうしが矛盾する。 *)
 Qed.
 
 
@@ -79,7 +79,7 @@ Check @eq_op : forall T : eqType, T -> T -> bool. (* bool値の等式 「==」 *
 つまり決定性のあるので、
 成り立つ場合(true)と、成り立たない場合(false) で場合分けできる。
 
-ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [1.])
+ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [3.])
 を使う他、``case H : (n == 42).`` のようにbool値の式を直接書くこともできる。
  *)
 
@@ -155,10 +155,42 @@ Check "ABC"%string. (* String "A" (String "B" (String "C" EmptyString)) *)
 (**
 ---------------
 # MathComp で文字列型を使う
+
+Mixin に、standard Coq で定義された、文字列型 ([2.]) のbool型の比較の関数と、
+それが、Leibnizの等式と同値である証明を与える ([4.] p.131)。
  *)
 
 Definition string_eqMixin := @EqMixin string String.eqb String.eqb_spec.
 Canonical string_eqType := EqType string string_eqMixin.
+
+Goal forall (s : string), s = "ABC" -> if (s == "ABC") then true else false.
+Proof.
+  move=> s H.              (* H : s = "ABC" *)
+  case: ifP.               (* if節 の成立と非成立で、場合分けする。 *)
+  (* Goal : (s == "ABC") = true -> true *)
+  - done.                   (* true なので自明 *)
+  (* Goal : (s == "ABC") = false -> false *)
+  - move/eqP.                  (* s <> "ABC" に「リフレクト」する。 *)
+  (* Goal : s <> "ABC" -> false *)
+    done.                                 (* 前提どうしが矛盾する。 *)
+Qed.
+
+(**
+- 文字列型に対して、Prop型の等式（「=」、Leibnizの等式）に加えて、
+bool値を返す等式（「==」、bool値の等式）が使える。
+
+- bool値の等式は、その値がtrueかfalseどどちらかに決まる。決定性がある。
+
+ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [3.])
+を使う他、``case H : (s == "ABC").`` のようにbool値の式を直接書くこともできる。
+
+- リスト型(seq)、直積型、オプション型と組み合わせとも、上記と同様になる。
+*)
+
+(**
+---------------
+# MathComp で文字列型を使う （続き）
+ *)
 
 Check "ABC" == "ABC" : bool.
 Check "ABC" == "ABC" : Prop.
