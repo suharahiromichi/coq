@@ -297,14 +297,16 @@ Qed.
 (** 線形リストとして、xを要素に含まないか。 *)
 Fixpoint memberp (x ys : star_exp) : star_exp :=
   match ys with
-  | S_CONS ys1 ys2 => if (x == ys1) then (s_quote "T") else (memberp x ys2)
+  | S_CONS ys1 ys2 =>
+    if (x == ys1) then (s_quote "T") else (memberp x ys2)
   | _ => "NIL"
   end.
 
 (** 線形リストとして、要素に重複がないか。集合であるか。 *)
 Fixpoint setp (xs : star_exp) : star_exp :=
   match xs with
-  | S_CONS xs1 xs2 => if (memberp xs1 xs2) then (s_quote "NIL") else (setp xs2)
+  | S_CONS xs1 xs2 =>
+    if (memberp xs1 xs2) then (s_quote "NIL") else (setp xs2)
   | _ => "T"
   end.
 
@@ -322,57 +324,35 @@ Fixpoint add_atoms (x ys : star_exp) : star_exp :=
 Definition atoms (x : star_exp) : star_exp :=
   add_atoms x "NIL".
 
-Lemma test s1 s2 :
-  setp s2 = setp (add_atoms s1 s2).
+Lemma step__step_add_atoms s1 s2 : setp s2 = setp (add_atoms s1 s2).
 Proof.
   elim: s1 s2 => [s1 s2 | s1' IHs1 s2' IHs2] /=.
   - rewrite /add_atom.
-    case: ifP => [| H] /=.
-    + done.
-    + case: ifP.
-      * by move/negbT/negP in H.
-      * done.
+    case: ifP => [| H] //=.
+    case: ifP => //= Hc.
+      by move/negbT/negP in H.              (* H と Hc の矛盾 *)
   - move=> s2.
     rewrite -(IHs1 (add_atoms s2' s2)).
-    rewrite IHs2.
-    done.
+      by rewrite IHs2.
+Qed.
+
+Theorem setp_add_atoms (a bs : star_exp) : (setp bs) -> (setp (add_atoms a bs)).
+Proof.
+  move=> H.
+    by rewrite -step__step_add_atoms.
 Qed.
 
 (** atoms の結果は集合である。 *)
-Theorem setp_atoms' (a : star_exp) : (setp (atoms a)).
+Theorem setp_atoms (a : star_exp) : (setp (atoms a)).
 Proof.
-  elim: a => [t|s1 IH1 s2 IH2].
-  - done.
-  - rewrite /atoms /=.
-    rewrite /atoms in IH1.
-    rewrite /atoms in IH2.
-    rewrite -test.
-    done.
-Qed.
-
-Theorem setp_add_atoms (a bs : star_exp) :
-  (setp bs) -> (setp (add_atoms a bs)).
-Proof.
-  elim: a => [t H | s1 IH1 s2 IH2].
-  - rewrite /add_atoms /add_atom.
-    case: ifP.
-    + done.
-    + move=> /= H1.
-      case: ifP.
-      * by move/negbT/negP in H1.
-      * done.
-  - move=> H.
-    by rewrite -test.
-Qed.
-
-Theorem setp_atoms (a bs : star_exp) :
-  (setp bs) -> (setp (add_atoms a bs)).
-Proof.
-  apply: setp_add_atoms.
+  rewrite /atoms.
+    by apply: setp_add_atoms.
 Qed.
 
 (**
-# TLP Chapter 10 （これは解けないだろう）
+# TLP Chapter 10
+
+（これは解けないだろう）
  *)
 
 Definition rotate (x : star_exp) : star_exp :=
@@ -404,10 +384,12 @@ Fixpoint s_size (x : star_exp) : nat :=
 
 Function align (x : star_exp) {measure s_size x} : star_exp :=
   match x with
-  | S_CONS x1 x2 => if (Atom x1) then (S_CONS x1 (align x2)) else (align (rotate x))
+  | S_CONS x1 x2 =>
+    if (Atom x1) then (S_CONS x1 (align x2)) else (align (rotate x))
   | _ => x
   end.
 Proof.
+  (* aling の引数の size が減っていかない。 *)
 Admitted.
 
 Fixpoint wt (x : star_exp) : star_exp :=
