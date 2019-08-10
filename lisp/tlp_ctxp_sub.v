@@ -250,14 +250,15 @@ Fixpoint sub (x y : star_exp) : star_exp :=
 # CTX?/SUB 定理の証明
 *)
 
-Lemma test1' (s1 s2 : star_exp) :
+Lemma l_ctxp_cons (s1 s2 : star_exp) :
   (ctxp s1) || (ctxp s2) = (ctxp (S_CONS s1 s2)).
 Proof.
   rewrite /=.
     by case: ifP.
 Qed.
 
-Lemma test' (x s1 s2 : star_exp) :
+(* 不使用 *)
+Lemma l_sub_cons (x s1 s2 : star_exp) :
   (sub x (S_CONS s1 s2)) = (S_CONS (sub x s1) (sub x s2)).
 Proof.
   done.
@@ -268,28 +269,22 @@ Lemma ctxp_sub (x y : star_exp) :
 Proof.
   elim: y.
   - move=> t Hx Ht /=.
-    by case: ifP.
-  - move=> s1 IHs1 s2 IHs2 H4 H5 /=.
-    rewrite -test1' in H5.
-    move/orP in H5.
-    move: (IHs1 H4)  => {IHs1} IHs1.
-    move: (IHs2 H4)  => {IHs2} IHs2.
-    case: H5.
+      by case: ifP.
+  - move=> s1 IHs1 s2 IHs2 H /=.
+    rewrite -l_ctxp_cons.
+    move/orP.
+    case.
     + move=> Hs1.
-      move: (IHs1 Hs1) => {IHs1} IHs1.
       case: ifP.
       * done.
-      * move=> H1.
-        move/negbT in H1.
-        move/negP in H1.
+      * move: (IHs1 H Hs1) => {IHs1} {Hs1} Hs1.
+        move/negbT/negP.                    (* Hs1と矛盾する。 *)
         done.
     + move=> Hs2.
-      move: (IHs2 Hs2) => {IHs2} IHs2.
+      move: (IHs2 H Hs2) => {IHs2} {Hs2} Hs2.
       case: ifP.
       * done.
-      * move=> H2.
-        move/negbT in H2.
-        move/negP in H2.
+      * move/negbT/negP.                    (* Hs2と矛盾する。 *)
         done.
 Qed.
 
