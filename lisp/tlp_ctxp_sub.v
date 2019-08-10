@@ -297,16 +297,14 @@ Qed.
 (** 線形リストとして、xを要素に含まないか。 *)
 Fixpoint memberp (x ys : star_exp) : star_exp :=
   match ys with
-  | S_CONS ys1 ys2 =>
-    if (x == ys1) then (s_quote "T") else (memberp x ys2)
+  | S_CONS ys1 ys2 => if (x == ys1) then (s_quote "T") else (memberp x ys2)
   | _ => "NIL"
   end.
 
 (** 線形リストとして、要素に重複がないか。集合であるか。 *)
 Fixpoint setp (xs : star_exp) : star_exp :=
   match xs with
-  | S_CONS xs1 xs2 =>
-    if (memberp xs1 xs2) then (s_quote "NIL") else (setp xs2)
+  | S_CONS xs1 xs2 => if (memberp xs1 xs2) then (s_quote "NIL") else (setp xs2)
   | _ => "T"
   end.
 
@@ -336,7 +334,8 @@ Proof.
       by rewrite IHs2.
 Qed.
 
-Theorem setp_add_atoms (a bs : star_exp) : (setp bs) -> (setp (add_atoms a bs)).
+Theorem setp_add_atoms (a bs : star_exp) :
+  (setp bs) -> (setp (add_atoms a bs)).
 Proof.
   move=> H.
     by rewrite -step__step_add_atoms.
@@ -384,8 +383,7 @@ Fixpoint s_size (x : star_exp) : nat :=
 
 Function align (x : star_exp) {measure s_size x} : star_exp :=
   match x with
-  | S_CONS x1 x2 =>
-    if (Atom x1) then (S_CONS x1 (align x2)) else (align (rotate x))
+  | S_CONS x1 x2 => if (Atom x1) then (S_CONS x1 (align x2)) else (align (rotate x))
   | _ => x
   end.
 Proof.
