@@ -231,7 +231,9 @@ Definition s2s (x : star_exp) : string :=
   end.
 
 (**
-# CTX? と SUB の定義
+# TLP Chapter 7
+
+## CTX? と SUB の定義
 *)
 
 Fixpoint ctxp (x : star_exp) : star_exp :=
@@ -247,7 +249,7 @@ Fixpoint sub (x y : star_exp) : star_exp :=
   end.
 
 (**
-# CTX?/SUB 定理の証明
+## CTX?/SUB 定理の証明
 *)
 
 Lemma l_ctxp_cons (s1 s2 : star_exp) :
@@ -287,6 +289,137 @@ Proof.
       * move/negbT/negP.                    (* Hs2と矛盾する。 *)
         done.
 Qed.
+
+(**
+# TLP Chapter 8
+ *)
+
+(** 線形リストとして、xを要素に含まないか。 *)
+Fixpoint memberp (x ys : star_exp) : star_exp :=
+  match ys with
+  | S_CONS ys1 ys2 => if (x == ys1) then (s_quote "T") else (memberp x ys2)
+  | _ => "NIL"
+  end.
+
+(** 線形リストとして、要素に重複がないか。集合であるか。 *)
+Fixpoint setp (xs : star_exp) : star_exp :=
+  match xs with
+  | S_CONS xs1 xs2 => if (memberp xs1 xs2) then (s_quote "NIL") else (setp xs2)
+  | _ => "T"
+  end.
+
+(** 線形リストとして、要素に重複がないなら、追加する。 *)
+Definition add_atom (x ys : star_exp) : star_exp :=
+  if (memberp x ys) then ys else (S_CONS x ys).
+
+(** xの要素それぞれに対して、追加する *)
+Fixpoint add_atoms (x ys : star_exp) : star_exp :=
+  match x with
+  | S_CONS x1 x2 => add_atoms x1 (add_atoms x2 ys)
+  | _ => add_atom x ys
+  end.
+
+Definition atoms (x : star_exp) : star_exp :=
+  add_atoms x "NIL".
+
+Lemma test s1 s2 :
+  setp s2 = setp (add_atoms s1 s2).
+Proof.
+  elim: s1 s2 => [s1 s2 | s1' IHs1 s2' IHs2] /=.
+  - rewrite /add_atom.
+    case: ifP => [| H] /=.
+    + done.
+    + case: ifP.
+      * by move/negbT/negP in H.
+      * done.
+  - move=> s2.
+    rewrite -(IHs1 (add_atoms s2' s2)).
+    rewrite IHs2.
+    done.
+Qed.
+
+(** atoms の結果は集合である。 *)
+Theorem setp_atoms' (a : star_exp) : (setp (atoms a)).
+Proof.
+  elim: a => [t|s1 IH1 s2 IH2].
+  - done.
+  - rewrite /atoms /=.
+    rewrite /atoms in IH1.
+    rewrite /atoms in IH2.
+    rewrite -test.
+    done.
+Qed.
+
+Theorem setp_add_atoms (a bs : star_exp) :
+  (setp bs) -> (setp (add_atoms a bs)).
+Proof.
+  elim: a => [t H | s1 IH1 s2 IH2].
+  - rewrite /add_atoms /add_atom.
+    case: ifP.
+    + done.
+    + move=> /= H1.
+      case: ifP.
+      * by move/negbT/negP in H1.
+      * done.
+  - move=> H.
+    by rewrite -test.
+Qed.
+
+Theorem setp_atoms (a bs : star_exp) :
+  (setp bs) -> (setp (add_atoms a bs)).
+Proof.
+  apply: setp_add_atoms.
+Qed.
+
+(**
+# TLP Chapter 10 （これは解けないだろう）
+ *)
+
+Definition rotate (x : star_exp) : star_exp :=
+  match x with
+  | S_CONS (S_CONS x11 x12) x2 => (S_CONS x11 (S_CONS x12 x2))
+  | _ => "NIL"
+  end.
+
+Theorem rotare_cons (x y z : star_exp) :
+  (rotate (S_CONS (S_CONS x y) z)) = (S_CONS x (S_CONS y z)).
+Proof.
+  done.
+Qed.
+
+Require Import Program.
+Require Import Recdef.
+
+Definition Atom (x : star_exp) : star_exp :=
+  match x with
+  | S_ATOM _ => "T"
+  | S_CONS _ _ => "NIL"
+  end.
+
+Fixpoint s_size (x : star_exp) : nat :=
+  match x with
+  | S_CONS a b => s_size a + s_size b + 1
+  | _ => 0
+  end.
+
+Function align (x : star_exp) {measure s_size x} : star_exp :=
+  match x with
+  | S_CONS x1 x2 => if (Atom x1) then (S_CONS x1 (align x2)) else (align (rotate x))
+  | _ => x
+  end.
+Proof.
+Admitted.
+
+Fixpoint wt (x : star_exp) : star_exp :=
+  match x with
+  | S_CONS x1 x2 => (wt x1).*2 + (wt x2)
+  | _ => 1
+  end.
+
+Theorem align_align (x : star_exp) : (align (align x)) = (align x).
+Proof.
+Admitted.
+
 
 End TLP.
 
