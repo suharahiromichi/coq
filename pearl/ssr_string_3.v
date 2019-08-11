@@ -283,7 +283,7 @@ Definition star_eqMixin (T : eqType) := @EqMixin (star T) (@eqStar T) (@star_eqP
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
 (**
-# S式と S式の埋め込み
+# S式とS式の埋め込み
 
 以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
 *)
@@ -346,13 +346,6 @@ Lemma l_ctxp_cons (s1 s2 : star_exp) :
 Proof.
   rewrite /=.
     by case: ifP.
-Qed.
-
-(* 不使用 *)
-Lemma l_sub_cons (x s1 s2 : star_exp) :
-  (sub x (S_CONS s1 s2)) = (S_CONS (sub x s1) (sub x s2)).
-Proof.
-  done.
 Qed.
 
 Lemma ctxp_sub (x y : star_exp) :
@@ -458,213 +451,143 @@ TBD
 
 
 (**
-----------------
-# MathComp で自然数型を使う（続き）
+---------------
+# 証明の詳細 （ifP 補題について）
+
+ifP は ``ssrbool.v`` で定義されている。そのソースコードと、[3.]にも説明がある。
  *)
 
-Goal forall (n : nat), (n == 42) || (n != 42).
+Goal forall (n : nat), n = 42 -> if (n == 42) then true else false.
 Proof.
-  move=> n.
-  case: (n == 42).
-  - done.                                   (* n == 42 の場合 *)
-  - done.                                   (* n != 42 の場合 *)
+  move=> n Hn.
+(**
+``Hn : n = 42`` …… n は 42 である、これは全体の前提である。
+ *)  
+
+(**
+ifP の引数を明示的に書くと。。。   
+*)  
+  move: (@ifP bool (n == 42) true false) => Hif.
+  Check Hif : if_spec (n == 42) true false ((n == 42) = false) (n == 42)
+                      (if n == 42 then true else false).
+
+(**
+場合分けする。
+ *)
+  case: Hif => Hcond.
+
+(**
+``Hcond : (n == 42) = true`` の場合。
+ *)
+  - Check @IfSpecTrue bool (n == 42) true false ((n == 42) = true)
+    : n == 42 -> if_spec (n == 42) true false ((n == 42) = true) true true.
+(**
+``Goal : true`` …… これは、成立する。
+*)
+    done.
+
+(**
+``Hcond : (n == 42) = false`` の場合。
+ *)
+  - Check @IfSpecTrue bool (n == 42) true false ((n == 42) = false)
+    : n == 42 -> if_spec (n == 42) true false ((n == 42) = false) true true.
+(**
+``Goal : false`` …… これは、成立しないけれども、
+*)
+    move/eqP in Hcond.
+(**
+``Hcond : (n == 42) = false`` …… bool値 = false を…
+
+``Hcond : n <> 42`` …… Prop型にリフレクトする。
+*)
+
+(**
+``Hcond : n <> 42`` は ``not (n = 42)`` なので、
+
+``Hn : n = 42`` …… H と Hcond が矛盾するして、証明終わり。
+*)
+    done.
 Qed.
 
-Goal forall (l : seq nat), (l == [:: 42]) || (l != [:: 42]).
-Proof.
-  move=> l.
-  case: (l == [:: 42]).
-  - done.                                   (* l == [:: 42] の場合 *)
-  - done.                                   (* l != [:: 42] の場合 *)
-Qed.
 
 (**
-- 自然数型は、決定性のある等式が使える。
-
-- 自然数型を要素とするリストや直積型などでも、決定性のある等式が使える
-（リストや直積型に、その準備がされているため）。
+--------------
+# eqMixin のまとめ
 *)
 
 (**
----------------
-# MathComp で自然数型を使う（続き）
+
+| eqType   | sort  | op | axiom | 補足 | 
+
+|:----------------|:--------|:---------------|:---------------|:---------------|
+
+| bool_eqType     | bool    | eqb (1)        | eqbP           |                |
+
+| nat_eqType      | nat     | eqn (2)        | eqnP           |                |
+
+| ascii_eqType    | ascii   | eqb (*)        | eqb_spec (*)   | Module Ascii   |
+
+| string_eqType   | string  | eqb (*)        | eqb_spec (*)   | Module String  |
+
+| seq_eqType      | seq T   | eqseqP         | eqseq          |                |
+
+| prod_eqType T   | prod T  | pair_eq        | pair_eqP       |                |
+
+| option_eqType T | option T | opt_eq        | opt_eqP        |                |
+
+| star_eqType T   | star T   | eqCons        | star_eqP       | 本資料で定義    |
+
+
+
+(1) Standard Coq では、beq
+
+(2) Standard Coq では、beq_nat
+
+(*) Standard Coq で定義
+
  *)
-
-Check 1      : nat                   : Type.
-Check 1      : nat_eqType            : eqType.
-Check 1      : Equality.sort nat_eqType.
-(* 「==」 *)
-Check 1 == 1                : bool.
-Check @eq_op nat_eqType 1 1 : bool.
-Fail Check @eq_op nat 1 1.
-
-Check [:: 1] : seq nat               : Type.
-Check [:: 1] : seq_eqType nat_eqType : eqType.
-Check [:: 1] : Equality.sort (seq_eqType nat_eqType).
-(* 「==」 *)
-Check [:: 1] == [:: 1]                             : bool.
-Check @eq_op (seq_eqType nat_eqType) [:: 1] [:: 1] : bool.
-Fail Check @eq_op (seq nat) [:: 1] [:: 1].
-
-(**
-- nat_eqType は、eqType (決定性のある等式のある型）のインスタンスである。
-
-- 1 は、nat型 であると同時に、nat_eqType型である（と見える）。コアーション。
-
-- 「==」の引数の 1 は、nat_eqType であると対応づけできる。カノニカル・プロジェクション
-*)
-
-
-
-(**
----------------
-# Coq の String型 (続き)
-
-決定性のある等式は、Starndard Coqでも定義されている。ただし、
-
-- 型毎に関数が違う（Notation で、「=?」と定義されてはいる）。
- *)
-
-Goal forall (s1 s2 : string), (String.eqb s1 s2) || (~~ String.eqb s1 s2).
-Proof.
-  move=> s1 s2.
-  case: (String.eqb s1 s2).
-  - done.
-  - done.
-Qed.
-
-(**
-- string のリストか可能だが、それに対して「==」が使えない。
-*)
-
-Check [:: "ABC"] : seq string.
-Fail Check [:: "ABC"] : seq_eqType string.
-Fail Check [:: "ABC"] == [:: "ABC"].
-
-(**
----------------
-# MathComp で文字列型を使う（続き）
- *)
-
-Check "ABC"      : string                   : Type.
-Check "ABC"      : string_eqType            : eqType.
-Check "ABC"      : Equality.sort string_eqType.
-(* 「==」 *)
-Check "ABC" == "ABC"                   : bool.
-Check @eq_op string_eqType "ABC" "ABC" : bool.
-Fail Check @eq_op string "ABC" "ABC".
-
-
-Check [:: "ABC"] : seq string               : Type.
-Check [:: "ABC"] : seq_eqType string_eqType : eqType.
-Check [:: "ABC"] : Equality.sort (seq_eqType string_eqType).
-(* 「==」 *)
-Check [:: "ABC"] == [:: "ABC"]                                : bool.
-Check @eq_op (seq_eqType string_eqType) [:: "ABC"] [:: "ABC"] : bool.
-Fail Check @eq_op (seq string) [:: "ABC"] [:: "ABC"].
-
-(**
-- string_eqType は、eqType (決定性のある等式のある型）のインスタンスである、ようになった。
-
-- "ABC" は、string型 であると同時に、string_eqType型である（と見える）、ようにになった。
-
-- 「==」の引数の "ABC" は、string_eqType であると対応づけできる、ようになった。
-*)
-
-(**
----------------
-# 補足説明 (その1)
-
-Mixin について：
- *)
-
-Check @EqMixin
-  : forall (T : Type)                       (* (1) *)
-           (op : T -> T -> bool),           (* (2) *)
-    (forall x y, reflect (x = y) (op x y))  (* (3) *)
-    -> Equality.mixin_of T.
-
-Check @EqMixin nat                          (* (1) *)
-      eqn                                   (* (2) *)
-      (@eqnP)                               (* (3) *)
-  : Equality.mixin_of nat.
-
-Check @EqMixin (seq nat)
-      eqseq
-      (@eqseqP nat_eqType)
-  : Equality.mixin_of (seq nat).
-
-Check @EqMixin string                       (* (1) *)
-      String.eqb                            (* (2) *)
-      String.eqb_spec                       (* (3) *)
-  : Equality.mixin_of string.
-
-Check @EqMixin (seq string)
-      eqseq
-      (@eqseqP string_eqType)
-  : Equality.mixin_of (seq string).
-
-(**
-(1) ベースとなる型、ここでは string
-
-(2) 決定性のある、bool型を返す等式。
-
-(3) (2)が、「=」と同値であることの証明を与える。ただし、bool型のtrueなら証明可能とみなす。
-
-String型については、(1)(2)(3)とも、String.v で定義されてりるので、それを使う。
-
-より詳しい説明は、[4.][5.][6.]。
-  *)
-
-(**
----------------
-# 補足説明 (その2)
-
-String.v での定義について：
-*)
-
-(**
-(2) bool値を返す等式の定義
- *)
-
-Print String.eqb.
-(**
-```
-
-Fixpoint eqb s1 s2 : bool :=
- match s1, s2 with
- | EmptyString, EmptyString => true
- | String c1 s1', String c2 s2' =>
-     if (Ascii.eqb c1 c2) then (eqb s1' s2') else false
- | _,_ => false
- end.
-
-```
-
-*)
-
-(**
-(3) の証明、リフレクティブ補題 ([5.])
-*)
-
-Check String.eqb_spec
-  : forall s1 s2 : string, reflect (s1 = s2) (String.eqb s1 s2).
-
 
 
 (**
 ----------------
-# 「定理証明手習い」の実現（まとめ）
+# 「定理証明手習い」の証明について - なにを証明しているのか - 
 
-S式（二分木のリスト）をもち、特定のATOMINCな要素(NIL)以外を真とするような、
-Lispの意味を形式化したといえます。
+## 対象にしているLispの性質（意味）
 
-TLPの前半では線形なリストを扱っていますが、それは、空リスト([])以外を真とする
-ものですから、まったく異なったものになると思います。試みてください！
+- S式、すなわち、二分木の構造に基づく。
+節をCONS、葉をATOMICと呼ぶ。
 
-前述のとおり、評価規則についてはCoqに依存しています。
-Eval-Quoteの評価規則を厳密に実装するには、なんらかのバーチャルマシンを定義する
-ことになるのだろうとおもいます。これも試みてください！！
+- 特定のATOMINCなシンボルであるNILを偽とする。
+それ以外のATOMICな要素は真とする。ATOMICでない要素も真とする。
+
+注記：LispではNILは空リストを示すわけではない。
+LispのCONSは直積に近いもの。
+もっとも深い位置にあるCONSの右側(CDR)は、かならずしもNILでなくてよい
+また、その要素がNILでないなら（CDRを取った果てがNILでないなら）、偽を表すわけではない。
+
+なお、上記は、ATOMICな要素に対してCARやCDRをとったときに、
+便宜的にNILを返すことについてのべているのではない。
+
+（注記終わり）
+
+
+「定理証明手習い」の前半では線形なリストを扱っているが、
+これは、空リストをNILとして偽とするものである。
+この場合の性質（意味）は、ここでの内容と別なものになると思います（試みてください）。
+
+
+## 対象にしているないLispの性質（意味）
+
+- 評価規則についてはCoqに依存する。simpl タクティクを使うため。
+
+- CARやCDRなどの組込関数を実装せず、match を使う。
+Coq の Fixpoint と simpl タクティクをつかうため。
+
+Fixpoint で well-formed で定義するためには match が必要である。
+また、simpl タクティクは、コンストラクタされた値をmatchで分解する
+（ιイオタ簡約）をおこなうが、CARやCDRを定義して使うとこれが機能しない。
+すなわち、Coqを使う必要性がなくなってしまう。
+
  *)
 
 
