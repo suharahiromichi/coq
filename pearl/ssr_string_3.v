@@ -283,6 +283,7 @@ Definition star_eqMixin (T : eqType) := @EqMixin (star T) (@eqStar T) (@star_eqP
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
 (**
+----------------
 # S式とS式の埋め込み
 
 以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
@@ -318,6 +319,7 @@ Coercion s_quote (s : string) : star_exp := (@S_ATOM string s).
 
 
 (**
+----------------
 # 「定理証明手習い」第7章
 
 ## CTX? と SUB の定義
@@ -336,6 +338,7 @@ Fixpoint sub (x y : star_exp) : star_exp :=
   end.
 
 (**
+----------------
 # 「定理証明手習い」第7章
 
 ## CTX?/SUB 定理の証明
@@ -501,23 +504,28 @@ ifP の引数を明示的に書くと。。。
 
 リフレクションの際にビューヒントから補完される補題は elimTF である。
  *)
+    move/eqP in Hcond.
+    Undo 1.
+    Check elimTF :
+      forall (P : Prop) (b c : bool), reflect P b -> b = c -> if c then P else ~ P.
     Check elimTF eqP : (n == 42) = false -> if false then n = 42 else n <> 42.
     Check elimTF eqP : (n == 42) = false -> n <> 42.
     Check elimNTF eqP : ~~ (n == 42) = false -> n = 42. (* 参考 *)
-    move/eqP in Hcond.
+    apply (elimTF eqP) in Hcond.
+    rewrite /= in Hcond.
 
 (**
 [4.] では、リフレクションを
 bool型とProp型 (bool型の等式 ``n == 42`` と Leibnizの等式 ``n = 42``)
 の相互の変換として説明しているが、
-boolの等式については ``(n == 42) = false`` のような
-否定の場合にも ``n <> 42`` のとの間でリフレクションが可能である。
+boolの等式については ``(n == 42) = false`` 
+の場合に ``n <> 42`` のような否定との間でリフレクションが可能である。
 *)
 
 (**
 ``Hcond : n <> 42`` は ``not (n = 42)`` なので、
 
-``Hn : n = 42`` …… から、 Hn と Hcond が矛盾するので証明終わり。
+``Hn : n = 42`` …… とから、 Hn と Hcond が矛盾するので証明終わり。
 *)
     done.
 Qed.
