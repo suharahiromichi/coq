@@ -517,7 +517,7 @@ Qed.
 
 (**
 
-| eqType   | sort  | op | axiom | 補足 | 
+| eqType   | sort  | op | axiom | Module (3) | 
 
 |:----------------|:--------|:---------------|:---------------|:---------------|
 
@@ -525,23 +525,25 @@ Qed.
 
 | nat_eqType      | nat     | eqn (2)        | eqnP           |                |
 
-| ascii_eqType    | ascii   | eqb (*)        | eqb_spec (*)   | Module Ascii   |
+| ascii_eqType    | ascii   | eqb (*)        | eqb_spec (*)   | Ascii   |
 
-| string_eqType   | string  | eqb (*)        | eqb_spec (*)   | Module String  |
+| string_eqType   | string  | eqb (*)        | eqb_spec (*)   | String  |
 
-| seq_eqType      | seq T   | eqseqP         | eqseq          |                |
+| seq_eqType eT   | seq T   | eqseqP         | eqseq          |                |
 
-| prod_eqType T   | prod T  | pair_eq        | pair_eqP       |                |
+| prod_eqType eT  | prod T  | pair_eq        | pair_eqP       |                |
 
-| option_eqType T | option T | opt_eq        | opt_eqP        |                |
+| option_eqType eT | option T | opt_eq        | opt_eqP        |                |
 
-| star_eqType T   | star T   | eqCons        | star_eqP       | 本資料で定義    |
+| star_eqType eT   | star T   | eqCons        | star_eqP       | 本資料で定義    |
 
 
 
 (1) Standard Coq では、beq
 
 (2) Standard Coq では、beq_nat
+
+(3) 空欄は、Moduleの外からも参照可能であるため、省いた。
 
 (*) Standard Coq で定義
 
