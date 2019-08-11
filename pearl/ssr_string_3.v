@@ -432,7 +432,7 @@ https://www.lambdanote.com/collections/littleprover
 
 [6.] リフレクションのしくみをつくる
 
-https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
+[4https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
 
 
 
@@ -494,17 +494,30 @@ ifP の引数を明示的に書くと。。。
 (**
 ``Goal : false`` …… これは、成立しないけれども、
 *)
-    move/eqP in Hcond.
 (**
 ``Hcond : (n == 42) = false`` …… bool値 = false を…
 
 ``Hcond : n <> 42`` …… Prop型にリフレクトする。
+
+リフレクションの際にビューヒントから補完される補題は elimTF である。
+ *)
+    Check elimTF eqP : (n == 42) = false -> if false then n = 42 else n <> 42.
+    Check elimTF eqP : (n == 42) = false -> n <> 42.
+    Check elimNTF eqP : ~~ (n == 42) = false -> n = 42. (* 参考 *)
+    move/eqP in Hcond.
+
+(**
+[4.] では、リフレクションを
+bool型とProp型 (bool型の等式 ``n == 42`` と Leibnizの等式 ``n = 42``)
+の相互の変換として説明しているが、
+boolの等式については ``(n == 42) = false`` のような
+否定の場合にも ``n <> 42`` のとの間でリフレクションが可能である。
 *)
 
 (**
 ``Hcond : n <> 42`` は ``not (n = 42)`` なので、
 
-``Hn : n = 42`` …… H と Hcond が矛盾するして、証明終わり。
+``Hn : n = 42`` …… から、 Hn と Hcond が矛盾するので証明終わり。
 *)
     done.
 Qed.
