@@ -1,5 +1,5 @@
 (**
-MathComp で文字列を使う - プログラムの証明への利用 -
+MathComp で文字列を使う - 「定理証明手習い」の証明をてみた
 ======
 2019/08/10
 
@@ -71,8 +71,8 @@ Qed.
 - Prop型の等式（「=」、Leibnizの等式）に加えて、
 bool値を返す等式（「==」、bool値の等式）が使える。
  *)
-Check @eq    : forall T : Type,   T -> T -> Prop. (* Leibnizの等式 「=」 *)
-Check @eq_op : forall T : eqType, T -> T -> bool. (* bool値の等式 「==」 *)
+Check @eq    : forall T  : Type,   T  -> T  -> Prop. (* Leibnizの等式 「=」 *)
+Check @eq_op : forall eT : eqType, eT -> eT -> bool. (* bool値の等式 「==」 *)
 
 (**
 - bool値の等式は、その値がtrueかfalseどどちらかに決まる。
