@@ -113,6 +113,9 @@ Section Sample2.
     move=> HPa; move: {HPa} (iffLR (PQequiv a) HPa).
     Undo 1.
     move=> HPa; apply (iffLR (PQequiv a)) in HPa; move: HPa.
+    Undo 1.
+    (* 実は、Standard Coq のapplyは、iffLR と iffRL を補完できる。 *)
+    move=> HPa; apply PQequiv in HPa; move: HPa.
     apply.
   Qed.
 
@@ -131,11 +134,14 @@ Section Sample2.
     apply: (iffLR (PQequiv a) HPa).
     Undo 1.
     apply (iffLR (PQequiv a)); apply HPa.
+    Undo 1.
+    (* 実は、Standard Coq のapplyは、iffLR と iffRL を補完できる。 *)
+    apply PQequiv; apply HPa.
   Qed.
 End Sample2.
 
 (**
-# 標準のView Hint の例 (iffLRn, iffRLn, iffLR, iffRL)
+# 標準のView Hint の例 (iffLR, iffRL, iffLRn, iffRLn)
 
 SSReflectのソースコードを見ると、theories/ssreflect.v の最後に四つのView Hintが宣言されています。
 *)
