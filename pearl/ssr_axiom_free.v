@@ -169,17 +169,39 @@ Check @functional_extensionality            (* Lemma *)
   : forall (A B : Type) (f g : A -> B), (forall x : A, f x = g x) -> f = g.
 
 (**
-これに対して、MathComp では finfun.v で次の補題が証明されています。
+これに対して、MathComp では finfun で定義された「=1」については、
+intros 操作だけで関数拡張できます。eq_ffun は 関数どうしの「=1」の等式にする補題です。
 *)
 
-Check ffunP : forall (aT : finType) (rT : aT -> Type) (* lemma *)
-                     (f1 f2 : {ffun forall x : aT, rT x}),
-    (forall x : aT, f1 x = f2 x) <-> f1 = f2.
+Check @eq_ffun : forall (aT : finType) (rT : Type) (g1 g2 : aT -> rT),
+    g1 =1 g2 -> [ffun x => g1 x] = [ffun x => g2 x].
 
+Definition predI' {fT : finType} (s1 s2 : fT -> bool) := [ffun x => s1 x && s2 x].
+Goal forall {fT : finType} (s1 s2 : pred fT) , predI' s1 s2 = predI' s2 s1.
+Proof.
+  move=> T s1 s2.
+  apply/eq_ffun.
+  move=> x /=.
+    (* Goal : s1 x && s2 x = s2 x && s1 x *)
+    by rewrite Bool.andb_comm.
+Qed.
+
+(**
+Standard Coq のライブラリを使う場合は、functional_extensionalityを 使って証明できます。
+*)
+Definition predI'' {fT : finType} (s1 s2 : fT -> bool) := (fun x => s1 x && s2 x).
+Goal forall {fT : finType} (s1 s2 : pred fT) , predI'' s1 s2 = predI'' s2 s1.
+Proof.
+  move=> T s1 s2.
+  rewrite /predI''.
+  apply: functional_extensionality => x.
+    (* Goal : s1 x && s2 x = s2 x && s1 x *)
+    by rewrite Bool.andb_comm.
+Qed.
 
 (**
 --------
-# (proof irrelevance)
+# 的外れ、見当違いの意味 (proof irrelevance)
 
 Standard Coq では ProofIrrelevance.v でで定義されています。
 
@@ -192,12 +214,58 @@ Check proof_irrelevance                     (* Axiom *)
 これに対して、MathComp では eqtype.v と ssrnat.v で次の補題が証明されています。
 *)
 
-Check bool_irrelevance : forall (b : bool) (p1 p2 : b), p1 = p2.
 Check eq_irrelevance : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
+
+(**
+natとboolは、より一般的な eqType を使って証明している。
+ *)
+Check bool_irrelevance : forall (b : bool) (p1 p2 : b), p1 = p2.
+Check nat_irrelevance : forall (x y : nat) (E E' : x = y), E = E'.
 Check le_irrelevance : forall (m n : nat) (le_mn1 le_mn2 : (m <= n)%coq_nat),
     le_mn1 = le_mn2.
 Check lt_irrelevance : forall (m n : nat) (lt_mn1 lt_mn2 : (m < n)%coq_nat),
     lt_mn1 = lt_mn2.
+
+(* ****** *)
+
+Definition odds := {x : nat | odd x}.       (* booelan sigma type *)
+
+(**
+証人(witness) が同じでも、証拠の異なるふたつの数、one_odd1とone_odd2 がある。
+  *)
+Definition one_odd1 : odds.
+Proof.
+    by exists 1.
+Defined.
+Print one_odd1.    (* = exist (fun x : nat => odd x) 1 is_true_true *)
+
+Definition one_odd2 : odds.
+Proof.
+    by exists 1; rewrite -(addn0 1) addn0.  (* 1+0-0 *)
+Defined.
+Print one_odd2.    (* = exist (fun x : nat => odd x) 1 ...略... *)
+
+(**
+one_odd1 の証拠は is_true_true すなわち true = true 。
+one_odd2 の証拠も同様に boolの等式の形である。
+（同じ型の）等式どうしは等しいという定理 irrelevance を使って証明できる。
+ *)
+
+Goal one_odd1 = one_odd2.
+Proof.
+  try reflexivity.                       (* still not convertible *)
+  congr exist.                           (* (true = true) = 略 *)
+    by apply: bool_irrelevance.
+Qed.
+
+(**
+Standard Coq のライブラリを使う場合は、proof_irrelevance を使って証明できます。
+*)
+Goal one_odd1 = one_odd2.
+Proof.
+  congr exist.                           (* (true = true) = 略 *)
+  apply: proof_irrelevance.
+Qed.
 
 
 (**
@@ -222,4 +290,3 @@ https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_classical_logic.v
  *)
 
 (* END *)
-
