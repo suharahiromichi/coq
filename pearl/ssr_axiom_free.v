@@ -69,6 +69,7 @@ Check NNPP : forall p : Prop, ~ ~ p -> p.   (* Lemma *)
 これに対して、MathComp では ssrbool.v で次の補題が証明されています。
 *)
 Check classicP : forall P : Prop, classically P <-> ~ ~ P. (* Lemma *)
+Check classic_EM : forall P : Prop, classically (decidable P). (* Lemma *)
 
 (** ----------------
 ## 二重否定除去
@@ -93,7 +94,7 @@ Qed.
 
 (**
 classicP と この補題を使うと、``m = n`` について二重否定除去が証明できます。
-当然、m と n はeqType型の型（たとえな nat_eqType で nat）である必要があります。
+当然、m と n はeqType型の型（たとえば nat_eqType で nat）である必要があります。
   *)
 
 Lemma ssr_nnpp : forall (m n : nat), ~ m <> n -> m = n.
@@ -104,7 +105,7 @@ Proof.
 Qed.  
 
 (**
-Standard Coq の場合はNNPPを使って証明できます。
+Standard Coq のライブラリを使う場合は、NNPPを使って証明できます。
 *)
 Lemma coq_nnpp : forall (m n : nat), ~ m <> n -> m = n.
 Proof.
@@ -117,47 +118,45 @@ Qed.
 ## 排中律
 *)
 
+(**
+classic_EM は、``decidable := fun P : Prop => {P} + {~ P}`` は、
+classically が成り立つということです。
+
+ここで P を Prop型の等式 ``P : m = n`` に限って考え、
+そして m と n が eqType型の型であるとすると、decidable は成立します。
+そのため、eqType型の型の等式については、classic_EM を使用せずに、排中律を証明できます。
+*)
+
 Check classic_EM : forall P : Prop, classically ({P} + {~ P}). (* Lemma *)
 Check classic_EM : forall P : Prop, classically (decidable P). (* Lemma *)
 
 Check sumboolP : forall (Q : Prop) (decQ : decidable Q), reflect Q decQ.
 Check decP : forall (P : Prop) (b : bool), reflect P b -> decidable P.
 
-Lemma orb__dec {eT : eqType} (m n : eT) : (m == n) || (m != n) -> decidable (m = n).
+Lemma dec_eq (m n : nat) : decidable (m = n).
 Proof.
-  move=> /orP Hb.
   apply: (@decP (m = n) (m == n)).
-  apply: (iffP idP).
-  case: Hb.
-  - by move/eqP.
-  - move/eqP=> H.
-    move/eqP.
-    done.
-  - case: Hb.
-    * done.
-    * by move/eqP.
+  apply: (iffP idP); by move/eqP.
 Qed.
 
-Lemma dec__orb {eT : eqType} (m n : eT) : decidable (m = n) -> (m == n) || (m != n).
+Lemma ssr_EM (m n : nat) : m = n \/ m <> n.
 Proof.
-    by case=> /eqP Hc; apply/orP; [left | right].
+    by case: (dec_eq m n); by [left | right].
 Qed.
 
-Goal forall (m n : nat), decidable (m = n). (* m = n \/ m <> n *)
+
+(**
+Standard Coq のライブラリを使う場合は、classicを使って証明できます。
+*)
+Lemma coq_EM (m n : nat) : m = n \/ m <> n.
 Proof.
-  move=> m n.
-  move: (@classic_EM (m = n)) => Hc.
-  move: (Hc ((m == n) || (m != n))) => {Hc} Hc.
-  apply: orb__dec.
-  apply: Hc.
-  apply: dec__orb.
+  by apply: classic.
 Qed.
-
 
 
 (**
 -------
-# 関数拡張 ()
+# 関数拡張 (functional_extensionality)
 
 Standard Coq では FunctionalExtensionality.v で定義されています。
  *)
@@ -169,10 +168,18 @@ Check @functional_extensionality_dep        (* Axiom *)
 Check @functional_extensionality            (* Lemma *)
   : forall (A B : Type) (f g : A -> B), (forall x : A, f x = g x) -> f = g.
 
+(**
+これに対して、MathComp では finfun.v で次の補題が証明されています。
+*)
+
+Check ffunP : forall (aT : finType) (rT : aT -> Type) (* lemma *)
+                     (f1 f2 : {ffun forall x : aT, rT x}),
+    (forall x : aT, f1 x = f2 x) <-> f1 = f2.
+
 
 (**
 --------
-# 
+# (proof irrelevance)
 
 Standard Coq では ProofIrrelevance.v でで定義されています。
 
@@ -180,6 +187,18 @@ Standard Coq では ProofIrrelevance.v でで定義されています。
 Require Import ProofIrrelevance.
 Check proof_irrelevance                     (* Axiom *)
   : forall (P : Prop) (p1 p2 : P), p1 = p2.
+
+(**
+これに対して、MathComp では eqtype.v と ssrnat.v で次の補題が証明されています。
+*)
+
+Check bool_irrelevance : forall (b : bool) (p1 p2 : b), p1 = p2.
+Check eq_irrelevance : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
+Check le_irrelevance : forall (m n : nat) (le_mn1 le_mn2 : (m <= n)%coq_nat),
+    le_mn1 = le_mn2.
+Check lt_irrelevance : forall (m n : nat) (lt_mn1 lt_mn2 : (m < n)%coq_nat),
+    lt_mn1 = lt_mn2.
+
 
 (**
 ---------------
@@ -203,117 +222,4 @@ https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_classical_logic.v
  *)
 
 (* END *)
-
-
-
-
-
-
-Check classic_bind : forall P Q : Prop,
-  (P -> classically Q) -> (classically P -> classically Q).
-
-Check classic_imply :
-  forall P Q, (P -> classically Q) -> classically (P -> Q).
-
-Check classic_pick : forall T P,
-    classically ({x : T | P x} + (forall x, ~ P x)).
-
-Goal forall P : Prop, P -> classically P.
-Proof.
-  move=> P H.
-  rewrite /classically.
-  move=> b Hb.
-  move: (Hb H).
-  
-
-Goal forall (m n : nat), m = n -> classically (m = n).
-Proof.
-  move=> m n H.
-  rewrite /classically.
-  move=> b Hb.
-  move: (Hb H).
-  
-
-Search _ (_ \/ _).
-
-
-
-
-
-
-
-
-
-
-    
-
-
-  
-
-
-  apply/(iffP idP).
-  
-  
-
-
-
-
-
-
-
-
-
-Goal forall (m n : nat), m = n \/ m <> n.
-Proof.
-  move=> m n.
-  move: (@classic_EM (m = n)) => Hc.
-  move: (Hc ((m == n) || (m != n))) => {Hc} Hc.
-  apply: dec__or.
-  
-
-  
-
-  apply: dec__or.
-  move: (@classic_EM (m = n)).
-  rewrite /classically => Hc.
-  move: (Hc (m == n)) => Hb.
-
-
-
-
-
-  move: (Hc ((m == n) || (m != n))).
-  case.
-  case: (Hc ((m == n) || (m != n))).
-
-
-
-Goal forall (m n : nat), m = n \/ m <> n.
-Proof.
-  move=> m n.
-  move: (@classic_EM (m = n)).
-
-  apply: dec__or.
-  move: (@classic_EM (m = n)).
-  rewrite /classically => Hc.
-  move: (Hc (m == n)) => Hb.
-  
-
-
-  Check Decidable.dec_or.
-
-
-  Check dec_or.
-  apply: dec_or.
-
-  
-
-
-
-
-
-Goal forall (a b : nat), classically (a = b) (a == b).
-
-Print classically.
-
 
