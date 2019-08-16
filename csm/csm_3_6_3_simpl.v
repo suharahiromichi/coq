@@ -36,10 +36,10 @@ Mathcomp で simpl をコマンドしてもよい。
 simpl は、（ゴールに対して）項の簡約をするタクティクで、
 simplification または simplify の略である。
 多少駄洒落はあるかもしれないが[2]、「簡単な」計算を行うコマンドという説明は適切ではない。
-簡約のことを計算と呼ぶのは、支障ないだろう。
+ただし、簡約のことを計算と呼ぶのは支障ないだろう。
 
-計算はできる限り、繰り返し、行われる。
-Coqなので必ず停止する。また、2回以上繰り返す意味はない。
+計算はできる限り繰り返し行われる。なので、simpl を2回以上繰り返す意味はない。
+一方で、Coqなので必ず停止することは保証されている。
  *)
 Goal true && (true || false).
 Proof.
@@ -92,7 +92,13 @@ Proof.
   move=> bs.
   simpl.
   (* pair1 (bs, (1, 2)) ==>  (first bs, 1) *)
-
+  
+  (* 参考 *)
+  Eval cbv delta                in pair1 (bs, (1, 2)).
+  Eval cbv delta beta           in pair1 (bs, (1, 2)).
+  Eval cbv delta beta zeta      in pair1 (bs, (1, 2)).
+  Eval cbv delta beta zeta iota in pair1 (bs, (1, 2)).
+  
   Restart.
   move=> bs.
   rewrite /pair1.
@@ -106,7 +112,7 @@ Qed.
 (1) pair1 の引数である (bs, (1, 2)) は、pair コンストラクタを逆につかって分解できる。
 bs と (1,2) の pair。
     
-(2) pair1 を unfold (ηイータ簡約）する。
+(2) pair1 を unfold (ηイータ簡約）する。変数を置き換える（δデルタ簡約）とも。
 
 (3) 実引数による仮引数の書換（βベータ簡約）をする。
 
