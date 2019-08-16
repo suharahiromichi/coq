@@ -184,7 +184,7 @@ bool値を返す等式（「==」、bool値の等式）が使える。
 ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [3.])
 を使う他、``case H : (s == "ABC").`` のようにbool値の式を直接書くこともできる。
 
-- リスト型(seq)、直積型、オプション型と組み合わせとも、上記と同様になる。
+- リスト型(seq)、直積型、オプション型と組み合わせとも、上記と同様になる（次頁）。
 *)
 
 (**
@@ -226,7 +226,7 @@ Inductive star T : Type :=
 (**
 Coqはinductiveなデータ型に対して、inductionできるようになります。
 そのために、star_ind という公理が自動的に定義されます。
-これは、TLPの第7賞で説明されている "star induction" と同じものです。
+これは、TLPの第7章で説明されている "star induction" と同じものです。
 
 Coqによる証明でも、この公理を直接使用することはなく、
 star型のデータに対して、
@@ -235,8 +235,9 @@ inductionタクティクまたはelimタクティクを使用すると、
  *)
 
 (**
-Star型についても、booleanの等号を定義して、論理式の等号にリフレク
-ションできるようにします。
+Star型についても、eqTypeのインスタンス型を定義します。
+
+最初に、``star T`` 型どうしの bool値の等式を定義します。
 *)
 
 Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
@@ -246,6 +247,9 @@ Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
   | _ => false
   end.
 
+(**
+次いで、Leinizの等式とbool値の等式とが同値であることを証明します。
+*)
 Lemma eqCons {T : eqType} (x y x' y' : star T) :
   (x = x' /\ y = y') -> @S_CONS T x y = @S_CONS T x' y'.
 Proof.
@@ -279,6 +283,9 @@ Proof.
          by apply/andP; split.
 Qed.
 
+(**
+eqTypeのインスタンス型を定義します。
+*)
 Definition star_eqMixin (T : eqType) := @EqMixin (star T) (@eqStar T) (@star_eqP T).
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
@@ -455,7 +462,7 @@ TBD
 
 (**
 ---------------
-# 証明の詳細 （ifP 補題について）
+# 証明の詳細 （``case: ifP`` と ``move/eqP`` について)
 
 ifP は ``ssrbool.v`` で定義されている。そのソースコードと、[3.]にも説明がある。
  *)
@@ -541,6 +548,8 @@ Qed.
 | eqType   | sort  | op | axiom | Module (3) | 
 
 |:----------------|:--------|:---------------|:---------------|:---------------|
+
+| unit_eqType     | unit    | fun _ _ => true  | unit_eqP     |                |
 
 | bool_eqType     | bool    | eqb (1)        | eqbP           |                |
 
