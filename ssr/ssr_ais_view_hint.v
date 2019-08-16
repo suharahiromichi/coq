@@ -4,6 +4,7 @@ SSReflectのViewとView Hintについてのメモ
 
 2014_10_26 @suharahiromichi
 2019_5_7 @suharahiromichi
+2019_8_16 @suharahiromichi
 *)
 
 (**
@@ -283,6 +284,41 @@ View Hint以前の話題ですが、次のようにも書けます。
     apply/orP/orP; case; by [right | left].
   Qed.
 End Sample4_5.
+
+(**
+# 補足
+
+View Hint の elimT と introT で、eqP などのreflect述語によって、
+Prop型と bool型を相互変換できると考えてまちがいではありません。
+ゴールないし仮定がbool型である場合は（コアーションの）``b = true`` を含めて
+View Hint が探されるため、elimTF と introTF が使われるようです。
+
+これは、``b = false`` である場合にも適用されます。
+否定を含めて考えると、Prop型と bool型との相互変換より以上のことができるます。
+
+たとえば、以下のすべてが、move/eqP または apply/eqP で変換可能です。
+
+*)
+Section Sample4_6.
+
+  Variable n : nat.
+
+  Check (@elimT (n = 42) (n == 42) eqP)          : n == 42 -> n = 42.
+  Check (@elimN (n = 42) (n == 42) eqP)          : n != 42 -> n <> 42.
+  Check (@elimTF (n = 42) (n == 42) true eqP)    : (n == 42) = true -> n = 42.
+  Check (@elimNTF (n = 42) (n == 42) true eqP)   : (n != 42) = true -> n <> 42.
+  Check (@elimTF (n = 42) (n == 42) false eqP)   : (n == 42) = false -> n <> 42.
+  Check (@elimNTF (n = 42) (n == 42) false eqP)  : (n != 42) = false -> n = 42.
+  
+  Check (@introT (n = 42) (n == 42) eqP)         : n = 42 -> (n == 42).
+  Check (@introN (n = 42) (n == 42) eqP)         : n <> 42 -> n != 42.
+  Check (@introTF (n = 42) (n == 42) true eqP)   : n = 42 -> (n == 42) = true.
+  Check (@introNTF (n = 42) (n == 42) true eqP)  : n <> 42 -> (n != 42) = true.
+  Check (@introTF (n = 42) (n == 42) false eqP)  : n <> 42 -> (n == 42) = false.
+  Check (@introNTF (n = 42) (n == 42) false eqP) : n = 42 -> (n != 42) = false.
+
+End Sample4_6.
+
 
 (**
 # まだ説明できていない事項
