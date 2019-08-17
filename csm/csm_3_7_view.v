@@ -308,16 +308,20 @@ Section Test5.
     - admit.                                (* goal : b1 -> b2 *)
     - admit.                                (* goal : b2 -> b1 *)
 
+      Show Proof.
     Restart.
     Show.
 
-    Check @introTF (b1 = b2) (b1 == b2) true idP.
-    apply: (introTF idP).
-    (* Goal : if b2 then b1 else ~ b1 *)
-
-    Check @equivPif b2 b2 b1 idP.
-
-    Check @equivPif (b1 = b2) (b1 = b2) (b1 == b2) eqP.
+    Check @introTF b1 b1 b2 idP.
+    (* (if b2 then b1 else ~ b1) -> b1 = b2 *)
+    Check @equivPif b2 b1 b2 idP.
+    (* (b1 -> b2) -> (b2 -> b1) -> if b2 then b1 else ~ b1 *)
     
+    apply: (@introTF b1 b1 b2 idP).
+    (* goal : if b2 then b1 else ~ b1 *)
+    apply: (@equivPif b2 b1 b2 idP).
+    - admit.                                (* goal : b1 -> b2 *)
+    - admit.                                (* goal : b2 -> b1 *)
+  Admitted.                                 (* OK *)
     
 (* END *)
