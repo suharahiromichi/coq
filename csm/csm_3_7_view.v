@@ -243,12 +243,10 @@ Propの型の命題をboolの型に変換できる、と理解して間違いで
 
     Undo 1. Show.
     move/(@elimTF P b true V).
-(*    
+    
     Undo 1. Show.
     move=> Hb.
-    apply/V.
-    Show Proof.
-*)
+    apply: V.                               (* View Hint は使わない？ *)
     done.
   Qed.
   
@@ -275,9 +273,9 @@ End Test3.
 ## apply/(iffP idP)
 
 reclect P b のリフレクション補題そのものを証明する場合に使います。
+（実は View Hintは使いません）
 
 b -> P と P -> b のふたつのゴールを生成します。
-
  *)
 
 Section Test4.
@@ -287,11 +285,14 @@ Section Test4.
 
   Goal reflect P b.
   Proof.
-    apply/(iffP idP).
+    apply/(iffP idP).                       (* apply: (iffP idP) *)
+    Show Proof.
     - admit.                                (* goal : b -> P *)
     - admit.                                (* goal : P -> b *)      
   Admitted.                                 (* OK *)
   
+  
+
 End Test4.
 
 (**
