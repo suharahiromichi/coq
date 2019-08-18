@@ -1,0 +1,181 @@
+DIGEST db828df81ad06291ab9cb6ca310206ee
+Fcsm_2_5_logic
+R29:37 mathcomp.ssreflect.ssreflect <> <> lib
+sec 585:589 <> Logic
+var 604:604 Logic A
+var 606:606 Logic B
+var 608:608 Logic C
+prf 657:663 <> contrap
+R667:667 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R674:679 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R688:688 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R682:685 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R686:686 Coq.Init.Logic <> :type_scope:'~'_x not
+R687:687 csm_2_5_logic <> Logic.A var
+R680:680 Coq.Init.Logic <> :type_scope:'~'_x not
+R681:681 csm_2_5_logic <> Logic.B var
+R669:672 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R673:673 csm_2_5_logic <> Logic.B var
+R668:668 csm_2_5_logic <> Logic.A var
+R713:715 Coq.Init.Logic <> not def
+R713:715 Coq.Init.Logic <> not def
+R713:715 Coq.Init.Logic <> not def
+prf 774:781 <> contrap'
+R785:785 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R792:797 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R806:806 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R800:803 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R804:804 Coq.Init.Logic <> :type_scope:'~'_x not
+R805:805 csm_2_5_logic <> Logic.A var
+R798:798 Coq.Init.Logic <> :type_scope:'~'_x not
+R799:799 csm_2_5_logic <> Logic.B var
+R787:790 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R791:791 csm_2_5_logic <> Logic.B var
+R786:786 csm_2_5_logic <> Logic.A var
+prf 1186:1196 <> AndOrDistL'
+R1220:1224 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1200:1200 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1207:1212 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1219:1219 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1202:1205 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1201:1201 csm_2_5_logic <> Logic.A var
+R1206:1206 csm_2_5_logic <> Logic.C var
+R1214:1217 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1213:1213 csm_2_5_logic <> Logic.B var
+R1218:1218 csm_2_5_logic <> Logic.C var
+R1225:1225 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1232:1236 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1227:1230 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1226:1226 csm_2_5_logic <> Logic.A var
+R1231:1231 csm_2_5_logic <> Logic.B var
+R1237:1237 csm_2_5_logic <> Logic.C var
+prf 1584:1595 <> AndOrDistL''
+R1619:1623 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R1599:1599 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1606:1611 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1618:1618 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1601:1604 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1600:1600 csm_2_5_logic <> Logic.A var
+R1605:1605 csm_2_5_logic <> Logic.C var
+R1613:1616 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1612:1612 csm_2_5_logic <> Logic.B var
+R1617:1617 csm_2_5_logic <> Logic.C var
+R1624:1624 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1631:1635 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R1626:1629 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R1625:1625 csm_2_5_logic <> Logic.A var
+R1630:1630 csm_2_5_logic <> Logic.B var
+R1636:1636 csm_2_5_logic <> Logic.C var
+prf 3180:3192 <> AndOrDistL'''
+R3216:3220 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R3196:3196 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3203:3208 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3215:3215 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3198:3201 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3197:3197 csm_2_5_logic <> Logic.A var
+R3202:3202 csm_2_5_logic <> Logic.C var
+R3210:3213 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3209:3209 csm_2_5_logic <> Logic.B var
+R3214:3214 csm_2_5_logic <> Logic.C var
+R3221:3221 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3228:3232 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3223:3226 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3222:3222 csm_2_5_logic <> Logic.A var
+R3227:3227 csm_2_5_logic <> Logic.B var
+R3233:3233 csm_2_5_logic <> Logic.C var
+prf 3612:3621 <> AndOrDistL
+R3645:3649 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R3625:3625 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3632:3637 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3644:3644 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3627:3630 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3626:3626 csm_2_5_logic <> Logic.A var
+R3631:3631 csm_2_5_logic <> Logic.C var
+R3639:3642 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3638:3638 csm_2_5_logic <> Logic.B var
+R3643:3643 csm_2_5_logic <> Logic.C var
+R3650:3650 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3657:3661 Coq.Init.Logic <> :type_scope:x_'/\'_x not
+R3652:3655 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R3651:3651 csm_2_5_logic <> Logic.A var
+R3656:3656 csm_2_5_logic <> Logic.B var
+R3662:3662 csm_2_5_logic <> Logic.C var
+prf 3935:3938 <> JDM'
+R3957:3960 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R3956:3956 csm_2_5_logic <> T var
+R3996:4000 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R3973:3975 Coq.Init.Logic <> :type_scope:'~'_x not
+R3995:3995 Coq.Init.Logic <> :type_scope:'~'_x not
+R3976:3983 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R3989:3991 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R3988:3988 csm_2_5_logic <> T var
+R3992:3992 csm_2_5_logic <> P var
+R3994:3994 csm_2_5_logic <> x var
+R4011:4011 Coq.Init.Logic <> :type_scope:'~'_x not
+R4012:4012 csm_2_5_logic <> P var
+R4014:4014 csm_2_5_logic <> x var
+prf 4133:4137 <> JDM''
+R4156:4159 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R4155:4155 csm_2_5_logic <> T var
+R4195:4199 Coq.Init.Logic <> :type_scope:x_'<->'_x not
+R4172:4174 Coq.Init.Logic <> :type_scope:'~'_x not
+R4194:4194 Coq.Init.Logic <> :type_scope:'~'_x not
+R4175:4182 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4188:4190 Coq.Init.Logic <> :type_scope:'exists'_x_'..'_x_','_x not
+R4187:4187 csm_2_5_logic <> T var
+R4191:4191 csm_2_5_logic <> P var
+R4193:4193 csm_2_5_logic <> x var
+R4210:4210 Coq.Init.Logic <> :type_scope:'~'_x not
+R4211:4211 csm_2_5_logic <> P var
+R4213:4213 csm_2_5_logic <> x var
+var 5459:5466 Logic ExMidLow
+R5488:5491 Coq.Init.Logic <> :type_scope:x_'\/'_x not
+R5487:5487 csm_2_5_logic <> P var
+R5492:5492 Coq.Init.Logic <> :type_scope:'~'_x not
+R5493:5493 csm_2_5_logic <> P var
+prf 5523:5530 <> notnotEq
+R5550:5553 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R5554:5554 csm_2_5_logic <> P var
+R5545:5546 Coq.Init.Logic <> :type_scope:'~'_x not
+R5547:5548 Coq.Init.Logic <> :type_scope:'~'_x not
+R5549:5549 csm_2_5_logic <> P var
+R5598:5605 csm_2_5_logic <> Logic.ExMidLow var
+R5608:5609 Coq.Init.Logic <> :type_scope:'~'_x not
+R5598:5605 csm_2_5_logic <> Logic.ExMidLow var
+R5608:5609 Coq.Init.Logic <> :type_scope:'~'_x not
+R5598:5605 csm_2_5_logic <> Logic.ExMidLow var
+R5608:5609 Coq.Init.Logic <> :type_scope:'~'_x not
+R5656:5663 csm_2_5_logic <> Logic.ExMidLow var
+R5656:5663 csm_2_5_logic <> Logic.ExMidLow var
+R5656:5663 csm_2_5_logic <> Logic.ExMidLow var
+prf 5687:5695 <> notnotEq'
+R5715:5718 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R5719:5719 csm_2_5_logic <> P var
+R5710:5711 Coq.Init.Logic <> :type_scope:'~'_x not
+R5712:5713 Coq.Init.Logic <> :type_scope:'~'_x not
+R5714:5714 csm_2_5_logic <> P var
+R5822:5829 csm_2_5_logic <> Logic.ExMidLow var
+R5832:5833 Coq.Init.Logic <> :type_scope:'~'_x not
+R5822:5829 csm_2_5_logic <> Logic.ExMidLow var
+R5832:5833 Coq.Init.Logic <> :type_scope:'~'_x not
+R5822:5829 csm_2_5_logic <> Logic.ExMidLow var
+R5832:5833 Coq.Init.Logic <> :type_scope:'~'_x not
+R6144:6151 csm_2_5_logic <> Logic.ExMidLow var
+R6144:6151 csm_2_5_logic <> Logic.ExMidLow var
+R6144:6151 csm_2_5_logic <> Logic.ExMidLow var
+prf 6602:6611 <> notnotEq''
+R6631:6634 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R6635:6635 csm_2_5_logic <> P var
+R6626:6627 Coq.Init.Logic <> :type_scope:'~'_x not
+R6628:6629 Coq.Init.Logic <> :type_scope:'~'_x not
+R6630:6630 csm_2_5_logic <> P var
+R6679:6686 csm_2_5_logic <> Logic.ExMidLow var
+R6689:6690 Coq.Init.Logic <> :type_scope:'~'_x not
+R6679:6686 csm_2_5_logic <> Logic.ExMidLow var
+R6689:6690 Coq.Init.Logic <> :type_scope:'~'_x not
+R6679:6686 csm_2_5_logic <> Logic.ExMidLow var
+R6689:6690 Coq.Init.Logic <> :type_scope:'~'_x not
+R6731:6738 csm_2_5_logic <> Logic.ExMidLow var
+R6731:6738 csm_2_5_logic <> Logic.ExMidLow var
+R6731:6738 csm_2_5_logic <> Logic.ExMidLow var
+R6798:6802 csm_2_5_logic Logic <> sec
