@@ -22,6 +22,12 @@ Open Scope string_scope.
 
 (**
 # 3.9.2 Lemma ... Qed
+
+Lemma/Defined による定義（QedでなくDefinedで終わる）についての補足説明
+
+Ordinal型（0から4までの5個の自然数からなる型）の値の定義が解り易く、実用的だろう。
+
+'I_5型の、0〜4 をそれぞれ定義してみた。
  *)
 
 Definition p0 := @Ordinal 5 0 is_true_true.
@@ -30,93 +36,48 @@ Lemma      p2 : 'I_5. Proof. by apply: (@Ordinal 5 2). Defined.
 Definition p3 : 'I_5. Proof. by apply: (@Ordinal 5 3). Qed.
 Lemma      p4 : 'I_5. Proof. by apply: (@Ordinal 5 4). Qed.
 
-Compute p0 + p1.                (* = 1 *)
-Compute p0 + p2.                (* = 2 *)
-Compute p0 + p3.                (* = let '@Ordinal _ m _ := p3 in m *)
+(**
+自然数のサブタイプなので、自然数と加算して自然数が得られるはずである。
+ *)
+
+Compute 0 + p0.                 (* = 0 : nat *)
+Compute 0 + p1.                 (* = 1 : nat *)
+Compute 0 + p2.                 (* = 2 : nat *)
+Compute 0 + p3.                 (* = let '@Ordinal _ m _ := p3 in m : nat *)
+Compute 0 + p4.                 (* = let '@Ordinal _ m _ := p4 in m : nat *)
+
+(**
+「:=」で定義する場合、または Defined で終わる定義の値については、
+自然数の値が求められていることがわかる。
+
+両方が、「:=」または「Defined」の場合だけ、
+自然数の値が求められていることがわかる。
+  *)
+
 Compute p0 + p4.                (* = let '@Ordinal _ m _ := p4 in m *)
-
-
-Definition p0' : 'I_4. Proof. by apply: (@Ordinal 4 0). Qed.
-Definition p1' : 'I_4. Proof. by apply: (@Ordinal 4 1). Qed.
-Print p1'.                  (* = Ordinal (n:=4) (m:=1) is_true_true *)
-
-Compute p0' + p1'.
+Compute p4 + 0.
 (*
-= (fix Ffix (x x0 : nat) {struct x} : nat :=
+  = (fix Ffix (x x0 : nat) {struct x} : nat :=
   match x with
   | 0 => x0
   | x1.+1 => (Ffix x1 x0).+1
-  end) (let '@Ordinal _ m _ := p0' in m) (let '@Ordinal _ m _ := p1' in m)
+  end) (let '@Ordinal _ m _ := p4 in m) 0
+*)
+
+(**
+ただし、Print した結果を見ても、判らない。   
  *)
 
-Definition p0 : 'I_4. Proof. by apply: (@Ordinal 4 0). Defined.
-Definition p1 : 'I_4. Proof. by apply: (@Ordinal 4 1). Defined.
-Print p1.                   (* = Ordinal (n:=4) (m:=1) is_true_true *)
+Print p0.            (* = Ordinal (n:=5) (m:=0) is_true_true : 'I_5 *)
+Print p1.            (* = Ordinal (n:=5) (m:=1) is_true_true : 'I_5 *)
+Print p2.            (* = Ordinal (n:=5) (m:=2) is_true_true : 'I_5 *)
+Print p3.            (* = Ordinal (n:=5) (m:=3) is_true_true : 'I_5 *)
+Print p4.            (* = Ordinal (n:=5) (m:=4) is_true_true : 'I_5 *)
 
-Compute p0 + p1.                            (* = 1 *)
+(**
+なお、「:=」で定義する場合は、
+Lemma や Theorem, Corollay, Fact, Proposition, Remark
+は使えない。
+*)
 
-
-Definition string_dec_qed : forall s1 s2 : string, {s1 = s2} + {s1 <> s2}.
-Proof.
- decide equality; apply ascii_dec.
-Qed.
-Print string_dec_qed.
-
-
-Definition string_dec : forall s1 s2 : string, {s1 = s2} + {s1 <> s2}.
-Proof.
- decide equality; apply ascii_dec.
-Defined.
-Print string_dec.
-
-Definition eqString (s t : string) : bool :=
-  match string_dec_qed s t with
-  | left _ => true
-  | right _ => false
-  end.
-
-Definition eqString (s t : string) : bool :=
-  match string_dec s t with
-  | left _ => true
-  | right _ => false
-  end.
-
-Goal "ABC" = "ABC".
-destruct (@string_dec_qed "ABC" "ABC").
-Admitted.
-
-Lemma transparent_proof_qed : 1 + 2 = 3.
-Proof.
-  apply/eqP.
-  apply: eq_refl.
-  Show Proof.
-Qed.
-Print transparent_proof_qed.                (* = eq_refl. *)
-(* transparent_proof_qed = [eta eqP] (eqxx (T:=nat_eqType) (1 + 2)) *)
-
-Lemma transparent_proof_defined : 1 + 2 = 3.
-Proof.
-  apply/eqP.
-  apply: eq_refl.
-  Show Proof.
-Defined.
-Print transparent_proof_defined.            (* = eq_refl. *)
-(* transparent_proof_defined = [eta eqP] (eqxx (T:=nat_eqType) (1 + 2)) *)
-
-
-Definition f_qed : nat.
-  refine (1 + 2).
-
-
-
-Definition transparent_proof_def : 1 + 2 = 3 := eq_refl.
-Print transparent_proof_def.                (* = eq_refl. *)
-
-Definition pred_strong4 : forall (n : nat), n > 0 -> {m : nat | n = S m}.
-  refine (fun n =>
-    match n with
-      | O => fun _ => False_rec _ _
-      | S n' => fun _ => exist _ n' _
-    end).
-Defined.
-Print pred_strong4.
+(* END *)
