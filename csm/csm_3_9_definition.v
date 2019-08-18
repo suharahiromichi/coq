@@ -80,4 +80,52 @@ Lemma や Theorem, Corollay, Fact, Proposition, Remark
 は使えない。
 *)
 
+(**
+証明のなかで simpl を実行してみるとよく判る。
+
+CRM : Controlling the reduction strategies and the conversion algorithm
+
+https://coq.inria.fr/refman/proof-engine/vernacular-commands.html#controlling-the-reduction-strategies-and-the-conversion-algorithm
+
+- 「:=」やDefined で定義したqualidを transparent と呼ぶ。unfold（δ簡約）できる。
+
+- Qed で定義したqualidを opaque と呼ぶ。unfold（δ簡約）できる。
+ *)
+
+(**
+p0 は transparent である。
+*)
+
+Goal 0 + p0 = 0.
+Proof.
+    by rewrite /p0 /=.
+Qed.
+
+(**
+transparent と opaque を切り替えるコマンドがある。
+*)
+
+Goal 0 + p0 = 0.
+Proof.
+  Opaque p0.
+  Fail rewrite /p0.                         (* p0 is opaque *)
+  
+  Transparent p0.
+  rewrite /p0.
+  done.
+Qed.
+
+(**
+p4 は opaque である。
+opaque なものを transparent にはできない。
+*)
+
+Goal 0 + p4 = 4.
+Proof.
+  Fail rewrite /p4.                         (* p4 is opaque *)
+  Fail Transparent p4. (* Cannot make p4 transparent because it was declared opaque. *)
+Admitted.
+
+Print Strategy p4.                          (* transparent と表示された。。。 *)
+
 (* END *)
