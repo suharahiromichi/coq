@@ -54,6 +54,11 @@ Compute 0 + p4.                 (* = let '@Ordinal _ m _ := p4 in m : nat *)
 自然数の値が求められていることがわかる。
   *)
 
+Compute p0 + p1.                            (* 1 *)
+Compute p1 + p0.                            (* 1 *)
+Compute p2 + p1.                            (* 3 *)
+Compute p1 + p2.                            (* 3 *)
+
 Compute p0 + p4.                (* = let '@Ordinal _ m _ := p4 in m *)
 Compute p4 + 0.
 (*
