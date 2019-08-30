@@ -34,9 +34,6 @@ Check Magma : forall carrier : Type, (carrier -> carrier -> carrier) -> magma.
 (** ****************** *)
 Check and.                             (* Prop -> Prop -> Prop *)
 Definition prop_and_magma := @Magma Prop and. (* 型インスタンス *)
-Canonical prop_and_magma.
-Print Canonical Projections.                (* カノニカルの表示 *)
-(** [Prop <- carrier ( prop_and_magma )] *)
 
 Print prop_and_magma.
 (** [{| carrier := Prop; operator := and |} : magma] *)
@@ -44,13 +41,6 @@ Compute carrier prop_and_magma.      (* 台 Prop を取り出す。 *)
 Compute @operator prop_and_magma.    (* オペレータ and を取り出す。 *)
 
 Lemma PropMagmaFalse (x y : carrier prop_and_magma) :
-  operator x False -> y.
-Proof.
-  rewrite /=; by case.
-Qed.
-
-(** これは Canonical 宣言が必要である。 *)
-Lemma PropMagmaFalse' (x y : Prop) :
   operator x False -> y.
 Proof.
   rewrite /=; by case.
@@ -72,9 +62,6 @@ Qed.
 (** Magma [(nat, +)] *)
 (** **************** *)
 Definition nat_plus_magma := @Magma nat plus. (* 型インスタンス *)
-Canonical nat_plus_magma.
-Print Canonical Projections.                (* カノニカルの表示 *)
-(** [nat <- carrier ( nat_plus_magma )]  *)
 
 Print nat_plus_magma.
 (** [{| carrier := nat; operator := Init.Nat.add |} : magma] *)
@@ -82,13 +69,6 @@ Compute carrier nat_plus_magma.     (* 台 nat を取り出す。 *)
 Compute @operator nat_plus_magma.   (* オペレータ plus を取り出す。 *)
 
 Lemma NatMagmaPlus (x y : carrier nat_plus_magma) :
-  operator x y = x + y.
-Proof.
-  rewrite /=; by [].
-Qed.
-
-(** これは Canonical 宣言が必要である。 *)
-Lemma NatMagmaPlus' (x y : nat) :
   operator x y = x + y.
 Proof.
   rewrite /=; by [].
@@ -133,9 +113,6 @@ Check addnA : associative addn.
 Check addnA 1 2 3 : 1 + (2 + 3) = 1 + 2 + 3.
 
 Definition nat_plus_semigroup := @Semigroup nat_plus_magma addnA. (* 型インスタンス *)
-Canonical nat_plus_semigroup.
-Print Canonical Projections.                (* カノニカルの表示 *)
-(** [nat_plus_magma <- scarrier ( nat_plus_semigroup )] *)
 
 Print nat_plus_semigroup.
 (** [{| scarrier := nat_plus_magma; assoc := addnA |}] *)
@@ -143,6 +120,22 @@ Print nat_plus_semigroup.
 (**
 # 3.15.2 コマンド Canonical
 *)
+
+Canonical nat_plus_magma.
+Print Canonical Projections.                (* カノニカルの表示 *)
+(** [nat <- carrier ( nat_plus_magma )]  *)
+
+Lemma NatMagmaPlus' (x y : nat) :
+  operator x y = x + y.
+Proof.
+  rewrite /=; by [].
+Qed.
+
+(* ********* *)
+
+Canonical nat_plus_semigroup.
+Print Canonical Projections.                (* カノニカルの表示 *)
+(** [nat_plus_magma <- scarrier ( nat_plus_semigroup )] *)
 
 Notation "a ^^ b" := (@operator _ a b) (at level 30, right associativity).
 (** 次でも同じ： *)
@@ -155,10 +148,8 @@ Section TEST1.
   
   Check @operator nat_plus_magma :
     carrier nat_plus_magma -> carrier nat_plus_magma -> carrier nat_plus_magma.
-  
-  Check @operator nat_plus_magma a b.
-  
-  Check a ^^ b.
+  Check @operator nat_plus_magma a b : carrier nat_plus_magma.
+  Check a ^^ b : carrier nat_plus_magma.
   
   Lemma natPlusExample1 (x y z : carrier nat_plus_magma) :
     x ^^ (y ^^ z) = (x ^^ y) ^^ z.
@@ -166,6 +157,7 @@ Section TEST1.
       by rewrite (@assoc nat_plus_semigroup).
   Qed.
 End TEST1.
+
 
 (** [Canonical nat_plus_magma] は必要。 *)
 (** [Canonical nat_plus_semigroup] がなくても良い例  *)
@@ -176,9 +168,9 @@ Section TEST2.
     carrier nat_plus_magma -> carrier nat_plus_magma -> carrier nat_plus_magma.
   Compute carrier nat_plus_magma.           (* nat *)
   Check @operator nat_plus_magma : nat -> nat -> nat.
-  
   Check @operator nat_plus_magma a b : carrier nat_plus_magma.
-  Check operator a b : carrier nat_plus_magma.
+  
+  Check operator a b : carrier nat_plus_magma. (* canonical 宣言が必要 *)
   Check a ^^ b  : carrier nat_plus_magma.
 
   Check @operator nat_plus_magma a b : nat.
@@ -202,16 +194,33 @@ Qed.
 
 (**
 # 補足
- *)
+*)
+
+(** ****************** *)
+(** Magma [(Prop, /\)] *)
+(** ****************** *)
 
 (**
 既存の [^] の定義により、Propに対する演算ができない（？）ので、
 全体に対して [^^] を使うようにした。
  *)
 
-(** [Canonical prop_and_magma]  がなくても良い例  *)
+(** [Canonical prop_and_magma] がなくても良い例  *)
 Lemma PropMagmaFalse1 (x y : carrier prop_and_magma) :
   x ^^ False -> y.
+Proof.
+  rewrite /=; by case.
+Qed.
+
+(* ********* *)
+(* ********* *)
+
+Canonical prop_and_magma.
+Print Canonical Projections.                (* カノニカルの表示 *)
+(** [Prop <- carrier ( prop_and_magma )] *)
+
+Lemma PropMagmaFalse2' (x y : Prop) :
+  operator x False -> y.
 Proof.
   rewrite /=; by case.
 Qed.
