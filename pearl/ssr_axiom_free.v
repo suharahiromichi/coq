@@ -37,9 +37,11 @@ Standard CoqのClassical.vを導入すればよいのですが、
 
 このことは [2.] の3.3節に説明があって、
 
+
 The Mathematical Components library is axiom free. This makes the
 library compatible with any combination of axioms that is known to be
 consistent with the Calculus of Inductive Constructions.
+
 
 要するに（Standard Coqと違って）、
 CICとの互換性が保たれない（かもしれない）命題は一切入れないのだ、
@@ -52,7 +54,7 @@ MathComp はそれぞれをどうしているのでしょうか？
 
 結論からいうと、命題をbool値の式に変換（リフレクト）して、
 決定性のあるbool値の上では、古典論理に基づいた証明ができるからなのですが、
-そのような、「MathComp」の考え方を調べてみましょう。
+そのような、「MathCompの考え方」を調べてみましょう。
  *)
 
 (**
@@ -70,7 +72,8 @@ Check classic : forall P : Prop, P \/ ~ P.  (* Axiom *)
 Check NNPP : forall p : Prop, ~ ~ p -> p.   (* Lemma *)
 
 (**
-これに対して、MathComp では ssrbool.v で次の補題が証明されています。
+これに対して、MathComp では、ssrbool.v において、
+公理としてではなく、次の補題が証明されています。
 *)
 Check classicP : forall P : Prop, classically P <-> ~ ~ P. (* Lemma *)
 Check classic_EM : forall P : Prop, classically (decidable P). (* Lemma *)
@@ -84,6 +87,7 @@ Check classic_EM : forall P : Prop, classically (decidable P). (* Lemma *)
 classicP は、``classically P`` の成り立つ P について二重否定除去が成り立つということです。
 
 ``classically := fun P : Type => forall b : bool, (P -> b) -> b``
+
 
 ここで仮に P を Prop型の等式 ``P : m = n`` に限って考えるとしましょう。
 
@@ -177,8 +181,9 @@ Check @functional_extensionality            (* Lemma *)
   : forall (A B : Type) (f g : A -> B), (forall x : A, f x = g x) -> f = g.
 
 (**
-これに対して、MathComp では finfun で定義された「=1」については、
-intros 操作だけで関数拡張できます。eq_ffun は 関数どうしの「=1」の等式にする補題です。
+これに対して、MathComp では 有限ドメインの関数 finfun が定義されていて、
+そこで定義された一階の等号の「=1」については、intros 操作だけで関数拡張できます。
+eq_ffun は 関数どうしの「=1」の等式にする補題です。
 *)
 
 Check @eq_ffun : forall (aT : finType) (rT : Type) (g1 g2 : aT -> rT),
