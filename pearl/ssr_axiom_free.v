@@ -185,9 +185,8 @@ Check @eq_ffun : forall (aT : finType) (rT : Type) (g1 g2 : aT -> rT),
     g1 =1 g2 -> [ffun x => g1 x] = [ffun x => g2 x].
 
 Definition predI' {fT : finType} (s1 s2 : fT -> bool) := [ffun x => s1 x && s2 x].
-Goal forall {fT : finType} (s1 s2 : pred fT) , predI' s1 s2 = predI' s2 s1.
+Lemma ssr_fext {fT : finType} (s1 s2 : pred fT) : predI' s1 s2 = predI' s2 s1.
 Proof.
-  move=> T s1 s2.
   apply/eq_ffun.
   move=> x /=.
     (* Goal : s1 x && s2 x = s2 x && s1 x *)
@@ -198,9 +197,8 @@ Qed.
 Standard Coq のライブラリを使う場合は、functional_extensionalityを 使って証明できます。
 *)
 Definition predI'' {fT : finType} (s1 s2 : fT -> bool) := (fun x => s1 x && s2 x).
-Goal forall {fT : finType} (s1 s2 : pred fT) , predI'' s1 s2 = predI'' s2 s1.
+Lemma coq_fext {fT : finType} (s1 s2 : pred fT) : predI'' s1 s2 = predI'' s2 s1.
 Proof.
-  move=> T s1 s2.
   rewrite /predI''.
   apply: functional_extensionality => x.
     (* Goal : s1 x && s2 x = s2 x && s1 x *)
@@ -275,19 +273,19 @@ one_odd2 の証拠も同様に ``odd 1 = true`` というboolの値どうしの�
 同じ型の等式 どうしは等しいという定理 irrelevance を使って証明できます。
  *)
 
-Goal one_odd1 = one_odd2.
+Lemma ssr_odds : one_odd1 = one_odd2.
 Proof.
   try reflexivity.                       (* still not convertible *)
-  congr exist.                           (* (true = true) = 略 *)
+  congr exist.                           (* is_true_true = 略 *)
     by apply: bool_irrelevance.
 Qed.
 
 (**
 Standard Coq のライブラリを使う場合は、proof_irrelevance を使って証明できます。
 *)
-Goal one_odd1 = one_odd2.
+Lemma coq_odds : one_odd1 = one_odd2.
 Proof.
-  congr exist.                           (* (true = true) = 略 *)
+  congr exist.                           (* is_true_true = 略 *)
     by apply: proof_irrelevance.
 Qed.
 
