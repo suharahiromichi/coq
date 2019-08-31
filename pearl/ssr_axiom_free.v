@@ -171,6 +171,10 @@ Qed.
 # 関数拡張 (functional_extensionality)
 
 Standard Coq では FunctionalExtensionality.v で定義されています。
+
+これは、関数に等しさをいうものです。Coqでは定義が同じでなければ同じであるとは言えません
+（ライプニッツの等号）。しかし、引数に対してすべて同じ値をとる関数どうしは「同じ」である
+と言いたい場合があります。
  *)
 
 Require Import FunctionalExtensionality.
@@ -183,6 +187,9 @@ Check @functional_extensionality            (* Lemma *)
 (**
 これに対して、MathComp では 有限ドメインの関数 finfun が定義されていて、
 そこで定義された一階の等号の「=1」については、intros 操作だけで関数拡張できます。
+定義域が有限ならば、すべてのxについて、f x = g x が成り立つことを調べることができ、
+それが成り立つなら、f = g といえるからです。
+
 eq_ffun は 関数どうしの「=1」の等式にする補題です。
 *)
 
@@ -222,13 +229,17 @@ Check proof_irrelevance                     (* Axiom *)
   : forall (P : Prop) (p1 p2 : P), p1 = p2.
 
 (**
-これに対して、MathComp では eqtype.v と ssrnat.v で次の補題が証明されています。
+これに対して、MathComp では eqtype.v で次の補題が証明されています。
 *)
 
-Check eq_irrelevance : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
+Check eq_irrelevance                        (* 補題 *)
+  : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
 
 (**
-natとboolは、より一般的な eqType を使って証明しています。
+たとえば、p1 が ``n = 3`` のとき、これは ``n == 3`` と同値で、
+booleanなら、その証明はひとつだけといえるからです（補足すること）。
+
+より特殊な場合についても補題が用意されています。
  *)
 Check bool_irrelevance : forall (b : bool) (p1 p2 : b), p1 = p2.
 Check nat_irrelevance : forall (x y : nat) (E E' : x = y), E = E'.
