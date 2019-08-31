@@ -14,7 +14,7 @@ Coq/SSReflect/MathComp による定理証明
 - nat_plus_magma が 型クラスmagma の型インスタンスであること。
 - prop_and_magma が Prop のカノニカル解、であること。
 - nat_plus_magma が nat のカノニカル解、であること。
-まで説明してはどうだろうか。
+を説明することにした。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -50,6 +50,8 @@ Print Graph.                     (* [carrier] : magma >-> Sortclass *)
 Check carrier prop_and_magma : Type.
 Check         prop_and_magma : magma.
 Check         prop_and_magma : Type.        (* コアーション *)
+(** コアーションによって、prop_and_magma は型として見える。
+prop_and_magma は magma型クラスから作られた、型インスタンスである。 *)
 
 Print prop_and_magma.
 (** [{| carrier := Prop; operator := and |} : magma] *)
@@ -83,6 +85,8 @@ Print Graph.                     (* [carrier] : magma >-> Sortclass *)
 Check carrier nat_plus_magma : Type.
 Check         nat_plus_magma : magma.
 Check         nat_plus_magma : Type.        (* コアーション *)
+(** コアーションによって、nat_plus_magma は型として見える。
+つまり、nat_plus_magma は magma型クラスから作られた、型インスタンスである。 *)
 
 Print nat_plus_magma.
 (** [{| carrier := nat; operator := Init.Nat.add |} : magma] *)
@@ -151,6 +155,9 @@ Check carrier (scarrier nat_plus_semigroup) : Type.
 Check                   nat_plus_semigroup  : semigroup.
 Check                   nat_plus_semigroup  : Type.   (* コアーション *)
 
+(** nat_plus_semigroup は semigroup型クラスから作られた、型インスタンスである。
+    そして、(2段階の)コアーションによって、nat_plus_semigroup は型として見える。 *)
+
 Print nat_plus_semigroup.
 (** [{| scarrier := nat_plus_magma; assoc := addnA |}] *)
 
@@ -173,6 +180,7 @@ Qed.
 Canonical nat_plus_semigroup.
 Print Canonical Projections.                (* カノニカルの表示 *)
 (** [nat_plus_magma <- scarrier ( nat_plus_semigroup )] *)
+(** [nat <- carrier ( nat_plus_magma )]  *)
 
 Notation "a ^^ b" := (@operator _ a b) (at level 30, right associativity).
 (** 次でも同じ： *)
@@ -214,8 +222,16 @@ Section TEST2.
   Check @operator nat_plus_magma a b : carrier nat_plus_magma.
   Check @operator nat_plus_magma a b : nat_plus_magma.
   
+(** カノニカル宣言のおかげで、
+    - nat_plus_magma の代わりに nat と書くことができる。
+    - nat型の a, b から、operater の（省略された）第一引数が、
+    「nat_plus_magma」であると連想できるようになる
+    
+    これは、natのカノニカル解がnat_plus_magmaになっている。
+ *)
+  
   Check operator a b : carrier nat_plus_magma. (* canonical 宣言が必要 *)
-  Check operator a b : nat_plus_magma. (* canonical 宣言が必要 *)
+  Check operator a b : nat_plus_magma.      (* canonical 宣言が必要 *)
   Check a ^^ b  : carrier nat_plus_magma.
   Check a ^^ b  : nat_plus_magma.
 
@@ -235,8 +251,17 @@ End TEST2.
 Lemma natPlusExample3 (x y z : nat) :
   x ^^ (y ^^ z) = (x ^^ y) ^^ z.
 Proof.
+  Check assoc : forall (s : semigroup) (a b c : s), a ^^ b ^^ c = (a ^^ b) ^^ c.
     by rewrite assoc.
 Qed.
+
+(** カノニカル宣言のおかげで、
+    - nat_plus_semigroup の代わりに nat と書くことができる。
+    - nat型の x, y, z から、assoc の（省略された）第一引数が、
+    「nat_plus_semigroup」であると連想できるようになる
+    
+    これは、natのカノニカル解がnat_plus_semigroupになっている。
+ *)
 
 (**
 # 補足
@@ -264,6 +289,14 @@ Qed.
 Canonical prop_and_magma.
 Print Canonical Projections.                (* カノニカルの表示 *)
 (** [Prop <- carrier ( prop_and_magma )] *)
+
+(** カノニカル宣言のおかげで、
+    - prop_and_magma の代わりに Prop と書くことができる。
+    - Prop型の x, y から、operater の（省略された）第一引数が、
+    「prop_and_magma」であると連想できるようになる
+    
+    これは、Propのカノニカル解がprop_and_magmaになっている。
+ *)
 
 Lemma PropMagmaFalse2' (x y : Prop) :
   operator x False -> y.
