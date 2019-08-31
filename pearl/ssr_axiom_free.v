@@ -234,30 +234,45 @@ Check le_irrelevance : forall (m n : nat) (le_mn1 le_mn2 : (m <= n)%coq_nat),
 Check lt_irrelevance : forall (m n : nat) (lt_mn1 lt_mn2 : (m < n)%coq_nat),
     lt_mn1 = lt_mn2.
 
-(* ****** *)
+(**
+自然数(witness)と、それが奇数である証拠(evidence)の組からなる依存型 odds を定義します。
+依存型はsigma typeとも言います。また、証拠のところがbool型の論理式であるので、
+boolean sigma type と呼びます。
+ *)
 
 Definition odds := {x : nat | odd x}.       (* booelan sigma type *)
 
 (**
-これはどういうことかというと、
-証人(witness) が同じでも、証拠の異なるふたつの数、one_odd1とone_odd2 があるとします。
+ここで、証人(witness) が同じでも、証拠(evidence) の異なるふたつの数、
+one_odd1とone_odd2 があるとします。
   *)
 Definition one_odd1 : odds.
 Proof.
     by exists 1.
 Defined.
 Print one_odd1.    (* = exist (fun x : nat => odd x) 1 is_true_true *)
+Check is_true_true
+  : true = true.                            (* 証拠の型 *)
 
 Definition one_odd2 : odds.
 Proof.
     by exists 1; rewrite -(addn0 1) addn0.  (* 1+0-0 *)
 Defined.
 Print one_odd2.    (* = exist (fun x : nat => odd x) 1 ...略... *)
+Check ((fun x : odd (1 + 0) =>
+          eq_ind (1 + 0) (fun y : nat => odd y) x 1
+                 (addn0 1))
+         ((fun x : odd 1 =>
+             eq_ind_r (fun y : nat => odd y) x (addn0 1))
+            is_true_true))
+  : odd 1 = true.                           (* 証拠の型 *)
 
 (**
-one_odd1 の証拠は is_true_true すなわち true = true 。
-one_odd2 の証拠も同様に boolの等式の形です。
-（同じ型の）等式どうしは等しいという定理 irrelevance を使って証明できます。
+one_odd1 の証拠は ``is_true_true`` でその型は ``true = true``。
+
+one_odd2 の証拠も同様に ``odd 1 = true`` というboolの値どうしの等式の形です。
+
+同じ型の等式 どうしは等しいという定理 irrelevance を使って証明できます。
  *)
 
 Goal one_odd1 = one_odd2.
