@@ -1,5 +1,5 @@
 (**
-MathComp になぜ公理がないか。
+MathComp になぜ公理がないか
 ======
 2019/08/14
 
@@ -21,18 +21,21 @@ From mathcomp Require Import all_ssreflect.
 ----------------
 # MathComp は排中律を仮定しているのか
 
-Stackoverflow (英語版）に、このような質問がありました([1.])。
+Stackoverflow (英語版）に、こんな質問がありました([1.])。
 
 ``forall A: Prop, A \/ ~A``
 
-の証明を教えてほしいとう趣旨でクローズしているようなのですが、
+
+の証明を教えてほしいという趣旨です。クローズしているようなのですが、
 その回答にあるように、MathComp のライブラリには排中律の公理が定義されていないので、
 任意の ``A : Prop`` については証明できません。
 
-もちろん、排中律を自分で定義するか、Standard CoqのClassical.vを導入すれば解けます。
+もちろん、排中律の公理を自分で定義するか、
+Standard CoqのClassical.vを導入すればよいのですが、
+そもそも MathComp のライブラリには公理、すなわち、証明なしで導入される
+命題はひとつも含まれていないのです。
 
-MathComp のライブラリには公理、すなわち、証明なしで導入される
-命題はひとつも含まれていません。このことは [2.] の3.3節に説明があって、
+このことは [2.] の3.3節に説明があって、
 
 The Mathematical Components library is axiom free. This makes the
 library compatible with any combination of axioms that is known to be
@@ -40,7 +43,7 @@ consistent with the Calculus of Inductive Constructions.
 
 要するに（Standard Coqと違って）、
 CICとの互換性が保たれない（かもしれない）命題は一切入れないのだ、
-ということのようです。
+ということのようです。これを "axiom free" というのだそうです。
 
 では、排中律ががなくて困ることはないのでしょうか？
 代わりの仕組みがあるのでしょうか？
@@ -52,7 +55,8 @@ MathComp はそれぞれをどうしているのでしょうか？
 そのような、「MathComp」の考え方を調べてみましょう。
  *)
 
-(** ----------------
+(**
+----------------
 # 古典論理
 
 Standard Coq では Classical.v で次のように定義されています。
@@ -71,7 +75,8 @@ Check NNPP : forall p : Prop, ~ ~ p -> p.   (* Lemma *)
 Check classicP : forall P : Prop, classically P <-> ~ ~ P. (* Lemma *)
 Check classic_EM : forall P : Prop, classically (decidable P). (* Lemma *)
 
-(** ----------------
+(**
+----------------
 ## 二重否定除去
 *)
 
@@ -101,7 +106,7 @@ Lemma ssr_nnpp : forall (m n : nat), ~ m <> n -> m = n.
 Proof.
   move=> m n Hnn.
   apply: classic_eq.
-  by apply/classicP.
+    by apply/classicP.
 Qed.  
 
 (**
@@ -110,11 +115,12 @@ Standard Coq のライブラリを使う場合は、NNPPを使って証明でき
 Lemma coq_nnpp : forall (m n : nat), ~ m <> n -> m = n.
 Proof.
   move=> m n Hnn.
-  by apply: NNPP.
+    by apply: NNPP.
 Qed.
 
 
-(** ----------------
+(**
+----------------
 ## 排中律
 *)
 
@@ -125,6 +131,8 @@ classically が成り立つということです。
 ここで P を Prop型の等式 ``P : m = n`` に限って考え、
 そして m と n が eqType型の型であるとすると、decidable は成立します。
 そのため、eqType型の型の等式については、classic_EM を使用せずに、排中律を証明できます。
+
+ただし、これはMathCompの趣旨とことなるため、見直す。
 *)
 
 Check classic_EM : forall P : Prop, classically ({P} + {~ P}). (* Lemma *)
@@ -141,7 +149,7 @@ Qed.
 
 Lemma ssr_EM (m n : nat) : m = n \/ m <> n.
 Proof.
-    by case: (dec_eq m n); by [left | right].
+    by case: (dec_eq m n); [left | right].
 Qed.
 
 
@@ -201,7 +209,7 @@ Qed.
 
 (**
 --------
-# 的外れ、見当違いの意味 (proof irrelevance)
+# proof irrelevance (的外れ、見当違いの意味)
 
 Standard Coq では ProofIrrelevance.v でで定義されています。
 
@@ -217,7 +225,7 @@ Check proof_irrelevance                     (* Axiom *)
 Check eq_irrelevance : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
 
 (**
-natとboolは、より一般的な eqType を使って証明している。
+natとboolは、より一般的な eqType を使って証明しています。
  *)
 Check bool_irrelevance : forall (b : bool) (p1 p2 : b), p1 = p2.
 Check nat_irrelevance : forall (x y : nat) (E E' : x = y), E = E'.
@@ -231,7 +239,8 @@ Check lt_irrelevance : forall (m n : nat) (lt_mn1 lt_mn2 : (m < n)%coq_nat),
 Definition odds := {x : nat | odd x}.       (* booelan sigma type *)
 
 (**
-証人(witness) が同じでも、証拠の異なるふたつの数、one_odd1とone_odd2 がある。
+これはどういうことかというと、
+証人(witness) が同じでも、証拠の異なるふたつの数、one_odd1とone_odd2 があるとします。
   *)
 Definition one_odd1 : odds.
 Proof.
@@ -247,8 +256,8 @@ Print one_odd2.    (* = exist (fun x : nat => odd x) 1 ...略... *)
 
 (**
 one_odd1 の証拠は is_true_true すなわち true = true 。
-one_odd2 の証拠も同様に boolの等式の形である。
-（同じ型の）等式どうしは等しいという定理 irrelevance を使って証明できる。
+one_odd2 の証拠も同様に boolの等式の形です。
+（同じ型の）等式どうしは等しいという定理 irrelevance を使って証明できます。
  *)
 
 Goal one_odd1 = one_odd2.
@@ -264,7 +273,7 @@ Standard Coq のライブラリを使う場合は、proof_irrelevance を使っ�
 Goal one_odd1 = one_odd2.
 Proof.
   congr exist.                           (* (true = true) = 略 *)
-  apply: proof_irrelevance.
+    by apply: proof_irrelevance.
 Qed.
 
 
