@@ -50,6 +50,8 @@ Print Graph.                     (* [carrier] : magma >-> Sortclass *)
 Check carrier prop_and_magma : Type.
 Check         prop_and_magma : magma.
 Check         prop_and_magma : Type.        (* コアーション *)
+Check True : carrier prop_and_magma.
+Check True : prop_and_magma.
 (** コアーションによって、prop_and_magma は型として見える。
 prop_and_magma は magma型クラスから作られた、型インスタンスである。 *)
 
@@ -85,6 +87,8 @@ Print Graph.                     (* [carrier] : magma >-> Sortclass *)
 Check carrier nat_plus_magma : Type.
 Check         nat_plus_magma : magma.
 Check         nat_plus_magma : Type.        (* コアーション *)
+Check 1 : carrier nat_plus_magma : Type.
+Check 1 :         nat_plus_magma : Type.    (* コアーション *)
 (** コアーションによって、nat_plus_magma は型として見える。
 つまり、nat_plus_magma は magma型クラスから作られた、型インスタンスである。 *)
 
@@ -144,16 +148,22 @@ Print Graph.
 Check carrier (scarrier nat_plus_semigroup) : Type.
 Check          scarrier nat_plus_semigroup  : magma.
 Check          scarrier nat_plus_semigroup  : Type.   (* コアーション *)
+Check 1 : carrier (scarrier nat_plus_semigroup) : Type.
+Check 1 :          scarrier nat_plus_semigroup  : Type.   (* コアーション *)
 
 (* [scarrier] : semigroup >-> magma *)
 Check scarrier nat_plus_semigroup : magma.
 Check          nat_plus_semigroup : semigroup.
 Check          nat_plus_semigroup : magma.  (* コアーション *)
+Check 1 : scarrier nat_plus_semigroup : magma.
+Check 1 :          nat_plus_semigroup : magma.  (* コアーション *)
 
 (* [scarrier; carrier] : semigroup >-> Sortclass *)
 Check carrier (scarrier nat_plus_semigroup) : Type.
 Check                   nat_plus_semigroup  : semigroup.
 Check                   nat_plus_semigroup  : Type.   (* コアーション *)
+Check 1 : carrier (scarrier nat_plus_semigroup) : Type.
+Check 1 :                   nat_plus_semigroup  : Type.   (* コアーション *)
 
 (** nat_plus_semigroup は semigroup型クラスから作られた、型インスタンスである。
     そして、(2段階の)コアーションによって、nat_plus_semigroup は型として見える。 *)
