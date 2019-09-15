@@ -48,10 +48,7 @@ Compute 0 + p4.                 (* = let '@Ordinal _ m _ := p4 in m : nat *)
 
 (**
 「:=」で定義する場合、または Defined で終わる定義の値については、
-自然数の値が求められていることがわかる。
-
-両方が、「:=」または「Defined」の場合だけ、
-自然数の値が求められていることがわかる。
+自然数の値が計算されていることがわかる。
   *)
 
 Compute p0 + p1.                            (* 1 *)
@@ -62,7 +59,7 @@ Compute p1 + p2.                            (* 3 *)
 Compute p0 + p4.                (* = let '@Ordinal _ m _ := p4 in m *)
 Compute p4 + 0.
 (*
-  = (fix Ffix (x x0 : nat) {struct x} : nat :=
+= (fix Ffix (x x0 : nat) {struct x} : nat :=
   match x with
   | 0 => x0
   | x1.+1 => (Ffix x1 x0).+1
@@ -86,16 +83,15 @@ Lemma や Theorem, Corollay, Fact, Proposition, Remark
 *)
 
 (**
-証明のなかで simpl を実行してみるとよく判る。
-
-CRM : Controlling the reduction strategies and the conversion algorithm
+証明のなかで simpl を実行してみるとよく判る。Coq Reference Manual の
+Controlling the reduction strategies and the conversion algorithm より。
 
 https://coq.inria.fr/refman/proof-engine/vernacular-commands.html#controlling-the-reduction-strategies-and-the-conversion-algorithm
 
 - 「:=」やDefined で定義したqualidを transparent と呼ぶ。unfold（δ簡約）できる。
 
-- Qed で定義したqualidを opaque と呼ぶ。unfold（δ簡約）できる。
- *)
+- Qed で定義したqualidを opaque と呼ぶ。unfold（δ簡約）できない。
+*)
 
 (**
 p0 は transparent である。
@@ -121,8 +117,7 @@ Proof.
 Qed.
 
 (**
-p4 は opaque である。
-opaque なものを transparent にはできない。
+p4 は opaque である。opaque なものを transparent にはできない。
 *)
 
 Goal 0 + p4 = 4.
@@ -131,6 +126,24 @@ Proof.
   Fail Transparent p4. (* Cannot make p4 transparent because it was declared opaque. *)
 Admitted.
 
-Print Strategy p4.                          (* transparent と表示された。。。 *)
+(**
+以下、不明な事項である。
+Print Strategy コマンドは、機能しない？ 
+ *)
+Print Strategy p0.
+Print Strategy p1.
+Print Strategy p2.
+Print Strategy p3.
+Print Strategy p4.                (* transparent と表示された。。。 *)
+
+Print All Dependencies p3.
+(**
+Opaque constants に leqnSn : forall n : nat, n <= n.+1 が含まれる。
+ *)
+
+Print All Dependencies p4.
+(**
+Opaque constants に leqnn : forall n : nat, n <= n が含まれる。
+ *)
 
 (* END *)
