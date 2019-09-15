@@ -192,9 +192,11 @@ Print Canonical Projections.                (* カノニカルの表示 *)
 (** [nat_plus_magma <- scarrier ( nat_plus_semigroup )] *)
 (** [nat <- carrier ( nat_plus_magma )]  *)
 
-Notation "a ^^ b" := (@operator _ a b) (at level 30, right associativity).
+Notation "a ^ b" := (@operator _ a b) (at level 30, right associativity) : magma_scope.
 (** 次でも同じ： *)
-(** [Notation "a ^^ b" := (operator a b) (at level 30, right associativity).] *)
+(** [Notation "a ^ b" := (operator a b) (at level 30, right associativity).] *)
+
+Open Scope magma_scope.
 
 (** [Canonical nat_plus_magma]  がなくても良い例  *)
 (** [Canonical nat_plus_semigroup] がなくても良い例  *)
@@ -207,11 +209,11 @@ Section TEST1.
     nat_plus_magma -> nat_plus_magma -> nat_plus_magma.
   Check @operator nat_plus_magma a b : carrier nat_plus_magma.
   Check @operator nat_plus_magma a b : nat_plus_magma.
-  Check a ^^ b : carrier nat_plus_magma.
-  Check a ^^ b : nat_plus_magma.
+  Check a ^ b : carrier nat_plus_magma.
+  Check a ^ b : nat_plus_magma.
   
-  Lemma natPlusExample1 (x y z : nat_plus_magma) : (* carrier nat_plus_magma *)
-    x ^^ (y ^^ z) = (x ^^ y) ^^ z.
+Lemma natPlusExample1 (x y z : nat_plus_magma) : (* carrier nat_plus_magma *)
+    x ^ (y ^ z) = (x ^ y) ^ z.
   Proof.
       by rewrite (@assoc nat_plus_semigroup).
   Qed.
@@ -242,15 +244,15 @@ Section TEST2.
   
   Check operator a b : carrier nat_plus_magma. (* canonical 宣言が必要 *)
   Check operator a b : nat_plus_magma.      (* canonical 宣言が必要 *)
-  Check a ^^ b  : carrier nat_plus_magma.
-  Check a ^^ b  : nat_plus_magma.
+  Check a ^ b  : carrier nat_plus_magma.
+  Check a ^ b  : nat_plus_magma.
 
   Check @operator nat_plus_magma a b : nat.
   Check operator a b : nat.
-  Check a ^^ b  : nat.
+  Check a ^ b  : nat.
   
   Lemma natPlusExample2 (x y z : nat) :
-    x ^^ (y ^^ z) = (x ^^ y) ^^ z.
+    x ^ (y ^ z) = (x ^ y) ^ z.
   Proof.
       by rewrite (@assoc nat_plus_semigroup).
   Qed.
@@ -259,9 +261,9 @@ End TEST2.
 (** [Canonical nat_plus_magma] は必要。 *)
 (** [Canonical nat_plus_semigroup]  は必要。 *)
 Lemma natPlusExample3 (x y z : nat) :
-  x ^^ (y ^^ z) = (x ^^ y) ^^ z.
+  x ^ (y ^ z) = (x ^ y) ^ z.
 Proof.
-  Check assoc : forall (s : semigroup) (a b c : s), a ^^ b ^^ c = (a ^^ b) ^^ c.
+  Check assoc : forall (s : semigroup) (a b c : s), a ^ b ^ c = (a ^ b) ^ c.
     by rewrite assoc.
 Qed.
 
@@ -281,14 +283,11 @@ Qed.
 (** Magma [(Prop, /\)] *)
 (** ****************** *)
 
-(**
-既存の [^] の定義により、Propに対する演算ができない（？）ので、
-全体に対して [^^] を使うようにした。
- *)
+Canonical prop_and_magma.
+Print Canonical Projections.                (* カノニカルの表示 *)
 
-(** [Canonical prop_and_magma] がなくても良い例  *)
 Lemma PropMagmaFalse1 (x y : prop_and_magma) : (* コアーション *)
-  x ^^ False -> y.
+  operator x False -> y.         (* ここで ^ が使えない理由は、不明 *)
 Proof.
   rewrite /=; by case.
 Qed.
@@ -296,7 +295,6 @@ Qed.
 (* ********* *)
 (* ********* *)
 
-Canonical prop_and_magma.
 Print Canonical Projections.                (* カノニカルの表示 *)
 (** [Prop <- carrier ( prop_and_magma )] *)
 
@@ -309,16 +307,27 @@ Print Canonical Projections.                (* カノニカルの表示 *)
  *)
 
 Lemma PropMagmaFalse2' (x y : Prop) :
-  operator x False -> y.
+  operator x False -> y.         (* ここで ^ が使えない理由は、不明 *)
 Proof.
   rewrite /=; by case.
 Qed.
 
-(** [Canonical prop_and_magma] が必要 *)
-Lemma PropMagmaFalse2 (x y : Prop) :
-  x ^^ False -> y.
-Proof.
-  rewrite /=; by case.
-Qed.
+(** ************  *)
+(** まとめ        *)
+(** ************  *)
+
+(** 型クラス magma から、型インスタンスをつくる。  *)
+(** コアーションのおかげで、台集合 carrier と同一視できる。 *)
+(** カノニカル・プロジェクションのおがげで、operator に台集合が与えられる。 *)
+
+Check 1 : nat : Type.
+Check 1 : nat_plus_magma : Type.
+Example ex1 : 1 ^ 2 = 1 + 2. Proof. done. Qed.
+
+Check True : Prop : Type.
+Check True : prop_and_magma : Type.
+Example ex2 : True ^ False = (True /\ False). Proof. done. Qed.
+
+(** ただし、この方法では 型クラスの継承関係が表現できない。 *)
 
 (** END *)
