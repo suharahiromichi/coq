@@ -1,5 +1,5 @@
 (**
-MathComp で文字列を使う - 「定理証明手習い」の証明をてみた
+MathComp で文字列を使う - 「定理証明手習い」の証明をしてみた
 ======
 2019/08/10
 
@@ -11,12 +11,12 @@ Coq/SSReflect/MathComp [1.] には文字列型の定義がないので、
 Starndard Coqの文字列の定義 [2.] を使うことになります。
 
 ここでは、それをそのまま使うのではなく、
-決定性のある等式の使える型として文字列型を定義してみます。
+決定性のある同値関係の使える型として文字列型を定義してみます。
 
 同様に、2分木のデータ構造も定義して、LispのS式のようなデータを扱えるようにしてみます。
 それを「定理証明手習い」[4.]のLispプログラムの証明に適用してみます。
 
-全体を通して、決定性のある等式のサポートのあるMathCompは、
+全体を通して、決定性のある同値関係のサポートのあるMathCompは、
 if-then-elesでの分岐のあるプログラムの証明にも便利であることを示します。
 *)
 
@@ -34,16 +34,77 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_string_3.v
 
 OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
  *)
-
-(**
-----------------
-# MathComp で自然数型を使う
- *)
 From mathcomp Require Import all_ssreflect.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+(**
+----------------
+# 型クラス ``eqType`` について
+ *)
+
+(**
+MathComp の実体は、深く継承された型クラスといってもよいのですが、
+その根にあるのは ``eqType`` という決定性のある同値関係が使える型のクラスです。
+
+毎度お馴染みの自然数型や今回述べる文字列型を台(carrier)にして、``eqType`` の
+型インスタンスを生成することで、
+自然数や文字列に対して、決定性のある同値関係 (``==``) が使えるようになります。
+自然数については、標準で意識せずに使っているかもしれません。
+ *)
+
+(**
+まず、eqType は 型です。
+ *)
+
+Check eqType : Type.
+
+(**
+自然数型 ``nat`` を台とする ``eqType`` のインスタンスは ``nat_eqType`` です。
+これは MathComp の命名規則によるようです。
+自然数型 ``nat`` が型であるように、``nat_eqType`` も型とみなせます。
+実際には、コアーション([4.] p.94)によって sort が省略されていることに注意してください。
+*)
+
+Check               nat        : Type.
+Check Equality.sort nat_eqType : Type.
+Check               nat_eqType : Type.      (* コアーション *)
+
+(**
+定数 ``42`` の型が ``nat`` であるのと同様に、``nat_eqType`` 型でもあるとみなせます。
+しかし、``42`` は複数の型を持つわけではなく、
+コアーションによって sort が省略されていることに注意してください。
+結果として、``42`` は、「eqType型の型」のところに書くことができます。
+ *)
+
+Check 42 :               nat.
+Check 42 : Equality.sort nat_eqType.
+Check 42 :               nat_eqType.        (* コアーション *)
+
+(**
+``nat``型から ``nat_eqType``型への対応づけがあります。
+*)
+
+Fail Check @eq_op nat        42 42. (* eq_opの第1引数はeqType型の型であるべき *)
+Check      @eq_op nat_eqType 42 42.
+Check       eq_op            42 42. (* nat_eqType を探し出している。 *)
+Check                        42 == 42.      (* 同上 *)
+
+(**
+``42`` を「eqType型の型」の場所に書くためには、
+それが ``nat_eqType`` であることが判る必要があります。
+クラスからインスタンスを探し出すことになるので、逆引きになり、
+Canonical コマンド ([4.] p.120) で宣言することで可能になります。
+この逆引き推論をすることをカノニカル・プロジェクションといいます。
+宣言の方法は後述します。
+*)
+
+(**
+----------------
+# MathComp で自然数型を使う
+ *)
 
 (**
  例。
@@ -76,7 +137,7 @@ Check @eq_op : forall eT : eqType, eT -> eT -> bool. (* bool値の等式 「==�
 
 (**
 - bool値の等式は、その値がtrueかfalseどどちらかに決まる。
-つまり決定性のあるので、
+つまり決定性があるので、
 成り立つ場合(true)と、成り立たない場合(false) で場合分けできる。
 
 ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [3.])
@@ -94,29 +155,8 @@ ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [3.])
 
 Check 42 == 42 : bool.
 Check (42 == 42) = true : Prop.
-Check 42 == 42 : Prop.     (* is_true が省略されている。コアーション。
- *)
+Check 42 == 42 : Prop.     (* is_true が省略されている。コアーション。 *)
 
-
-(**
-- 決定性の等式の型クラス(eqType)のインスタンス型(nat_eqType)が定義されている。
- *)
-
-Check 42 : nat.
-Check 42 : Equality.sort nat_eqType.
-Check 42 : nat_eqType.       (* sort が省略されている。コアーション *)
-(* 42 は nat_eqType 型ではない、ことに注意 *)
-
-(**
-- nat型からnat_eqType型への対応づけがある。
-*)
-
-Fail Check @eq_op nat 42 42. (* eq_opの第1引数はeqType型の型であるべき *)
-Check @eq_op nat_eqType 42 42.
-Check eq_op 42 42.
-Check 42 == 42.
-(* 42 は nat_eqType型ではないが、eqType型である型であるところに書くと、
-nat_eqType型であると対応づけされる。カノニカル・プロジェクション *)
 
 (**
 - リスト型(seq)、直積型、オプション型と組み合わせとも、上記と同様になる。
@@ -205,9 +245,9 @@ Check [:: "ABC"; "DEF"] : seq string.
 Check [:: "ABC"; "DEF"] : seq_eqType string_eqType.
 
 (**
-- 文字列型は、決定性のある等式が使える。「==」が使えるようになった。
+- 文字列型は、決定性のある同値関係(``==``)が使えるようになった。
 
-- 文字列型を要素とするリストや直積型などでも、決定性のある等式が使える、ようになった。
+- 文字列型を要素とするリストや直積型などでも、決定性のある同値関係が使える、ようになった。
 *)
 
 
@@ -311,7 +351,7 @@ S式を論理式(Prop)に埋め込めるようにします。このとき、Lisp
 star_sring型が必須となるようです。
 *)
 
-Coercion is_not_nil (x : star_exp) : bool := x != (@S_ATOM string "NIL").
+Coercion is_not_nil (x : star_exp) : bool := x != (S_ATOM "NIL").
 
 (**
 さらに、S式の文脈でシンボルを直接書けるようにします。
@@ -322,8 +362,7 @@ eval-quote式のLispの評価規則を実装することはTLPの範囲外と考
 ここでは、書きやすさを優先することにします。
 *)
 
-Coercion s_quote (s : string) : star_exp := (@S_ATOM string s).
-
+Coercion s_quote (s : string) : star_exp := (S_ATOM s).
 
 (**
 ----------------
@@ -442,16 +481,7 @@ https://www.lambdanote.com/collections/littleprover
 
 [6.] リフレクションのしくみをつくる
 
-[4https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
-
-
-
-[5.] TBD
-
-TBD
-
-
-
+https://qiita.com/suharahiromichi/items/9cd109386278b4a22a63
  *)
 
 (**
