@@ -56,15 +56,16 @@ MathComp の実体は、深く継承された型クラスといってもよい�
  *)
 
 (**
-まず、eqType は 型です。
- *)
-
-Check eqType : Type.
-
-(**
 自然数型 ``nat`` を台とする ``eqType`` のインスタンスは ``nat_eqType`` です。
 これは MathComp の命名規則によるようです。
+ *)
+
+Check     eqType :   Type.
+Check nat_eqType : eqType.
+
+(**
 自然数型 ``nat`` が型であるように、``nat_eqType`` も型とみなせます。
+「eqType型の型」です。
 実際には、コアーション([4.] p.94)によって sort が省略されていることに注意してください。
 *)
 
