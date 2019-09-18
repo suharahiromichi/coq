@@ -236,7 +236,7 @@ Coqの標準ライブラリにある文字列型をMathCompの自然数型のよ
 決定性のある同値関係の使える型として定義します。
 
 最初に述べたように、型クラス ``eqType`` のインスタンスとして、
-文字列型を台とする型を定義します。
+文字列型を台とする型を生成します。
 そのためには、ふたつの文字列が同じか判定するbool値の関数と、
 それがLeibnizの等式と同値であるという証明を与える必要があります ([4.] p.131)。
  *)
@@ -336,10 +336,10 @@ Coqはinductiveなデータ型に対して、inductionできるようになり�
  *)
 
 (**
-文字列型と同様に、Star型についても、型クラス ``eqType`` のインスタンスとして、
-Star型を台とする型を定義します。
+文字列型と同様に、``Star T`` 型についても、型クラス ``eqType`` のインスタンスとして、
+``Star T``型を台とする型を生成します。
 
-最初に、``star T`` 型のふたつの値(S式)が同じか判定するbool値の関数 ``eqStar`` を定義します。
+最初に、``star T``型のふたつの値(S式)が同じか判定するbool値の関数 ``eqStar`` を定義します。
 
 CONSを分解してATOMに至ったら、
 ATOMどうしを決定性のある同値関係を使って、等しいかどうか判定します。
@@ -391,16 +391,26 @@ Proof.
 Qed.
 
 (**
-eqTypeのインスタンス型を定義します。
+最後に、型クラス ``eqType`` のインスタンスとして、``Star T``型を台とする型を生成します。
+これで、文字列型と同様に、``Star T``型を決定性のある同値関係の使える型として定義できました。
 *)
 Definition star_eqMixin (eT : eqType) := @EqMixin (star eT) (@eqStar eT) (@star_eqP eT).
 Canonical star_eqType (eT : eqType) := EqType (star eT) (star_eqMixin eT).
 
 (**
+このとき、``Star eT`` の ``eT`` は ``eqType`` でなければなりません。
+そうであるならば、``star_eqType eT`` は ``eqType`` になります。
+ *)
+
+Check star_eqType    nat_eqType : eqType.   (* 自然数を要素とする S式 *)
+Check star_eqType string_eqType : eqType.   (* 文字列を要素とする S式 *)
+
+
+(**
 ----------------
 # S式とS式の埋め込み
 
-以降では、string型を要素（アトム）にもつS式だけを考えるので、その型を定義します。
+以降では、string型を要素（ATOM）にもつS式だけを考えるので、その型を定義します。
 *)
 
 Definition star_exp := star string.
