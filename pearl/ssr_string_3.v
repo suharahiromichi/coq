@@ -21,7 +21,7 @@ Starndard Coqの文字列の定義 [2.] を使うことになります。
 
 同様に、2分木型のデータ構造も定義して、
 LispのS式のようなデータを扱えるようにしてみます。
-それを「定理証明手習い」[4.]のLispプログラムの証明に適用してみます。
+それを「定理証明手習い」（以下 TLP [5.]) のLispプログラムの証明に適用してみます。
 
 全体を通して、決定性のある同値関係のサポートのあるMathCompは、
 if-then-elesでの分岐のあるプログラムの証明にも便利であることを示します。
@@ -248,6 +248,7 @@ Canonical string_eqType := EqType string string_eqMixin.
 - String.eqb ......... 文字列型のbool型の判定の関数
 - String.eqb_spec .... Leibnizの等式と同値であるという証明
 
+どちらも ``String.v`` で定義されているものが使えます。
 2行めの Canonical は Define の代わりで、カノニカル・プロジェクションを有効にします。
  *)
 
@@ -294,6 +295,13 @@ ifP や eqP など MathComp で定義された補題（``ssrbool.v`` [3.])
 # MathComp で文字列型を使う （続き）
  *)
 
+(**
+ここまでをまとめると、次のようになります。
+
+- 文字列型は、決定性のある同値関係(``==``)が使えるようになった。
+- 文字列型を要素とするリストや直積型などでも、決定性のある同値関係が使える、ようになった。
+*)
+
 Check "ABC" == "ABC" : bool.
 Check "ABC" == "ABC" : Prop.
 
@@ -305,13 +313,6 @@ Check [:: "ABC"; "DEF"] == [:: "ABC"; "DEF"] : Prop.
 
 Check [:: "ABC"; "DEF"] : seq string.
 Check [:: "ABC"; "DEF"] : seq_eqType string_eqType.
-
-(**
-ここまでをまとめると、次のようになります。
-
-- 文字列型は、決定性のある同値関係(``==``)が使えるようになった。
-- 文字列型を要素とするリストや直積型などでも、決定性のある同値関係が使える、ようになった。
-*)
 
 
 (**
@@ -325,7 +326,7 @@ Star型は、「ATOM、または、Star型のふたつ要素を連結(CONS)し�
 任意の型を ATOM にできるように、``T : Type`` を引数とします。
 *)
 
-Inductive star T : Type :=
+Inductive star (T : Type) : Type :=
 | S_ATOM of T
 | S_CONS of star T & star T.
 
@@ -342,11 +343,11 @@ Star型を台とする型を定義します。
 
 CONSを分解してATOMに至ったら、
 ATOMどうしを決定性のある同値関係を使って、等しいかどうか判定します。
-ここで、引数 ``T`` の型が (``Type``でなく) ``eqType`` であることに注意してください。
+ここで、引数 ``eT`` の型が (``Type``でなく) ``eqType`` であることに注意してください。
 なので、ATOMの値 a と b は、「eqType型の型」になります。
 *)
 
-Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
+Fixpoint eqStar {eT : eqType} (x y : star eT) : bool :=
   match (x, y) with
   | (S_ATOM a, S_ATOM b) => a == b          (* eqType *)
   | (S_CONS x1 y1, S_CONS x2 y2) => eqStar x1 x2 && eqStar y1 y2
@@ -356,14 +357,14 @@ Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
 (**
 次いで、Leinizの等式と ``eqStar`` によるbool値の等式とが同値であることを証明します。
 *)
-Lemma eqCons {T : eqType} (x y x' y' : star T) :
-  (x = x' /\ y = y') -> @S_CONS T x y = @S_CONS T x' y'.
+Lemma eqCons {eT : eqType} (x y x' y' : star eT) :
+  (x = x' /\ y = y') -> @S_CONS eT x y = @S_CONS eT x' y'.
 Proof.
   case=> Hx Hy.
     by rewrite Hx Hy.
 Qed.
 
-Lemma star_eqP : forall (T : eqType) (x y : star T), reflect (x = y) (eqStar x y).
+Lemma star_eqP : forall (eT : eqType) (x y : star eT), reflect (x = y) (eqStar x y).
 Proof.
   move=> T x y.
   apply: (iffP idP).
@@ -392,8 +393,8 @@ Qed.
 (**
 eqTypeのインスタンス型を定義します。
 *)
-Definition star_eqMixin (T : eqType) := @EqMixin (star T) (@eqStar T) (@star_eqP T).
-Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
+Definition star_eqMixin (eT : eqType) := @EqMixin (star eT) (@eqStar eT) (@star_eqP eT).
+Canonical star_eqType (eT : eqType) := EqType (star eT) (star_eqMixin eT).
 
 (**
 ----------------
@@ -466,7 +467,7 @@ Fixpoint sub (x y : star_exp) : star_exp :=
 
 (**
 ----------------
-# 「定理証明手習い」第7章
+# 「定理証明手習い」TLP 第7章
 
 ## CTX?/SUB 定理の証明
 *)
