@@ -9,12 +9,16 @@ Coq/SSReflect/MathComp による定理証明
 
 (**
 補足説明：
-テキストはCanonical宣言の説明だが、MathCompとしてはCoercionを併用して、
-- prop_and_magma が 型クラスmagma の型インスタンスであること。
-- nat_plus_magma が 型クラスmagma の型インスタンスであること。
-- prop_and_magma が Prop のカノニカル解、であること。
-- nat_plus_magma が nat のカノニカル解、であること。
-を説明することにした。
+
+テキストはCanonical宣言の説明だが、Coercionを併用して、以下のことを説明することにした。
+
+- prop_and_magma が 型クラスmagma の型インスタンスであること。台はProp。
+- nat_plus_magma が 型クラスmagma の型インスタンスであること。台はnat。
+- nat_plus_semigroup が 型クラス semigroup の型インスタンスであること。台はnat。
+- prop_and_magma が Prop のカノニカル解、であるので、Propと同一視できる。
+- nat_plus_magma が nat のカノニカル解、であるので、natと同一視できる。
+- nat_plus_semigroup が nat のカノニカル解、であるので、natと同一視できる。
+- semigroup が magma を継承する方法から、Telescopes と呼ばれる。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -36,6 +40,9 @@ Record magma : Type :=                      (* 型クラス *)
       carrier :> Type;                      (* コアーション *)
       operator : carrier -> carrier -> carrier
     }.
+Notation "a ^ b" := (@operator _ a b) (at level 30, right associativity) : magma_scope.
+(** 次でも同じ： *)
+(** [Notation "a ^ b" := (operator a b) (at level 30, right associativity).] *)
 
 Check magma : Type.
 Check Magma : forall carrier : Type, (carrier -> carrier -> carrier) -> magma.
@@ -45,6 +52,14 @@ Check Magma : forall carrier : Type, (carrier -> carrier -> carrier) -> magma.
 (** ****************** *)
 Check and.                             (* Prop -> Prop -> Prop *)
 Definition prop_and_magma := @Magma Prop and. (* 型インスタンス *)
+(**
+あとで、
+Canonical prop_and_magma.
+と宣言するが、
+ここで、
+Canonical prop_and_magma := @Magma Prop and.
+とするのが、MathComp 風である。
+*)
 
 Print Graph.                     (* [carrier] : magma >-> Sortclass *)
 Check carrier prop_and_magma : Type.
@@ -192,10 +207,6 @@ Print Canonical Projections.                (* カノニカルの表示 *)
 (** [nat_plus_magma <- scarrier ( nat_plus_semigroup )] *)
 (** [nat <- carrier ( nat_plus_magma )]  *)
 
-Notation "a ^ b" := (@operator _ a b) (at level 30, right associativity) : magma_scope.
-(** 次でも同じ： *)
-(** [Notation "a ^ b" := (operator a b) (at level 30, right associativity).] *)
-
 Open Scope magma_scope.
 
 (** [Canonical nat_plus_magma]  がなくても良い例  *)
@@ -324,10 +335,18 @@ Check 1 : nat : Type.
 Check 1 : nat_plus_magma : Type.
 Example ex1 : 1 ^ 2 = 1 + 2. Proof. done. Qed.
 
+Check 1 : nat_plus_semigroup : Type.
+Example ex2  : 1 ^ 2 ^ 3 = (1 ^ 2) ^ 3. Proof. done. Qed.
+
 Check True : Prop : Type.
 Check True : prop_and_magma : Type.
-Example ex2 : True ^ False = (True /\ False). Proof. done. Qed.
+Example ex3 : True ^ False = (True /\ False). Proof. done. Qed.
 
-(** ただし、この方法では 型クラスの継承関係が表現できない。 *)
+(**
+ここで使われる継承の表し方を Telescopes という。 MathComp Book 7.2 参照。
+MathComp で使われるのは、Packed Class 7.3    
+
+Packaging Mathematical Structures, inria-00368403
+ *)
 
 (** END *)
