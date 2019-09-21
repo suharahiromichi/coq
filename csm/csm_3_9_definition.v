@@ -34,7 +34,73 @@ Lemma/Defined による定義（QedでなくDefinedで終わる）について�
 
 なお、「:=」で定義するのは Definition のみである。
 Lemma や Theorem, Corollay, Fact, Proposition, Remark は使えない。
+ *)
 
+(**
+自然数の例
+*)
+
+Definition n0 : nat := 0.
+Definition n1 : nat. Proof. apply: 1. Defined.
+Definition n2 : nat. Proof. apply: 2. Qed.
+
+(**
+「:=」で定義する場合、または Defined で終わる定義の値については、
+自然数の値が計算されていることがわかる。
+  *)
+
+Compute 0 + n0.                             (* 0 *)
+Compute 0 + n1.                             (* 1 *)
+Compute 0 + n2.                             (* n2、値にならない。 *)
+
+Print n0.                                   (* n0 = 0 : nat *)
+About n0.
+(* 
+n0 : nat
+n0 is transparent             ............. unfold できる。
+ *)
+
+Print n1.                                   (* n1 = 1 : nat *)
+About n1.
+(* 
+n1 : nat
+n1 is transparent             ............. unfold できる。
+ *)
+
+Print n2.                                   (* n2 = 2 : nat *)
+About n2.
+(* 
+n2 : nat
+n2 is opaque             ................. unfold でできない。
+ *)
+
+Goal 0 + n0 = 0.
+Proof.
+  rewrite /n0.
+    by rewrite /=.
+Qed.
+
+Goal 0 + n1 = 1.
+Proof.
+  rewrite /n1.
+    by rewrite /=.
+Qed.
+
+Goal 0 + n2 = 2.
+Proof.
+  Fail rewrite /n2.                      (* unfold がエラーになる。 *)
+  (* n2 is opaque. *)
+Admitted.
+
+(* ************************************************** *)
+(* ************************************************** *)
+(* ************************************************** *)
+
+
+(**
+有限順序数 Ordinal型 の例
+ *)
+(**
 有限順序数 Ordinal型 (p.146) の値の定義が解り易く、実用的だろう。
 （0から4までの5個の自然数からなる型）
 
@@ -43,7 +109,17 @@ Lemma や Theorem, Corollay, Fact, Proposition, Remark は使えない。
 
 (**
 0 < 5 の証明を与える。
-*)
+ *)
+Lemma a : nat.
+  apply: 1.
+Qed.
+Print a.
+Goal a = 1.
+Proof.
+  rewrite /a.
+  done.
+Qed.
+
 Lemma lt_0_5 : 0 < 5. done. Qed.          (* ここは Defined でなくてよい。 *)
 Definition p0 := Ordinal lt_0_5.
 (* Definition p0 := @Ordinal 5 0 lt_0_5. *)
