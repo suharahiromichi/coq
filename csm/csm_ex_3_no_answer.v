@@ -34,19 +34,19 @@ Fail Check nil cons 赤玉 nil : 玉の列.
 Check cons 白玉 (cons 赤玉 nil).
 
 (** 問 3.4 *)
-(* 0 を適当な定義に置き換えてください。 *)
+(* 次の定義を修正して、完成してください。 *)
 
 Fixpoint 赤数え (s : 玉の列) : nat :=
   0.
   
 (** 問 3.5 追加の問題 *)
 (** 与えられた玉の列に対する赤玉の数を示す述語 num_of_red を Inductive により定義せよ。 *)
-(* 2箇所ある True を適当な論理式に書き換えてください。それぞれ別の式です。 *)
+(* 次の定義を修正して、完成してください。 *)
 
 Inductive num_of_red : 玉の列 -> nat -> Prop :=
-| b_nil : num_of_red nil 0
-| b_red : forall s n, True -> num_of_red (赤玉 :: s) n
-| b_white : forall s n, True -> num_of_red (白玉 :: s) n
+| b_nil   : num_of_red nil 0
+| b_red   : forall s n,                     num_of_red (赤玉 :: s) n
+| b_white : forall s n,                     num_of_red (白玉 :: s) n
 .
 
 (** 問 3.6 追加の問題 *)
