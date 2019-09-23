@@ -399,7 +399,7 @@ Proof.
      elim: x.
      * by move=> a /=.
      * move=> x Hx y' Hy /=.
-         by apply/andP; split.
+         by apply/andP/conj.
 Qed.
 
 (**
@@ -627,13 +627,12 @@ ifP の引数を明示的に書くと。。。
 *)  
   move: (@ifP bool (n == 42) true false) => Hif.
   Check Hif : if_spec (n == 42) true false ((n == 42) = false) (n == 42)
-                      (if n == 42 then true else false).
-
+                      (if (n == 42) then true else false).
 (**
 場合分けする。
  *)
   case: Hif => Hcond.
-
+  
 (**
 ``Hcond : (n == 42) = true`` の場合。
  *)
