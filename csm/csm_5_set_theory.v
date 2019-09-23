@@ -237,7 +237,7 @@ Section fintypeを用いた有限集合.
   
   (* myMotherSet =
      p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))) *)
-  Check p2S M.
+  Check p2S M : mySet M.
   Check p2S (mem M).
   Check p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
   
@@ -340,5 +340,102 @@ Section ライブラリfinsetの利用.
     by rewrite -orb_andl.         (* || と && の ド・モルガンの定理 *)
   Qed.
 End ライブラリfinsetの利用.
+
+(* ************************************* *)
+(* ************************************* *)
+(* ************************************* *)
+
+Section 具体的なfinType.                    (* suhara *)
+  (* 具体的な finType として、'I_5 を与える。 *)
+  
+  (* 'I_5 の要素として、p0 を定義する。 *)
+  Definition p0 := @Ordinal 5 0 is_true_true.
+  Check p0 : 'I_5 : Type.
+  
+  Check Finite.sort (ordinal_finType 5) : Type.
+  Check              ordinal_finType 5  : finType.
+  Check              ordinal_finType 5  : Type.      (* コアーション *)
+  Check p0 : Finite.sort (ordinal_finType 5) : Type.
+  Check p0 :              ordinal_finType 5  : Type. (* コアーション *)
+  (** コアーションによって、(ordinal_finType 5) は型として見える。
+      つまり、(ordinal_finType 5) は finType型クラスから作られた、型インスタンスである。 *)
+  
+  (* 台を取り出す。 *)
+  Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
+  
+  (* 'I_5 を要素とする集合を定義する。 *)
+  Check @p2S : forall M : finType, pred M -> mySet M.
+
+  (* Set Printing All. *)
+  Set Printing Coercions.
+  Check @p2S  _ (ordinal_finType 5)    : mySet 'I_5.
+  Check p2S     (ordinal_finType 5)    : mySet 'I_5.
+  Check p2S     (ordinal         5)    : mySet 'I_5.
+  Check p2S                   'I_5     : mySet 'I_5.
+  Check \{ x in (ordinal_finType 5) \} : mySet 'I_5.
+  Check \{ x in (ordinal         5) \} : mySet 'I_5.
+  Check \{ x in               'I_5  \} : mySet 'I_5.
+  
+  (* これでは、'I_5 が与えられる理由がまだ判らない。 *)
+  Check @p2S (ordinal_finType 5)
+        (@pred_of_simpl
+           (Equality.sort (Finite.eqType (ordinal_finType 5)))
+           (pred_of_argType
+              (Equality.sort (Finite.eqType (ordinal_finType 5))))).
+  (* @ をとる。 *)
+  Check p2S
+        (pred_of_simpl
+           (pred_of_argType
+              (Equality.sort (Finite.eqType (ordinal_finType 5))))).
+  (* 計算して 'I_5 になる。 *)
+  Check (Equality.sort (Finite.eqType (ordinal_finType 5))) : Type.
+  Compute (Equality.sort (Finite.eqType (ordinal_finType 5))). (* 'I_5 *)
+  Check p2S
+        (pred_of_simpl
+           (pred_of_argType
+              'I_5)).
+  
+  (* まず *)
+  Check @p2S.                               (* これの第2引数は、 *)
+  Variable M : finType.
+  Check pred (Finite.sort M).               (* の型を持つこと。 *)
+  (* 一方 *)
+  Compute (pred_of_simpl
+             (pred_of_argType
+                'I_5)).
+  (* この型は、 *)
+  Check pred 'I_5.
+  (* また *)
+  Compute (pred_of_simpl
+             (pred_of_argType
+                (Equality.sort (Finite.eqType (ordinal_finType 5))))). (* xpredT *)
+  (* この型は、 *)
+  Check pred (Equality.sort (Finite.eqType (ordinal_finType 5))). (* (A)  *)
+  Compute    (Equality.sort (Finite.eqType (ordinal_finType 5))). (* 'I_5 *)
+  Compute    (Finite.sort                  (ordinal_finType 5)). (* 'I_5 *)
+  Check pred 'I_5.                          (* (B) *)
+  (* 以上から、 *)
+  Check pred (Finite.sort  (ordinal_finType 5)). (* (A) *)
+  Check pred                             'I_5.   (* (B) *)
+  (* のどちらを与えてもよいことになる。（？） *)
+  
+  (* *************** *)
+  (* ここからが本題。 *)
+  (* *************** *)
+  
+  Variable T : Type.
+  Check \{ x in T \}.
+
+  (* p0 は素の集合の要素である。 *)
+  Goal p0 ∈ \{ x in 'I_5 \}.
+  Proof.
+      (*
+        rewrite /belong /p2S.
+        by case H : (p  1 \in 'I_5).
+       *)
+      by [].
+  Qed.
+  
+End 具体的なfinType.
 
 (* END *)
