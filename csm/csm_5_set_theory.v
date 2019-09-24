@@ -360,38 +360,34 @@ Section 具体的なfinType.                    (* suhara *)
   (** コアーションによって、(ordinal_finType 5) は型として見える。
       つまり、(ordinal_finType 5) は finType型クラスから作られた、型インスタンスである。 *)
   
-  (* 台を取り出す。 *)
-  Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
-  
   (* 'I_5 を要素とする集合を定義する。 *)
   Check @p2S : forall M : finType, pred M -> mySet M.
-
-  (* 'I_5 は finType のインスタンスである。 *)
+  
+  (* see also. ssr/ssr_in_operator.v *)
+  (* 'I_5 は finType のインスタンスである。(あ) *)
   Goal 'I_5 = ordinal_eqType 5. Proof. done. Qed.
   
-  (* T : finType, P : pred T なる P は mem の引数になるので、*)
-  (* pred_of_simpl (pred_of_argType 'I_5) を引数に書ける。 (1) *)
+  (* (pred_of_simpl (pred_of_argType 'I_5)) は、pred 'I_5 型である。(い) *)
   Check pred_of_simpl (pred_of_argType 'I_5) : pred 'I_5.
-  Check xpredT                               : pred 'I_5. (* これは参考 *)
   
-  (* 奇妙だが、'I_5 は 'I_5 -> bool の型を持つので、'I_5 を直接書くこともできる。(2) *)  
-  Check                                'I_5  : pred 'I_5.
-  Check                                'I_5  : 'I_5 -> bool.
+  (* (あ)(い) より、(pred_of_simpl (pred_of_argType 'I_5)) は、
+     T : finType, P : pred T なる P である。 *)
+  Check pred_of_argType : forall T : predArgType, simpl_pred T.
+  Check pred_of_simpl   : forall T : Type, simpl_pred T -> pred T.
+  Check (fun T => pred_of_simpl (pred_of_argType T)) : forall T : predArgType, pred T.
   
+  (* (pred_of_simpl (pred_of_argType 'I_5)) は、
+     mem の引数に書くことができ、また、mem も省略できる。 *)
   Check p2S (mem (pred_of_simpl (pred_of_argType 'I_5))) : mySet 'I_5. (* (1) *)
   Check p2S (mem                                 'I_5)   : mySet 'I_5. (* (2) *)
-  
-  (* また、mem も省略できる。 *)
   Check p2S      (pred_of_simpl (pred_of_argType 'I_5))  : mySet 'I_5.  
   Check p2S                                      'I_5    : mySet 'I_5.
+  Check \{ x in 'I_5 \}                                  : mySet 'I_5.  
   
   (* *************** *)
   (* ここからが本題。 *)
   (* *************** *)
   
-  Variable T : Type.
-  Check \{ x in T \}.
-
   (* p0 は素の集合の要素である。 *)
   Goal p0 ∈ \{ x in 'I_5 \}.
   Proof.
