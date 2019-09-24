@@ -22,7 +22,7 @@ Unset Printing Implicit Defensive.
 *)
 
 (**
-## (1) collective 述語 (PredType 型)
+## (1) collective 述語 (predType 型)
  *)
 Section SectPred.
 Variable T : Type.
@@ -129,6 +129,8 @@ Check pred_of_simpl (pred_of_argType 'I_5) : pred 'I_5. (* 'I_5 -> bool *)
 Check pred_of_simpl                  'I_5  : pred 'I_5.
 Check                pred_of_argType 'I_5  : pred 'I_5.
 Check                                'I_5  : pred 'I_5.
+Check pred_of_simpl (pred_of_argType bool_finType) : pred bool.
+Check                                bool_finType  : pred bool.
 
 (* (あ)(い) より、 T : finType, P : pred T なる P が、
    (pred_of_simpl (pred_of_argType 'I_5)) にあたる。 これが、mem の引数に書ける。 *)
@@ -140,12 +142,14 @@ Compute mem (pred_of_simpl (pred_of_argType 'I_5)) i. (* true : bool *)
 Compute mem (pred_of_simpl                  'I_5)  i. (* true : bool *)
 Compute mem (               pred_of_argType 'I_5)  i. (* true : bool *)
 Compute mem                                 'I_5   i. (* true : bool *)
+Compute mem                           bool_finType true. (* true : bool *)
 
 (* さらに mem も省ける。 *)
 Compute (pred_of_simpl (pred_of_argType 'I_5)) i. (* true : bool *)
 Compute (pred_of_simpl                  'I_5)  i. (* true : bool *)
 Compute (               pred_of_argType 'I_5)  i. (* true : bool *)
 Compute                                 'I_5   i. (* true : bool *)
+Compute                           bool_finType true. (* true : bool *)
 
 (**
 ### \in の利用
@@ -155,6 +159,7 @@ Compute i \in pred_of_simpl (pred_of_argType 'I_5). (* true : bool *)
 Compute i \in pred_of_simpl                  'I_5.  (* true : bool *)
 Compute i \in                pred_of_argType 'I_5.  (* true : bool *)
 Compute i \in                                'I_5.  (* true : bool *)
+Compute true \in                             bool_finType. (* true : bool *)
 
 End SectFinType.
 
