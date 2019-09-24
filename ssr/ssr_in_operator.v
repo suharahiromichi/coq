@@ -120,20 +120,32 @@ Goal 'I_5 = ordinal_eqType 5. Proof. done. Qed.
 
 (* (い) 'I_5 は predArgType でもあるので、 *)
 Check 'I_5 : predArgType.
-(* pred_of_simpl (pred_of_argType 'I_5) は、pred 'I_5 型を持つ。 *)
+Check pred_of_argType : forall T : predArgType, simpl_pred T.
+Check pred_of_simpl   : forall T : Type, simpl_pred T -> pred T.
+Check (fun T => pred_of_simpl (pred_of_argType T)) : forall T : predArgType, pred T.
+
+(* (pred_of_simpl (pred_of_argType 'I_5)) は、pred 'I_5 型を持つ。 *)
 Check pred_of_simpl (pred_of_argType 'I_5) : pred 'I_5. (* 'I_5 -> bool *)
 Check pred_of_simpl                  'I_5  : pred 'I_5.
 Check                pred_of_argType 'I_5  : pred 'I_5.
 Check                                'I_5  : pred 'I_5.
 
-Variable i : 'I_5.
-(* (あ)(い) より、 T : finType, P : pred T なる P がこれにあたる。 *)
-Compute pred_of_simpl (pred_of_argType 'I_5) i. (* true : bool *)
-Compute pred_of_simpl                  'I_5  i. (* true : bool *)
-Compute                pred_of_argType 'I_5  i. (* true : bool *)
-Compute                                'I_5  i. (* true : bool *)
+(* (あ)(い) より、 T : finType, P : pred T なる P が、
+   (pred_of_simpl (pred_of_argType 'I_5)) にあたる。 これが、mem の引数に書ける。 *)
 (* さらに、pred_of_simpl と pred_of_argType も省略できるので、
    T : finType なる T を直接書ける。 *)
+
+Variable i : 'I_5.
+Compute mem (pred_of_simpl (pred_of_argType 'I_5)) i. (* true : bool *)
+Compute mem (pred_of_simpl                  'I_5)  i. (* true : bool *)
+Compute mem (               pred_of_argType 'I_5)  i. (* true : bool *)
+Compute mem                                 'I_5   i. (* true : bool *)
+
+(* さらに mem も省ける。 *)
+Compute (pred_of_simpl (pred_of_argType 'I_5)) i. (* true : bool *)
+Compute (pred_of_simpl                  'I_5)  i. (* true : bool *)
+Compute (               pred_of_argType 'I_5)  i. (* true : bool *)
+Compute                                 'I_5   i. (* true : bool *)
 
 (**
 ### \in の利用
