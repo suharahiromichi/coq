@@ -366,58 +366,24 @@ Section 具体的なfinType.                    (* suhara *)
   (* 'I_5 を要素とする集合を定義する。 *)
   Check @p2S : forall M : finType, pred M -> mySet M.
 
-  (* Set Printing All. *)
-  Set Printing Coercions.
-  Check @p2S  _ (ordinal_finType 5)    : mySet 'I_5.
-  Check p2S     (ordinal_finType 5)    : mySet 'I_5.
-  Check p2S     (ordinal         5)    : mySet 'I_5.
-  Check p2S                   'I_5     : mySet 'I_5.
-  Check \{ x in (ordinal_finType 5) \} : mySet 'I_5.
-  Check \{ x in (ordinal         5) \} : mySet 'I_5.
-  Check \{ x in               'I_5  \} : mySet 'I_5.
+  (* 'I_5 は finType のインスタンスである。 *)
+  Goal 'I_5 = ordinal_eqType 5. Proof. done. Qed.
   
-  (* これでは、'I_5 が与えられる理由がまだ判らない。 *)
-  Check @p2S (ordinal_finType 5)
-        (@pred_of_simpl
-           (Equality.sort (Finite.eqType (ordinal_finType 5)))
-           (pred_of_argType
-              (Equality.sort (Finite.eqType (ordinal_finType 5))))).
-  (* @ をとる。 *)
-  Check p2S
-        (pred_of_simpl
-           (pred_of_argType
-              (Equality.sort (Finite.eqType (ordinal_finType 5))))).
-  (* 計算して 'I_5 になる。 *)
-  Check (Equality.sort (Finite.eqType (ordinal_finType 5))) : Type.
-  Compute (Equality.sort (Finite.eqType (ordinal_finType 5))). (* 'I_5 *)
-  Check p2S
-        (pred_of_simpl
-           (pred_of_argType
-              'I_5)).
+  (* T : finType, P : pred T なる P は mem の引数になるので、*)
+  (* pred_of_simpl (pred_of_argType 'I_5) を引数に書ける。 (1) *)
+  Check pred_of_simpl (pred_of_argType 'I_5) : pred 'I_5.
+  Check xpredT                               : pred 'I_5. (* これは参考 *)
   
-  (* まず *)
-  Check @p2S.                               (* これの第2引数は、 *)
-  Variable M : finType.
-  Check pred (Finite.sort M).               (* の型を持つこと。 *)
-  (* 一方 *)
-  Compute (pred_of_simpl
-             (pred_of_argType
-                'I_5)).
-  (* この型は、 *)
-  Check pred 'I_5.
-  (* また *)
-  Compute (pred_of_simpl
-             (pred_of_argType
-                (Equality.sort (Finite.eqType (ordinal_finType 5))))). (* xpredT *)
-  (* この型は、 *)
-  Check pred (Equality.sort (Finite.eqType (ordinal_finType 5))). (* (A)  *)
-  Compute    (Equality.sort (Finite.eqType (ordinal_finType 5))). (* 'I_5 *)
-  Compute    (Finite.sort                  (ordinal_finType 5)). (* 'I_5 *)
-  Check pred 'I_5.                          (* (B) *)
-  (* 以上から、 *)
-  Check pred (Finite.sort  (ordinal_finType 5)). (* (A) *)
-  Check pred                             'I_5.   (* (B) *)
-  (* のどちらを与えてもよいことになる。（？） *)
+  (* 奇妙だが、'I_5 は 'I_5 -> bool の型を持つので、'I_5 を直接書くこともできる。(2) *)  
+  Check                                'I_5  : pred 'I_5.
+  Check                                'I_5  : 'I_5 -> bool.
+  
+  Check p2S (mem (pred_of_simpl (pred_of_argType 'I_5))) : mySet 'I_5. (* (1) *)
+  Check p2S (mem                                 'I_5)   : mySet 'I_5. (* (2) *)
+  
+  (* また、mem も省略できる。 *)
+  Check p2S      (pred_of_simpl (pred_of_argType 'I_5))  : mySet 'I_5.  
+  Check p2S                                      'I_5    : mySet 'I_5.
   
   (* *************** *)
   (* ここからが本題。 *)
