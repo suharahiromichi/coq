@@ -812,5 +812,38 @@ Fixpoint で well-formed で定義するためには match が必要である。
 
  *)
 
+(**
+----------------
+# Collective述語になれるようにする。
+ *)
+
+(**
+\in (∈) の 左側の文字(ascii)、右側に文字列(string) が書けるようにする。
+*)
+
+Section Collective.
+
+  Fail Compute "C"%char \in "ABCD".         (* collective述語 *)
+  Fail Compute "ABCD" "C"%char.             (* applicative述語 *)
+  
+  Fixpoint in_string (s : string) (c : ascii) : bool :=
+    match s with
+    | EmptyString => false
+    | String c' s' => (Ascii.eqb c c') || in_string s' c
+    end.
+  Coercion pred_of_string (s : string) : pred_class := in_string s.
+  
+  Compute in_string "ABCD" "C"%char.   (* true *)
+  
+  Canonical string_predType := @mkPredType ascii string pred_of_string.
+  Canonical mem_string_predType := mkPredType pred_of_string.
+  Check string_predType : predType ascii.
+
+End Collective.
+Check string_predType : predType ascii.
+
+Compute "C"%char \in "ABCD".                (* true *)
+Compute "E"%char \in "ABCD".                (* false *)
+Fail Compute "ABCD" "C"%char.               (* applicative述語 *)
 
 (* END *)
