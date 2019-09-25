@@ -4,6 +4,11 @@ From mathcomp Require Import finfun bigop finset.
 
 (**
 \in 二項演算子 の右側が命題でも、リストでも、集合でもよいという不思議を調べてみる。
+(1) collective述語
+(2) seq
+(3) finType
+(4) finset
+そのすべてが predType型のインスタンス型である(collective述語である)ことが判る。
 
 @suharahiromichi
 
@@ -22,7 +27,7 @@ Unset Printing Implicit Defensive.
 *)
 
 (**
-## (1) collective 述語 (predType 型)
+## (1) collective述語
  *)
 Section SectPred.
 Variable T : Type.
@@ -37,6 +42,12 @@ Check @pred_of_simpl T : simpl_pred T -> pred T.
 About pred_of_mem.
 Check @pred_of_mem T : mem_pred T -> predPredType T.
 (* ********************************************* *)
+
+(**
+### predType型の型であること。
+*)
+Check [pred n : nat | n < 3] : predPredType nat. (* **** *)
+Check [pred n : nat | n < 3] : simplPredType nat. (* **** *)
 
 (**
 ### 素朴な使用例
@@ -92,6 +103,14 @@ Check @pred_of_eq_seq cT : eqseq_class cT -> ssrbool.predPredType cT.
 *)
 Compute mem_seq [:: 0; 1; 2] 0.             (* true : bool *)
 Compute pred_of_eq_seq [:: 0; 1; 2] 0.      (* mem_seq を呼び出している。 *)
+
+(**
+### predType型の型であること。
+*)
+Check [:: 0; 1; 2] : seq nat.
+Check [:: 0; 1; 2] : seq_predType nat_eqType. (* **** *)
+Check [:: 0; 1; 2] : mem_seq_predType nat_eqType.
+
 (**
 ### カノニカル
  *)
@@ -102,6 +121,7 @@ Check mem_seq_predType : predType cT.
 Check seq_predType : forall T : eqType, predType T.
 Canonical seq_predType := @mkPredType cT (seq cT) (@pred_of_eq_seq cT).
 Check seq_predType : predType cT.
+
 
 (**
 ### \in の利用
@@ -152,6 +172,16 @@ Compute                                 'I_5   i. (* true : bool *)
 Compute                           bool_finType true. (* true : bool *)
 
 (**
+### predType型の型であること。
+*)
+Check pred_of_simpl (pred_of_argType 'I_5) : predPredType 'I_5. (* **** *)
+Check pred_of_simpl                  'I_5  : predPredType 'I_5. (* **** *)
+Check                pred_of_argType 'I_5  : predPredType 'I_5. (* **** *)
+Check                                'I_5  : predPredType 'I_5. (* **** *)
+Check pred_of_simpl (pred_of_argType bool_finType) : predPredType bool. (* **** *)
+Check                                bool_finType  : predPredType bool. (* **** *)
+
+(**
 ### \in の利用
 *)
 
@@ -167,7 +197,8 @@ End SectFinType.
 ## (4) 有限集合 (finset 型)
  *)
 Section SectSet.
-
+Variable T : finType.
+  
 (**
 ### finset.v で定義
  *)
@@ -182,6 +213,19 @@ Variable i : 'I_3.
 
 Compute pred_of_set [set n | n in 'I_3] i.
 Compute pred_of_set [set i] i.
+
+(**
+### predType型の型であること。
+*)
+Check [set i] : {set 'I_3}.
+Check [set i] : {set ordinal_finType 3}.
+Check [set i] : set_predType (ordinal_finType 3). (* **** *)
+
+(**
+### カノニカル
+ *)
+Check @mkPredType _ (unkeyed (set_type T)) (@pred_of_set T) : predType T.
+Canonical set_predType T := @mkPredType _ (unkeyed (set_type T)) (@pred_of_set T).
 
 (**
 ### \in の利用
