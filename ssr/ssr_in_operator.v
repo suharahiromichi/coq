@@ -4,11 +4,6 @@ From mathcomp Require Import finfun bigop finset.
 
 (**
 \in 二項演算子 の右側が命題でも、リストでも、集合でもよいという不思議を調べてみる。
-(1) collective述語
-(2) seq
-(3) finType
-(4) finset
-そのすべてが predType型のインスタンス型である(collective述語である)ことが判る。
 
 @suharahiromichi
 
@@ -24,6 +19,22 @@ Unset Printing Implicit Defensive.
 
 (*
 # 例
+
+そのすべてが predType型のインスタンス型である(collective述語である)ことが判る。
+
+(1) collective述語      predlPredType, simplPredType
+
+(2) seq                 seq_predType, mem_seq_predType
+
+(3) finType
+
+(4) finset              set_predType
+
+このほか、標準で以下がある。
+- tuple_predType
+- vector_predType
+- bitseq_predType
+- nat_pred_pred
 *)
 
 (**
