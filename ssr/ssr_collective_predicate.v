@@ -25,9 +25,9 @@ Check mem nat_eqType       : mem_pred nat.
 Goal mem nat_eqType 1.
 Proof. move=> /=. done. Qed.
 
-(** x \in A は自動で簡約されない。明示的に apply inE で簡約する。 *)
+(** x \in A は自動で簡約されない。明示的に apply inE または rewrite inE で簡約する。 *)
 Goal 1 \in nat_eqType.
-Proof. apply inE. Qed.
+Proof. by rewrite inE. Qed.
 
 
 (** # Applicative Predicate と Collective Predicate *)
@@ -147,13 +147,16 @@ Check mem [:: 1] : mem_pred nat.
 
 Goal SimplPred P 1.
   simpl.
+Admitted.
 
-  Goal 1 \in [predI [::1] & [::1]].
-    simpl.
+Goal 1 \in [predI [::1] & [::1]].
+  simpl.
+Admitted.
 
-  Goal m \in [pred x | nat_eqType x].
-    simpl.
-  
+Goal m \in [pred x | nat_eqType x].
+  simpl.
+Admitted.
+
 Goal SimplPred nat_eqType m.
   simpl.
 Admitted.
@@ -161,7 +164,6 @@ Admitted.
 Goal mem nat_eqType m.
   simpl.
 Admitted.
-
 
 Goal mem {: nat} 1.
   simpl.
@@ -193,6 +195,7 @@ Check [:: 1] =i [:: 1].
 Check mem P.
 Goal mem P m.
   simpl.
+Admitted.
 
 About mem_pred.
 Print mem_pred.
