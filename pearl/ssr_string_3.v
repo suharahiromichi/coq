@@ -332,7 +332,7 @@ Check [:: "ABC"; "DEF"] : seq_eqType string_eqType.
 
 (**
 2分木型をここでは TLP ([5.]) の「Star Induction」から、Star型と命名します。
-Star型は、「ATOM、または、Star型のふたつ要素を連結(CONS)したもの」と再帰的に定義できます。
+star型は、「ATOM、または、star型のふたつ要素を連結(CONS)したもの」と再帰的に定義できます。
 その要素のことを一般的なLispのようにS式と呼ぶことにします。
 
 任意の型を ATOM にできるように、``T : Type`` を引数とします。
@@ -343,20 +343,21 @@ Inductive star (T : Type) : Type :=
 | S_CONS of star T & star T.
 
 (**
-Star型はInductiveなデータ型です、(TLP [5.]と同様に)
+star型はInductiveなデータ型です、(TLP [5.]と同様に)
 Coqはinductiveなデータ型に対して、inductionできるようになります。
  *)
 
 (**
-文字列型と同様に、``Star T`` 型についても、型クラス ``eqType`` のインスタンスとして、
-``Star T``型を台とする型を生成します。
+文字列型と同様に、``star T`` 型についても、型クラス ``eqType`` のインスタンスとして、
+``star T``型を台とする型を生成します。
 
 最初に、``star T``型のふたつの値(S式)が同じか判定するbool値の関数 ``eqStar`` を定義します。
 
 CONSを分解してATOMに至ったら、
 ATOMどうしを決定性のある同値関係を使って、等しいかどうか判定します。
-ここで、引数 ``eT`` の型が (``Type``でなく) ``eqType`` であることに注意してください。
-なので、ATOMの値 a と b は、「eqType型の型」になります。
+ここで、eqStarの引数 ``eT`` の型が (``Type``でなく) ``eqType`` 
+であることに注意してください。
+そのため、ATOMの値 a と b は、「eqType型の型」になり「==」が使えます。
 *)
 
 Fixpoint eqStar {eT : eqType} (x y : star eT) : bool :=
@@ -403,15 +404,15 @@ Proof.
 Qed.
 
 (**
-最後に、型クラス ``eqType`` のインスタンスとして、``Star T``型を台とする型を生成します。
-これで、文字列型と同様に、``Star T``型を決定性のある同値関係の使える型として定義できました。
+最後に、型クラス ``eqType`` のインスタンスとして、``star T``型を台とする型を生成します。
+これで、文字列型と同様に、``star T``型を決定性のある同値関係の使える型として定義できました。
 *)
 Definition star_eqMixin (eT : eqType) := @EqMixin (star eT) (@eqStar eT) (@star_eqP eT).
 Canonical star_eqType (eT : eqType) := EqType (star eT) (star_eqMixin eT).
 
 (**
-このとき、``Star eT`` の ``eT`` は ``eqType`` でなければなりません。
-そうであるならば、``star_eqType eT`` は ``eqType`` になります。
+このとき、``star eT`` の ``eT`` は ``eqType``型 でなければなりません。
+そうであるならば、``star_eqType eT`` は ``eqType``型 になります。
  *)
 
 Check star_eqType    nat_eqType : eqType.   (* 自然数を要素とする S式 *)
@@ -814,7 +815,7 @@ Fixpoint で well-formed で定義するためには match が必要である。
 
 (**
 ----------------
-# Collective述語になれるようにする。
+# 文字列型をCollective述語になれるようにする。
  *)
 
 (**
