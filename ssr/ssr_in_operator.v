@@ -91,6 +91,8 @@ Check memPredType : predType T.
 ### \in の利用
 *)
 Compute 0 \in [pred n : nat | n < 3].       (* true : bool *)
+Goal 0 \in [pred n : nat | n < 3].          (* true : bool *)
+Proof. rewrite inE. done. Qed.              (* 0 < 3 *)
 
 End SectPred.
 
@@ -138,6 +140,8 @@ Check seq_predType : predType cT.
 ### \in の利用
 *)
 Compute 0 \in [:: 0; 1; 2].                 (* true : bool *)
+Goal 0 \in [:: 0; 1; 2].
+Proof. rewrite inE. done. Qed.     (* (0 == 0) || (0 \in [:: 1; 2]) *)
 
 End SectSeq.
 
@@ -200,7 +204,13 @@ Compute i \in pred_of_simpl (pred_of_argType 'I_5). (* true : bool *)
 Compute i \in pred_of_simpl                  'I_5.  (* true : bool *)
 Compute i \in                pred_of_argType 'I_5.  (* true : bool *)
 Compute i \in                                'I_5.  (* true : bool *)
+
+Goal i \in 'I_5.
+Proof. rewrite inE. done. Qed.              (* true *)
+  
 Compute true \in                             bool_finType. (* true : bool *)
+Goal true \in bool_finType.
+Proof. rewrite inE. done. Qed.              (* true *)
 
 End SectFinType.
 
@@ -243,6 +253,7 @@ Canonical set_predType T := @mkPredType _ (unkeyed (set_type T)) (@pred_of_set T
 *)
 Compute i \in [set n | n in 'I_3].
 Compute i \in [set i].
+(* inE は使えない。 *)
 
 End SectSet.
 
