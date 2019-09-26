@@ -38,6 +38,7 @@ Proof. by rewrite inE. Qed.
 Goal [pred x | nat_eqType x] =1 [pred x | nat_eqType x].
 Proof. move => x. done. Qed.
 
+
 (** ## Collective Predicate *)
 (** (x \in mem nat_eqType) = (x \in mem nat_eqType) *)
 Goal mem nat_eqType =i mem nat_eqType.
@@ -118,7 +119,8 @@ Check {: nat} : predArgType.
 Compute 1 \in [predU (0,1) & (0,2)].        (* union *)
 Compute 1 \in [predI (0,1) & (0,2)].        (* intersection *)
 Compute 1 \in [predD (0,1) & (0,2)].        (* difference *)
-
+Goal 1 \in [predD (0,1) & (0,2)].           (* difference *)
+Proof. rewrite inE. simpl. done. Qed. (* ~~ (mem (0, 2)) 1 && (mem (0, 1)) 1 *)
 
 
 (** # おまけ *)
