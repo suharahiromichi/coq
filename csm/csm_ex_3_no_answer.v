@@ -1,11 +1,11 @@
 (**
 Coq/SSReflect/MathComp による定理証明
 
-第3章 演習問題と追加の問題、回答なし。
+第3章 演習問題と追加の問題、回答付き
 
 ======
 
-2018_09_16 @suharahiromichi
+2018_10_11 @suharahiromichi
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -14,68 +14,39 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(** 問 3.1 *)
-
-Inductive 紅白玉 :=
-| 赤玉
-| 白玉
-.
+(** 問 3.1  *)
+(** 赤玉と白玉のふたつの要素からなる型「紅白玉」をInductiveを使って定
+    義してください。 *)
+(** Exercise 3.1 *)
+(** Define the type "ball" that consists of two elements, red (rouge)
+    and white (blanc). *)
 
 (** 問 3.2 *)
-
-Definition 玉の列 := list 紅白玉.
+(** ボールの列の型をlist型を使って定義してください。 *)
+(** Exercise 3.2 *)
+(** Dinefine the type of sequence of balls using the "list" (or "seq") type. *)
 
 (** 問 3.3 *)
-
-Check nil : 玉の列.
-Fail Check 赤玉      : 玉の列.
-Check cons 赤玉 nil  : 玉の列.
-Fail Check nil cons 赤玉 nil : 玉の列.
-Check cons 白玉 (cons 赤玉 nil).
+(** 次のうち、正しい型をもつ値はどれでしょうか。Checkコマンドを使って
+    確認してください。 *)
+(** Exercise 3.3 *)
+(** Which of the following values ​​has the correct type? Confirm using
+    the "Check" command. *)
 
 (** 問 3.4 *)
-(* 次の定義を修正して、完成してください。 *)
-
-Fixpoint 赤数え (s : 玉の列) : nat :=
-  0.
-  
-(** 問 3.5 追加の問題 *)
-(** 与えられた玉の列に対する赤玉の数を示す述語 num_of_red を Inductive により定義せよ。 *)
-(* 次の定義を修正して、完成してください。 *)
-
-Inductive num_of_red : 玉の列 -> nat -> Prop :=
-| b_nil   : num_of_red nil 0
-| b_red   : forall s n,                     num_of_red (赤玉 :: s) n
-| b_white : forall s n,                     num_of_red (白玉 :: s) n
-.
-
-(** 問 3.6 追加の問題 *)
-(** 命題 [num_of_red (cons 白玉 (cons 赤玉 nil)) 1] が真であることを示せ。 *)
-(* Admitted を修正してください。 *)
-
-Goal num_of_red (cons 白玉 (cons 赤玉 nil)) 1.
-Proof.
-Admitted.
-
-(** 問 3.7 追加の問題 *)
-(** 命題 [num_of_red (cons 白玉 (cons 赤玉 nil)) 0] が偽（否定が真）であることを示せ。 *)
-(* Admitted を修正してください。 *)
-
-Goal ~ num_of_red (cons 白玉 (cons 赤玉 nil)) 0.
-Proof.
-Admitted.
-
-(** 問 3.8 追加の問題 *)
-(** 問 3.4 で定義した 関数 赤数え の結果と、問 3.5 で定義した 述語
-    num_of_red の命題が必要十分条件であることを定理として示せ。
-    このとき、num_of_red の定義を見直してもよい。 *)
-(* admit と Admitted を修正してください。 *)
-
-Theorem 赤数え_赤の数 s n : 赤数え s = n <-> num_of_red s n.
-Proof.
-  split.
-  - admit.
-  - admit.
-Admitted.
+(** Fixpint コマンドを使って、型 balls -> nat を持つ関数 count_rouges
+    を定義してください。以下に動作例を示します。 *)
+(** そして、Compute コマンドを使って確認してください。 *)
+(** Exercise 3.4 *)
+(** Define the function "count_rouges" which has the "balls -> nat"
+    type, using "Fixpoint" command. *)
+(** Examples of function values are shown below. *)
+(**
+   count_rouges nil                           ==> 0
+   count_rouges (cons rouge nil)              ==> 1
+   count_rouges (cons blanc nil)              ==> 0
+   count_rouges (cons rouge (cons rouge nil)) ==> 2
+   *)
+(* And confirm using the "Compute" command. *)
 
 (* END *)
