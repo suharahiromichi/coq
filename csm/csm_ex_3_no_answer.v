@@ -146,4 +146,26 @@ Qed.
     statement of the predicate num_of_red are equivalent. *)
 
 
+(** 問 3a *)
+(** SSReflect/MathComp は、Standard Coqよりもbool型の等式を使います。
+    決定性のある等式（bool型の等式）の成り立つ型のクラス (eqType) が用意されています。
+    ユーザの定義した型をeqTypeのインスタンスとすることで、eqTypeで定義された関数や定理を
+    使うことができます。bool型は真が偽かに決まるため、証明がやさしくなる場合があります。
+    SSReflect/MathCompの方法で、もういちど、問題を解いてみましょう。
+ *)
+
+(** Exercise 3a *)
+(** SSReflect/MathComp uses bool type equations rather than Standard
+    Coq.  There is a type class (eqType) that holds deterministic
+    equations (equals of type bool).
+    By making the user-defined type an instance of eqType, you can use
+    the functions and theorems defined by eqType. Since the bool type
+    is determined to be true or false, the proof may be easy.
+    Let's solve the exercises again with the SSReflect/MathComp way.
+ *)
+
+(** なお、今回は証明は単純になりませんが、count_rouge_xxx の定義が簡単になります。 *)
+(** Note that this time the proof will not be simple,
+    but the definition of count_rouge will be easy. *)
+
 (* END *)
