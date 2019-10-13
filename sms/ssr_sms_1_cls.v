@@ -1,3 +1,5 @@
+(** Tezos' Michelson small-setp semantics *)
+
 From mathcomp Require Import all_ssreflect.
 Require Import ssrinv ssrclosure.
 
@@ -21,14 +23,14 @@ Inductive inst : Set :=
 | idup
 | iswap
 | ipush (ty : type) (d : data)
-| iloop (i : inst)                          (* あどで seq inst にする。 *)
+| iloop (cs : seq inst)
 | idip (cs : seq inst)
 | iadd
 | isub
 | imul
 | ieq
 | ineq
-| iret (d : data)
+| iret (d : data)                           (* for idip *)
 .
 
 Definition sample1 :=
@@ -45,15 +47,15 @@ Definition fact :=
      ipush tn (dn 4);
      idup;
      ineq;
-     iloop (iseq [::
-                    idup;
-                    idip [:: imul];
-                    ipush tn (dn 1);
-                    iswap;
-                    isub;
-                    idup;
-                    ineq
-                 ]);
+     iloop [::
+              idup;
+              idip [:: imul];
+              ipush tn (dn 1);
+              iswap;
+              isub;
+              idup;
+              ineq
+           ];
      idrop
   ].
 
@@ -69,7 +71,8 @@ Inductive eval : relation env :=            (* env -> env -> Prop *)
 | evaldup  d vs cs :       eval (d :: vs, idup :: cs)           (d :: d :: vs, cs)
 | evalswap d1 d2 vs cs :   eval (d2 :: d1 :: vs, iswap :: cs)   (d1 :: d2 :: vs, cs)
 | evalpush ty d vs cs:     eval (vs, ipush ty d :: cs)          (d :: vs, cs)
-| evalloop_tt vs i cs :    eval (db true :: vs, iloop i :: cs)  (vs, i :: cs)
+| evalloop_tt vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
+                           eval (db true :: vs, iloop cs1 :: cs2) (vs, cs)
 | evalloop_ff vs i cs :    eval (db false :: vs, iloop i :: cs) (vs, cs)
 | evaldip d vs1 vs2 cs1 cs2 cs : cs1 ++ [:: iret d] ++ cs2 = cs -> (* XXX *)
                            eval (d :: vs1, idip cs1 :: cs2) (vs2, cs)
@@ -173,8 +176,34 @@ Proof.
         -- right=> Hc. inversion Hc. by inversion H.
         -- right=> Hc. inversion Hc. by inversion H.
         -- right=> Hc. inversion Hc. by inversion H.
-  - admit.                                  (* isub *)
-  - admit.                                  (* imul *)
+  - case: vs.                               (* isub *)
+    + right=> Hc. inversion Hc. by inversion H.
+    + move=> d2 vs'.
+      case: vs'.
+      * right=> Hc. inversion Hc. by inversion H.
+      * move=> d vs'.
+        case: d; case: d2.
+        -- move=> n2 n1 sc.
+            left.
+            exists (dn (n1 - n2) :: vs', sc).
+              by apply: evalsub.
+        -- right=> Hc. inversion Hc. by inversion H.
+        -- right=> Hc. inversion Hc. by inversion H.
+        -- right=> Hc. inversion Hc. by inversion H.
+  - case: vs.                               (* imul *)
+    + right=> Hc. inversion Hc. by inversion H.
+    + move=> d2 vs'.
+      case: vs'.
+      * right=> Hc. inversion Hc. by inversion H.
+      * move=> d vs'.
+        case: d; case: d2.
+        -- move=> n2 n1 sc.
+            left.
+            exists (dn (n1 * n2) :: vs', sc).
+              by apply: evalmul.
+        -- right=> Hc. inversion Hc. by inversion H.
+        -- right=> Hc. inversion Hc. by inversion H.
+        -- right=> Hc. inversion Hc. by inversion H.
   - case: vs.                               (* ieq *)
     + right=> Hc. inversion Hc. by inversion H.
     + case.
@@ -186,8 +215,20 @@ Proof.
            eexists.
              by apply: evaleq_ff.
       * right=> Hc. inversion Hc. by inversion H.
-  - admit.                                  (* ineq *)
+  - case: vs.                               (* ineq *)
+    + right=> Hc. inversion Hc. by inversion H.
+    + case.
+      * case=> vs cs.
+        -- left.                            (* [:: 0 ;..... *)
+           eexists.
+             by apply: evalneq_ff.
+        -- left.                            (* [:: 1 ; .... *)
+           eexists.
+             by apply: evalneq_tt.
+      * right=> Hc. inversion Hc. by inversion H.
   - move=> d sc.                            (* iret *)
     left.
       by eexists; econstructor.            (* by exists (d :: vs, sc) *)
-Admitted.
+Qed.
+
+(* END *)
