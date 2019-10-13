@@ -1,4 +1,6 @@
 (** Tezos' Michelson small-setp semantics *)
+(** @suharahiromicihi *)
+(** 2019_10_12 *)
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssrinv ssrclosure.
@@ -12,13 +14,13 @@ Inductive type : Set :=
 | tb
 .
 
-Inductive data : Set :=
+Inductive data : Set :=                     (* v *)
 | dn (n : nat)
 | db (b : bool)
 .
 
-Inductive inst : Set :=
-| iseq (i : seq inst)
+Inductive inst : Set :=                     (* c *)
+| iseq (cs : seq inst)
 | idrop
 | idup
 | iswap
@@ -32,6 +34,10 @@ Inductive inst : Set :=
 | ineq
 | iret (d : data)                           (* for idip *)
 .
+
+Definition cstack := seq inst.              (* c :: cs *)
+Definition vstack := seq data.              (* v :: vs *)
+Definition env := (vstack * cstack)%type.   (* e *)
 
 Definition sample1 :=
   [::
@@ -59,176 +65,151 @@ Definition fact :=
      idrop
   ].
 
-Definition cstack := seq inst.              (* i :: cs *)
-Definition vstack := seq data.              (* d :: vs *)
-
-Definition env := (vstack * cstack)%type.
-
-Inductive eval : relation env :=            (* env -> env -> Prop *)
-| evalseq  vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
-                           eval (vs, iseq cs1 :: cs2)           (vs, cs)
-| evaldrop d vs cs :       eval (d :: vs, idrop :: cs)          (vs, cs)
-| evaldup  d vs cs :       eval (d :: vs, idup :: cs)           (d :: d :: vs, cs)
-| evalswap d1 d2 vs cs :   eval (d2 :: d1 :: vs, iswap :: cs)   (d1 :: d2 :: vs, cs)
-| evalpush ty d vs cs:     eval (vs, ipush ty d :: cs)          (d :: vs, cs)
-| evalloop_tt vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
-                           eval (db true :: vs, iloop cs1 :: cs2) (vs, cs)
-| evalloop_ff vs i cs :    eval (db false :: vs, iloop i :: cs) (vs, cs)
-| evaldip d vs1 vs2 cs1 cs2 cs : cs1 ++ [:: iret d] ++ cs2 = cs -> (* XXX *)
-                           eval (d :: vs1, idip cs1 :: cs2) (vs2, cs)
-| evaladd d1 d2 d3 vs cs : d1 + d2 = d3 ->
-                           eval (dn d2 :: dn d1 :: vs, iadd :: cs) (dn d3 :: vs, cs)
-| evalsub d1 d2 d3 vs cs : d1 - d2 = d3 ->
-                           eval (dn d2 :: dn d1 :: vs, isub :: cs) (dn d3 :: vs, cs)
-| evalmul d1 d2 d3 vs cs : d1 * d2 = d3 ->
-                           eval (dn d2 :: dn d1 :: vs, imul :: cs) (dn d3 :: vs, cs)
-| evaleq_tt vs cs :        eval (dn 0 :: vs, ieq :: cs)     (db true :: vs, cs)
-| evaleq_ff d vs cs :      eval (dn d.+1 :: vs, ieq :: cs)  (db false :: vs, cs)
-| evalneq_tt d vs cs :     eval (dn d.+1 :: vs, ineq :: cs) (db true :: vs, cs)
-| evalneq_ff vs cs :       eval (dn 0 :: vs, ineq :: cs)    (db false :: vs, cs)
-| evalret  d vs cs:        eval (vs, iret d :: cs)          (d :: vs, cs)
+Inductive step : relation env :=            (* env -> env -> Prop *)
+| stepseq  vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
+                           step (vs, iseq cs1 :: cs2)           (vs, cs)
+| stepdrop v vs cs :       step (v :: vs, idrop :: cs)          (vs, cs)
+| stepdup  v vs cs :       step (v :: vs, idup :: cs)           (v :: v :: vs, cs)
+| stepswap v1 v2 vs cs :   step (v2 :: v1 :: vs, iswap :: cs)   (v1 :: v2 :: vs, cs)
+| steppush ty v vs cs:     step (vs, ipush ty v :: cs)          (v :: vs, cs)
+| steploop_tt vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
+                           step (db true :: vs, iloop cs1 :: cs2) (vs, cs)
+| steploop_ff vs cs1 cs2 : step (db false :: vs, iloop cs1 :: cs2) (vs, cs2)
+| stepdip v vs1 vs2 cs1 cs2 cs : cs1 ++ [:: iret v] ++ cs2 = cs ->
+                           step (v :: vs1, idip cs1 :: cs2) (vs2, cs)
+| stepadd v1 v2 v3 vs cs : v1 + v2 = v3 ->
+                           step (dn v2 :: dn v1 :: vs, iadd :: cs) (dn v3 :: vs, cs)
+| stepsub v1 v2 v3 vs cs : v1 - v2 = v3 ->
+                           step (dn v2 :: dn v1 :: vs, isub :: cs) (dn v3 :: vs, cs)
+| stepmul v1 v2 v3 vs cs : v1 * v2 = v3 ->
+                           step (dn v2 :: dn v1 :: vs, imul :: cs) (dn v3 :: vs, cs)
+| stepeq_tt vs cs :        step (dn 0 :: vs, ieq :: cs)     (db true :: vs, cs)
+| stepeq_ff v vs cs :      step (dn v.+1 :: vs, ieq :: cs)  (db false :: vs, cs)
+| stepneq_tt v vs cs :     step (dn v.+1 :: vs, ineq :: cs) (db true :: vs, cs)
+| stepneq_ff vs cs :       step (dn 0 :: vs, ineq :: cs)    (db false :: vs, cs)
+| stepret v vs cs:         step (vs, iret v :: cs)          (v :: vs, cs)
 .
 
-Hint Constructors eval.
+Hint Constructors step.
 Hint Constructors refl_step_closure.
 
-Definition evalrec := refl_step_closure eval. (* env -> env -> Prop *)
+Definition steprec := refl_step_closure step. (* env -> env -> Prop *)
 
-Infix "|=>" := eval (at level 50, no associativity).
-Infix "|=>*" := evalrec (at level 50, no associativity).
+Infix "|=>" := step (at level 50, no associativity).
+Infix "|=>*" := steprec (at level 50, no associativity).
 
-Lemma evalrtc_refl (e : env) : e |=>* e.
+Lemma steprtc_refl (e : env) : e |=>* e.
 Proof. done. Qed.
 
-Lemma evalrtc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
+Lemma steprtc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
 Proof. by move=> <-. Qed.
 
-Lemma evalrtc_step (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
+Lemma steprtc_step (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
 Proof. by do !econstructor. Qed.
 
-Lemma evalrtc_cons (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
+Lemma steprtc_cons (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by econstructor; eauto. Qed.
 
-Lemma evalrtc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
+Lemma steprtc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by apply: rsc_trans. Qed.
 
-Theorem decide_eval (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
+Ltac i_none := right; inv=> ?; inv; done.   (* inst の条件にあわない場合 *)
+
+(* step が決定的であることを証明する。 *)
+
+Theorem decide_step (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
 Proof.
   case: e1 => vs cs.
-  case: cs;  [| move=> i; case: i].
-  (* case=> [vs [|[]]]. *)
-  
-  - right=> Hc.                             (* [::] *)
-    now inversion Hc.
-  - move=> sc1 sc2.                         (* iseq *)
+  case: cs => [| c]; first i_none.
+  case: c.                                 (* inst で場合分けする。 *)
+  (* seq *)
+  - move=> cs1 cs2.
     left.
-    exists (vs, sc1 ++ sc2).
-    by econstructor.
-  - case: vs.                               (* idrop *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d vs sc.
-      left.
-        by eexists; econstructor.
-  - case: vs.                               (* idup *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d vs sc.
-      left.
-        by eexists; econstructor.
-  - case: vs.                               (* iswap *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d2 vs'.
-      case: vs'.
-      * right=> Hc. inversion Hc. by inversion H.
-      * move=> d vs'.
-        left.
-          by eexists; econstructor. (* by exists ([:: d, d2 & vs'], cs) *)
-  - move=> ty d sc.                         (* ipush *)
+    exists (vs, cs1 ++ cs2).                (* eexists *)
+      by apply: stepseq.                    (* constructor *)
+  (* drop *)
+  - case: vs => [cs | v vs cs]; first i_none.
     left.
-      by eexists; econstructor.            (* by exists (d :: vs, sc) *)
-  - case: vs.                              (* iloop *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d vs' i cs.
-      case: d.
-      * right=> Hc. inversion Hc. by inversion H.
-      * left.
-        case: b.
-        -- by eexists; econstructor.
-        -- by eexists; econstructor.
-
-  - case: vs => d vs1.                      (* idip *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> sc1 sc2.
-      left.
-      exists (vs1, sc1 ++ [:: iret d] ++ sc2).
-        by apply: evaldip.
+    exists (vs, cs).
+      by apply: stepdrop.
+  (* dup *)
+  - case: vs => [cs | v vs cs]; first i_none.
+    left.
+    exists ([:: v, v & vs], cs).
+      by apply: stepdup.
+  (* swap *)
+  - case: vs => [cs | v1 vs cs]; first i_none.
+    case: vs => [| v2 vs]; first i_none.
+    left.
+    exists ([:: v2, v1 & vs], cs).
+      by apply: stepswap.
+  (* push *) (* 型のチェックを入れること。 *)
+  - move=> ty v cs.
+    left.
+    exists ([:: v & vs], cs).
+      by apply: steppush.
+  (* loop *)
+  - case: vs => [cs | v vs cs1 cs2]; first i_none.
+    case: v => [n | b]; first i_none. (* nat か bool で場合分けする。 *)
+    left.
+    case: b.                      (* true か false で場合分けする。 *)
+    + exists (vs, cs1 ++ cs2).
+        by apply: steploop_tt.
+    + exists (vs, cs2).
+        by apply: steploop_ff.
         
-  - case: vs.                               (* iadd *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d2 vs'.
-      case: vs'.
-      * right=> Hc. inversion Hc. by inversion H.
-      * move=> d vs'.
-        case: d; case: d2.
-        -- move=> n2 n1 sc.
-            left.
-            exists (dn (n1 + n2) :: vs', sc).
-              by apply: evaladd.
-        -- right=> Hc. inversion Hc. by inversion H.
-        -- right=> Hc. inversion Hc. by inversion H.
-        -- right=> Hc. inversion Hc. by inversion H.
-  - case: vs.                               (* isub *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d2 vs'.
-      case: vs'.
-      * right=> Hc. inversion Hc. by inversion H.
-      * move=> d vs'.
-        case: d; case: d2.
-        -- move=> n2 n1 sc.
-            left.
-            exists (dn (n1 - n2) :: vs', sc).
-              by apply: evalsub.
-        -- right=> Hc. inversion Hc. by inversion H.
-        -- right=> Hc. inversion Hc. by inversion H.
-        -- right=> Hc. inversion Hc. by inversion H.
-  - case: vs.                               (* imul *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + move=> d2 vs'.
-      case: vs'.
-      * right=> Hc. inversion Hc. by inversion H.
-      * move=> d vs'.
-        case: d; case: d2.
-        -- move=> n2 n1 sc.
-            left.
-            exists (dn (n1 * n2) :: vs', sc).
-              by apply: evalmul.
-        -- right=> Hc. inversion Hc. by inversion H.
-        -- right=> Hc. inversion Hc. by inversion H.
-        -- right=> Hc. inversion Hc. by inversion H.
-  - case: vs.                               (* ieq *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + case.
-      * case=> vs cs.
-        -- left.                            (* [:: 0 ;..... *)
-           eexists.
-             by apply: evaleq_tt.
-        -- left.                            (* [:: 1 ; .... *)
-           eexists.
-             by apply: evaleq_ff.
-      * right=> Hc. inversion Hc. by inversion H.
-  - case: vs.                               (* ineq *)
-    + right=> Hc. inversion Hc. by inversion H.
-    + case.
-      * case=> vs cs.
-        -- left.                            (* [:: 0 ;..... *)
-           eexists.
-             by apply: evalneq_ff.
-        -- left.                            (* [:: 1 ; .... *)
-           eexists.
-             by apply: evalneq_tt.
-      * right=> Hc. inversion Hc. by inversion H.
-  - move=> d sc.                            (* iret *)
+  (* dip *)
+  - case: vs => [cs1 cs2 |v vs cs1 cs2]; first i_none.
     left.
-      by eexists; econstructor.            (* by exists (d :: vs, sc) *)
+    exists (vs, cs1 ++ [:: iret v] ++ cs2). (* iret を使う例。 *)
+        by apply: stepdip.
+        
+  (* add *)
+  - case: vs => [cs | v1 vs cs]; first i_none.
+    case: vs => [| v2 vs]; first i_none.
+    case: v1; case: v2 => n1 n2; try i_none. (* nat か bool で場合分けする。 *)
+    (* nat と nat の組み合わせ以外を try i_none で片付ける。 *)
+    left.
+    exists (dn (n1 + n2) :: vs, cs).
+      by apply: stepadd.
+  (* sub *)
+  - case: vs => [cs | v1 vs cs]; first i_none.
+    case: vs => [| v2 vs]; first i_none.
+    case: v1; case: v2 => n1 n2; try i_none.
+    left.
+    exists (dn (n1 - n2) :: vs, cs).
+      by apply: stepsub.
+  (* mul *)
+  - case: vs => [cs | v1 vs cs]; first i_none.
+    case: vs => [| v2 vs]; first i_none.
+    case: v1; case: v2 => n1 n2; try i_none.
+    left.
+    exists (dn (n1 * n2) :: vs, cs).
+      by apply: stepmul.
+  (* eq *)
+  - case: vs => [cs | v vs cs]; first i_none.
+    case: v => n; try i_none.       (* nat か bool で場合分けする。 *)
+    left.
+    case: n.                        (* 0 か 非0 で場合分けする。 *)
+    + exists ([:: db true & vs], cs).
+        by apply: stepeq_tt.
+    + exists ([:: db false & vs], cs).
+        by apply: stepeq_ff.
+  (* neq *)
+  - case: vs => [cs | v vs cs]; first i_none.
+    case: v => n; try i_none.
+    left.
+    case: n.
+    + exists ([:: db false & vs], cs).
+        by apply: stepneq_ff.
+    + exists ([:: db true & vs], cs).
+        by apply: stepneq_tt.
+        
+  (* ret 追加 *)
+  - move=> v cs.
+    left.
+    exists ([:: v & vs], cs).
+      by apply: stepret.
 Qed.
 
 (* END *)
