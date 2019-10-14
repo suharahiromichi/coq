@@ -34,7 +34,7 @@ Inductive inst : Set :=                     (* c *)
 | imul
 | ieq
 | ineq
-| iret (v : value)                           (* for idip *)
+| iret (v : value)                          (* for idip, internal use *)
 .
 
 Definition cstack := seq inst.              (* c :: cs *)
@@ -78,14 +78,14 @@ Inductive step : relation env :=            (* env -> env -> Prop *)
 | steploop_tt vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
                            step (vb true :: vs, iloop cs1 :: cs2) (vs, cs)
 | steploop_ff vs cs1 cs2 : step (vb false :: vs, iloop cs1 :: cs2) (vs, cs2)
-| stepdip v vs1 vs2 cs1 cs2 cs : cs1 ++ [:: iret v] ++ cs2 = cs ->
+| stepdip v vs1 vs2 cs1 cs2 cs : cs1 ++ (iret v :: cs2) = cs ->
                            step (v :: vs1, idip cs1 :: cs2) (vs2, cs)
 | stepadd v1 v2 v3 vs cs : v1 + v2 = v3 ->
-                           step (vn v2 :: vn v1 :: vs, iadd :: cs) (vn v3 :: vs, cs)
+                           step ([:: vn v2, vn v1 & vs], iadd :: cs) (vn v3 :: vs, cs)
 | stepsub v1 v2 v3 vs cs : v1 - v2 = v3 ->
-                           step (vn v2 :: vn v1 :: vs, isub :: cs) (vn v3 :: vs, cs)
+                           step ([:: vn v2, vn v1 & vs], isub :: cs) (vn v3 :: vs, cs)
 | stepmul v1 v2 v3 vs cs : v1 * v2 = v3 ->
-                           step (vn v2 :: vn v1 :: vs, imul :: cs) (vn v3 :: vs, cs)
+                           step ([:: vn v2, vn v1 & vs], imul :: cs) (vn v3 :: vs, cs)
 | stepeq_tt vs cs :        step (vn 0 :: vs, ieq :: cs)     (vb true :: vs, cs)
 | stepeq_ff v vs cs :      step (vn v.+1 :: vs, ieq :: cs)  (vb false :: vs, cs)
 | stepneq_tt v vs cs :     step (vn v.+1 :: vs, ineq :: cs) (vb true :: vs, cs)
@@ -171,7 +171,7 @@ Proof.
   (* dip *)
   - case: vs => [cs1 cs2 |v vs cs1 cs2]; first i_none.
     left.
-    exists (vs, cs1 ++ [:: iret v] ++ cs2). (* iret を使う例。 *)
+    exists (vs, cs1 ++ (iret v :: cs2)).    (* iret を使う例。 *)
         by apply: stepdip.
         
   (* add *)
@@ -220,6 +220,6 @@ Proof.
     left.
     exists ([:: v & vs], cs).
       by apply: stepret.
-Qed.
+Defined.
 
 (* END *)
