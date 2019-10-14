@@ -561,4 +561,117 @@ Proof.
   by apply rsc_refl.
 Qed.
 
+Goal ([::], [::], fact) |=>* ([::], [::], [::]).
+Proof.
+  rewrite /fact.
+  eapply rsc_step with (y:=([::], [:: vn 1], _));
+    first by apply: steppush_n.
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 1], _));
+    first by apply: steppush_n.
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 4; vn 1], _));
+       first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vb true; vn 4; vn 1], _));
+    first by apply: stepneq_tt.
+  (* **** *)
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 1], _));
+    first by apply: steploop_tt.
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 4; vn 1], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 4; vn 1], _));
+    first by apply: stepdip.
+  eapply rsc_step with (y:=([:: vn 4], [:: vn 4; vn 1], _));
+    first by apply: stepup.
+  eapply rsc_step with (y:=([:: vn 4], [:: vn 4], _));
+    first by apply: stepmul.
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 4], _));
+    first by apply: stepdown.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 4; vn 4], _));
+    first by apply: steppush_n.
+  eapply rsc_step with (y:=([::], [:: vn 4; vn 1; vn 4], _));
+    first by apply: stepswap.
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 4], _));
+    first by apply: stepsub.
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 3; vn 4], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vb true; vn 3; vn 4], _));
+    first by apply: stepneq_tt.
+  (* **** *)
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 4], _));
+    first by apply: steploop_tt.
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 3; vn 4], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 3; vn 4], _));
+    first by apply: stepdip.
+  eapply rsc_step with (y:=([:: vn 3], [:: vn 3; vn 4], _));
+    first by apply: stepup.
+  eapply rsc_step with (y:=([:: vn 3], [:: vn 12], _));
+    first by apply: stepmul.
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 12], _));
+    first by apply: stepdown.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 3; vn 12], _));
+    first by apply: steppush_n.
+  eapply rsc_step with (y:=([::], [:: vn 3; vn 1; vn 12], _));
+    first by apply: stepswap.
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 12], _));
+    first by apply: stepsub.
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 2; vn 12], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vb true; vn 2; vn 12], _));
+    first by apply: stepneq_tt.
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 12], _));
+    first by apply: steploop_tt.
+  (* **** *)
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 2; vn 12], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 2; vn 12], _));
+    first by apply: stepdip.
+  eapply rsc_step with (y:=([:: vn 2], [:: vn 2; vn 12], _));
+    first by apply: stepup.
+  eapply rsc_step with (y:=([:: vn 2], [:: vn 24], _));
+    first by apply: stepmul.
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 24], _));
+    first by apply: stepdown.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 2; vn 24], _));
+    first by apply: steppush_n.
+  eapply rsc_step with (y:=([::], [:: vn 2; vn 1; vn 24], _));
+    first by apply: stepswap.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 24], _));
+    first by apply: stepsub.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vb true; vn 1; vn 24], _));
+    first by apply: stepneq_tt.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 24], _));
+    first by apply: steploop_tt.
+  (* **** *)
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepdip.
+  eapply rsc_step with (y:=([:: vn 1], [:: vn 1; vn 24], _));
+    first by apply: stepup.
+  eapply rsc_step with (y:=([:: vn 1], [:: vn 24], _));
+    first by apply: stepmul.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 24], _));
+    first by apply: stepdown.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: steppush_n.
+  eapply rsc_step with (y:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepswap.
+  eapply rsc_step with (y:=([::], [:: vn 0; vn 24], _));
+    first by apply: stepsub.
+  eapply rsc_step with (y:=([::], [:: vn 0; vn 0; vn 24], _));
+    first by apply: stepdup.
+  eapply rsc_step with (y:=([::], [:: vb false; vn 0; vn 24], _));
+    first by apply: stepneq_ff.
+  eapply rsc_step with (y:=([::], [:: vn 0; vn 24], _));
+    first by apply: steploop_ff.
+  (* **** *) 
+  eapply rsc_step with (y:=([::], [:: vn 24], _));
+    first by apply: stepdrop.
+  eapply rsc_step with (y:=([::], [::], _));
+    first by apply: stepdrop.
+  by eapply rsc_refl.
+Qed.
+
 (* END *)
