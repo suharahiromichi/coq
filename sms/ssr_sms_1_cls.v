@@ -75,20 +75,20 @@ Inductive step : relation env :=            (* env -> env -> Prop *)
 | stepswap v1 v2 vs cs :   step (v2 :: v1 :: vs, iswap :: cs)   (v1 :: v2 :: vs, cs)
 | steppush_n n vs cs:      step (vs, ipush tn (vn n) :: cs)     ((vn n) :: vs, cs)
 | steppush_b b vs cs:      step (vs, ipush tb (vb b) :: cs)     ((vb b) :: vs, cs)
-| steploop_tt vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
+| steploop_tt vs cs1 cs2 cs : cs1 ++ (iloop cs1 :: cs2) = cs ->
                            step (vb true :: vs, iloop cs1 :: cs2) (vs, cs)
 | steploop_ff vs cs1 cs2 : step (vb false :: vs, iloop cs1 :: cs2) (vs, cs2)
 | stepdip v vs1 vs2 cs1 cs2 cs : cs1 ++ (iret v :: cs2) = cs ->
                            step (v :: vs1, idip cs1 :: cs2) (vs2, cs)
-| stepadd v1 v2 v3 vs cs : v1 + v2 = v3 ->
-                           step ([:: vn v2, vn v1 & vs], iadd :: cs) (vn v3 :: vs, cs)
-| stepsub v1 v2 v3 vs cs : v1 - v2 = v3 ->
-                           step ([:: vn v2, vn v1 & vs], isub :: cs) (vn v3 :: vs, cs)
-| stepmul v1 v2 v3 vs cs : v1 * v2 = v3 ->
-                           step ([:: vn v2, vn v1 & vs], imul :: cs) (vn v3 :: vs, cs)
+| stepadd n1 n2 n3 vs cs : n2 + n1 = n3 ->
+                           step ([:: vn n2, vn n1 & vs], iadd :: cs) (vn n3 :: vs, cs)
+| stepsub n1 n2 n3 vs cs : n2 - n1 = n3 ->
+                           step ([:: vn n2, vn n1 & vs], isub :: cs) (vn n3 :: vs, cs)
+| stepmul n1 n2 n3 vs cs : n2 * n1 = n3 ->
+                           step ([:: vn n2, vn n1 & vs], imul :: cs) (vn n3 :: vs, cs)
 | stepeq_tt vs cs :        step (vn 0 :: vs, ieq :: cs)     (vb true :: vs, cs)
-| stepeq_ff v vs cs :      step (vn v.+1 :: vs, ieq :: cs)  (vb false :: vs, cs)
-| stepneq_tt v vs cs :     step (vn v.+1 :: vs, ineq :: cs) (vb true :: vs, cs)
+| stepeq_ff n vs cs :      step (vn n.+1 :: vs, ieq :: cs)  (vb false :: vs, cs)
+| stepneq_tt n vs cs :     step (vn n.+1 :: vs, ineq :: cs) (vb true :: vs, cs)
 | stepneq_ff vs cs :       step (vn 0 :: vs, ineq :: cs)    (vb false :: vs, cs)
 | stepret v vs cs:         step (vs, iret v :: cs)          (v :: vs, cs)
 .
@@ -163,7 +163,7 @@ Proof.
     case: v => [n | b]; first i_none. (* nat か bool で場合分けする。 *)
     left.
     case: b.                      (* true か false で場合分けする。 *)
-    + exists (vs, cs1 ++ cs2).
+    + exists (vs, cs1 ++ (iloop cs1 :: cs2)).
         by apply: steploop_tt.
     + exists (vs, cs2).
         by apply: steploop_ff.
@@ -180,21 +180,21 @@ Proof.
     case: v1; case: v2 => n1 n2; try i_none. (* nat か bool で場合分けする。 *)
     (* nat と nat の組み合わせ以外を try i_none で片付ける。 *)
     left.
-    exists (vn (n1 + n2) :: vs, cs).
+    exists (vn (n2 + n1) :: vs, cs).
       by apply: stepadd.
   (* sub *)
   - case: vs => [cs | v1 vs cs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
-    exists (vn (n1 - n2) :: vs, cs).
+    exists (vn (n2 - n1) :: vs, cs).
       by apply: stepsub.
   (* mul *)
   - case: vs => [cs | v1 vs cs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
-    exists (vn (n1 * n2) :: vs, cs).
+    exists (vn (n2 * n1) :: vs, cs).
       by apply: stepmul.
   (* eq *)
   - case: vs => [cs | v vs cs]; first i_none.
