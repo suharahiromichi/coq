@@ -253,9 +253,7 @@ Proof.
       by apply: stepdown.
 Defined.
 
-Print refl_step_closure.
-
-
+(* 階乗の計算 *)
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
   rewrite /fact.
@@ -282,6 +280,7 @@ Proof.
            [:: iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
             idrop; idrop]));
     first by apply: stepneq_tt.
+  (* **** *)
   apply rsc_step with
       (y:=([::], [:: vn 4; vn 1],
            [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
@@ -336,6 +335,230 @@ Proof.
             iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
             idrop; idrop]));
     first by apply: stepsub.
-  Admitted.
+  apply rsc_step with
+      (y:=([::], [:: vn 3; vn 3; vn 4],
+           [:: ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vb true; vn 3; vn 4],
+           [:: iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepneq_tt.
+  (* **** *)
+  apply rsc_step with
+      (y:=([::], [:: vn 3; vn 4],
+           [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: steploop_tt.
+  apply rsc_step with
+      (y:=([::], [:: vn 3; vn 3; vn 4],
+           [:: idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vn 3; vn 3; vn 4],
+           [:: iup; imul; idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdip.
+  apply rsc_step with
+      (y:=([:: vn 3], [:: vn 3; vn 4],
+           [:: imul; idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepup.
+  apply rsc_step with
+      (y:=([:: vn 3], [:: vn 12],
+           [:: idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepmul.
+  apply rsc_step with
+      (y:=([::], [:: vn 3; vn 12],
+           [:: ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdown.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 3; vn 12],
+           [:: iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: steppush_n.
+  apply rsc_step with
+      (y:=([::], [:: vn 3; vn 1; vn 12],
+           [:: isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepswap.
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 12],
+           [:: idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepsub.
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 2; vn 12],
+           [:: ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vb true; vn 2; vn 12],
+           [:: iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepneq_tt.
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 12],
+           [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: steploop_tt.
+  (* **** *)
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 2; vn 12],
+           [:: idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 2; vn 12],
+           [:: iup; imul; idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdip.
+  apply rsc_step with
+      (y:=([:: vn 2], [:: vn 2; vn 12],
+           [:: imul; idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepup.
+  apply rsc_step with
+      (y:=([:: vn 2], [:: vn 24],
+           [:: idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepmul.
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 24],
+           [:: ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdown.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 2; vn 24],
+           [:: iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: steppush_n.
+  apply rsc_step with
+      (y:=([::], [:: vn 2; vn 1; vn 24],
+           [:: isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepswap.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 24],
+           [:: idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepsub.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 1; vn 24],
+           [:: ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vb true; vn 1; vn 24],
+           [:: iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepneq_tt.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 24],
+           [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: steploop_tt.
+  (* **** *)
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 1; vn 24],
+           [:: idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 1; vn 24],
+           [:: iup; imul; idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdip.
+  apply rsc_step with
+      (y:=([:: vn 1], [:: vn 1; vn 24],
+           [:: imul; idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepup.
+  apply rsc_step with
+      (y:=([:: vn 1], [:: vn 24],
+           [:: idown; ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepmul.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 24],
+           [:: ipush tn 1; iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdown.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 1; vn 24],
+           [:: iswap; isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: steppush_n.
+  apply rsc_step with
+      (y:=([::], [:: vn 1; vn 1; vn 24],
+           [:: isub; idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepswap.
+  apply rsc_step with
+      (y:=([::], [:: vn 0; vn 24],
+           [:: idup; ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepsub.
+  apply rsc_step with
+      (y:=([::], [:: vn 0; vn 0; vn 24],
+           [:: ineq;
+            iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepdup.
+  apply rsc_step with
+      (y:=([::], [:: vb false; vn 0; vn 24],
+           [:: iloop [:: idup; idip [:: imul]; ipush tn 1; iswap; isub; idup; ineq];
+            idrop; idrop]));
+    first by apply: stepneq_ff.
+  apply rsc_step with
+      (y:=([::], [:: vn 0; vn 24],
+           [:: idrop; idrop]));
+    first by apply: steploop_ff.
+  (* **** *)  
+  apply rsc_step with
+      (y:=([::], [:: vn 24],
+           [:: idrop]));
+    first by apply: stepdrop.
+  apply rsc_step with
+      (y:=([::], [::],
+           [::]));
+    first by apply: stepdrop.
+
+  by apply rsc_refl.
+Qed.
 
 (* END *)
