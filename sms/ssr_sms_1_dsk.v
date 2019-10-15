@@ -136,6 +136,7 @@ Proof. by move=> <-. Qed.
 Lemma steprtc_step (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
 Proof. by do !econstructor. Qed.
 
+(* rsc_step. *)
 Lemma steprtc_cons (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by econstructor; eauto. Qed.
 
@@ -569,7 +570,7 @@ Proof.
   eapply rsc_step with (y:=([::], [:: vn 4; vn 1], _));
     first by apply: steppush_n.
   eapply rsc_step with (y:=([::], [:: vn 4; vn 4; vn 1], _));
-       first by apply: stepdup.
+    first by apply: stepdup.
   eapply rsc_step with (y:=([::], [:: vb true; vn 4; vn 1], _));
     first by apply: stepneq_tt.
   (* **** *)
@@ -672,6 +673,119 @@ Proof.
   eapply rsc_step with (y:=([::], [::], _));
     first by apply: stepdrop.
   by eapply rsc_refl.
+Qed.
+
+Goal ([::], [::], fact) |=>* ([::], [::], [::]).
+Proof.
+  rewrite /fact.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1], _));
+    first by apply: steppush_n.
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 1], _));
+    first by apply: steppush_n.
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 4; vn 1], _));
+    first by apply: stepneq_tt.
+  (* **** *)
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 1], _));
+    first by apply: steploop_tt.
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
+    first by apply: stepdip.
+  eapply steprtc_cons with (e2:=([:: vn 4], [:: vn 4; vn 1], _));
+    first by apply: stepup.
+  eapply steprtc_cons with (e2:=([:: vn 4], [:: vn 4], _));
+    first by apply: stepmul.
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4], _));
+    first by apply: stepdown.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 4; vn 4], _));
+    first by apply: steppush_n.
+  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 1; vn 4], _));
+    first by apply: stepswap.
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 4], _));
+    first by apply: stepsub.
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 3; vn 4], _));
+    first by apply: stepneq_tt.
+  (* **** *)
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 4], _));
+    first by apply: steploop_tt.
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
+    first by apply: stepdip.
+  eapply steprtc_cons with (e2:=([:: vn 3], [:: vn 3; vn 4], _));
+    first by apply: stepup.
+  eapply steprtc_cons with (e2:=([:: vn 3], [:: vn 12], _));
+    first by apply: stepmul.
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 12], _));
+    first by apply: stepdown.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 3; vn 12], _));
+    first by apply: steppush_n.
+  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 1; vn 12], _));
+    first by apply: stepswap.
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 12], _));
+    first by apply: stepsub.
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 2; vn 12], _));
+    first by apply: stepneq_tt.
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 12], _));
+    first by apply: steploop_tt.
+  (* **** *)
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
+    first by apply: stepdip.
+  eapply steprtc_cons with (e2:=([:: vn 2], [:: vn 2; vn 12], _));
+    first by apply: stepup.
+  eapply steprtc_cons with (e2:=([:: vn 2], [:: vn 24], _));
+    first by apply: stepmul.
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 24], _));
+    first by apply: stepdown.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 2; vn 24], _));
+    first by apply: steppush_n.
+  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 1; vn 24], _));
+    first by apply: stepswap.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 24], _));
+    first by apply: stepsub.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 1; vn 24], _));
+    first by apply: stepneq_tt.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 24], _));
+    first by apply: steploop_tt.
+  (* **** *)
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepdip.
+  eapply steprtc_cons with (e2:=([:: vn 1], [:: vn 1; vn 24], _));
+    first by apply: stepup.
+  eapply steprtc_cons with (e2:=([:: vn 1], [:: vn 24], _));
+    first by apply: stepmul.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 24], _));
+    first by apply: stepdown.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: steppush_n.
+  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+    first by apply: stepswap.
+  eapply steprtc_cons with (e2:=([::], [:: vn 0; vn 24], _));
+    first by apply: stepsub.
+  eapply steprtc_cons with (e2:=([::], [:: vn 0; vn 0; vn 24], _));
+    first by apply: stepdup.
+  eapply steprtc_cons with (e2:=([::], [:: vb false; vn 0; vn 24], _));
+    first by apply: stepneq_ff.
+  eapply steprtc_cons with (e2:=([::], [:: vn 0; vn 24], _));
+    first by apply: steploop_ff.
+  (* **** *) 
+  eapply steprtc_cons with (e2:=([::], [:: vn 24], _));
+    first by apply: stepdrop.
+  eapply steprtc_cons with (e2:=([::], [::], _));
+    first by apply: stepdrop.
+  by eapply steprtc_refl.
 Qed.
 
 (* END *)
