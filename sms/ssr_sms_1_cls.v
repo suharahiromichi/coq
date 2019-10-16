@@ -2,6 +2,8 @@
 (** @suharahiromicihi *)
 (** 2019_10_12 *)
 
+(** このコードは保守していません。 *)
+
 From mathcomp Require Import all_ssreflect.
 Require Import ssrinv ssrclosure.
 
@@ -123,31 +125,31 @@ Ltac i_none := right; inv=> ?; inv; done.   (* inst の条件にあわない場�
 Theorem decide_step (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
 Proof.
   case: e1 => vs cs.
-  case: cs => [| c]; first i_none.
+  case: cs => [| c cs]; first i_none.
   case: c.                                 (* inst で場合分けする。 *)
   (* seq *)
-  - move=> cs1 cs2.
+  - move: cs => cs2 cs1.
     left.
     exists (vs, cs1 ++ cs2).                (* eexists *)
       by apply: stepseq.                    (* constructor *)
   (* drop *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists (vs, cs).
       by apply: stepdrop.
   (* dup *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists ([:: v, v & vs], cs).
       by apply: stepdup.
   (* swap *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     left.
     exists ([:: v2, v1 & vs], cs).
       by apply: stepswap.
   (* push *)
-  - move=> ty v cs.
+  - move=> ty v.
     case: ty; case: v; try i_none.  (* nat か bool で場合分けする。 *)
     (* nat の組み合わせ と bool の組み合わせ以外を try i_none で片付ける。 *)
     + move=> n.
@@ -159,7 +161,8 @@ Proof.
       exists ([:: vb b & vs], cs).
         by apply: steppush_b.
   (* loop *)
-  - case: vs => [cs | v vs cs1 cs2]; first i_none.
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs2 cs1.
     case: v => [n | b]; first i_none. (* nat か bool で場合分けする。 *)
     left.
     case: b.                      (* true か false で場合分けする。 *)
@@ -169,13 +172,14 @@ Proof.
         by apply: steploop_ff.
         
   (* dip *)
-  - case: vs => [cs1 cs2 |v vs cs1 cs2]; first i_none.
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs2 cs1.
     left.
     exists (vs, cs1 ++ (iret v :: cs2)).    (* iret を使う例。 *)
         by apply: stepdip.
         
   (* add *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none. (* nat か bool で場合分けする。 *)
     (* nat と nat の組み合わせ以外を try i_none で片付ける。 *)
@@ -183,21 +187,21 @@ Proof.
     exists (vn (n2 + n1) :: vs, cs).
       by apply: stepadd.
   (* sub *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
     exists (vn (n2 - n1) :: vs, cs).
       by apply: stepsub.
   (* mul *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
     exists (vn (n2 * n1) :: vs, cs).
       by apply: stepmul.
   (* eq *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     case: v => n; try i_none.       (* nat か bool で場合分けする。 *)
     left.
     case: n.                        (* 0 か 非0 で場合分けする。 *)
@@ -206,7 +210,7 @@ Proof.
     + exists ([:: vb false & vs], cs).
         by apply: stepeq_ff.
   (* neq *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     case: v => n; try i_none.
     left.
     case: n.
@@ -216,7 +220,7 @@ Proof.
         by apply: stepneq_tt.
         
   (* ret 追加 *)
-  - move=> v cs.
+  - move=> v.
     left.
     exists ([:: v & vs], cs).
       by apply: stepret.
