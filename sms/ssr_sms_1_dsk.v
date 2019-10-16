@@ -160,7 +160,7 @@ Proof.
   - case: vs => [| v vs]; try i_none; i_done.         (* drop *)
   - case: vs => [| v vs]; try i_none; i_done.         (* dup *)
   - case: vs => [| v1 [| v2 vs]]; try i_none; i_done. (* swap *)
-  - case; case=> n; try i_none; i_done.               (* push *)
+  - case=> [] [] n; try i_none; i_done.               (* push *)
   - case: vs => [| [n | b] vs]; try i_none.
     case: b; i_done.                        (* loop_tt と loop_ff *)
     
@@ -168,7 +168,7 @@ Proof.
     move: cs => cs2 cs1.
     left.
     exists (us, vs, (iup :: cs1) ++ (idown :: cs2)).
-        by apply: stepdip.                  (* dip *)
+      by constructor.                       (* dip *)
         
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* add *)
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* sub *)
@@ -177,8 +177,8 @@ Proof.
     case: n; i_done.                                (* eq_tt と eq_ff *)
   - case: vs => [| [n | b] vs]; try i_none.
     case: n; i_done.                                (* neq_ff と neq_tt *)
-  - case: vs => [| v vs]; try i_none; i_done. (* 追加 up *)
-  - case: us => [| u us]; try i_none; i_done. (* 追加 down *)
+  - case: vs => [| v vs]; try i_none; i_done.       (* 追加 up *)
+  - case: us => [| u us]; try i_none; i_done.       (* 追加 down *)
 Defined.
 
 
