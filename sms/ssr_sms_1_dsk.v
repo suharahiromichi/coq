@@ -151,64 +151,66 @@ Proof. by apply: rsc_trans. Qed.
 Ltac i_none := right; inv=> ?; inv; done. (* inst の定義にあわない場合。 *)
 Ltac i_done := left; eexists; constructor; done. (* inst の定義にあう場合。 *)
 
+(* 常識的な答え *)
 Theorem decide_step (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
 Proof.
   case: e1 => [[us vs] [| c cs]]; try i_none.
   case: c.                                 (* inst で場合分けする。 *)
-  - move: cs => cs1 cs2; i_done.           (* seq *)
+  - move: cs => cs2 cs1; i_done.           (* seq *)
   - case: vs => [| v vs]; try i_none; i_done.         (* drop *)
   - case: vs => [| v vs]; try i_none; i_done.         (* dup *)
   - case: vs => [| v1 [| v2 vs]]; try i_none; i_done. (* swap *)
   - case; case=> n; try i_none; i_done.               (* push *)
   - case: vs => [| [n | b] vs]; try i_none.
-    case: b; i_done.                        (* loop tt と  ff *)
+    case: b; i_done.                        (* loop_tt と loop_ff *)
     
-  - case: vs => [|v vs]; first i_none.
-    move=> cs2.
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs2 cs1.
     left.
-    exists (us, vs, (iup :: cs2) ++ (idown :: cs)).
+    exists (us, vs, (iup :: cs1) ++ (idown :: cs2)).
         by apply: stepdip.                  (* dip *)
         
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* add *)
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* sub *)
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* mul *)
   - case: vs => [| [n | b] vs]; try i_none.
-    case: n; i_done.                                (* eq tt と ff *)
+    case: n; i_done.                                (* eq_tt と eq_ff *)
   - case: vs => [| [n | b] vs]; try i_none.
-    case: n; i_done.                                (* neq ff と tt *)
+    case: n; i_done.                                (* neq_ff と neq_tt *)
   - case: vs => [| v vs]; try i_none; i_done. (* 追加 up *)
   - case: us => [| u us]; try i_none; i_done. (* 追加 down *)
-Qed.
+Defined.
 
 
+(* 省略の全く無い答え *)
 Theorem decide_step' (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
 Proof.
   case: e1 => [[us vs] cs].
-  case: cs => [| c]; first i_none.
+  case: cs => [| c cs]; first i_none.
   case: c.                                 (* inst で場合分けする。 *)
   (* seq *)
-  - move=> cs1 cs2.
+  - move: cs => cs2 cs1.
     left.
     exists (us, vs, cs1 ++ cs2).
       by apply: stepseq.
   (* drop *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists (us, vs, cs).
       by apply: stepdrop.
   (* dup *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists (us, [:: v, v & vs], cs).
       by apply: stepdup.
   (* swap *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     left.
     exists (us, [:: v2, v1 & vs], cs).
       by apply: stepswap.
   (* push *)
-  - move=> ty v cs.
+  - move=> ty v.
     case: ty; case: v; try i_none.  (* nat か bool で場合分けする。 *)
     (* nat の組み合わせ と bool の組み合わせ以外を try i_none で片付ける。 *)
     + move=> n.
@@ -220,7 +222,8 @@ Proof.
       exists (us, [:: vb b & vs], cs).
         by apply: steppush_b.
   (* loop *)
-  - case: vs => [cs | v vs cs1 cs2]; first i_none.
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs2 cs1.
     case: v => [n | b]; first i_none. (* nat か bool で場合分けする。 *)
     case: b.                      (* true か false で場合分けする。 *)
     + left.
@@ -231,13 +234,14 @@ Proof.
         by apply: steploop_ff.
         
   (* dip *)
-  - case: vs => [cs1 cs2 |v vs cs1 cs2]; first i_none.
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs2 cs1.
     left.
     exists (us, vs, (iup :: cs1) ++ (idown :: cs2)). (* 補助スタックを使う例。 *)
         by apply: stepdip.
         
   (* add *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none. (* nat か bool で場合分けする。 *)
     (* nat と nat の組み合わせ以外を try i_none で片付ける。 *)
@@ -245,21 +249,21 @@ Proof.
     exists (us, vn (n2 + n1) :: vs, cs).
       by apply: stepadd.
   (* sub *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
     exists (us, vn (n2 - n1) :: vs, cs).
       by apply: stepsub.
   (* mul *)
-  - case: vs => [cs | v1 vs cs]; first i_none.
+  - case: vs => [| v1 vs]; first i_none.
     case: vs => [| v2 vs]; first i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
     exists (us, vn (n2 * n1) :: vs, cs).
       by apply: stepmul.
   (* eq *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     case: v => n; try i_none.       (* nat か bool で場合分けする。 *)
     case: n.                        (* 0 か 非0 で場合分けする。 *)
     + left.
@@ -269,7 +273,7 @@ Proof.
       exists (us, [:: vb false & vs], cs).
         by apply: stepeq_ff.
   (* neq *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     case: v => n; try i_none.
     case: n.
     + left.
@@ -280,44 +284,45 @@ Proof.
         by apply: stepneq_tt.
         
   (* 追加 up *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists ([:: v & us], vs, cs).
       by apply: stepup.
   (* 追加 down *)
-  - case: us => [cs | u us cs]; first i_none.
+  - case: us => [| u us]; first i_none.
     left.
     exists (us, [:: u & vs], cs).
       by apply: stepdown.
 Defined.
 
 
+(* case 文をまとめた例 *)
 Theorem decide_step'' (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
 Proof.
-  case: e1 => [[us vs] [| c]]; first i_none.
+  case: e1 => [[us vs] [| c cs]]; first i_none.
   case: c.                                 (* inst で場合分けする。 *)
   (* seq *)
-  - move=> cs1 cs2.
+  - move: cs => cs2 cs1.
     left.
     exists (us, vs, cs1 ++ cs2).                (* eexists *)
       by apply: stepseq.                    (* constructor *)
   (* drop *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists (us, vs, cs).
       by apply: stepdrop.
   (* dup *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists (us, [:: v, v & vs], cs).
       by apply: stepdup.
   (* swap *)
-  - case: vs => [cs | v1 [| v2 vs] cs]; try i_none.
+  - case: vs => [| v1 [| v2 vs]]; try i_none.
     left.
     exists (us, [:: v2, v1 & vs], cs).
       by apply: stepswap.
   (* push *)
-  - move=> ty v cs.
+  - move=> ty v.
     case: ty; case: v; try i_none.  (* nat か bool で場合分けする。 *)
     (* nat の組み合わせ と bool の組み合わせ以外を try i_none で片付ける。 *)
     + move=> n.
@@ -329,7 +334,8 @@ Proof.
       exists (us, [:: vb b & vs], cs).
         by apply: steppush_b.
   (* loop *)
-  - case: vs => [cs | [n | b] vs cs1 cs2]; try i_none.
+  - case: vs => [| [n | b] vs]; try i_none.
+    move: cs => cs2 cs1.
     (* nat か bool で場合分けする。 *)
     case: b.                      (* true か false で場合分けする。 *)
     + left.
@@ -340,32 +346,33 @@ Proof.
         by apply: steploop_ff.
         
   (* dip *)
-  - case: vs => [cs1 cs2 |v vs cs1 cs2]; first i_none.
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs2 cs1.
     left.
     exists (us, vs, (iup :: cs1) ++ (idown :: cs2)). (* 補助スタックを使う例。 *)
         by apply: stepdip.
         
   (* add *)
-  - case: vs => [cs | v1 [|v2 vs] cs]; try i_none.
+  - case: vs => [| v1 [| v2 vs]]; try i_none.
     case: v1; case: v2 => n1 n2; try i_none. (* nat か bool で場合分けする。 *)
     (* nat と nat の組み合わせ以外を try i_none で片付ける。 *)
     left.
     exists (us, vn (n2 + n1) :: vs, cs).
       by apply: stepadd.
   (* sub *)
-  - case: vs => [cs | v1 [|v2 vs] cs]; try i_none.
+  - case: vs => [| v1 [| v2 vs]]; try i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
     exists (us, vn (n2 - n1) :: vs, cs).
       by apply: stepsub.
   (* mul *)
-  - case: vs => [cs | v1 [|v2 vs] cs]; try i_none.
+  - case: vs => [| v1 [| v2 vs]]; try i_none.
     case: v1; case: v2 => n1 n2; try i_none.
     left.
     exists (us, vn (n2 * n1) :: vs, cs).
       by apply: stepmul.
   (* eq *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     case: v => n; try i_none.       (* nat か bool で場合分けする。 *)
     case: n.                        (* 0 か 非0 で場合分けする。 *)
     + left.
@@ -375,7 +382,7 @@ Proof.
       exists (us, [:: vb false & vs], cs).
         by apply: stepeq_ff.
   (* neq *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     case: v => n; try i_none.
     case: n.
     + left.
@@ -386,12 +393,12 @@ Proof.
         by apply: stepneq_tt.
         
   (* 追加 up *)
-  - case: vs => [cs | v vs cs]; first i_none.
+  - case: vs => [| v vs]; first i_none.
     left.
     exists ([:: v & us], vs, cs).
       by apply: stepup.
   (* 追加 down *)
-  - case: us => [cs | u us cs]; first i_none.
+  - case: us => [| u us]; first i_none.
     left.
     exists (us, [:: u & vs], cs).
       by apply: stepdown.
