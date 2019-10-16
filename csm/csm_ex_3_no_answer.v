@@ -36,10 +36,17 @@ Unset Printing Implicit Defensive.
 (** Which of the following values ​​has the correct type? Confirm using
     the "Check" command. *)
 
+Check nil.
+Check rouge.
+Check cons rouge nil.
+Check nil cons rouge nil.
+Check cons blanc (cons rouge nil).
 
-(** いくつかの方法で、ボールの列に含まれる赤玉の数を数える関数を定義します。*)
-(** Define a function that counts the number of rouge balls in a
-    sequenceq of balls in several ways. *)
+
+(** 問 3.4〜6 では、いくつかの方法で、ボールの列に含まれる赤玉の数を数える関
+    数を定義します。*)
+(** In exercise 3.4 to 6, define a function that counts the number of rouge
+    balls in a sequenceq of balls in several ways. *)
 
 (** 問 3.4 *)
 (** Fixpint コマンドを使って、型 balls -> nat を持つ関数 count_rouges
@@ -67,7 +74,11 @@ Unset Printing Implicit Defensive.
     sequence is obtained by replacing the rouge of the ball sequence
     with 1 and blanc with 0. Then calculate the sum. *)
 (** Example
-    [:: rouge; blanc; rouge] ==> [:: 1; 0; 1] ==> 1 + 0 + 1 = 2 *)
+    sumn (map (λx. if x is rouge then 1 else 0) [:: rouge; blanc; rouge])
+    ==> sumn [:: 1; 0; 1]
+    ==> 1 + 0 + 1
+    ==> 2
+ *)
 
 
 (** count_rouge と count_rouge_with_map の結果が一致することを証明して
@@ -83,7 +94,10 @@ Unset Printing Implicit Defensive.
 (** Define the function using filter and size. Create a sequence of
     balls leaving only rouge and calculate its size. *)
 (** Example
-    [:: rouge; blanc; rouge] ==> [:: rouge; rouge] ==> size is 2 *)
+    size (filter (λx. if x is rouge then true else false) [:: rouge; blanc; rouge])
+    ==> size [:: rouge; rouge]
+    ==> 2
+ *)
 
 
 (** count_rouge と count_rouge_with_fil の結果が一致することを証明して
@@ -237,8 +251,6 @@ Qed.
 (** Define the function using map and sumn. The natural number
     sequence is obtained by replacing the rouge of the ball sequence
     with 1 and blanc with 0. Then calculate the sum. *)
-(** Example
-    [:: rouge; blanc; rouge] ==> [:: 1; 0; 1] ==> 1 + 0 + 1 = 2 *)
 
 (** count_rouge と count_rouge_with_map の結果が一致することを証明して
     ください。 *)
@@ -252,8 +264,6 @@ Qed.
 (** Exercise 3a.6 *)
 (** Define the function using filter and size. Create a sequence of
     balls leaving only rouge and calculate its size. *)
-(** Example
-    [:: rouge; blanc; rouge] ==> [:: rouge; rouge] ==> size is 2 *)
 
 (** count_rouge と count_rouge_with_fil の結果が一致することを証明して
     ください。 *)
