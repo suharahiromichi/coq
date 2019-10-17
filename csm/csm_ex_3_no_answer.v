@@ -14,6 +14,24 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+(**
+第3章では、SSReflect 拡張の主なタクティクやコマンドを勉強しました。章
+の最後にある演習問題 (page.124) を解いていきます。問題は、すべて、この
+ファイルに転記してあります。追加の問題も用意しました。
+
+In Chapter 3, we studied tactics and commands of the SSReflect
+extension. Solve the exercise at the end of the chapter. (page.124)
+All problems are posted in this file. Additional issues have also been
+prepared.
+
+第4章の予習として、eqType 型クラス (インターフェース）のインスタンスを
+定義して、同じ問題を解いてみます（次回以降）。
+
+As a preparation of Chapter 4, define an instance of the eqType type
+class (or interface) and try to solve the same problems.
+*)
+
+
 (** 問 3.1  *)
 (** 赤玉と白玉のふたつの要素からなるball型をInductiveを使って定
     義してください。 *)
