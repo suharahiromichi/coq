@@ -28,6 +28,7 @@ Inductive inst : Set :=                     (* c *)
 | idup
 | iswap
 | ipush (ty : type) (v : value)
+| iif (cs1 cs2 : seq inst)                  (* skip なら nil *)
 | iloop (cs : seq inst)
 | idip (cs : seq inst)
 | iadd
@@ -99,6 +100,10 @@ Inductive step : relation env :=            (* env -> env -> Prop *)
                            step (us, v2 :: v1 :: vs, iswap :: cs) (us, v1 :: v2 :: vs, cs)
 | steppush_n us n vs cs:   step (us, vs, ipush tn (vn n) :: cs)   (us, (vn n) :: vs, cs)
 | steppush_b us b vs cs:   step (us, vs, ipush tb (vb b) :: cs)   (us, (vb b) :: vs, cs)
+| stepif_tt us vs cs1 cs2 cs3 cs : cs1 ++ cs3 = cs ->
+                           step (us, vb true :: vs, iif cs1 cs2 :: cs3) (us, vs, cs)
+| stepif_ff us vs cs1 cs2 cs3 cs : cs2 ++ cs3 = cs ->
+                           step (us, vb false :: vs, iif cs1 cs2 :: cs3) (us, vs, cs)
 | steploop_tt us vs cs1 cs2 cs : cs1 ++ (iloop cs1 :: cs2) = cs ->
                            step (us, vb true :: vs, iloop cs1 :: cs2) (us, vs, cs)
 | steploop_ff us vs cs1 cs2 :
@@ -162,6 +167,8 @@ Proof.
   - case: vs => [| v1 [| v2 vs]]; try i_none; i_done. (* swap *)
   - case=> [] [] n; try i_none; i_done.               (* push *)
   - case: vs => [| [n | b] vs]; try i_none.
+    case: b; i_done.                        (* if_tt と if_ff *)
+  - case: vs => [| [n | b] vs]; try i_none.
     case: b; i_done.                        (* loop_tt と loop_ff *)
     
   - case: vs => [| v vs]; first i_none.
@@ -221,6 +228,17 @@ Proof.
       left.
       exists (us, [:: vb b & vs], cs).
         by apply: steppush_b.
+  (* if *)
+  - case: vs => [| v vs]; first i_none.
+    move: cs => cs3 cs1 cs2.
+    case: v => [n | b]; first i_none. (* nat か bool で場合分けする。 *)
+    case: b.                      (* true か false で場合分けする。 *)
+    + left.
+      exists (us, vs, cs1 ++ cs3).
+        by apply: stepif_tt.
+    + left.
+      exists (us, vs, cs2 ++ cs3).
+        by apply: stepif_ff.
   (* loop *)
   - case: vs => [| v vs]; first i_none.
     move: cs => cs2 cs1.
@@ -333,6 +351,16 @@ Proof.
       left.
       exists (us, [:: vb b & vs], cs).
         by apply: steppush_b.
+  (* if *)
+  - case: vs => [| [n | b] vs]; try i_none.
+    move: cs => cs3 cs1 cs2.
+    case: b.                      (* true か false で場合分けする。 *)
+    + left.
+      exists (us, vs, cs1 ++ cs3).
+        by apply: stepif_tt.
+    + left.
+      exists (us, vs, cs2 ++ cs3).
+        by apply: stepif_ff.
   (* loop *)
   - case: vs => [| [n | b] vs]; try i_none.
     move: cs => cs2 cs1.
