@@ -108,8 +108,8 @@ Inductive step : relation env :=            (* env -> env -> Prop *)
                            step (us, vb true :: vs, iloop cs1 :: cs2) (us, vs, cs)
 | steploop_ff us vs cs1 cs2 :
                            step (us, vb false :: vs, iloop cs1 :: cs2) (us, vs, cs2)
-| stepdip us v vs1 vs2 cs1 cs2 cs : (iup :: cs1) ++ (idown :: cs2) = cs ->
-                        step (us, v :: vs1, idip cs1 :: cs2) (vs2, cs)
+| stepdip us vs cs1 cs2 cs : (iup :: cs1) ++ (idown :: cs2) = cs ->
+                           step (us, vs, idip cs1 :: cs2) (us, vs, cs)
 | stepadd us n1 n2 n3 vs cs : n2 + n1 = n3 ->
                         step (us, [::vn n2, vn n1 & vs], iadd :: cs) (us, vn n3 :: vs, cs)
 | stepsub us n1 n2 n3 vs cs : n2 - n1 = n3 ->
@@ -151,7 +151,11 @@ Lemma steprtc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by apply: rsc_trans. Qed.
 
 
+
+
+(* ********************************* *)
 (* step が決定的であることを証明する。 *)
+(* ********************************* *)
 
 Ltac i_none := right; inv=> ?; inv; done. (* inst の定義にあわない場合。 *)
 Ltac i_done := left; eexists; constructor; done. (* inst の定義にあう場合。 *)
@@ -170,13 +174,7 @@ Proof.
     case: b; i_done.                        (* if_tt と if_ff *)
   - case: vs => [| [n | b] vs]; try i_none.
     case: b; i_done.                        (* loop_tt と loop_ff *)
-    
-  - case: vs => [| v vs]; first i_none.
-    move: cs => cs2 cs1.
-    left.
-    exists (us, vs, (iup :: cs1) ++ (idown :: cs2)).
-      by constructor.                       (* dip *)
-        
+  - move: cs => cs2 cs1; i_done.            (* dip *)
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* add *)
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* sub *)
   - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* mul *)
@@ -252,7 +250,6 @@ Proof.
         by apply: steploop_ff.
         
   (* dip *)
-  - case: vs => [| v vs]; first i_none.
     move: cs => cs2 cs1.
     left.
     exists (us, vs, (iup :: cs1) ++ (idown :: cs2)). (* 補助スタックを使う例。 *)
@@ -374,8 +371,7 @@ Proof.
         by apply: steploop_ff.
         
   (* dip *)
-  - case: vs => [| v vs]; first i_none.
-    move: cs => cs2 cs1.
+  - move: cs => cs2 cs1.
     left.
     exists (us, vs, (iup :: cs1) ++ (idown :: cs2)). (* 補助スタックを使う例。 *)
         by apply: stepdip.
@@ -432,9 +428,18 @@ Proof.
       by apply: stepdown.
 Defined.
 
+(* ************* *)
+(* step の一意性 *)
+(* ************* *)
+Theorem step_uniqueness (e1 e2 e3 : env) : e1 |=> e2 -> e1 |=> e3 -> e2 = e3.
+Proof.
+    by inv; inv.
+Qed.
 
+
+(* ************* *)
 (* 階乗の計算 *)
-
+(* ************* *)
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
   rewrite /fact.
