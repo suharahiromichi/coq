@@ -80,8 +80,8 @@ Inductive step : relation env :=            (* env -> env -> Prop *)
 | steploop_tt vs cs1 cs2 cs : cs1 ++ (iloop cs1 :: cs2) = cs ->
                            step (vb true :: vs, iloop cs1 :: cs2) (vs, cs)
 | steploop_ff vs cs1 cs2 : step (vb false :: vs, iloop cs1 :: cs2) (vs, cs2)
-| stepdip v vs1 vs2 cs1 cs2 cs : cs1 ++ (iret v :: cs2) = cs ->
-                           step (v :: vs1, idip cs1 :: cs2) (vs2, cs)
+| stepdip v vs cs1 cs2 cs : cs1 ++ (iret v :: cs2) = cs ->
+                           step (v :: vs, idip cs1 :: cs2) (vs, cs)
 | stepadd n1 n2 n3 vs cs : n2 + n1 = n3 ->
                            step ([:: vn n2, vn n1 & vs], iadd :: cs) (vn n3 :: vs, cs)
 | stepsub n1 n2 n3 vs cs : n2 - n1 = n3 ->
