@@ -442,7 +442,7 @@ Qed.
 (* ************** *)
 (* steprc の合流性 *)
 (* ************** *)
-Theorem steprc_confluence (e1 e2 e3 : env) :
+Theorem steprtc_confluence (e1 e2 e3 : env) :
   e1 |=>* e2 -> e1 |=>* e3 -> e2 |=>* e3 \/ e3 |=>* e2.
 Proof.
   elim=> [e2' H2'__3 | e1' e2' e3' H1'_2' H2'3' IHe H1'__3].
@@ -471,16 +471,42 @@ Qed.
  *  \    /
  *    e4
  *)
-Theorem steprc_confluence_weak (e1 e2 e3 : env) :
+Theorem steprtc_confluence_weak (e1 e2 e3 : env) :
   e1 |=>* e2 -> e1 |=>* e3 -> (exists e4, e2 |=>* e4 /\ e3 |=>* e4).
 Proof.
   move=> H1__2 H1__3.
-  case: (steprc_confluence H1__2 H1__3) => [H2__3 | H3__2].
+  case: (steprtc_confluence H1__2 H1__3) => [H2__3 | H3__2].
   - exists e3.
-    by split.
+      by split.
   - exists e2.
-    by split.
+      by split.
 Qed.
+
+(* ********************************** *)
+(* スタックの後ろにリストを付け加える。 *)
+(* ********************************** *)
+Theorem step_apptail (us1 us2 us3 : ustack)
+        (vs1 vs2 vs3 : vstack) (cs1 cs2 cs3 : cstack) :
+  (us1, vs1, cs1) |=> (us2, vs2, cs2) ->
+  (us1 ++ us3, vs1 ++ vs3, cs1 ++ cs3) |=> (us2 ++ us3, vs2 ++ vs3, cs2 ++ cs3).
+Proof.
+  by inv=> //=; try rewrite -catA; constructor.
+Qed.
+(* constructor は、stepseq など。 *)
+
+Theorem steprtc_apptail (us1 us2 us3 : ustack)
+        (vs1 vs2 vs3 : vstack) (cs1 cs2 cs3 : cstack) :
+  (us1, vs1, cs1) |=>* (us2, vs2, cs2) ->
+  (us1 ++ us3, vs1 ++ vs3, cs1 ++ cs3) |=>* (us2 ++ us3, vs2 ++ vs3, cs2 ++ cs3).
+Proof.
+  move=> H.
+  apply: steprtc_trans.
+  -  admit.
+  - apply: steprtc_cons.
+    + apply: step_apptail => //.
+      admit.
+    + done.
+Admitted.
 
 
 (* ************* *)
