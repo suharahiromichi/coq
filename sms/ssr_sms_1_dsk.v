@@ -529,7 +529,7 @@ Qed.
 Ltac stepstep_0 e1 e2 :=
   apply steprtc_refl ||
   match eval hnf in (decide_step e1) with
-  | @or_introl _ (@ex_intro _ ?e3 ?p) => apply (@steprtc_cons _ _ _ p)
+  | left (ex_intro _ _ ?p) => apply (@steprtc_cons _ _ _ p)
   end.
 
 Ltac stepstep_1 e1 e2 :=
@@ -556,6 +556,7 @@ Ltac stepstep :=
 
 Ltac stepauto := repeat stepstep.
 
+
 (***********************)
 (* 手動証明 ************)
 (***********************)
@@ -572,6 +573,31 @@ Tactic Notation "steppartial" constr(H) := steppartial H by idtac.
 
 Ltac rtcrefl := apply steprtc_refl' ; repeat f_equal.
   
+
+(* sample *)
+
+Definition inop := [:: ipush tn 42; idrop].
+
+Lemma stepnop us vs cs :
+  (us, vs, [:: ipush tn 42, idrop & cs]) |=>* (us, vs, cs).
+Proof.
+  Check decide_step (us, vs, [:: ipush tn 42, idrop & cs]).
+  Eval hnf in (decide_step (us, vs, [:: ipush tn 42, idrop & cs])).
+  Check steprtc_cons (steppush_n us 42 vs (idrop :: cs)).
+  apply: (steprtc_cons (steppush_n us 42 vs (idrop :: cs))).
+  Check stepdrop us 42 vs cs.
+  apply: (steprtc_cons (stepdrop us 42 vs cs)).
+  apply: steprtc_refl.
+  
+  Restart.
+  stepstep_0 (us, vs, [:: ipush tn 42, idrop & cs]) (us, vs, cs).
+  stepstep_0 (us, [:: vn 42 & vs], [:: idrop & cs]) (us, vs, cs).
+  apply: steprtc_refl.
+
+  Restart.
+  stepauto.
+Qed.
+
 
 (* ************* *)
 (* 階乗の計算 *)
