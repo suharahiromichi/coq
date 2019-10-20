@@ -527,24 +527,24 @@ Proof.
 Qed.
 
 Ltac stepstep_0 e1 e2 :=
-  apply steprtc_refl ||
+  apply: steprtc_refl ||
   match eval hnf in (decide_step e1) with
-  | left (ex_intro _ _ ?p) => apply (@steprtc_cons _ _ _ p)
+  | left (ex_intro _ _ ?p) => apply: (@steprtc_cons _ _ _ p)
   end.
 
 Ltac stepstep_1 e1 e2 :=
-  (eexists; split; last apply steprtc_refl) ||
+  (eexists; split; last apply: steprtc_refl) ||
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) =>
-    apply (@exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p))
+    apply: (@exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p))
   end.
 
 Ltac stepstep_2 e1 e2 :=
-  (eexists; split; last (eexists; split; last apply steprtc_refl)) ||
+  (eexists; split; last (eexists; split; last apply: steprtc_refl)) ||
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) =>
-    apply (@exists_and_right_map _ _ _ (fun _ =>
-           @exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p)))
+    apply: (@exists_and_right_map _ _ _ (fun _ =>
+            @exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p)))
   end.
 
 Ltac stepstep :=
