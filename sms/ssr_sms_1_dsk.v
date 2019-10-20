@@ -509,6 +509,70 @@ Proof.
 Admitted.
 
 
+(***********************)
+(* 自動証明 ************)
+(***********************)
+Lemma exists_and_right_map (P Q R : inst -> Prop) :
+  (forall i, Q i -> R i) -> (exists i, P i /\ Q i) -> (exists i, P i /\ R i).
+Proof.
+(*
+  move=> HQR [i [HP HQ]].
+  exists i.
+  split.
+  - done.
+  - by apply: HQR.
+  Restart.
+*)
+    by firstorder.
+Qed.
+
+Ltac stepstep_0 e1 e2 :=
+  apply steprtc_refl ||
+  match eval hnf in (decide_step e1) with
+  | @or_introl _ (@ex_intro _ ?e3 ?p) => apply (@steprtc_cons _ _ _ p)
+  end.
+
+Ltac stepstep_1 e1 e2 :=
+  (eexists; split; last apply steprtc_refl) ||
+  match eval hnf in (decide_step e1) with
+  | @or_introl _ (@ex_intro _ ?e3 ?p) =>
+    apply (@exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p))
+  end.
+
+Ltac stepstep_2 e1 e2 :=
+  (eexists; split; last (eexists; split; last apply steprtc_refl)) ||
+  match eval hnf in (decide_step e1) with
+  | @or_introl _ (@ex_intro _ ?e3 ?p) =>
+    apply (@exists_and_right_map _ _ _ (fun _ =>
+           @exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p)))
+  end.
+
+Ltac stepstep :=
+  match goal with
+  | |- ?e1 |=>* ?e2 => stepstep_0 e1 e2
+  | |- (exists i1, _ /\ ?e1 |=>* ?e2) => stepstep_1 e1 e2
+  | |- (exists i1, _ /\ (exists i2, _ /\ ?e1 |=>* ?e2)) => stepstep_2 e1 e2
+  end.
+
+Ltac stepauto := repeat stepstep.
+
+(***********************)
+(* 手動証明 ************)
+(***********************)
+Tactic Notation "steppartial" constr(H) "by" tactic(tac) :=
+  (eapply @steprtc_trans ;
+   [by eapply H; tac |]) ||
+  (refine (@exists_and_right_map _ _ _ (fun _ => @steprtc_trans _ _ _ _) _);
+   [by eapply H; tac |]) ||
+  (refine (@exists_and_right_map _ _ _ (fun _ =>
+           @exists_and_right_map _ _ _ (fun _ => @steprtc_trans _ _ _ _)) _);
+   [by eapply H; tac |]).
+
+Tactic Notation "steppartial" constr(H) := steppartial H by idtac.
+
+Ltac rtcrefl := apply steprtc_refl' ; repeat f_equal.
+  
+
 (* ************* *)
 (* 階乗の計算 *)
 (* ************* *)
