@@ -535,14 +535,14 @@ Ltac stepstep_0 e1 e2 :=
 Ltac stepstep_1 e1 e2 :=
   (eexists; split; last apply steprtc_refl) ||
   match eval hnf in (decide_step e1) with
-  | @or_introl _ (@ex_intro _ ?e3 ?p) =>
+  | left (ex_intro _ _ ?p) =>
     apply (@exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p))
   end.
 
 Ltac stepstep_2 e1 e2 :=
   (eexists; split; last (eexists; split; last apply steprtc_refl)) ||
   match eval hnf in (decide_step e1) with
-  | @or_introl _ (@ex_intro _ ?e3 ?p) =>
+  | left (ex_intro _ _ ?p) =>
     apply (@exists_and_right_map _ _ _ (fun _ =>
            @exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p)))
   end.
@@ -587,21 +587,26 @@ Proof.
   apply: (steprtc_cons (steppush_n us 42 vs (idrop :: cs))).
   Check stepdrop us 42 vs cs.
   apply: (steprtc_cons (stepdrop us 42 vs cs)).
-  apply: steprtc_refl.
+    by apply: steprtc_refl.
   
   Restart.
   stepstep_0 (us, vs, [:: ipush tn 42, idrop & cs]) (us, vs, cs).
   stepstep_0 (us, [:: vn 42 & vs], [:: idrop & cs]) (us, vs, cs).
-  apply: steprtc_refl.
+    by apply: steprtc_refl.
 
   Restart.
-  stepauto.
+    by stepauto.
 Qed.
 
 
 (* ************* *)
 (* 階乗の計算 *)
 (* ************* *)
+Goal ([::], [::], fact) |=>* ([::], [::], [::]).
+Proof.
+    by stepauto.
+Qed.
+
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
   rewrite /fact.
