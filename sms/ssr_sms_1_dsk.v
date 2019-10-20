@@ -471,6 +471,16 @@ Qed.
  *  \    /
  *    e4
  *)
+Theorem steprc_confluence_weak (e1 e2 e3 : env) :
+  e1 |=>* e2 -> e1 |=>* e3 -> (exists e4, e2 |=>* e4 /\ e3 |=>* e4).
+Proof.
+  move=> H1__2 H1__3.
+  case: (steprc_confluence H1__2 H1__3) => [H2__3 | H3__2].
+  - exists e3.
+    by split.
+  - exists e2.
+    by split.
+Qed.
 
 
 (* ************* *)
