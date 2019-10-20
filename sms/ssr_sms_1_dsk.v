@@ -554,7 +554,15 @@ Ltac stepstep :=
   | |- (exists i1, _ /\ (exists i2, _ /\ ?e1 |=>* ?e2)) => stepstep_2 e1 e2
   end.
 
+Ltac stepstep_trace :=
+  match goal with
+  | |- ?e1 |=>* ?e2 => stepstep_0 e1 e2; idtac e1
+  | |- (exists i1, _ /\ ?e1 |=>* ?e2) => stepstep_1 e1 e2; idtac e1
+  | |- (exists i1, _ /\ (exists i2, _ /\ ?e1 |=>* ?e2)) => stepstep_2 e1 e2; idtac e1
+  end.
+
 Ltac stepauto := repeat stepstep.
+(* Ltac stepauto := repeat stepstep_trace. *)
 
 
 (***********************)
@@ -599,9 +607,9 @@ Proof.
 Qed.
 
 
-(* ************* *)
+(* ********** *)
 (* 階乗の計算 *)
-(* ************* *)
+(* ********** *)
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
     by stepauto.
