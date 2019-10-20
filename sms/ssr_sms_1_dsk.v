@@ -428,13 +428,49 @@ Proof.
       by apply: stepdown.
 Defined.
 
+
 (* ************* *)
 (* step の一意性 *)
 (* ************* *)
-Theorem step_uniqueness (e1 e2 e3 : env) : e1 |=> e2 -> e1 |=> e3 -> e2 = e3.
+Theorem step_uniqueness (e1 e2 e3 : env) :
+  e1 |=> e2 -> e1 |=> e3 -> e2 = e3.
 Proof.
     by inv; inv.
 Qed.
+
+
+(* ************** *)
+(* steprc の合流性 *)
+(* ************** *)
+Theorem steprc_confluence (e1 e2 e3 : env) :
+  e1 |=>* e2 -> e1 |=>* e3 -> e2 |=>* e3 \/ e3 |=>* e2.
+Proof.
+  elim=> [e2' H2'__3 | e1' e2' e3' H1'_2' H2'3' IHe H1'__3].
+  - by left.
+  - inv: H1'__3.
+    + right.
+        by apply: (steprtc_cons H1'_2' H2'3'). (* H3__3' *)
+    + move=> e2'' H1'_2'' H2''_3.
+      apply: IHe.
+      rewrite (step_uniqueness H1'_2' H1'_2''). (* e2' = e2'' *)
+        by apply: H2''_3.
+Qed.
+(**
+ * ここで証明したのは：
+ *    e1
+ *  /    \
+ * e2     e3
+ *    →
+ *    OR
+ *    ←
+ *
+ * 本来の合流性は、これより弱い：
+ *    e1
+ *  /    \
+ * e2     e3
+ *  \    /
+ *    e4
+ *)
 
 
 (* ************* *)
