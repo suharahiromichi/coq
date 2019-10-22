@@ -132,22 +132,21 @@ Definition steprec := refl_step_closure step. (* env -> env -> Prop *)
 Infix "|=>" := step (at level 50, no associativity).
 Infix "|=>*" := steprec (at level 50, no associativity).
 
-(* rsc_refl *)
-Lemma steprtc_refl (e : env) : e |=>* e.
+Lemma steprsc_refl (e : env) : e |=>* e.
 Proof. done. Qed.
 
-Lemma steprtc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
+Lemma steprsc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
 Proof. by move=> <-. Qed.
 
-Lemma steprtc_step (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
+Lemma steprsc_step' (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
 Proof. by do !econstructor. Qed.
 
 (* rsc_step. *)
-Lemma steprtc_cons (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
+Lemma steprsc_step (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by econstructor; eauto. Qed.
 
 (* rsc_trans *)
-Lemma steprtc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
+Lemma steprsc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by apply: rsc_trans. Qed.
 
 
@@ -442,14 +441,14 @@ Qed.
 (* ************** *)
 (* steprc の合流性 *)
 (* ************** *)
-Theorem steprtc_confluence (e1 e2 e3 : env) :
+Theorem steprsc_confluence (e1 e2 e3 : env) :
   e1 |=>* e2 -> e1 |=>* e3 -> e2 |=>* e3 \/ e3 |=>* e2.
 Proof.
   elim=> [e2' H2'__3 | e1' e2' e3' H1'_2' H2'3' IHe H1'__3].
   - by left.
   - inv: H1'__3.
     + right.
-        by apply: (steprtc_cons H1'_2' H2'3'). (* H3__3' *)
+        by apply: (steprsc_step H1'_2' H2'3'). (* H3__3' *)
     + move=> e2'' H1'_2'' H2''_3.
       apply: IHe.
       rewrite (step_uniqueness H1'_2' H1'_2''). (* e2' = e2'' *)
@@ -471,11 +470,11 @@ Qed.
  *  \    /
  *    e4
  *)
-Theorem steprtc_confluence_weak (e1 e2 e3 : env) :
+Theorem steprsc_confluence_weak (e1 e2 e3 : env) :
   e1 |=>* e2 -> e1 |=>* e3 -> (exists e4, e2 |=>* e4 /\ e3 |=>* e4).
 Proof.
   move=> H1__2 H1__3.
-  case: (steprtc_confluence H1__2 H1__3) => [H2__3 | H3__2].
+  case: (steprsc_confluence H1__2 H1__3) => [H2__3 | H3__2].
   - exists e3.
       by split.
   - exists e2.
@@ -494,15 +493,15 @@ Proof.
 Qed.
 (* constructor は、stepseq など。 *)
 
-Theorem steprtc_apptail (us1 us2 us3 : ustack)
+Theorem steprsc_apptail (us1 us2 us3 : ustack)
         (vs1 vs2 vs3 : vstack) (cs1 cs2 cs3 : cstack) :
   (us1, vs1, cs1) |=>* (us2, vs2, cs2) ->
   (us1 ++ us3, vs1 ++ vs3, cs1 ++ cs3) |=>* (us2 ++ us3, vs2 ++ vs3, cs2 ++ cs3).
 Proof.
   move=> H.
-  apply: steprtc_trans.
+  apply: steprsc_trans.
   -  admit.
-  - apply: steprtc_cons.
+  - apply: steprsc_step.
     + apply: step_apptail => //.
       admit.
     + done.
@@ -527,24 +526,24 @@ Proof.
 Qed.
 
 Ltac stepstep_0 e1 e2 :=
-  apply: steprtc_refl ||
+  apply: steprsc_refl ||
   match eval hnf in (decide_step e1) with
-  | left (ex_intro _ _ ?p) => apply: (steprtc_cons p)
+  | left (ex_intro _ _ ?p) => apply: (steprsc_step p)
   end.
 
 Ltac stepstep_1 e1 e2 :=
-  (eexists; split; last apply: steprtc_refl) ||
+  (eexists; split; last apply: steprsc_refl) ||
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) =>
-    apply: (exists_and_right_map (fun _ => steprtc_cons p))
+    apply: (exists_and_right_map (fun _ => steprsc_step p))
   end.
 
 Ltac stepstep_2 e1 e2 :=
-  (eexists; split; last (eexists; split; last apply: steprtc_refl)) ||
+  (eexists; split; last (eexists; split; last apply: steprsc_refl)) ||
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) =>
     apply: (exists_and_right_map (fun _ =>
-            exists_and_right_map (fun _ => steprtc_cons p)))
+            exists_and_right_map (fun _ => steprsc_step p)))
   end.
 
 Ltac stepstep :=
@@ -569,17 +568,17 @@ Ltac stepauto := repeat stepstep.
 (* 手動証明 ************)
 (***********************)
 Tactic Notation "steppartial" constr(H) "by" tactic(tac) :=
-  (eapply steprtc_trans ;
+  (eapply steprsc_trans ;
    [by eapply H; tac |]) ||
-  (refine (exists_and_right_map (fun _ => steprtc_trans _) _);
+  (refine (exists_and_right_map (fun _ => steprsc_trans _) _);
    [by eapply H; tac |]) ||
   (refine (exists_and_right_map (fun _ =>
-           exists_and_right_map (fun _ => steprtc_trans _)) _);
+           exists_and_right_map (fun _ => steprsc_trans _)) _);
    [by eapply H; tac |]).
 
 Tactic Notation "steppartial" constr(H) := steppartial H by idtac.
 
-Ltac rtcrefl := apply steprtc_refl' ; repeat f_equal.
+Ltac rscrefl := apply steprsc_refl' ; repeat f_equal.
   
 
 (* sample *)
@@ -591,16 +590,16 @@ Lemma stepnop us vs cs :
 Proof.
   Check decide_step (us, vs, [:: ipush tn 42, idrop & cs]).
   Eval hnf in (decide_step (us, vs, [:: ipush tn 42, idrop & cs])).
-  Check steprtc_cons (steppush_n us 42 vs (idrop :: cs)).
-  apply: (steprtc_cons (steppush_n us 42 vs (idrop :: cs))).
+  Check steprsc_step (steppush_n us 42 vs (idrop :: cs)).
+  apply: (steprsc_step (steppush_n us 42 vs (idrop :: cs))).
   Check stepdrop us 42 vs cs.
-  apply: (steprtc_cons (stepdrop us 42 vs cs)).
-    by apply: steprtc_refl.
+  apply: (steprsc_step (stepdrop us 42 vs cs)).
+    by apply: steprsc_refl.
   
   Restart.
   stepstep_0 (us, vs, [:: ipush tn 42, idrop & cs]) (us, vs, cs).
   stepstep_0 (us, [:: vn 42 & vs], [:: idrop & cs]) (us, vs, cs).
-    by apply: steprtc_refl.
+    by apply: steprsc_refl.
 
   Restart.
     by stepauto.
@@ -1038,114 +1037,114 @@ Qed.
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
   rewrite /fact.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1], _));
     first by apply: steppush_n.
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 1], _));
     first by apply: steppush_n.
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vb true; vn 4; vn 1], _));
     first by apply: stepneq_tt.
   (* **** *)
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 1], _));
     first by apply: steploop_tt.
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 4; vn 1], _));
     first by apply: stepdip.
-  eapply steprtc_cons with (e2:=([:: vn 4], [:: vn 4; vn 1], _));
+  eapply steprsc_step with (e2:=([:: vn 4], [:: vn 4; vn 1], _));
     first by apply: stepup.
-  eapply steprtc_cons with (e2:=([:: vn 4], [:: vn 4], _));
+  eapply steprsc_step with (e2:=([:: vn 4], [:: vn 4], _));
     first by apply: stepmul.
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 4], _));
     first by apply: stepdown.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 4; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 4; vn 4], _));
     first by apply: steppush_n.
-  eapply steprtc_cons with (e2:=([::], [:: vn 4; vn 1; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 4; vn 1; vn 4], _));
     first by apply: stepswap.
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 4], _));
     first by apply: stepsub.
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vb true; vn 3; vn 4], _));
     first by apply: stepneq_tt.
   (* **** *)
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 4], _));
     first by apply: steploop_tt.
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 3; vn 4], _));
     first by apply: stepdip.
-  eapply steprtc_cons with (e2:=([:: vn 3], [:: vn 3; vn 4], _));
+  eapply steprsc_step with (e2:=([:: vn 3], [:: vn 3; vn 4], _));
     first by apply: stepup.
-  eapply steprtc_cons with (e2:=([:: vn 3], [:: vn 12], _));
+  eapply steprsc_step with (e2:=([:: vn 3], [:: vn 12], _));
     first by apply: stepmul.
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 12], _));
     first by apply: stepdown.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 3; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 3; vn 12], _));
     first by apply: steppush_n.
-  eapply steprtc_cons with (e2:=([::], [:: vn 3; vn 1; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 3; vn 1; vn 12], _));
     first by apply: stepswap.
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 12], _));
     first by apply: stepsub.
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vb true; vn 2; vn 12], _));
     first by apply: stepneq_tt.
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 12], _));
     first by apply: steploop_tt.
   (* **** *)
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 2; vn 12], _));
     first by apply: stepdip.
-  eapply steprtc_cons with (e2:=([:: vn 2], [:: vn 2; vn 12], _));
+  eapply steprsc_step with (e2:=([:: vn 2], [:: vn 2; vn 12], _));
     first by apply: stepup.
-  eapply steprtc_cons with (e2:=([:: vn 2], [:: vn 24], _));
+  eapply steprsc_step with (e2:=([:: vn 2], [:: vn 24], _));
     first by apply: stepmul.
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 24], _));
     first by apply: stepdown.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 2; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 2; vn 24], _));
     first by apply: steppush_n.
-  eapply steprtc_cons with (e2:=([::], [:: vn 2; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 2; vn 1; vn 24], _));
     first by apply: stepswap.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 24], _));
     first by apply: stepsub.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vb true; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vb true; vn 1; vn 24], _));
     first by apply: stepneq_tt.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 24], _));
     first by apply: steploop_tt.
   (* **** *)
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
     first by apply: stepdip.
-  eapply steprtc_cons with (e2:=([:: vn 1], [:: vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([:: vn 1], [:: vn 1; vn 24], _));
     first by apply: stepup.
-  eapply steprtc_cons with (e2:=([:: vn 1], [:: vn 24], _));
+  eapply steprsc_step with (e2:=([:: vn 1], [:: vn 24], _));
     first by apply: stepmul.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 24], _));
     first by apply: stepdown.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
     first by apply: steppush_n.
-  eapply steprtc_cons with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 1; vn 1; vn 24], _));
     first by apply: stepswap.
-  eapply steprtc_cons with (e2:=([::], [:: vn 0; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 0; vn 24], _));
     first by apply: stepsub.
-  eapply steprtc_cons with (e2:=([::], [:: vn 0; vn 0; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 0; vn 0; vn 24], _));
     first by apply: stepdup.
-  eapply steprtc_cons with (e2:=([::], [:: vb false; vn 0; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vb false; vn 0; vn 24], _));
     first by apply: stepneq_ff.
-  eapply steprtc_cons with (e2:=([::], [:: vn 0; vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 0; vn 24], _));
     first by apply: steploop_ff.
   (* **** *) 
-  eapply steprtc_cons with (e2:=([::], [:: vn 24], _));
+  eapply steprsc_step with (e2:=([::], [:: vn 24], _));
     first by apply: stepdrop.
-  eapply steprtc_cons with (e2:=([::], [::], _));
+  eapply steprsc_step with (e2:=([::], [::], _));
     first by apply: stepdrop.
-  by eapply steprtc_refl.
+  by eapply steprsc_refl.
 Qed.
 
 (* END *)
