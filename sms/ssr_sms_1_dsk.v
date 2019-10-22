@@ -139,17 +139,13 @@ Lemma steprsc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
 Proof. by move=> <-. Qed.
 
 Lemma steprsc_step' (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
-Proof. by do !econstructor. Qed.
+Proof. by apply: rsc_R. Qed.
 
-(* rsc_step. *)
 Lemma steprsc_step (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
-Proof. by econstructor; eauto. Qed.
+Proof. by apply: rsc_step. Qed.
 
-(* rsc_trans *)
 Lemma steprsc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by apply: rsc_trans. Qed.
-
-
 
 
 (* ********************************* *)
