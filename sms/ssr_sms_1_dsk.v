@@ -594,26 +594,46 @@ Definition fact :=
      idrop
   ].
 
+Goal ([::], [::], fact) |=>* ([::], [::], [::]).
+Proof.
+    by stepauto.
+Qed.
+
+
+Definition fact_loop_body :=
+  [::
+     idup;
+     idip [:: imul];
+     ipush tn 1;
+     iswap;
+     isub;
+     idup;
+     ineq
+  ].
+
+Definition fact_loop :=
+  [::
+     ineq;
+     iloop fact_loop_body
+  ].
+
 Definition fact' :=
   [::
      ipush tn 1;
      iswap;
      idup;
-     ineq;
-     iloop [::
-              idup;
-              iseq [:: iup; imul; idown];
-              ipush tn 1;
-              iswap;
-              isub;
-              idup;
-              ineq
-           ];
+     iseq fact_loop;
      idrop
   ].
 
+Goal ([::], [:: vn 4; vn 1], fact_loop_body) |=>*
+     ([::], [:: vb true; vn 3; vn 4], [::]).
+Proof.
+    by stepauto.
+Qed.
 
-Goal ([::], [::], fact) |=>* ([::], [::], [::]).
+Goal ([::], [:: vn 4; vn 4; vn 1], fact_loop) |=>*
+     ([::], [:: vn 0; vn 24], [::]).
 Proof.
     by stepauto.
 Qed.
@@ -623,35 +643,65 @@ Proof.
     by stepauto.
 Qed.
 
-Goal forall n m, m = fact_rec n ->
-    ([::], [:: vn n], fact') |=>* ([::], [:: vn m], [::]).
+Goal forall l m n,
+    n = fact_rec l * m ->
+    ([::], [:: vn l; vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
 Proof.
-  move=> n m H.
-  elim: n H.
-  - rewrite /= => ->.
-      by stepauto.
-  - move=> n IHn H.
+  elim.
+  - simpl=> m n H.
+    rewrite H.
+    stepauto.
+    unlock muln.
+    simpl.
+    rewrite -plus_n_O.
+    done.
+  - move=> n IHn m n' H.
     stepauto.
     simpl.
-    Search _ (_.+1.-1 = _).
     rewrite subn1.
     rewrite PeanoNat.Nat.pred_succ.
     case: n IHn H => [IHn H | n IHn H].
-    +  stepauto.
+    + stepauto.
          by rewrite H.
-    +
-      (*
-  m, n : nat
-  IHn : m = fact_rec n.+1 -> ([::], [:: n.+1], fact') |=>* ([::], [:: m], [::])
-  H : m = fact_rec n.+2
-  ============================
-  ([::], [:: n.+1; n.+1; n.+2 * 1],
-  [:: ineq;
-      iloop [:: idup; iseq [:: iup; imul; idown]; ipush tn 1; iswap; isub; idup; ineq];
-      idrop]) |=>* ([::], [:: m], [::])
-*)
-      
+    + Check IHn (n.+2 * m) n'.
+      apply: (IHn (n.+2 * m) n').
+      Check factS.
 Admitted.
+
+Lemma test m : m * 1 = m.
+Admitted.
+
+Lemma test' m : 1 * m = m.
+
+Admitted.
+
+Goal forall l m n,
+    n = m * l`! ->
+    ([::], [:: vn l; vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
+Proof.
+  elim.
+  - simpl=> m n H.
+    rewrite H.
+    stepauto.
+    rewrite fact0.
+    rewrite test.
+    done.
+  - move=> n IHn m n' H.
+    stepauto.
+    simpl.
+    rewrite subn1.
+    rewrite PeanoNat.Nat.pred_succ.
+    case: n IHn H => [IHn H | n IHn H].
+    + stepauto.
+      rewrite H.
+      by rewrite factS fact0 test test test'.
+    + Check IHn (n.+2 * m) n'.
+      apply: (IHn (n.+2 * m) n').
+      rewrite factS in H.
+      rewrite mulnA in H.
+      rewrite [m * n.+2]mulnC in H.
+      done.
+Qed.
 
 (*
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
