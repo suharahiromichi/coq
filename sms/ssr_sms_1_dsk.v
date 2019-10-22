@@ -45,52 +45,6 @@ Definition vstack := seq value.             (* v :: vs *)
 Definition ustack := seq value.             (* u :: us , auxiliary stack or upper stack *)
 Definition env := (ustack * vstack * cstack)%type.   (* e *)
 
-Definition sample1 :=
-  [::
-     ipush tn 1;
-     ipush tn 2;
-     iadd;
-     idrop;
-     idrop
-  ].
-
-Definition fact :=
-  [::
-     ipush tn 1;
-     ipush tn 4;
-     idup;
-     ineq;
-     iloop [::
-              idup;
-              idip [:: imul];
-              ipush tn 1;
-              iswap;
-              isub;
-              idup;
-              ineq
-           ];
-     idrop;
-     idrop
-  ].
-
-Definition fact' :=
-  [::
-     ipush tn 1;
-     ipush tn 4;
-     idup;
-     ineq;
-     iloop [::
-              idup;
-              iseq [:: iup; imul; idown];
-              ipush tn 1;
-              iswap;
-              isub;
-              idup;
-              ineq
-           ];
-     idrop
-  ].
-
 Inductive step : relation env :=            (* env -> env -> Prop *)
 | stepseq us vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
                            step (us, vs, iseq cs1 :: cs2)         (us, vs, cs)
@@ -557,21 +511,28 @@ Ltac stepstep_trace :=
   end.
 
 Ltac stepauto := repeat stepstep.
-(* Ltac stepauto := repeat stepstep_trace. *)
+Ltac stepauto_trace := repeat stepstep_trace.
 
 
 (***********************)
 (* 手動証明 ************)
 (***********************)
+(*
 Tactic Notation "steppartial" constr(H) "by" tactic(tac) :=
-  (eapply steprsc_trans ;
+  (eapply steprsc_trans 
    [by eapply H; tac |]) ||
   (refine (exists_and_right_map (fun _ => steprsc_trans _) _);
    [by eapply H; tac |]) ||
   (refine (exists_and_right_map (fun _ =>
            exists_and_right_map (fun _ => steprsc_trans _)) _);
    [by eapply H; tac |]).
+ *)
 
+Tactic Notation "steppartial" constr(H) "by" tactic(tac) :=
+  eapply steprsc_trans;
+  [by (apply steprsc_step'; eapply H) || eapply H; tac |].
+(*   subst_evars. *)
+                                               
 Tactic Notation "steppartial" constr(H) := steppartial H by idtac.
 
 Ltac rscrefl := apply steprsc_refl' ; repeat f_equal.
@@ -605,11 +566,94 @@ Qed.
 (* ********** *)
 (* 階乗の計算 *)
 (* ********** *)
+Definition sample0 :=
+  [::
+     ipush tn 1;
+     ipush tn 2;
+     iadd;
+     idrop;
+     idrop
+  ].
+
+Definition fact :=
+  [::
+     ipush tn 1;
+     ipush tn 4;
+     idup;
+     ineq;
+     iloop [::
+              idup;
+              idip [:: imul];
+              ipush tn 1;
+              iswap;
+              isub;
+              idup;
+              ineq
+           ];
+     idrop;
+     idrop
+  ].
+
+Definition fact' :=
+  [::
+     ipush tn 1;
+     iswap;
+     idup;
+     ineq;
+     iloop [::
+              idup;
+              iseq [:: iup; imul; idown];
+              ipush tn 1;
+              iswap;
+              isub;
+              idup;
+              ineq
+           ];
+     idrop
+  ].
+
+
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
     by stepauto.
 Qed.
 
+Goal ([::], [:: vn 4], fact') |=>* ([::], [:: vn 24], [::]).
+Proof.
+    by stepauto.
+Qed.
+
+Goal forall n m, m = fact_rec n ->
+    ([::], [:: vn n], fact') |=>* ([::], [:: vn m], [::]).
+Proof.
+  move=> n m H.
+  elim: n H.
+  - rewrite /= => ->.
+      by stepauto.
+  - move=> n IHn H.
+    stepauto.
+    simpl.
+    Search _ (_.+1.-1 = _).
+    rewrite subn1.
+    rewrite PeanoNat.Nat.pred_succ.
+    case: n IHn H => [IHn H | n IHn H].
+    +  stepauto.
+         by rewrite H.
+    +
+      (*
+  m, n : nat
+  IHn : m = fact_rec n.+1 -> ([::], [:: n.+1], fact') |=>* ([::], [:: m], [::])
+  H : m = fact_rec n.+2
+  ============================
+  ([::], [:: n.+1; n.+1; n.+2 * 1],
+  [:: ineq;
+      iloop [:: idup; iseq [:: iup; imul; idown]; ipush tn 1; iswap; isub; idup; ineq];
+      idrop]) |=>* ([::], [:: m], [::])
+*)
+      
+Admitted.
+
+(*
 Goal ([::], [::], fact) |=>* ([::], [::], [::]).
 Proof.
   rewrite /fact.
@@ -1142,5 +1186,72 @@ Proof.
     first by apply: stepdrop.
   by eapply steprsc_refl.
 Qed.
+*)
+
+(** example 1 *)
+
+Definition example1 :=
+  [::                                        (* a b c d *)
+     idip [:: idrop; idup; idip [:: iswap]]; (* a c d c *)
+     iswap; idip [:: iswap];                 (* c d a c *)
+       iswap                                 (* d c a c *)
+  ].
+
+Definition example2 :=
+  [::                                            (* a b c d *)
+     iup; idrop; idup; iup; iswap; idown; idown; (* a c d c *)
+     iswap; iup; iswap; idown;                   (* c d a c *)
+       iswap                                     (* d c a c *)
+  ].
+
+Lemma stepexample1 (a b c d : value) :
+  ([::], [:: a; b; c; d], example1) |=>* ([::], [:: d; c; a; c], [::]).
+Proof.
+    by stepauto.
+Qed.
+
+Lemma stepexample2 (a b c d : value) :
+  ([::], [:: a; b; c; d], example2) |=>* ([::], [:: d; c; a; c], [::]).
+Proof.
+    by stepauto.
+Qed.
+
+Lemma stepexample2' (a b c d : value) :
+  {p | ([::], [:: a; b; c; d], p) |=>* ([::], [:: d; c; a; c], [::])}.
+Proof.
+  eexists.
+  eapply steprsc_step; first apply stepup.
+  eapply steprsc_step; first apply stepdrop.
+  eapply steprsc_step; first apply stepdup.
+  eapply steprsc_step; first apply stepup.
+  eapply steprsc_step; first apply stepswap.
+  eapply steprsc_step; first apply stepdown.
+  eapply steprsc_step; first apply stepdown.
+  eapply steprsc_step; first apply stepswap.
+  eapply steprsc_step; first apply stepup.
+  eapply steprsc_step; first apply stepswap.
+  eapply steprsc_step; first apply stepdown.
+  eapply steprsc_step; first apply stepswap.
+  done.
+Defined.
+
+Lemma stepexample12'' (a b c d : value) :
+  {p | ([::], [:: a; b; c; d], p) |=>* ([::], [:: d; c; a; c], [::])}.
+Proof.
+  eexists.
+  steppartial stepup.
+  steppartial stepdrop.
+  steppartial stepdup.
+  steppartial stepup.
+  steppartial stepswap.
+  steppartial stepdown.
+  steppartial stepdown.
+  steppartial stepswap.
+  steppartial stepup.
+  steppartial stepswap.
+  steppartial stepdown.
+  steppartial stepswap.
+  done.
+Defined.
 
 (* END *)
