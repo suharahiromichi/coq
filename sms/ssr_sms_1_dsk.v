@@ -613,6 +613,7 @@ Definition fact_loop_body :=
 
 Definition fact_loop :=
   [::
+     idup;
      ineq;
      iloop fact_loop_body
   ].
@@ -621,7 +622,6 @@ Definition fact' :=
   [::
      ipush tn 1;
      iswap;
-     idup;
      iseq fact_loop;
      idrop
   ].
@@ -632,33 +632,58 @@ Proof.
     by stepauto.
 Qed.
 
-Goal ([::], [:: vn 4; vn 4; vn 1], fact_loop) |=>*
+Goal ([::], [:: vn 4; vn 1], fact_loop) |=>*
      ([::], [:: vn 0; vn 24], [::]).
 Proof.
     by stepauto.
 Qed.
+
 
 Goal ([::], [:: vn 4], fact') |=>* ([::], [:: vn 24], [::]).
 Proof.
     by stepauto.
 Qed.
 
+
+(* fact_loop を 1回分だけ実行する。 *)
+(* 最後まで実行すると、帰納法が使えなくなるから。 *)
+Ltac stepfact_one :=
+  steppartial stepdup;
+  steppartial stepneq_tt;
+  steppartial steploop_tt;
+  steppartial stepdup;
+  steppartial stepdip;
+  steppartial stepup;
+  steppartial stepmul;
+  steppartial stepdown;
+  steppartial steppush_n;
+  steppartial stepswap;
+  steppartial stepsub.
+  
+Goal ([::], [:: vn 4; vn 1], fact_loop) |=>*
+     ([::], [:: vn 3; vn 4], fact_loop).
+Proof.
+    by stepfact_one.
+Qed.
+
+
 (* 任意の自然数についての階乗の計算 *)
 Goal forall l m n,
     n = m * l`! ->
-    ([::], [:: vn l; vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
+    ([::], [:: vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
 Proof.
-  elim=> // [m n H | l IHl m n H].
-  - stepauto.
+  elim=> // [m n H | l IHl m n H].     (* l による数学的帰納法を行う。 *)
+  - stepauto.                          (* loop を最後まで実行する。 *)
       by rewrite H fact0 muln1.
-  - stepauto.
-    rewrite subn1 PeanoNat.Nat.pred_succ /=.
-    case: l IHl H => [IHl H | l IHl H].
-    + stepauto.                             (* l = 0 *)
-        by rewrite H mul1n factS fact0 2!muln1.
-    + apply: (IHl (l.+2 * m) n).            (* l = l.+1 *)
+  - case: l IHl H => [IHl H | l IHl H].
+    (* l = 0 *)
+    + stepauto.                        (* loop を最後まで実行する。 *)
+        by rewrite subn1 PeanoNat.Nat.pred_succ mul1n H factS fact0 2!muln1.
+    (* l = l.+1 *)
+    + stepfact_one.                   (* loop を1周期だけ実行する。 *)
+      apply: (IHl (l.+2 * m) n).
       rewrite H factS.
-      ring.                    (* by rewrite mulnA [m * l.+2]mulnC *)
+      ring.                     (* by rewrite mulnA [m * l.+2]mulnC *)
 Qed.
 
 (*
