@@ -643,64 +643,22 @@ Proof.
     by stepauto.
 Qed.
 
-Goal forall l m n,
-    n = fact_rec l * m ->
-    ([::], [:: vn l; vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
-Proof.
-  elim.
-  - simpl=> m n H.
-    rewrite H.
-    stepauto.
-    unlock muln.
-    simpl.
-    rewrite -plus_n_O.
-    done.
-  - move=> n IHn m n' H.
-    stepauto.
-    simpl.
-    rewrite subn1.
-    rewrite PeanoNat.Nat.pred_succ.
-    case: n IHn H => [IHn H | n IHn H].
-    + stepauto.
-         by rewrite H.
-    + Check IHn (n.+2 * m) n'.
-      apply: (IHn (n.+2 * m) n').
-      Check factS.
-Admitted.
-
-Lemma test m : m * 1 = m.
-Admitted.
-
-Lemma test' m : 1 * m = m.
-
-Admitted.
-
+(* 任意の自然数についての階乗の計算 *)
 Goal forall l m n,
     n = m * l`! ->
     ([::], [:: vn l; vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
 Proof.
-  elim.
-  - simpl=> m n H.
-    rewrite H.
-    stepauto.
-    rewrite fact0.
-    rewrite test.
-    done.
-  - move=> n IHn m n' H.
-    stepauto.
-    simpl.
-    rewrite subn1.
-    rewrite PeanoNat.Nat.pred_succ.
-    case: n IHn H => [IHn H | n IHn H].
-    + stepauto.
-      rewrite H.
-      by rewrite factS fact0 test test test'.
-    + Check IHn (n.+2 * m) n'.
-      apply: (IHn (n.+2 * m) n').
-      rewrite factS in H.
-      rewrite mulnA in H.
-      rewrite [m * n.+2]mulnC in H.
-      done.
+  elim=> // [m n H | l IHl m n H].
+  - stepauto.
+      by rewrite H fact0 muln1.
+  - stepauto.
+    rewrite subn1 PeanoNat.Nat.pred_succ /=.
+    case: l IHl H => [IHl H | l IHl H].
+    + stepauto.                             (* l = 0 *)
+        by rewrite H mul1n factS fact0 2!muln1.
+    + apply: (IHl (l.+2 * m) n).            (* l = l.+1 *)
+      rewrite H factS.
+      ring.                    (* by rewrite mulnA [m * l.+2]mulnC *)
 Qed.
 
 (*
