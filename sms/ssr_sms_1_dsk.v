@@ -529,22 +529,22 @@ Qed.
 Ltac stepstep_0 e1 e2 :=
   apply: steprtc_refl ||
   match eval hnf in (decide_step e1) with
-  | left (ex_intro _ _ ?p) => apply: (@steprtc_cons _ _ _ p)
+  | left (ex_intro _ _ ?p) => apply: (steprtc_cons p)
   end.
 
 Ltac stepstep_1 e1 e2 :=
   (eexists; split; last apply: steprtc_refl) ||
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) =>
-    apply: (@exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p))
+    apply: (exists_and_right_map (fun _ => steprtc_cons p))
   end.
 
 Ltac stepstep_2 e1 e2 :=
   (eexists; split; last (eexists; split; last apply: steprtc_refl)) ||
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) =>
-    apply: (@exists_and_right_map _ _ _ (fun _ =>
-            @exists_and_right_map _ _ _ (fun _ => @steprtc_cons _ _ _ p)))
+    apply: (exists_and_right_map (fun _ =>
+            exists_and_right_map (fun _ => steprtc_cons p)))
   end.
 
 Ltac stepstep :=
@@ -569,12 +569,12 @@ Ltac stepauto := repeat stepstep.
 (* 手動証明 ************)
 (***********************)
 Tactic Notation "steppartial" constr(H) "by" tactic(tac) :=
-  (eapply @steprtc_trans ;
+  (eapply steprtc_trans ;
    [by eapply H; tac |]) ||
-  (refine (@exists_and_right_map _ _ _ (fun _ => @steprtc_trans _ _ _ _) _);
+  (refine (exists_and_right_map (fun _ => steprtc_trans _) _);
    [by eapply H; tac |]) ||
-  (refine (@exists_and_right_map _ _ _ (fun _ =>
-           @exists_and_right_map _ _ _ (fun _ => @steprtc_trans _ _ _ _)) _);
+  (refine (exists_and_right_map (fun _ =>
+           exists_and_right_map (fun _ => steprtc_trans _)) _);
    [by eapply H; tac |]).
 
 Tactic Notation "steppartial" constr(H) := steppartial H by idtac.
