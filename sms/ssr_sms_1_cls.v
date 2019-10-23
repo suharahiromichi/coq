@@ -2,8 +2,6 @@
 (** @suharahiromicihi *)
 (** 2019_10_12 *)
 
-(** このコードは保守していません。 *)
-
 From mathcomp Require Import all_ssreflect.
 Require Import ssrinv ssrclosure.
 
@@ -43,32 +41,6 @@ Definition cstack := seq inst.              (* c :: cs *)
 Definition vstack := seq value.             (* v :: vs *)
 Definition env := (vstack * cstack)%type.   (* e *)
 
-Definition sample1 :=
-  [::
-     ipush tn 1;
-     ipush tn 2;
-     iadd;
-     idrop
-  ].
-
-Definition fact :=
-  [::
-     ipush tn 1;
-     ipush tn 4;
-     idup;
-     ineq;
-     iloop [::
-              idup;
-              idip [:: imul];
-              ipush tn 1;
-              iswap;
-              isub;
-              idup;
-              ineq
-           ];
-     idrop
-  ].
-
 Inductive step : relation env :=            (* env -> env -> Prop *)
 | stepseq vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
                            step (vs, iseq cs1 :: cs2)           (vs, cs)
@@ -103,127 +75,166 @@ Definition steprec := refl_step_closure step. (* env -> env -> Prop *)
 Infix "|=>" := step (at level 50, no associativity).
 Infix "|=>*" := steprec (at level 50, no associativity).
 
-Lemma steprtc_refl (e : env) : e |=>* e.
+Lemma steprsc_refl (e : env) : e |=>* e.
 Proof. done. Qed.
 
-Lemma steprtc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
+Lemma steprsc_refl' (e1 e2 : env) : e1 = e2 -> e1 |=>* e2.
 Proof. by move=> <-. Qed.
 
-Lemma steprtc_step (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
-Proof. by do !econstructor. Qed.
+Lemma steprsc_step' (e1 e2 : env) : e1 |=> e2 -> e1 |=>* e2.
+Proof. by apply: rsc_R. Qed.
 
-Lemma steprtc_cons (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
-Proof. by econstructor; eauto. Qed.
+Lemma steprsc_step (e1 e2 e3 : env) : e1 |=> e2 -> e2 |=>* e3 -> e1 |=>* e3.
+Proof. by apply: rsc_step. Qed.
 
-Lemma steprtc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
+Lemma steprsc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by apply: rsc_trans. Qed.
 
+(* ************* *)
+(* step の決定性 *)
+(* ************* *)
 Ltac i_none := right; inv=> ?; inv; done.   (* inst の条件にあわない場合 *)
-
-(* step が決定的であることを証明する。 *)
+Ltac i_done := left; eexists; constructor; done. (* inst の定義にあう場合。 *)
 
 Theorem decide_step (e1 : env) : decidable (exists (e2 : env), e1 |=> e2).
 Proof.
-  case: e1 => vs cs.
-  case: cs => [| c cs]; first i_none.
+  case: e1 => [vs [| c cs]]; try i_none.
   case: c.                                 (* inst で場合分けする。 *)
-  (* seq *)
-  - move: cs => cs2 cs1.
-    left.
-    exists (vs, cs1 ++ cs2).                (* eexists *)
-      by apply: stepseq.                    (* constructor *)
-  (* drop *)
-  - case: vs => [| v vs]; first i_none.
-    left.
-    exists (vs, cs).
-      by apply: stepdrop.
-  (* dup *)
-  - case: vs => [| v vs]; first i_none.
-    left.
-    exists ([:: v, v & vs], cs).
-      by apply: stepdup.
-  (* swap *)
-  - case: vs => [| v1 vs]; first i_none.
-    case: vs => [| v2 vs]; first i_none.
-    left.
-    exists ([:: v2, v1 & vs], cs).
-      by apply: stepswap.
-  (* push *)
-  - move=> ty v.
-    case: ty; case: v; try i_none.  (* nat か bool で場合分けする。 *)
-    (* nat の組み合わせ と bool の組み合わせ以外を try i_none で片付ける。 *)
-    + move=> n.
-      left.
-      exists ([:: vn n & vs], cs).
-        by apply: steppush_n.
-    + move=> b.
-      left.
-      exists ([:: vb b & vs], cs).
-        by apply: steppush_b.
-  (* loop *)
-  - case: vs => [| v vs]; first i_none.
-    move: cs => cs2 cs1.
-    case: v => [n | b]; first i_none. (* nat か bool で場合分けする。 *)
-    left.
-    case: b.                      (* true か false で場合分けする。 *)
-    + exists (vs, cs1 ++ (iloop cs1 :: cs2)).
-        by apply: steploop_tt.
-    + exists (vs, cs2).
-        by apply: steploop_ff.
-        
-  (* dip *)
-  - case: vs => [| v vs]; first i_none.
-    move: cs => cs2 cs1.
-    left.
-    exists (vs, cs1 ++ (iret v :: cs2)).    (* iret を使う例。 *)
-        by apply: stepdip.
-        
-  (* add *)
-  - case: vs => [| v1 vs]; first i_none.
-    case: vs => [| v2 vs]; first i_none.
-    case: v1; case: v2 => n1 n2; try i_none. (* nat か bool で場合分けする。 *)
-    (* nat と nat の組み合わせ以外を try i_none で片付ける。 *)
-    left.
-    exists (vn (n2 + n1) :: vs, cs).
-      by apply: stepadd.
-  (* sub *)
-  - case: vs => [| v1 vs]; first i_none.
-    case: vs => [| v2 vs]; first i_none.
-    case: v1; case: v2 => n1 n2; try i_none.
-    left.
-    exists (vn (n2 - n1) :: vs, cs).
-      by apply: stepsub.
-  (* mul *)
-  - case: vs => [| v1 vs]; first i_none.
-    case: vs => [| v2 vs]; first i_none.
-    case: v1; case: v2 => n1 n2; try i_none.
-    left.
-    exists (vn (n2 * n1) :: vs, cs).
-      by apply: stepmul.
-  (* eq *)
-  - case: vs => [| v vs]; first i_none.
-    case: v => n; try i_none.       (* nat か bool で場合分けする。 *)
-    left.
-    case: n.                        (* 0 か 非0 で場合分けする。 *)
-    + exists ([:: vb true & vs], cs).
-        by apply: stepeq_tt.
-    + exists ([:: vb false & vs], cs).
-        by apply: stepeq_ff.
-  (* neq *)
-  - case: vs => [| v vs]; first i_none.
-    case: v => n; try i_none.
-    left.
-    case: n.
-    + exists ([:: vb false & vs], cs).
-        by apply: stepneq_ff.
-    + exists ([:: vb true & vs], cs).
-        by apply: stepneq_tt.
-        
-  (* ret 追加 *)
-  - move=> v.
-    left.
-    exists ([:: v & vs], cs).
-      by apply: stepret.
+  - move: cs => cs2 cs1; i_done.                      (* seq *)
+  - case: vs => [| v vs]; try i_none; i_done.         (* drop *)
+  - case: vs => [| v vs]; try i_none; i_done.         (* dup *)
+  - case: vs => [| v1 [| v2 vs]]; try i_none; i_done. (* swap *)
+  - case=> [] [] n; try i_none; i_done.               (* push *)
+  - case: vs => [| [n | b] vs]; try i_none.
+    case: b; i_done.                          (* if_tt と if_ff *)
+  - case: vs => [| v vs]; try i_none. i_done. (* dip *)
+  - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* add *)
+  - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* sub *)
+  - case: vs => [| [n1 | b1] [| [n2 | b2] vs]]; try i_none; i_done. (* mul *)
+  - case: vs => [| [n | b] vs]; try i_none.
+    case: n; i_done.                                (* eq_tt と eq_ff *)
+  - case: vs => [| [n | b] vs]; try i_none.
+    case: n; i_done.                                (* neq_ff と neq_tt *)
+  - case: vs => [| v vs]; try i_none; i_done.       (* 追加 ret *)
 Defined.
+
+(* ************* *)
+(* step の一意性 *)
+(* ************* *)
+Theorem step_uniqueness (e1 e2 e3 : env) :
+  e1 |=> e2 -> e1 |=> e3 -> e2 = e3.
+Proof.
+    by inv; inv.
+Qed.
+
+
+(* ************** *)
+(* steprc の合流性 *)
+(* ************** *)
+Theorem steprsc_confluence (e1 e2 e3 : env) :
+  e1 |=>* e2 -> e1 |=>* e3 -> e2 |=>* e3 \/ e3 |=>* e2.
+Proof.
+  elim=> [e2' H2'__3 | e1' e2' e3' H1'_2' H2'3' IHe H1'__3].
+  - by left.
+  - inv: H1'__3.
+    + right.
+        by apply: (steprsc_step H1'_2' H2'3'). (* H3__3' *)
+    + move=> e2'' H1'_2'' H2''_3.
+      apply: IHe.
+      rewrite (step_uniqueness H1'_2' H1'_2''). (* e2' = e2'' *)
+        by apply: H2''_3.
+Qed.
+(**
+ * ここで証明したのは：
+ *    e1
+ *  /    \
+ * e2     e3
+ *    →
+ *    OR
+ *    ←
+ *
+ * 本来の合流性は、これより弱い：
+ *    e1
+ *  /    \
+ * e2     e3
+ *  \    /
+ *    e4
+ *)
+Theorem steprsc_confluence_weak (e1 e2 e3 : env) :
+  e1 |=>* e2 -> e1 |=>* e3 -> (exists e4, e2 |=>* e4 /\ e3 |=>* e4).
+Proof.
+  move=> H1__2 H1__3.
+  case: (steprsc_confluence H1__2 H1__3) => [H2__3 | H3__2].
+  - exists e3.
+      by split.
+  - exists e2.
+      by split.
+Qed.
+
+(***********************)
+(* 自動証明 ************)
+(***********************)
+Lemma exists_and_right_map (P Q R : inst -> Prop) :
+  (forall i, Q i -> R i) -> (exists i, P i /\ Q i) -> (exists i, P i /\ R i).
+Proof.
+    by firstorder.
+Qed.
+
+Ltac stepstep_0 e1 e2 :=
+  apply: steprsc_refl ||
+  match eval hnf in (decide_step e1) with
+  | left (ex_intro _ _ ?p) => apply: (steprsc_step p)
+  end.
+
+Ltac stepstep :=
+  match goal with
+  | |- ?e1 |=>* ?e2 => stepstep_0 e1 e2
+  end.
+
+(* ********** *)
+(* 階乗の計算 *)
+(* ********** *)
+Definition fact_loop :=
+  [::idup;
+     ineq;
+     iloop [::idup;
+              idip [:: imul];
+              ipush tn 1;
+              iswap;
+              isub;
+              idup;
+              ineq
+           ]
+  ].
+
+Goal ([:: vn 4; vn 1], fact_loop) |=>*
+     ([:: vn 0; vn 24], [::]).
+Proof.
+  do !stepstep.
+Qed.
+
+Goal ([:: vn 4; vn 1], fact_loop) |=>*
+     ([:: vn 3; vn 4], fact_loop).
+Proof.
+  by do 10!stepstep.
+Qed.
+
+(* 任意の自然数についての階乗の計算 *)
+Goal forall l m n,
+    n = m * l`! ->
+    ([:: vn l; vn m], fact_loop) |=>* ([:: vn 0; vn n], [::]).
+Proof.
+  elim=> // [m n H | l IHl m n H].
+  - do !stepstep.
+      by rewrite H fact0 muln1.
+  - case: l IHl H => [IHl H | l IHl H].
+    + do !stepstep.
+      rewrite subn1 succnK mul1n H.
+        by rewrite factS fact0 2!muln1.
+    + do 10!stepstep.
+      apply: (IHl (l.+2 * m) n).
+      rewrite H factS.
+      ring.                     (* by rewrite mulnA [m * l.+2]mulnC *)
+Qed.
 
 (* END *)
