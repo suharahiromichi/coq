@@ -648,6 +648,8 @@ Qed.
 (* fact_loop を 1回分だけ実行する。 *)
 (* 最後まで実行すると、帰納法が使えなくなるから。 *)
 Ltac stepfact_one :=
+  do 11 ! stepstep.
+(*
   steppartial stepdup;
   steppartial stepneq_tt;
   steppartial steploop_tt;
@@ -659,13 +661,13 @@ Ltac stepfact_one :=
   steppartial steppush_n;
   steppartial stepswap;
   steppartial stepsub.
-  
+*)  
+
 Goal ([::], [:: vn 4; vn 1], fact_loop) |=>*
      ([::], [:: vn 3; vn 4], fact_loop).
 Proof.
     by stepfact_one.
 Qed.
-
 
 (* 任意の自然数についての階乗の計算 *)
 Goal forall l m n,
@@ -673,14 +675,15 @@ Goal forall l m n,
     ([::], [:: vn l; vn m], fact_loop) |=>* ([::], [:: vn 0; vn n], [::]).
 Proof.
   elim=> // [m n H | l IHl m n H].     (* l による数学的帰納法を行う。 *)
-  - stepauto.                          (* loop を最後まで実行する。 *)
+  - do !stepstep. (* stepauto *)      (* loop を最後まで実行する。 *)
       by rewrite H fact0 muln1.
   - case: l IHl H => [IHl H | l IHl H].
     (* l = 0 *)
-    + stepauto.                        (* loop を最後まで実行する。 *)
-        by rewrite subn1 PeanoNat.Nat.pred_succ mul1n H factS fact0 2!muln1.
+    + do !stepstep. (* stepauto *)    (* loop を最後まで実行する。 *)
+      rewrite subn1 succnK mul1n H.
+        by rewrite factS fact0 2!muln1.
     (* l = l.+1 *)
-    + stepfact_one.                   (* loop を1周期だけ実行する。 *)
+    + do 11!stepstep. (* stepfact_one. *) (* loop を1周期だけ実行する。 *)
       apply: (IHl (l.+2 * m) n).
       rewrite H factS.
       ring.                     (* by rewrite mulnA [m * l.+2]mulnC *)
