@@ -127,7 +127,6 @@ Proof.
     by inv; inv.
 Qed.
 
-
 (* ************** *)
 (* steprc の合流性 *)
 (* ************** *)
@@ -171,17 +170,18 @@ Proof.
       by split.
 Qed.
 
-(***********************)
-(* 自動証明 ************)
-(***********************)
 Lemma exists_and_right_map (P Q R : inst -> Prop) :
   (forall i, Q i -> R i) -> (exists i, P i /\ Q i) -> (exists i, P i /\ R i).
 Proof.
     by firstorder.
 Qed.
 
+(***********************)
+(* 自動証明 ************)
+(***********************)
+
 Ltac stepstep_0 e1 e2 :=
-  apply: steprsc_refl ||
+(* apply: steprsc_refl || これは使わず、done で終了する。 *)
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) => apply: (steprsc_step p)
   end.
@@ -211,12 +211,14 @@ Goal ([:: vn 4; vn 1], fact_loop) |=>*
      ([:: vn 0; vn 24], [::]).
 Proof.
   do !stepstep.
+  done.
 Qed.
 
 Goal ([:: vn 4; vn 1], fact_loop) |=>*
      ([:: vn 3; vn 4], fact_loop).
 Proof.
-  by do 10!stepstep.
+  do 10!stepstep.
+  done.
 Qed.
 
 (* 任意の自然数についての階乗の計算 *)
@@ -232,7 +234,8 @@ Proof.
       rewrite subn1 succnK mul1n H.
         by rewrite factS fact0 2!muln1.
     + do 10!stepstep.
-      apply: (IHl (l.+2 * m) n).
+      rewrite /= -/fact_loop.
+      apply: IHl.                     (* apply: (IHl (l.+2 * m) n). *)
       rewrite H factS.
       ring.                     (* by rewrite mulnA [m * l.+2]mulnC *)
 Qed.
