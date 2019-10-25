@@ -181,7 +181,6 @@ Qed.
 (***********************)
 
 Ltac stepstep_0 e1 e2 :=
-(* apply: steprsc_refl || これは使わず、done で終了する。 *)
   match eval hnf in (decide_step e1) with
   | left (ex_intro _ _ ?p) => apply: (steprsc_step p)
   end.
@@ -207,6 +206,7 @@ Definition fact_loop :=
            ]
   ].
 
+(* 4! を計算する。 *)
 Goal ([:: vn 4; vn 1], fact_loop) |=>*
      ([:: vn 0; vn 24], [::]).
 Proof.
@@ -214,30 +214,33 @@ Proof.
   done.
 Qed.
 
+(* 4! * 1 = 3! * 4 であり、ループの 1回分を計算する。 *)
+(* 10 ステップでよいことがわかる。 *)
 Goal ([:: vn 4; vn 1], fact_loop) |=>*
      ([:: vn 3; vn 4], fact_loop).
 Proof.
-  do 10!stepstep.
+  do 10!stepstep.                           (* 10 step *)
   done.
 Qed.
 
 (* 任意の自然数についての階乗の計算 *)
-Goal forall l m n,
-    n = m * l`! ->
-    ([:: vn l; vn m], fact_loop) |=>* ([:: vn 0; vn n], [::]).
+Goal forall n m l,
+    l = m * n`! ->
+    ([:: vn n; vn m], fact_loop) |=>* ([:: vn 0; vn l], [::]).
 Proof.
-  elim=> // [m n H | l IHl m n H].
+  elim=> // [m l H |].                      (* n の帰納法をつかう。 *)
   - do !stepstep.
       by rewrite H fact0 muln1.
-  - case: l IHl H => [IHl H | l IHl H].
+  - case=> [| n] IHn m l H.      (* n の 0 か n.+1 で場合分けする。 *)
     + do !stepstep.
       rewrite subn1 succnK mul1n H.
         by rewrite factS fact0 2!muln1.
-    + do 10!stepstep.
+    + do 10!stepstep.             (* 10 step でループを 1回進める。 *)
       rewrite /= -/fact_loop.
-      apply: IHl.                     (* apply: (IHl (l.+2 * m) n). *)
+      Check (IHn (n.+2 * m) l).
+      apply: IHn.
       rewrite H factS.
-      ring.                     (* by rewrite mulnA [m * l.+2]mulnC *)
+      ring.                     (* by rewrite mulnA [m * n.+2]mulnC *)
 Qed.
 
 (* END *)
