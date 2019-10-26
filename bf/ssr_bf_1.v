@@ -136,17 +136,26 @@ Proof.
 Qed.
 
 
-Goal exists outputs, (sample, [::], 0, [::], [::], [::]) |=>*
-     ([::],   [::], 0, [:: 1; 0], [::], outputs).
+Lemma test : exists x ls rs outputs,
+    (sample, [::], 0, [::], [::], [::]) |=>* ([::], ls, x, rs, [::], outputs).
 Proof.
+  eexists.
+  eexists.
+  eexists.
   eexists.
   do !stepstep.
   match goal with
   | |- ?e1 |=>* ?e2 => idtac e2
   end.
   done.
-  Show Proof.
 Qed.
+
+Print test.
+(*
+  これから
+  ex_intro _ x (ex_intro ls (ex_intro rs (ex_intro out _)))
+  をパターンを取り出す。
+*)
 
 (*
 Variable H1 : ([:: vn 1], [:: idrop; idrop]) |=> ([::], [:: idrop]).
