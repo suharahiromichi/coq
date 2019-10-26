@@ -123,14 +123,29 @@ Ltac stepstep :=
 Definition sample :=
   [:: ileft;
      iinc;
-     ileft].
+     iout;
+     ileft
+  ].
 
 Goal (sample, [::], 0, [::], [::], [::]) |=>*
-     ([::],   [::], 0, [:: 1; 0], [::], [::]).
+     ([::],   [::], 0, [:: 1; 0], [::], [:: 1]).
 Proof.
   do !stepstep.
   (* これが、無限ループにならないのはなぜだろう。 *)
   done.
+Qed.
+
+
+Goal exists outputs, (sample, [::], 0, [::], [::], [::]) |=>*
+     ([::],   [::], 0, [:: 1; 0], [::], outputs).
+Proof.
+  eexists.
+  do !stepstep.
+  match goal with
+  | |- ?e1 |=>* ?e2 => idtac e2
+  end.
+  done.
+  Show Proof.
 Qed.
 
 (*
