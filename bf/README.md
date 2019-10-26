@@ -1,31 +1,31 @@
-Brainfuck (Brainf*uck) �� Small-Step semantics
--- �܂��́A�����ЂƂ� Coq �ŏ����� brainf*ck�C���^�v���^
+Brainfuck (Brainf\*uck) の Small-Step semantics
+-- または、もうひとつの Coq で書いた brainf\*ckインタプリタ
 
 @suharahiromichi
 
 2019_10_26
+c
 
 
+# 初めに
 
-# ���߂�
+Small-Step semantics を定義して、それを使ってインタプリタを実行する。
+実行の繰り返しには、[2.] がLtac の再帰呼び出しを使っていることに対して、
+「do !」 つまり repeat タクティクで行っている。
 
-Small-Step semantics ���`���āA������g���ăC���^�v���^�����s����B
-���s�̌J��Ԃ��ɂ́A[2.] ��Ltac �̍ċA�Ăяo�����g���Ă��邱�Ƃɑ΂��āA
-�udo !�v �܂� repeat �^�N�e�B�N�ōs���Ă���B
+2個スタックのVMでの実装、すなわち Small-Step semantics は [3.] を参考にした。
 
-2�X�^�b�N��VM�ł̎����A���Ȃ킿 Small-Step semantics �� [3.] ���Q�l�ɂ����B
-
-Coq�̃R�[�h�́A�S�̓I�� [1.] �̍l�����ɉ����Ă���B
+Coqのコードは、全体的に [1.] の考え方に沿っている。
 
 
-# �Q�l
+# 参考
 
-[1.] ����ACoq�ɂ��藝�ؖ� Coq�ŃX�^�b�N�w���v���O���~���O�AStricter.org
+[1.] 坂口、Coqによる定理証明 Coqでスタック指向プログラミング、Stricter.org
 
-[2.] Coq�̓`���[�����O���S -- Ltac��brainf*ck�C���^�v���^��������
+[2.] Coqはチューリング完全 -- Ltacでbrainf*ckインタプリタを書いた
      https://qiita.com/erutuf13/items/98f15cc7e74b0570c971
 
-[3.] C�̓`���[�����O���S������
+[3.] Cはチューリング完全だった
      https://qiita.com/takl/items/6ffe14db22974b1f74ce
 
-�ȏ�
+以上
