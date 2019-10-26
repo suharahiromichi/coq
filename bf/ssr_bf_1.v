@@ -9,34 +9,60 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Inductive type : Set :=
-| tn
-| tb
-.
-
-Inductive value : Set :=                    (* v *)
-| vn (n : nat)
-| vb (b : bool)
-.
-Coercion vn : nat >-> value.
-Coercion vb : bool >-> value.
-
 Inductive inst : Set :=                     (* c *)
-| iseq (cs : seq inst)
-| idrop
+| ileft                                     (* < *)
+| iright                                    (* > *)
+| iinc                                      (* + *)
+| idec                                      (* - *)
+| iout                                      (* . *)
+| iin                                       (* , *)
+| iloop (i : seq inst)                      (* [ と ] *)
 .
 
 Definition cstack := seq inst.              (* c :: cs *)
-Definition vstack := seq value.             (* v :: vs *)
-Definition env := (vstack * cstack)%type.   (* e *)
+Definition lstack := seq nat.               (* l :: ls *)
+Definition rstack := seq nat.               (* r :: rs *)
+Definition input := seq nat.                (* x :: ins *)
+Definition output := seq nat.               (* x :: outs *)
+Definition env := (cstack * lstack * nat * rstack * input * output)%type.
 
-(* brainfuck をエラーなしの small-step で実現するための準備 *)
 Inductive step : relation env :=            (* env -> env -> Prop *)
-| stepseq vs cs1 cs2 cs : cs1 ++ cs2 = cs ->
-                           step (vs, iseq cs1 :: cs2)      (vs, cs)
-| stepdrop_cons v vs cs :  step (v :: vs, idrop :: cs)     (vs, cs)
-| stepdrop_nil  cs :       step ([::],    idrop :: cs)     ([::], cs)
-| step_nil vs :            step (vs , [::]) (vs, [::])
+| stepdone x rs ls ins outs :
+    step (         [::],     ls,     x,      rs,      ins,      outs)
+         (         [::],     ls,     x,      rs,      ins,      outs)
+| stepleft_z x cs rs ins outs :             (* < *)
+    step (ileft   :: cs,    [::],    x,      rs,      ins,      outs)
+         (           cs,    [::],    0, x :: rs,      ins,      outs)
+| stepleft_v x y cs ls rs ins outs :        (* < *)
+    step (ileft   :: cs, y :: ls,    x,      rs,      ins,      outs)
+         (           cs,      ls,    y, x :: rs,      ins,      outs)
+| stepright_z x cs ls ins outs :            (* > *)
+    step (iright  :: cs,      ls,    x,    [::],      ins,      outs)
+         (           cs, x :: ls,    0,    [::],      ins,      outs)
+| stepright_v x y cs rs ls ins outs :       (* > *)
+    step (iright  :: cs,      ls,    x, y :: rs,      ins,      outs)
+         (           cs, x :: ls,    y,      rs,      ins,      outs)
+| stepinc x cs rs ls ins outs :             (* + *)
+    step (iinc    :: cs,      ls,    x,      rs,      ins,      outs)
+         (           cs,      ls, x.+1,      rs,      ins,      outs)
+| stepdec x cs rs ls ins outs :             (* - *)
+    step (idec    :: cs,      ls,    x,      rs,      ins,      outs)
+         (           cs,      ls, x.-1,      rs,      ins,      outs)
+| stepin_z x cs rs ls outs :                (* . *)
+    step (iin     :: cs,      ls,    x,      rs,     [::],      outs)
+         (           cs,      ls,    0,      rs,     [::],      outs)
+| stepin_v x y cs rs ls ins outs :          (* . *)
+    step (iin     :: cs,      ls,    x,      rs, y :: ins,      outs)
+         (           cs,      ls,    y,      rs,      ins,      outs)
+| stepout x cs rs ls ins outs :             (* , *)
+    step (iout    :: cs,      ls,    x,      rs,      ins,      outs)
+         (           cs,      ls,    x,      rs,      ins, x :: outs)
+| steploop_z c cs rs ls ins outs :          (* [ *)
+    step (iloop c :: cs,      ls,    0,      rs,      ins,      outs)
+         (           cs,      ls,    0,      rs,      ins,      outs)
+| steploop_v x c cs rs ls ins outs :        (* ] *)
+    step (iloop c :: cs,      ls, x.+1,      rs,      ins,      outs)
+ (c ++  (iloop c :: cs),      ls, x.+1,      rs,      ins,      outs)         
 .
 
 Hint Constructors step.
@@ -62,30 +88,21 @@ Proof. by apply: rsc_step. Qed.
 Lemma steprsc_trans (e1 e2 e3 : env) : e1 |=>* e2 -> e2 |=>* e3 -> e1 |=>* e3.
 Proof. by apply: rsc_trans. Qed.
 
-(* ************* *)
-(* step の決定性 *)
-(* ************* *)
-(* エラーがなく、かならずステップする場合の実験 *)
 Theorem decide_step (e1 : env) : exists (e2 : env), e1 |=> e2.
 Proof.
-  case: e1.
-  move=> vs cs.
+  case: e1  => [[[[[cs ls] x] rs] ins] outs].
   case: cs => [|c cs].
-  - by exists (vs, [::]).
+  - by eexists; constructor.
   - case: c.
+    + case: ls => [|x' ls']; by eexists; constructor.   (* < *)
+    + case: rs => [|x' rs']; by eexists; constructor.   (* > *)
+    + by eexists; constructor.                          (* + *)
+    + by eexists; constructor.                          (* - *)
+    + by eexists; constructor.                          (* , *)
+    + case: ins => [|x' ins']; by eexists; constructor. (* . *)
     + move=> cs'.
-      exists (vs, cs' ++ cs).
-        by apply: stepseq.
-    + case: vs => [|v vs].
-      * exists ([::], cs).
-        by apply: stepdrop_nil.
-      * exists (vs, cs).
-          by apply: stepdrop_cons.
-Defined.                                    (* XXXX *)
-
-(***********************)
-(* 自動証明 ************)
-(***********************)
+      case: x => [| x']; by eexists; constructor. (* [ と ] *)
+Defined.
 
 Ltac stepstep_0 e1 e2 :=
   match eval hnf in (decide_step e1) with
@@ -104,18 +121,19 @@ Ltac stepstep :=
   end.
 
 Definition sample :=
-  [::idrop;
-     idrop].
+  [:: ileft;
+     iinc;
+     ileft].
 
-
-Goal ([:: vn 1], sample) |=>* ([::], [::]).
+Goal (sample, [::], 0, [::], [::], [::]) |=>*
+     ([::],   [::], 0, [:: 1; 0], [::], [::]).
 Proof.
   do !stepstep.
   (* これが、無限ループにならないのはなぜだろう。 *)
   done.
 Qed.
 
-
+(*
 Variable H1 : ([:: vn 1], [:: idrop; idrop]) |=> ([::], [:: idrop]).
 Variable H2 : ([::], [:: idrop]) |=> ([::], [::]).
 Variable H3 : ([::], [::]) |=> ([::], [::]).
@@ -139,5 +157,6 @@ Proof.
   apply: (steprsc_step H3).                 (* もう、進まない。 *)
   done.
 Qed.
+*)
 
 (* END *)
