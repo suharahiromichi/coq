@@ -14,8 +14,8 @@ Inductive inst : Set :=                     (* c *)
 | iright                                    (* > *)
 | iinc                                      (* + *)
 | idec                                      (* - *)
-| iout                                      (* . *)
 | iin                                       (* , *)
+| iout                                      (* . *)
 | iloop (i : seq inst)                      (* [ と ] *)
 .
 
@@ -98,8 +98,8 @@ Proof.
     + case: rs => [|x' rs']; by eexists; constructor.   (* > *)
     + by eexists; constructor.                          (* + *)
     + by eexists; constructor.                          (* - *)
-    + by eexists; constructor.                          (* , *)
     + case: ins => [|x' ins']; by eexists; constructor. (* . *)
+    + by eexists; constructor.                          (* , *)
     + move=> cs'.
       case: x => [| x']; by eexists; constructor. (* [ と ] *)
 Defined.
@@ -184,3 +184,157 @@ Qed.
 *)
 
 (* END *)
+
+(* ********* *)
+(* 加算 *)
+(* ********* *)
+
+(* ",>,<[-<+>]<." *)
+Definition sample1 :=
+  [::iin;
+     iright;
+     iin;
+     ileft;
+     iloop [::idec;
+              iright;
+              iinc;
+              ileft];
+     iright;
+     iout].
+
+Goal (sample1, [::], 0, [::], [::4; 3], [::]) |=>*
+     ([::],   [::0], 7, [::], [::], [:: 7]).
+Proof.
+  do !stepstep.
+  done.
+Qed.
+
+Goal exists ls x rs ins, (sample1, [::], 0, [::], [::4; 3], [::]) |=>*
+     ([::], ls, x, rs, ins, [:: 7]).
+Proof.
+  do !eexists.
+  do !stepstep.
+  done.
+Qed.
+
+(* 加算のループ不変式 *)
+Goal ([:: iloop [:: idec; iright; iinc; ileft]], [::], 4, [:: 3],
+      [::], [::]) |=>* ([::], [::], 0, [::7], [::], [::]).
+Proof.
+  do 5!stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  stepstep.
+  done.
+Qed.
+
+(* ********* *)
+(* Hello World!\n *)
+(* ********* *)
+
+(*
+>+++++ +++++             initialize counter (cell #0) to 10
+[                       use loop to set 70/100/30/10
+    > +++++ ++              add  7 to cell #1
+    > +++++ +++++           add 10 to cell #2
+    > +++                   add  3 to cell #3
+    > +                     add  1 to cell #4
+<<<< -                  decrement counter (cell #0)
+]
+> ++ .                  print 'H'
+> + .                   print 'e'
++++++ ++ .              print 'l'
+.                       print 'l'
++++ .                   print 'o'
+> ++ .                  print ' '
+<< +++++ +++++ +++++ .  print 'W'
+> .                     print 'o'
++++ .                   print 'r'
+----- - .               print 'l'
+----- --- .             print 'd'
+> + .                   print '!'
+> .                     print '\n'
+ *)
+
+Definition hello :=
+  [::iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; (* 10 *)
+     iloop [::iright; iinc; iinc; iinc; iinc; iinc; iinc; iinc; (* 7 *)
+              iright; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; (* 10 *)
+                iright; iinc; iinc; iinc;   (* 3 *)
+                  iright; iinc;             (* 1 *)
+                    ileft; ileft; ileft; ileft; idec];
+     (* 70 100 30 10 *)
+     iright; iinc; iinc; iout;                           (* H *)
+       iright; iinc; iout;                               (* e *)
+         iinc; iinc; iinc; iinc; iinc; iinc; iinc; iout; (* l *)
+           iout;                                         (* l *)
+           iinc; iinc; iinc; iout;                       (* o *)
+             iright; iinc; iinc; iout;                   (*   *)
+               ileft; ileft; iinc; iinc; iinc; iinc; iinc;
+                 iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iinc; iout; (* W *)
+                   iright; iout;             (* o *)
+                     iinc; iinc; iinc; iout; (* r *)
+                       idec; idec; idec; idec; idec; idec; iout; (* l *)
+                         idec; idec; idec; idec; idec; idec; idec; idec; iout; (* d *)
+                           iright; iinc; iout; (* ! *)
+                             iright; iout].    (* \n *)
+
+Goal exists ls x rs ins,
+    (hello, [::], 0, [::], [::], [::])
+      |=>*
+      ([::], ls, x, rs, ins,
+       [:: 10; 33; 100; 108; 114; 111; 87; 32; 111; 108; 108; 101; 72]).
+(* \n ! d l r o W ' ' o l l e H *)
+Proof.
+  do !eexists.
+  do !stepstep => /=.
+  done.
+Qed.
+
+(* ********* *)
+(* ********* *)
+(* ********* *)
+
+(* ",>,<[->[->>+<<]>>[-<+<+>>]<<<]>>. *)
+Definition sample2 :=
+  [::iin;
+     iright;
+     iin;
+     ileft;
+     iloop [::idec;
+              iright;
+              iloop [::idec;
+                       iright;
+                       iright;
+                       iinc;
+                       ileft;
+                       ileft];
+              iright;
+              iright;
+              iloop [::idec;
+                       ileft;
+                       iinc;
+                       ileft;
+                       iinc;
+                       iright;
+                       iright];
+              ileft;
+              ileft;
+              ileft];
+    iright;
+    iright].
+
+(* "+[>.+<]" *)
+Definition sample3 :=
+  [::iin;
+     iloop [::iright;
+              iout;
+              iinc;
+              ileft]].
+               
+               
+     
+              
+              
+     
