@@ -229,6 +229,59 @@ Proof.
   done.
 Qed.
 
+Lemma addition_invariant (m n : nat) :
+  ([:: iloop [:: idec; iright; iinc; ileft]], [::], m, [:: n],
+      [::], [::]) |=>* ([::], [::], 0, [:: m + n], [::], [::]).
+Proof.
+  elim: m n => [n |m IHm n].
+  - by stepstep.
+  - do 5!stepstep.
+    rewrite succnK addSnnS.
+      by apply: IHm.
+Qed.
+
+(* そすう さんのスライドにある定義 *)
+Lemma addition_invariant' (m n : nat) :
+  ([:: iloop [:: iright; iinc; ileft; idec]], [::], m, [:: n],
+   [::], [::]) |=>* ([::], [::], 0, [:: m + n], [::], [::]).
+Proof.
+  elim: m n => [n |m IHm n].
+  - by stepstep.
+  - do 5!stepstep.
+    rewrite succnK addSnnS.
+      by apply: IHm.
+Qed.
+
+Lemma output_lemma' (m n : nat) :
+    (sample1, [::], 0, [::], [:: m; n], [::])
+      |=>* ([:: iright; iout], [::], 0, [:: m +n], [::], [::]).
+Proof.
+  Check (steprsc_trans (addition_invariant m n)).
+
+  Admitted.
+
+
+
+Lemma output_lemma (m n : nat) :
+  ([:: iright; iout], [::], m, [:: n], [::],
+   [::]) |=>* ([::], [:: m], n, [::], [::], [:: n]).
+Proof.
+  by do !stepstep.
+Qed.
+
+Lemma addition (m n : nat) : exists ls x rs ins,
+    (sample1,
+     [::], 0, [::], [:: m; n], [::]) |=>* ([::], ls, x, rs, ins, [:: m + n]).
+Proof.
+  exists [:: 0], (m + n), [::], [::].
+  Check (steprsc_trans (output_lemma' m n)).
+  eapply (steprsc_trans (output_lemma' m n)).
+  Check steprsc_trans (output_lemma 0 (m + n)).
+  eapply (steprsc_trans (output_lemma 0 (m + n))).
+  done.
+Qed.
+
+  
 (* ********* *)
 (* Hello World!\n *)
 (* ********* *)
@@ -332,9 +385,5 @@ Definition sample3 :=
               iout;
               iinc;
               ileft]].
-               
-               
-     
-              
-              
-     
+
+(* END *)
