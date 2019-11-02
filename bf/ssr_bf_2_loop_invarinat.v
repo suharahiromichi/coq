@@ -135,9 +135,16 @@ Ltac stepstep :=
 (* ******* *)
 
 (* *********** *)
-(* 加算 [>+<-] *)
+(* Sum numbers *)
 (* *********** *)
-Definition add := [:: iloop [:: iright; iinc; ileft; idec]].
+(**
+[    while B is not null
+  -  decrease B
+  <+ go to A and increase
+  >  go back to B
+]    loop
+ *)
+Definition add := [:: iloop [:: idec; iright; iinc; ileft]]. (* [-<+>] *)
 
 Goal (add, [::], 4, [:: 3], [::], [::]) |=>* ([::], [::], 0, [:: 7], [::], [::]).
 Proof.
@@ -154,16 +161,18 @@ Proof.
       by apply: IHn.
 Qed.
 
-Lemma addition_invariant' (n m : nat) cs ls rs ins outs :
-  (add ++ cs, ls, n, m :: rs, ins, outs) |=>* (cs, ls, 0, n + m :: rs, ins, outs).
-Proof.
-Admitted.
+(* **************** *)
+(* Subtract numbers *)
+(* **************** *)
+(**
+[    while B is not null
+  -  decrease B
+  <- go to A and increase
+  >  go back to B
+]    loop
+ *)
+Definition sub := [:: iloop [:: iright; idec; ileft; idec]]. (* [-<->] *)
 
-
-(* *********** *)
-(* 減算 [>-<-] *)
-(* *********** *)
-Definition sub := [:: iloop [:: iright; idec; ileft; idec]].
 Goal (sub, [::], 3, [:: 7], [::], [::]) |=>* ([::], [::], 0, [:: 4], [::], [::]).
 Proof.
   by do !stepstep.
@@ -184,10 +193,52 @@ Proof.
       by apply: IHn.
 Qed.
 
-(* ********************* *)
-(* 値のコピー [->+>+<<] *)
-(* ********************* *)
-Definition cp := [::iloop [:: idec; iright; iinc; iright; iinc; ileft; ileft]].
+(* **************************** *)
+(* Move value (aka pseudo-copy) *)
+(* **************************** *)
+(**
+[    while A is not null
+  -  decrease A
+  >+ increase target
+  <  go back to A
+]    loop
+*)
+Definition mv := [:: iloop [:: idec; iright; iinc; ileft]]. (* [->+<] *)
+
+Goal (mv, [::], 2, [::], [::], [::]) |=>* ([::], [::], 0, [::2], [::], [::]).
+Proof.
+  do 5!stepstep.
+  do 5!stepstep.
+  stepstep.
+  done.
+Qed.
+
+Lemma move_invariant (n m : nat) :
+  (mv, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: n + m], [::], [::]).
+Proof.
+  elim: n m => [| n IHn] m.
+  - stepstep.
+      by rewrite add0n.
+  - do 5!stepstep.
+    rewrite succnK.
+    have -> : n.+1 + m = n + m.+1 by ssromega.
+      by apply: IHn.
+Qed.
+
+(* *********** *)
+(* Copy value *)
+(* *********** *)
+(**
+[    while A is not null
+  -  decrease A
+  >+ increase 1st next cell
+  >+ increase 2nd next cell
+  <<  go back to A
+]
+ *)
+Definition cp :=
+  [:: iloop [:: idec; iright; iinc; iright; iinc; ileft; ileft]]. (* [->+>+<<] *)
+
 Goal (cp, [::], 2, [::], [::], [::]) |=>* ([::], [::], 0, [::2;2], [::], [::]).
 Proof.
   do 8!stepstep.
@@ -220,23 +271,11 @@ Proof.
     by apply: copy_invariant.
 Qed.
 
-
-(* ****************************** *)
-(* 値のコピー [>+>+<<-]>>[<<+>>-] *)
-(* ****************************** *)
-(*
-Definition copy := [::iloop [:: iright; iinc; iright; iinc; ileft; ileft; idec];
-                      iright; iright;
-                        iloop [:: ileft; ileft; iinc; iright; iright; idec]].
- *)
-
-(* ***************** *)
-(* 定数倍 [>+++++<-] *)
-(* ***************** *)
-Definition mulc := [::iloop [::iright;
-                               iinc; iinc; iinc; iinc; iinc;
-                                 ileft;
-                                 idec]].
+(* ******* *)
+(* 定数倍  *)
+(* ******* *)
+Definition mulc :=                          (* [>+++++<-] *)
+  [:: iloop [:: iright;  iinc; iinc; iinc; iinc; iinc;  ileft; idec]].
 
 Goal (mulc, [::], 3, [::], [::], [::]) |=>* ([::], [::], 0, [::15], [::], [::]).
 Proof.
@@ -266,4 +305,85 @@ Proof.
     by apply: multiply_const_invariant. 
 Qed.
 
+
+(* **************** *)
+(* Multiply numbers *)
+(* **************** *)
+(**
+[       while m is not null
+  >[    while n is not null
+    -   decrease n
+    >+  increase o
+    >+  increase p
+  <<]   loop
+  >[    while o is not null
+    -   decrease o
+    <+  increase n
+  >]    loop
+  <<-   decrease m
+]       loop
+ *)
+Definition mul :=                           (* [>[->+>+<<]>[-<+>]<<-] *)
+  [:: iloop [:: iright;
+               iloop [:: idec; iright; iinc; iright; iinc; ileft; ileft];
+               iright;
+               iloop [:: idec; ileft; iinc; iright];
+               ileft; ileft; idec]].
+
+Goal (mul, [::], 3, [::5;0;0], [::], [::]) |=>* ([::], [::], 0, [::5;0;15], [::], [::]).
+Proof.
+  stepstep.
+  
+  stepstep.                                 (* 73 *)
+  do 8!stepstep.
+  do 8!stepstep.
+  do 8!stepstep.
+  do 8!stepstep.
+  do 8!stepstep.
+  stepstep.
+  stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  do 5!stepstep.
+  
+  do 73!stepstep.
+  do 73!stepstep.
+  
+  done.
+Qed.
+(* invariant : p=Bx(A-m) + (B-n), o= B-n *)
+Lemma multiply_invariant (A B m n o p : nat) :
+  p = B * (A - m) + (B - n) -> o = B - n ->
+  (mul, [::], m, [:: n; o; p], [::], [::]) |=>* ([::], [::], 0, [:: B;0;B*A], [::], [::]).
+Proof.
+  elim: m n o p A B.
+  - intros.
+    elim: n o p A B H H0.
+    + intros.
+      subst.
+      stepstep.
+          
+      
+  - move=> m l.
+
+
+Lemma muli
+
+
+
 (* END *)
+
+
+
+(* ****************************** *)
+(* 値のコピー [>+>+<<-]>>[<<+>>-] *)
+(* ****************************** *)
+(*
+Definition copy := [:: iloop [:: iright; iinc; iright; iinc; ileft; ileft; idec];
+                      iright; iright;
+                        iloop [:: ileft; ileft; iinc; iright; iright; idec]].
+ *)
+
