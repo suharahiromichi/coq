@@ -1,12 +1,14 @@
 (** Brainfuck / Brainf*ck *)
 (** ループ不変式を証明してみる。 *)
 
+(** Brainfuckの参考 : https://www.slideshare.net/KMC_JP/brainfck *)
+
 (** @suharahiromicihi *)
 (** 2019_11_01 *)
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssrclosure.
-(* Require Import ssrinv. *)
+Require Import ssrinv.
 Require Import ssromega.
 (* Require Import ssrstring. *)
 
@@ -132,15 +134,15 @@ Ltac stepstep :=
 (* *********** *)
 (* 加算 [>+<-] *)
 (* *********** *)
-Goal ([:: iloop [:: iright; iinc; ileft; idec]],
-      [::], 4, [:: 3], [::], [::]) |=>* ([::], [::], 0, [:: 7], [::], [::]).
+Definition add := [:: iloop [:: iright; iinc; ileft; idec]].
+
+Goal (add, [::], 4, [:: 3], [::], [::]) |=>* ([::], [::], 0, [:: 7], [::], [::]).
 Proof.
   by do !stepstep.
 Qed.
 
 Lemma addition_invariant (n m : nat) :
-  ([:: iloop [:: iright; iinc; ileft; idec]],
-   [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: n + m], [::], [::]).
+  (add, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: n + m], [::], [::]).
 Proof.
   elim: n m => [m |n IHn m].
   - by stepstep.
@@ -149,24 +151,27 @@ Proof.
       by apply: IHn.
 Qed.
 
+Lemma addition_invariant' (n m : nat) cs ls rs ins outs :
+  (add ++ cs, ls, n, m :: rs, ins, outs) |=>* (cs, ls, 0, n + m :: rs, ins, outs).
+Proof.
+Admitted.
+
+
 (* *********** *)
 (* 減算 [>-<-] *)
 (* *********** *)
-Goal ([:: iloop [:: iright; idec; ileft; idec]],
-      [::], 3, [:: 7], [::], [::]) |=>* ([::], [::], 0, [:: 4], [::], [::]).
+Definition sub := [:: iloop [:: iright; idec; ileft; idec]].
+Goal (sub, [::], 3, [:: 7], [::], [::]) |=>* ([::], [::], 0, [:: 4], [::], [::]).
 Proof.
   by do !stepstep.
 Qed.
 
-Lemma subn0 (n : nat) : n - 0 = n.
-Proof. by ssromega. Qed.
-
 Lemma subnS' (m n : nat) : m - n.+1 = m.-1 - n.
 Proof. by ssromega. Qed.
 
+(* m < n であっても、値が0になるだけなので、前提に条件は不要である。 *)
 Lemma subtract_invariant (n m : nat) :
-  ([:: iloop [:: iright; idec; ileft; idec]],
-   [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: m - n], [::], [::]).
+  (sub, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: m - n], [::], [::]).
 Proof.
   elim: n m => [|n IHn] m.
   - stepstep.
@@ -174,6 +179,50 @@ Proof.
   - do 5!stepstep.                       (* ループの中身を1巡する。 *)
     rewrite succnK subnS'.
       by apply: IHn.
+Qed.
+
+(* ****************************** *)
+(* 値のコピー [>+>+<<-]>>[<<+>>-] *)
+(* ****************************** *)
+Definition copy := [::iloop [:: iright; iinc; iright; iinc; ileft; ileft; idec];
+                      iright; iright;
+                        iloop [:: ileft; ileft; iinc; iright; iright; idec]].
+
+
+(* ***************** *)
+(* 定数倍 [>+++++<-] *)
+(* ***************** *)
+Definition mulc := [::iloop [::iright;
+                               iinc; iinc; iinc; iinc; iinc;
+                                 ileft;
+                                 idec]].
+
+Goal (mulc, [::], 3, [::], [::], [::]) |=>* ([::], [::], 0, [::15], [::], [::]).
+Proof.
+  do 9!stepstep.
+  do 9!stepstep.
+  do 9!stepstep.
+    by stepstep.
+Qed.
+
+Lemma multiply_const_invariant (n m : nat) :
+  (mulc, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: n * 5 + m], [::], [::]).
+Proof.
+  elim: n m => [|n IHn] m.
+  - stepstep.
+      by rewrite mul0n.
+  - do 9!stepstep.                      (* ループの中身を一巡する。 *)
+    rewrite /=.
+    have -> : n.+1 * 5 + m = n * 5 + (m + 5) by ssromega.
+    have -> : m.+1.+4 = m + 5 by ssromega.
+      by apply: IHn.                        (* IHn (m + 5) *)
+Qed.    
+
+Lemma multiply_const (n : nat) :
+  (mulc, [::], n, [:: 0], [::], [::]) |=>* ([::], [::], 0, [:: n * 5], [::], [::]).
+Proof.
+  rewrite -[n * 5]addn0.
+    by apply: multiply_const_invariant. 
 Qed.
 
 (* END *)
