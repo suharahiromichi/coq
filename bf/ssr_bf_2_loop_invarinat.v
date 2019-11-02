@@ -1,7 +1,10 @@
 (** Brainfuck / Brainf*ck *)
 (** ループ不変式を証明してみる。 *)
 
-(** Brainfuckの参考 : https://www.slideshare.net/KMC_JP/brainfck *)
+(** Brainfuckの参考 : 
+- https://www.slideshare.net/KMC_JP/brainfck
+- https://www.codingame.com/playgrounds/50426/getting-started-with-brainfuck/welcome
+ *)
 
 (** @suharahiromicihi *)
 (** 2019_11_01 *)
@@ -181,13 +184,51 @@ Proof.
       by apply: IHn.
 Qed.
 
+(* ********************* *)
+(* 値のコピー [->+>+<<] *)
+(* ********************* *)
+Definition cp := [::iloop [:: idec; iright; iinc; iright; iinc; ileft; ileft]].
+Goal (cp, [::], 2, [::], [::], [::]) |=>* ([::], [::], 0, [::2;2], [::], [::]).
+Proof.
+  do 8!stepstep.
+  do 8!stepstep.
+  stepstep.
+  done.
+Qed.
+
+Lemma copy_invariant (n m : nat) :
+  (cp, [::], n, [:: m; m], [::], [::]) |=>* ([::], [::], 0, [:: n+m; n+m], [::], [::]).
+Proof.
+  case: n m.
+  - move=> m.
+    stepstep.
+      by rewrite add0n.
+  - elim=> [| n IHn] m.
+    + do 8!stepstep.
+      stepstep.
+        by rewrite add1n.
+    + do 8!stepstep.
+      rewrite succnK.
+      have -> : n.+2 + m = n.+1 + m.+1 by ssromega.
+        by apply: IHn.
+Qed.
+
+Lemma copy_value (n : nat) :
+  (cp, [::], n, [::0; 0], [::], [::]) |=>* ([::], [::], 0, [:: n; n], [::], [::]).
+Proof.
+  rewrite -{2}[n]addn0 -{3}[n]addn0.
+    by apply: copy_invariant.
+Qed.
+
+
 (* ****************************** *)
 (* 値のコピー [>+>+<<-]>>[<<+>>-] *)
 (* ****************************** *)
+(*
 Definition copy := [::iloop [:: iright; iinc; iright; iinc; ileft; ileft; idec];
                       iright; iright;
                         iloop [:: ileft; ileft; iinc; iright; iright; idec]].
-
+ *)
 
 (* ***************** *)
 (* 定数倍 [>+++++<-] *)
