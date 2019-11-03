@@ -3,7 +3,8 @@
 (** 2019_10_26 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssrinv ssrclosure.
+Require Import ssrclosure.
+Require Import Ascii String.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -131,7 +132,7 @@ Goal (sample, [::], 0, [::], [::], [::]) |=>*
      ([::],   [::], 0, [:: 1; 0], [::], [:: 1]).
 Proof.
   do !stepstep.
-  (* これが、無限ループにならないのはなぜだろう。 *)
+  (* これが、無限ループにならないのは、cstack が空になるから。 *)
   done.
 Qed.
 
@@ -154,7 +155,7 @@ Print test.
 (*
   これから
   ex_intro _ x (ex_intro ls (ex_intro rs (ex_intro out _)))
-  をパターンを取り出す。
+  をパターンを取り出すと、より計算しているように見える。
 *)
 
 (*
@@ -183,105 +184,6 @@ Proof.
 Qed.
 *)
 
-(* END *)
-
-(* ********* *)
-(* 加算 *)
-(* ********* *)
-
-(* ",>,<[-<+>]<." *)
-Definition sample1 :=
-  [::iin;
-     iright;
-     iin;
-     ileft;
-     iloop [::idec;
-              iright;
-              iinc;
-              ileft];
-     iright;
-     iout].
-
-Goal (sample1, [::], 0, [::], [::4; 3], [::]) |=>*
-     ([::],   [::0], 7, [::], [::], [:: 7]).
-Proof.
-  do !stepstep.
-  done.
-Qed.
-
-Goal exists ls x rs ins, (sample1, [::], 0, [::], [::4; 3], [::]) |=>*
-     ([::], ls, x, rs, ins, [:: 7]).
-Proof.
-  do !eexists.
-  do !stepstep.
-  done.
-Qed.
-
-(* 加算のループ不変式 *)
-Goal ([:: iloop [:: idec; iright; iinc; ileft]], [::], 4, [:: 3],
-      [::], [::]) |=>* ([::], [::], 0, [::7], [::], [::]).
-Proof.
-  do 5!stepstep.
-  do 5!stepstep.
-  do 5!stepstep.
-  do 5!stepstep.
-  stepstep.
-  done.
-Qed.
-
-Lemma addition_invariant (m n : nat) :
-  ([:: iloop [:: idec; iright; iinc; ileft]], [::], m, [:: n],
-      [::], [::]) |=>* ([::], [::], 0, [:: m + n], [::], [::]).
-Proof.
-  elim: m n => [n |m IHm n].
-  - by stepstep.
-  - do 5!stepstep.
-    rewrite succnK addSnnS.
-      by apply: IHm.
-Qed.
-
-(* そすう さんのスライドにある定義 *)
-Lemma addition_invariant' (m n : nat) :
-  ([:: iloop [:: iright; iinc; ileft; idec]], [::], m, [:: n],
-   [::], [::]) |=>* ([::], [::], 0, [:: m + n], [::], [::]).
-Proof.
-  elim: m n => [n |m IHm n].
-  - by stepstep.
-  - do 5!stepstep.
-    rewrite succnK addSnnS.
-      by apply: IHm.
-Qed.
-
-Lemma output_lemma' (m n : nat) :
-    (sample1, [::], 0, [::], [:: m; n], [::])
-      |=>* ([:: iright; iout], [::], 0, [:: m +n], [::], [::]).
-Proof.
-  Check (steprsc_trans (addition_invariant m n)).
-
-  Admitted.
-
-
-
-Lemma output_lemma (m n : nat) :
-  ([:: iright; iout], [::], m, [:: n], [::],
-   [::]) |=>* ([::], [:: m], n, [::], [::], [:: n]).
-Proof.
-  by do !stepstep.
-Qed.
-
-Lemma addition (m n : nat) : exists ls x rs ins,
-    (sample1,
-     [::], 0, [::], [:: m; n], [::]) |=>* ([::], ls, x, rs, ins, [:: m + n]).
-Proof.
-  exists [:: 0], (m + n), [::], [::].
-  Check (steprsc_trans (output_lemma' m n)).
-  eapply (steprsc_trans (output_lemma' m n)).
-  Check steprsc_trans (output_lemma 0 (m + n)).
-  eapply (steprsc_trans (output_lemma 0 (m + n))).
-  done.
-Qed.
-
-  
 (* ********* *)
 (* Hello World!\n *)
 (* ********* *)
@@ -345,45 +247,39 @@ Proof.
   done.
 Qed.
 
-(* ********* *)
-(* ********* *)
-(* ********* *)
+(* ****** *)
+(* Parser *)
+(* ****** *)
 
-(* ",>,<[->[->>+<<]>>[-<+<+>>]<<<]>>. *)
-Definition sample2 :=
-  [::iin;
-     iright;
-     iin;
-     ileft;
-     iloop [::idec;
-              iright;
-              iloop [::idec;
-                       iright;
-                       iright;
-                       iinc;
-                       ileft;
-                       ileft];
-              iright;
-              iright;
-              iloop [::idec;
-                       ileft;
-                       iinc;
-                       ileft;
-                       iinc;
-                       iright;
-                       iright];
-              ileft;
-              ileft;
-              ileft];
-    iright;
-    iright].
+(* このパーサは、特に以下を参考にしました。 *)
+(* https://qiita.com/erutuf13/items/98f15cc7e74b0570c971 *)
 
-(* "+[>.+<]" *)
-Definition sample3 :=
-  [::iin;
-     iloop [::iright;
-              iout;
-              iinc;
-              ileft]].
+Fixpoint parse' (str : string) : (cstack * seq cstack)%type :=
+  match str with
+  | ""%string => ([::], [::])
+  | String x xs =>
+    let (body, rest) := parse' xs in
+    match x with
+    | ">"%char => (iright :: body, rest)
+    | "<"%char => (ileft  :: body, rest)
+    | "+"%char => (iinc   :: body, rest)
+    | "-"%char => (idec   :: body, rest)
+    | ","%char => (iin    :: body, rest)
+    | "."%char => (iout   :: body, rest)
+    | "["%char =>
+      match rest with
+      | [::]       => ([:: iloop body], [::])
+      | s :: rest' => (iloop body :: s, rest')
+      end
+    | "]"%char => ([::], body :: rest)
+    | _        => ([::], [::])
+    end
+  end.
+
+Definition parse str := (parse' str).1.
+
+Compute parse ",>,<[-<+>]<.".
+Compute parse ",>,<[->[->>+<<]>>[-<+<+>>]<<<]>>.".
+Compute parse "+[>.+<]".
 
 (* END *)
