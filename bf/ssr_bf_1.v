@@ -4,7 +4,7 @@
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssrclosure.
-Require Import Ascii String.
+Require Import ssrstring.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

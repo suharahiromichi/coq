@@ -11,8 +11,8 @@
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssrclosure.
-Require Import ssrinv.
 Require Import ssromega.
+(* Require Import ssrinv. *)
 (* Require Import ssrstring. *)
 
 Set Implicit Arguments.
