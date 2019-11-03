@@ -154,11 +154,27 @@ Qed.
 Lemma addition_invariant (n m : nat) :
   (add, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: n + m], [::], [::]).
 Proof.
-  elim: n m => [m |n IHn m].
+  elim: n m => [| n IHn] m.
   - by stepstep.
   - do 5!stepstep.                          (* ループの中身を1巡する。 *)
     rewrite succnK addSnnS.
       by apply: IHn.
+Qed.
+
+Lemma addition_invariant' (A B A' B' X : nat) :
+  A + B = X ->                            (* ループ不変式 *)
+  B' = 0 -> A' = X ->                     (* 終了条件とループ不変式 *)
+  (add, [::], B, [:: A], [::], [::]) |=>* ([::], [::], B', [:: A'], [::], [::]).
+Proof.
+  move=> H H1 H2.
+  subst.
+  elim: B A => [|B IHB] A.
+  - rewrite addn0.
+      by stepstep.
+  - do 5!stepstep.                          (* ループの中身を1巡する。 *)
+    rewrite succnK.
+    have -> : A + B.+1 = A.+1 + B by ssromega.
+      by apply: IHB.
 Qed.
 
 (* **************** *)
@@ -178,19 +194,33 @@ Proof.
   by do !stepstep.
 Qed.
 
-Lemma subnS' (m n : nat) : m - n.+1 = m.-1 - n.
-Proof. by ssromega. Qed.
-
 (* m < n であっても、値が0になるだけなので、前提に条件は不要である。 *)
 Lemma subtract_invariant (n m : nat) :
   (sub, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: m - n], [::], [::]).
 Proof.
-  elim: n m => [|n IHn] m.
+  elim: n m => [| n IHn] m.
   - stepstep.
       by rewrite subn0.
   - do 5!stepstep.                       (* ループの中身を1巡する。 *)
-    rewrite succnK subnS'.
+    rewrite succnK.
+    have -> : m - n.+1 = m.-1 - n by ssromega.
       by apply: IHn.
+Qed.
+
+Lemma subtract_invariant' (A B A' B' X : nat) :
+  A - B = X ->                              (* ループ不変式 *)
+  B' = 0 -> A' = X ->                       (* 終了条件とループ不変式 *)
+  (sub, [::], B, [:: A], [::], [::]) |=>* ([::], [::], B', [:: A'], [::], [::]).
+Proof.
+  move=> H H1 H2.
+  subst.
+  elim: B A => [| B IHB] A.
+  - stepstep.
+      by rewrite subn0.
+  - do 5!stepstep.                       (* ループの中身を1巡する。 *)
+    rewrite succnK.
+    have -> : A - B.+1 = A.-1 - B by ssromega.
+      by apply: IHB.
 Qed.
 
 (* **************************** *)
@@ -225,6 +255,22 @@ Proof.
       by apply: IHn.
 Qed.
 
+Lemma move_invariant' (A B A' B' X : nat) :
+  A + B = X ->                              (* ループ不変式 *)
+  A' = 0 -> B' = X ->                       (* 終了条件とループ不変式 *)
+  (mv, [::], A, [:: B], [::], [::]) |=>* ([::], [::], A', [:: B'], [::], [::]).
+Proof.
+  move=> H H1 H2.
+  subst.
+  elim: A B => [| A IHA] B.
+  - stepstep.
+      by rewrite add0n.
+  - do 5!stepstep.
+    rewrite succnK.
+    have -> : A.+1 + B = A + B.+1 by ssromega.
+      by apply: IHA.
+Qed.
+
 (* *********** *)
 (* Copy value *)
 (* *********** *)
@@ -239,7 +285,7 @@ Qed.
 Definition cp :=
   [:: iloop [:: idec; iright; iinc; iright; iinc; ileft; ileft]]. (* [->+>+<<] *)
 
-Goal (cp, [::], 2, [::], [::], [::]) |=>* ([::], [::], 0, [::2;2], [::], [::]).
+Goal (cp, [::], 2, [::0], [::], [::]) |=>* ([::], [::], 0, [::2;2], [::], [::]).
 Proof.
   do 8!stepstep.
   do 8!stepstep.
@@ -269,6 +315,27 @@ Lemma copy_value (n : nat) :
 Proof.
   rewrite -{2}[n]addn0 -{3}[n]addn0.
     by apply: copy_invariant.
+Qed.
+
+Lemma copy_invariant' (A B C A' B' C' X : nat) :
+  A + B = X -> B = C ->                     (* ループ不変式 *)
+  A' = 0 -> B' = X -> B' = C' ->             (* 終了条件 *)
+  (cp, [::], A, [:: B; C], [::], [::]) |=>* ([::], [::], A', [:: B'; C'], [::], [::]).
+Proof.
+  move=> H H' H1 H2 H3.
+  subst.
+  case: A C.
+  - move=> C.
+    stepstep.
+      by rewrite add0n.
+  - elim=> [| A IHA] C.
+    + do 8!stepstep.
+      stepstep.
+        by rewrite add1n.
+    + do 8!stepstep.
+      rewrite succnK.
+      have -> : A.+2 + C = A.+1 + C.+1 by ssromega.
+        by apply: IHA.
 Qed.
 
 (* ******* *)
@@ -354,36 +421,44 @@ Proof.
   
   done.
 Qed.
-(* invariant : p=Bx(A-m) + (B-n), o= B-n *)
-Lemma multiply_invariant (A B m n o p : nat) :
-  p = B * (A - m) + (B - n) -> o = B - n ->
-  (mul, [::], m, [:: n; o; p], [::], [::]) |=>* ([::], [::], 0, [:: B;0;B*A], [::], [::]).
+
+(* invariant : m, n, p=Bx(A-m) + (B-n), o= B-n *)
+(* terminal : Memory: 0, B, 0 , AxB *)
+
+Lemma multiply_invariant (m n o p m' n' o' p' A B : nat) :
+  p = B * (A - m) + (B - n) -> o = B - n -> (* ループ不変式 *)
+  m' = 0 -> n' = B -> o' = 0 -> p' = A * B -> (* 終了条件とループ不変式 *)
+  (mul, [::], m, [:: n; o; p], [::], [::])
+    |=>* ([::], [::], m', [:: n'; o'; p'], [::], [::]).
 Proof.
-  elim: m n o p A B.
-  - intros.
-    elim: n o p A B H H0.
-    + intros.
-      subst.
-      stepstep.
-          
-      
-  - move=> m l.
-
-
-Lemma muli
-
-
+  move=> H H' H1 H2 H3 H4.
+  subst.
+(**
+  m, n, A, B : nat
+  ============================
+  (mul, [::], m, [:: n; B - n; B * (A - m) + (B - n)], [::], [::])
+  |=>* ([::], [::], 0, [:: B; 0; A * B], [::], [::])
+*)
+  elim: m n A B.
+  - move=> n A B.
+    rewrite subn0.
+    
+   elim: (B - n).          (* n は B から減っていく帰納法が必要か？ *)
+    (* i = B - n, i = 0.... *)
+    (* n = B - i, n = B.... *)
+    + admit.
+    + 
+Admitted.
 
 (* END *)
-
 
 
 (* ****************************** *)
 (* 値のコピー [>+>+<<-]>>[<<+>>-] *)
 (* ****************************** *)
+(* 意図どおりは動作しない。 *)
 (*
 Definition copy := [:: iloop [:: iright; iinc; iright; iinc; ileft; ileft; idec];
                       iright; iright;
                         iloop [:: ileft; ileft; iinc; iright; iright; idec]].
  *)
-
