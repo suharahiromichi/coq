@@ -157,7 +157,7 @@ Proof.
   elim: n m => [| n IHn] m.
   - by stepstep.
   - do 5!stepstep.                          (* ループの中身を1巡する。 *)
-    rewrite succnK addSnnS.
+    rewrite succnK addSnnS /= -/add.
       by apply: IHn.
 Qed.
 
@@ -168,11 +168,11 @@ Lemma addition_invariant' (A B A' B' X : nat) :
 Proof.
   move=> H H1 H2.
   subst.
-  elim: B A => [|B IHB] A.
+  elim: B A => [| B IHB] A.
   - rewrite addn0.
       by stepstep.
   - do 5!stepstep.                          (* ループの中身を1巡する。 *)
-    rewrite succnK.
+    rewrite succnK /= -/add.
     have -> : A + B.+1 = A.+1 + B by ssromega.
       by apply: IHB.
 Qed.
@@ -202,7 +202,7 @@ Proof.
   - stepstep.
       by rewrite subn0.
   - do 5!stepstep.                       (* ループの中身を1巡する。 *)
-    rewrite succnK.
+    rewrite succnK /= -/sub.
     have -> : m - n.+1 = m.-1 - n by ssromega.
       by apply: IHn.
 Qed.
@@ -218,7 +218,7 @@ Proof.
   - stepstep.
       by rewrite subn0.
   - do 5!stepstep.                       (* ループの中身を1巡する。 *)
-    rewrite succnK.
+    rewrite succnK /= -/sub.
     have -> : A - B.+1 = A.-1 - B by ssromega.
       by apply: IHB.
 Qed.
@@ -250,7 +250,7 @@ Proof.
   - stepstep.
       by rewrite add0n.
   - do 5!stepstep.
-    rewrite succnK.
+    rewrite succnK /= -/mv.
     have -> : n.+1 + m = n + m.+1 by ssromega.
       by apply: IHn.
 Qed.
@@ -266,7 +266,7 @@ Proof.
   - stepstep.
       by rewrite add0n.
   - do 5!stepstep.
-    rewrite succnK.
+    rewrite succnK /= -/mv.
     have -> : A.+1 + B = A + B.+1 by ssromega.
       by apply: IHA.
 Qed.
@@ -305,7 +305,7 @@ Proof.
       stepstep.
         by rewrite add1n.
     + do 8!stepstep.
-      rewrite succnK.
+      rewrite succnK /= -/cp.
       have -> : n.+2 + m = n.+1 + m.+1 by ssromega.
         by apply: IHn.
 Qed.
@@ -333,7 +333,7 @@ Proof.
       stepstep.
         by rewrite add1n.
     + do 8!stepstep.
-      rewrite succnK.
+      rewrite succnK /= -/cp.
       have -> : A.+2 + C = A.+1 + C.+1 by ssromega.
         by apply: IHA.
 Qed.
@@ -359,7 +359,7 @@ Proof.
   - stepstep.
       by rewrite mul0n.
   - do 9!stepstep.                      (* ループの中身を一巡する。 *)
-    rewrite /=.
+    rewrite /= -/mulc.
     have -> : n.+1 * 5 + m = n * 5 + (m + 5) by ssromega.
     have -> : m.+1.+4 = m + 5 by ssromega.
       by apply: IHn.                        (* IHn (m + 5) *)
