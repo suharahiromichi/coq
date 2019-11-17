@@ -62,6 +62,7 @@ match b with | true => v1 | _ => v2 end
 
 *)
 
+
 (**
 # bool型の論理演算 
 
@@ -72,6 +73,13 @@ match b with | true => v1 | _ => v2 end
 (+)     addb    (排他的論理和 exor)
 
 &&と^^はバニラCoqで定義されています。
+*)
+
+(**
+等式については eqtype.v で詳しく扱いますが、
+
+= が Prop型の等式で、その否定は <> です。
+== が bool型の等式で、その否定は != です。
 *)
 
 
@@ -163,8 +171,31 @@ Check elimFn : forall (P : Prop) (b' : bool), reflect P (~~ b') -> b' = false ->
 (**
 ### リフレクション補題 -- iffP, appP, sameP など
 
-reflect P b を証明するための補題が証明されています。
+reflect P b を証明するための補題などが証明されています。
+
+使用例：
+reflect P b の補題を証明するときは、apply: (iffP idP) を実行して、
+b -> P と P -> b のふたつのゴールに変換します。
 *)
+
+Goal reflect (1 = 1) (1 == 1).
+Proof.
+  Check @idP : forall b1 : bool, reflect b1 b1.
+  apply: (iffP idP).
+  - done.                                   (* 1 == 1 -> 1 = 1 *)
+  - done.                                   (* 1 = 1 -> 1 == 1 *)
+Qed.
+
+(**
+apply: introP も使えます。場合によってはこちらの方がよいかもしれません。
+*)
+Goal reflect (1 = 1) (1 == 1).
+Proof.
+  apply: introP.
+  - done.                                   (* 1 == 1 -> 1 = 1 *)
+  - done.                                   (* 1 != 1 -> 1 <> 1 *)
+Qed.
+
 
 Check introP : forall (Q : Prop) (b : bool), (b -> Q) -> (~~ b -> ~ Q) -> reflect Q b.
 Check iffP   : forall (P Q : Prop) (b : bool),
@@ -175,12 +206,44 @@ Check sameP  : forall (P : Prop) (b c : bool), reflect P b -> reflect P c -> b =
 (**
 ## decidable  と リフレクション補題 -- sumboolP
 
-以下も参照してください；
-https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_mockbird_2.v
+命題 P : Prop が決定可能なとき、すなわち P か ~ P のどちらかが成立するとき、
+バニラCoqでは、{P} + {~ P} 成り立つといい、これをsumboolと呼びます。
+
+reflect P b の b は bool でなければいけませんが、
+sumbool から bool型へのコアーション is_left が定義されているため、
+sumbool reflect P b の b のところに書くことができます。
 *)
 
 Print decidable.                   (* = fun P : Prop => {P} + {~ P} *)
 Check sumboolP : forall (Q : Prop) (decQ : decidable Q), reflect Q decQ.
+Check sumboolP : forall (Q : Prop) (decQ : decidable Q), reflect Q (is_left decQ).
+
+Require Import Ascii String.
+Definition string_dec : forall x y : string, decidable (x = y).
+Proof.
+  rewrite /decidable => x y.                (* {x = y} + {x <> y} *)
+  decide equality;                          (* string に対して。 *)
+    decide equality;                        (* ascii に対して。 *)
+    decide equality.                        (* bool に対して。 *)
+Defined.
+
+Check          string_dec "foo"%string "bar"%string  : bool.
+Check is_left (string_dec "foo"%string "bar"%string) : bool.
+
+Definition string_eqP (x y : string) := sumboolP (string_dec x y).
+Check string_eqP : forall x y : string, reflect (x = y) (string_dec x y).
+(*
+Lemma string_eqP (x y : string) : reflect (x = y) (string_dec x y).
+Proof.
+  by apply: sumboolP.
+Qed.   
+ *)
+
+(**
+以下も参照してください；
+https://github.com/suharahiromichi/coq/blob/master/lisp/ssr_string.v
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_mockbird_2.v
+*)
 
 (**
 ## classically と リフレクション補題 -- classicP
@@ -287,11 +350,67 @@ Check @implyP : forall b1 b2 : bool, reflect (b1 -> b2) (b1 ==> b2).
 
 (**
 # ブール述語 
+
+ブール述語とは pred T の型の述語のことで、[pred x : T | E] で表される。
 *)
 
+Print pred.                                 (* T -> bool *)
+Check [pred n : nat | n == 2] : pred nat.
+Check [pred n       | n == 2] : pred nat.
+
+Goal [pred n | n == 2] 2.
+Proof. done. Qed.
 
 (**
 ## ブール述語 \in 
+
+2項演算子のブール述語に \in がある。forall T, pred S の型を持つ。
+
+\in の右側 (型 Sのところ) に書ける述語を collective述語といいます。
+（これに対して、普通に P x の Pに書ける述語を applicatable述語といいます。）
+x \in A は自動で簡約されない。明示的に apply inE または rewrite inE で簡約する。
+
+collective述語は、predType型クラスのインスタンス型である必要があります
+（mkPredType で定義する場所が判る）。
+
+predType型のインスタンスとしては以下がある。自分で定義することもできる。
+*)
+
+Check predPredType _ : predType _.          (* ssrbool で定義 *)
+Check seq_predType _ : predType _.          (* seq で定義 *)
+Check tuple_predType _ _ : predType _.      (* tuple で定義 *)
+
+(**
+例として、T と S は次の組み合わせが可能である。
+*)
+
+(* T と predPredType T の組み合わせ： *)
+Check forall (T : Type) (x : T) (t : predPredType T), x \in t.
+Check 1 \in {: nat}.
+
+(* T と seq T の組み合わせ： *)
+Check forall (T : eqType) (x : T) (l : seq T), x \in l.
+Check 1 \in [:: 1].
+
+(* T と tuple T の組み合わせ： *)
+Check forall (T : eqType) (x : T) (l : 3.-tuple T), x \in l.
+Check 1 \in [tuple of [:: 1]].
+
+(* T と T * T の組み合わせ（ができるように定義する）： *)
+Coercion pred_of_eq_pair (T : eqType) (s : T * T) :
+  pred_class := xpredU (eq_op s.1) (eq_op s.2).
+Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T).
+
+Check forall (T : eqType) (x : T) (l : pair_predType T) , x \in l.
+Check 1 \in (1, 2).
+
+(* T と eqType の組み合わせ： *)
+Check 1 \in nat_eqType.
+Check forall (T : eqType) (x : T), x \in T.
+
+(**
+以下も参照してください：
+ssr/ssr_collective_predicate.v
 *)
 
 (**
