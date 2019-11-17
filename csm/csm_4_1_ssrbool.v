@@ -351,7 +351,7 @@ Check @implyP : forall b1 b2 : bool, reflect (b1 -> b2) (b1 ==> b2).
 (**
 # ブール述語 
 
-ブール述語とは pred T の型の述語のことで、[pred x : T | E] で表される。
+ブール述語とは pred T (= T -> bool) の型の述語のことで、[pred x : T | E] で表される。
 *)
 
 Print pred.                                 (* T -> bool *)
@@ -417,15 +417,27 @@ ssr/ssr_collective_predicate.v
 ## ブール述語 部分集合 
 *)
 
-
+Check {subset [:: 1] <= [:: 1; 2]}.
+Goal  {subset [:: 1] <= [:: 1; 2]}.
+Proof.
+Admitted.
 
 (**
 # 二項関係 
+
+二項関係とは rel T (= T -> T -> bool) の型の述語のことで、[rel x : T | E] で表される。
 *)
+
+Check [rel m n : nat | m.+1 == n] : rel nat.
+Check [rel m n       | m.+1 == n] : rel nat.
 
 (**
 ## 対称律、同値関係 
 *)
+
+Definition R := [rel m n : nat | m == n].
+Check symmetric.
+Check equivalence_rel.
 
 (**
 # 補足：boolからnatへのコアーション
