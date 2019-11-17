@@ -1,13 +1,29 @@
 (** Brainfuck / Brainf*ck *)
 (** ループ不変式を証明してみる。 *)
 
-(** Brainfuckの参考 : 
-- https://www.slideshare.net/KMC_JP/brainfck
-- https://www.codingame.com/playgrounds/50426/getting-started-with-brainfuck/welcome
- *)
-
 (** @suharahiromicihi *)
 (** 2019_11_01 *)
+
+(** 
+以下のバージョンで作成しました；
+OCaml 4.07.1, Coq 8.9.0, MathComp 1.9.0
+
+これを実行するには、GitHub の同じディレクトリにある ssrclosure.v と ssromega.v
+もダウンロードして同じディレクトリに置き、以下を実行してください。
+
+coqc ssrclosure.v 
+coqc ssromega.v
+ *)
+
+(**
+Brainfuckの参考 : 
+
+- 全般：
+  https://www.slideshare.net/KMC_JP/brainfck
+
+- プログラム例、ループ不変式など：
+  https://www.codingame.com/playgrounds/50426/getting-started-with-brainfuck/welcome
+ *)
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssrclosure.
@@ -319,7 +335,7 @@ Qed.
 
 Lemma copy_invariant' (A B C A' B' C' X : nat) :
   A + B = X -> B = C ->                     (* ループ不変式 *)
-  A' = 0 -> B' = X -> B' = C' ->             (* 終了条件 *)
+  A' = 0 -> B' = X -> B' = C' ->            (* 終了条件 *)
   (cp, [::], A, [:: B; C], [::], [::]) |=>* ([::], [::], A', [:: B'; C'], [::], [::]).
 Proof.
   move=> H H' H1 H2 H3.
