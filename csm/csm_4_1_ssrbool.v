@@ -230,14 +230,11 @@ Defined.
 Check          string_dec "foo"%string "bar"%string  : bool.
 Check is_left (string_dec "foo"%string "bar"%string) : bool.
 
+Definition string_eqb (x y : string) : bool := string_dec x y.
 Definition string_eqP (x y : string) := sumboolP (string_dec x y).
+
+Check string_eqb : forall x y : string, bool.
 Check string_eqP : forall x y : string, reflect (x = y) (string_dec x y).
-(*
-Lemma string_eqP (x y : string) : reflect (x = y) (string_dec x y).
-Proof.
-  by apply: sumboolP.
-Qed.   
- *)
 
 (**
 以下も参照してください；
