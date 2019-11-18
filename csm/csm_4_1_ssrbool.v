@@ -28,6 +28,11 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 つぎのコマンドで探すこともできます。
 
 find ~/.opam/ -name ssrbool.v
+
+ライブラリを使う目的から説明していきます。実装について興味のあるひとは、
+以下を参照してください：
+Assia Mahboubi and Enrico Tassi, Mathematical Components
+https://math-comp.github.io/mcb/
 *)
 
 (**
@@ -411,13 +416,42 @@ ssr/ssr_collective_predicate.v
 *)
 
 (**
-## ブール述語 部分集合 
+## ブール述語 同値と部分集合 
+
+Collective述語の同値は「=i」で比較します（Applicatable述語の同値は「=1」です）。
+1階の述語なので、なにもないところからintro xするように見えます。
 *)
 
-Check {subset [:: 1] <= [:: 1; 2]}.
-Goal  {subset [:: 1] <= [:: 1; 2]}.
+Goal forall (T : eqType) (a b : T), (a, b) =i (b, a).
 Proof.
-Admitted.
+  move=> T a b.
+  (* rewrite /eq_mem. *)
+  (* forall x, (x \in (a, b)) = (x \in (b, a)) *)
+  move=> x.                   (* 1階の述語の比較なので intro する。 *)
+  rewrite -!topredE /=.
+  Set Printing All.
+  rewrite /pred_of_eq_pair /=.
+  Unset Printing All.
+    by rewrite Bool.orb_comm.
+Qed.
+
+(**
+部分重合 subset の関係も使えます。
+これも1階の述語なので、なにもないところからintro xするように見えます。
+ *)
+
+Goal forall (T : eqType) (a b : T), {subset (a, a) <= (a, b)}.
+Proof.
+  move=> T a b.
+  (* rewrite /sub_mem. *)
+  (* forall x, x \in (a, a) -> x \in (a, b) *)
+  move=> x.                   (* 1階の述語の比較なので intro する。 *)
+  rewrite -!topredE /=.
+  Set Printing All.
+  rewrite /pred_of_eq_pair /=.
+  Unset Printing All.
+    by case/orP => ->.
+Qed.
 
 (**
 # 二項関係 
