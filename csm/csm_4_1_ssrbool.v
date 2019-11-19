@@ -374,41 +374,40 @@ x \in A は自動で簡約されない。明示的に apply inE または rewrit
 
 collective述語は、predType型クラスのインスタンス型である必要があります
 （mkPredType で定義する場所が判る）。
-
-predType型のインスタンスとしては以下がある。自分で定義することもできる。
 *)
 
-Check predPredType _ : predType _.          (* ssrbool で定義 *)
-Check seq_predType _ : predType _.          (* seq で定義 *)
-Check tuple_predType _ _ : predType _.      (* tuple で定義 *)
-
-(**
-例として、T と S は次の組み合わせが可能である。
-*)
-
-(* T と predPredType T の組み合わせ： *)
-Check forall (T : Type) (x : T) (t : predPredType T), x \in t.
-Check 1 \in {: nat}.
-
-(* T と seq T の組み合わせ： *)
 Check forall (T : eqType) (x : T) (l : seq T), x \in l.
-Check 1 \in [:: 1].
+Goal 1 \in [:: 1].
+Proof. done. Qed.
 
-(* T と tuple T の組み合わせ： *)
 Check forall (T : eqType) (x : T) (l : 3.-tuple T), x \in l.
-Check 1 \in [tuple of [:: 1]].
+Goal 1 \in [tuple of [:: 1]].
+Proof. done. Qed.
 
-(* T と T * T の組み合わせ（ができるように定義する）： *)
-Coercion pred_of_eq_pair (T : eqType) (s : T * T) :
-  pred_class := xpredU (eq_op s.1) (eq_op s.2).
+(* pair (prod型) が使えるようにする *)
+Coercion pred_of_eq_pair (T : eqType) (s : T * T) : pred_class :=
+  xpredU (eq_op s.1) (eq_op s.2).
 Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T).
 
 Check forall (T : eqType) (x : T) (l : pair_predType T) , x \in l.
-Check 1 \in (1, 2).
+Goal 1 \in (1, 2).
+Proof. done. Qed.
 
-(* T と eqType の組み合わせ： *)
-Check 1 \in nat_eqType.
-Check forall (T : eqType) (x : T), x \in T.
+(* 型が書けるようにする。 *)
+Inductive ball' : predArgType := red' | white'. (* predArgType 型 *)
+Goal red' \in ball'.
+Proof. rewrite inE. done. Qed.
+
+Inductive ball : Type := red | white.
+Goal red \in {: ball}.                  (* 任意の型を {:_} で囲む。 *)
+Proof. rewrite inE. done. Qed.
+
+(* おまけ *)
+Check nat_eqType : predPredType nat.
+Goal 1 \in nat_eqType.
+Proof. rewrite inE. done. Qed.
+Goal 1 \in {: nat}.
+Proof. rewrite inE. done. Qed.
 
 (**
 以下も参照してください：
