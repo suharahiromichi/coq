@@ -83,7 +83,7 @@ Fixpoint rev2 (a b : seq nat) : seq nat :=
 
 Compute rev2 [:: 1;2;3] [::].               (* [:: 3;2;1] *)
 
-Goal forall (a b c : seq nat), reverse2 a b c <-> rev2 a b = c.
+Lemma test2 : forall (a b c : seq nat), reverse2 a b c <-> rev2 a b = c.
 Proof.
   split.
   - by elim=> //=.
@@ -95,5 +95,24 @@ Proof.
       apply: rev2_cons.
       by apply: IH.
 Qed.
+
+
+Require Import Program.
+
+Program Fixpoint rev2' (a b : seq nat) : {c : seq nat | reverse2 a b c} :=
+  match a with
+  | [::] => b
+  | n :: a => rev2' a (n :: b)
+  end.
+Next Obligation.
+Proof.
+    by apply: rev2_nil.
+Defined.
+Next Obligation.
+Proof.
+    by apply: rev2_cons.
+Defined.
+
+Compute proj1_sig (rev2' [:: 1;2;3] [::]).  (* [:: 3;2;1] *)
 
 (* END *)
