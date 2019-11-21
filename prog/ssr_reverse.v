@@ -113,6 +113,90 @@ Proof.
     by apply: rev2_cons.
 Defined.
 
+Print rev2'.
+
 Compute proj1_sig (rev2' [:: 1;2;3] [::]).  (* [:: 3;2;1] *)
 
+Section Vector.
+
+  Variable A : Set.
+
+  Inductive vector : nat -> Set :=
+  | Vnil : vector 0
+  | Vcons : forall n, A -> vector n -> vector n.+1.
+  
+End Vector.
+
+Check Vnil nat : vector nat 0.
+Check Vcons 100 (Vnil nat).
+
+Inductive vappend : forall (n m : nat),
+    vector nat n -> vector nat m -> vector nat (n + m) -> Prop :=
+| vapp_nil : forall (n : nat) (b : vector nat n), vappend (Vnil nat) b b
+| vapp_cons : forall (h : nat) (n m : nat)
+                     (a : vector nat n) (b : vector nat m) (c : vector nat (n + m)),
+    vappend a b c -> vappend (Vcons h a) b (Vcons h c).
+Hint Constructors vappend.
+
+Definition data1 := Vcons 1 (Vcons 2 (Vnil nat)).
+Definition data2 := Vcons 3 (Vcons 4 (Vnil nat)).
+Definition data12 := Vcons 1 (Vcons 2 (Vcons 3 (Vcons 4 (Vnil nat)))).
+
+Goal vappend data1 data2 data12.
+Proof.
+  apply: vapp_cons.
+  apply: vapp_cons.
+  apply: vapp_nil.
+Qed.
+
+Fixpoint vapp (n m : nat) (a : vector nat n) (b : vector nat m) : vector nat (n + m) :=
+  match a with
+  | Vnil => b
+  | Vcons n h t => Vcons h (vapp t b)
+  end.
+
+Compute vapp data1 data2. (* = Vcons 1 (Vcons 2 (Vcons 3 (Vcons 4 (Vnil nat)))) *)
+
+Goal forall (n m : nat) (a : vector nat n) (b : vector nat m) (c : vector nat (n + m)),
+    vappend a b c <-> vapp a b = c.
+Proof.
+  move=> n m a b c.
+  split.
+  - elim=> //=.
+    move=> h n' m' a' b' c' H1 H2.
+      by subst.
+  - elim: a b c => //=.
+    + move=> b c H.
+      subst.
+      by apply: vapp_nil.
+    + move=> n' m' a IHa b c H.
+      subst.
+      apply: vapp_cons.
+      by apply: IHa.
+Qed.
+
+Program Fixpoint vapp' (n m : nat)
+        (a : vector nat n) (b : vector nat m) : {c | vappend a b c} :=
+  match a with
+  | Vnil => b
+  | Vcons n h t => Vcons h (vapp' t b)
+  end.
+
+Compute vapp data1 data2.
+Compute proj1_sig (vapp' data1 data2).
+(* (* = Vcons 1 (Vcons 2 (Vcons 3 (Vcons 4 (Vnil nat)))) *) *)
+
+
+(*
+Inductive vreverse : forall (n m : nat),
+    vector nat n -> vector nat m -> vector nat (n + m) -> Prop :=
+| vrev_nil : forall (n : nat) (b : vector nat n), vreverse (Vnil nat) b b
+| vrev_cons : forall (h : nat) (n m : nat)
+                     (a : vector nat n) (b : vector nat m) (c : vector nat (n + m)),
+    vreverse a (Vcons h b) c -> vreverse (Vcons h a) b c.
+Hint Constructors vreverse.
+*)
+  
+Qed.
+     
 (* END *)
