@@ -207,4 +207,15 @@ Fail Fixpoint vrev (n : nat) (a : vector nat n) : vector nat n :=
   | Vcons n h t => vapp (vrev a) (Vcons h (Vnil nat))
   end.
 
+Program Fixpoint vrev (n m : nat) (a : vector nat n) (b : vector nat m)
+  : (vector nat (n + m)) :=
+  match a with
+  | Vnil => b
+  | Vcons n h t => vrev t (Vcons h b)
+  end.
+Next Obligation.
+Proof.
+  by rewrite addSnnS.
+Qed.
+
 (* END *)
