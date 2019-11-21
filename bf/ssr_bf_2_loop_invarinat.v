@@ -193,6 +193,16 @@ Proof.
       by apply: IHB.
 Qed.
 
+Require Import Program.
+Program Fixpoint addition (n m : nat) :
+  {l | (add, [::], n, [:: m], [::], [::]) |=>* ([::], [::], 0, [:: l], [::], [::])} :=
+  n + m.
+Next Obligation.
+Proof.
+  by apply: addition_invariant.
+Qed.
+Compute proj1_sig (addition 5 8).           (* 13 *)
+
 (* **************** *)
 (* Subtract numbers *)
 (* **************** *)
