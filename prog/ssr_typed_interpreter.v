@@ -65,3 +65,14 @@ Proof.
       subst.
       done.
 Qed.
+
+Require Import Program.
+Program Fixpoint eval' (t : Type) (e : exp t) : {v | evaluate e v} :=
+  match e with
+  | Nat n => n
+  | Pair t1 t2 a b => (eval' a, eval' b) (* (@eval' t1 a, @eval' t2 b) *)
+  | App t1 t2 f g => (eval' f) (eval' g) (* (@eval' (t1 -> t2) f) (@eval' t1 g) *)
+  | Plus => plus
+  end.
+
+(** END **)
