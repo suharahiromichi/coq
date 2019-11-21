@@ -187,16 +187,24 @@ Compute proj1_sig (vapp' data1 data2).
 (* (* = Vcons 1 (Vcons 2 (Vcons 3 (Vcons 4 (Vnil nat)))) *) *)
 
 
-(*
-Inductive vreverse : forall (n m : nat),
+Fail Inductive vreverse : forall (n m : nat),
     vector nat n -> vector nat m -> vector nat (n + m) -> Prop :=
 | vrev_nil : forall (n : nat) (b : vector nat n), vreverse (Vnil nat) b b
 | vrev_cons : forall (h : nat) (n m : nat)
-                     (a : vector nat n) (b : vector nat m) (c : vector nat (n + m)),
+                     (a : vector nat n) (b : vector nat m) (c : vector nat (n + m).+1),
     vreverse a (Vcons h b) c -> vreverse (Vcons h a) b c.
-Hint Constructors vreverse.
-*)
-  
-Qed.
-     
+Fail Hint Constructors vreverse.
+
+
+Fail Inductive vreverse : forall (n : nat), vector nat n -> vector nat n -> Prop :=
+| vrev_nil : vreverse (Vnil nat) (Vnil nat)
+| vrev_cons (h : nat) (n : nat) (a b : vector nat n) (c : vector nat n.+1) :
+  vreverse a b -> vappend b (Vcons h (Vnil nat)) c -> vreverse (Vcons h a) c.
+
+Fail Fixpoint vrev (n : nat) (a : vector nat n) : vector nat n :=
+  match a with
+  | Vnil => Vnil nat
+  | Vcons n h t => vapp (vrev a) (Vcons h (Vnil nat))
+  end.
+
 (* END *)
