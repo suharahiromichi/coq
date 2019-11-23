@@ -1,3 +1,9 @@
+(**
+   型付インタープリタ
+   
+   https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2011_AW/coq7.pdf
+ *)
+
 From mathcomp Require Import all_ssreflect.
 
 Set Implicit Arguments.
@@ -13,9 +19,9 @@ Inductive exp : Type -> Type :=
 Fixpoint eval (t : Type) (e : exp t) : t :=
   match e with
   | Nat n => n
-  | Pair t1 t2 a b => (eval a, eval b)  (* (@eval t1 a, @eval t2 b) *)
+  | Pair t1 t2 a b => (eval a, eval b) (* (@eval t1 a, @eval t2 b) *)
   | App t1 t2 f g => (eval f) (eval g) (* (@eval (t1 -> t2) f) (@eval t1 g) *)
-  | Plus => plus
+  | Plus => addn
   end.
 
 Compute eval (App (App Plus (Nat 1)) (Nat 2)). (* 3 *)
@@ -36,43 +42,35 @@ Proof.
   - done.
 Qed.
 
-Goal forall (t : Type) (e : exp t) (v : t), evaluate e v <-> eval e = v.
+Lemma eval_eval (t : Type) (e : exp t) (v : t) : evaluate e v <-> eval e = v.
 Proof.
-  move=> t e v.
   split.
-  - elim.
-    + done.
+  - elim=> //=.
     + move=> t1 t2 a b a' b' H1 H2 H3 H4.
         by subst.
     + move=> t1 t2 a b a' b' H1 H2 H3 H4.
         by subst.
-    + done.
-  - elim: e v => /=.
-    + move=> n v H.
-      rewrite H.
-      done.
-    + move=> t1 t2 e1 H1 e2 H2 v IH.
-      subst.
-      apply: e_pair.
+  - elim: e v => [n v H | t1 t2 e1 H1 e2 H2 v IH | t1 t2 f Hf g Hg v IH | v H];
+                   subst => //=.
+    + apply: e_pair.
       * by apply: H1.
       * by apply: H2.
-    + move=> t1 t2 f Hf g Hg v IH.
-      subst.
-      apply: e_app.
+    + apply: e_app.
       * by apply: Hf.
       * by apply: Hg.
-    + move=> v H.
-      subst.
-      done.
 Qed.
 
 Require Import Program.
 Program Fixpoint eval' (t : Type) (e : exp t) : {v | evaluate e v} :=
   match e with
   | Nat n => n
-  | Pair t1 t2 a b => (eval' a, eval' b) (* (@eval' t1 a, @eval' t2 b) *)
-  | App t1 t2 f g => (eval' f) (eval' g) (* (@eval' (t1 -> t2) f) (@eval' t1 g) *)
-  | Plus => plus
+  | Pair t1 t2 a b => (eval' a, eval' b)
+  | App t1 t2 f g => (eval' f) (eval' g)
+  | Plus => addn
   end.
+(* 証明責務はなし。 *)
+
+Compute (eval (App (App Plus (Nat 1)) (Nat 2))).
+Compute (eval' (App (App Plus (Nat 1)) (Nat 2))).
 
 (** END **)
