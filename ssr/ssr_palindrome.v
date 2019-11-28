@@ -58,15 +58,33 @@ Section Pal.
       by apply: Hss.
   Qed.
   
+  Lemma cat_injective {X : Type} (s t : seq X) x : s ++ [:: x] = t ++ [:: x] -> s = t.
+  Proof.
+    elim: s; elim: t => //=.
+    - move=> a l IH1 IH2.
+      inversion IH2; subst; clear IH2.
+  Admitted.
+  
+
   (* sf/Lists.v *)
+  Lemma snoc_rev {X : Type} (x : X) (l : seq X) : rev (rcons l x) = x :: (rev l).
+  Proof.
+    elim: l => //= a l IHl.
+    rewrite rev_cons IHl /=.
+    by rewrite -rev_cons.
+  Qed.
+  
   Lemma rev_injective { X : Type } (l1 l2 : seq X) : rev l1 = rev l2 -> l1 = l2.
   Proof.
-  Admitted.
+    move=> H.
+    rewrite -(revK l1).
+    rewrite H.
+      by rewrite (revK l2).
+  Qed.
   
   Theorem rev_pal' { X : Type } (l : seq X) : l = rev l -> palindrome l.
   Proof.
-    move=> H.
-    elim/(@alt_induction X) : l H => //= l IH x y H.
+    elim/(@alt_induction X) : l => //= l IH x y H.
     have H1 : x :: l ++ [:: y] = (x :: l) ++ [:: y] by [].
     rewrite H1 in H.
     rewrite rev_cat in H.
@@ -80,8 +98,11 @@ Section Pal.
     have H2 : rev [:: x] = [:: x] by [].
     rewrite H2 in H.
     symmetry in H.
-    Admitted.
-
+    Check (@cat_injective X (rev l) l x).
+    move/(@cat_injective X (rev l) l x) in H.
+    done.
+  Qed.
+  
 (*
   Theorem rev_pal' { X : Type } : forall (l : seq X), l = rev l -> palindrome l.
   Proof.
