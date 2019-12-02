@@ -125,6 +125,27 @@ Check 0 <= 1.                               (* 0 <= 1 *)
 Check 1 >= 0.                               (* 0 <= 1  *)
 
 (**
+場合分けのための補題： leqP と ltnP （これは覚えるべき補題）。
+
+(leP と ltP と紛らわしいが、別なもの）
+*)
+
+Goal forall m n, (if m <= n then n else m) = maxn n m.
+Proof.
+  move=> m n.
+  rewrite /maxn.
+    by case: leqP.
+Qed.    
+(* if then else は = より結合度が低いので、括弧がいる。 *)
+
+Goal forall m n, (if m <= n then m else n) = minn n m.
+Proof.
+  move=> m n.
+  rewrite /minn.
+    by case: ltnP.
+Qed.    
+
+(**
 # min, max
 *)
 
