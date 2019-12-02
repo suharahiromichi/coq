@@ -209,15 +209,16 @@ Section map.
 Coqに組み込まれた関数型言語である Gallina を使って定義されています。
 ここでは、これを「通常の関数型言語の map 関数」とみなします。
 
-これは次のように、再帰をつかってふつうに定義されています。
-*)
+これは次のように、再帰を使って普通に定義されています。
 
-(**
-  Fixpoint map (T1 T2 : Type) (f : T1 -> T2) (s : seq T1) : seq T2 :=
+```
+
+Fixpoint map (T1 T2 : Type) (f : T1 -> T2) (s : seq T1) : seq T2 :=
   match s with
   | [::] => [::]
   | x :: s' => f x :: map s'
   end.
+```
 *)
 
   Lemma mapmap (f : A -> B) (xs : seq A) (ys : seq B) :
@@ -243,12 +244,10 @@ Coqに組み込まれた関数型言語である Gallina を使って定義さ�
       
     (* <- の証明 *)
     - elim: xs ys => //=.           (* リスト xs についての帰納法を使う。 *)
-      + move=> t H.                 (* 入力の引数が空リストの場合： *)
-        rewrite -H.
+      + move=> t <-.                (* 入力の引数が空リストの場合： *)
           by apply: egi_map_nil.
           
-      + move=> x s IH t H.         (* 入力の引数が空ではない場合： *) 
-        rewrite -H.
+      + move=> x s IH t <-.        (* 入力の引数が空ではない場合： *) 
 (**
 ここで、egi_map_cons を適用します。適用される引数を省かずに書くと、
 次の Check コマンドの引数(@から:の前まで)のようになります。
