@@ -44,6 +44,20 @@ Print Nat.pred.  (* Nat.pred = fun n : nat => match n with | 0 => n | u.+1 => u 
 
 
 (**
+nat_eqType、eqType のインスタンス
+*)
+
+Check 1 : nat_eqType : eqType.
+Check 1 : nat        : Type.
+
+(**
+# bin_nat, number
+
+(略)
+*)
+
+
+(**
 # basic arithmetic
 
 nosimpl がついている。
@@ -111,41 +125,38 @@ Check 0 <= 1.                               (* 0 <= 1 *)
 Check 1 >= 0.                               (* 0 <= 1  *)
 
 (**
-# minn, maxn
+# min, max
 *)
 
+Print minn.       (* minn = fun m n : nat => if m < n then m else n *)
+Print maxn.       (* maxn = fun m n : nat => if m < n then n else m *)
 
-(**
-nat_eqType、eqType のインスタンス
-*)
+(* 当然、可換である。 *)
+Goal forall m n, minn m n = minn n m.
+Proof.
+  move=> m n.
+    by rewrite minnC.
+Qed.
 
-Check 1 : nat_eqType : eqType.
-Check 1 : nat        : Type.
+Goal forall m n, n <= m -> minn n m = n.
+Proof.
+  move=> m n.
+  rewrite /leq.
+  move/eqP.
+  rewrite minnE.
+  move=> ->.
+    by rewrite subn0.
+Qed.
 
-(**
-# bin_nat, number
-
-(略)
-*)
-
-
-(**
-# doubling, halving, and parity
- *)
-
-Locate ".*2".      (* double n : nat_scope (default interpretation) *)
-Print double.      (* double = nosimpl double_rec *)
-
-Locate "./2".        (* half n : nat_scope (default interpretation) *)
-Print half.          (* half = 
-                        fix half (n : nat) : nat := match n with
-                            | 0 => n
-                            | n'.+1 => uphalf n'
-                            end
-                            with uphalf (n : nat) : nat := match n with
-                               | 0 => n
-                               | n'.+1 => (half n').+1
-                               end *)
+Goal forall m n, n <= m -> maxn m n = m.
+Proof.
+  move=> m n.
+  rewrite /leq.
+  move/eqP.
+  rewrite maxnE.
+  move=> ->.
+    by rewrite addn0.
+Qed.
 
 
 (**
@@ -163,6 +174,25 @@ fix odd (n : nat) : bool := match n with
                             | n'.+1 => ~~ odd n'
                             end
  *)
+
+(**
+# doubling, halving
+ *)
+
+Locate ".*2".      (* double n : nat_scope (default interpretation) *)
+Print double.      (* double = nosimpl double_rec *)
+
+Locate "./2".        (* half n : nat_scope (default interpretation) *)
+Print half.          (* half = 
+                        fix half (n : nat) : nat := match n with
+                            | 0 => n
+                            | n'.+1 => uphalf n'
+                            end
+                            with uphalf (n : nat) : nat := match n with
+                               | 0 => n
+                               | n'.+1 => (half n').+1
+                               end *)
+
 
 (**
 これに対して Standard Coq の even は even(n.+2) -> even(n) の帰納法なので、
@@ -194,5 +224,21 @@ Print expn.        (* expn = nosimpl expn_rec *)
 Locate "n `!".  (* factorial n : nat_scope (default interpretation) *)
 Print factorial.                    (* factorial = nosimpl fact_rec *)
 
+
+
+(*   A (infix) -- conjunction, as in                                          *)
+(*      ltn_neqAle : (m < n) = (m != n) && (m <= n).                          *)
+(*   B -- subtraction, as in subBn : (m - n) - p = m - (n + p).               *)
+(*   D -- addition, as in mulnDl : (m + n) * p = m * p + n * p.               *)
+(*   M -- multiplication, as in expnMn : (m * n) ^ p = m ^ p * n ^ p.         *)
+(*   p (prefix) -- positive, as in                                            *)
+(*      eqn_pmul2l : m > 0 -> (m * n1 == m * n2) = (n1 == n2).                *)
+(*   P  -- greater than 1, as in                                              *)
+(*      ltn_Pmull : 1 < n -> 0 < m -> m < n * m.                              *)
+(*   S -- successor, as in addSn : n.+1 + m = (n + m).+1.                     *)
+(*   V (infix) -- disjunction, as in                                          *)
+(*      leq_eqVlt : (m <= n) = (m == n) || (m < n).                           *)
+(*   X - exponentiation, as in lognX : logn p (m ^ n) = logn p m * n in       *)
+(*         file prime.v (the suffix is not used in ths file).                 *)
 
 (* END *)
