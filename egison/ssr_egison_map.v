@@ -92,7 +92,7 @@ egimap f xs ya
 述語 egijoin は3つの引数をとり、第1引数と第2引数を連結した結果が第3引数であるとします。
 
 すると上記は、 ``egijoin ax (x :: bx) xs`` と ``egijoin ay (y :: by) ys`` となります。
-ここで、「::」はリストの連結(cons)の意味です。
+ここで、 ``::`` はリストの連結(cons)の意味です。
 
 以上をひとつの論理式にまとめると、次のようになります。
 
@@ -164,12 +164,14 @@ Section List.
   Lemma joincat (a b c : seq A) : egijoin a b c <-> a ++ b = c.
   Proof.
     split.
-    - elim=> b'' //= a' b' c' H IH.
+    (* -> の証明 *)
+    - elim=> b'' //= a' b' c' H IH. (* 前提 egijoin ... についてのの帰納法を使う。  *)
         by rewrite IH.
-    - elim: a b c => //=.
-      + move=> b c ->.
+    (* <- の証明 *)
+    - elim: a b c => //=.      (* リスト a についての帰納法を使う。 *)
+      + move=> b c ->.         (* リストが空の場合： *)
           by apply: egi_join_nil.
-      + move=> n' a' IH b' c' <-.
+      + move=> n' a' IH b' c' <-.       (* リストが空ではない場合： *)
         apply: egi_join_cons.
           by apply: IH.
   Qed.
@@ -264,7 +266,7 @@ Coqに組み込まれた関数型言語である Gallina を使って定義さ�
         
         * by apply: egi_join_nil.
         * by apply: egi_map_nil.
-        * by apply: IH.                     (* 帰納法の仮定を使用する。 *)
+        * by apply: IH.
         * by apply: egi_join_nil.
   Qed.
   
