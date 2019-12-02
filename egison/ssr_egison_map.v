@@ -24,11 +24,12 @@ OCaml 4.07.1, Coq 8.9.1, MathComp 1.9.0
 という願望があります。
 
 そこで、Egisonで書かれたプログラムを証明することへの（個人的な）第一歩として、
-Egison の map関数 ([1.] 付録2) の意味を定義して、
+Egison の map関数 ([1.]) の意味を定義して、
 それが通常の関数型言語の map と同じである
 （同じ入力に対して同じ出力を返す）ことを証明してみます。
 
-証明は Coq/MathComp を使用します。
+証明は Coq/MathComp を使用します。MathCompで定義済み（証明済み）の補題などについては、
+[2.] を参照してください。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -39,6 +40,60 @@ Unset Printing Implicit Defensive.
 
 (**
 # 証明の方針
+
+[1.] にある、Egison の map関数のコード（説明の都合から wildcard を変数 に変えています）
+を対象にします。
+
+```
+(define $map
+  (lambda [$f $xs]
+    (match-all xs (list something)
+      [<join $ax <cons $x $bx>> (f x)])))
+```
+
+の結果（出力）を ys とします。
+このプログラムの意味を与える命題を考えてみます。
+述語 egimap は3つの引数をとり、第1引数が適用する ``A -> B`` 型の関数、
+第2引数が入力のリスト、この要素すべてにfを適用した結果が第3引数とします。
+すると、このプログラムの意味は、
+
+```
+egimap f xs ya
+```
+
+となります。また以下のように考えられます。
+
+- 入力リスト xs は、リスト ax と 要素 x と、リスト bx に分解される。
+- ax は帰納的に、``egimap f ax ay``
+- bx は帰納的に、``egimap f bx by``
+- 出力リストは、リスト ya と ``f x`` と、リスト by から組み立てられる。
+
+
+リストの分解と組立ては、
+述語 egijoin は3つの引数をとり、第1引数と第2引数を連結した結果が第3引数であるとすると、
+``egijoin ax (x :: bx) xs`` と ``egijoin ay (y :: by) ys`` となります。
+ここで、「::」はリストの連結(cons)の意味です。
+
+以上をひとつの論理式にまとめると、次のようになります。
+
+```
+∀(x : A), ∀(xa xb xs : seq A), ∀(ya yb ys : seq B),
+      egijoin xa (x :: xb) xs ->
+      egimap f xa ya ->
+      egimap f xb yb ->
+      egijoin ya (f x :: yb) ys ->
+      egimap f xs ys.
+```
+
+この論理式が Egison の map プログラムの意味を正しく示していると言えるなら、
+それが、関数言語の map と等価であることを示すために、
+
+
+```
+∀(xa : seq A), ∀(ya : seq B), egimap f xs ys <-> map f xs = ys
+```
+
+を証明できればよいことになります。
 *)
 
 (**
@@ -76,7 +131,7 @@ Section List.
   | egi_join_nil (b : seq A) : egijoin [::] b b
   | egi_join_cons (h : A) (a b c : seq A) :
       egijoin a b c -> egijoin (h :: a) b (h :: c).
-  Hint Constructors egijoin.
+  (* Hint Constructors egijoin. *)
   
 (**
 次に、命題 ``egijoin a b c`` が、関数 cat の結果 ``a ++ b = c`` と
@@ -88,7 +143,8 @@ Section List.
     - elim=> b'' //= a' b' c' H IH.
         by rewrite IH.
     - elim: a b c => //=.
-      + by move=> b c ->.
+      + move=> b c ->.
+          by apply: egi_join_nil.
       + move=> n' a' IH b' c' <-.
         apply: egi_join_cons.
           by apply: IH.
@@ -117,7 +173,7 @@ Section map.
   | egi_map_cons (x : A) (xa xb xs : seq A) (ya yb ys : seq B) :
       egijoin xa (x :: xb) xs -> egimap f xa ya -> egimap f xb yb ->
       egijoin ya (f x :: yb) ys -> egimap f xs ys.
-  Hint Constructors egimap.
+  (* Hint Constructors egimap. *)
   
 (**
 最後に、命題 ``egimap f xs ys`` が、関数 map の結果 ``map f xs = ys``
@@ -144,13 +200,14 @@ Section map.
       
       rewrite map_cat.
       rewrite map_cons.
-      done.                               (* 左辺と右辺が一致する。 *)
+        by [].                            (* 左辺と右辺が一致する。 *)
       
     (* <- の証明 *)
     - elim: xs ys => //=.
       (* 入力の引数が空リストの場合： *)
       + move=> t H.
-          by rewrite -H.              (* egi_map_nil が適用される。 *)
+        rewrite -H.
+          by apply: egi_map_nil.
       + move=> x s IH t H.
         rewrite -H.
         
@@ -167,7 +224,7 @@ Section map.
             egimap f s [seq f i | i <- s] ->
             egijoin [::] (f x :: [seq f i | i <- s]) (f x :: [seq f i | i <- s]) ->
             egimap f (x :: s) (f x :: [seq f i | i <- s]).
-        apply: egi_map_cons.
+        apply: egi_map_cons.          (* 引数を省略しても適用できる。 *)
         
         * by apply: egi_join_nil.
         * by apply: egi_map_nil.
@@ -176,6 +233,26 @@ Section map.
   Qed.
   
 End map.
+
+(**
+# まとめ
+
+Egisonで書かれたプログラムに証明を与えることの一歩として、
+map関数の証明（のようなもの）を与えてみました。
+
+実際のEgisonのコードから述語 egimap を求める部分に飛躍があり、
+証明遊びの域を出るものではありません。
+もし、Egison を Coq や他の証明器で証明することに関心をもたれる方があれば幸いです。
+*)
+
+(**
+# 参考文献
+
+[1.] 江木 「Egison プログラミング入門」、Egison Journal Vol.1
+
+
+[2.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
+*)
 
 
 (* END *)
