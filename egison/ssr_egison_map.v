@@ -1,16 +1,9 @@
 (**
 Egisonプログラムの証明 - 序論 -
 ======
-2019/12/06
+2019/12/02
 
 
-本記事は「Egison Advent Calendar 2019」
-
-
-https://qiita.com/advent-calendar/2019/egison
-
-
-の6日目の記事です。
 この文書のソースコードは以下にあります。
 
 
@@ -40,8 +33,13 @@ Egison の map プログラム ([1.]) の意味を定義して、
 それが通常の関数型言語の map 関数と同じである
 （同じ入力に対して同じ出力を返す）ことを証明してみます。
 
-証明は Coq/MathComp を使用します。
+証明は Coq とその MathComp ライブラリを使用します。
 Coq/MathComp 全般については[2.] を参照してください。
+
+=> は、ゴールの前提に名前をつけること。
+apply: は、ゴール Q に ``P -> Q`` を適用して P を得ること。
+rewrite は、ゴール X に ``X = Y`` で書き換えてY を得ること。
+という程度の理解でも証明が読めるかもしれません。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -201,12 +199,11 @@ Section map.
   (* Hint Constructors egimap. *)
   
 (**
-最後に、命題 ``egimap f xs ys`` が、``[seq f i | i <- xs] = ys``
+最後に、命題 ``egimap f xs ys`` が、``map f xs = ys``
 と同値であることを証明します。
 
-``[seq f i | i <- xs]`` は、MathComp の map 関数の構文糖で、
-Coqに組み込まれた関数型言語である Gallina を使って定義されています。
-ここでは、これを「通常の関数型言語の map 関数」とみなします。
+この map は、Coq に埋め込まれた関数型言語である Gallina を使って MathComp 
+のライブラリで定義されています。ここでは、これを「通常の関数型言語の map 関数」とみなします。
 
 これは次のように、再帰を使って普通に定義されています。
 
@@ -215,13 +212,16 @@ Coqに組み込まれた関数型言語である Gallina を使って定義さ�
 Fixpoint map (T1 T2 : Type) (f : T1 -> T2) (s : seq T1) : seq T2 :=
   match s with
   | [::] => [::]
-  | x :: s' => f x :: map s'
+  | x :: s' => f x :: map f s'
   end.
 ```
+
+MathComp の map 関数には構文糖があり、``[seq f i | i <- xs]`` と表記できますが、
+この記事ではこれは使用しません。
 *)
 
   Lemma mapmap (f : A -> B) (xs : seq A) (ys : seq B) :
-      egimap f xs ys <-> [seq f i | i <- xs] = ys.
+      egimap f xs ys <-> map f xs = ys.
   Proof.
     split.
     (* -> の証明 *)
@@ -231,11 +231,25 @@ Fixpoint map (T1 T2 : Type) (f : T1 -> T2) (s : seq T1) : seq T2 :=
       move/joincat in Hjy.          (* egijoin を ++ に置き換える。 *)
       subst.                        (* 式を整理する。 *)
       
-      (* MathComp の証明済みの補題を使います。 *)
+(**
+ここでは MathComp の証明済みの補題を使います。
+map_cat は、map の入力リストがふたつのリストの結合(cat、join)であるとき、
+その結果は、それぞれを入力リストとするmapの値（出力リスト）の結合した結果と
+同じである、ということです。
+*)
       Check map_cat : forall (T1 T2 : Type) (f : T1 -> T2) (s1 s2 : seq T1),
-          [seq f i | i <- s1 ++ s2] = [seq f i | i <- s1] ++ [seq f i | i <- s2].
+          map f (s1 ++ s2) = (map f s1) ++ (map f s2).
+(**
+Check は項の型をチェックするコマンドですが、``項 : 型`` は ``証明 : 命題`` に対応
+しますから、map_cat で証明できる命題を示していることになります。
+
+同様に、map_cons は、map の入力リストがリストに要素を追加(cons)したものであるとき、
+その要素（に関数を適用した値）をリストの map の値（出力リスト）の追加したものと同じ
+である、ということです。
+*)
+
       Check map_cons : forall (T1 T2 : Type) (f : T1 -> T2) (x : T1) (s : seq T1),
-          [seq f i | i <- x :: s] = f x :: [seq f i | i <- s].
+          map f (x :: s) = f x :: map f x.
       
       rewrite map_cat.
       rewrite map_cons.
@@ -248,19 +262,22 @@ Fixpoint map (T1 T2 : Type) (f : T1 -> T2) (s : seq T1) : seq T2 :=
           
       + move=> x s IH t <-.        (* 入力の引数が空ではない場合： *) 
 (**
-ここで、egi_map_cons を適用します。適用される引数を省かずに書くと、
-次の Check コマンドの引数(@から:の前まで)のようになります。
-しかしこの場合は、引数をすべて省略しても Coq が補ってくれます。
-とても直感的ですね。
+ここで、egi_map_cons を適用します。
+ここで適用する項の引数を省かずに書くと、次の Check コマンドのようになります。
+@は、省略するべき引数を明示することをしめします。
  *)
         Check @egi_map_cons f x [::] s (x :: s)
-              [::] [seq f i | i <- s] (f x :: [seq f i | i <- s])
+              [::] (map f s) (f x :: (map f s))
           : egijoin [::] (x :: s) (x :: s) ->
             egimap f [::] [::] ->
-            egimap f s [seq f i | i <- s] ->
-            egijoin [::] (f x :: [seq f i | i <- s]) (f x :: [seq f i | i <- s]) ->
-            egimap f (x :: s) (f x :: [seq f i | i <- s]).
-        apply: egi_map_cons.          (* 引数を省略しても適用できる。 *)
+            egimap f s (map f s) ->
+            egijoin [::] (f x :: (map f s)) (f x :: (map f s)) ->
+            egimap f (x :: s) (f x :: (map f s)).
+(**
+しかしこの場合は、引数をすべて省略しても Coq が補ってくるので、
+以下だけで十分です。とても直感的ですね。
+*)
+        apply: egi_map_cons.
         
         * by apply: egi_join_nil.
         * by apply: egi_map_nil.
@@ -288,9 +305,19 @@ map 関数の証明もどきを与えてみました。
 
 (1) Egison のコードから、その仕様である egimap 述語を導く過程が一般化されていないこと。
 
+今回は list を対象としていますが、multiset や set については egijoin に対応する
+述語を別に定義する必要があります。
+また、[1.] の adjacent-map については論理式を書き下すことはできそうですが、
+map-with-both-sides は難しそうです。
+たとえ書けたとしても、それは Egison プログラムの動作を理解した「人智」が反映された結果
+で、それをもって「プログラムの証明ができた」というのは適切でないでしょう。
+
 (2) 関数型言語の map 関数の定義は一般的なものですが、Egison のプログラムを
 (それより表現力の乏しい）通常の関数型言語を使って証明したとしても、
 この先 Egison のプログラム一般を対象にできるとはいえない。
+
+具体的にいえば、[1.]の関数型言語で定義された adjacentMap や mapWithBothSides に対して
+証明をするのは大変そうです。
 
 以上から、この証明の例は、Egison とは無関係な命題と、
 たまたま対応のあった関数型言語の関数との間の等価性の証明をしたに過ぎない、
