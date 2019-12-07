@@ -2,7 +2,8 @@
 Egisonプログラムの証明 - 序論 -
 ======
 2019/12/02
-2019/12/06
+2019/12/06 公開
+2019/12/07 joincat について追記
 
 
 本記事は「Egison Advent Calendar 2019 - Qiita」の6日目の記事です。
@@ -159,7 +160,7 @@ Section List.
   
 (**
 次に、命題 ``egijoin a b c`` が、関数 cat の結果 ``a ++ b = c`` と
-同値であることを証明します。
+同値であることを証明します。これは、後で使います。
 *)
   Lemma joincat (a b c : seq A) : egijoin a b c <-> a ++ b = c.
   Proof.
@@ -229,9 +230,24 @@ MathComp の map 関数には構文糖があり、``[seq f i | i <- xs]`` と表
     (* -> の証明 *)
     - elim=> //=.            (* 前提 egimap f xs ys についての帰納法を使う。 *)
       move=> x xa xb s ya yb t Hjx Hema Hcma Hemb Hcmb Hjy.
-      move/joincat in Hjx.          (* egijoin を ++ に置き換える。 *)
-      move/joincat in Hjy.          (* egijoin を ++ に置き換える。 *)
+
+(**
+これから、MathComp の map 関数に関する命題を証明することになります。
+egijoin を含む前提の Hjx と Hjy を ++ (cat) の式に置き換えます。
+そのためには先に証明した、egijoin が ++ (cat) と同値であるという補題 joincat を使います。
+*)
+
+      move/joincat in Hjx.          (* 補題 joincat を 前提Hjxに適用する。 *)
+      move/joincat in Hjy.          (* 補題 joincat を 前提Hjyに適用する。 *)
       subst.                        (* 式を整理する。 *)
+
+(**
+ゴールが次のようになり、
+map の入力リストと出力リストの間の結合や追加との関係を証明すればよいことが判ります。
+```
+ map f (xa ++ x :: xb) = map f xa ++ ((f x) :: map f x b)
+```
+*)
       
 (**
 ここでは MathComp の証明済みの補題を使います。
@@ -251,8 +267,11 @@ Check は項の型をチェックするコマンドですが、``項 : 型`` は
 *)
 
       Check map_cons : forall (T1 T2 : Type) (f : T1 -> T2) (x : T1) (s : seq T1),
-          map f (x :: s) = f x :: map f x.
-      
+          map f (x :: s) = f x :: map f s.
+
+(**
+map_cat と map_cons の補題を使って左辺を書き換えると、右辺と一致します。
+*)      
       rewrite map_cat.
       rewrite map_cons.
         by [].                            (* 左辺と右辺が一致する。 *)
@@ -281,9 +300,12 @@ Check は項の型をチェックするコマンドですが、``項 : 型`` は
 *)
         apply: egi_map_cons.
         
+(**
+最後に、join と map の定義に関する命題と、帰納法の仮定を適用すると、証明が終わります。
+*)
         * by apply: egi_join_nil.
         * by apply: egi_map_nil.
-        * by apply: IH.
+        * by apply: IH.                 (* 帰納法の仮定を適用する。 *)
         * by apply: egi_join_nil.
   Qed.
   
