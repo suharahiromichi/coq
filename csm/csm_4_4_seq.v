@@ -126,6 +126,67 @@ Print rev.
 (* Definition rev := catrev^~ [::] *)
 (* Definition rev s := catrev s [::] *)
 
+Check catrev_catl
+  : forall (T : Type) (s t u : seq T), catrev (s ++ t) u = catrev t (catrev s u).
+Check catrev_catr
+  : forall (T : Type) (s t u : seq T), catrev s (t ++ u) = catrev s t ++ u.
+Check catrevE
+  : forall (T : Type) (s t : seq T), catrev s t = rev s ++ t.
+Check rev_cons
+  : forall (T : Type) (x : T) (s : seq T), rev (x :: s) = rcons (rev s) x.
+
+Section Lists.
+  Variable A : Type.
+
+(**
+Inductive に定義した append と cat の同値を証明する。
+*)
+  Inductive append : seq A -> seq A -> seq A -> Prop :=
+  | append_nil (b : seq A) : append [::] b b
+  | append_cons (h : A) (a b c : seq A) :
+      append a b c -> append (h :: a) b (h :: c).
+  Hint Constructors append.
+  
+  Lemma append_cat (a b c : seq A) : append a b c <-> a ++ b = c.
+  Proof.
+    split.
+    - elim=> b'' //= a' b' c' H IH.
+        by rewrite IH.
+    - elim: a b c => //= [b c -> // | n' a' IH b' c' <-].
+      apply: append_cons.
+        by apply: IH.
+  Qed.
+  
+(**
+Inductive に定義した reverse と rev の同値を証明する。
+*)
+  Inductive reverse : seq A -> seq A -> Prop :=
+  | reverse_nil (s : seq A) : reverse [::] [::]
+  | reverse_cons (x : A) (s t : seq A) :
+      reverse s t -> reverse (x :: s) (rcons t x).
+  Hint Constructors reverse.
+
+  Lemma rev0 : @rev A [::] = [::].
+  Proof.
+      by rewrite /rev.
+  Qed.
+  
+  Lemma rev_rev (s t : seq A) : reverse s t <-> rev s = t.
+  Proof.
+    split.
+    - elim => [s' | x s' t' H IH].
+      + by rewrite /rev.
+      + by rewrite rev_cons IH.
+    - elim: s t => //= [t H | x s IH t' H].
+      + rewrite -H rev0.
+          by apply: reverse_nil.
+      + rewrite -H rev_cons.
+        apply: reverse_cons.
+          by apply: IH.
+  Qed.      
+
+End Lists.
+
 (**
 # seq_predType (\in が使える)
 
