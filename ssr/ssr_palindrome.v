@@ -44,15 +44,15 @@ Section Pal.
 
   Lemma seq_alt_correct : forall (l : seq X), seq_alt l.
   Proof.
-    induction l.
-    - apply seq_alt_base.
-    - apply seq_alt_cons. apply IHl.
+    elim.
+    - by apply seq_alt_base.
+    - by apply seq_alt_cons.
   Qed.
   
-  Lemma alt_induction (P : seq X -> Prop) :
+  Lemma alt_list_ind (P : seq X -> Prop) :
     P [::] ->
     (forall (x : X), P [:: x]) ->
-    (forall (l : seq X), P l -> forall (x y : X), P (x :: l ++ [:: y])) ->
+    (forall (l : seq X), P l -> forall (x y : X), P (x :: (l ++ [:: y]))) ->
     forall (ln : seq X), P ln.
   Proof.
     move=> Hb1 Hb2 Hss ln.
@@ -69,10 +69,11 @@ Section Pal.
   Lemma app_injective (l1 l2 s : seq X) : l1 ++ s = l2 ++ s -> l1 = l2.
   Proof.
   Admitted.                                 (*  *)
+  
   (* これは証明できなかったので *)
   Theorem rev_pal' (l : seq X) : l = rev l -> palindrome l.
   Proof.
-    elim/alt_induction : l => //= l IH x y H.
+    elim/alt_list_ind : l => //= l IH x y H.
     rewrite -cat_cons rev_cat /= in H.
     inversion H.                 (* injection H as H1 *)
     (* H1 : x = y *)
@@ -96,7 +97,7 @@ Section Pal.
   
   Theorem rev_pal' (l : seq X) : l = rev l -> palindrome l.
   Proof.
-    elim/alt_induction : l => //= l IH x y H.
+    elim/alt_list_ind : l => //= l IH x y H.
     rewrite -cat_cons rev_cat /= in H.
     (* H : x :: l ++ [:: y] = y :: rev (x :: l) *)
     inversion H.
