@@ -171,20 +171,39 @@ Inductive に定義した reverse と rev の同値を証明する。
       by rewrite /rev.
   Qed.
   
-  Lemma rev_rev (s t : seq A) : reverse s t <-> rev s = t.
+  Lemma rev_catrev (s t : seq A) : reverse s t <-> rev s = t.
   Proof.
     split.
-    - elim => [s' | x s' t' H IH].
+    - elim=> [s' | x s' t' H IH].
       + by rewrite /rev.
       + by rewrite rev_cons IH.
-    - elim: s t => //= [t H | x s IH t' H].
-      + rewrite -H rev0.
+    - elim: s t => //= [t <- | x s IH t' <-].
+      + rewrite rev0.
           by apply: reverse_nil.
-      + rewrite -H rev_cons.
+      + rewrite rev_cons.
         apply: reverse_cons.
           by apply: IH.
-  Qed.      
+  Qed.
 
+(**
+末尾再帰ではない rev につていも、同様に証明する。
+ *)
+  Fixpoint ntrev (s : seq A) : seq A :=
+    match s with
+    | [::] => [::]
+    | x :: a => rcons (ntrev a) x
+    end.
+  
+  Lemma rev_ntrev (s t : seq A) : reverse s t <-> ntrev s = t.
+  Proof.
+    split.
+    - elim=> [s' | x s' t' H <-] //=.
+    - elim: s t => //= [t <- | x s IH t' <-].
+      + by apply: reverse_nil.
+      + apply: reverse_cons.
+          by apply: IH.
+  Qed.      
+  
 End Lists.
 
 (**
