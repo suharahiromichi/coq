@@ -59,8 +59,6 @@ Check cat_uniq
 (**
 # 特別な帰納法 last_ind (rcons でする帰納法の例）
 
-cons と rcons でする帰納法の例：
-https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_palindrome.v
 *)
 
 Check last_ind
@@ -69,7 +67,55 @@ Check last_ind
     (forall (s : seq T) (x : T), P s -> P (rcons s x)) -> forall s : seq T, P s.
 
 (**
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_palindrome.v
+
+回文の証明で使用した cons と rcons でする帰納法の例：
+
+alt_list_ind : 
+    P [::] ->
+    (forall (x : X), P [:: x]) ->
+    (forall (l : seq X), P l -> forall (x y : X), P (x :: (l ++ [:: y]))) ->
+    forall (ln : seq X), P ln.
+*)
+
+
+(**
 # has と all
+
+リストのある要素（すべての要素）に対して、条件が成立する。
+ *)
+
+Compute has odd [:: 1; 2; 3].               (* true *)
+Compute has odd [:: 2; 4; 6].               (* false *)
+
+Compute all odd [:: 1; 2; 3].               (* false *)
+Compute all odd [:: 1; 3; 5].               (* true *)
+
+(**
+has（all）は再帰関数として定義されているが、forall（exists) を使った定義もある。
+それとのリフレクションが定義されている。
+ *)
+
+Check @hasP : forall (eT : eqType) (a : pred eT) (s : seq eT),
+    reflect (exists2 x : eT, x \in s & a x) (has a s).
+
+Check @allP : forall (eT : eqType) (a : pred eT) (s : seq eT),
+    reflect (forall x : eT, x \in s -> a x) (all a s).
+
+(**
+なお、exists2 は、論理式をふたつとれる「∃」。
+MathComp ぽい命名だが、バニラCoqで定義されている。
+*)
+Check ex : forall A : Type, (A -> Prop) -> Prop.
+Check ex2 : forall A : Type, (A -> Prop) -> (A -> Prop) -> Prop.
+Check forall (A : Type) (x : A) (P : Prop), (exists x : A, P).
+Check forall (A : Type) (x : A) (P Q : Prop), (exists2 x : A, P & Q).
+
+(**
+Standard Coq の List.v には、インダクティブな命題として、
+Exists（Forall）が定義されている。それとのリフレクションを定義した例：
+
+https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
  *)
 
 (**
@@ -82,13 +128,26 @@ Print rev.
 
 (**
 # seq_predType (\in が使える)
+
+predType 型クラス（インターフェース）のインスタンスとして seq_predType を定義している。
+すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、\in の右に書けるようになる。
 *)
 
 Check [:: 1; 2] : seq_predType nat_eqType.
 Compute 1 \in [:: 1; 2].                    (* true *)
 
 (**
+Standard Coq の List.v には、インダクティブな命題として、
+In が定義されている。それとのリフレクションを定義した例：
+
+https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
+ *)
+
+(**
 # seq_eqType (== が使える)
+
+eqType 型クラス（インターフェース）のインスタンスとして seq_eqType を定義している。
+すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、== の左右に書けるようになる。
 *)
 
 Check [:: 1; 2] : seq_eqType nat_eqType.
@@ -98,6 +157,33 @@ Compute [:: 1; 2] == [:: 3; 4].             (* false *)
 # map と filter
 *)
 
+Compute map succn [::  1; 2; 3].            (* [:: 2; 3; 4] *)
+Compute [seq succn x | x <- [:: 1; 2; 3]].  (* [:: 2; 3; 4] *)
+
+Compute filter odd [:: 1; 2; 3].            (* [:: 1 3] *)
+Compute [seq x <- [:: 1;2;3] | odd x].      (* [:: 1 3] *)
+
+
+(**
+ラムダ式を書かなくてすむ。
+ *)
+Compute map (fun x => x + 2) [::  1; 2; 3]. (* [:: 3; 4; 5] *)
+Compute [seq x + 2 | x <- [:: 1; 2; 3]].    (* [:: 3; 4; 5] *)
+
+Compute filter (fun x => ~~ odd x) [:: 1; 2; 3]. (* [:: 2] *)
+Compute [seq x <- [:: 1;2;3] | ~~ odd x].        (* [:: 2] *)
+
+
+(**
+まとめてひとつの [seq ... ] で書けるわけではない。
+ *)
+Compute [seq x <- [seq succn x | x <- [:: 1; 2; 3]]  | odd x]. (* [:: 3] *)
+Compute [seq succn x | x <- [seq x <- [:: 1;2;3] | odd x]]. (* [:: 2; 4] *)
+
+
+(**
+map と filter についてのいくつかの補題が証明されている。かなり便利である。
+ *)
 Check map_cons
   : forall (T1 T2 : Type) (f : T1 -> T2) (x : T1) (s : seq T1),
     [seq f i | i <- x :: s] = f x :: [seq f i | i <- s].
@@ -134,11 +220,5 @@ Check filter_rcons
     [seq x <- rcons s x | a x] =
     (if a x then rcons [seq x <- s | a x] x else [seq x <- s | a x]).
                                                        
-
-(**
-Standard Coq の Forall や Exists と In のリフレクションの例：
-
-https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
- *)
 
 (* END *)
