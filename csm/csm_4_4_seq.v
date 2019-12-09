@@ -27,9 +27,31 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 *)
 
 (**
+# rcons
+
+rcons は再帰的に定義されている。後ろにcatする定義とは異なる。
+ *)
+Definition rcons' (T : Type) (s : seq T) (z : T) : seq T := s ++ [:: z].
+
+(**
+両者が同値であることは証明できる。
+*)
+Goal forall (T : Type) (s : seq T) (z : T), rcons s z = rcons' s z.
+Proof.
+  move=> T s z.
+  elim: s => //.
+  move=> a s IH /=.
+    by rewrite IH /rcons' /=.
+
+  Restart.
+  move=> T s z.
+    by rewrite /rcons' cats1.
+Qed.
+
+
+(**
 # cat に関する補題
 *)
-
 
 Check cat0s : forall (T : Type) (s : seq T), [::] ++ s = s.
 Check cats0 : forall (T : Type) (s : seq T), s ++ [::] = s.
