@@ -117,15 +117,6 @@ Print rev.
 (* Definition rev := catrev^~ [::] *)
 (* Definition rev s := catrev s [::] *)
 
-Check catrev_catl
-  : forall (T : Type) (s t u : seq T), catrev (s ++ t) u = catrev t (catrev s u).
-Check catrev_catr
-  : forall (T : Type) (s t u : seq T), catrev s (t ++ u) = catrev s t ++ u.
-Check catrevE
-  : forall (T : Type) (s t : seq T), catrev s t = rev s ++ t.
-Check rev_cons
-  : forall (T : Type) (x : T) (s : seq T), rev (x :: s) = rcons (rev s) x.
-
 Section Lists.
   Variable A : Type.
 
@@ -223,8 +214,10 @@ Check rev_cat
   : forall (T : Type) (s t : seq T), rev (s ++ t) = rev t ++ rev s.
 Check rev_rcons
   : forall (T : Type) (s : seq T) (x : T), rev (rcons s x) = x :: rev s.
-Check revK
+
+Check revK                                  (* rev (rev s) = s *)
   : involutive rev.
+
 Check nth_rev
   : forall (T : Type) (x0 : T) (n : nat) (s : seq T),
     n < size s -> nth x0 (rev s) n = nth x0 s (size s - n.+1).
