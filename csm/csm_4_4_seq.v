@@ -46,15 +46,6 @@ Check cat_rcons
   : forall (T : Type) (x : T) (s1 s2 : seq T), rcons s1 x ++ s2 = s1 ++ x :: s2.
 Check cat_take_drop
   : forall (n0 : nat) (T : Type) (s : seq T), take n0 s ++ drop n0 s = s.
-Check catrev_catl
-  : forall (T : Type) (s t u : seq T), catrev (s ++ t) u = catrev t (catrev s u).
-Check catrev_catr
-  : forall (T : Type) (s t u : seq T), catrev s (t ++ u) = catrev s t ++ u.
-Check catrevE : forall (T : Type) (s t : seq T), catrev s t = rev s ++ t.
-Check cat_uniq
-  : forall (T : eqType) (s1 s2 : seq T),
-    uniq (s1 ++ s2) = [&& uniq s1, ~~ has (mem s1) s2 & uniq s2].
-
 
 (**
 # 特別な帰納法 last_ind (rcons でする帰納法の例）
@@ -156,6 +147,9 @@ Inductive に定義した append と cat の同値を証明する。
       apply: append_cons.
         by apply: IH.
   Qed.
+(**
+補足： <-> のかたちの補題を適用するときは、apply/V を使う。
+*)
   
 (**
 Inductive に定義した reverse と rev の同値を証明する。
@@ -167,6 +161,11 @@ Inductive に定義した reverse と rev の同値を証明する。
   Hint Constructors reverse.
 
   Lemma rev0 : @rev A [::] = [::].
+  Proof.
+      by rewrite /rev.
+  Qed.
+  
+  Lemma rev1 (x : A) : @rev A [:: x] = [:: x].
   Proof.
       by rewrite /rev.
   Qed.
@@ -203,8 +202,41 @@ Inductive に定義した reverse と rev の同値を証明する。
       + apply: reverse_cons.
           by apply: IH.
   Qed.      
-  
 End Lists.
+
+(**
+rev に関する補題
+ *)
+Check catrev_catl
+  : forall (T : Type) (s t u : seq T), catrev (s ++ t) u = catrev t (catrev s u).
+Check catrev_catr
+  : forall (T : Type) (s t u : seq T), catrev s (t ++ u) = catrev s t ++ u.
+Check catrevE : forall (T : Type) (s t : seq T), catrev s t = rev s ++ t.
+Check cat_uniq
+  : forall (T : eqType) (s1 s2 : seq T),
+    uniq (s1 ++ s2) = [&& uniq s1, ~~ has (mem s1) s2 & uniq s2].
+Check rev_cons
+  : forall (T : Type) (x : T) (s : seq T), rev (x :: s) = rcons (rev s) x.
+Check size_rev
+  : forall (T : Type) (s : seq T), size (rev s) = size s.
+Check rev_cat
+  : forall (T : Type) (s t : seq T), rev (s ++ t) = rev t ++ rev s.
+Check rev_rcons
+  : forall (T : Type) (s : seq T) (x : T), rev (rcons s x) = x :: rev s.
+Check revK
+  : involutive rev.
+Check nth_rev
+  : forall (T : Type) (x0 : T) (n : nat) (s : seq T),
+    n < size s -> nth x0 (rev s) n = nth x0 s (size s - n.+1).
+Check filter_rev
+  : forall (T : Type) (a : pred T) (s : seq T),
+    [seq x <- rev s | a x] = rev [seq x <- s | a x].
+Check count_rev
+  : forall (T : Type) (a : pred T) (s : seq T), count a (rev s) = count a s.
+Check has_rev
+  : forall (T : Type) (a : pred T) (s : seq T), has a (rev s) = has a s.
+Check all_rev
+  : forall (T : Type) (a : pred T) (s : seq T), all a (rev s) = all a s.
 
 (**
 # seq_predType (\in が使える)
