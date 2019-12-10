@@ -21,7 +21,7 @@ Unset Printing Implicit Defensive.
 
 本節はテキストを参照しながら、MathComp のソースコードに沿って説明していきます。
 ソースコードが手元にあるならば、それも参照してください。
-opamでインストールしている場合は、ssrbool.v のソースは、たとえば以下にあります。
+opamでインストールしている場合は、ソースは、たとえば以下にあります。
 
 ~/.opam/4.07.1/lib/coq/user-contrib/mathcomp/ssreflect/eqtype.v
 *)
@@ -82,19 +82,36 @@ Definition bool2balle (b : bool) : balle :=
   | false => blanc
   end.
 
-(* balle2bool の単射性をつかってeqTypeを定義する。 *)
+(* balle2bool の単射性をつかってballe_eqTypeを定義する。 *)
 Lemma inj_b2b : injective balle2bool.
 Proof. by case; case. Qed.
 
 Definition balle_eqMixin := InjEqMixin inj_b2b.
 Canonical balle_eqType := EqType balle balle_eqMixin.
 
-(* balle2bool と bool2balle が逆であることをつかってeqTypeを定義する。 *)
+(* balle2bool と bool2balle が逆であることをつかってballe_eqTypeを定義する。 *)
 Lemma can_b2b : cancel balle2bool bool2balle.
 Proof. by case. Qed.
 
 Definition balle_eqMixin' := CanEqMixin can_b2b.
 Canonical balle_eqType' := EqType balle balle_eqMixin'.
+
+(*
+eqType の公理から balle_eqType を定義する。
+*)
+
+Definition balle_eqb (x y : balle) : bool :=
+  match (x, y) with
+  | (rouge, rouge) => true
+  | (blanc, blanc) => true
+  | _ => false
+  end.
+
+Lemma balle_eqb_spec x y : reflect (x = y) (balle_eqb x y).
+Proof. apply: (iffP idP); by case: x; case y. Qed.
+
+Definition balle_eqMixin'' := EqMixin balle_eqb_spec.
+Canonical balle_eqType'' := EqType balle balle_eqMixin''.
 
 
 (**
@@ -128,6 +145,15 @@ Canonical balle_eqType' := EqType balle balle_eqMixin'.
 (**
 ## sum_eqType
  *)
+
+(**
+## その他
+
+nat_eqType      nat.v
+seq_eqType      seq.v
+tree_eqType     choice.v
+ordinal_eqType  fintype.v
+*)
 
 
 (* END *)
