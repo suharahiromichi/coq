@@ -149,93 +149,94 @@ Qed.
 Definition p0 : 'I_5. Proof. by apply: (@Ordinal 5 0). Defined.
 Definition p4 : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
 
-Goal [exists x in 'I_5, x == p0].
+Definition s0 (x : 'I_5) := (x == p0).
+Definition s4 (x : 'I_5) := x <= p4.
+
+
+Check @forallP
+  : forall (T : finType) (P : pred T), reflect (forall x : T, P x) [forall x, P x].
+Check @existsP
+  : forall (T : finType) (P : pred T), reflect (exists x : T, P x) [exists x, P x].
+
+Goal [forall x, s4 x].
+Proof.
+  apply/forallP.
+  rewrite /s4 /p4.
+  (* forall x : ordinal_finType 5, x <= p4 *)
+  case=> m /=.
+  (* m < 5 -> m <= 4 *)
+  done.
+Qed.
+
+Goal [exists x, s0 x].
 Proof.
   apply/existsP.
-    (* exists x, (x \in 'I_5) && (x == p0) *)
-    by exists p0.
+  rewrite /s0.
+  (* exists x : ordinal_finType 5, x == p0  *)
+  exists p0.
+  (* p0 == p0 *)
+  done.
 Qed.
 
 (**
 # \subset と \proper
 *)
 
-Goal 'I_5 \proper 'I_5.
-Proof.
-  apply/properP.
-  (* I_5 \subset 'I_5 /\ (exists2 x : ordinal_finType 5, x \in 'I_5 & x \notin 'I_5) *)
-Admitted.
-
-Goal 'I_5 \subset 'I_5.
+Lemma s0_s4 : s0 \subset s4.
 Proof.
   apply/subsetP.
-  (* {subset 'I_5 <= 'I_5} *)
-Admitted.
-
-Goal 'I_5 \subset 'I_5.
-Proof. done. Qed.
-
-(**
-## A \subset B
-
-- A \subset B の定義は fintype.v にある。 #| predD A B | == 0 と定義。
-
-- predD A B の定義は ssrbool.v にある。 fun x => ~~ A x && B x と定義。
-*)
-Goal #| predD 'I_5 'I_5 | == 0.
-Proof.
-  Admitted.
-
-
-(**
-## {subset A <= B}
-
-- {subset A <= B} の定義は ssrbool.v にある。
-  forall x : T, in_mem x p1 -> in_mem x p2.
-*)
-
-Goal forall x, in_mem x (mem 'I_5) -> in_mem x (mem 'I_5).
-Proof.
-  done.
+  rewrite /s0 /s4 => x.
+  rewrite /mem /in_mem /=.
+    by move/eqP => ->.
 Qed.
 
-
-(**
-## ほしいもの
- *)
-Goal [forall x, (x \in 'I_5) ==> (x \in 'I_5)].
+Goal s0 \proper s4.
 Proof.
-  Admitted.
+  apply/properP.
+  split.
+  - by apply: s0_s4.
+  - exists p4.
+    + done.
+    + done.
+Qed.
 
+(*
+## subset の補題
+
+https://qiita.com/suharahiromichi/items/789b007b54e5d6d4ed1c
+
+の内容と同じだが、証明をみなおして簡単にしている。
+ *)
 
 Section Test.
   Variable T : finType.
   
+  Lemma mySubsetP' (s1 s2 : pred T) :
+    (forall x, x \in s1 -> x \in s2) <-> [forall x, (x \in s1) ==> (x \in s2)].
+  Proof.
+    split=> H.
+    - apply/forallP => x.
+      apply/implyP.
+        by apply: H.
+    - move=> x.
+      apply/implyP.
+      move: x.
+      apply/forallP.
+      done.
+  Qed.
+  
   Lemma mySubsetP (s1 s2 : pred T) :
     s1 \subset s2 <-> (forall x, x \in s1 -> x \in s2).
   Proof.
-    rewrite subset_disjoint /disjoint.
     split.
-    - move/pred0P => H.
-      move=> x Hs1.
-      move: (H x) => {H} /= /eqP.
-      rewrite inE eqbF_neg negb_and /=.
-      move/orP => [Hn1 | Hnn2].
-      + by move/negP : Hn1.
-      + by rewrite Bool.negb_involutive in Hnn2.
-
-    - move=> H.
-      apply/pred0P => x.
-      apply/andP => [[H1 Hn2]].
-      rewrite inE /= in Hn2.
-      move/negP in Hn2.
-        by apply/Hn2/H.
+    - move/subsetP.
+      move/mySubsetP' => H.
+        by apply/mySubsetP'.
+    - move/mySubsetP' => H.
+      apply/subsetP.
+        by apply/mySubsetP'.
   Qed.
   
-(**
-## boolean な論理式での証明
- *)
-
   Lemma mySubsetE (s1 s2 : pred T) :
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
   Proof.
@@ -243,27 +244,43 @@ Section Test.
     - move=> H.
       apply/forallP => x.
       apply/implyP.
-      by apply/mySubsetP : x.
-
+        by apply/mySubsetP : x.
     - move=> H.
       apply/mySubsetP => x.
       move/forallP in H.
-      by move: (H x) => {H} /implyP H /=.
+        by move: (H x) => {H} /implyP H /=.
   Qed.
-
 End Test.
 
-Definition s1 (x : 'I_5) := nat_of_ord x == 0.
-Definition s2 (x : 'I_5) := x < 4.
+(**
+## A \subset B
 
-Goal s1 \subset s2.
+- A \subset B の定義は fintype.v にある。 #| predD A B | == 0 と定義。
+- predD A B の定義は ssrbool.v にある。 fun x => ~~ A x && B x と定義。
+
+つまり「論理式 A を満たし、論理式 B を満たさない要素の数が 0 である」というぐあいに
+濃度から導いていて、最初に証明したように、はこれが一番易しい。でも使いではあまりない。
+*)
+Check s0_s4 : s0 \subset s4.                (* 上で証明した。 *)
+
+(**
+## {subset A <= B}
+- {subset A <= B} の定義は ssrbool.v にある。
+*)
+Goal forall x, x \in s0 -> x \in s4.        (* {subset A <= B} *)
 Proof.
-  rewrite mySubsetE.
-  apply/forallP=> x.
-  apply/implyP.
-  move=> H.
-Admitted.  
+  apply/mySubsetP.
+    by apply: s0_s4.
+Qed.
 
+(**
+## MathCopmp 的に欲しいもの（？）
+ *)
+Goal [forall x, (x \in s0) ==> (x \in s4)].
+Proof.
+  rewrite -mySubsetE.
+    by apply: s0_s4.
+Qed.
 
 
 (**
