@@ -34,28 +34,23 @@ opamでインストールしている場合は、ソースは、たとえば以�
 
 (**
 ## モノイドによる定義
+*)
 
-Check や Print だと、読み難い。
- *)
+Check \big[addn/0]_(i < 5) i.               (* \sum_(i < 5) i *)
+Check \big[maxn/0]_(i < 5) i.               (* \mux_(i < 5) i *)
+Check \big[muln/1]_(i < 5) i.               (* \prod_(i < 5) i *)
 
-Check big_distrl                            (* 係数を括り出す *)
-  : forall (R : Type) (zero : R) (times : Monoid.mul_law zero)
-           (plus : Monoid.add_law zero times) (I : Type) (r : seq I) 
-           (a : R) (P : pred I) (F : I -> R),
-    times (\big[plus/zero]_(i <- r | P i) F i) a =
-    \big[plus/zero]_(i <- r | P i) times (F i) a.
+(* finset *)
+Check \big[@setU _/set0]_(i <- [:: set0]) i. (* \bigcup_(i <- [:: set0]) i *)
+Check \big[@setI _/setT]_(i <- [:: set0]) i. (* \bigcap_(i <- [:: set0]) i *)
 
-(**
-ソースコードでは、ローカルに +, 0, -, 1 を定義して使っている：
+Check \big[andb/true]_(i : bool) i.
+Check \big[orb/false]_(i : bool) i.
+Check \big[addb/false]_(i : bool) i.
+Check \big[gcdn/0]_(i < 5) i.
+Check \big[lcmn/1]_(i < 5) i.
+Check \big[cat/[::]]_(i <- [:: [:: 0]; [::1]; [:: 2]]) i.
 
-Lemma big_distrl I r a (P : pred I) F :
-  \big[+%M/0]_(i <- r | P i) F i * a = \big[+%M/0]_(i <- r | P i) (F i * a).
-
-
-あるいは、数学記号（Σ、Π）を使った説明：
-
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
- *)
 
 (**
 ## レンジはリスト
@@ -95,6 +90,32 @@ Admitted.
 
 
 (**
+## モノイドによる定義 (その2)
+
+Check や Print だと、読み難い。
+ *)
+
+Check big_distrl                            (* 係数を括り出す *)
+  : forall (R : Type) (zero : R) (times : Monoid.mul_law zero)
+           (plus : Monoid.add_law zero times) (I : Type) (r : seq I) 
+           (a : R) (P : pred I) (F : I -> R),
+    times (\big[plus/zero]_(i <- r | P i) F i) a =
+    \big[plus/zero]_(i <- r | P i) times (F i) a.
+
+(**
+ソースコードでは、ローカルに +, 0, -, 1 を定義して使っている：
+
+Lemma big_distrl I r a (P : pred I) F :
+  \big[+%M/0]_(i <- r | P i) F i * a = \big[+%M/0]_(i <- r | P i) (F i * a).
+
+
+あるいは、数学記号（Σ、Π）を使った説明：
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
+ *)
+
+
+(**
 ## bigA_distr_bigA
  *)
 
@@ -107,8 +128,17 @@ Proof.
   rewrite unlock /reducebig.
 Admitted.
 
-(* ここで、f は、 定義域 {0, 1}、値域 {0, 1, 2} である関数(finfun)のすべて。
-   全部で 3^2 = 9 個ある。 *)
+(**
+
+F(i, j) = 10 * i + j
+
+が
+
+F(i, j) = 10 * i + f(i)
+
+になっている。こで、f は、 定義域 {0, 1}、値域 {0, 1, 2} である関数(finfun)のすべて。
+全部で 3^2 = 9 個ある。
+ *)
 Check {ffun 'I_2 -> 'I_3}.    (* ('I_3 ^ 'I_2) と書いてもいいかも。 *)
 Check finfun_finType (ordinal_finType 2) (ordinal_finType 3).
 
