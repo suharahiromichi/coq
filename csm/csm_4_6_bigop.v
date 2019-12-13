@@ -11,7 +11,7 @@ Coq/SSReflect/MathComp による定理証明
  *)
 
 From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import bigop.
+From mathcomp Require Import bigop matrix.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -116,29 +116,37 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
 
 
 (**
-## bigA_distr_bigA
+## 総和と相乗の分配規 bigA_distr_bigA
  *)
+
+Definition F (i j : nat) := 10 * i + j.
 
 Check bigA_distr_bigA.
 
-Goal \prod_(i < 2) (\sum_(j < 3) (10*i+j)) = 10. (* 右辺はいい加減 *)
+Goal \prod_(i < 2) (\sum_(j < 3) F i j) = 10. (* 右辺はいい加減 *)
 Proof.
   rewrite bigA_distr_bigA /=.
-  (* \sum_f \prod_(i < 2) (10 * i + f i) = 10 *)
+  (* \sum_f \prod_(i < 2) F i (f i) = 10 *)
   rewrite unlock /reducebig.
 Admitted.
 
 (**
+F(i, j) が F(i, f(i)) になっている。
 
-F(i, j) = 10 * i + j
-
-が
-
-F(i, j) = 10 * i + f(i)
-
-になっている。こで、f は、 定義域 {0, 1}、値域 {0, 1, 2} である関数(finfun)のすべて。
+こで、f は、 定義域 {0, 1}、値域 {0, 1, 2} である関数(finfun)のすべて。
 全部で 3^2 = 9 個ある。
  *)
+
+(**
+Π_i=1,2 Σ_j=1,3 Fij
+= (F00 + F01 + F02)(F10 + F11 + F12)
+= F00 F10 + F00 F11 + F00 F12
++ F01 F10 + F01 F11 + F01 F12
++ F02 F10 + F02 F11 + F02 F12
+= Σ_f F0(f0)F1(f1)
+= Σ_f Π_i=1,2 Fi(fi)
+*)
+
 Check {ffun 'I_2 -> 'I_3}.    (* ('I_3 ^ 'I_2) と書いてもいいかも。 *)
 Check finfun_finType (ordinal_finType 2) (ordinal_finType 3).
 
@@ -148,5 +156,14 @@ Definition p2 : 'I_3. Proof. by apply: (@Ordinal 3 2). Defined.
 
 Check [ffun i : 'I_2 => p0] : {ffun 'I_2 -> 'I_3}.
 Check [ffun i : 'I_2 => p1] : finfun_finType (ordinal_finType 2) (ordinal_finType 3).
+
+(**
+これは行列式の積 |A B| = |A||B| の証明に使われる。matrix.v
+*)
+
+Check det_mulmx
+  : forall (R : ssralg.GRing.ComRing.type) (n : nat) (A B : 'M_n),
+    @determinant (ssralg.GRing.ComRing.ringType R) n (A *m B) =
+    @ssralg.GRing.mul (ssralg.GRing.ComRing.ringType R) (\det A) (\det B).
 
 (* END *)
