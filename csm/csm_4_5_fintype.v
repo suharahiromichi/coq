@@ -86,6 +86,13 @@ Definition balle_finMixin := CanFinMixin can_b2b.
 Canonical balle_finType := FinType balle balle_finMixin.
 
 (**
+出来上がったもの：
+*)
+Check rouge : balle : Type.
+Check rouge : balle_finType : finType.
+Check rouge : Finite.sort balle_finType : Type.
+
+(**
 # その他の finType のインスタンス
 *)
 
@@ -286,6 +293,18 @@ Qed.
 (**
 # Ordinal
  *)
+
+(**
+## 作り方は Qed でなく、Defined で終わること。
+*)
+Definition p1 : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
+
+(**
+出来上がったもの：
+ *)
+Check p1 : 'I_5 : predArgType.
+Check p1 : ordinal_finType 5 : finType.
+Check p1 : Finite.sort (ordinal_finType 5) : predArgType.
 
 (**
 ## val または  nat_of_ord で自然数の値を取り出す。後者はコアーション。
