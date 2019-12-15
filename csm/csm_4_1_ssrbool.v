@@ -46,7 +46,7 @@ is_true を補って（コアーション）、b = true と解釈されます。
 
 このときの b をブール命題と呼ぶことがあります。
  *)
-                                                  
+
 (**
 ## if-then-else (ssreflect.v で定義) 
 
@@ -128,7 +128,9 @@ Check contraTT : forall c b : bool, (~~ c -> ~~ b) -> b -> c.
 
 (**
 次も参照してください： MathComp の「等号問題」を解決する
+
 https://qiita.com/suharahiromichi/items/85773d5af998ae3fe148
+
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_ltac_1.v
 *)
 
@@ -171,6 +173,10 @@ Check elimFn : forall (P : Prop) (b' : bool), reflect P (~~ b') -> b' = false ->
 ### view hint 
 
 前節の補題は、View Hint に使える。
+
+以下も参照してください；
+SSReflectのViewとView Hintについてのメモ
+https://qiita.com/suharahiromichi/items/02c7f42809f2d20ba11a
 *)
 
 (**
@@ -219,6 +225,8 @@ sumbool から bool型へのコアーション is_left が定義されている�
 sumbool reflect P b の b のところに書くことができます。
 *)
 
+Print is_left. (* fun (A B : Prop) (u : {A} + {B}) => if u then true else false *)
+
 Print decidable.                   (* = fun P : Prop => {P} + {~ P} *)
 Check sumboolP : forall (Q : Prop) (decQ : decidable Q), reflect Q decQ.
 Check sumboolP : forall (Q : Prop) (decQ : decidable Q), reflect Q (is_left decQ).
@@ -243,7 +251,9 @@ Check string_eqP : forall x y : string, reflect (x = y) (string_dec x y).
 
 (**
 以下も参照してください；
+
 https://github.com/suharahiromichi/coq/blob/master/lisp/ssr_string.v
+
 https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_mockbird_2.v
 *)
 
@@ -262,16 +272,16 @@ Check classicP : forall P : Prop, classically P <-> ~ ~ P.
 等式自体はProp型であるこに注意してください。
 *)
 Lemma classic_eq {eT : eqType} (m n : eT) : classically (m = n) -> m = n.
-Proof.  move=> Hc. by case: (Hc (m == n)); move/eqP. Qed.
+Proof. move=> Hc. by case: (Hc (m == n)); move/eqP. Qed.
 
 Lemma ssr_nnpp : forall (m n : nat), ~ m <> n -> m = n.
-Proof.  move=> m n Hnn. apply: classic_eq. by apply/classicP. Qed.  
+Proof. move=> m n Hnn. apply: classic_eq. by apply/classicP. Qed.  
 
 (**
 以下も参照してください：
-
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_axiom_free.v
 
+これは、古典論理の命題相互の証明であり、MathComp とは直接関係ありません：
 https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_classical_logic.v
 *)
 
