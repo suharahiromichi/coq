@@ -269,8 +269,10 @@ Proof.  move=> m n Hnn. apply: classic_eq. by apply/classicP. Qed.
 
 (**
 以下も参照してください：
-pearl/ssr_axiom_free.v
-ssr/ssr_classical_logic_2.v
+
+https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_axiom_free.v
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_classical_logic.v
 *)
 
 
@@ -279,6 +281,22 @@ ssr/ssr_classical_logic_2.v
 
 右結合であること。
 *)
+
+Goal forall x y z, [&& x, y & z] = x && (y && z).
+Proof. done. Qed.
+
+(* 最後のひとつの & は、カンマと同じ意味です。 *)
+Goal forall x y z t, [&& x, y, z & t] = x && (y && (z && t)).
+Proof. done. Qed.
+
+(* 途中に && を挿入できることに注意してください。 *)
+Goal forall x y z t, [&& x, y && z & t] = x && ((y && z) && t).
+Proof. done. Qed.
+
+(* 最後のひとつの | は、カンマと同じ意味です。 *)
+Goal forall x y z t, [|| x, y, z | t] = x || (y || (z || t)).
+Proof. done. Qed.
+
 
 (**
 ### リフレクション補題 -- negP, andP, orP など。
@@ -339,6 +357,19 @@ Check andbCA : left_commutative andb.
 Check andbAC : right_commutative andb.
 Check andbACA : interchange andb andb.
 
+Check andTb : forall b, true && b = b.
+Check andFb : forall b, false && b = false.
+Check andbT : forall b, b && true = b.
+Check andbF : forall b, b && false = false.
+Check andbb : forall b, b && b = b.
+Check andbC : forall b c, b && c = c && b.
+Check andbA : forall a b c : bool, [&& a, b & c] = a && b && c. (* a && (b && c) *)
+Check andbCA : forall x y z, [&& x, y & z] = [&& y, x & z].
+Check andbAC : forall x y z, x && y && z = x && z && y.
+Check andbACA : forall x y z t, x && y && (z && t) = x && z && (y && t).
+(* リスト表記 *)
+Check andbACA : forall x y z t, [&& x && y, z & t] = [&& x && z, y & t].
+
 (* or の例 *)
 Check orTb : forall b, true || b.
 Check orFb : left_id false orb.
@@ -356,6 +387,28 @@ Check andb_orl : left_distributive andb orb.
 Check andb_orr : right_distributive andb orb.
 Check orb_andl : left_distributive orb andb.
 Check orb_andr : right_distributive orb andb.
+
+(* neg の例 *)
+Check negbT : forall b, b = false -> ~~ b.
+Check negbTE : forall b, ~~ b -> b = false.
+Check negbF : forall b,  (b : bool) -> ~~ b = false.
+Check negbFE : forall b, ~~ b = false -> b.
+Check negbK : involutive negb.              (* これは使うので覚えておく！ *)
+Check negbNE : forall b, ~~ ~~ b -> b.
+
+Check negb_inj : injective negb.
+Check negbLR : forall b c, b = ~~ c -> ~~ b = c.
+Check negbRL : forall b c, ~~ b = c -> b = ~~ c.
+
+(* ドモルガンの定理 *)
+Check negb_and : forall a b, ~~ (a && b) = ~~ a || ~~ b.
+Check negb_or  : forall a b, ~~ (a || b) = ~~ a && ~~ b.
+
+(* involutive *)
+Check andbK : forall a b, a && b || a = a.
+Check andKb : forall a b, a || b && a = a.
+Check orbK : forall a b, (a || b) && a = a.
+Check orKb : forall a b, a && (b || a) = a.
 
 (* This file extends the lemma name suffix conventions of ssrfun as follows:  *)
 (*   A -- associativity, as in andbA : associative andb.                      *)
@@ -428,7 +481,7 @@ Inductive ball' : Type := red' | white'.   (* : Type は省略できる。 *)
 Goal red' \in {: ball'}.                (* 任意の型を {:_} で囲む。 *)
 Proof. rewrite inE. done. Qed.
 
-(* predArgType を指定したほうがよい。finType で、濃度が定義されるため。 *)
+(* predArgType を指定したほうがよい。finType で濃度が定義されるため（後述）。 *)
 Inductive ball : predArgType := red | white. (* predArgType 型 *)
 Goal red \in ball.
 Proof. rewrite inE. done. Qed.
