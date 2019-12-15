@@ -327,6 +327,36 @@ Check @implyP : forall b1 b2 : bool, reflect (b1 -> b2) (b1 ==> b2).
 # ブール演算に関する補題 
 *)
 
+(* and の例 *)
+Check andTb : left_id true andb.
+Check andFb : left_zero false andb.
+Check andbT : right_id true andb.
+Check andbF : right_zero false andb.
+Check andbb : idempotent andb.
+Check andbC : commutative andb.
+Check andbA : associative andb.
+Check andbCA : left_commutative andb.
+Check andbAC : right_commutative andb.
+Check andbACA : interchange andb andb.
+
+(* or の例 *)
+Check orTb : forall b, true || b.
+Check orFb : left_id false orb.
+Check orbT : forall b, b || true.
+Check orbF : right_id false orb.
+Check orbb : idempotent orb.
+Check orbC : commutative orb.
+Check orbA : associative orb.
+Check orbCA : left_commutative orb.
+Check orbAC : right_commutative orb.
+Check orbACA : interchange orb orb.
+
+(* 分配則 *)
+Check andb_orl : left_distributive andb orb.
+Check andb_orr : right_distributive andb orb.
+Check orb_andl : left_distributive orb andb.
+Check orb_andr : right_distributive orb andb.
+
 (* This file extends the lemma name suffix conventions of ssrfun as follows:  *)
 (*   A -- associativity, as in andbA : associative andb.                      *)
 (*  AC -- right commutativity.                                                *)
