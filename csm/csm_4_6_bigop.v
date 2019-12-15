@@ -154,8 +154,11 @@ Definition p0 : 'I_3. Proof. by apply: (@Ordinal 3 0). Defined.
 Definition p1 : 'I_3. Proof. by apply: (@Ordinal 3 1). Defined.
 Definition p2 : 'I_3. Proof. by apply: (@Ordinal 3 2). Defined.
 
-Check [ffun i : 'I_2 => p0] : {ffun 'I_2 -> 'I_3}.
-Check [ffun i : 'I_2 => p1] : finfun_finType (ordinal_finType 2) (ordinal_finType 3).
+Check [ffun i : 'I_2 => p0] : {ffun 'I_2 -> 'I_3} : predArgType.
+Check [ffun i : 'I_2 => p1]
+  : finfun_finType (ordinal_finType 2) (ordinal_finType 3) : finType.
+(* ordinal は predArgType *)
+(* sort がコアーションで略されている。 *)
 
 (**
 これは行列式の積 |A B| = |A||B| の証明に使われる。matrix.v

@@ -38,7 +38,7 @@ opamでインストールしている場合は、ソースは、たとえば以�
 ## balle_finType
 *)
 
-Inductive balle :=
+Inductive balle : Type :=       (* predArgType でも同じ。 *)
 | rouge  (* red ball, la balle rouge, 紅玉 *)
 | blanc. (* white ball, la balle blanc, 白玉 *)
 
@@ -88,9 +88,9 @@ Canonical balle_finType := FinType balle balle_finMixin.
 (**
 出来上がったもの：
 *)
-Check rouge : balle : Type.
+Check rouge : balle : predArgType.
 Check rouge : balle_finType : finType.
-Check rouge : Finite.sort balle_finType : Type.
+Check rouge : Finite.sort balle_finType : predArgType.
 
 (**
 # その他の finType のインスタンス
@@ -302,7 +302,7 @@ Definition p1 : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
 (**
 出来上がったもの：
  *)
-Check p1 : 'I_5 : predArgType.
+Check p1 : 'I_5 : predArgType.            (* ordinal は predArgType *)
 Check p1 : ordinal_finType 5 : finType.
 Check p1 : Finite.sort (ordinal_finType 5) : predArgType.
 
