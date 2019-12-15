@@ -386,7 +386,7 @@ Proof. done. Qed.
 
 (* pair (prod型) が使えるようにする *)
 Coercion pred_of_eq_pair (T : eqType) (s : T * T) : pred_class :=
-  xpredU (eq_op s.1) (eq_op s.2).
+  fun x => (s.1 == x) || (s.2 == x). (* xpredU (eq_op s.1) (eq_op s.2). *)
 Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T).
 
 Check forall (T : eqType) (x : T) (l : pair_predType T) , x \in l.
@@ -394,12 +394,13 @@ Goal 1 \in (1, 2).
 Proof. done. Qed.
 
 (* 型が書けるようにする。 *)
-Inductive ball' : predArgType := red' | white'. (* predArgType 型 *)
-Goal red' \in ball'.
+Inductive ball' : Type := red' | white'.   (* : Type は省略できる。 *)
+Goal red' \in {: ball'}.                (* 任意の型を {:_} で囲む。 *)
 Proof. rewrite inE. done. Qed.
 
-Inductive ball : Type := red | white.
-Goal red \in {: ball}.                  (* 任意の型を {:_} で囲む。 *)
+(* predArgType を指定したほうがよい。finType で、濃度が定義されるため。 *)
+Inductive ball : predArgType := red | white. (* predArgType 型 *)
+Goal red \in ball.
 Proof. rewrite inE. done. Qed.
 
 (* おまけ *)

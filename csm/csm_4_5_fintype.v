@@ -35,62 +35,77 @@ opamでインストールしている場合は、ソースは、たとえば以�
 *)
 
 (**
-## balle_finType
+## ball_finType
 *)
 
-Inductive balle : Type :=       (* predArgType でも同じ。 *)
-| rouge  (* red ball, la balle rouge, 紅玉 *)
-| blanc. (* white ball, la balle blanc, 白玉 *)
+(**
+predArgType を明示したほうがよい。
+ *)
+Inductive ball : predArgType :=
+| red                          (* 紅玉 *)
+| white.                       (* 白玉 *)
 
-Definition balle2bool (b : balle) : bool :=
+Definition ball2bool (b : ball) : bool :=
   match b with
-  | rouge => true
-  | blanc => false
+  | red => true
+  | white => false
   end.
 
-Definition bool2balle (b : bool) : balle :=
+Definition bool2ball (b : bool) : ball :=
   match b with
-  | true => rouge
-  | false => blanc
+  | true => red
+  | false => white
   end.
 
-Lemma inj_b2b : injective balle2bool.
+Lemma inj_b2b : injective ball2bool.
 Proof. by case; case. Qed.
 
-Lemma can_b2b : cancel balle2bool bool2balle.
+Lemma can_b2b : cancel ball2bool bool2ball.
 Proof. by case. Qed.
 
-Definition balle_eqMixin := InjEqMixin inj_b2b.
-Canonical balle_eqType := EqType balle balle_eqMixin.
-Definition balle_choiceMixin := CanChoiceMixin can_b2b.
-Canonical balle_choiceType := ChoiceType balle balle_choiceMixin.
-Definition balle_countMixin := CanCountMixin can_b2b.
-Canonical balle_countType := CountType balle balle_countMixin.
-
+Definition ball_eqMixin := InjEqMixin inj_b2b.
+Canonical ball_eqType := EqType ball ball_eqMixin.
+Definition ball_choiceMixin := CanChoiceMixin can_b2b.
+Canonical ball_choiceType := ChoiceType ball ball_choiceMixin.
+Definition ball_countMixin := CanCountMixin can_b2b.
+Canonical ball_countType := CountType ball ball_countMixin.
 
 (**
-balle の本来の定義を使ってfinTypeを定義する。
+ball の本来の定義を使ってfinTypeを定義する。
  *)
-Definition balle_enum := [:: rouge; blanc].
+Definition ball_enum := [:: red; white].
 
-Lemma balle_uniq : forall x, count_mem x balle_enum = 1.
+Lemma ball_uniq : forall x, count_mem x ball_enum = 1.
 Proof. by case. Qed.
 
-Definition balle_finMixin' := @FinMixin balle_countType balle_enum balle_uniq.
-Canonical balle_finType' := FinType balle balle_finMixin'.
+Definition ball_finMixin' := @FinMixin ball_countType ball_enum ball_uniq.
+Canonical ball_finType' := FinType ball ball_finMixin'.
 
 (**
-balle2bool の単射性をつかってfinTypeを定義する。
+ball2bool の単射性をつかってfinTypeを定義する。
  *)
-Definition balle_finMixin := CanFinMixin can_b2b.
-Canonical balle_finType := FinType balle balle_finMixin.
+Definition ball_finMixin := CanFinMixin can_b2b.
+Canonical ball_finType := FinType ball ball_finMixin.
 
 (**
 出来上がったもの：
 *)
-Check rouge : balle : predArgType.
-Check rouge : balle_finType : finType.
-Check rouge : Finite.sort balle_finType : predArgType.
+Check red : ball : predArgType.
+(**
+ball の定義のときに predArgType を明示しない場合：
+ball : predArgType は成り立つ。 predArgType = Type なので。
+しかし、finType の定義のなかで、濃度の定義がされない。
+*)
+Check red : ball_finType : finType.
+Check red : Finite.sort ball_finType : predArgType.
+
+(**
+以上で、==, \in, #|_| の「三点セット」が成り立つよういなる。
+*)
+Check red == red.
+Check red != white.
+Check red \in ball.          (* 最初に predArgType を明示すること。 *)
+Check #| ball | == 2.        (* predArgType に対する finType なら濃度が定義される。 *)
 
 (**
 # その他の finType のインスタンス
