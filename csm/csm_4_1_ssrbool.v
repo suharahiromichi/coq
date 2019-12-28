@@ -94,10 +94,14 @@ match b with | true => v1 | _ => v2 end
 自明ですが「名前が欲しい」こともあるので、記憶にとどめて置おきましょう。
 *)
 
+Lemma is_true_true : true = true. Proof. done. Qed.
 Check is_true_true : true.
 Check isT : true.                           (* 短縮名 *)
 
+Lemma not_false_is_true : ~ (false = true). Proof. done. Qed.
 Check not_false_is_true : ~ false.
+Lemma not_false_is_true' : false <> true. Proof. done. Qed.
+Check not_false_is_true' : ~ false.
 Check notF : ~ false.                       (* 短縮名 *)
 
 (**
@@ -106,20 +110,20 @@ Check notF : ~ false.                       (* 短縮名 *)
 b = false と ~~ b は同値のはずですが、自明でないので補題が用意されています。
 ~~ b = false と b は同値のはずですが、自明でないので補題が用意されています。
 *)
-Check negbT  : forall b : bool, b = false -> ~~ b.
-Check negbTE : forall b : bool, ~~ b -> b = false.
-Check negbF  : forall b : bool, b -> ~~ b = false.
-Check negbFE : forall b : bool, ~~ b = false -> b.
+Check negbT  : forall b : bool, b = false -> (~~ b) = true.
+Check negbTE : forall b : bool, (~~ b) = true -> b = false.
+Check negbF  : forall b : bool, b = true -> ~~ b = false.
+Check negbFE : forall b : bool, ~~ b = false -> b = true.
 
 (**
-~~ は involutive (2回適用すると元に戻る) が成立します。二重否定除去ですね。
+~~ は involutive (対合、2回適用すると元に戻る) が成立します。二重否定除去ですね。
 ~~ は injective (単射) です。
  *)
 Check negbK : forall b : bool, ~~ ~~ b = b. (* involutive negb *)
 Check negb_inj : forall b c, ~~ b = ~~ c -> b = c. (* injective negb *)
 
 (**
-二重否定が成り立つので、4種類の対偶もすべて成立します。
+二重否定除去が成り立つので、4種類の対偶もすべて成立します。
  *)
 Check contraNN : forall c b : bool, (c -> b) -> ~~ b -> ~~ c.
 Check contraTN : forall c b : bool, (c -> ~~ b) -> b -> ~~ c.
@@ -261,7 +265,8 @@ https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_mockbird_2.v
 ## classically と リフレクション補題 -- classicP
 
 MathComp では古典論理の公理を含んで居ません。その代わりに次の補題が証明されています。
-命題 P が classically という条件を満たすことと、二重否定が成り立つことは同値だということです。
+命題 P が classically という条件を満たすことと、
+二重否定除去が成り立つことは同値だということです。
 *)
 
 Print classically. (* fun P : Type => forall b : bool, (P -> b) -> b *)
@@ -525,7 +530,7 @@ Proof.
   Set Printing All.
   rewrite /pred_of_eq_pair /=.
   Unset Printing All.
-    by rewrite Bool.orb_comm.
+    by rewrite orbC.
 Qed.
 
 (**
