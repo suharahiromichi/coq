@@ -276,11 +276,32 @@ Check classicP : forall P : Prop, classically P <-> ~ ~ P.
 二重否定除去が成立することを証明することができます。
 等式自体はProp型であるこに注意してください。
 *)
-Lemma classic_eq {eT : eqType} (m n : eT) : classically (m = n) -> m = n.
-Proof. move=> Hc. by case: (Hc (m == n)); move/eqP. Qed.
 
-Lemma ssr_nnpp : forall (m n : nat), ~ m <> n -> m = n.
+Lemma classic_eq {eT : eqType} (m n : eT) : classically (m = n) -> m = n.
+Proof. move=> Hc. apply/eqP/Hc. by move/eqP. Qed.
+
+Lemma ssr_nnpp : forall (m n : nat), ~ ~ m = n -> m = n. (* 二重否定除去 *)
 Proof. move=> m n Hnn. apply: classic_eq. by apply/classicP. Qed.  
+
+(* classically の成り立つ条件を一般化する。 *)
+(* 命題 P をリフレクトできる ブール式 b があれば、classically P は成り立つ。 *)
+Lemma classic_p (P : Prop) (b : bool) : reflect P b -> classically P -> P.
+Proof.
+  move=> Hr Hc.
+  apply/Hr.
+  apply: Hc.
+  move/Hr.
+  done.
+Qed.
+
+(* 命題 P をリフレクトできる ブール式 b があれば、二重否定除去は成り立つ。 *)
+Lemma nnpp_p (P : Prop) (b : bool) : reflect P b -> ~ ~ P -> P.
+Proof.
+  move=> Hr Hnn.
+  apply: classic_p.
+  - by apply: Hr.
+  - by apply/classicP.
+Qed.
 
 (**
 以下も参照してください：
