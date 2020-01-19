@@ -98,20 +98,42 @@ classicP は、``classically P`` の成り立つ P について二重否定除�
 Lemma classic_eq {eT : eqType} (m n : eT) : classically (m = n) -> m = n.
 Proof.
   move=> Hc.
-    by case: (Hc (m == n)); move/eqP.
+  apply/eqP/Hc.                           (* case: (Hc (m == n)) *)
+    by move/eqP.
 Qed.
-
 (**
 classicP と この補題を使うと、``m = n`` について二重否定除去が証明できます。
 当然、m と n はeqType型の型（たとえば nat_eqType で nat）である必要があります。
   *)
 
-Lemma ssr_nnpp : forall (m n : nat), ~ m <> n -> m = n.
+Lemma ssr_nnpp : forall (m n : nat), ~ ~ m = n -> m = n.
 Proof.
   move=> m n Hnn.
   apply: classic_eq.
     by apply/classicP.
 Qed.  
+(* 逆は自明であり、classic_eq は不要である。 *)
+
+(* classically の成り立つ条件を一般化する。 *)
+(* 命題 P をリフレクトできる ブール式 b があれば、classically P は成り立つ。 *)
+Lemma classic_p (P : Prop) (b : bool) : reflect P b -> classically P -> P.
+Proof.
+  move=> Hr Hc.
+  apply/Hr.
+  apply: Hc.
+  move/Hr.
+  done.
+Qed.
+
+(* 命題 P をリフレクトできる ブール式 b があれば、二重否定除去は成り立つ。 *)
+Lemma nnpp_p (P : Prop) (b : bool) : reflect P b -> ~ ~ P -> P.
+Proof.
+  move=> Hr Hnn.
+  apply: classic_p.
+  - by apply: Hr.
+  - by apply/classicP.
+Qed.
+
 
 (**
 Standard Coq のライブラリを使う場合は、NNPPを使って証明できます。
@@ -238,6 +260,7 @@ Check eq_irrelevance                        (* 補題 *)
 (**
 たとえば、p1 が ``n = 3`` のとき、これは ``n == 3`` と同値で、
 booleanなら、その証明はひとつだけといえるからです（補足すること）。
+あるいは、bool_irrelevance を直接証明してみる。
 
 より特殊な場合についても補題が用意されています。
  *)
