@@ -205,5 +205,68 @@ tree_eqType     choice.v
 ordinal_eqType  fintype.v
 *)
 
+(* ************************** *)
+(* モチベーション維持のためにw *)
+(* ************************** *)
+
+From mathcomp Require Import all_ssreflect.
+From mathcomp Require Import all_algebra.
+
+(* 
+eqTypeが重要なのは、MathCompのクラス階層の起点であるから。
+
+rat             pair
+   ←サブタイプ         ←インスタンス
+                ↑カノニカル
+rat_Ring                                ringType
+rat_ZmodType                            zmodType
+rat_countType   pair_countType          countType
+rat_choiceType  pair_choiceType         choiceType
+rat_eqType      pair_eqType             eqType
+ *)
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+(* Set Print All. *)
+
+(* 以下全部要る *)
+Import intZmod.
+Import intOrdered.
+Import GRing.Theory.
+Open Scope ring_scope.
+
+
+(* 有理数型 *)
+
+Definition q1_3 := fracq (1%:Z, 3%:Z).
+Definition q2_6 := fracq (2%:Z, 6%:Z).
+
+Compute (valq q2_6).1.                      (* 1 *)
+Compute (valq q2_6).2.                      (* 3 *)
+
+Compute q1_3 == q2_6.                       (* true *)
+
+Goal q1_3 = q2_6.
+Proof.
+  Fail reflexivity.
+    by apply/eqP.
+Qed.
+
+Check rat_Ring : ringType.               (* rat_RingType ではない。 *)
+Lemma rat_mulrNN (q1 q2 : rat) : - q1 * - q2 = q1 * q2.
+Proof.
+    by apply mulrNN.
+Qed.
+
+
+(* 多項式型 *)
+
+Check {poly rat_Ring}.
+Lemma poly_mulrNN (p1 p2 : {poly rat_Ring}) : - p1 * - p2 = p1 * p2.
+Proof.
+    by apply mulrNN.
+Qed.
+
 
 (* END *)
