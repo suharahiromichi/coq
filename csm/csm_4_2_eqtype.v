@@ -262,11 +262,12 @@ Qed.
 
 (* 多項式型 *)
 
-Check {poly rat_Ring}.
-Lemma poly_mulrNN (p1 p2 : {poly rat_Ring}) : - p1 * - p2 = p1 * p2.
+Check polynomial_ringType rat_Ring : ringType.
+Lemma poly_mulrNN (p1 p2 : polynomial rat_Ring) : - p1 * - p2 = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
 
+Check {poly rat_Ring}.
 
 (* END *)
