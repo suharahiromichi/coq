@@ -220,7 +220,7 @@ rat             pair
                 ↑カノニカル
 rat_Ring                                ringType
 rat_ZmodType                            zmodType
-rat_countType   pair_countType          countType
+rat_countType   pair_countType                  countType
 rat_choiceType  pair_choiceType         choiceType
 rat_eqType      pair_eqType             eqType
  *)
@@ -263,11 +263,28 @@ Qed.
 (* 多項式型 *)
 
 Check polynomial_ringType rat_Ring : ringType.
+
 Lemma poly_mulrNN (p1 p2 : polynomial rat_Ring) : - p1 * - p2 = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
 
-Check {poly rat_Ring}.
+(* {poly R} は phantom type を使い、
+   R を ringTypeのカノニカル型に制限することを意味する。 *)
+Check {poly rat}.
+
+Definition p2 : {poly rat} := \poly_(i < 3) fracq (i%:Z, 2%:Z).
+(* (2/2)x^2 + (1/2)x + (0/2) *)
+
+Definition p3 : {poly rat} := \poly_(i < 2) fracq (i%:Z, 3%:Z).
+(* (1/3)x + (0/3) *)
+
+Check - p2 * - p3 : {poly rat}.
+Check - p2 * - p3 : polynomial rat_Ring.
+
+Lemma poly_mulrNN' (p1 p2 : {poly rat}) : - p1 * - p2 = p1 * p2.
+Proof.
+    by apply mulrNN.
+Qed.
 
 (* END *)
