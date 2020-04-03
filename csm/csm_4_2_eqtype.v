@@ -230,11 +230,10 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
-(* 以下全部要る *)
-Import intZmod.
-Import intOrdered.
-Import GRing.Theory.
-Open Scope ring_scope.
+Import intZmod.                             (* なくてもいいかも *)
+Import intOrdered.                          (* なくてもいいかも *)
+Import GRing.Theory.                        (* mulrNN を使えるようにする。 *)
+Open Scope ring_scope.                      (* 1%:Z *)
 
 
 (* 有理数型 *)
@@ -271,6 +270,7 @@ Qed.
 
 (* {poly R} は phantom type を使い、
    R を ringTypeのカノニカル型に制限することを意味する。 *)
+(* see. https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-phantom_types.v *)
 Check {poly rat}.
 
 Definition p2 : {poly rat} := \poly_(i < 3) fracq (i%:Z, 2%:Z).
