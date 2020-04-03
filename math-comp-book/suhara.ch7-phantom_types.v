@@ -1,98 +1,164 @@
-From mathcomp Require Import all_ssreflect.
+(**
+MathComp のおける Phantom Type の使用例
+============
 
-(* 5.11.1 Phantom types *)
+@suharahiromichi
+
+2020/04/03
+*)
+
+(**
+# 概要
+
+MathComp のおける Phantom Type の使用例を調べてみた。
+
+- {set T}
+- {perm T}
+- {ffun aT -> rT}
+- {poly R}
+
+ *)
+
+From mathcomp Require Import all_ssreflect.
+From mathcomp Require Import all_algebra.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+Set Printing All.
+
+(**
+# phantom の例
+
+mcb : 5.11.1 Phantom types
+ *)
 
 Inductive phantom (T : Type) (p : Type) := Phantom.
 Arguments phantom : clear implicits.
 
-(* 7. Hierarchies *)
-(* 7.4 Parameters and constructors *)
+(**
+``{set T}`` として、
+T に finType にカノニカルプロジェクションできる型だけを書きたい。
+ *)
+
+Definition set_of' (T : finType) (a : phantom Type (Finite.sort T)) := seq T.
+
+Notation "{ 'set' T }" := (@set_of' _ (Phantom _ T))
+                            (at level 0, format "{ 'set' T }") : type_scope.
+
+(**
+set_of' の引数を調べる：
+ *)
+
+(**
+T について、bool_finType は finType のインスタンスである。
+ *)
+Check bool_finType : finType.
+
+(**
+a について、
+
+``T = bool_finType`` の場合、 ``Finite.sort bool_finType`` は bool である。
+
+``a = Phantom Type bool`` は、 ``phantom Type bool`` の型を持つ。
+ *)
+Compute Equality.sort bool_finType.           (* = bool *)
+Check Phantom Type bool : phantom Type (Finite.sort bool_finType).
+Check Phantom Type bool : phantom Type bool.
+
+(**
+以上より、
+ *)
+Check @set_of' bool_finType (Phantom Type bool).
+
+(**
+カノニカルストラクチャで、bool_finType が見つかるので、引数は省略できる。
+
+``bool <- Finite.sort ( bool_finType )``
+ *)
+Check @set_of' _            (Phantom _    bool).
+
+(**
+構文糖を適用すると、
+ *)
+Check {set bool}.
+
+(**
+一方、 nat_finType が存在しないので、nat ではエラーになる。
+ *)
+Fail Check {set nat}.
+
+(**
+# phant の例
+
+こっちのほうが、よく使う。
+
+7. Hierarchies
+7.4 Parameters and constructors
+*)
 
 Inductive phant (p : Type) := Phant.
 
-(* *********** *)
-(* (1) phantom *)
-(* *********** *)
-(* {set p} として、p に  eqType にカノニカルプロジェクションできる型だけを書きたい。 *)
+(**
+## finset の例
+*)
 
-Definition set_of'' (T : eqType) (_ : phantom Type (Equality.sort T)) := seq T.
+(* ``{set T}`` として、
+T に  finType にカノニカルプロジェクションできる型だけを書きたい。
+ *)
 
-Notation "{ 'set' p }" := (set_of'' _ (Phantom _ p))
-                            (at level 0, format "{ 'set' p }") : type_scope.
+Definition set_of (T : finType) (a : phant T) := seq T.
 
-Check set_of'' nat_eqType (Phantom Type nat_eqType).
-Check set_of'' _          (Phantom _    nat_eqType).
-Check {set nat_eqType}.
+Notation "{ 'set' T }" := (@set_of _ (Phant T))
+                            (at level 0, format "{ 'set' T }") : type_scope.
 
-(* (1.1) *)
-Print Canonical Projections.
-(* nat <- Equality.sort ( nat_eqType ) である。 *)
-(* nat を書くことかできる。 *)
-Check set_of'' nat_eqType (Phantom Type nat).
-Check set_of'' _          (Phantom _    nat).
-Check {set nat}.
+(**
+set_of の引数を調べる：
+ *)
 
-(* (1.2) *)
-(* windrose 型は、カノニカルプロダクションが無いので、それを書くことができない。 *)
-Inductive windrose : predArgType := N | S | E | W.
-Fail Check set_of'' _ (Phantom _ windrose).
-Fail Check {set windrose}.
+(**
+T について、bool_finType は finType のインスタンスである。
+ *)
+Check bool_finType : finType.
 
-(* (1.3) ユニフィケーションの説明 *)
-(* set_of'' の最後の引数 *)
-Check Phantom _ nat : phantom Type nat.               (* 実引数 *)
-Check _             : phantom Type (Equality.sort _). (* 仮引数 *)
-(* カノニカルストラクチャで、nat_eqType が見つかる。 *)
-Check phantom Type (Equality.sort nat_eqType).
+(**
+a について、
 
+``T = bool_finType`` の場合、
 
-(* ********* *)
-(* (2) phant *)
-(* ********* *)
-(* {set p} として、p に  eqType にカノニカルプロジェクションできる型だけを書きたい。 *)
+a の型 ``phant bool_finType`` は、
+コアーションにより ``phant bool`` になるので、``a = Phant bool``
+ *)
+Check Phant bool : phant bool_finType.
+Check Phant bool : phant (Finite.sort bool_finType).
+Check Phant bool : phant bool.
 
-Definition set_of (T : eqType) (_ : phant (Equality.sort T)) := seq T.
+(**
+以上より、
+ *)
+Check @set_of bool_finType (Phant bool).
 
-Notation "{ 'set' p }" := (set_of _ (Phant p))
-                            (at level 0, format "{ 'set' p }") : type_scope.
+(**
+カノニカルストラクチャで、bool_finType が見つかるので、引数は省略できる。
 
-Check set_of nat_eqType (Phant nat_eqType).
-Check set_of _          (Phant nat_eqType).
-Check {set nat_eqType}.
+``bool <- Finite.sort ( bool_finType )``
+ *)
+Check @set_of _            (Phant bool).
 
-(* (2.1) *)
-Print Canonical Projections.
-(* nat <- Equality.sort ( nat_eqType ) である。 *)
-(* nat を書くことかできる。 *)
-Check set_of nat_eqType (Phant nat).
-Check set_of _          (Phant nat).
-Check {set nat}.
+(**
+構文糖を適用すると、
+ *)
+Check {set bool}.
 
-(* (2.2) *)
-(* windrose 型は、カノニカルプロダクションが無いので、それを書くことができない。 *)
-Fail Check set_of _ (Phant _ windrose).
-Fail Check {set windrose}.
-
-(* (2.3) ユニフィケーションの説明 *)
-(* set_of の最後の引数 *)
-Check Phant nat : phant nat.               (* 実引数 *)
-Check _         : phant (Equality.sort _). (* 仮引数 *)
-(* カノニカルストラクチャで、nat_eqType が見つかる。 *)
-Check phant (Equality.sort nat_eqType).
+(**
+一方、nat_finType が存在しないので、nat ではエラーになる。
+ *)
+Fail Check {set nat}.
 
 
-(* ******************************* *)
-(* (3) ファントムタイプを使わない例 *)
-(* ******************************* *)
-(* カノニカルストラクチャが機能しないので、nat を引数にとれない。 *)
-Definition set_of' (T : eqType) := seq T.
-Check set_of' nat_eqType.
-Fail Check set_of' nat.
-
-
-(* *************** *)
-(* (4) finfun の例 *)
-(* *************** *)
+(**
+## finfun の例
+ *)
 
 (*
 Section Def.
@@ -102,32 +168,56 @@ Definition finfun_of of phant (aT -> rT) := finfun_type.
 End Def.
 *)
 
-(* {ffin p -> q} として、p が finType にカノニカルプロジェクションできること。 *)
-Inductive finfun_type (aT : finType) (rT : Type) : predArgType := Finfun of #|aT|.-tuple rT.
+(**
+``{ffin aT -> rT}`` として、
+aT が finType にカノニカルプロジェクションできること。
+ *)
 
-Definition finfun_of (aT : finType) (rT : Type) (_ : phant (Finite.sort aT -> rT)) :=
+Inductive finfun_type (aT : finType) (rT : Type) : predArgType :=
+  Finfun of #|aT|.-tuple rT.
+Definition finfun_of (aT : finType) (rT : Type) (a : phant (aT -> rT)) :=
   finfun_type aT rT.
-(*
-コアーションを見越した場合
-[Finite.sort] : Finite.type >-> Sortclass
-Definition finfun_of (aT : finType) (rT : Type) (_ : phant (aT -> rT)) :=
-  finfun_type aT rT.
-*)
 
-Notation "{ 'ffun' fT }" := (finfun_of _ _ (Phant fT))
+Notation "{ 'ffun' fT }" := (@finfun_of _ _ (Phant fT))
   (at level 0, format "{ 'ffun'  '[hv' fT ']' }") : type_scope.
 
-Check finfun_of bool_finType nat (Phant (bool_finType -> nat)).
-Check finfun_of bool_finType nat (Phant (bool -> nat)).
+(**
+finfun_of の引数を調べる：
+
+aT について、bool_finType は finType のインスタンスである。
+ *)
+Check bool_finType : finType.
+
+(**
+rT について、
+ *)
+Check nat : Type.
+
+(**
+``aT = bool_finType`` ``rT = nat`` のとき、
+
+a の型 ``phant (bool_finType -> nat)`` は、
+コアーションにより ``phant (bool -> nat)`` になるので、``a = Phant (bool -> nat)``
+ *)
+Check Phant (bool -> nat) : phant (bool_finType -> nat).
+Check Phant (bool -> nat) : phant ((Finite.sort bool_finType) -> nat).
+Check Phant (bool -> nat) : phant (bool -> nat).
+
+(**
+以上より、
+ *)
+Check @finfun_of bool_finType nat (Phant (bool -> nat)).
+
+(**
+カノニカルストラクチャで、bool_finType が見つかるので、引数は省略できる。
+
+``bool <- Finite.sort ( bool_finType )``
+ *)
+Check @finfun_of _            _   (Phant (bool -> nat)).
+
+(**
+構文糖を適用すると、
+ *)
 Check {ffun bool -> nat}.
-
-(* finfun_of の最後の引数 *)
-Check Phant (bool -> nat).                  (* 実引数 *)
-Check Phant (Finite.sort _ -> nat).         (* 仮引数 *)
-(* カノニカルストラクチャで、bool_finType が見つかる。 *)
-Check Phant (Finite.sort bool_finType -> nat).
-
-(* nat は finType にカノニカルプロジェクションできない。 *)
-Fail Check {ffun nat -> nat}.
 
 (* END *)
