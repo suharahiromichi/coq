@@ -236,7 +236,7 @@ Import GRing.Theory.                        (* mulrNN を使えるようにす�
 Open Scope ring_scope.                      (* 1%:Z *)
 
 
-(* 有理数型 *)
+(* # 有理数型 *)
 
 Definition q1_3 := fracq (1%:Z, 3%:Z).
 Definition q2_6 := fracq (2%:Z, 6%:Z).
@@ -252,6 +252,8 @@ Proof.
     by apply/eqP.
 Qed.
 
+(* ## 有理数における (−a)(−b) = ab *)
+
 Check rat_Ring : ringType.               (* rat_RingType ではない。 *)
 Lemma rat_mulrNN (q1 q2 : rat) : - q1 * - q2 = q1 * q2.
 Proof.
@@ -259,19 +261,58 @@ Proof.
 Qed.
 
 
-(* 多項式型 *)
+(* # 多項式型 *)
+
+(* ## 多項式における (−a)(−b) = ab *)
 
 Check polynomial_ringType rat_Ring : ringType.
-
-Lemma poly_mulrNN (p1 p2 : polynomial rat_Ring) : - p1 * - p2 = p1 * p2.
+Lemma poly_mulrNN' (p1 p2 : polynomial rat_Ring) : - p1 * - p2 = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
 
-(* {poly R} は phantom type を使い、
-   R を ringTypeのカノニカル型に制限することを意味する。 *)
-(* see. https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-phantom_types.v *)
+(* Phantom Type ファントムタイプ *)
+
+Lemma poly_mulrNN (p1 p2 : {poly rat}) : - p1 * - p2 = p1 * p2.
+Proof.
+    by apply mulrNN.
+Qed.
+
+(* {poly R} は phantom type を使い、R を ringTypeのカノニカル型に制限することを意味する。
+
+see. https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-phantom_types.v
+ *)
+
+(* {poly R} は poly_of の構文糖衣であることが判る。 *)
+Set Printing All.
 Check {poly rat}.
+Check @poly_of rat_Ring (Phant rat).
+
+(* poly_of は R に加えて、使われない a という引数をとる。 *)
+Print poly_of.
+(* poly_of (R : ringType) (a : phant (sort R)) := polynomial R. *)
+(* 実際の定義では、(sort R) がコアーションで省略されている *)
+(* poly_of (R : ringType) (a : phant R) := polynomial R. *)
+
+(* a の型は phant R だが、これは普通にインダクティブに定義されている。 *)
+Print phant.
+(*
+Inductive phant (p : Type) : Prop :=
+| Phant : phant p
+
+コンストラクタとしては難しくない。
+*)
+Check Phant rat : phant rat.                (* ここに省略はない。 *)
+
+(* poly_of の定義から a の型が ``phant rat_Ring`` であるが、
+   poly_of の定義側のコアーションで上記でよいことになる。
+   これができるかどうか、ring型に変換できるかどうか、をチェックしているこになる。 *)
+Check Phant rat : phant rat_Ring.
+Check Phant rat : phant (GRing.Ring.sort rat_Ring).
+Check Phant rat : phant rat.
+
+
+(* ## 多項式の計算例： *)
 
 Definition p2 : {poly rat} := \poly_(i < 3) fracq (i%:Z, 2%:Z).
 (* (2/2)x^2 + (1/2)x + (0/2) *)
@@ -281,10 +322,6 @@ Definition p3 : {poly rat} := \poly_(i < 2) fracq (i%:Z, 3%:Z).
 
 Check - p2 * - p3 : {poly rat}.
 Check - p2 * - p3 : polynomial rat_Ring.
-
-Lemma poly_mulrNN' (p1 p2 : {poly rat}) : - p1 * - p2 = p1 * p2.
-Proof.
-    by apply mulrNN.
-Qed.
+(* Compute すると、終わらない。 *)
 
 (* END *)
