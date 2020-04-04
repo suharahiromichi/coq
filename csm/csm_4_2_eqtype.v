@@ -206,7 +206,7 @@ ordinal_eqType  fintype.v
 *)
 
 (* ************************** *)
-(* モチベーション維持のためにw *)
+(* モチベーション維持のために  *)
 (* ************************** *)
 
 From mathcomp Require Import all_ssreflect.
@@ -233,7 +233,7 @@ Unset Printing Implicit Defensive.
 Import intZmod.                             (* なくてもいいかも *)
 Import intOrdered.                          (* なくてもいいかも *)
 Import GRing.Theory.                        (* mulrNN を使えるようにする。 *)
-Open Scope ring_scope.                      (* 1%:Z *)
+Open Scope ring_scope.                      (* 1%:Z を使えるようにする。 *)
 
 
 (* # 有理数型 *)
@@ -251,6 +251,7 @@ Proof.
   Fail reflexivity.
     by apply/eqP.
 Qed.
+
 
 (* ## 有理数における (−a)(−b) = ab *)
 
@@ -286,30 +287,52 @@ see. https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch
 (* {poly R} は poly_of の構文糖衣であることが判る。 *)
 Set Printing All.
 Check {poly rat}.
-Check @poly_of rat_Ring (Phant rat).
+Check @poly_of _        (Phant rat).        (* 構文糖を展開する。 *)
+Check @poly_of rat_Ring (Phant rat). (* カノニカルプロジェクションで、引数を補完した。 *)
+(* このカノニカルプロジェクションをおこなうために、
+   poly_of には、後述する（使われない）二つ目の引数 a : phant R がある。 *)
 
-(* poly_of は R に加えて、使われない a という引数をとる。 *)
-Print poly_of.
-(* poly_of (R : ringType) (a : phant (sort R)) := polynomial R. *)
-(* 実際の定義では、(sort R) がコアーションで省略されている *)
-(* poly_of (R : ringType) (a : phant R) := polynomial R. *)
-
-(* a の型は phant R だが、これは普通にインダクティブに定義されている。 *)
+(* Phant が出てくるが、これは普通にインダクティブに定義されている。 *)
 Print phant.
 (*
-Inductive phant (p : Type) : Prop :=
-| Phant : phant p
+Variant phant (p : Type) : Prop := Phant : phant p
+
+Coqの基本的な書き方に修正すると：
+
+Inductive phant : Type -> Prop :=
+| Phant p : phant p.
 
 コンストラクタとしては難しくない。
 *)
 Check Phant rat : phant rat.                (* ここに省略はない。 *)
 
-(* poly_of の定義から a の型が ``phant rat_Ring`` であるが、
-   poly_of の定義側のコアーションで上記でよいことになる。
-   これができるかどうか、ring型に変換できるかどうか、をチェックしているこになる。 *)
-Check Phant rat : phant rat_Ring.
-Check Phant rat : phant (GRing.Ring.sort rat_Ring).
+(* poly_of は R に加えて、使われない a という引数をとる。 *)
+Print poly_of.
+(* poly_of (R : ringType) (a : phant R) := polynomial R.
+   phant の引数は Type なので、コアーションが機能する。
+   poly_of (R : ringType) (a : phant (GRing.Ring.sort R)) := polynomial R. *)
+
+(* poly_of の定義から、
+   a の型は ``phant rat_Ring`` であるけれど、コアーションを考慮すると、 
+   a の型は ``phant rat`` でよいことになる。
+ *)
+Check Phant rat : phant rat_Ring.           (* コアーションあり *)
+Check Phant rat : phant (GRing.Ring.sort rat_Ring). (* 省略なし。 *)
+Check Phant rat : phant rat.                        (* 省略なし。 *)
+
+
+(* このことは、カノニカルプロジェクションの意味では、「==」と同じで、 *)
+Check true : bool.
+(*           ^^^^ *)
+Check true == true.
+Check @eq_op bool_eqType true true.
+(*           ^^^^^^^^^^^ *)
+(* と *)
 Check Phant rat : phant rat.
+(*                      ^^^ *)
+Check @poly_of rat_Ring (Phant rat).
+(*             ^^^^^^^^ *)
+(* の類似で納得できるだろうか。 *)
 
 
 (* ## 多項式の計算例： *)
