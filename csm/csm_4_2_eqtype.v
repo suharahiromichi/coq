@@ -111,8 +111,11 @@ Check eq_irrelevance  : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
 
 
 (**
-# pcancel や cancel から eqType を定義する：
+# injective や、 cancel、pcancel から eqType を定義する：
 
+以下では、nat との injective と pcancel (部分キャンセル) を使う。 
+
+'I_n との canel を使う例（bool と のcanelを使う場合も同様である)。
 https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-windrose-2.v
 *)
 
@@ -120,36 +123,46 @@ Inductive balle :=
 | rouge  (* red ball, la balle rouge, 紅玉 *)
 | blanc. (* white ball, la balle blanc, 白玉 *)
 
-Definition balle2bool (b : balle) : bool :=
+Fail Compute rouge == blanc.                (* == が定義されていない。 *)
+
+Definition balle2nat (b : balle) : nat :=
   match b with
-  | rouge => true
-  | blanc => false
+  | rouge => 1
+  | blanc => 0
   end.
 
-Definition bool2balle (b : bool) : balle :=
+Definition nat2balle (b : nat) : option balle :=
   match b with
-  | true => rouge
-  | false => blanc
+  | 1 => Some rouge
+  | 0 => Some blanc
+  | _ => None
   end.
 
-(* balle2bool の単射性をつかってballe_eqTypeを定義する。 *)
-Lemma inj_b2b : injective balle2bool.
+(* balle2nat の単射性をつかってballe_eqTypeを定義する。 *)
+Lemma inj_b2n : injective balle2nat.
 Proof. by case; case. Qed.
 
-Definition balle_eqMixin := InjEqMixin inj_b2b.
+Definition balle_eqMixin := InjEqMixin inj_b2n.
 Canonical balle_eqType := EqType balle balle_eqMixin.
 
-(* balle2bool と bool2balle が逆であることをつかってballe_eqTypeを定義する。 *)
-Lemma can_b2b : cancel balle2bool bool2balle.
+Compute rouge == blanc.                     (* == が定義される。 *)
+Compute eq_op rouge blanc.
+Print Canonical Projections.
+(* balle <- Equality.sort ( balle_eqType ) *)
+Compute @eq_op balle_eqType rouge blanc. (* カノニカルプロジェクションが使われている。 *)
+
+(* balle2nat と nat2balle が逆であることをつかってballe_eqTypeを定義する。 *)
+Lemma pcan_b2n : pcancel balle2nat nat2balle.
 Proof. by case. Qed.
 
-Definition balle_eqMixin' := CanEqMixin can_b2b.
+Definition balle_eqMixin' := PcanEqMixin pcan_b2n.
 Canonical balle_eqType' := EqType balle balle_eqMixin'.
+(* この場合も、inj_b2n の場合と同様に、== が定義される。 *)
 
 (*
-eqType の公理から balle_eqType を定義する。
+bool の equal (balle_eqb) を定義し、
+eqTypeの公理を満たすインスタンスとして balle_eqType を定義する。
 *)
-
 Definition balle_eqb (x y : balle) : bool :=
   match (x, y) with
   | (rouge, rouge) => true
@@ -162,7 +175,7 @@ Proof. apply: (iffP idP); by case: x; case y. Qed.
 
 Definition balle_eqMixin'' := EqMixin balle_eqb_spec.
 Canonical balle_eqType'' := EqType balle balle_eqMixin''.
-
+(* この場合も、inj_b2n の場合と同様に、== が定義される。 *)
 
 (**
 # eqType型のインスタンス
