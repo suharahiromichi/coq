@@ -60,6 +60,9 @@ Check Phant bool : phant bool.
 T に  finType にカノニカルプロジェクションできる型だけを書きたい。
  *)
 
+Definition set_of'' (T : finType) (a : (phant (Finite.sort T))) := seq T.
+Arguments set_of'' : clear implicits.
+(* Finite.sort はコアーションで省略できる。 *)
 Definition set_of (T : finType) (a : phant T) := seq T.
 Arguments set_of : clear implicits.
 
