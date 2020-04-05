@@ -51,9 +51,28 @@ eqType に対して使える定理
  *)
 
 (**
+## eqE （== を Equality.op に書き換える補題） 使うのか？
+eq_op (==) に適用するという意味では、ジェネリックである。
+ *)
+Goal forall n, n.+1 == n.+1.
+Proof.
+  move=> n.
+  rewrite /=.                               (* 変わらない。 *)
+  rewrite !eqE.
+  rewrite /=.                               (* n == n になる。 *)
+  rewrite -!eqE.
+  done.
+Qed.
+Check eqbE.                                 (* eqb 専用 *)
+Check eqnE.                                 (* eqn 専用 *)
+
+(**
 ## eqP (= と == に間を変換する)
+eq_op (==) に適用するという意味では、ジェネリックである。
  *)
 Check @eqP : forall (T : eqType) (x y : T), reflect (x = y) (x == y).
+Check eqbP.                                 (* eqb 専用 *)
+Check eqnP.                                 (* eqn 専用 *)
 
 Lemma test : forall (x y : nat), x == y -> x + y == y + y.
 Proof. move=> x y. by move=> /eqP ->. Qed.
@@ -71,6 +90,23 @@ Qed.
  *)
 Check eq_refl : forall (T : eqType) (x : T), x == x.
 Check eq_sym  : forall (T : eqType) (x y : T), (x == y) = (y == x).
+
+(**
+## inj_eq (f が単射、キャンセル可能、全単射 なら、(f x == f y) = (x = y))
+
+これらは、よく使うと思う。
+ *)
+Check inj_eq.                               (* 単射 *)
+Check can_eq.                               (* キャンセル可能 *)
+Check bij_eq.                               (* 全単射 *)
+
+(* それぞれの意味は、以下による。  *)
+Print injective.         (* f x1 = f x2 -> x1 = x2 *)
+Print cancel.            (* g (f x) = x *)
+Print bijective.         (* cancel f g -> cancel g f -> bijective f *)
+(* 単射の逆は必ずなりたつ。 *)
+Check f_equal.           (* x = y -> f x = f y *)
+
 
 (**
 ## contraXX (== に関する対偶)
