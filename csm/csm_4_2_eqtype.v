@@ -279,11 +279,15 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
-Import intZmod.                             (* なくてもいいかも *)
-Import intOrdered.                          (* なくてもいいかも *)
-Import GRing.Theory.                        (* mulrNN を使えるようにする。 *)
-Open Scope ring_scope.                      (* 1%:Z を使えるようにする。 *)
-
+(* ssralg.v *)
+Import GRing.Theory.                 (* mulrNN を使えるようにする。 *)
+(* ssrnum.v *)
+Import Num.Theory.                   (* normr0_eq0 などを使えるようにする。 *)
+(* ssrint.v *)
+Import intZmod.                        (* addz など *)
+Import intRing.                        (* mulz など *)
+Import intOrdered.                     (* lez など *)
+Open Scope ring_scope.                 (* 1%:Z を使えるようにする。 *)
 
 (* # 有理数型 *)
 
