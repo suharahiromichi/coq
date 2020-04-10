@@ -58,20 +58,27 @@ Qed.
 ## 補題 : 9x + 99y + 999z は3の倍数である。
  *)
 
+(* これは使わない。 *)
 Lemma dvdn3_s99 (n : nat) : 3 %| \sum_(1 <= i < n.+2)(10^i - 1).
 Proof.
   elim: n => [| n IHn].
   - by rewrite big_nat1.
-  - rewrite big_nat_recr.
-    rewrite dvdn_addl.
-    + done.
-    + apply: dvdn3_99.
-    + done.
+  - rewrite big_nat_recr //.
+    rewrite dvdn_addl //.
+      by apply: dvdn3_99.
 Qed.
 
 Lemma dvdn3_s99x (n : nat) : 3 %| \sum_(1 <= i < n.+2)((10^i - 1) * (x i)).
 Proof.
-  Admitted.
+  elim: n => [| n IHn].
+  - rewrite big_nat1.
+    apply: dvdn_mulr.
+      by apply: dvdn3_99.
+  - rewrite big_nat_recr //.
+    + rewrite dvdn_addl //.
+      rewrite dvdn_mulr //.
+        by apply: dvdn3_99.
+Qed.
 
 (**
 ## 補題 : 10x + 100y + 1000z = 9x + 99y + 999z + x + y + z
@@ -91,13 +98,30 @@ Proof.
 Qed.
 
 Lemma s100x__s99x_x (n : nat) :
-  \sum_(1 <= i < n)(10^i * (x i)) =
-  \sum_(1 <= i < n)((10^i - 1) * (x i)) + \sum_(1 <= i < n)(x i).
+  \sum_(1 <= i < n.+2)(10^i * (x i)) =
+  \sum_(1 <= i < n.+2)((10^i - 1) * (x i) + (x i)).
 Proof.
   Admitted.
 
+
+Lemma s100x__s99x_sx (n : nat) :
+  \sum_(1 <= i < n.+2)(10^i * (x i)) =
+  \sum_(1 <= i < n.+2)((10^i - 1) * (x i)) + \sum_(1 <= i < n.+2)(x i).
+Proof.
+  elim: n => [| n IHn].
+  - rewrite !big_nat1.
+    rewrite -{3}[x 1]mul1n.
+      by rewrite -mulnDl.
+  - rewrite big_nat_recr.
+    rewrite [\sum_(1 <= i < n.+3) (10 ^ i - 1) * x i]big_nat_recr.
+    rewrite [\sum_(1 <= i < n.+3) x i]big_nat_recr.
+    rewrite -addnA.
+    
+  Admitted.
+
 (**
-## 定理
+## 補題 : 10x + 100y + 1000z が3で割りきれることと、
+x + y + z が3で割りきれることは、同値である。
  *)
 Goal forall (n : nat), (3 %| \sum_(1 <= i < n.+2)(10^i * (x i))) =
                        (3 %| \sum_(1 <= i < n.+2)(x i)).
@@ -107,6 +131,16 @@ Proof.
   rewrite dvdn_addr //.
     by apply: dvdn3_s99x.
 Qed.
+
+(**
+## 定理 : u + 10x + 100y + 1000z が3で割りきれることと、
+u + x + y + z が3で割りきれることは、同値である。
+ *)
+
+
+
+
+
 
 (*
 
