@@ -17,6 +17,7 @@ Unset Printing Implicit Defensive.
 (**
 # 証明
 *)
+Section multiple_of_3.
 
 Variable x : nat -> nat.
 
@@ -101,33 +102,37 @@ Lemma s100x__s99x_x (n : nat) :
   \sum_(1 <= i < n.+2)(10^i * (x i)) =
   \sum_(1 <= i < n.+2)((10^i - 1) * (x i) + (x i)).
 Proof.
-  Admitted.
+  elim: n => [| n IHn].
+  - by rewrite 2!big_nat1 l_100x__99x_x.
+  - rewrite big_nat_recr //=.
+    rewrite [\sum_(1 <= i < n.+3) ((10 ^ i - 1) * x i + x i)]big_nat_recr //=.
+    have <- : 10 ^ n.+2 * x n.+2 = (10 ^ n.+2 - 1) * x n.+2 + x n.+2
+      by rewrite -{3}[x n.+2]mul1n -[(10 ^ n.+2 - 1) * x n.+2 + 1 * x n.+2]mulnDl
+         -l_100__99_1.
+      by rewrite -IHn.
+Qed.
 
+Lemma s__s_s (n : nat) (F G : nat -> nat) :
+  \sum_(1 <= i < n)(F i + G i) = 
+  \sum_(1 <= i < n)(F i) + \sum_(1 <= i < n)(G i).
+Proof.
+Admitted.
 
 Lemma s100x__s99x_sx (n : nat) :
   \sum_(1 <= i < n.+2)(10^i * (x i)) =
   \sum_(1 <= i < n.+2)((10^i - 1) * (x i)) + \sum_(1 <= i < n.+2)(x i).
 Proof.
-  elim: n => [| n IHn].
-  - rewrite !big_nat1.
-    rewrite -{3}[x 1]mul1n.
-      by rewrite -mulnDl.
-  - rewrite big_nat_recr.
-    rewrite [\sum_(1 <= i < n.+3) (10 ^ i - 1) * x i]big_nat_recr.
-    rewrite [\sum_(1 <= i < n.+3) x i]big_nat_recr.
-    rewrite -addnA.
-    
-  Admitted.
+    by rewrite -s__s_s s100x__s99x_x.
+Qed.
 
 (**
 ## 補題 : 10x + 100y + 1000z が3で割りきれることと、
 x + y + z が3で割りきれることは、同値である。
  *)
-Goal forall (n : nat), (3 %| \sum_(1 <= i < n.+2)(10^i * (x i))) =
-                       (3 %| \sum_(1 <= i < n.+2)(x i)).
+Lemma mo3 (n : nat) : (3 %| \sum_(1 <= i < n.+2)(10^i * (x i))) =
+                      (3 %| \sum_(1 <= i < n.+2)(x i)).
 Proof.
-  move=> n.
-  rewrite s100x__s99x_x.
+  rewrite s100x__s99x_sx.
   rewrite dvdn_addr //.
     by apply: dvdn3_s99x.
 Qed.
@@ -137,14 +142,13 @@ Qed.
 u + x + y + z が3で割りきれることは、同値である。
  *)
 
+(* *************************** *)
+(* *************************** *)
 
 
+(* 具体的な数についての証明 *)
 
-
-
-(*
-
-Lemma test100 x : (3 %| x) = (3 %| 100 * x).
+Lemma test100 (x2 : nat) : (3 %| x2) = (3 %| 100 * x2).
 Proof.
   have -> : 100 = 99 + 1 by [].
   rewrite mulnDl mul1n.
@@ -152,7 +156,7 @@ Proof.
     by rewrite dvdn_mulr.
 Qed.
 
-Lemma test10 x : (3 %| x) = (3 %| 10 * x).
+Lemma test10 x1 : (3 %| x1) = (3 %| 10 * x1).
 Proof.
   have -> : 10 = 9 + 1 by [].
   rewrite mulnDl mul1n.
@@ -160,86 +164,6 @@ Proof.
     by rewrite dvdn_mulr.
 Qed.
 
+End multiple_of_3.
 
-Goal forall x y z, 3 %| x -> 3 %| y -> 3 %| z ->
-                   (3 %| (100 * x + 10 * y + z)).
-Proof.
-  move=> x y z Hx Hy Hz.
-  rewrite dvdn_addl.
-  - rewrite dvdn_addl.
-    + by rewrite -test100.
-    + by rewrite -test10.
-  - done.
-Qed.  
-
-Goal forall x y z, (3 %| (x + y + z)) = (3 %| (100 * x + 10 * y + z)).
-Proof.
-Admitted.
-
-
-Lemma testXY x y : 3 %| x -> 3 %| y -> 3 %| (x + y).
-Proof.
-  move=> Hx Hy.
-    by rewrite dvdn_addl.
-Qed.
-
-Goal forall a b x y, 3 %| (a + b) = (3 %| (x + y)).
-Proof.
-  move=> a b x y.
-  apply/idP/idP => H.
-  - apply: testXY.
-  
-
-
-
-(* ******************************** *)
-
-
-Lemma test2 n : 0 < 10^n.
-Proof.
-  elim: n => // n IHn.
-  rewrite expnS.
-  rewrite -{1}(muln0 10).
-    by rewrite ltn_pmul2l.
-Qed.
-
-Lemma dvdn3_99 n : 3 %| (10^n - 1).
-Proof.
-  elim: n => //.
-  move=> n IHn.
-  rewrite expnS.
-  have {1}-> : 10 = 9 + 1 by [].
-  rewrite mulnDl.
-  rewrite mul1n.
-  rewrite -addnBA.
-  - rewrite dvdn_addr.
-    + done.
-    + Search _ (_ %| _ * _).
-        by rewrite dvdn_mulr.
-  - apply: test2.
-Qed.
-
-Lemma test n : 10 ^ n = 10 ^ n - 1 + 1.
-Proof.
-  rewrite addn1 subn1 prednK //.
-  by apply: test2.
-Qed.
-
-Goal forall x n, (3 %| x) = (3 %| 10^n * x).
-Proof.
-  move=> x n.
-  have -> : 10^n = (10^n - 1) + 1 by apply: test.
-    by rewrite mulnDl mul1n dvdn_addr // dvdn_mulr // dvdn3_99.
-Qed.
-
-Goal forall x, (3 %| x) = (3 %| 10 * x).
-Proof.
-  move=> x.
-  have -> : 10 = 9 + 1 by [].
-  rewrite mulnDl mul1n.
-  rewrite dvdn_addr => //=.
-    by rewrite dvdn_mulr.
-Qed.
-
- *)
-  
+(* END *)
