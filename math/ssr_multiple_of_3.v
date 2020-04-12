@@ -116,7 +116,9 @@ Lemma s__s_s (n : nat) (F G : nat -> nat) :
   \sum_(1 <= i < n)(F i + G i) = 
   \sum_(1 <= i < n)(F i) + \sum_(1 <= i < n)(G i).
 Proof.
-Admitted.
+  rewrite big_split /=.
+  done.
+Qed.
 
 Lemma s100x__s99x_sx (n : nat) :
   \sum_(1 <= i < n.+2)(10^i * (x i)) =
