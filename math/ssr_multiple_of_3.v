@@ -15,14 +15,30 @@ Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
 (**
-# 証明
+# 問題
 *)
 Section multiple_of_3.
 
 Variable x : nat -> nat.
 
 (**
-## 補題： 9x, 99x, 999x は3の倍数である。
+以下において、0 (= 0x) は、3の倍数であるとします。
+*)
+
+Check forall (n : nat), (3 %| \sum_(0 <= i < n.+1)(10^i * (x i))) =
+                        (3 %| \sum_(0 <= i < n.+1)(x i)).
+
+(**
+を証明すればよいことになります。
+*)
+
+
+(**
+# 証明
+*)
+
+(**
+## 補題： 0x, 9y, 99z は3の倍数である。
  *)
 
 Lemma gt_exp m n : 0 < m -> 0 < m^n.
@@ -56,11 +72,11 @@ Proof.
 Qed.
 
 (**
-## 補題 : 9x + 99y + 999z は3の倍数である。
+## 補題 : 0x + 9y + 99z は3の倍数である。
  *)
 
 (* これは使わない。 *)
-Lemma dvdn3_s99 (n : nat) : 3 %| \sum_(1 <= i < n.+2)(10^i - 1).
+Lemma dvdn3_s99 (n : nat) : 3 %| \sum_(0 <= i < n.+1)(10^i - 1).
 Proof.
   elim: n => [| n IHn].
   - by rewrite big_nat1.
@@ -69,7 +85,7 @@ Proof.
       by apply: dvdn3_99.
 Qed.
 
-Lemma dvdn3_s99x (n : nat) : 3 %| \sum_(1 <= i < n.+2)((10^i - 1) * (x i)).
+Lemma dvdn3_s99x (n : nat) : 3 %| \sum_(0 <= i < n.+1)((10^i - 1) * (x i)).
 Proof.
   elim: n => [| n IHn].
   - rewrite big_nat1.
@@ -82,7 +98,7 @@ Proof.
 Qed.
 
 (**
-## 補題 : 10x + 100y + 1000z = 9x + 99y + 999z + x + y + z
+## 補題 : x + 10y + 100z = 0x + 9y + 99z + x + y + z
 *)
 
 Lemma l_100__99_1 (n : nat) : 10 ^ n = 10 ^ n - 1 + 1.
@@ -99,50 +115,45 @@ Proof.
 Qed.
 
 Lemma s100x__s99x_x (n : nat) :
-  \sum_(1 <= i < n.+2)(10^i * (x i)) =
-  \sum_(1 <= i < n.+2)((10^i - 1) * (x i) + (x i)).
+  \sum_(0 <= i < n.+1)(10^i * (x i)) =
+  \sum_(0 <= i < n.+1)((10^i - 1) * (x i) + (x i)).
 Proof.
   elim: n => [| n IHn].
   - by rewrite 2!big_nat1 l_100x__99x_x.
   - rewrite big_nat_recr //=.
-    rewrite [\sum_(1 <= i < n.+3) ((10 ^ i - 1) * x i + x i)]big_nat_recr //=.
-    have <- : 10 ^ n.+2 * x n.+2 = (10 ^ n.+2 - 1) * x n.+2 + x n.+2
-      by rewrite -{3}[x n.+2]mul1n -[(10 ^ n.+2 - 1) * x n.+2 + 1 * x n.+2]mulnDl
+    rewrite [\sum_(0 <= i < n.+2) ((10 ^ i - 1) * x i + x i)]big_nat_recr //=.
+    have <- : 10 ^ n.+1 * x n.+1 = (10 ^ n.+1 - 1) * x n.+1 + x n.+1
+      by rewrite -{3}[x n.+1]mul1n -[(10 ^ n.+1 - 1) * x n.+1 + 1 * x n.+1]mulnDl
          -l_100__99_1.
       by rewrite -IHn.
 Qed.
 
 Lemma s__s_s (n : nat) (F G : nat -> nat) :
-  \sum_(1 <= i < n)(F i + G i) = 
-  \sum_(1 <= i < n)(F i) + \sum_(1 <= i < n)(G i).
+  \sum_(0 <= i < n)(F i + G i) = 
+  \sum_(0 <= i < n)(F i) + \sum_(0 <= i < n)(G i).
 Proof.
   rewrite big_split /=.
   done.
 Qed.
 
 Lemma s100x__s99x_sx (n : nat) :
-  \sum_(1 <= i < n.+2)(10^i * (x i)) =
-  \sum_(1 <= i < n.+2)((10^i - 1) * (x i)) + \sum_(1 <= i < n.+2)(x i).
+  \sum_(0 <= i < n.+1)(10^i * (x i)) =
+  \sum_(0 <= i < n.+1)((10^i - 1) * (x i)) + \sum_(0 <= i < n.+1)(x i).
 Proof.
     by rewrite -s__s_s s100x__s99x_x.
 Qed.
 
 (**
-## 補題 : 10x + 100y + 1000z が3で割りきれることと、
+## 定理 : x + 10y + 100z が3で割りきれることと、
 x + y + z が3で割りきれることは、同値である。
  *)
-Lemma mo3 (n : nat) : (3 %| \sum_(1 <= i < n.+2)(10^i * (x i))) =
-                      (3 %| \sum_(1 <= i < n.+2)(x i)).
+Lemma mo3 (n : nat) : (3 %| \sum_(0 <= i < n.+1)(10^i * (x i))) =
+                      (3 %| \sum_(0 <= i < n.+1)(x i)).
 Proof.
   rewrite s100x__s99x_sx.
   rewrite dvdn_addr //.
     by apply: dvdn3_s99x.
 Qed.
-
-(**
-## 定理 : u + 10x + 100y + 1000z が3で割りきれることと、
-u + x + y + z が3で割りきれることは、同値である。
- *)
 
 (* *************************** *)
 (* *************************** *)
