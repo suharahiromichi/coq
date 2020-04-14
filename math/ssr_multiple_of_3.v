@@ -55,6 +55,9 @@ Check forall (n : nat), (3 %| \sum_(0 <= i < n.+1)(10^i * (x i))) =
 (**
 を証明すればよいことになります。
 以下において、0 は 3の倍数であるとします。
+
+また、``i = 0 to n`` を ``0 <= i < n.+1`` とするのは、
+big operator の補題 big_nat1 を使えるようにするためです。
 *)
 
 (**
@@ -62,8 +65,11 @@ Check forall (n : nat), (3 %| \sum_(0 <= i < n.+1)(10^i * (x i))) =
 *)
 
 (**
-## 補題 : ``0*x0 + 9*x1 + 99*x2 + 999*x3`` は3の倍数である。
+## 補題 1.
 
+``0*x0 + 9*x1 + 99*x2 + 999*x3`` は3の倍数である。
+
+3の倍数問題の根幹となる補題です。
 0, 9, 99, 999 に、任意の自然数 xi を掛けたものの和が、3の倍数になることを証明します。
 *)
 
@@ -71,9 +77,7 @@ Lemma gt_exp m n : 0 < m -> 0 < m^n.
 Proof.
   move=> H.
   elim: n => // n IHn.
-  rewrite expnS.
-  rewrite -{1}(muln0 m).
-    by rewrite ltn_pmul2l.
+    by rewrite expnS -{1}(muln0 m)ltn_pmul2l.
 Qed.
 
 Lemma dvdn3_99 n : 3 %| (10^n - 1).
@@ -82,12 +86,8 @@ Proof.
   move=> n IHn.
   rewrite expnS.
   have {1}-> : 10 = 9 + 1 by [].
-  rewrite mulnDl.
-  rewrite mul1n.
-  rewrite -addnBA.
-  - rewrite dvdn_addr.
-    + done.
-    + by rewrite dvdn_mulr.
+  rewrite mulnDl mul1n -addnBA.
+  - by rewrite dvdn_addr // dvdn_mulr.
   - by apply: gt_exp.
 Qed.
 
@@ -108,24 +108,17 @@ Proof.
   - rewrite big_nat1.
     apply: dvdn_mulr.
       by apply: dvdn3_99.
-  - rewrite big_nat_recr //.
-    + rewrite dvdn_addl //.
-      rewrite dvdn_mulr //.
-        by apply: dvdn3_99.
+  - rewrite big_nat_recr // dvdn_addl // dvdn_mulr //.
+      by apply: dvdn3_99.
 Qed.
 
 (**
-## 補題 : 
-``x + 10*x1 + 100*x2 + 1000*x3 = (0*x0 + 9*x1 + 99*x2 + 999*x3) + (x0 + x1 + x2 + x3)``
+## 補題 ``Σ(f + g) = Σf + Σg``
 
-数列の和の問題として、``x + 10*x1 + 100*x2 + 1000*x3`` が、
-``0*x0 + 9*x1 + 99*x2 + 999*x3`` と``x0 + x1 + x2 + x3`` の和であることを証明します。
-
-これは一見自明ですが、``Σ(f + g) = Σf + Σg`` を使うために式を変形していきます。
-
-``Σ(f + g) = Σf + Σg`` は、bigop.v のなかで、
+数列の和について、自明な補題について証明しておきます。
+これは、bigop.v のなかで、
 可換なop一般に対して証明されているので、それを使います。
-*)
+ *)
 
 Check big_split
   : forall (R : Type) (idx : R) (op : Monoid.com_law idx) 
@@ -133,6 +126,23 @@ Check big_split
     \big[op/idx]_(i <- r | P i) op (F1 i) (F2 i) =
     op (\big[op/idx]_(i <- r | P i) F1 i) (\big[op/idx]_(i <- r | P i) F2 i).
 
+Lemma s__s_s (n : nat) (F G : nat -> nat) :
+  \sum_(0 <= i < n)(F i + G i) = 
+  \sum_(0 <= i < n)(F i) + \sum_(0 <= i < n)(G i).
+Proof.
+    by rewrite big_split /=.
+Qed.
+
+(**
+## 補題 2.
+
+``x + 10*x1 + 100*x2 + 1000*x3 = (0*x0 + 9*x1 + 99*x2 + 999*x3) + (x0 + x1 + x2 + x3)``
+
+数列の和の問題として、``x + 10*x1 + 100*x2 + 1000*x3`` が、
+``0*x0 + 9*x1 + 99*x2 + 999*x3`` と``x0 + x1 + x2 + x3`` の和であることを証明します。
+
+これは一見自明ですが、``Σ(f + g) = Σf + Σg`` を使うために式を変形していきます。
+*)
 
 Lemma l_100__99_1 (n : nat) : 10 ^ n = 10 ^ n - 1 + 1.
 Proof.
@@ -161,14 +171,6 @@ Proof.
       by rewrite -IHn.
 Qed.
 
-Lemma s__s_s (n : nat) (F G : nat -> nat) :
-  \sum_(0 <= i < n)(F i + G i) = 
-  \sum_(0 <= i < n)(F i) + \sum_(0 <= i < n)(G i).
-Proof.
-  rewrite big_split /=.
-  done.
-Qed.
-
 Lemma s100x__s99x_sx (n : nat) :
   \sum_(0 <= i < n.+1)(10^i * (x i)) =
   \sum_(0 <= i < n.+1)((10^i - 1) * (x i)) + \sum_(0 <= i < n.+1)(x i).
@@ -177,7 +179,9 @@ Proof.
 Qed.
 
 (**
-## 定理 : ``x + 10*x1 + 100*x2 + 1000*x3`` が3で割りきれることと、
+## 定理
+
+``x + 10*x1 + 100*x2 + 1000*x3`` が3で割りきれることと、
 ``x0 + x1 + x2 + x3`` が3で割りきれることは、同値である。
 
 二つの補題をつかって、定理を証明します。
