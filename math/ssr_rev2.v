@@ -44,16 +44,22 @@ n は size s と同じか、大きければよい。またsize sは2の冪でな
     - move=> n HT Hn1.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)
       apply: ltn_Pdiv => //.
+      (*
       move/negbT in Hn1.
       rewrite -ltnNge in Hn1.
         by apply: (@leq_ltn_trans 1 0).
+       *)
+        by ssromega.
     (* forall n : nat, seq T -> (n <= 1) = false -> (n %/ 2 < n)%coq_nat *)
     - move=> n HT Hn1.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)
       apply: ltn_Pdiv => //.
+      (*
       move/negbT in Hn1.
       rewrite -ltnNge in Hn1.
         by apply: (@leq_ltn_trans 1 0).
+       *)
+        by ssromega.
     (* well_founded lt *)
     - by apply: lt_wf.                      (* Wf_nat *)
   Defined.
@@ -75,12 +81,14 @@ Program と if-then-else は併用できない。if条件が失われる。
   Obligation 1.
   Proof.
     apply/ltP/ltn_Pdiv => //.
-      by apply/neq0_lt0n/negbTE/eqP/not_eq_sym.
+      (* by apply/neq0_lt0n/negbTE/eqP/not_eq_sym. *)
+      by ssromega.
   Qed.
   Obligation 2.
   Proof.
     apply/ltP/ltn_Pdiv => //.
-      by apply/neq0_lt0n/negbTE/eqP/not_eq_sym.
+    (* by apply/neq0_lt0n/negbTE/eqP/not_eq_sym. *)
+      by ssromega.
   Qed.
   
 (**
@@ -101,19 +109,25 @@ Program と if-then-else は併用できない。if条件が失われる。
   Proof.
     apply/ltP/ltn_Pdiv => //.
     move/eqP in H.
+    (*
     rewrite -ltnNge in H.
     apply/neq0_lt0n/negbTE.
     rewrite -lt0n.
       by apply: (@leq_ltn_trans 1 0 n).
+     *)
+    by ssromega.
   Qed.
   Obligation 2.
   Proof.
     apply/ltP/ltn_Pdiv => //.
     move/eqP in H.
+    (*
     rewrite -ltnNge in H.
     apply/neq0_lt0n/negbTE.
     rewrite -lt0n.
       by apply: (@leq_ltn_trans 1 0 n).
+     *)
+      by ssromega.
   Qed.
 
 (**
@@ -123,9 +137,10 @@ Program と if-then-else は併用できない。if条件が失われる。
   Lemma ltn_pred (n : nat) : 0 < n -> n.-1 < n.
   Proof.
     move=> Hn0.
-      by rewrite prednK //.
+    (* by rewrite prednK //. *)
+      by ssromega.
   Qed.
-
+  
   Lemma negC (eT : eqType) (x y : eT) : (x != y) = (y != x).
   Proof.
     apply/idP/idP => H.
@@ -174,15 +189,21 @@ Program と if-then-else は併用できない。if条件が失われる。
     end.
   Obligation 1.
   Proof.
+    (*
     move/eqP in H.
     apply/ltP/ltn_pred.
       by rewrite lt0n negC.
+     *)
+      by ssromega.
   Qed.
   Obligation 2.
   Proof.
+    (*
     move/eqP in H.
     apply/ltP/ltn_pred.
       by rewrite lt0n negC.
+     *)
+    by ssromega.
   Qed.
   
 (**
@@ -211,7 +232,6 @@ Program と if-then-else は併用できない。if条件が失われる。
 (**
 ## 例3 : リストの長さ(size)を直接使用する。
 *)
-  
   Lemma take_size (n : nat) (s : seq T) : n < size s -> size (take n s) < size s.
   Proof.
     move=> H.
@@ -220,11 +240,11 @@ Program と if-then-else は併用できない。if条件が失われる。
   Qed.
   
   Lemma drop_size (n : nat) (s : seq T) :
-    1 < size s -> 0 < n -> size (drop n s) < size s.
+    0 < size s -> 0 < n -> size (drop n s) < size s.
   Proof.
     move=> Hs Hn.
     rewrite size_drop.
-    rewrite -{2}[size s]subn0.
+    (* rewrite -{2}[size s]subn0. *)
       by ssromega.
   Qed.
   
@@ -233,7 +253,6 @@ Program と if-then-else は併用できない。if条件が失われる。
 
 length は Coq、size は mathcomp である。
 *)
-
   Function rev31 (s : seq T) {measure size s} : seq T :=
     if size s <= 1 then s
     else
@@ -245,14 +264,16 @@ length は Coq、size は mathcomp である。
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)      
       apply: take_size.
       apply: ltn_Pdiv => //.
+      (*
       move/negbT in Hs0.
       rewrite -ltnNge in Hs0.
         by apply: (@leq_ltn_trans 1 0).      
+       *)
+        by ssromega.
     - move=> s Hs0.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)      
       apply: drop_size.
-      + move/negbT in Hs0.
-          by rewrite -ltnNge in Hs0.
+      + by ssromega.
       + rewrite divn_gt0 //.
           by ssromega.
   Qed.
