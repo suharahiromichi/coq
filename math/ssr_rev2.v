@@ -1,5 +1,5 @@
 (**
-“ñ•ªŠ„‚É‚æ‚éƒŠƒXƒg‚Ì”½“]
+äºŒåˆ†å‰²ã«ã‚ˆã‚‹ãƒªã‚¹ãƒˆã®åè»¢
 ========================
 
 @suharahiromichi
@@ -11,6 +11,7 @@ From mathcomp Require Import all_ssreflect.
 Require Import Recdef.
 Require Import Wf_nat.                      (* well_founded lt *)
 Require Import Program.Wf.                  (* Program Fixpoint *)
+Require Import ssr_omega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -22,14 +23,14 @@ Section Rev2.
   Variable T : Type.
 
 (**
-## —á1 : ƒŠƒXƒg‚ÌƒTƒCƒY‚ğ”’l‚Å•Ê“r—^‚¦‚éB
+## ä¾‹1 : ãƒªã‚¹ãƒˆã®ã‚µã‚¤ã‚ºã‚’æ•°å€¤ã§åˆ¥é€”ä¸ãˆã‚‹ã€‚
 
-n ‚Í size s ‚Æ“¯‚¶‚©A‘å‚«‚¯‚ê‚Î‚æ‚¢B‚Ü‚½size s‚Í2‚Ì™p‚Å‚È‚­‚Ä‚à‚æ‚¢B
-‚È‚º‚È‚çAtake ‚Æ drop ‚ÅŒ‹‰Ê‚ªd‚È‚ç‚È‚¢‚½‚ßB
+n ã¯ size s ã¨åŒã˜ã‹ã€å¤§ãã‘ã‚Œã°ã‚ˆã„ã€‚ã¾ãŸsize sã¯2ã®å†ªã§ãªãã¦ã‚‚ã‚ˆã„ã€‚
+ãªãœãªã‚‰ã€take ã¨ drop ã§çµæœãŒé‡ãªã‚‰ãªã„ãŸã‚ã€‚
  *)
   
 (**
-### —á11
+### ä¾‹11
 *)
   Function rev11 (n : nat) (s : seq T) {wf lt n} : seq T :=
     if n <= 1 then s
@@ -41,14 +42,14 @@ n ‚Í size s ‚Æ“¯‚¶‚©A‘å‚«‚¯‚ê‚Î‚æ‚¢B‚Ü‚½size s‚Í2‚Ì™p‚Å‚È‚­‚Ä‚à‚æ‚¢B
   Proof.
     (* forall n : nat, seq T -> (n <= 1) = false -> (n %/ 2 < n)%coq_nat *)
     - move=> n HT Hn1.
-      apply/ltP.                (* aCoq‚Ì(<)‚ğMathComp‚Ì(<)‚É‚·‚éB *)
+      apply/ltP.                (* Coqã®(<)ã‚’MathCompã®(<)ã«ã™ã‚‹ã€‚ *)
       apply: ltn_Pdiv => //.
       move/negbT in Hn1.
       rewrite -ltnNge in Hn1.
         by apply: (@leq_ltn_trans 1 0).
     (* forall n : nat, seq T -> (n <= 1) = false -> (n %/ 2 < n)%coq_nat *)
     - move=> n HT Hn1.
-      apply/ltP.                (* aCoq‚Ì(<)‚ğMathComp‚Ì(<)‚É‚·‚éB *)
+      apply/ltP.                (* Coqã®(<)ã‚’MathCompã®(<)ã«ã™ã‚‹ã€‚ *)
       apply: ltn_Pdiv => //.
       move/negbT in Hn1.
       rewrite -ltnNge in Hn1.
@@ -58,10 +59,10 @@ n ‚Í size s ‚Æ“¯‚¶‚©A‘å‚«‚¯‚ê‚Î‚æ‚¢B‚Ü‚½size s‚Í2‚Ì™p‚Å‚È‚­‚Ä‚à‚æ‚¢B
   Defined.
   
 (**
-### —á12
+### ä¾‹12
 
-Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
-‚»‚Ì‚½‚ßAmatch ‚ğg—p‚·‚éBmatch ‚Å”’l‚ÅU‚è•ª‚¯‚éê‡B
+Program ã¨ if-then-else ã¯ä½µç”¨ã§ããªã„ã€‚ifæ¡ä»¶ãŒå¤±ã‚ã‚Œã‚‹ã€‚
+ãã®ãŸã‚ã€match ã‚’ä½¿ç”¨ã™ã‚‹ã€‚match ã§æ•°å€¤ã§æŒ¯ã‚Šåˆ†ã‘ã‚‹å ´åˆã€‚
 *)
   Program Fixpoint rev12 (n : nat) (s : seq T) {wf lt n} : seq T :=
     match n with
@@ -83,10 +84,10 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
   Qed.
   
 (**
-### —á13
+### ä¾‹13
 
-Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
-‚»‚Ì‚½‚ßAmatch ‚ğg—p‚·‚éBmatch ‚ÅboolqŒê‚Ì^‹U‚ÅU‚è•ª‚¯‚éê‡B
+Program ã¨ if-then-else ã¯ä½µç”¨ã§ããªã„ã€‚ifæ¡ä»¶ãŒå¤±ã‚ã‚Œã‚‹ã€‚
+ãã®ãŸã‚ã€match ã‚’ä½¿ç”¨ã™ã‚‹ã€‚match ã§boolè¿°èªã®çœŸå½ã§æŒ¯ã‚Šåˆ†ã‘ã‚‹å ´åˆã€‚
 *)
   Program Fixpoint rev13 (n : nat) (s : seq T) {wf lt n} : seq T :=
     match n <= 1 with
@@ -116,7 +117,7 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
   Qed.
 
 (**
-## —á2 : Ä‹A‚Ì‰ñ”‚ğ”’l‚Åw’è‚·‚éB
+## ä¾‹2 : å†å¸°ã®å›æ•°ã‚’æ•°å€¤ã§æŒ‡å®šã™ã‚‹ã€‚
 
 *)
   Lemma ltn_pred (n : nat) : 0 < n -> n.-1 < n.
@@ -137,7 +138,7 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
   Qed.
   
 (**
-### —á21
+### ä¾‹21
 *)
   Function rev21 (n : nat) (s : seq T) {wf lt n} : seq T :=
     if n == 0 then s
@@ -148,12 +149,12 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
   Proof.
     (* forall n : nat, seq T -> (n == 0) = false -> (n.-1 < n)%coq_nat *)
     - move=> n HT Hn0.
-      apply/ltP.                (* aCoq‚Ì(<)‚ğMathComp‚Ì(<)‚É‚·‚éB *)
+      apply/ltP.                (* Coqã®(<)ã‚’MathCompã®(<)ã«ã™ã‚‹ã€‚ *)
       apply: ltn_pred.
       move/negbT in Hn0.
         by rewrite -lt0n in Hn0.
     - move=> n HT Hn0.
-      apply/ltP.                (* aCoq‚Ì(<)‚ğMathComp‚Ì(<)‚É‚·‚éB *)
+      apply/ltP.                (* Coqã®(<)ã‚’MathCompã®(<)ã«ã™ã‚‹ã€‚ *)
       apply: ltn_pred.
       move/negbT in Hn0.
         by rewrite -lt0n in Hn0.
@@ -162,7 +163,7 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
   Defined.
 
 (**
-### —á22
+### ä¾‹22
 *)
   Program Fixpoint rev22 (n : nat) (s : seq T) {wf lt n} : seq T :=
     match n with
@@ -185,7 +186,7 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
   Qed.
   
 (**
-### —á23
+### ä¾‹23
 *)
   Program Fixpoint rev23 (n : nat) (s : seq T) {wf lt n} : seq T :=
     match n == 0 with
@@ -206,32 +207,31 @@ Program ‚Æ if-then-else ‚Í•¹—p‚Å‚«‚È‚¢BifğŒ‚ª¸‚í‚ê‚éB
     apply/ltP/ltn_pred.
       by rewrite lt0n.
   Qed.
-
+  
 (**
-## —á3 : ƒŠƒXƒg‚Ì’·‚³(size)‚ğ’¼Úg—p‚·‚éB
+## ä¾‹3 : ãƒªã‚¹ãƒˆã®é•·ã•(size)ã‚’ç›´æ¥ä½¿ç”¨ã™ã‚‹ã€‚
 *)
   
   Lemma take_size (n : nat) (s : seq T) : n < size s -> size (take n s) < size s.
   Proof.
     move=> H.
     rewrite size_takel //.
-  Admitted.
-
+      by ssromega.
+  Qed.
+  
   Lemma drop_size (n : nat) (s : seq T) :
     1 < size s -> 0 < n -> size (drop n s) < size s.
   Proof.
     move=> Hs Hn.
     rewrite size_drop.
     rewrite -{2}[size s]subn0.
-(*
-      by apply: (@ltn_sub2l (size s) 0 n).
-*)
-  Admitted.
-
+      by ssromega.
+  Qed.
+  
 (**
-### —á31
+### ä¾‹31
 
-length ‚Í CoqAsize ‚Í mathcomp ‚Å‚ ‚éB
+length ã¯ Coqã€size ã¯ mathcomp ã§ã‚ã‚‹ã€‚
 *)
 
   Function rev31 (s : seq T) {measure size s} : seq T :=
@@ -242,25 +242,24 @@ length ‚Í CoqAsize ‚Í mathcomp ‚Å‚ ‚éB
       rev31 s1 ++ rev31 s0.
   Proof.
     - move=> s Hs0.
-      apply/ltP.                (* aCoq‚Ì(<)‚ğMathComp‚Ì(<)‚É‚·‚éB *)      
+      apply/ltP.                (* Coqã®(<)ã‚’MathCompã®(<)ã«ã™ã‚‹ã€‚ *)      
       apply: take_size.
       apply: ltn_Pdiv => //.
       move/negbT in Hs0.
       rewrite -ltnNge in Hs0.
         by apply: (@leq_ltn_trans 1 0).      
     - move=> s Hs0.
-      apply/ltP.                (* aCoq‚Ì(<)‚ğMathComp‚Ì(<)‚É‚·‚éB *)      
+      apply/ltP.                (* Coqã®(<)ã‚’MathCompã®(<)ã«ã™ã‚‹ã€‚ *)      
       apply: drop_size.
       + move/negbT in Hs0.
           by rewrite -ltnNge in Hs0.
       + rewrite divn_gt0 //.
-        Search _ ((_ <= _) = false).
-  Admitted.
-
+          by ssromega.
+  Qed.
+  
 (**
-### —á32
+### ä¾‹32
 *)
-
     Program Fixpoint rev32 (s : seq T) {measure (size s)} : seq T :=
       match (size s) with
       | 0 => s
@@ -272,18 +271,20 @@ length ‚Í CoqAsize ‚Í mathcomp ‚Å‚ ‚éB
     Obligation 1.
     Proof.
       apply/ltP/drop_size.
-      admit.
-    Admitted.
+      - by ssromega.
+      - rewrite divn_gt0 //.
+          by ssromega.
+    Qed.
     Obligation 2.
     Proof.
       apply/ltP/take_size.
-      admit.
-    Admitted.
-
+      apply: ltn_Pdiv => //.
+        by ssromega.
+    Qed.
+    
 (**
-### —á33
+### ä¾‹33
 *)
-
     Program Fixpoint rev33 (s : seq T) {measure (size s)} : seq T :=
       match (size s <= 1) with
       | true => s
@@ -294,14 +295,20 @@ length ‚Í CoqAsize ‚Í mathcomp ‚Å‚ ‚éB
     Obligation 1.
     Proof.
       apply/ltP/drop_size.
-      admit.
-    Admitted.
+      move/eqP in H.
+      - by ssromega.
+      - rewrite divn_gt0 //.
+        move/eqP in H.
+          by ssromega.
+    Qed.
     Obligation 2.
     Proof.
       apply/ltP/take_size.
-      admit.
-    Admitted.
-  
+      apply: ltn_Pdiv => //.
+      move/eqP in H.
+        by ssromega.
+    Qed.
+    
 End Rev2.
 
 Definition data := [:: 0; 1; 2; 3; 4; 5; 6; 7].
