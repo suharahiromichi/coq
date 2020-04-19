@@ -43,7 +43,7 @@ n は size s と同じか、大きければよい。またsize sは2の冪でな
     (* forall n : nat, seq T -> (n <= 1) = false -> (n %/ 2 < n)%coq_nat *)
     - move=> n HT Hn1.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)
-      apply: ltn_Pdiv => //.
+      rewrite ltn_Pdiv //.
       (*
       move/negbT in Hn1.
       rewrite -ltnNge in Hn1.
@@ -53,7 +53,7 @@ n は size s と同じか、大きければよい。またsize sは2の冪でな
     (* forall n : nat, seq T -> (n <= 1) = false -> (n %/ 2 < n)%coq_nat *)
     - move=> n HT Hn1.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)
-      apply: ltn_Pdiv => //.
+      rewrite ltn_Pdiv //.
       (*
       move/negbT in Hn1.
       rewrite -ltnNge in Hn1.
@@ -107,8 +107,8 @@ Program と if-then-else は併用できない。if条件が失われる。
     end.
   Obligation 1.
   Proof.
-    apply/ltP/ltn_Pdiv => //.
     move/eqP in H.
+    apply/ltP/ltn_Pdiv => //.
     (*
     rewrite -ltnNge in H.
     apply/neq0_lt0n/negbTE.
@@ -119,8 +119,8 @@ Program と if-then-else は併用できない。if条件が失われる。
   Qed.
   Obligation 2.
   Proof.
-    apply/ltP/ltn_Pdiv => //.
     move/eqP in H.
+    apply/ltP/ltn_Pdiv => //.
     (*
     rewrite -ltnNge in H.
     apply/neq0_lt0n/negbTE.
@@ -165,12 +165,12 @@ Program と if-then-else は併用できない。if条件が失われる。
     (* forall n : nat, seq T -> (n == 0) = false -> (n.-1 < n)%coq_nat *)
     - move=> n HT Hn0.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)
-      apply: ltn_pred.
+      rewrite ltn_pred //.
       move/negbT in Hn0.
         by rewrite -lt0n in Hn0.
     - move=> n HT Hn0.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)
-      apply: ltn_pred.
+      rewrite ltn_pred //.
       move/negbT in Hn0.
         by rewrite -lt0n in Hn0.
     (* well_founded lt *)
@@ -263,7 +263,7 @@ length は Coq、size は mathcomp である。
     - move=> s Hs0.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)      
       apply: take_size.
-      apply: ltn_Pdiv => //.
+      rewrite ltn_Pdiv //.
       (*
       move/negbT in Hs0.
       rewrite -ltnNge in Hs0.
@@ -272,7 +272,7 @@ length は Coq、size は mathcomp である。
         by ssromega.
     - move=> s Hs0.
       apply/ltP.                (* Coqの(<)をMathCompの(<)にする。 *)      
-      apply: drop_size.
+      rewrite drop_size //.
       + by ssromega.
       + rewrite divn_gt0 //.
           by ssromega.
@@ -281,58 +281,60 @@ length は Coq、size は mathcomp である。
 (**
 ### 例32
 *)
-    Program Fixpoint rev32 (s : seq T) {measure (size s)} : seq T :=
-      match (size s) with
-      | 0 => s
-      | 1 => s
-      | _ => let s0 := take (size s %/ 2) s in
-             let s1 := drop (size s %/ 2) s in
-             rev32 s1 ++ rev32 s0
-      end.
-    Obligation 1.
-    Proof.
-      apply/ltP/drop_size.
-      - by ssromega.
-      - rewrite divn_gt0 //.
-          by ssromega.
-    Qed.
-    Obligation 2.
-    Proof.
-      apply/ltP/take_size.
-      apply: ltn_Pdiv => //.
+  Program Fixpoint rev32 (s : seq T) {measure (size s)} : seq T :=
+    match (size s) with
+    | 0 => s
+    | 1 => s
+    | _ => let s0 := take (size s %/ 2) s in
+           let s1 := drop (size s %/ 2) s in
+           rev32 s1 ++ rev32 s0
+    end.
+  Obligation 1.
+  Proof.
+    apply/ltP/drop_size.
+    - by ssromega.
+    - rewrite divn_gt0 //.
         by ssromega.
-    Qed.
-    
-(**
+  Qed.
+  Obligation 2.
+  Proof.
+    apply/ltP/take_size.
+    rewrite ltn_Pdiv //.
+      by ssromega.
+  Qed.
+  
+  (**
 ### 例33
-*)
-    Program Fixpoint rev33 (s : seq T) {measure (size s)} : seq T :=
-      match (size s <= 1) with
-      | true => s
-      | _ => let s0 := take (size s %/ 2) s in
-             let s1 := drop (size s %/ 2) s in
-             rev33 s1 ++ rev33 s0
-      end.
-    Obligation 1.
-    Proof.
-      apply/ltP/drop_size.
-      move/eqP in H.
-      - by ssromega.
-      - rewrite divn_gt0 //.
-        move/eqP in H.
-          by ssromega.
-    Qed.
-    Obligation 2.
-    Proof.
-      apply/ltP/take_size.
-      apply: ltn_Pdiv => //.
-      move/eqP in H.
+   *)
+  Program Fixpoint rev33 (s : seq T) {measure (size s)} : seq T :=
+    match (size s <= 1) with
+    | true => s
+    | _ => let s0 := take (size s %/ 2) s in
+           let s1 := drop (size s %/ 2) s in
+           rev33 s1 ++ rev33 s0
+    end.
+  Obligation 1.
+  Proof.
+    move/eqP in H.
+    apply/ltP/drop_size.
+    - by ssromega.
+    - rewrite divn_gt0 //.
         by ssromega.
-    Qed.
-    
+  Qed.
+  Obligation 2.
+  Proof.
+    move/eqP in H.
+    apply/ltP/take_size.
+    rewrite ltn_Pdiv //.
+      by ssromega.
+  Qed.
+  
 End Rev2.
 
 Definition data := [:: 0; 1; 2; 3; 4; 5; 6; 7].
 Compute rev33 data.
+
+Definition data16 := [:: 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15].
+Compute rev33 data16.
 
 (* END *)
