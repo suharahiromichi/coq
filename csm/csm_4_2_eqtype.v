@@ -51,18 +51,11 @@ eqType に対して使える定理
  *)
 
 (**
-## eqE （== を Equality.op に書き換える補題） 使うのか？
+## eqE （== を Equality.op に書き換える補題）
 eq_op (==) に適用するという意味では、ジェネリックである。
  *)
-Goal forall n, n.+1 == n.+1.
-Proof.
-  move=> n.
-  rewrite /=.                               (* 変わらない。 *)
-  rewrite !eqE.
-  rewrite /=.                               (* n == n になる。 *)
-  rewrite -!eqE.
-  done.
-Qed.
+Check @eqE nat_eqType 1 : eq_op 1 = Equality.op (Equality.class nat_eqType) 1.
+(* ほとんど使わないだろう。 *)
 Check eqbE.                                 (* eqb 専用 *)
 Check eqnE.                                 (* eqn 専用 *)
 
@@ -70,12 +63,19 @@ Check eqnE.                                 (* eqn 専用 *)
 ## eqP (= と == に間を変換する)
 eq_op (==) に適用するという意味では、ジェネリックである。
  *)
+(* これはよく使う。 *)
 Check @eqP : forall (T : eqType) (x y : T), reflect (x = y) (x == y).
 Check eqbP.                                 (* eqb 専用 *)
 Check eqnP.                                 (* eqn 専用 *)
 
 Lemma test : forall (x y : nat), x == y -> x + y == y + y.
-Proof. move=> x y. by move=> /eqP ->. Qed.
+Proof.
+  move=> x y.
+  move/eqP.                                 (* 前提部分 : x = y *)
+  move=> <-.
+  apply/eqP.                                (* 帰結部分 : x = y *)
+  done.
+Qed.
 
 Lemma test4 : forall (n m : nat), if n == m then true else true.
 Proof. move=> n m.
@@ -92,19 +92,27 @@ Check eq_refl : forall (T : eqType) (x : T), x == x.
 Check eq_sym  : forall (T : eqType) (x y : T), (x == y) = (y == x).
 
 (**
-## inj_eq (f が単射、キャンセル可能、全単射 なら、(f x == f y) = (x = y))
+## 関数拡張 (f x == f y) = (x = y) が成立する。
 
-これらは、よく使うと思う。
+ただし、前提によって補題が異なる。
  *)
-Check inj_eq.                               (* 単射 *)
-Check can_eq.                               (* キャンセル可能 *)
-Check bij_eq.                               (* 全単射 *)
-
-(* それぞれの意味は、以下による。  *)
 Print injective.         (* f x1 = f x2 -> x1 = x2 *)
+Check inj_eq : forall (aT rT : eqType) (f : aT -> rT),
+    injective f ->                          (* 単射 *)
+    forall x y : aT, (f x == f y) = (x == y).
+
 Print cancel.            (* g (f x) = x *)
+Check can_eq : forall (aT rT : eqType) (f : aT -> rT) (g : rT -> aT),
+    cancel f g ->                           (* fのキャンセルgが存在 *)
+    forall x y : aT, (f x == f y) = (x == y).
+(* f自体が自己キャンセルである必要はない。 *)
+
 Print bijective.         (* cancel f g -> cancel g f -> bijective f *)
-(* 単射の逆は必ずなりたつ。 *)
+Check bij_eq : forall (aT rT : eqType) (f : aT -> rT),
+    bijective f ->                          (* 全単射 *)
+    forall x y : aT, (f x == f y) = (x == y).
+
+(* ちなみに、単射の逆は必ず成り立つことに、注意してください。 *)
 Check f_equal.           (* x = y -> f x = f y *)
 
 
@@ -264,7 +272,6 @@ Section GenType.
 (**
 ## Type型の型T の変数 x と y
  *)
-
   Variable T : Type.
   Variables x y : T.
   
@@ -279,11 +286,9 @@ Section GenType.
   Check s = t.
   Fail Check s == t.                        (** == が成り立たない。 *)
 
-
 (**
 ## eqType型の型T の変数 m と n
  *)
-  
   Variable eT : eqType.
   Variables m n : eT.
 
