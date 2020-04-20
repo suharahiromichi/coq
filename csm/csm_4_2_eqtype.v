@@ -254,6 +254,108 @@ tree_eqType     choice.v
 ordinal_eqType  fintype.v
 *)
 
+(**
+# ジェネリックな型としての eqType
+
+Type の代わりに eqType とすると、eqType型である型の値どうしは「==」の成り立つようになる。
+ *)
+Section GenType.
+
+(**
+## Type型の型T の変数 x と y
+ *)
+
+  Variable T : Type.
+  Variables x y : T.
+  
+  Check x = y.
+  Fail Check x == y.                        (** == が成り立たない。 *)
+
+(**
+## Type型の型Tの seq の変数 s と t
+ *)
+  Variables s t : seq T.
+
+  Check s = t.
+  Fail Check s == t.                        (** == が成り立たない。 *)
+
+
+(**
+## eqType型の型T の変数 m と n
+ *)
+  
+  Variable eT : eqType.
+  Variables m n : eT.
+
+  Check m = n.
+  Check m == n.                             (** == が成り立つ。 *)
+  
+(**
+## eqType型の型eTの seq の変数 u と v
+ *)
+  Variables u v : seq eT.
+
+  Check u = v.
+  Check u == v.                             (** == が成り立たつ。 *)
+
+End GenType.
+
+(**
+## 自分で定義した関数
+*)
+
+Definition testT (T : Type) (x : T)  : T := x.
+Definition testeT (eT : eqType) (m : eT)  : eT := m.
+
+(**
+Type型の型Tには、任意の型が代入できる。
+*)
+Check bool : Type.
+Compute @testT bool true.                   (* true *)
+
+Check nat : Type.
+Compute @testT nat 1.                       (* 1 *)
+
+Check seq nat : Type.
+Compute @testT (seq nat) [:: 1].            (* [:: 1] *)
+
+(**
+同様に、eqType型eTには、任意のeqType型（eqType型の型インスタンス）が代入できる。
+また、内部で、以下のコアーションが効くため、eqType型の型の値として、natの値が書ける。
+*)
+Compute Equality.sort nat_eqType.           (* nat *)
+Check true : bool_eqType.
+Check 1 : nat_eqType.
+Check [:: 1] : seq_eqType nat_eqType.
+
+Check bool_eqType : eqType.
+Compute @testeT bool_eqType true.
+
+Check nat_eqType : eqType.
+Compute @testeT nat_eqType 1.
+
+Check seq_eqType nat_eqType : eqType.
+Compute @testeT (seq_eqType nat_eqType) [:: 1].
+
+(**
+nat は、nat_eqType のカノニカル解であるため、上記の nat_eqType型であるべき箇所に書ける。
+省略された eqType型の第１引数 nat_eqType を nat型の値「1」から見つけることができる。
+*)
+Compute testeT true.
+Compute testeT 1.
+Compute testeT [:: 1].
+
+Compute testeT true : bool.
+Compute testeT 1 : nat.
+Compute testeT [:: 1] : seq nat.
+
+(**
+コアーションとカノニカル解のメカニズムを追うのは難しいが、
+Type の代わりに eqType とすると、eqType型である型の値どうしは「==」の成り立つようになる、
+と覚えておいてもよい。
+*)
+
+
 (* ************************** *)
 (* モチベーション維持のために  *)
 (* ************************** *)
@@ -287,7 +389,9 @@ Import Num.Theory.                   (* normr0_eq0 などを使えるように�
 Import intZmod.                        (* addz など *)
 Import intRing.                        (* mulz など *)
 Import intOrdered.                     (* lez など *)
-Open Scope ring_scope.                 (* 1%:Z を使えるようにする。 *)
+(* Open Scope int_scope. *)
+(* Open Scope rat_scope. *)
+Open Scope ring_scope.
 
 (* # 有理数型 *)
 
