@@ -110,4 +110,63 @@ Definition data16 := [:: 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15].
 Compute binrev data16.
 Compute bitrev data16.
 
+Goal bitrev (bitrev data16) == data16.
+Proof.
+  done.
+Qed.
+
+Section Test.
+
+  Variable T : Type.
+
+  Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
+  
+  Lemma binrev_cat (s0 s1 : seq T) : binrev s1 ++ binrev s0 = binrev (s0 ++ s1).
+  Proof.
+  Admitted.
+
+
+  Lemma cat_ind P :
+    P [::] -> (forall (s0 s1 : seq T), P s0 -> P s1 -> P (s0 ++ s1)) -> forall s, P s.
+  Proof.
+    move=> HP IHs s.
+    rewrite -[s]cats0.
+    elim: s.
+
+    Check (@cat_take_drop ((size s) %/ 2) T s).
+    apply: IHs.
+    - elim: s => // a s IHs.
+      Search _ take.
+
+  Admitted.
+  
+  Lemma binrev_binrev (s : seq T) : binrev (binrev s) = s.
+  Proof.
+    elim/cat_ind : s => // [s0 s1 IHs0 IHs1].
+    rewrite -!binrev_cat.
+      by rewrite IHs0 IHs1.
+  Qed.
+  
+  
+  (* ************* *)
+  
+
+  Lemma zip2_ind P :
+    P [::] -> (forall (s0 s1 : seq T), P s0 -> P s1 -> P (s0 +++ s1)) -> forall s, P s.
+  Proof.
+  Admitted.
+  
+  Lemma bitrev_cat (s0 s1 : seq T) : bitrev s0 +++ bitrev s1 = bitrev (s0 +++ s1).
+  Proof.
+  Admitted.
+  
+  Lemma bitrev_bitrev (s : seq T) : bitrev (bitrev s) = s.
+  Proof.
+    elim/zip2_ind : s => // [s0 s1 IHs0 IHs1].
+    rewrite -!bitrev_cat.
+      by rewrite IHs0 IHs1.
+  Qed.
+
+End Test.
+
 (* END *)
