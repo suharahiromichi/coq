@@ -40,14 +40,52 @@ Section ZetaFactor.
   Canonical zeta_countType := CountType zeta zeta_countMixin.
   Canonical zeta_subCountType := [subCountType of zeta].
   
-  Lemma gcdnlel x y : gcdn x y <= x. Proof. Admitted.
-  Lemma gcdnler x y : gcdn x y <= y. Proof. Admitted.
-  Lemma coprime_gcdn m d : coprime (m %/ gcdn m d) (d %/ gcdn m d). Proof. Admitted.
-  Lemma ltn_gcdn m d : d != 0 -> 0 < d %/ gcdn m d. Proof. Admitted.
+  Lemma gcdnlel m n : 0 < m -> gcdn m n <= m.
+  Proof.
+    move=> H.
+    Check dvdn_leq : forall d m : nat, 0 < m -> d %| m -> d <= m.
+    Check dvdn_gcdl : forall m n : nat, gcdn m n %| m.
+    apply: dvdn_leq => //.
+      by apply: dvdn_gcdl.
+  Qed.
+  
+  Lemma gcdnler m n : 0 < n -> gcdn m n <= n.
+  Proof.
+    move=> H.
+    Check dvdn_gcdr : forall m n : nat, gcdn m n %| n.
+    apply: dvdn_leq => //.
+      by apply: dvdn_gcdr.
+  Qed.
+  
+(* これは、zf_func を修正することで、不要にできる。 *)
+(*Lemma divn_modnl m n d : (m %% n) %/ d = (m %/ d) %% (n %/ d). *)
+  Lemma divn_modnl : left_distributive divn modn.
+  Proof.
+    rewrite /left_distributive.
+  Admitted.
+  Compute (6 %% 4) %/ 2.
+  Compute (6 %/ 2) %% (4 %/ 2).
+  
+  Lemma ltn_gcdn x y : y != 0 -> 0 < y %/ (gcdn x y).
+  Proof.
+    move=> H.
+    rewrite divn_gt0.
+    - apply: gcdnler.
+        by rewrite lt0n.
+    - rewrite gcdn_gt0.
+      apply/orP/or_intror.
+        by rewrite lt0n.
+  Qed.
+  
+  Lemma coprime_gcdn m d : coprime (m %/ gcdn m d) (d %/ gcdn m d).
+  Proof.
+    rewrite /coprime.
+    apply/eqP.
+    Search _ (gcdn _ (gcdn _ _)).
+  Admitted.
   
   Definition zf_fact (m d : nat) :=
-    if (d == 0) then (0, 1) else ((m %/ (gcdn m d)) %% (d %/ (gcdn m d)),
-                                  d %/ (gcdn m d)).
+    if (d == 0) then (0, 1) else ((m %% d) %/ (gcdn m d), d %/ (gcdn m d)).
 
   Compute zf_fact 0 0.                      (* (0, 1) *)
   Compute zf_fact 1 1.                      (* (0, 1) *)
@@ -71,13 +109,9 @@ Section ZetaFactor.
     rewrite /zf_fact.
     case: eqP => /eqP //= H.                (* H : d != 0 *)
     apply/andP; split; [apply/andP; split |]; rewrite /=.
-    - rewrite divn_gt0 //.
-      + by apply: gcdnler.
-      + rewrite gcdn_gt0.
-        apply/orP/or_intror.                (* right *)
-          by rewrite lt0n.
-    - by rewrite ltn_mod ltn_gcdn //.
-    - by rewrite coprime_modl coprime_gcdn.
+    - by rewrite ltn_gcdn.
+    - by rewrite divn_modnl ltn_mod ltn_gcdn.
+    - by rewrite divn_modnl coprime_modl coprime_gcdn.
   Qed.
   
   Definition zf (x : (nat * nat)) := @Zeta(_, _) (zf_subproof x).
