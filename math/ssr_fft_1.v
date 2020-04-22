@@ -265,15 +265,23 @@ End Expression.
 
 Notation "a + b" := (tadd a b).
 
-Section Butterfly.
+Fixpoint map2 {T : Type} op (i : nat) (s1 s2 : seq T) : seq T :=
+  match s1, s2 with
+  | [::], _ => [::]
+  | _, [::] => [::]
+  | c1 :: s1, c2 :: s2 => (op i c1 c2) :: map2 op i.+1 s1 s2
+  end.
 
-  Fixpoint map2 op (i : nat) (s1 s2 : seq exp) : seq exp :=
-    match s1, s2 with
-    | [::], _ => [::]
-    | _, [::] => [::]
-    | c1 :: s1, c2 :: s2 => (op i c1 c2) :: map2 op i.+1 s1 s2
-    end.
-  
+Fixpoint zip2 {T : Type} (s1 s2 : seq T) : seq T :=
+  match s1, s2 with
+  | [::], _ => [::]
+  | _, [::] => [::]
+  | c1 :: s1, c2 :: s2 => c1 :: c2 :: zip2 s1 s2
+  end.
+Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
+
+Section FFT.
+
   (* バタフライ演算 *)
   Definition be (n : nat) s1 s2 := map2 (fun _ c1 c2 => addze c1 c2) 0 s1 s2.
   Definition bo n s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2) (zf (i, n))) 0 s1 s2.
@@ -293,18 +301,6 @@ Section Butterfly.
     Compute be 8 (take 4 CS) (drop 4 CS).
     Compute bo 8 (take 4 CS) (drop 4 CS).
   End Test5.
-
-End Butterfly.
-
-Section FFT.
-  
-  Fixpoint zip2 {T : Type} (s1 s2 : seq T) : seq T :=
-    match s1, s2 with
-    | [::], _ => [::]
-    | _, [::] => [::]
-    | c1 :: s1, c2 :: s2 => c1 :: c2 :: zip2 s1 s2
-    end.
-  Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
 
   Program Fixpoint fft (n : nat) (c : seq exp) {wf lt n} : seq exp :=
     match n with
@@ -327,13 +323,66 @@ Section FFT.
       by ssromega.
   Qed.
 
-  Section Test6.
-
-    Compute fft 8 CS.
-
-  End Test6.
-
 End FFT.
 
-(* END *)
 
+Section FFT'.
+  
+  (* バタフライ演算 *)
+  Definition be' s1 s2 := map2 (fun _ c1 c2 => addze c1 c2) 0 s1 s2.
+  Definition bo' s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2)
+                                                     (zf (i, (size s1)))) 0 s1 s2.
+
+  Lemma size_map__size_c2 {T : Type} (c1 c2  : seq T) :
+    forall (op : _) (i : nat), size (map2 op i c1 c2) = size c1.
+  Proof.
+  Admitted.
+  
+  Lemma size_map__size_c1 {T : Type} (c1 c2 : seq T) :
+    forall (op : _) (i : nat), size (map2 op i c1 c2) = size c2.
+  Proof.
+    move=> op i.
+  Admitted.
+  
+  Lemma take_size {T : Type} (n : nat) (s : seq T) :
+    n < size s -> size (take n s) < size s.
+  Proof.
+    move=> H.
+    rewrite size_takel //.
+      by ssromega.
+  Qed.
+  
+  Lemma drop_size {T : Type} (n : nat) (s : seq T) :
+    0 < size s -> 0 < n -> size (drop n s) < size s.
+  Proof.
+    move=> Hs Hn.
+    rewrite size_drop.
+      by ssromega.
+  Qed.
+  
+  Program Fixpoint fft' (c : seq exp) {measure (size c)} : seq exp :=
+    match (size c) with
+    | 0 | 1 => c
+    | _ => let c0 := take (size c %/2) c in      (* 前半 *)
+           let c1 := drop (size c %/2) c in      (* 後半 *)
+           fft' (be' c0 c1) +++ fft' (bo' c0 c1)
+    end.
+  Obligation 1.
+  Proof.
+    rewrite size_map__size_c1.
+    apply/ltP/drop_size.
+    - by ssromega.
+    - rewrite divn_gt0 //.
+        by ssromega.
+  Qed.
+  Obligation 2.
+  Proof.
+    rewrite size_map__size_c2.
+    apply/ltP/take_size.
+    rewrite ltn_Pdiv //.
+      by ssromega.
+  Qed.
+
+End FFT'.
+
+(* END *)
