@@ -77,12 +77,27 @@ Section ZetaFactor.
         by rewrite lt0n.
   Qed.
   
-  Lemma coprime_gcdn m d : coprime (m %/ gcdn m d) (d %/ gcdn m d).
+  Lemma muln_c x c : 0 < c -> x * c = c -> x = 1.
   Proof.
+    move=> H0c /eqP H.
+    apply/eqP.
+      by rewrite -(eqn_pmul2r H0c) mul1n.
+  Qed.
+  
+  Lemma coprime_gcdn m n : 0 < n -> forall d,
+      d = gcdn m n -> coprime (m %/ d) (n %/ d).
+  Proof.
+    move=> H0n d H.
     rewrite /coprime.
     apply/eqP.
-    Search _ (gcdn _ (gcdn _ _)).
-  Admitted.
+    have Hd : 0 < d by rewrite H gcdn_gt0; apply/orP/or_intror/H0n.
+    apply: (muln_c Hd).
+    rewrite (@muln_gcdl (m %/ d) (n %/d) d).
+    have Hm : gcdn m n %| m by rewrite dvdn_gcdl.
+    have Hn : gcdn m n %| n by rewrite dvdn_gcdr.
+    rewrite H (divnK Hm) (divnK Hn).
+    done.
+  Qed.
   
   Definition zf_fact (m d : nat) :=
     if (d == 0) then (0, 1) else ((m %% d) %/ (gcdn m d), d %/ (gcdn m d)).
@@ -98,7 +113,9 @@ Section ZetaFactor.
   Compute zf_fact 6 4.                      (* (1, 2) *)
   Compute zf_fact 7 4.                      (* (3, 4) *)
   Compute zf_fact 8 4.                      (* (0, 1) *)
-
+  Compute (zf_fact 8 4).1.                  (* 0 *)
+  Compute (zf_fact 8 4).2.                  (* 1 *)
+  
   Lemma zf_subproof (x : (nat * nat)) :
     let: z := zf_fact x.1 x.2 in
     (0 < z.2) && (z.1 < z.2) && (coprime z.1 z.2).
@@ -111,7 +128,7 @@ Section ZetaFactor.
     apply/andP; split; [apply/andP; split |]; rewrite /=.
     - by rewrite ltn_gcdn.
     - by rewrite divn_modnl ltn_mod ltn_gcdn.
-    - by rewrite divn_modnl coprime_modl coprime_gcdn.
+    - by rewrite divn_modnl coprime_modl coprime_gcdn //= lt0n.
   Qed.
   
   Definition zf (x : (nat * nat)) := @Zeta(_, _) (zf_subproof x).
