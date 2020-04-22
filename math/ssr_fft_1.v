@@ -134,143 +134,171 @@ Section ZetaFactor.
   Definition zf (x : (nat * nat)) := @Zeta(_, _) (zf_subproof x).
   (* (x.1, x.2) とするとエラーになる。 *)
 
-  Section Test.
+  Section Test1.
+    Definition z0_2 := zf (0, 2).
     Definition z1_2 := zf (1, 2).
+    
+    Definition z0_4 := zf (0, 4).
+    Definition z1_4 := zf (1, 4).
     Definition z2_4 := zf (2, 4).
+    Definition z3_4 := zf (3, 4).
+    Definition z4_4 := zf (2, 4).
     Definition z5_4 := zf (5, 4).    
     Definition z6_4 := zf (6, 4).
-    Compute z1_2 == z2_4.                     (* true *)
-    Compute z5_4 == z2_4.                     (* false *)
-    Compute z6_4 == z2_4.                     (* true *)
+    Definition z7_4 := zf (7, 4).
+    Definition z8_4 := zf (8, 4).
+    
+    Goal z1_2 == z2_4. Proof. compute. done. Qed.
+    Goal z5_4 != z2_4. Proof. compute. done. Qed.
+    Goal z6_4 == z2_4. Proof. compute. done. Qed.
+    Goal z0_4 == z8_4. Proof. compute. done. Qed.
     
     Variables i : nat.
     
     Definition zi_4 := zf (i, 4).
     Definition z2i_8 := zf (2 * i, 8).
+
     Check zi_4 == z2i_8.
-  End Test.
+  End Test1.
+  
+  
+(* zeta因子の掛け算 *)
 
+  Definition nzf (z : zeta) := (valz z).1.  (* 分子 ζ^n_N の n *)
+  Definition dzf (z : zeta) := (valz z).2.  (* 分母 ζ^n_N の N *)
+  Definition mulzf (z1 z2 : zeta) :=
+    zf (nzf z1 * dzf z2 + dzf z1 * nzf z2, dzf z1 * dzf z2).
+  Definition negzf (z : zeta) := mulzf z (zf (1, 2)).
+
+  Section Test2.
+
+    Goal mulzf z1_2 z1_2 == z0_2. Proof. compute. done. Qed.
+    Goal mulzf z1_4 z1_4 == z1_2. Proof. compute. done. Qed.
+    
+    Goal negzf z1_2 == z0_2. Proof. compute. done. Qed.
+    Goal negzf z1_4 == z3_4. Proof. compute. done. Qed.
+  End Test2.
+  
 End ZetaFactor.
-
-
-(* ******************************* *)
-(* ******************************* *)
-(* ******************************* *)
-(* ******************************* *)
-(* ******************************* *)
-(* ******************************* *)
-(* ******************************* *)
-
 
 Section Term.
 
-(** a_0 * W~i_N の項を 示す。 *)
-
   Record term : Set :=
     Term {
-        val : (nat * (nat * nat)) ;
-        axiom : (0 < val.2.2) && (coprime val.2.1 val.2.2)
+        valt : (nat * zeta);
+        _ : true
       }.
   
-
-(*
-  axiom の2項めがないとき：
+  Canonical term_subType := Eval hnf in [subType for valt].
+  Definition term_eqMixin := [eqMixin of term by <:].
+  Canonical term_eqType := EqType term term_eqMixin.
+  Definition term_choiceMixin := [choiceMixin of term by <:].
+  Canonical term_choiceType := ChoiceType term term_choiceMixin.
+  Definition term_countMixin := [countMixin of term by <:].
+  Canonical term_countType := CountType term term_countMixin.
+  Canonical term_subCountType := [subCountType of term].
   
-  Lemma term_subproof (x : (nat * (nat * nat))) :
-    let d := if 0 < x.2.2 then x.2.2 else 1 in
-    (0 < d).
-  Proof.
-      by case: ifP => H.                   (* case H : (0 < x.2.2). *)
-  Qed.
 
-  Lemma Test0_3 : 0 < 3. Proof. done. Qed.
-  Check @Term (1,(2,3)) Test0_3.
-  Check term_subproof (1,(2,3)).
+  Definition zt (n : nat) (z : zeta) := Term (n, z) is_true_true.
 
-  Check Term (term_subproof (1,(2,3))).
-  Check @Term (_, (_, _)) (term_subproof (1,(2,3))).
-  Definition et (x : (nat * (nat * nat))) :=
-    @Term (x.1, (x.2.1, _)) (term_subproof' x). (* x.2.2 とするとエラーになる。 *)
-*)  
-
-  Lemma term_subproof (x : nat * (nat * nat)) :
-  let n := if x.2.2 == 0 then 0 else (x.2.1 %/ gcdn x.2.1 x.2.2) in
-  let d := if x.2.2 == 0 then 1 else (x.2.2 %/ gcdn x.2.1 x.2.2) in
-  (0 < d) && (coprime n d).
-  Proof.
-    case: eqP => H //=.                     (* x.2.2 <> 0 *)
-    apply/andP; split=> //.
-    - admit.
-    - rewrite /coprime.
-  Admitted.
+  Definition czt (t : term) : nat := (valt t).1.
+  Definition fzt (t : term) : zeta := (valt t).2.
+  Definition nzt (t : term) : nat := nzf (valt t).2.
+  Definition dzt (t : term) : nat := dzf (valt t).2.
+  Definition mulzt (t : term) (z : zeta) : term := zt (czt t) (mulzf (fzt t) z).
+  Definition negzt (t : term) : term := zt (czt t) (negzf (fzt t)).
   
-  Compute term_subproof (1,(2,3)).
-  Check @Term (_, (_, _)) (term_subproof (1,(2,3))).
-  Fail Check Term (term_subproof (1,(2,3))).
-  Definition et (x : (nat * (nat * nat))) :=
-    @Term (x.1, (_, _)) (term_subproof x). (* x.2.2 とするとエラーになる。 *)
+  Section Test3.
 
-  Definition e1 := et (1,(2,3)).
-  Definition e2 := et (1,(3,6)).
-  Compute e1 == e2.                         (* false *)
+ 
+    Definition t1_1_4 := zt 1 (zf (1, 4)).
+    Definition t1_3_4 := mulzt t1_1_4 (zf (1, 2)).
+    Definition t1_3_4' := zt 1 (zf (3, 4)).
+    
+    Goal t1_3_4 == t1_3_4'. Proof. compute. done. Qed.
+    
+    Compute czt t1_3_4.                      (* 1 *)
+    Compute nzt t1_3_4.                      (* 3 *)
+    Compute dzt t1_3_4.                      (* 4 *)
 
-  Variable i : nat.
-  Definition ei := et (1,(2,i)).
-  Compute ei == ei.
+  End Test3.
+End Term.
 
+Section Expression.
 
-Section BitRev.
+  Inductive exp : Type :=
+  | tt (t : term)
+  | tadd (e : exp) (t : term).
+         
+  Coercion tt : term >-> exp.
+  Notation "a + b" := (tadd a b).
   
-  Variable T : Type.
-  
-  Lemma take_size (n : nat) (s : seq T) : n < size s -> size (take n s) < size s.
-  Proof.
-    move=> H.
-    rewrite size_takel //.
-      by ssromega.
-  Qed.
-  
-  Lemma drop_size (n : nat) (s : seq T) :
-    0 < size s -> 0 < n -> size (drop n s) < size s.
-  Proof.
-    move=> Hs Hn.
-    rewrite size_drop.
-      by ssromega.
-  Qed.
-  
-(**
-### リストを反転する。
-
-length は Coq、size は mathcomp である。
-*)
-  Program Fixpoint binrev (s : seq T) {measure (size s)} : seq T :=
-    match (size s <= 1) with
-    | true => s
-    | _ => let s0 := take (size s %/ 2) s in
-           let s1 := drop (size s %/ 2) s in
-           binrev s1 ++ binrev s0
+  Fixpoint mulze (e : exp) (z : zeta) : exp :=
+    match e with
+    | tt t => mulzt t z
+    | tadd e t => tadd (mulze e z) (mulzt t z)
     end.
-  Obligation 1.
-  Proof.
-    move/eqP in H.
-    apply/ltP/drop_size.
-    - by ssromega.
-    - rewrite divn_gt0 //.
-        by ssromega.
-  Qed.
-  Obligation 2.
-  Proof.
-    move/eqP in H.
-    apply/ltP/take_size.
-    rewrite ltn_Pdiv //.
-      by ssromega.
-  Qed.
   
+  Fixpoint addze (e1 e2 : exp) : exp :=
+    match e2 with
+    | tt t => tadd e1 t                         (* e1 + t *)
+    | tadd e2 t => tadd (addze e1 e2) t         (* e1 + (e2 + t) *)
+    end
+  with subze (e1 e2 : exp) : exp :=
+         match e2 with
+         | tt t => tadd e1 (negzt t)                 (* e1 - t *)
+         | tadd e2 t => tadd (subze e1 e2) (negzt t) (* e1 - (e2 + t) *)
+         end.
 
-(**
-### リストをビット逆順にする
-*)
-  Fixpoint zip2 (s1 s2 : seq T) : seq T :=
+  Section Test4.
+
+    Definition z1 : zeta := zf (1, 4).
+    Definition e1 : exp :=
+      (zt 0 (zf (0, 4))) + zt 1 (zf (1, 4)) + zt 2 (zf (2, 4)) + zt 3 (zf (3, 4)).
+    Definition e2 : exp := mulze e1 z1.
+    
+    Definition e2' : exp :=
+      (zt 0 (zf (1, 4))) + zt 1 (zf (2, 4)) + zt 2 (zf (3, 4)) + zt 3 (zf (0, 4)).
+  End Test4.
+
+End Expression.
+
+Notation "a + b" := (tadd a b).
+
+Section Butterfly.
+
+  Fixpoint map2 op (i : nat) (s1 s2 : seq exp) : seq exp :=
+    match s1, s2 with
+    | [::], _ => [::]
+    | _, [::] => [::]
+    | c1 :: s1, c2 :: s2 => (op i c1 c2) :: map2 op i.+1 s1 s2
+    end.
+  
+  (* バタフライ演算 *)
+  Definition be (n : nat) s1 s2 := map2 (fun _ c1 c2 => addze c1 c2) 0 s1 s2.
+  Definition bo n s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2) (zf (i, n))) 0 s1 s2.
+
+  Section Test5.
+
+    Definition CS : seq exp := [:: tt (zt 0 (zf (0, 1)));
+                                  tt (zt 1 (zf (0, 1)));
+                                  tt (zt 2 (zf (0, 1)));
+                                  tt (zt 3 (zf (0, 1)));
+                                  tt (zt 4 (zf (0, 1)));
+                                  tt (zt 5 (zf (0, 1)));
+                                  tt (zt 6 (zf (0, 1)));
+                                  tt (zt 7 (zf (0, 1)))
+                               ].
+      
+    Compute be 8 (take 4 CS) (drop 4 CS).
+    Compute bo 8 (take 4 CS) (drop 4 CS).
+  End Test5.
+
+End Butterfly.
+
+Section FFT.
+  
+  Fixpoint zip2 {T : Type} (s1 s2 : seq T) : seq T :=
     match s1, s2 with
     | [::], _ => [::]
     | _, [::] => [::]
@@ -278,321 +306,34 @@ length は Coq、size は mathcomp である。
     end.
   Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
 
-  Program Fixpoint bitrev (s : seq T) {measure (size s)} : seq T :=
-    match (size s <= 1) with
-    | true => s
-    | _ => let s0 := take (size s %/ 2) s in
-           let s1 := drop (size s %/ 2) s in
-           bitrev s0 +++ bitrev s1
+  Program Fixpoint fft (n : nat) (c : seq exp) {wf lt n} : seq exp :=
+    match n with
+    | 0 | 1 => c
+    | _ => let c0 := take (n %/2) c in      (* 前半 *)
+           let c1 := drop (n %/2) c in      (* 後半 *)
+           fft (n %/2) (be n c0 c1) +++ fft (n %/2) (bo n c0 c1)
     end.
+  Obligations.
   Obligation 1.
   Proof.
-    move/eqP in H.
-    apply/ltP/take_size.
-    rewrite ltn_Pdiv //.
+  (* (n %/ 2 < n)%coq_nat *)
+    apply/ltP/ltn_Pdiv => //.
       by ssromega.
   Qed.
   Obligation 2.
   Proof.
-    move/eqP in H.
-    apply/ltP/drop_size.
-    - by ssromega.
-    - rewrite divn_gt0 //.
-        by ssromega.
+  (* (n %/ 2 < n)%coq_nat *)
+    apply/ltP/ltn_Pdiv => //.
+      by ssromega.
   Qed.
 
-End BitRev.
+  Section Test6.
 
-Definition data := [:: 0; 1; 2; 3; 4; 5; 6; 7].
-Compute binrev data.               (* = [:: 7; 6; 5; 4; 3; 2; 1; 0] *)
-Compute bitrev data.               (* = [:: 0; 4; 2; 6; 1; 5; 3; 7] *)
+    Compute fft 8 CS.
 
-Definition data16 := [:: 0; 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15].
-Compute binrev data16.
-Compute bitrev data16.
+  End Test6.
 
-Goal bitrev (bitrev data16) == data16.
-Proof.
-  done.
-Qed.
-
-Section Test.
-
-  Variable T : Type.
-
-  Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
-  
-  Lemma binrev_cat (s0 s1 : seq T) : binrev s1 ++ binrev s0 = binrev (s0 ++ s1).
-  Proof.
-  Admitted.
-
-
-  Lemma cat_ind P :
-    P [::] -> (forall (s0 s1 : seq T), P s0 -> P s1 -> P (s0 ++ s1)) -> forall s, P s.
-  Proof.
-    move=> HP IHs s.
-    rewrite -[s]cats0.
-    elim: s.
-
-    Check (@cat_take_drop ((size s) %/ 2) T s).
-    apply: IHs.
-    - elim: s => // a s IHs.
-      Search _ take.
-
-  Admitted.
-  
-  Lemma binrev_binrev (s : seq T) : binrev (binrev s) = s.
-  Proof.
-    elim/cat_ind : s => // [s0 s1 IHs0 IHs1].
-    rewrite -!binrev_cat.
-      by rewrite IHs0 IHs1.
-  Qed.
-  
-  
-  (* ************* *)
-  
-
-  Lemma zip2_ind P :
-    P [::] -> (forall (s0 s1 : seq T), P s0 -> P s1 -> P (s0 +++ s1)) -> forall s, P s.
-  Proof.
-  Admitted.
-  
-  Lemma bitrev_cat (s0 s1 : seq T) : bitrev s0 +++ bitrev s1 = bitrev (s0 +++ s1).
-  Proof.
-  Admitted.
-  
-  Lemma bitrev_bitrev (s : seq T) : bitrev (bitrev s) = s.
-  Proof.
-    elim/zip2_ind : s => // [s0 s1 IHs0 IHs1].
-    rewrite -!bitrev_cat.
-      by rewrite IHs0 IHs1.
-  Qed.
-
-End Test.
+End FFT.
 
 (* END *)
-From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import all_algebra.
 
-Set Implicit Arguments.
-Unset Strict Implicit.
-Unset Printing Implicit Defensive.
-(* Set Print All. *)
-
-(* 以下全部要る *)
-Import intZmod.
-Import intOrdered.
-Import GRing.Theory.
-Open Scope ring_scope.
-
-Check ratz 0 : rat.
-Check ratz 1 : rat.
-
-Check fracq (1%:Z, 2%:Z).
-
-Definition ratn (m : int) (n : int) := fracq (m, n).
-Check ratn 1 2 : rat.                       (* 1/2 *)
-
-Compute ratn 2 4 == ratn 1 2.               (* true *)
-Compute ratn 3 4 == ratn 1 2.               (* false *)
-
-Compute addq (ratn 1 2) (ratn 1 2) == ratz 1.   (* true *)
-Compute subq (ratn 1 2) (ratn 1 2) == ratz 0.   (* true *)
-Compute mulq (ratn 1 2) (ratn 1 2) == ratn 1 4. (* true *)
-
-
-Definition norm (z : rat) :=
-  let d := denq z in
-  let n := numq z in
-  let n' := n - d in                        (* 整数引算 *)
-  if d <= n then fracq (n', d) else z.      (* 整数比較 *)
-
-
-Definition sign (z : rat) := norm (addq z (ratn 1 2)). (* 1/2 を足す。-1倍と同じ。 *)
-Compute sign (ratn 1 4).                    (* 3/4 *)
-Compute sign (ratn 1 8).                    (* 5/8 *)
-Compute sign (ratn 3 4).                    (* 5/4 = 1/4 *)
-
-Inductive Term : Type :=
-| tcoe (n : nat)
-| tmul (t : Term) (z : rat).
-
-Definition sign2 (t : Term) :=
-  match t with
-  | tcoe n => tmul (tcoe n) (ratn 1 2)
-  | tmul t z => tmul t (sign z)
-  end.
-
-Inductive Exp : Type :=
-| term (t : Term)
-| tadd (e : Exp) (t : Term)
-| tsub (e : Exp) (t : Term).
-
-Fixpoint tmult (t : Exp) (z : rat) : Exp :=
-  match t with
-  | term t => match t with
-              | tcoe n => term (tmul (tcoe n) z)
-              | tmul t z' => term (tmul t (norm (addq z' z)))
-              end
-  | tadd e t => match t with
-                | tcoe n => tadd (tmult e z) (tmul (tcoe n) z)
-                | tmul t z' => tadd (tmult e z) (tmul t (norm (addq z' z)))
-                end
-  | tsub e t => match t with
-                | tcoe n => tadd (tmult e z) (tmul (tcoe n) (sign z))
-                | tmul t z' => tadd (tmult e z) (tmul t (norm (sign (addq z' z))))
-                end
-  end.
-
-Compute tmult (tsub (term (tcoe 0)) (tcoe 4)) (ratn 0 8).
-Compute tmult (tsub (term (tcoe 2)) (tcoe 6)) (ratn 2 8).
-Compute tmult (tsub (term (tcoe 1)) (tcoe 5)) (ratn 1 8).
-Compute tmult (tsub (term (tcoe 3)) (tcoe 7)) (ratn 3 8).
-
-Fixpoint taddt (e1 e2 : Exp) : Exp :=
-  match e2 with
-  | term t => tadd e1 t                       (* e1 + t *)
-  | tadd e2 t => tadd (taddt e1 e2) t         (* e1 + (e2 + t) *)
-  | tsub e2 t => tadd (taddt e1 e2) (sign2 t) (* e1 + (e2 - t) *)
-  end
-with tsubt (e1 e2 : Exp) : Exp :=
-  match e2 with
-  | term t => tadd e1 (sign2 t)               (* e1 - t *)
-  | tadd e2 t => tadd (tsubt e1 e2) (sign2 t) (* e1 - (e2 + t) *)
-  | tsub e2 t => tadd (tsubt e1 e2) t         (* e1 - (e2 - t) *)
-  end.
-  
-
-Compute tmult (tsub (term (tcoe 0)) (tcoe 4)) (ratn 0 8).
-Compute tmult (tsub (term (tcoe 2)) (tcoe 6)) (ratn 2 8).
-Compute tsubt
-        (tmult (tsub (term (tcoe 0)) (tcoe 4)) (ratn 0 8))
-        (tmult (tsub (term (tcoe 2)) (tcoe 6)) (ratn 2 8)).
-
-Compute tmult
-        (tsubt
-           (tmult (tsub (term (tcoe 0)) (tcoe 4)) (ratn 0 8))
-           (tmult (tsub (term (tcoe 2)) (tcoe 6)) (ratn 2 8)))
-        (ratn 0 4).
-
-Compute tsubt
-        (tmult (tsub (term (tcoe 1)) (tcoe 5)) (ratn 1 8))
-        (tmult (tsub (term (tcoe 3)) (tcoe 7)) (ratn 3 8)).
-
-Compute tmult
-        (tsubt
-           (tmult (tsub (term (tcoe 1)) (tcoe 5)) (ratn 1 8))
-           (tmult (tsub (term (tcoe 3)) (tcoe 7)) (ratn 3 8)))
-        (ratn 1 4).
-
-Compute tsubt
-        (tmult
-           (tsubt
-              (tmult (tsub (term (tcoe 0)) (tcoe 4)) (ratn 0 8))
-              (tmult (tsub (term (tcoe 2)) (tcoe 6)) (ratn 2 8)))
-           (ratn 0 4))
-        (tmult
-           (tsubt
-              (tmult (tsub (term (tcoe 1)) (tcoe 5)) (ratn 1 8))
-              (tmult (tsub (term (tcoe 3)) (tcoe 7)) (ratn 3 8)))
-           (ratn 1 4)).
-
-(* 
-     = tadd
-         (tadd
-            (tadd
-               (tadd
-                  (tadd
-                     (tadd
-                        (tadd (term (tmul (tcoe 0) (Rat (fracq_subproof (0, 1)))))
-                           (tmul (tcoe 4) (Rat (fracq_subproof (1, 2))))) (* 4/8 *)
-                        (tmul (tcoe 2) (Rat (fracq_subproof (3, 4))))) (* 6/8 *)
-                     (tmul (tcoe 6) (Rat (fracq_subproof (5, 4))))) (* 2/8 *)
-                  (tmul (tcoe 1) (Rat (fracq_subproof (14, 16))))) (* 7/8 *)
-               (tmul (tcoe 5) (Rat (fracq_subproof (22, 16))))) (* 3/8 *)
-            (tmul (tcoe 3) (Rat (fracq_subproof (26, 16))))) (* 5/8 *)
-         (tmul (tcoe 7) (Rat (fracq_subproof (34, 16)))) (* 1/8 *)
-     : Exp
-*)
-
-(* 
-ノーマライズあと
-     = tadd
-         (tadd
-            (tadd
-               (tadd
-                  (tadd
-                     (tadd
-                        (tadd (term (tmul (tcoe 0) (Rat (fracq_subproof (0, 1)))))
-                           (tmul (tcoe 4) (Rat (fracq_subproof (1, 2))))) (* 4/8 *)
-                        (tmul (tcoe 2) (Rat (fracq_subproof (3, 4))))) (* 6/8 *)
-                     (tmul (tcoe 6) (Rat (fracq_subproof (1, 4))))) (* 2/8 *)
-                  (tmul (tcoe 1) (Rat (fracq_subproof (14, 16))))) (* 7/8 *)
-               (tmul (tcoe 5) (Rat (fracq_subproof (3, 8))))) (* 3/8 *)
-            (tmul (tcoe 3) (Rat (fracq_subproof (10, 16))))) (* 5/8 *)
-         (tmul (tcoe 7) (Rat (fracq_subproof (1, 8)))) (* 1/8 *)
-     : Exp
- *)
-
-
-Definition CS :=
-  [:: term (tcoe 0); term (tcoe 1); term (tcoe 2); term (tcoe 3);
-     term (tcoe 4); term (tcoe 5); term (tcoe 6); term (tcoe 7)].
-
-Compute take 4 CS.
-Compute drop 4 CS.
-
-Fixpoint map2 op (i : nat) (s1 s2 : seq Exp) : seq Exp :=
-  match s1, s2 with
-  | [::], _ => [::]
-  | _, [::] => [::]
-  | c1 :: s1, c2 :: s2 => (op i c1 c2) :: map2 op i.+1 s1 s2
-  end.
-
-Check (fun _ c1 c2 => taddt c1 c2).
-Check (fun i c1 c2 => tmult (tsubt c1 c2) (ratn i 8)).
-
-(* バタフライ演算 *)
-Definition Be (n : nat) s1 s2 := map2 (fun _ c1 c2 => taddt c1 c2) 0 s1 s2.
-Compute Be 8 (take 4 CS) (drop 4 CS).
-
-Definition Bo n s1 s2 := map2 (fun i c1 c2 => tmult (tsubt c1 c2) (ratn i n)) 0 s1 s2.
-Compute Bo 8 (take 4 CS) (drop 4 CS).
-
-Fixpoint zip2 (s1 s2 : seq Exp) : seq Exp :=
-  match s1, s2 with
-  | [::], _ => [::]
-  | _, [::] => [::]
-  | c1 :: s1, c2 :: s2 => c1 :: c2 :: zip2 s1 s2
-  end.
-
-Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
-
-Require Import Recdef.
-Require Import Program.Wf.
-Program Fixpoint FFT (n : nat) (c : seq Exp) {wf lt n} : seq Exp :=
-  if (leq n 1) then c
-  else
-    let c0 := take (n %/2) c in                  (* 前半 *)
-    let c1 := drop (n %/2) c in                  (* 後半 *)
-    FFT (n %/2) (Be n c0 c1) +++ FFT (n %/2) (Bo n c0 c1).
-Obligations.
-Obligation 1.                               (* (n %/ 2 < n)%coq_nat *)
-Proof.
-  Admitted.
-Obligation 2.                               (* (n %/ 2 < n)%coq_nat *)
-Proof.
-  Admitted.
-
-Compute FFT 8 CS.
-
-(* 結果は手動と一致するようだ。 *)
-
-Coercion term : Term >-> Exp.
-Notation "a + b" := (tadd a b).
-Notation "a * b" := (tmul a b).
-
-Compute FFT 8 CS.
-
-
-(* END *)
