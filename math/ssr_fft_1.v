@@ -153,12 +153,12 @@ Section ZetaFactor.
     Goal z6_4 == z2_4. Proof. compute. done. Qed.
     Goal z0_4 == z8_4. Proof. compute. done. Qed.
     
-    Variables i : nat.
+    Variables j : nat.
     
-    Definition zi_4 := zf (i, 4).
-    Definition z2i_8 := zf (2 * i, 8).
+    Definition zj_4 := zf (j, 4).
+    Definition z2j_8 := zf (2 * j, 8).
 
-    Check zi_4 == z2i_8.
+    Check zj_4 == z2j_8.
   End Test1.
   
   
@@ -269,32 +269,32 @@ Section MapZip.
 
   Variable T : Type.
   
-  Fixpoint map2 op (i : nat) (s1 s2 : seq T) : seq T :=
+  Fixpoint map2 op (j : nat) (s1 s2 : seq T) : seq T :=
     match s1, s2 with
     | [::], _ => [::]
     | _, [::] => [::]
-    | c1 :: s1, c2 :: s2 => (op i c1 c2) :: map2 op i.+1 s1 s2
+    | c1 :: s1, c2 :: s2 => (op j c1 c2) :: map2 op j.+1 s1 s2
     end.
   
   Lemma size_map2 (s t : seq T) :
-    forall op i, size (map2 op i s t) = minn (size s) (size t).
+    forall op j, size (map2 op j s t) = minn (size s) (size t).
   Proof.
-    elim: s t => [| x s IHs] [| t2 t] //= op i.
+    elim: s t => [| x s IHs] [| t2 t] //= op j.
       by rewrite IHs -add1n addn_minr.
   Qed.
 
   Lemma size1_map2 (s t : seq T) :
-    forall op i, size (map2 op i s t) <= size s.
+    forall op j, size (map2 op j s t) <= size s.
   Proof.
-    move=> op i.
+    move=> op j.
     rewrite size_map2.
     apply: geq_minl.
   Qed.
   
   Lemma size2_map2 (s t : seq T) :
-    forall op i, size (map2 op i s t) <= size t.
+    forall op j, size (map2 op j s t) <= size t.
   Proof.
-    move=> op i.
+    move=> op j.
     rewrite size_map2.
     apply: geq_minr.
   Qed.
@@ -342,7 +342,7 @@ Section FFT'.
   (* バタフライ演算 *)
   Definition be' (n : nat) s1 s2 := map2 (fun _ c1 c2 => addze c1 c2)
                                          0 s1 s2.
-  Definition bo' n s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2) (zf (i, n)))
+  Definition bo' n s1 s2 := map2 (fun j c1 c2 => mulze (subze c1 c2) (zf (j, n)))
                                  0 s1 s2.
 
   Section Test5.
@@ -356,6 +356,7 @@ Section FFT'.
     | _ => let c0 := take (n %/2) c in      (* 前半 *)
            let c1 := drop (n %/2) c in      (* 後半 *)
            fft' (n %/2) (be' n c0 c1) +++ fft' (n %/2) (bo' n c0 c1)
+           (* 偶数番 *)                   (* 奇数番 *)
     end.
   Obligations.
   Obligation 1.
@@ -385,7 +386,7 @@ Section FFT.
   (* バタフライ演算 *)
   Definition be s1 s2 := map2 (fun _ c1 c2 => addze c1 c2)
                               0 s1 s2.
-  Definition bo s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2) (zf (i, (size s1).*2)))
+  Definition bo s1 s2 := map2 (fun j c1 c2 => mulze (subze c1 c2) (zf (j, (size s1).*2)))
                               0 s1 s2.
   
   Section Test6.
@@ -399,6 +400,7 @@ Section FFT.
     | _ => let c0 := take (size c %/2) c in      (* 前半 *)
            let c1 := drop (size c %/2) c in      (* 後半 *)
            fft (be c0 c1) +++ fft (bo c0 c1)
+           (* 偶数番 *)       (* 奇数番 *)
     end.
   Obligation 1.
   Proof.
