@@ -326,6 +326,16 @@ End MapZip.
 
 Notation "s1 +++ s2" := (zip2 s1 s2) (right associativity, at level 60).
 
+Definition CS : seq exp := [:: tt (zt 0 (zf (0, 1)));
+                              tt (zt 1 (zf (0, 1)));
+                              tt (zt 2 (zf (0, 1)));
+                              tt (zt 3 (zf (0, 1)));
+                              tt (zt 4 (zf (0, 1)));
+                              tt (zt 5 (zf (0, 1)));
+                              tt (zt 6 (zf (0, 1)));
+                              tt (zt 7 (zf (0, 1)))
+                           ].
+      
 (* リストのサイズを渡す。それにより再帰の停止性を決める。 *)
 Section FFT'.
 
@@ -336,21 +346,10 @@ Section FFT'.
                                  0 s1 s2.
 
   Section Test5.
-
-    Definition CS : seq exp := [:: tt (zt 0 (zf (0, 1)));
-                                  tt (zt 1 (zf (0, 1)));
-                                  tt (zt 2 (zf (0, 1)));
-                                  tt (zt 3 (zf (0, 1)));
-                                  tt (zt 4 (zf (0, 1)));
-                                  tt (zt 5 (zf (0, 1)));
-                                  tt (zt 6 (zf (0, 1)));
-                                  tt (zt 7 (zf (0, 1)))
-                               ].
-      
     Compute be' 8 (take 4 CS) (drop 4 CS).
     Compute bo' 8 (take 4 CS) (drop 4 CS).
   End Test5.
-
+  
   Program Fixpoint fft' (n : nat) (c : seq exp) {wf lt n} : seq exp :=
     match n with
     | 0 | 1 => c
@@ -372,6 +371,7 @@ Section FFT'.
       by ssromega.
   Qed.
 
+  Compute fft' 8 CS.
 End FFT'.
 
 (* リストのサイズを使って再帰の停止性を決める。 *)
@@ -385,8 +385,13 @@ Section FFT.
   (* バタフライ演算 *)
   Definition be s1 s2 := map2 (fun _ c1 c2 => addze c1 c2)
                               0 s1 s2.
-  Definition bo s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2) (zf (i, (size s1))))
+  Definition bo s1 s2 := map2 (fun i c1 c2 => mulze (subze c1 c2) (zf (i, (size s1).*2)))
                               0 s1 s2.
+  
+  Section Test6.
+    Compute be (take 4 CS) (drop 4 CS).
+    Compute bo (take 4 CS) (drop 4 CS).
+  End Test6.
   
   Program Fixpoint fft (c : seq exp) {measure (size c)} : seq exp :=
     match (size c) with
@@ -418,6 +423,75 @@ Section FFT.
         by apply: ltn_Pdiv.
   Qed.
   
+  Compute fft CS.
+  (* 
+     = [:: Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (2, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (6, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (1, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (5, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (3, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (7, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (2, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (6, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) is_true_true +
+           Term (1, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) is_true_true +
+           Term (5, {| valz := (5, 8); axiom := zf_subproof (10, 16) |}) is_true_true +
+           Term (3, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) is_true_true +
+           Term (7, {| valz := (7, 8); axiom := zf_subproof (14, 16) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (2, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (6, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (1, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (5, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (3, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) is_true_true +
+           Term (7, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (2, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
+           Term (6, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (1, {| valz := (3, 8); axiom := zf_subproof (12, 32) |}) is_true_true +
+           Term (5, {| valz := (7, 8); axiom := zf_subproof (28, 32) |}) is_true_true +
+           Term (3, {| valz := (1, 8); axiom := zf_subproof (36, 32) |}) is_true_true +
+           Term (7, {| valz := (5, 8); axiom := zf_subproof (20, 32) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (2, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (6, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (1, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (5, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (3, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (7, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (2, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (6, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
+           Term (1, {| valz := (5, 8); axiom := zf_subproof (5, 8) |}) is_true_true +
+           Term (5, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) is_true_true +
+           Term (3, {| valz := (7, 8); axiom := zf_subproof (7, 8) |}) is_true_true +
+           Term (7, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (2, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (6, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (1, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
+           Term (5, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
+           Term (3, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (7, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true;
+           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
+           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
+           Term (2, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
+           Term (6, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
+           Term (1, {| valz := (7, 8); axiom := zf_subproof (7, 8) |}) is_true_true +
+           Term (5, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) is_true_true +
+           Term (3, {| valz := (5, 8); axiom := zf_subproof (5, 8) |}) is_true_true +
+           Term (7, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) is_true_true]
+     : seq exp
+   *)
+
 End FFT.
 
 (* END *)
