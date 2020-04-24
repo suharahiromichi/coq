@@ -92,7 +92,7 @@ Check eq_refl : forall (T : eqType) (x : T), x == x.
 Check eq_sym  : forall (T : eqType) (x y : T), (x == y) = (y == x).
 
 (**
-## 関数拡張 (f x == f y) = (x = y) が成立する。
+## 関数拡張 (f x == f y) = (x == y) が成立する。
 
 ただし、前提によって補題が異なる。
  *)
@@ -103,16 +103,17 @@ Check inj_eq : forall (aT rT : eqType) (f : aT -> rT),
 
 Print cancel.            (* g (f x) = x *)
 Check can_eq : forall (aT rT : eqType) (f : aT -> rT) (g : rT -> aT),
-    cancel f g ->                           (* fのキャンセルgが存在 *)
+    cancel f g ->                           (* fの逆関数gが存在 *)
     forall x y : aT, (f x == f y) = (x == y).
-(* f自体が自己キャンセルである必要はない。 *)
+(* f自体が自己逆関数（キャンセル）である必要はない。 *)
 
 Print bijective.         (* cancel f g -> cancel g f -> bijective f *)
 Check bij_eq : forall (aT rT : eqType) (f : aT -> rT),
     bijective f ->                          (* 全単射 *)
     forall x y : aT, (f x == f y) = (x == y).
 
-(* ちなみに、単射の逆は必ず成り立つことに、注意してください。 *)
+(* ちなみに、次は必ず成り立つことに、注意してください。
+   バニラCoqのタクティクにもあります。 *)
 Check f_equal.           (* x = y -> f x = f y *)
 
 
@@ -123,28 +124,28 @@ Check f_equal.           (* x = y -> f x = f y *)
 最後のふたつを覚えておけばよいかも。
  *)
 Check contraTeq : forall (T1 : eqType) (b : bool) (x y : T1),
-    (x != y -> ~~ b) -> b -> x = y.
+    (x != y -> ~~ b) -> (b -> x = y).
 Check contraNeq : forall (T1 : eqType) (b : bool) (x y : T1),
-    (x != y -> b) -> ~~ b -> x = y.
+    (x != y -> b) -> (~~ b -> x = y).
 Check contraFeq : forall (T1 : eqType) (b : bool) (x y : T1),
     (x != y -> b) -> b = false -> x = y.
 Check contraTneq : forall (T1 : eqType) (b : bool) (x y : T1),
-    (x = y -> ~~ b) -> b -> x != y.
+    (x = y -> ~~ b) -> (b -> x != y).
 Check contraNneq : forall (T1 : eqType) (b : bool) (x y : T1),
-    (x = y -> b) -> ~~ b -> x != y.
+    (x = y -> b) -> (~~ b -> x != y).
 Check contraFneq : forall (T1 : eqType) (b : bool) (x y : T1),
-    (x = y -> b) -> b = false -> x != y.
+    (x = y -> b) -> (b = false -> x != y).
 Check contra_eqN : forall (T1 : eqType) (b : bool) (x y : T1),
-    (b -> x != y) -> x = y -> ~~ b.
+    (b -> x != y) -> (x = y -> ~~ b).
 Check contra_eqF : forall (T1 : eqType) (b : bool) (x y : T1),
-    (b -> x != y) -> x = y -> b = false.
+    (b -> x != y) -> (x = y -> b = false).
 Check contra_eqT : forall (T1 : eqType) (b : bool) (x y : T1),
-    (~~ b -> x != y) -> x = y -> b.
+    (~~ b -> x != y) -> (x = y -> b).
 
 Check contra_eq : forall (T1 T2 : eqType) (z1 z2 : T2) (x1 x2 : T1),
-       (x1 != x2 -> z1 != z2) -> z1 = z2 -> x1 = x2.
+       (x1 != x2 -> z1 != z2) -> (z1 = z2 -> x1 = x2).
 Check contra_neq : forall (T1 T2 : eqType) (z1 z2 : T2) (x1 x2 : T1),
-       (x1 = x2 -> z1 = z2) -> z1 != z2 -> x1 != x2.
+       (x1 = x2 -> z1 = z2) -> (z1 != z2 -> x1 != x2).
 
 (**
 ## eq_irrelevance
@@ -189,6 +190,7 @@ Proof. by case; case. Qed.
 Definition balle_eqMixin := InjEqMixin inj_b2n.
 Canonical balle_eqType := EqType balle balle_eqMixin.
 
+(* bool の equal (balle_eqb) を定義し、ていないのに、 *)
 Compute rouge == blanc.                     (* == が定義される。 *)
 Compute eq_op rouge blanc.
 Print Canonical Projections.
@@ -204,7 +206,7 @@ Canonical balle_eqType' := EqType balle balle_eqMixin'.
 (* この場合も、inj_b2n の場合と同様に、== が定義される。 *)
 
 (*
-bool の equal (balle_eqb) を定義し、
+これまでのように、bool の equal (balle_eqb) を定義し、
 eqTypeの公理を満たすインスタンスとして balle_eqType を定義する。
 *)
 Definition balle_eqb (x y : balle) : bool :=
@@ -379,6 +381,9 @@ rat_ZmodType                            zmodType
 rat_countType   pair_countType                  countType
 rat_choiceType  pair_choiceType         choiceType
 rat_eqType      pair_eqType             eqType
+
+rat は、 pair のサブタイプ
+poly T は、seq T のサブタイプ
  *)
 
 Set Implicit Arguments.
@@ -398,7 +403,9 @@ Import intOrdered.                     (* lez など *)
 (* Open Scope rat_scope. *)
 Open Scope ring_scope.
 
+(* ********** *)
 (* # 有理数型 *)
+(* ********** *)
 
 Definition q1_3 := fracq (1%:Z, 3%:Z).
 Definition q2_6 := fracq (2%:Z, 6%:Z).
@@ -417,14 +424,30 @@ Qed.
 
 (* ## 有理数における (−a)(−b) = ab *)
 
-Check rat_Ring : ringType.               (* rat_RingType ではない。 *)
+Check rat_Ring : ringType.               (* rat_ringType ではない（注） *)
 Lemma rat_mulrNN (q1 q2 : rat) : - q1 * - q2 = q1 * q2.
 Proof.
     by apply mulrNN.
 Qed.
 
+(*
+(注) intとratは、命名規則を間違えている。
 
+○int_eqType
+×int_zmodType   ○int_ZmodType  
+×rat_zmodType   ○rat_ZmodType  
+○poly_zmodType                  
+
+○int_eqType
+×int_ringType   ○int_Ring      
+×rat_ringType   ○rat_Ring      
+○poly_ringType
+*)
+
+
+(* ********** *)
 (* # 多項式型 *)
+(* ********** *)
 
 (* ## 多項式における (−a)(−b) = ab *)
 
@@ -433,15 +456,23 @@ Lemma poly_mulrNN' (p1 p2 : polynomial rat_Ring) : - p1 * - p2 = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
+(* (p1 p2 : polynomial rat_Ring) がダサいと感じる。 *)
 
-(* Phantom Type ファントムタイプ *)
+
+(* ## Phantom Type ファントムタイプ *)
 
 Lemma poly_mulrNN (p1 p2 : {poly rat}) : - p1 * - p2 = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
 
-(* {poly R} は phantom type を使い、R を ringTypeのカノニカル型に制限することを意味する。
+(*
+{poly R} は phantom type を使い、R を ringTypeのカノニカル型に制限することを意味する。
+
+同様な例として、以下の T と aT は finType に制限する。rTな任意のType。
+{ffun aT -> rT}
+{set T}
+{perm T}
 
 see. https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-phantom_types.v
  *)
