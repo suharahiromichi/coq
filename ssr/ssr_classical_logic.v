@@ -114,7 +114,7 @@ Section Classical_Logic.
   Lemma impor__exmid : impor -> exmid.
   Proof.
     move=> impor P.
-    case: (impor P P) => [HnP | HP].
+    case: (impor P P) => [| HnP | HP].
     - done.
     - by right.
     - by left.
@@ -123,9 +123,9 @@ Section Classical_Logic.
   Lemma dms__nnpp : dms -> nnpp.
   Proof.
     move=> dms P HnnQ.
-    case: (dms P P) => [HnPnP | ].
+    case: (dms P P) => [H | HP | ].
     - apply: HnnQ=> HP.
-        by case: HnPnP => [HnP1 HnP2].
+        by case: H.
     - done.
     - done.
   Qed.
