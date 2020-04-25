@@ -68,7 +68,7 @@ Check @eqP : forall (T : eqType) (x y : T), reflect (x = y) (x == y).
 Check eqbP.                                 (* eqb 専用 *)
 Check eqnP.                                 (* eqn 専用 *)
 
-Lemma test : forall (x y : nat), x == y -> x + y == y + y.
+Example test : forall (x y : nat), x == y -> x + y == y + y.
 Proof.
   move=> x y.
   move/eqP.                                 (* 前提部分 : x = y *)
@@ -77,7 +77,7 @@ Proof.
   done.
 Qed.
 
-Lemma test4 : forall (n m : nat), if n == m then true else true.
+Example test4 : forall (n m : nat), if n == m then true else true.
 Proof. move=> n m.
        case: eqP => H.                      (* ifP でもよい。 *)
        (* H : n = m *)
@@ -90,6 +90,18 @@ Qed.
  *)
 Check eq_refl : forall (T : eqType) (x : T), x == x.
 Check eq_sym  : forall (T : eqType) (x y : T), (x == y) = (y == x).
+
+(**
+rewrite eq_sym は x != y についても使える。 ~~ (x == y) なので。
+ *)
+Example test5 : forall (n : nat), 0 != n -> 0 < n.
+Proof.
+  move=> n H.
+  Check lt0n : forall n : nat, (0 < n) = (n != 0).
+  rewrite eq_sym in H.                      (* n != 0 *)
+  rewrite -lt0n in H.                       (* 0 < n *)
+  done.
+Qed.
 
 (**
 ## 関数拡張 (f x == f y) = (x == y) が成立する。
@@ -105,7 +117,7 @@ Print cancel.            (* g (f x) = x *)
 Check can_eq : forall (aT rT : eqType) (f : aT -> rT) (g : rT -> aT),
     cancel f g ->                           (* fの逆関数gが存在 *)
     forall x y : aT, (f x == f y) = (x == y).
-(* f自体が自己逆関数（キャンセル）である必要はない。 *)
+(* f自体が自己逆関数（セルフキャンセル）である必要はない。 *)
 
 Print bijective.         (* cancel f g -> cancel g f -> bijective f *)
 Check bij_eq : forall (aT rT : eqType) (f : aT -> rT),
@@ -121,7 +133,7 @@ Check f_equal.           (* x = y -> f x = f y *)
 ## contraXX (== に関する対偶)
 
 直観主義論理では、一般に対偶は成り立たないが、否定の側がboolなら成立する。
-最後のふたつを覚えておけばよいかも。
+気づかずに自分で解いてしまうだろう。最後のふたつを覚えておけばよいかも。
  *)
 Check contraTeq : forall (T1 : eqType) (b : bool) (x y : T1),
     (x != y -> ~~ b) -> (b -> x = y).
@@ -157,6 +169,7 @@ Check eq_irrelevance  : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
 
 (**
 # injective や、 cancel、pcancel から eqType を定義する：
+（サブタイプの話とは別）
 
 以下では、nat との injective と pcancel (部分キャンセル) を使う。 
 
@@ -207,7 +220,7 @@ Canonical balle_eqType' := EqType balle balle_eqMixin'.
 
 (*
 これまでのように、bool の equal (balle_eqb) を定義し、
-eqTypeの公理を満たすインスタンスとして balle_eqType を定義する。
+eqTypeの公理を満たすインスタンスとして balle_eqType を定義することもできる。
 *)
 Definition balle_eqb (x y : balle) : bool :=
   match (x, y) with
@@ -258,10 +271,10 @@ Canonical balle_eqType'' := EqType balle balle_eqMixin''.
 (**
 ## その他
 
-nat_eqType      nat.v
-seq_eqType      seq.v
-tree_eqType     choice.v
-ordinal_eqType  fintype.v
+nat_eqType      (nat.v で定義)
+seq_eqType      (seq.v で定義)
+tree_eqType     (choice.v で定義)
+ordinal_eqType  (fintype.v で定義)
 *)
 
 (**
@@ -391,6 +404,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
+(* 以下をインポートしてオープンすると、有理多項式が使えるようになる。 *)
 (* ssralg.v *)
 Import GRing.Theory.                 (* mulrNN を使えるようにする。 *)
 (* ssrnum.v *)
@@ -407,9 +421,10 @@ Open Scope ring_scope.
 (* # 有理数型 *)
 (* ********** *)
 
-Definition q1_3 := fracq (1%:Z, 3%:Z).
-Definition q2_6 := fracq (2%:Z, 6%:Z).
+Definition q1_3 := fracq (1%:Z, 3%:Z).      (* 1/3 *)
+Definition q2_6 := fracq (2%:Z, 6%:Z).      (* 2/6 *)
 
+(* 既約して得られる。 *)
 Compute (valq q2_6).1.                      (* 1 *)
 Compute (valq q2_6).2.                      (* 3 *)
 
@@ -417,16 +432,19 @@ Compute q1_3 == q2_6.                       (* true *)
 
 Goal q1_3 = q2_6.
 Proof.
-  Fail reflexivity.
-    by apply/eqP.
+  Fail reflexivity.                         (* = は成立しない。 *)
+    by apply/eqP.                           (* == は成立する。 *)
 Qed.
 
 
 (* ## 有理数における (−a)(−b) = ab *)
 
 Check rat_Ring : ringType.               (* rat_ringType ではない（注） *)
+Check rat : Type.
 Lemma rat_mulrNN (q1 q2 : rat) : - q1 * - q2 = q1 * q2.
 Proof.
+  (* 環一般に成り立つ補題 *)
+  Check mulrNN : forall (R : ringType) (x y : R), (- x) *( - y) = x * y.
     by apply mulrNN.
 Qed.
 
@@ -452,16 +470,18 @@ Qed.
 (* ## 多項式における (−a)(−b) = ab *)
 
 Check polynomial_ringType rat_Ring : ringType.
-Lemma poly_mulrNN' (p1 p2 : polynomial rat_Ring) : - p1 * - p2 = p1 * p2.
+Check polynomial rat_Ring : Type.
+Lemma poly_mulrNN' (p1 p2 : polynomial rat_Ring) : (- p1) * (- p2) = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
-(* (p1 p2 : polynomial rat_Ring) がダサいと感じる。 *)
+(* (p1 p2 : polynomial rat_Ring) の rat_Ring がダサいと感じる。ring と書きたい。 *)
 
 
 (* ## Phantom Type ファントムタイプ *)
 
-Lemma poly_mulrNN (p1 p2 : {poly rat}) : - p1 * - p2 = p1 * p2.
+Check {poly rat} : Type.
+Lemma poly_mulrNN (p1 p2 : {poly rat}) : (- p1) * (- p2) = p1 * p2.
 Proof.
     by apply mulrNN.
 Qed.
@@ -490,7 +510,7 @@ Print phant.
 (*
 Variant phant (p : Type) : Prop := Phant : phant p
 
-Coqの基本的な書き方に修正すると：
+Coqの基本的な Inductive な定義の書き方に修正すると：
 
 Inductive phant : Type -> Prop :=
 | Phant p : phant p.
@@ -501,20 +521,41 @@ Check Phant rat : phant rat.                (* ここに省略はない。 *)
 
 (* poly_of は R に加えて、使われない a という引数をとる。 *)
 Print poly_of.
-(* poly_of (R : ringType) (a : phant R) := polynomial R.
-   phant の引数は Type なので、コアーションが機能する。
-   poly_of (R : ringType) (a : phant (GRing.Ring.sort R)) := polynomial R. *)
+(* 
+   定義は以下であるが、
+   
+   poly_of (R : ringType) (a : phant R) := polynomial R.
+   
+   phant の引数は Type なので、コアーションが機能するため、実際は以下である。
+   
+   poly_of (R : ringType) (a : phant (GRing.Ring.sort R)) := polynomial R.
+
+   R は ringType でなければならない。
+   
+注意：poly_of の右辺が polynominal なので、{poly rat} の型が Type となる。
+polynominal_ringType にすると、ringType になる。
+ *)
 
 (* poly_of の定義から、
+
    a の型は ``phant rat_Ring`` であるけれど、コアーションを考慮すると、 
+
    a の型は ``phant rat`` でよいことになる。
  *)
 Check Phant rat : phant rat_Ring.           (* コアーションあり *)
 Check Phant rat : phant (GRing.Ring.sort rat_Ring). (* 省略なし。 *)
 Check Phant rat : phant rat.                        (* 省略なし。 *)
 
+(*
+  繰り返しになるが、{poly R} の R は ringType のカノニカル解となりうる型だけが書ける。
+*)
+Check {poly rat}.
+Check @poly_of _        (Phant rat).        (* 構文糖を展開する。 *)
+Check @poly_of rat_Ring (Phant rat). (* カノニカルプロジェクションで、引数を補完した。 *)
 
-(* このことは、カノニカルプロジェクションの意味では、「==」と同じで、 *)
+(*
+実は、このことは、カノニカルプロジェクションをやっているという意味では、「==」と同じで、
+ *)
 Check true : bool.
 (*           ^^^^ *)
 Check true == true.
@@ -536,8 +577,7 @@ Definition p2 : {poly rat} := \poly_(i < 3) fracq (i%:Z, 2%:Z).
 Definition p3 : {poly rat} := \poly_(i < 2) fracq (i%:Z, 3%:Z).
 (* (1/3)x + (0/3) *)
 
-Check - p2 * - p3 : {poly rat}.
-Check - p2 * - p3 : polynomial rat_Ring.
-(* Compute すると、終わらない。 *)
+Check (- p2) * (- p3) : {poly rat}.
+(* Compute (- p2) * (- p3). *)      (* Compute すると、終わらない。 *)
 
 (* END *)
