@@ -29,11 +29,9 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 (**
 # successor and predecessor
 
-standard coq の S と pred を rename したもの。
-nosimpl ではないことに注意してください。
+Standard Soq の S と pred を rename したもの。nosimpl ではないことに注意してください。
 
-次節にある .*2 (double) は nosimple です。
-csm_3_6_3_simpl.v に誤記がありました。
+次節にある .*2 (double) は nosimple です。csm_3_6_3_simpl.v に誤記がありました。
 *)
 
 Locate ".+1".           (* S n : nat_scope (default interpretation) *)
@@ -60,19 +58,63 @@ Check 1 : nat        : Type.
 (**
 # basic arithmetic
 
-nosimpl がついている。
+## 定義
 
-csm_3_6_3_simpl.v も参照のこと。
+Standard Soq の Nat.add, Nat.sub. Nat.mul に nosimpl をつけたもの。
 *)
 
 Locate "m + n".    (* addn m n : nat_scope (default interpretation) *)
 Print addn.        (* addn = nosimpl addn_rec *)
+Print addn_rec.    (* Nat.add *)
+Print plus.        (* Notation plus := Nat.add (Standard Coq での定義) *)
 
 Locate "m - n".    (* subn m n : nat_scope (default interpretation) *)
 Print subn.        (* subn = nosimpl subn_rec *)
+Print subn_rec.    (* subn_rec = Nat.sub *)
+Print minus.       (* Notation minus := Nat.sub (Standard Coq での定義) *)
 
 Locate "m * n".    (* muln m n : nat_scope (default interpretation) *)
 Print muln.        (* muln = nosimpl muln_rec *)
+Print muln_rec.    (* muln_rec = Nat.mul *)
+Print mult.        (* Notation mult := Nat.mul (Standard Coq での定義) *)
+
+(**
+## nosimpl とは
+
+定義のなかで（これが重要）match や let: を使うと、simplが機能しない。
+
+simpl (rewrite /=) は、簡約をするタクティクで simplification の略。
+*)
+
+Definition add1 := (match tt with tt => Nat.add end).
+Definition add2 := (let: tt := tt in Nat.add).
+Definition add3 := (let tt := tt in Nat.add). (* これは simpl される。 *)
+
+(* どこの simpl で 左辺が2に簡約されるか。 *)
+Goal add1 1 1 = 2. Proof. simpl. rewrite /add1. simpl. reflexivity. Qed.
+Goal add2 1 1 = 2. Proof. simpl. rewrite /add2. simpl. reflexivity. Qed.
+Goal add3 1 1 = 2. Proof. simpl. reflexivity. Qed.
+
+
+(**
+## Standard Coq の関数に変換する。
+
+次の補題が用意されている。 
+Standard Coq の add, sub, mul には + * / が用意されているが、
+デフォルトでないので、%coq_nat と表示される。
+
+一旦 %coq_nat に変換すれば、Standard Coq の omega などが使用できる。
+ただし、ltacで定義するのが現実的である。ssr_omega.v 参照のこと。
+*)
+
+Check plusE  : Nat.add = addn.
+Check minusE : Nat.sub = subn.
+Check multE  : Nat.mul = muln.
+
+Goal 1 + 1 = 2. Proof. rewrite -plusE. simpl. reflexivity. Qed. (* (1 + 1)%coq_nat *)
+Goal 1 - 1 = 0. Proof. rewrite -minusE. simpl. reflexivity. Qed. (* (1 - 1)%coq_nat *)
+Goal 1 * 1 = 1. Proof. rewrite -multE. simpl. reflexivity. Qed. (* (1 * 1)%coq_nat *)
+
 
 (**
 # comparison
@@ -86,7 +128,7 @@ MathComp の <= などの不等式はboolである。Prop の不等式にした�
 leP と ltP を使う。
 
 leq は、nosimpl でないので、done で証明できる。
-むしろ、Standard Coq の <= と < にすると、Prop なので done できなくなる。
+Standard Coq の <= と < は、Prop なので done できなくなる。
 *)
 
 Goal forall n, n <= n.+1.
@@ -94,7 +136,7 @@ Proof.
   move=> n.
   apply/leP.
   (* (n <= n.+1)%coq_nat *)
-  (* done で終わらない。やってみて。 *)
+  Fail done.                     (* done で終わらない。 *)
   apply/leP.
   (* n <= n.+1 *)  
   done.
@@ -105,9 +147,6 @@ Proof.
   move=> n.
   apply/ltP.
   (* (n < n.+1)%coq_nat *)
-  (* done で終わらない。やってみて。 *)
-  apply/leP.
-  (* n < n.+1 *)  
   done.
 Qed.  
 
