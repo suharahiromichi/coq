@@ -183,28 +183,14 @@ End ZetaFactor.
 
 Section Term.
 
-  Record term : Set :=
-    Term {
-        valt : (nat * zeta);
-        _ : true
-      }.
+  Definition term : Set := (nat * zeta)%type.
   
-  Canonical term_subType := Eval hnf in [subType for valt].
-  Definition term_eqMixin := [eqMixin of term by <:].
-  Canonical term_eqType := EqType term term_eqMixin.
-  Definition term_choiceMixin := [choiceMixin of term by <:].
-  Canonical term_choiceType := ChoiceType term term_choiceMixin.
-  Definition term_countMixin := [countMixin of term by <:].
-  Canonical term_countType := CountType term term_countMixin.
-  Canonical term_subCountType := [subCountType of term].
-  
+  Definition zt (n : nat) (z : zeta) := (n, z).
 
-  Definition zt (n : nat) (z : zeta) := Term (n, z) is_true_true.
-
-  Definition czt (t : term) : nat := (valt t).1.
-  Definition fzt (t : term) : zeta := (valt t).2.
-  Definition nzt (t : term) : nat := nzf (valt t).2.
-  Definition dzt (t : term) : nat := dzf (valt t).2.
+  Definition czt (t : term) : nat := t.1.
+  Definition fzt (t : term) : zeta := t.2.
+  Definition nzt (t : term) : nat := nzf t.2.
+  Definition dzt (t : term) : nat := dzf t.2.
   Definition mulzt (t : term) (z : zeta) : term := zt (czt t) (mulzf (fzt t) z).
   Definition negzt (t : term) : term := zt (czt t) (negzf (fzt t)).
   
@@ -254,11 +240,12 @@ Section Expression.
 
     Definition z1 : zeta := zf (1, 4).
     Definition e1 : exp :=
-      (zt 0 (zf (0, 4))) + zt 1 (zf (1, 4)) + zt 2 (zf (2, 4)) + zt 3 (zf (3, 4)).
+      tt (zt 0 (zf (0, 4))) + zt 1 (zf (1, 4)) + zt 2 (zf (2, 4)) + zt 3 (zf (3, 4)).
     Definition e2 : exp := mulze e1 z1.
+    (* 先頭のttのコアーションが効いていない。 *)
     
     Definition e2' : exp :=
-      (zt 0 (zf (1, 4))) + zt 1 (zf (2, 4)) + zt 2 (zf (3, 4)) + zt 3 (zf (0, 4)).
+      tt (zt 0 (zf (1, 4))) + zt 1 (zf (2, 4)) + zt 2 (zf (3, 4)) + zt 3 (zf (0, 4)).
   End Test4.
 
 End Expression.
@@ -378,11 +365,6 @@ End FFT'.
 (* リストのサイズを使って再帰の停止性を決める。 *)
 Section FFT.
   
-  Lemma neqC {eT : eqType} (m n : eT) : (m != n) = (n != m).
-  Proof.
-    apply/idP/idP => H; by apply/eqP/not_eq_sym/eqP.
-  Qed.
-  
   (* バタフライ演算 *)
   Definition be s1 s2 := map2 (fun _ c1 c2 => addze c1 c2)
                               0 s1 s2.
@@ -410,7 +392,7 @@ Section FFT.
     - by apply: size1_map2.
     - apply: take_size.
       move/eqP in H0.
-      rewrite neqC -lt0n in H0.
+      rewrite eq_sym -lt0n in H0.           (* != のシンメトリにも使える *)
         by apply: ltn_Pdiv.
   Qed.
   Obligation 2.
@@ -421,79 +403,89 @@ Section FFT.
     - by apply: size1_map2.
     - apply: take_size.
       move/eqP in H0.
-      rewrite neqC -lt0n in H0.
+      rewrite eq_sym -lt0n in H0.
         by apply: ltn_Pdiv.
   Qed.
   
   Compute fft CS.
-  (* 
-     = [:: Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (2, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (6, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (1, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (5, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (3, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (7, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (2, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (6, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) is_true_true +
-           Term (1, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) is_true_true +
-           Term (5, {| valz := (5, 8); axiom := zf_subproof (10, 16) |}) is_true_true +
-           Term (3, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) is_true_true +
-           Term (7, {| valz := (7, 8); axiom := zf_subproof (14, 16) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (2, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (6, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (1, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (5, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (3, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) is_true_true +
-           Term (7, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (2, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
-           Term (6, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (1, {| valz := (3, 8); axiom := zf_subproof (12, 32) |}) is_true_true +
-           Term (5, {| valz := (7, 8); axiom := zf_subproof (28, 32) |}) is_true_true +
-           Term (3, {| valz := (1, 8); axiom := zf_subproof (36, 32) |}) is_true_true +
-           Term (7, {| valz := (5, 8); axiom := zf_subproof (20, 32) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (2, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (6, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (1, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (5, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (3, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (7, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (2, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (6, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
-           Term (1, {| valz := (5, 8); axiom := zf_subproof (5, 8) |}) is_true_true +
-           Term (5, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) is_true_true +
-           Term (3, {| valz := (7, 8); axiom := zf_subproof (7, 8) |}) is_true_true +
-           Term (7, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (2, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (6, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (1, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
-           Term (5, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
-           Term (3, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (7, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true;
-           Term (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) is_true_true +
-           Term (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) is_true_true +
-           Term (2, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) is_true_true +
-           Term (6, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) is_true_true +
-           Term (1, {| valz := (7, 8); axiom := zf_subproof (7, 8) |}) is_true_true +
-           Term (5, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) is_true_true +
-           Term (3, {| valz := (5, 8); axiom := zf_subproof (5, 8) |}) is_true_true +
-           Term (7, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) is_true_true]
+(*
+     = [:: (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (2, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (6, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (1, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (5, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (3, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (7, {| valz := (0, 1); axiom := zf_subproof (0, 1) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (2, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (6, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) +
+           (1, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) +
+           (5, {| valz := (5, 8); axiom := zf_subproof (10, 16) |}) +
+           (3, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) +
+           (7, {| valz := (7, 8); axiom := zf_subproof (14, 16) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (2, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (6, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (1, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (5, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (3, {| valz := (3, 4); axiom := zf_subproof (6, 8) |}) +
+           (7, {| valz := (3, 4); axiom := zf_subproof (6, 8) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (2, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) +
+           (6, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (1, {| valz := (3, 8); axiom := zf_subproof (12, 32) |}) +
+           (5, {| valz := (7, 8); axiom := zf_subproof (28, 32) |}) +
+           (3, {| valz := (1, 8); axiom := zf_subproof (36, 32) |}) +
+           (7, {| valz := (5, 8); axiom := zf_subproof (20, 32) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (2, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (6, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (1, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (5, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (3, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (7, {| valz := (1, 2); axiom := zf_subproof (1, 2) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (2, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (6, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) +
+           (1, {| valz := (5, 8); axiom := zf_subproof (5, 8) |}) +
+           (5, {| valz := (1, 8); axiom := zf_subproof (1, 8) |}) +
+           (3, {| valz := (7, 8); axiom := zf_subproof (7, 8) |}) +
+           (7, {| valz := (3, 8); axiom := zf_subproof (3, 8) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (2, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (6, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (1, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) +
+           (5, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) +
+           (3, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (7, {| valz := (1, 4); axiom := zf_subproof (1, 4) |});
+           (0, {| valz := (0, 1); axiom := zf_subproof (0, 1) |}) +
+           (4, {| valz := (1, 2); axiom := zf_subproof (1, 2) |}) +
+           (2, {| valz := (3, 4); axiom := zf_subproof (3, 4) |}) +
+           (6, {| valz := (1, 4); axiom := zf_subproof (1, 4) |}) +
+           (1, {| valz := (7, 8); axiom := zf_subproof (7, 8) |}) +
+           (5, {| valz := (3, 8); axiom := zf_subproof (3, 8) |}) +
+           (3, {| valz := (5, 8); axiom := zf_subproof (5, 8) |}) +
+           (7, {| valz := (1, 8); axiom := zf_subproof (1, 8) |})]
      : seq exp
    *)
 
 End FFT.
 
 (* END *)
+
+(*
+exp をビット逆順でないように、一意に==できるようにする。
+
+zip2をやめて、++してからビット逆順を戻す
+
+DFTを作成する
+
+DFTとFFTが一致することを証明する。
+ *)
