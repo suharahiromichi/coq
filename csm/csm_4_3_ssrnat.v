@@ -82,8 +82,9 @@ Print mult.        (* Notation mult := Nat.mul (Standard Coq での定義) *)
 ## nosimpl とは
 
 定義のなかで（これが重要）match や let: を使うと、simplが機能しない。
+https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html#locking-unlocking
+の後半 We found that 以降。
 
-simpl (rewrite /=) は、簡約をするタクティクで simplification の略。
 *)
 
 Definition add1 := (match tt with tt => Nat.add end).
@@ -95,6 +96,27 @@ Goal add1 1 1 = 2. Proof. simpl. rewrite /add1. simpl. reflexivity. Qed.
 Goal add2 1 1 = 2. Proof. simpl. rewrite /add2. simpl. reflexivity. Qed.
 Goal add3 1 1 = 2. Proof. simpl. reflexivity. Qed.
 
+(*
+simpl (rewrite /=) は、簡約をするタクティクで simplification の略。
+https://coq.inria.fr/refman/proof-engine/tactics.html#coq:tacn.simpl
+In detail, the tactic simpl 以降。
+
+simpl タクティクは、β簡約またはι簡約をおこなうが、ι簡約できる場合のみδ簡約する
+（δ簡約によって展開することで、ι簡約できるようになった場合のみ、その関数をδ簡約する）
+という性質を使う。以下の例を参照のこと：
+*)
+
+(* 単なるι簡約：できる。 *)
+Goal (match 0 with 0 => 1 | _ => 1 end) = 1. Proof. simpl. reflexivity. Qed.
+Goal (match tt with tt => 1 end) = 1. Proof. simpl. reflexivity. Qed.
+
+(* δ簡約して、ι簡約：できる。 *)
+Definition one1 (n : nat) := (match n with 0 => 1 | _ => 1 end).
+Goal one1 0 = 1. Proof. simpl. reflexivity. Qed. (* 1 = 1 *)
+
+(* δ簡約しても、それでι簡約できるわけではない。 *)
+Definition one2 (n : nat) := (match tt with tt => 1 end).
+Goal one2 0 = 1. Proof. simpl. Admitted.    (* one2 0 = 1 *)
 
 (**
 ## Standard Coq の関数に変換する。
@@ -114,7 +136,6 @@ Check multE  : Nat.mul = muln.
 Goal 1 + 1 = 2. Proof. rewrite -plusE. simpl. reflexivity. Qed. (* (1 + 1)%coq_nat *)
 Goal 1 - 1 = 0. Proof. rewrite -minusE. simpl. reflexivity. Qed. (* (1 - 1)%coq_nat *)
 Goal 1 * 1 = 1. Proof. rewrite -multE. simpl. reflexivity. Qed. (* (1 * 1)%coq_nat *)
-
 
 (**
 # comparison
