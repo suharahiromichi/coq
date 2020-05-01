@@ -86,9 +86,10 @@ Section Median.
   Definition median' (m n p : nat) :=
     if (m < n) then
       if (n < p) then n else p
-    else
+    else if (m == n) then m
+    else                                    (* m > n *)
       if (p < m) then p else m.
-
+  
   Goal forall (a b c : bool), median a b c = maj3 a b c.
   Proof.
       by case; case; case.
@@ -97,16 +98,14 @@ Section Median.
   Goal forall (a b c : bool), median a b c = median' a b c.
   Proof.
     rewrite /median /median'.
-    case; case; case => //=.
-    (* maxn (maxn (minn 1 1) (minn 1 0)) (minn 0 1) = 0 *)
-  Admitted.
+      by case; case; case.
+  Qed.
   
   Goal forall (m n p : nat), median m n p = median' m n p.
   Proof.
     move=> m n p.
     rewrite /median /median'.
     rewrite /minn /maxn.
-    case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m).
   Admitted.
   
 End Median.
@@ -138,5 +137,13 @@ Section FullAdder.
   Qed.
 
 End FullAdder.
+
+
+(* おまけ *)
+
+Goal forall (a b c : bool), maj3 a b c = maj a b c.
+Proof.
+    by case; case; case.
+Qed.
 
 (* END *)
