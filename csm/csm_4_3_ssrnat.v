@@ -305,21 +305,111 @@ Print expn.        (* expn = nosimpl expn_rec *)
 Locate "n `!".  (* factorial n : nat_scope (default interpretation) *)
 Print factorial.                    (* factorial = nosimpl fact_rec *)
 
+(**
+# これだけは憶えておきたい補題
 
+以下も参照してください；
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrnat_doc.pdf
+*)
 
-(*   A (infix) -- conjunction, as in                                          *)
-(*      ltn_neqAle : (m < n) = (m != n) && (m <= n).                          *)
-(*   B -- subtraction, as in subBn : (m - n) - p = m - (n + p).               *)
-(*   D -- addition, as in mulnDl : (m + n) * p = m * p + n * p.               *)
-(*   M -- multiplication, as in expnMn : (m * n) ^ p = m ^ p * n ^ p.         *)
-(*   p (prefix) -- positive, as in                                            *)
-(*      eqn_pmul2l : m > 0 -> (m * n1 == m * n2) = (n1 == n2).                *)
-(*   P  -- greater than 1, as in                                              *)
-(*      ltn_Pmull : 1 < n -> 0 < m -> m < n * m.                              *)
-(*   S -- successor, as in addSn : n.+1 + m = (n + m).+1.                     *)
-(*   V (infix) -- disjunction, as in                                          *)
-(*      leq_eqVlt : (m <= n) = (m == n) || (m < n).                           *)
-(*   X - exponentiation, as in lognX : logn p (m ^ n) = logn p m * n in       *)
-(*         file prime.v (the suffix is not used in ths file).                 *)
+Section Lemmas.
+  Variables m n p q : nat.
+  
+  Check add0n n : 0 + n = n.          (* left_id 0 addn *)
+  Check addn0 n : n + 0 = n.          (* right_id 0 addn *)
+  Check add1n n : 1 + n = n.+1.       (* .+2 から .+4 も使用可能である。 *)
+  Check addn1 n : n + 1 = n.+1.
+  Check addSn m n : m.+1 + n = (m + n).+1.
+  Check addnS m n : m + n.+1 = (m + n).+1.
+  Check addSnnS m n : m.+1 + n = m + n.+1.
+  Check addnC m n : m + n = n + m.             (* commutative addn *)
+  Check addnA m n p : m + (n + p) = m + n + p. (* associative addn *)
+  Check addnCA m n p : m + (n + p) = n + (m + p). (* left_commutative addn *)
+  Check addnAC m n p : m + n + p = m + p + n. (* right_commutative addn *)
+  Check addnACA m n p q : m + n + (p + q) = m + p + (n + q). (* interchange addn addn *)
+  Check addKn m n : m + n - m = n.             (* cancel (addn n) (subn^~ n) *)
+  Check addnK m n : n + m - m = n.             (* cancel (addn^~ n) (subn^~ n) *)
+  
+  Check subnn n : n - n = 0.                (* self_inverse *)
+  
+  Check mul0n n : 0 * n = 0.                (* left_zero 0 muln *)
+  Check muln0 n : n * 0 = 0.                (* right_zero 0 muln *)
+  Check mul1n n : 1 * n = n.                (* left_id 1 muln *)
+  Check muln1 n : n * 1 = n.                (* right_id 1 muln *)
+  Check mulSn m n : m.+1 * n = n + m * n.
+  Check mulSnr m n : m.+1 * n = m * n + n.
+  Check mulnS m n : m * n.+1 = m + m * n.
+  Check mulnSr m n : m * n.+1 = m * n + m.
+  Check mulnC m n : m * n = n * m.             (* commutative muln *)
+  Check mulnA m n p : m * (n * p) = m * n * p. (* associative muln *)
+  Check mulnDl m n p : (m + n) * p = m * p + n * p. (* left_distributive muln addn *)
+  Check mulnDr m n p : m * (n + p) = m * n + m * p. (* right_distributive muln addn *)
+  Check mulnBl m n p : (m - n) * p = m * p - n * p. (* left_distributive muln subn *)
+  Check mulnBr m n p : m * (n - p) = m * n - m * p. (* right_distributive muln subn *)
+  Check mulnCA m n p : m * (n * p) = n * (m * p). (* left_commutative muln *)
+  Check mulnAC m n p : m * n * p = m * p * n. (* right_commutative muln *)
+  Check mulnACA m n p q : m * n * (p * q) = m * p * (n * q). (* interchange muln muln *)
+
+End Lemmas.
+
+(**
+つぎの Search は結果がない（left_id で定義されているため）。
+それらについては、ここで憶えてしまうしかない。
+*)
+Search _ (0 + _ = _).
+
+(**
+# 可換なとき、大きな式を扱うコツ
+
+addn の場合
+
+- ?addnA で左結合
+- -?addnA で右結合
+
+に変換できる。?は零回以上の繰り替えしで、すでにそうなっている場合にエラーにしないため。
+*)
+
+(**
+## 3項を逆順にする。
+
+1回の可換則では、隣どうししか入れ替えられないから、
+3項を逆順にするには3回必要
+*)
+Goal 0 + 1 + 2 = 3.
+Proof.
+  rewrite ?addnA addnAC.                    (* 2番めを最後に *)
+  rewrite -?addnA addnCA.                   (* 2番めを最初に *)
+  rewrite ?addnA addnAC.                    (* 2番めを最後に *)
+  done.
+Qed.
+
+(**
+同上
+ *)
+Goal 0 + 1 + 2 = 3.
+Proof.
+  rewrite -?addnA addnCA.                   (* 2番めを最初に *)
+  rewrite ?addnA addnAC.                    (* 2番めを最後に *)
+  rewrite -?addnA addnCA.                   (* 2番めを最初に *)
+  rewrite ?addnA.                           (* 左結合にする。 *)
+  done.
+Qed.
+
+(**
+## 項を入れ替える
+
+任意の項を先頭または、最後にする方法。内容で項を指定する。
+
+左結合で最後、右結合で先頭、にすれば、その項を取り出せる。
+*)
+Goal 0 + 1 + 2 + (3 + 4 + 5 + 6 + 7) + 8 + 9 = 45.
+Proof.
+  rewrite ?addnA.                           (* 左結合にする。 *)
+  rewrite [_ + 4]addnC ?addnA.              (* 4 を先頭にする。 *)
+  rewrite -?addnA.                          (* 右結合にする。 *)
+  rewrite [6 + _]addnC -?addnA.             (* 6 を最後にする。 *)
+  rewrite ?addnA.                           (* 左結合にする。 *)
+  done.
+Qed.
 
 (* END *)
