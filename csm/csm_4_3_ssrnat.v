@@ -319,9 +319,11 @@ Section Lemmas.
   Check addn0 n : n + 0 = n.          (* right_id 0 addn *)
   Check add1n n : 1 + n = n.+1.       (* .+2 から .+4 も使用可能である。 *)
   Check addn1 n : n + 1 = n.+1.
+  Check addnn n : n + n = n.*2.
   Check addSn m n : m.+1 + n = (m + n).+1.
   Check addnS m n : m + n.+1 = (m + n).+1.
   Check addSnnS m n : m.+1 + n = m + n.+1.
+  
   Check addnC m n : m + n = n + m.             (* commutative addn *)
   Check addnA m n p : m + (n + p) = m + n + p. (* associative addn *)
   Check addnCA m n p : m + (n + p) = n + (m + p). (* left_commutative addn *)
@@ -336,10 +338,14 @@ Section Lemmas.
   Check muln0 n : n * 0 = 0.                (* right_zero 0 muln *)
   Check mul1n n : 1 * n = n.                (* left_id 1 muln *)
   Check muln1 n : n * 1 = n.                (* right_id 1 muln *)
+  Check mul2n n : 2 * n = n.*2.
+  Check muln2 n : n * 2 = n.*2.
+  Check mulnn n : n * n = n ^ 2.
   Check mulSn m n : m.+1 * n = n + m * n.
   Check mulSnr m n : m.+1 * n = m * n + n.
   Check mulnS m n : m * n.+1 = m + m * n.
   Check mulnSr m n : m * n.+1 = m * n + m.
+  
   Check mulnC m n : m * n = n * m.             (* commutative muln *)
   Check mulnA m n p : m * (n * p) = m * n * p. (* associative muln *)
   Check mulnDl m n p : (m + n) * p = m * p + n * p. (* left_distributive muln addn *)
@@ -349,7 +355,6 @@ Section Lemmas.
   Check mulnCA m n p : m * (n * p) = n * (m * p). (* left_commutative muln *)
   Check mulnAC m n p : m * n * p = m * p * n. (* right_commutative muln *)
   Check mulnACA m n p q : m * n * (p * q) = m * p * (n * q). (* interchange muln muln *)
-
 End Lemmas.
 
 (**
