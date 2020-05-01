@@ -382,92 +382,76 @@ Check @implyP : forall b1 b2 : bool, reflect (b1 -> b2) (b1 ==> b2).
 *)
 
 (* and の例 *)
-Check andTb : left_id true andb.
-Check andFb : left_zero false andb.
-Check andbT : right_id true andb.
-Check andbF : right_zero false andb.
-Check andbb : idempotent andb.
-Check andbC : commutative andb.
-Check andbA : associative andb.
-Check andbCA : left_commutative andb.
-Check andbAC : right_commutative andb.
-Check andbACA : interchange andb andb.
+(**
+# これだけは憶えておきたい補題
 
-Check andTb : forall b, true && b = b.
-Check andFb : forall b, false && b = false.
-Check andbT : forall b, b && true = b.
-Check andbF : forall b, b && false = false.
-Check andbb : forall b, b && b = b.
-Check andbC : forall b c, b && c = c && b.
-Check andbA : forall a b c : bool, [&& a, b & c] = a && b && c. (* a && (b && c) *)
-Check andbCA : forall x y z, [&& x, y & z] = [&& y, x & z].
-Check andbAC : forall x y z, x && y && z = x && z && y.
-Check andbACA : forall x y z t, x && y && (z && t) = x && z && (y && t).
-(* リスト表記 *)
-Check andbACA : forall x y z t, [&& x && y, z & t] = [&& x && z, y & t].
+以下も参照してください；
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrbool_doc.pdf
+*)
+
+Section Lemmas.
+Variables a b c d : bool.
+
+Check andTb b : true && b = b.          (* left_id true andb *)
+Check andbT b : b && true = b.          (* right_id true andb *)
+Check andFb b : false && b = false.     (* left_zero false andb *)
+Check andbF b : b && false = false.     (* right_zero false andb *)
+Check andbb b : b && b = b.             (* idempotent andb *)
+
+Check andbC a b : a && b = b && a.      (* commutative andb *)
+Check andbA a b c : a && (b && c) = a && b && c. (* associative andb *)
+Check andbCA a b c : a && (b && c) = b && (a && c). (* left_commutative andb *)
+Check andbAC a b c : a && b && c = a && c && b. (* right_commutative andb *)
+Check andbACA a b c d : [&& a && b, c & d] = [&& a && c, b & d]. (* interchange andb andb *)
+Check andbACA a b c d : a && b && (c && d) = a && c && (b && d). (* interchange andb andb *)  
+Check andbN b :  b && ~~ b = false.
+Check andNb b :  ~~ b && b = false.
+Check andbK a b : a && b || a = a.
+Check andKb a b : a || b && a = a.
 
 (* or の例 *)
-Check orTb : forall b, true || b.
-Check orFb : left_id false orb.
-Check orbT : forall b, b || true.
-Check orbF : right_id false orb.
-Check orbb : idempotent orb.
-Check orbC : commutative orb.
-Check orbA : associative orb.
-Check orbCA : left_commutative orb.
-Check orbAC : right_commutative orb.
-Check orbACA : interchange orb orb.
+Check orTb b : true || b.                   (* = true *)
+Check orbT b : b || true.                   (* = true *)
+Check orFb b : false || b = b.              (* left_id false orb *)
+Check orbF b : b || false = b.              (* right_id false orb *)
+Check orbb b : b || b = b.                  (* idempotent orb *)
+Check orbC a b : a || b = b || a.           (* commutative orb *)
+Check orbA a b c : a || (b || c) = a || b || c. (* associative orb *)
+Check orbCA a b c : a || (b || c) = b || (a || c). (* left_commutative orb *)
+Check orbAC a b c : a || b || c = a || c || b. (* right_commutative orb *)
+Check orbACA a b c d : [|| a || b, c | d] = [|| a || c, b | d]. (* interchange orb orb *)
+Check orbACA a b c d : a || b || ( c || d) = (a || c) || (b || d). (* interchange orb orb *)
+Check orbN b :  b || ~~ b.                  (* = true *)
+Check orNb b :  ~~ b || b.                  (* = true *)
+Check orbK a b : (a || b) && a = a.
+Check orKb a b : a && (b || a) = a.
 
 (* 分配則 *)
-Check andb_orl : left_distributive andb orb.
-Check andb_orr : right_distributive andb orb.
-Check orb_andl : left_distributive orb andb.
-Check orb_andr : right_distributive orb andb.
+(* && と || *)
+Check andb_orl a b c : (a || b) && c = a && c || b && c. (* left_distributive andb orb *)
+Check andb_orr a b c : a && (b || c) = a && b || a && c. (* right_distributive andb orb *)
+Check orb_andl a b c : a && b || c = (a || c) && (b || c). (* left_distributive orb andb *)
+Check orb_andr a b c : a || b && c = (a || b) && (a || c). (* right_distributive orb andb *)
+(* && と (+) exor *)
+Check andb_addl a b c : (a (+) b) && c = a && c (+) b && c. (* left_distributive andb addb *)
+Check andb_addr a b c : a && (b (+) c) = a && b (+) a && c. (* right_distributive andb addb *)
 
 (* neg の例 *)
-Check negbT : forall b, b = false -> ~~ b.
-Check negbTE : forall b, ~~ b -> b = false.
-Check negbF : forall b,  (b : bool) -> ~~ b = false.
-Check negbFE : forall b, ~~ b = false -> b.
-Check negbK : involutive negb.              (* これは使うので覚えておく！ *)
-Check negbNE : forall b, ~~ ~~ b -> b.
+Check @negbT b : b = false -> ~~ b.
+Check @negbTE b : ~~ b -> b = false.
+Check @negbF b : (b : bool) -> ~~ b = false.
+Check @negbFE b : ~~ b = false -> b.
+Check negbK b : ~~ ~~ b = b.       (* involutive negb. 憶えること！ *)
+Check @negbNE b : ~~ ~~ b -> b.
 
-Check negb_inj : injective negb.
-Check negbLR : forall b c, b = ~~ c -> ~~ b = c.
-Check negbRL : forall b c, ~~ b = c -> b = ~~ c.
+Check @negb_inj b c : ~~ b = ~~ c -> b = c. (* injective negb *)
+Check @negbLR b c : b = ~~ c -> ~~ b = c.
+Check @negbRL b c : ~~ b = c -> b = ~~ c.
 
 (* ドモルガンの定理 *)
-Check negb_and : forall a b, ~~ (a && b) = ~~ a || ~~ b.
-Check negb_or  : forall a b, ~~ (a || b) = ~~ a && ~~ b.
-
-(* involutive *)
-Check andbK : forall a b, a && b || a = a.
-Check andKb : forall a b, a || b && a = a.
-Check orbK : forall a b, (a || b) && a = a.
-Check orKb : forall a b, a && (b || a) = a.
-
-(* This file extends the lemma name suffix conventions of ssrfun as follows:  *)
-(*   A -- associativity, as in andbA : associative andb.                      *)
-(*  AC -- right commutativity.                                                *)
-(* ACA -- self-interchange (inner commutativity), e.g.,                       *)
-(*        orbACA : (a || b) || (c || d) = (a || c) || (b || d).               *)
-(*   b -- a boolean argument, as in andbb : idempotent andb.                  *)
-(*   C -- commutativity, as in andbC : commutative andb,                      *)
-(*        or predicate complement, as in predC.                               *)
-(*  CA -- left commutativity.                                                 *)
-(*   D -- predicate difference, as in predD.                                  *)
-(*   E -- elimination, as in negbEf : ~~ b = false -> b.                      *)
-(*   F or f -- boolean false, as in andbF : b && false = false.               *)
-(*   I -- left/right injectivity, as in addbI : right_injective addb,         *)
-(*        or predicate intersection, as in predI.                             *)
-(*   l -- a left-hand operation, as andb_orl : left_distributive andb orb.    *)
-(*   N or n -- boolean negation, as in andbN : a && (~~ a) = false.           *)
-(*   P -- a characteristic property, often a reflection lemma, as in          *)
-(*        andP : reflect (a /\ b) (a && b).                                   *)
-(*   r -- a right-hand operation, as orb_andr : rightt_distributive orb andb. *)
-(*   T or t -- boolean truth, as in andbT: right_id true andb.                *)
-(*   U -- predicate union, as in predU.                                       *)
-(*   W -- weakening, as in in1W : {in D, forall x, P} -> forall x, P.         *)
+Check negb_and a b : ~~ (a && b) = ~~ a || ~~ b.
+Check negb_or  a b : ~~ (a || b) = ~~ a && ~~ b.
+End Lemmas.  
 
 (**
 # ブール述語 
@@ -611,38 +595,5 @@ Check equivalence_rel.
 Compute (true : nat) + 2.                   (* 3 *)
 
 Compute sumn [seq (m < 10) : nat | m <- [:: 0; 3; 20]]. (* 2 *)
-
-(**
-# これだけは憶えておきたい補題
-
-以下も参照してください；
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrbool_doc.pdf
-*)
-
-Section Lemmas.
-  Variables a b c d : bool.
-
-  Check andTb b : true && b = b.          (* left_id true andb *)
-  Check andbT b : b && true = b.          (* right_id true andb *)
-  Check andFb b : false && b = false.     (* left_zero false andb *)
-  Check andbF b : b && false = false.     (* right_zero false andb *)
-  Check andbb b : b && b = b.             (* idempotent andb *)
-  
-  Check andbC a b : a && b = b && a.      (* commutative andb *)
-  Check andbA a b c : a && (b && c) = a && b && c. (* associative andb *)
-  Check andbCA a b c : a && (b && c) = b && (a && c). (* left_commutative andb *)
-  Check andbAC a b c : a && b && c = a && c && b. (* right_commutative andb *)
-  Check andbACA a b c d : a && b && (c && d) = a && c && (b && d). (* interchange andb andb *)  
-  Check andbN b :  b && ~~ b = false.
-  Check andNb b :  ~~ b && b = false.
-  Check andbK a b : a && b || a = a.
-  Check andKb a b : a || b && a = a.
-
-  (* 分配則 (add は exor の意味) *)
-  Check andb_orl a b c : (a || b) && c = a && c || b && c. (* left_distributive andb orb *)
-  Check andb_orr a b c : a && (b || c) = a && b || a && c. (* right_distributive andb orb *)
-  Check andb_addl a b c : (a (+) b) && c = a && c (+) b && c. (* left_distributive andb addb *)
-  Check andb_addr a b c : a && (b (+) c) = a && b (+) a && c. (* right_distributive andb addb *)
-End Lemmas.  
 
 (* END *)
