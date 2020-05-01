@@ -489,28 +489,43 @@ Proof. done. Qed.
 
 \in の右側 (型 Sのところ) に書ける述語を collective述語といいます。
 （これに対して、普通に P x の Pに書ける述語を applicatable述語といいます。）
-x \in A は自動で簡約されない。明示的に apply inE または rewrite inE で簡約する。
+x \in A は自動で簡約されない。明示的に rewrite inE または apply inE で簡約する。
 
 collective述語は、predType型クラスのインスタンス型である必要があります
-（mkPredType で定義する場所が判る）。
+（mkPredType でソースコードを検索すると、定義されている場所が判る）。
 *)
 
+(**
+### predType
+*)
+
+Check seq_predType.
 Check forall (T : eqType) (x : T) (l : seq T), x \in l.
 Goal 1 \in [:: 1].
 Proof. done. Qed.
 
+Check tuple_predType.
 Check forall (T : eqType) (x : T) (l : 3.-tuple T), x \in l.
 Goal 1 \in [tuple of [:: 1]].
 Proof. done. Qed.
 
-(* pair (prod型) が使えるようにする *)
-Coercion pred_of_eq_pair (T : eqType) (s : T * T) : pred_class :=
+(* pair (prod型) が使えるようにする。コアーション....。 *)
+Coercion pred_of_eq_pair (T : eqType) (s : T * T) : pred T := (* pred_class *)
   fun x => (s.1 == x) || (s.2 == x). (* xpredU (eq_op s.1) (eq_op s.2). *)
-Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T).
+
+Compute pred_of_eq_pair (1, 2) 1.           (* true *)
+
+Canonical pair_predType (T : eqType) := mkPredType (@pred_of_eq_pair T).
+(* Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T). *)
 
 Check forall (T : eqType) (x : T) (l : pair_predType T) , x \in l.
+
 Goal 1 \in (1, 2).
 Proof. done. Qed.
+
+(**
+### predArgType
+*)
 
 (* 型が書けるようにする。 *)
 Inductive ball' : Type := red' | white'.   (* : Type は省略できる。 *)
@@ -544,7 +559,7 @@ Collective述語の同値は「=i」で比較します（Applicatable述語の�
 Goal forall (T : eqType) (a b : T), (a, b) =i (b, a).
 Proof.
   move=> T a b.
-  (* rewrite /eq_mem. *)
+  rewrite /eq_mem.
   (* forall x, (x \in (a, b)) = (x \in (b, a)) *)
   move=> x.                   (* 1階の述語の比較なので intro する。 *)
   rewrite -!topredE /=.
@@ -596,5 +611,38 @@ Check equivalence_rel.
 Compute (true : nat) + 2.                   (* 3 *)
 
 Compute sumn [seq (m < 10) : nat | m <- [:: 0; 3; 20]]. (* 2 *)
+
+(**
+# これだけは憶えておきたい補題
+
+以下も参照してください；
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrbool_doc.pdf
+*)
+
+Section Lemmas.
+  Variables a b c d : bool.
+
+  Check andTb b : true && b = b.          (* left_id true andb *)
+  Check andbT b : b && true = b.          (* right_id true andb *)
+  Check andFb b : false && b = false.     (* left_zero false andb *)
+  Check andbF b : b && false = false.     (* right_zero false andb *)
+  Check andbb b : b && b = b.             (* idempotent andb *)
+  
+  Check andbC a b : a && b = b && a.      (* commutative andb *)
+  Check andbA a b c : a && (b && c) = a && b && c. (* associative andb *)
+  Check andbCA a b c : a && (b && c) = b && (a && c). (* left_commutative andb *)
+  Check andbAC a b c : a && b && c = a && c && b. (* right_commutative andb *)
+  Check andbACA a b c d : a && b && (c && d) = a && c && (b && d). (* interchange andb andb *)  
+  Check andbN b :  b && ~~ b = false.
+  Check andNb b :  ~~ b && b = false.
+  Check andbK a b : a && b || a = a.
+  Check andKb a b : a || b && a = a.
+
+  (* 分配則 (add は exor の意味) *)
+  Check andb_orl a b c : (a || b) && c = a && c || b && c. (* left_distributive andb orb *)
+  Check andb_orr a b c : a && (b || c) = a && b || a && c. (* right_distributive andb orb *)
+  Check andb_addl a b c : (a (+) b) && c = a && c (+) b && c. (* left_distributive andb addb *)
+  Check andb_addr a b c : a && (b (+) c) = a && b (+) a && c. (* right_distributive andb addb *)
+End Lemmas.  
 
 (* END *)
