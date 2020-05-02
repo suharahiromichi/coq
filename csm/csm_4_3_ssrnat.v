@@ -141,8 +141,16 @@ Goal 1 * 1 = 1. Proof. rewrite -multE. simpl. reflexivity. Qed. (* (1 * 1)%coq_n
 # comparison
 *)
 
+(**
+leq m n := (m - n == 0) で、<= は leq の Notation である。
+< と <= で、 ltn は < で定義されている。
+*)
+
 Locate "m <= n".    (* leq m n : nat_scope (default interpretation) *)
 Print leq.          (* leq = fun m n : nat => m - n == 0 *)
+
+Locate "m < n".  (* leq m.+1 n : nat_scope (default interpretation) *)
+Print ltn.       (* [rel m n | m < n] *)
 
 (**
 MathComp の <= などの不等式はboolである。Prop の不等式にしたい場合は、
@@ -171,7 +179,7 @@ Proof.
   done.
 Qed.  
 
-
+Locate "m <= n". (* leq m n : nat_scope (default interpretation) *)
 Locate "m < n".  (* leq m.+1 n : nat_scope (default interpretation) *)
 Locate "m >= n". (* leq n m : nat_scope (default interpretation) *)
 Locate "m > n".  (* leq n.+1 m : nat_scope (default interpretation) *)
@@ -239,6 +247,12 @@ Proof.
     by rewrite addn0.
 Qed.
 
+(**
+# iter
+
+(略)
+*)
+
 
 (**
 # parity
@@ -276,26 +290,6 @@ Print half.          (* half =
 
 
 (**
-これに対して Standard Coq の even は even(n.+2) -> even(n) の帰納法なので、
-非標準な帰納法が必要になってしまう。
-
-csm_3_5_elim.v も参照せよ。
- *)
-
-Print Nat.even.
-(* 
-Nat.even = 
-fix even (n : nat) : bool :=
-  match n with
-  | 0 => true
-  | 1 => false
-  | n'.+2 => even n'
-  end
- *)
-
-
-
-(**
 # exponentiation, factorial
  *)
 
@@ -304,6 +298,13 @@ Print expn.        (* expn = nosimpl expn_rec *)
 
 Locate "n `!".  (* factorial n : nat_scope (default interpretation) *)
 Print factorial.                    (* factorial = nosimpl fact_rec *)
+
+(**
+# ex_minn, ex_maxn
+
+(略)
+ *)
+
 
 (**
 # これだけは憶えておきたい補題
