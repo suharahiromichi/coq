@@ -81,14 +81,22 @@ Section Majority.
 End Majority.
 
 Section Median.
-
+  
+  (* 5回比較するので、効率悪い *)
   Definition median (m n p : nat) := maxn (maxn (minn m n) (minn n p)) (minn p m).
-  Definition median' (m n p : nat) :=
-    if (m < n) then
-      if (n < p) then n else p
-    else if (m == n) then m
-    else                                    (* m > n *)
-      if (p < m) then p else m.
+  
+  (* 展開したバブルソート *)
+  Definition median' (n1 n2 n3 : nat) :=
+    let (n1', n2') := if n1 < n2 then (n1, n2) else (n2, n1) in
+    let (n2'', n3') := if n2' < n3 then (n2', n3) else (n3, n2') in
+    let (n1'', n2''') := if (n1' < n2'') then (n1', n2'') else (n2'', n1') in n2'''.
+  
+  (* 上記をswapなしにしたもの *)
+  Definition median'' (m n p : nat) :=
+    if m < n then
+      if n < p then n else (if m < p then p else m)
+    else
+      if m < p then m else (if n < p then p else n).
   
   Goal forall (a b c : bool), median a b c = maj3 a b c.
   Proof.
@@ -101,12 +109,42 @@ Section Median.
       by case; case; case.
   Qed.
   
+  Goal forall (a b c : bool), median a b c = median'' a b c.
+  Proof.
+    rewrite /median /median'.
+      by case; case; case.
+  Qed.
+  
+  (* nat *)
+  
+  Goal forall (m n p : nat), median' m n p = median'' m n p.
+  Proof.
+    move=> m n p.
+    rewrite /median' /median'' /maxn /minn.
+    case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m);
+      case Hmp : (m < p); case Hnm : (n < m);
+      rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm //; ssromega.
+  Qed.
+  
+  Goal forall (m n p : nat), median m n p = median'' m n p.
+  Proof.
+    move=> m n p.
+    rewrite /median /median'' /maxn /minn.
+    case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m);
+      case Hmp : (m < p); case Hnm : (n < m);
+        case Hpp : (p < p); case Hnn : (n < n); case Hmm : (m < m);
+        rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm ?Hpp ?Hnn //; ssromega.
+  Qed.
+
   Goal forall (m n p : nat), median m n p = median' m n p.
   Proof.
     move=> m n p.
-    rewrite /median /median'.
-    rewrite /minn /maxn.
-  Admitted.
+    rewrite /median /median' /maxn /minn.
+    case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m);
+      case Hmp : (m < p); case Hnm : (n < m);
+        case Hpp : (p < p); case Hnn : (n < n); case Hmm : (m < m);
+        rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm ?Hpp ?Hnn //; ssromega.
+  Qed.
   
 End Median.
 
