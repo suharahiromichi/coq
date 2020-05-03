@@ -98,6 +98,8 @@ Section Median.
     else
       if m < p then m else (if n < p then p else n).
   
+  (* bool で証明する。 *)
+  
   Goal forall (a b c : bool), median a b c = maj3 a b c.
   Proof.
       by case; case; case.
@@ -115,7 +117,45 @@ Section Median.
       by case; case; case.
   Qed.
   
-  (* nat *)
+  (* nat で証明する。 *)
+  
+  (* ゴールと前提にある if条件の不等式で場合分けする。 *)
+  Ltac linear_arithmetic2 :=
+    intros;
+    repeat match goal with
+           | [ |- context[if (?a <= ?b) then _ else _] ] =>
+             let H' := fresh in destruct (a <= b) eqn: H'
+           | [ H : context[if (?a <= ?b) then _ else _] |- _ ] =>
+             let H' := fresh in destruct (a <= b) eqn: H'
+           | [ |- context[if (?a < ?b) then _ else _] ] =>
+             let H' := fresh in destruct (a < b) eqn: H'
+           | [ H : context[if (?a < ?b) then _ else _] |- _ ] =>
+             let H' := fresh in destruct (a < b) eqn: H'
+           | _ => idtac
+           end.
+  
+  Goal forall (m n p : nat), median' m n p = median'' m n p.
+  Proof.
+    move=> m n p.
+    rewrite /median' /median''.
+    linear_arithmetic2; try done; ssromega.
+  Qed.
+  
+  Goal forall (m n p : nat), median m n p = median'' m n p.
+  Proof.
+    move=> m n p.
+    rewrite /median /median'' /maxn /minn.
+    linear_arithmetic2; try done; ssromega.
+  Qed.
+  
+  Goal forall (m n p : nat), median m n p = median' m n p.
+  Proof.
+    move=> m n p.
+    rewrite /median /median' /maxn /minn.
+    linear_arithmetic2; try done; ssromega.
+  Qed.
+  
+  (* MathComp 風に rewrite で簡単にする。遅い。 *)
   
   Goal forall (m n p : nat), median' m n p = median'' m n p.
   Proof.
