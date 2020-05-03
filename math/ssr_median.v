@@ -120,7 +120,7 @@ Section Median.
   (* nat で証明する。 *)
   
   (* ゴールと前提にある if条件の不等式で場合分けする。 *)
-  Ltac linear_arithmetic2 :=
+  Ltac linear_arithmetic2' :=
     intros;
     repeat match goal with
            | [ |- context[if (?a <= ?b) then _ else _] ] =>
@@ -134,25 +134,29 @@ Section Median.
            | _ => idtac
            end.
   
+  Ltac linear_arithmetic2 :=
+    linear_arithmetic2'; try done; ssromega.
+  
+  
   Goal forall (m n p : nat), median' m n p = median'' m n p.
   Proof.
     move=> m n p.
     rewrite /median' /median''.
-    linear_arithmetic2; try done; ssromega.
+    linear_arithmetic2.
   Qed.
   
   Goal forall (m n p : nat), median m n p = median'' m n p.
   Proof.
     move=> m n p.
     rewrite /median /median'' /maxn /minn.
-    linear_arithmetic2; try done; ssromega.
+    linear_arithmetic2.
   Qed.
   
   Goal forall (m n p : nat), median m n p = median' m n p.
   Proof.
     move=> m n p.
     rewrite /median /median' /maxn /minn.
-    linear_arithmetic2; try done; ssromega.
+    linear_arithmetic2.
   Qed.
   
   (* MathComp 風に rewrite で簡単にする。遅い。 *)
