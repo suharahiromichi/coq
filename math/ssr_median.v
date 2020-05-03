@@ -120,10 +120,8 @@ Section Median.
   Goal forall (m n p : nat), median' m n p = median'' m n p.
   Proof.
     move=> m n p.
-    rewrite /median' /median'' /maxn /minn.
-    case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m);
-      case Hmp : (m < p); case Hnm : (n < m);
-      rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm //; ssromega.
+    rewrite /median' /median''.
+    case: ifP => Hmn; case: ifP => Hnp; case: ifP => Hpm; ssromega.
   Qed.
   
   Goal forall (m n p : nat), median m n p = median'' m n p.
@@ -133,9 +131,9 @@ Section Median.
     case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m);
       case Hmp : (m < p); case Hnm : (n < m);
         case Hpp : (p < p); case Hnn : (n < n); case Hmm : (m < m);
-        rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm ?Hpp ?Hnn //; ssromega.
+        rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm ?Hpp ?Hnn; ssromega.
   Qed.
-
+  
   Goal forall (m n p : nat), median m n p = median' m n p.
   Proof.
     move=> m n p.
@@ -143,7 +141,7 @@ Section Median.
     case Hmn : (m < n); case Hnp : (n < p); case Hpm : (p < m);
       case Hmp : (m < p); case Hnm : (n < m);
         case Hpp : (p < p); case Hnn : (n < n); case Hmm : (m < m);
-        rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm ?Hpp ?Hnn //; ssromega.
+        rewrite ?Hmn ?Hnp ?Hpm ?Hmp ?Hnm ?Hpp ?Hnn; ssromega.
   Qed.
   
 End Median.
