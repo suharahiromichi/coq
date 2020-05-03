@@ -119,44 +119,39 @@ Section Median.
   
   (* nat で証明する。 *)
   
-  (* ゴールと前提にある if条件の不等式で場合分けする。 *)
-  Ltac linear_arithmetic2' :=
+  (* ゴールと前提にある if式の条件で場合分けする。 *)
+  Ltac if_condition' :=
     intros;
     repeat match goal with
-           | [ |- context[if (?a <= ?b) then _ else _] ] =>
-             let H' := fresh in destruct (a <= b) eqn: H'
-           | [ H : context[if (?a <= ?b) then _ else _] |- _ ] =>
-             let H' := fresh in destruct (a <= b) eqn: H'
-           | [ |- context[if (?a < ?b) then _ else _] ] =>
-             let H' := fresh in destruct (a < b) eqn: H'
-           | [ H : context[if (?a < ?b) then _ else _] |- _ ] =>
-             let H' := fresh in destruct (a < b) eqn: H'
+           | [ |- context[if ?b then _ else _] ] =>
+             let H' := fresh in destruct b eqn: H'
+           | [ H : context[if ?b then _ else _] |- _ ] =>
+             let H' := fresh in destruct b eqn: H'
            | _ => idtac
            end.
   
-  Ltac linear_arithmetic2 :=
-    linear_arithmetic2'; try done; ssromega.
-  
+  Ltac if_condition :=
+    if_condition'; try done; ssromega.
   
   Goal forall (m n p : nat), median' m n p = median'' m n p.
   Proof.
     move=> m n p.
     rewrite /median' /median''.
-    linear_arithmetic2.
+    if_condition.
   Qed.
   
   Goal forall (m n p : nat), median m n p = median'' m n p.
   Proof.
     move=> m n p.
     rewrite /median /median'' /maxn /minn.
-    linear_arithmetic2.
+    if_condition.
   Qed.
   
   Goal forall (m n p : nat), median m n p = median' m n p.
   Proof.
     move=> m n p.
     rewrite /median /median' /maxn /minn.
-    linear_arithmetic2.
+    if_condition.
   Qed.
   
   (* MathComp 風に rewrite で簡単にする。遅い。 *)
