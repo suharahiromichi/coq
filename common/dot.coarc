@@ -1,0 +1,12 @@
+(**
+~/.coqrc
+*)
+
+Add LoadPath "~/WORK/coq/common".
+
+(**
+Require Import ssromega.
+Require Import ssrinv.
+*)
+
+(* END *)
