@@ -1,3 +1,4 @@
+(* fib k*n は fib k の倍数である。  *)
 (* http://parametron.blogspot.com/2017/03/blog-post.html *)
 
 From mathcomp Require Import all_ssreflect.
@@ -39,6 +40,10 @@ Section Fibonacci.
       (forall n : nat, P n -> P n.+1 -> P n.+2) ->
       forall n : nat, P n.
 
+(**
+fibonacci 関数
+*)
+
   Fixpoint fib (n: nat) : nat :=
     match n with
     | 0 => 0
@@ -65,7 +70,10 @@ Section Fibonacci.
   Proof.
     done.
   Qed.
-  
+
+(**
+補題：  nat_ind22 を使って解く。
+*)  
   Lemma fib_m_n_1 m n :
     fib (m + n + 1) = fib m * fib n + fib m.+1 * fib n.+1.
   Proof.
@@ -95,14 +103,39 @@ Section Fibonacci.
       done.
   Qed.
 
+  Lemma n2__n1_1 n : n.+2 = n.+1 + 1.
+  Proof.
+      by ssromega.
+  Qed.
+  
+(**
+fib k*n は fib k の倍数である。
+nについての帰納法で解く。
+ *)
 
+  Lemma fibkn_divs_fibk k n : fib k.+1 %| fib (k.+1 * n.+1).
+  Proof.
+    elim: n.
+    - rewrite muln1.
+      done.
+    - move=> n IHn.
+      have -> : k.+1 * n.+2 = k.+1 * n.+1 + k + 1
+        by rewrite n2__n1_1 mulnDr muln1-{2}[k.+1]addn1 ?addnA.
+      rewrite fib_m_n_1.
+      apply: dvdn_add.
+      + by apply: dvdn_mulr.
+      (* fib k.+1 %| fib (k.+1 * n.+1) -> fib k.+1 %| fib (k.+1 * n.+1) * _ *)
+      + by apply: dvdn_mull.
+        (* fib k.+1 %| _ * fib k.+1 *)
+  Qed.
+  
+(*
   Lemma fib_m_n m n :
     fib (m + n) = fib m.-1 * fib n + fib m * fib n.+1.
   Proof.
   Admitted.
   
-  
-  Lemma fibkn_divs_fibn k n : fib k %| fib (k * n).
+  Lemma fibkn_divs_fibn' k n : fib k %| fib (k * n).
   Proof.
     elim: n.
     - rewrite muln0.
@@ -115,6 +148,7 @@ Section Fibonacci.
       + by apply: dvdn_mulr.
         (* fib k %| fib (k * n) -> fib k %| fib (k * n) * _ *)
   Qed.
+*)
 
 End Fibonacci.
 
