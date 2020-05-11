@@ -46,46 +46,41 @@ Section Fibonacci.
     | (npp.+1 as np).+1 => fib npp + fib np (* fib n.-2 + fib n.-1 *)
     end.
 
-
-  Definition P m n :=
-    fib (m + n + 1) = fib m * fib n + fib m.+1 * fib n.+1.
-
-  Lemma test0 n : fib 0 * fib n = 0.
+  Lemma fib_0 n : fib 0 * fib n = 0.
   Proof.
       by rewrite mul0n.
   Qed.
   
-  Lemma test1 n : fib 1 * fib n = fib n.
+  Lemma fib_1 n : fib 1 * fib n = fib n.
   Proof.
       by rewrite mul1n.
   Qed.
         
-  Lemma test2 n : fib 2 * fib n = fib n.
+  Lemma fib_2 n : fib 2 * fib n = fib n.
   Proof.
       by rewrite mul1n.
   Qed.
 
-  Lemma testn n : fib n.+2 = fib n + fib n.+1.
+  Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
   Proof.
     done.
   Qed.
   
-  Goal forall m n, P m n.
+  Lemma fib_m_n_1 m n :
+    fib (m + n + 1) = fib m * fib n + fib m.+1 * fib n.+1.
   Proof.
-    move=> m n.
-    rewrite /P.
     elim/nat_ind22 : m.
     - rewrite add0n addn1.
-      rewrite test0 test1 add0n.
+      rewrite fib_0 fib_1 add0n.
       done.
       
     - rewrite add1n addn1.
-      rewrite test2 test1.      
-      rewrite -testn.
+      rewrite fib_2 fib_1.      
+      rewrite -fib_n.
       done.
       
     - move=> m IHm IHm1.
-      rewrite 2!testn 2!mulnDl.      
+      rewrite 2!fib_n 2!mulnDl.      
       
       rewrite ?addnA [_ + fib m.+1 * fib n.+1]addnC ?addnA.
       rewrite [fib m.+1 * fib n.+1 + fib m * fib n]addnC.
@@ -96,8 +91,29 @@ Section Fibonacci.
       
       have -> : m.+2 + n + 1 = (m + n + 1).+2 by ssromega.
       have -> : m.+1 + n + 1 = (m + n + 1).+1 by ssromega.
-      rewrite -testn.
+      rewrite -fib_n.
       done.
+  Qed.
+
+
+  Lemma fib_m_n m n :
+    fib (m + n) = fib m.-1 * fib n + fib m * fib n.+1.
+  Proof.
+  Admitted.
+  
+  
+  Lemma fibkn_divs_fibn k n : fib k %| fib (k * n).
+  Proof.
+    elim: n.
+    - rewrite muln0.
+      done.
+    - move=> n IHn.
+      have -> : k * n.+1 = k * n + k. by rewrite -addn1 mulnDr muln1.
+      rewrite fib_m_n.
+      apply: dvdn_add.
+      + by apply: dvdn_mull.                (* fib k %| _ * fib k *)
+      + by apply: dvdn_mulr.
+        (* fib k %| fib (k * n) -> fib k %| fib (k * n) * _ *)
   Qed.
 
 End Fibonacci.
