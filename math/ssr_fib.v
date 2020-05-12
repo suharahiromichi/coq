@@ -130,7 +130,7 @@ F(n * k) は F(k) の倍数である。
 
 n についての帰納法で解く。
 
-Coqの帰納法にあわせて、n と k ともに n+1 と k+1 にする。
+ここでは、Coqの帰納法にあわせて、n と k ともに n+1 と k+1 にする。
 *)
   Lemma dvdn_1 k m n : k %| m -> k %| m * n.
   Proof.
@@ -163,8 +163,9 @@ Coqの帰納法にあわせて、n と k ともに n+1 と k+1 にする。
 ```F(n.+1) * F(n.-1) - F(n)^2 = (-1)^n```
 
 すなわち、nが偶数なら1、奇数なら-1。
+参考文献ならば、n についての単純な帰納法で証明できる。ただしP(1)を底にする。
 
-Coqの帰納法にあわせて n, n.+1, n.+2 とする（偶数なら-1、奇数なら1）とともに、
+ここでは、Coqの帰納法にあわせて n, n.+1, n.+2 とする（偶数なら-1、奇数なら1）とともに、
 (-1)が使えないので、偶数と奇数で、引き算の方向を逆にして、つねに1と比較する。
 
 nat_ind2 を使って証明する。
@@ -176,39 +177,45 @@ nat_ind2 を使って証明する。
     by rewrite negbK.
   Qed.
 
-  Lemma fib_o n :
-    fib n.+2 * fib n - fib n.+1 * fib n.+1 =
-    fib n.+4 * fib n.+2 - fib n.+3 * fib n.+3.
+  Lemma fibfib_fib2 n : fib n.+3 * fib n.+1 - fib n.+2 * fib n.+2 =
+                        fib n.+1 * fib n.+1 - fib n.+2 * fib n.
   Proof.
-    rewrite [fib n.+4]fib_n.
-    rewrite {2}[fib n.+3]fib_n.
-    rewrite 2!mulnDl.
-    rewrite [fib n.+3 * fib n.+2]mulnC.
-    rewrite subnDr.
-
-    rewrite {3}[fib n.+2]fib_n.
     rewrite [fib n.+3]fib_n.
-    rewrite 2!mulnDr.
-    rewrite [fib n.+1 * fib n.+2]mulnC.    
+    rewrite {2}[fib n.+2]fib_n.
+    rewrite 2!mulnDl.
+    rewrite [fib n.+2 * fib n.+1]mulnC.
     rewrite subnDr.
+    rewrite [fib n.+2 * fib n]mulnC.
     done.
   Qed.
   
-  Lemma fib_e n :
-    fib n.+1 * fib n.+1 - fib n.+2 * fib n =
-    fib n.+3 * fib n.+3 - fib n.+4 * fib n.+2.
+  Lemma fib2_fibfib n : fib n.+2 * fib n.+2 - fib n.+3 * fib n.+1 =
+                        fib n.+2 * fib n - fib n.+1 * fib n.+1.
   Proof.
-    rewrite {1}[fib n.+3]fib_n.
-    rewrite [fib n.+4]fib_n.
-    rewrite 2!mulnDl.
-    rewrite [fib n.+3 * fib n.+2]mulnC.
-    rewrite subnDr.
-    
-    rewrite {3}[fib n.+2]fib_n.
     rewrite [fib n.+3]fib_n.
-    rewrite 2!mulnDr.
-    rewrite [fib n.+1 * fib n.+2]mulnC.    
+    rewrite {1}[fib n.+2]fib_n.
+    rewrite 2!mulnDl.
+    rewrite [fib n.+2 * fib n.+1]mulnC.
     rewrite subnDr.
+    rewrite [fib n.+2 * fib n]mulnC.
+    done.
+  Qed.
+  
+  Lemma fib_o n :
+    fib n.+4 * fib n.+2 - fib n.+3 * fib n.+3 =
+    fib n.+2 * fib n - fib n.+1 * fib n.+1.
+  Proof.
+    rewrite fibfib_fib2.
+    rewrite fib2_fibfib.
+    done.
+  Qed.
+
+  Lemma fib_e n :
+    fib n.+3 * fib n.+3 - fib n.+4 * fib n.+2 =
+    fib n.+1 * fib n.+1 - fib n.+2 * fib n.
+  Proof.
+    rewrite fib2_fibfib.
+    rewrite fibfib_fib2.
     done.
   Qed.
   
@@ -222,7 +229,7 @@ nat_ind2 を使って証明する。
     elim/nat_ind2 : n => [/= | /= | n IHn].
     - by ssromega.
     - by ssromega.
-    - by rewrite oddn2 -fib_o -fib_e.
+    - by rewrite oddn2 fib_o fib_e.
   Qed.
 
 End Fibonacci.
