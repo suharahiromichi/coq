@@ -1,5 +1,10 @@
-(* fib k*n は fib k の倍数である。  *)
-(* http://parametron.blogspot.com/2017/03/blog-post.html *)
+(**
+フィボナッチ数列についての定理の証明
+
+F(k * n) は F(k) の倍数である、など。
+
+参考：  http://parametron.blogspot.com/2017/03/blog-post.html
+*)
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
@@ -8,10 +13,17 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(* ffibonacci *)
+(**
+ffibonacci
+ *)
 
 Section Fibonacci.
-(*
+
+(**
+# 参考
+
+SFの古い版にあった even の証明に使う帰納法の例。
+*)
   Definition nat_ind2 :
     forall (P : nat -> Prop),
     P 0 ->
@@ -31,24 +43,26 @@ Section Fibonacci.
       P 1 ->
       (forall n : nat, P n -> P n.+2) ->
       forall n : nat, P n.
+
+(**
+# fib の証明に使う帰納法
+
+公理として与える。修正すること。
 *)
-  
-  Variable nat_ind22
-    : forall P : nat -> Prop,
+  Axiom nat_ind22 : forall P : nat -> Prop,
       P 0 ->
       P 1 ->
       (forall n : nat, P n -> P n.+1 -> P n.+2) ->
       forall n : nat, P n.
 
 (**
-fibonacci 関数
+# fibonacci 関数の定義
 *)
-
   Fixpoint fib (n: nat) : nat :=
     match n with
     | 0 => 0
     | 1 => 1
-    | (npp.+1 as np).+1 => fib npp + fib np (* fib n.-2 + fib n.-1 *)
+    | (ppn.+1 as pn).+1 => fib ppn + fib pn (* fib n.-2 + fib n.-1 *)
     end.
 
   Lemma fib_0 n : fib 0 * fib n = 0.
@@ -73,6 +87,12 @@ fibonacci 関数
 
 (**
 補題：  nat_ind22 を使って解く。
+
+参考文献では、
+
+```F(m + n) = F(m) * F(n+1) + F(m-1) * F(n)```
+
+Coqの帰納法にあわせて、mをm+1に変更し、右辺を昇順にした。
 *)  
   Lemma fib_m_n_1 m n :
     fib (m + n + 1) = fib m * fib n + fib m.+1 * fib n.+1.
@@ -90,10 +110,12 @@ fibonacci 関数
     - move=> m IHm IHm1.
       rewrite 2!fib_n 2!mulnDl.      
       
+      (* F(m + n + 1) の項をまとめて置き換える *)
       rewrite ?addnA [_ + fib m.+1 * fib n.+1]addnC ?addnA.
       rewrite [fib m.+1 * fib n.+1 + fib m * fib n]addnC.
       rewrite -IHm.
-
+      
+      (* F(m.+1 + n + 1) の項をまとめて置き換える *)
       rewrite -?[fib (m + n + 1) + fib m.+1 * fib n + fib m.+2 * fib n.+1]addnA.
       rewrite -IHm1.
       
@@ -102,54 +124,38 @@ fibonacci 関数
       rewrite -fib_n.
       done.
   Qed.
-
-  Lemma n2__n1_1 n : n.+2 = n.+1 + 1.
-  Proof.
-      by ssromega.
-  Qed.
   
 (**
-fib k*n は fib k の倍数である。
-nについての帰納法で解く。
- *)
+F(n * k) は F(k) の倍数である。
 
-  Lemma fibkn_divs_fibk k n : fib k.+1 %| fib (k.+1 * n.+1).
+n についての帰納法で解く。
+
+Coqの帰納法にあわせて、n と k ともに n+1 と k+1 にする。
+*)
+  Lemma dvdn_1 k m n : k %| m -> k %| m * n.
+  Proof.
+      by apply: dvdn_mulr.
+  Qed.
+  
+  Lemma dvdn_2 k m : k %| m * k.
+  Proof.
+      by apply: dvdn_mull.
+  Qed.
+  
+  Lemma fibkn_divs_fibk k n : fib k.+1 %| fib (n.+1 * k.+1).
   Proof.
     elim: n.
-    - rewrite muln1.
+    - rewrite mul1n.
       done.
     - move=> n IHn.
-      have -> : k.+1 * n.+2 = k.+1 * n.+1 + k + 1
-        by rewrite n2__n1_1 mulnDr muln1-{2}[k.+1]addn1 ?addnA.
+      have -> : n.+2 * k.+1 = n.+1 * k.+1 + k + 1
+        by rewrite -addn1  mulnDl mul1n -?addnA addn1.
       rewrite fib_m_n_1.
       apply: dvdn_add.
-      + by apply: dvdn_mulr.
-      (* fib k.+1 %| fib (k.+1 * n.+1) -> fib k.+1 %| fib (k.+1 * n.+1) * _ *)
-      + by apply: dvdn_mull.
-        (* fib k.+1 %| _ * fib k.+1 *)
-  Qed.
+      + by apply: dvdn_1.                   (* IHn 使う *)
+      + by apply: dvdn_2.
+    Qed.
   
-(*
-  Lemma fib_m_n m n :
-    fib (m + n) = fib m.-1 * fib n + fib m * fib n.+1.
-  Proof.
-  Admitted.
-  
-  Lemma fibkn_divs_fibn' k n : fib k %| fib (k * n).
-  Proof.
-    elim: n.
-    - rewrite muln0.
-      done.
-    - move=> n IHn.
-      have -> : k * n.+1 = k * n + k. by rewrite -addn1 mulnDr muln1.
-      rewrite fib_m_n.
-      apply: dvdn_add.
-      + by apply: dvdn_mull.                (* fib k %| _ * fib k *)
-      + by apply: dvdn_mulr.
-        (* fib k %| fib (k * n) -> fib k %| fib (k * n) * _ *)
-  Qed.
-*)
-
 End Fibonacci.
 
 (* END *)
