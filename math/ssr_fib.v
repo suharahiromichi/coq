@@ -156,6 +156,75 @@ Coqの帰納法にあわせて、n と k ともに n+1 と k+1 にする。
       + by apply: dvdn_2.
     Qed.
   
+
+(**
+参考文献では、
+
+```F(n.+1) * F(n.-1) - F(n)^2 = (-1)^n```
+
+すなわち、nが偶数なら1、奇数なら-1。
+
+Coqの帰納法にあわせて n, n.+1, n.+2 とする（偶数なら-1、奇数なら1）とともに、
+(-1)が使えないので、偶数と奇数で、引き算の方向を逆にして、つねに1と比較する。
+
+nat_ind2 を使って証明する。
+*)  
+
+  Lemma oddn2 n : odd n.+2 = odd n.
+  Proof.
+    rewrite /=.
+    by rewrite negbK.
+  Qed.
+
+  Lemma fib_o n :
+    fib n.+2 * fib n - fib n.+1 * fib n.+1 =
+    fib n.+4 * fib n.+2 - fib n.+3 * fib n.+3.
+  Proof.
+    rewrite [fib n.+4]fib_n.
+    rewrite {2}[fib n.+3]fib_n.
+    rewrite 2!mulnDl.
+    rewrite [fib n.+3 * fib n.+2]mulnC.
+    rewrite subnDr.
+
+    rewrite {3}[fib n.+2]fib_n.
+    rewrite [fib n.+3]fib_n.
+    rewrite 2!mulnDr.
+    rewrite [fib n.+1 * fib n.+2]mulnC.    
+    rewrite subnDr.
+    done.
+  Qed.
+  
+  Lemma fib_e n :
+    fib n.+1 * fib n.+1 - fib n.+2 * fib n =
+    fib n.+3 * fib n.+3 - fib n.+4 * fib n.+2.
+  Proof.
+    rewrite {1}[fib n.+3]fib_n.
+    rewrite [fib n.+4]fib_n.
+    rewrite 2!mulnDl.
+    rewrite [fib n.+3 * fib n.+2]mulnC.
+    rewrite subnDr.
+    
+    rewrite {3}[fib n.+2]fib_n.
+    rewrite [fib n.+3]fib_n.
+    rewrite 2!mulnDr.
+    rewrite [fib n.+1 * fib n.+2]mulnC.    
+    rewrite subnDr.
+    done.
+  Qed.
+  
+  Lemma fib_e_o n :
+    if odd n then
+      fib n.+2 * fib n - (fib n.+1)^2 = 1
+    else
+      (fib n.+1)^2 - fib n.+2 * fib n = 1.
+  Proof.
+    rewrite -mulnn.
+    elim/nat_ind2 : n => [/= | /= | n IHn].
+    - by ssromega.
+    - by ssromega.
+    - by rewrite oddn2 -fib_o -fib_e.
+  Qed.
+
 End Fibonacci.
 
 (* END *)
