@@ -42,6 +42,16 @@ Print Nat.pred.  (* Nat.pred = fun n : nat => match n with | 0 => n | u.+1 => u 
 
 
 (**
+重大な注意
+
+n.+1.-1 = n は、無条件に成立するが、
+n.-1.+1 = n は、n≧1 でなければならない。 0.-1.+1 = 0.+1 = 1 なので。
+*)
+
+Check succnK : forall n : nat, n = n.+1.-1.
+Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n.
+
+(**
 nat_eqType、eqType のインスタンス
 *)
 
@@ -163,7 +173,8 @@ MathComp の「<=」などの不等式はboolである。leq は、nosimpl で�
 Standard Coq の不等式は Prop であり、 <= と < は、%coq_nat と表示される。
 Stadnard Coq の不等式は done できない。
 
-boolの不等式とPropの不等式の相互変換は leP と ltP を使う。
+boolの不等式と、Propの不等式(%coq_nat)の相互変換は、leP と ltP を使う。
+一旦 %coq_nat に変換すれば、Standard Coq の omega などが使用できる。
 *)
 
 Goal forall n, n <= n.+1.
@@ -275,6 +286,19 @@ fix odd (n : nat) : bool := match n with
                             | n'.+1 => ~~ odd n'
                             end
  *)
+
+Lemma oddn2 n : odd n.+2 = odd n.
+Proof. rewrite /=. by rewrite negbK. Qed.
+
+Lemma oddn1 n : odd n.+1 = ~~ odd n.
+Proof. done. Qed.
+  
+Lemma odd_pred n : 1 <= n -> odd n.-1 = ~~ odd n.
+Proof.
+  elim: n => [// | n IHn H].
+    by rewrite succnK oddn1 negbK.
+Qed.
+
 
 (**
 # doubling, halving
