@@ -203,6 +203,17 @@ nat_ind2 を使って証明する。
     by rewrite negbK.
   Qed.
 
+  Lemma oddn1 n : odd n.+1 = ~~ odd n.
+  Proof.
+    done.
+  Qed.
+  
+  Lemma odd_pred n : 1 <= n -> odd n.-1 = ~~ odd n.
+  Proof.
+    elim: n => [// | n IHn H].
+      by rewrite succnK oddn1 negbK.
+  Qed.
+  
   Lemma fibfib_fib2 n : fib n.+3 * fib n.+1 - fib n.+2 * fib n.+2 =
                         fib n.+1 * fib n.+1 - fib n.+2 * fib n.
   Proof.
@@ -245,7 +256,7 @@ nat_ind2 を使って証明する。
     done.
   Qed.
   
-  Lemma fib_e_o n :
+  Lemma fib_e_o' n :
     if odd n then
       fib n.+2 * fib n - (fib n.+1)^2 = 1
     else
@@ -258,6 +269,20 @@ nat_ind2 を使って証明する。
     - by rewrite oddn2 fib_o fib_e.
   Qed.
 
+  Lemma fib_e_o n :
+    1 <= n ->
+    if odd n then
+      (fib n)^2 - fib n.+1 * fib n.-1 = 1
+    else
+      fib n.+1 * fib n.-1 - (fib n)^2 = 1.
+  Proof.
+    move=> Hn.
+    have H' := fib_e_o' n.-1.
+    rewrite prednK in H'; last done.
+    rewrite odd_pred in H' ; last done.
+      by rewrite if_neg in H'.
+  Qed.
+  
 End Fibonacci.
 
 (* END *)
