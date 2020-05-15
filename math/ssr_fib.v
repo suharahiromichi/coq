@@ -49,7 +49,7 @@ SFの古い版にあった even の証明に使う帰納法の例。
 
 公理として与える。修正すること。
 *)
-  Axiom nat_ind22 : forall P : nat -> Prop,
+  Axiom nat_fib_ind : forall P : nat -> Prop,
       P 0 ->
       P 1 ->
       (forall n : nat, P n -> P n.+1 -> P n.+2) ->
@@ -86,18 +86,21 @@ SFの古い版にあった even の証明に使う帰納法の例。
   Qed.
 
 (**
-補題：  nat_ind22 を使って解く。
+補題：フィボナッチ数列の加法定理
+
+nat_fib_ind を使って解く。
 
 参考文献では、
 
 ```F(m + n) = F(m) * F(n+1) + F(m-1) * F(n)```
 
-Coqの帰納法にあわせて、mをm+1に変更し、右辺を昇順にした。
+これに対して、m ≧ 1 の条件を追加した。
 *)  
-  Lemma fib_m_n_1 m n :
+
+  Lemma fib_addition' m n :
     fib (m + n + 1) = fib m * fib n + fib m.+1 * fib n.+1.
   Proof.
-    elim/nat_ind22 : m.
+    elim/nat_fib_ind : m.
     - rewrite add0n addn1.
       rewrite fib_0 fib_1 add0n.
       done.
@@ -125,6 +128,18 @@ Coqの帰納法にあわせて、mをm+1に変更し、右辺を昇順にした�
       done.
   Qed.
   
+  Lemma fib_addition m n :
+    1 <= m -> fib (m + n) = fib m * fib n.+1 + fib m.-1 * fib n.
+  Proof.
+    move=> H.
+    have H' := fib_addition' m.-1 n.
+    rewrite -?addnA addnCA addn1 prednK in H'.
+    - rewrite addnC.
+      rewrite [fib m * fib n.+1 + fib m.-1 * fib n]addnC.
+      done.
+    - done.
+  Qed.
+  
 (**
 F(n * k) は F(k) の倍数である。
 
@@ -150,7 +165,7 @@ n についての帰納法で解く。
     - move=> n IHn.
       have -> : n.+2 * k.+1 = n.+1 * k.+1 + k + 1
         by rewrite -addn1  mulnDl mul1n -?addnA addn1.
-      rewrite fib_m_n_1.
+      rewrite fib_addition'.
       apply: dvdn_add.
       + by apply: dvdn_1.                   (* IHn 使う *)
       + by apply: dvdn_2.
