@@ -94,7 +94,8 @@ nat_fib_ind を使って解く。
 
 ```F(m + n) = F(m) * F(n+1) + F(m-1) * F(n)```
 
-これに対して、m ≧ 1 の条件を追加した。
+一旦、mをm+1に変更し（右辺を昇順にして）証明した。
+さらに、m ≧ 1 の条件を追加して証明した。
 *)  
 
   Lemma fib_addition' m n :
@@ -145,7 +146,8 @@ F(n * k) は F(k) の倍数である。
 
 n についての帰納法で解く。
 
-ここでは、Coqの帰納法にあわせて、n と k ともに n+1 と k+1 にする。
+一旦、Coqの帰納法にあわせて、n と k ともに n+1 と k+1 として証明したのち、
+k ≧ 1 と n ≧ 1 の条件をつけて証明する。
 *)
   Lemma dvdn_1 k m n : k %| m -> k %| m * n.
   Proof.
@@ -157,7 +159,7 @@ n についての帰納法で解く。
       by apply: dvdn_mull.
   Qed.
   
-  Lemma fibkn_divs_fibk k n : fib k.+1 %| fib (n.+1 * k.+1).
+  Lemma fibkn_divs_fibk' k n : fib k.+1 %| fib (n.+1 * k.+1).
   Proof.
     elim: n.
     - rewrite mul1n.
@@ -170,6 +172,15 @@ n についての帰納法で解く。
       + by apply: dvdn_1.                   (* IHn 使う *)
       + by apply: dvdn_2.
     Qed.
+  
+  Lemma fibkn_divs_fibk k n : 1 <= k -> 1 <= n -> fib k %| fib (n * k).
+  Proof.
+    move=> Hk Hm.
+    have H' := fibkn_divs_fibk' k.-1 n.-1.
+    rewrite prednK in H'; last done.
+    rewrite prednK in H'; last done.
+    done.
+  Qed.
   
 
 (**
