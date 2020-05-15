@@ -81,11 +81,15 @@ Print mult.        (* Notation mult := Nat.mul (Standard Coq での定義) *)
 (**
 ## nosimpl とは
 
-定義のなかで（これが重要）match や let: を使うと、simplが機能しない。
+match や let: 定義の中でを使うと、simplが機能しないことを利用する。
+（定義を展開unfoldすると、simplは機能することに注意）
+
 https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html#locking-unlocking
 の後半 We found that 以降。
 
 *)
+
+Print nosimpl.        (* Notation nosimpl t := (let 'tt := tt in t) *)
 
 Definition add1 := (match tt with tt => Nat.add end).
 Definition add2 := (let: tt := tt in Nat.add).
@@ -122,8 +126,8 @@ Goal one2 0 = 1. Proof. simpl. Admitted.    (* one2 0 = 1 *)
 ## Standard Coq の関数に変換する。
 
 次の補題が用意されている。 
-Standard Coq の add, sub, mul には + * / が用意されているが、
-デフォルトでないので、%coq_nat と表示される。
+Standard Coq の add, sub, mul にも 「+」「-」「*」 が用意されているが、
+デフォルトではないので、%coq_nat と表示される。
 
 一旦 %coq_nat に変換すれば、Standard Coq の omega などが使用できる。
 ただし、ltacで定義するのが現実的である。ssr_omega.v 参照のこと。
@@ -138,12 +142,13 @@ Goal 1 - 1 = 0. Proof. rewrite -minusE. simpl. reflexivity. Qed. (* (1 - 1)%coq_
 Goal 1 * 1 = 1. Proof. rewrite -multE. simpl. reflexivity. Qed. (* (1 * 1)%coq_nat *)
 
 (**
-# comparison
+# comparison 比較
 *)
 
 (**
-leq m n := (m - n == 0) で、<= は leq の Notation である。
-< と <= で、 ltn は < で定義されている。
+leq m n := (m - n == 0) で定義されている。「<=」は leq の Notation である。
+
+「<」はleqで定義されている。ltn は「<」で定義されている。
 *)
 
 Locate "m <= n".    (* leq m n : nat_scope (default interpretation) *)
@@ -153,11 +158,12 @@ Locate "m < n".  (* leq m.+1 n : nat_scope (default interpretation) *)
 Print ltn.       (* [rel m n | m < n] *)
 
 (**
-MathComp の <= などの不等式はboolである。Prop の不等式にしたい場合は、
-leP と ltP を使う。
+MathComp の「<=」などの不等式はboolである。leq は、nosimpl でないので、done で証明できる。
 
-leq は、nosimpl でないので、done で証明できる。
-Standard Coq の <= と < は、Prop なので done できなくなる。
+Standard Coq の不等式は Prop であり、 <= と < は、%coq_nat と表示される。
+Stadnard Coq の不等式は done できない。
+
+boolの不等式とPropの不等式の相互変換は leP と ltP を使う。
 *)
 
 Goal forall n, n <= n.+1.
@@ -362,7 +368,7 @@ End Lemmas.
 つぎの Search は結果がない（left_id で定義されているため）。
 それらについては、ここで憶えてしまうしかない。
 *)
-Search _ (0 + _ = _).
+Search _ (0 + _ = _).                       (* add0n は出てこない。 *)
 
 (**
 # 可換なとき、大きな式を扱うコツ
