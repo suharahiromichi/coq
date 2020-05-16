@@ -35,7 +35,7 @@ Section Fib_2.
   Qed.
 
 (**
-## 性質1
+## 性質1（フィボナッチ数列の和）
 
 ```Ｆ1 ＋ Ｆ2 ＋ … ＋ Ｆn ＝ Ｆn+2 － 1```
 
@@ -55,7 +55,7 @@ Section Fib_2.
   Qed.
 
 (**
-## 性質2
+## 性質2（積の和）
 
 ```Ｆ1 × Ｆ1 ＋ Ｆ2 × Ｆ2 ＋ … ＋ Ｆn × Ｆn ＝ Ｆn × Ｆn+1```
 *)
@@ -73,7 +73,7 @@ Section Fib_2.
   Qed.
 
 (**
-## 性質3
+## 性質3 (奇数の和）
 
 ```Ｆ1 ＋ Ｆ3 ＋ Ｆ5 ＋ … ＋ Ｆ2n-1 ＝ Ｆ2n```
 *)  
@@ -91,8 +91,34 @@ Section Fib_2.
         rewrite IHn.
           by congr (_ + _).
   Qed.
+
+(**
+## 性質4（偶数の和）
+
+```Ｆ2 ＋ Ｆ4 ＋ Ｆ6 ＋ … ＋ Ｆ2n ＋ １ ＝ Ｆ2n+1```
+*)
+  Lemma lemma4 (n : nat) :
+    \sum_(0 <= i < n.+1)(fib i.*2) + 1 = fib n.*2.+1.
+  Proof.
+    elim: n.
+    - by rewrite big_cons big_nil /=.
+    - move=> n IHn.
+      have H : n.+1.*2 = n.*2.+2
+        by rewrite -addn1 -!muln2 addn1 2!muln2 doubleS.
+      (* 右辺 *)
+      rewrite H.
+      rewrite !fib_n.
+      rewrite -{1}IHn.
+      rewrite -addnA.
+      rewrite -fib_n.
+      rewrite [1 + fib n.*2.+2]addnC.
+      
+      (* 左辺 *)      
+      rewrite l_last; last done.
+      rewrite -H -addnA.
+      done.
+  Qed.
   
-    
 
 End Fib_2.
   
