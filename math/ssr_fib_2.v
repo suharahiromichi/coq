@@ -118,8 +118,75 @@ Section Fib_2.
       rewrite -H -addnA.
       done.
   Qed.
-  
 
+(**
+## 性質5（となり同士のフィボナッチ数列は互いに素である。）
+ *)
+  Lemma lemma5 (n : nat) : coprime (fib n) (fib n.+1).
+  Proof.
+    rewrite /coprime.
+    elim: n => [//= | n IHn].
+    rewrite fib_n.
+      by rewrite gcdnDr gcdnC.
+  Qed.
+
+(**
+## 性質6（Ｆn+m ＝ Ｆm × Ｆn+1 ＋ Ｆm-1 × Ｆn）
+
+フィボナッチ数列の加法定理
+ *)
+  Axiom nat_fib_ind : forall P : nat -> Prop,
+      P 0 ->
+      P 1 ->
+      (forall n : nat, P n -> P n.+1 -> P n.+2) ->
+      forall n : nat, P n.
+  
+  Lemma fib_addition' n m :
+    fib (n + m.+1) = fib m.+1 * fib n.+1 + fib m * fib n.
+  Proof.
+    elim/nat_fib_ind : m.
+    - rewrite addn1.
+      rewrite [fib 1]/= mul1n.
+      rewrite [fib 0]/= mul0n !addn0.
+      done.
+      
+    - rewrite addn2.
+      rewrite [fib 2]/= add0n mul1n.
+      rewrite [fib 1]/= mul1n.
+      rewrite fib_n.
+      rewrite addnC.
+      done.
+
+    - move=> m IHm IHm1.
+      rewrite fib_n mulnDl.
+      rewrite {2}fib_n mulnDl.
+      
+      (* F(n + m.+1) の項をまとめて置き換える *)
+      rewrite ?addnA [_ + fib m * fib n]addnC. (* この項を先頭に。 *)
+      rewrite ?addnA [_ + fib m.+1 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
+      rewrite -IHm.
+       
+      (* F(n + m.+2) の項をまとめて置き換える *)
+      rewrite ?addnA [_ + fib m.+1 * fib n]addnC. (* この項を先頭に。 *)
+      rewrite ?addnA [_ + fib m.+2 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
+      rewrite -IHm1.
+      
+      have -> : n + m.+3 = (m + n).+3 by ssromega.
+      have -> : n + m.+2 = (m + n).+2 by ssromega.
+      have -> : n + m.+1 = (m + n).+1 by ssromega.
+      rewrite fib_n.
+      rewrite [fib (m + n).+2 + fib (m + n).+1]addnC.
+      done.
+  Qed.
+  
+  Lemma fib_addition n m :
+    1 <= m -> fib (n + m) = fib m * fib n.+1 + fib m.-1 * fib n.
+  Proof.
+    move=> H.
+    have H' := fib_addition' n m.-1.
+      by rewrite prednK in H'.
+  Qed.
+  
 End Fib_2.
   
 (* END *)
