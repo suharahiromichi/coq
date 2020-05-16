@@ -29,175 +29,164 @@ Section Fib_1.
     end.
 
 (**
-# 定理
+## 定理 性質1
 
-## 性質１  
+```Σ(i=0..n)fib(i) = fib n+2 - 1```
  *)
 
-  Lemma l1_sub1 (n : nat) :
+(**
+### fib数列の和の加算
+
+```Σf + Σg = Σ(f + g)```
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
+*)
+  Lemma l_sum_of_seq (n : nat) :
     \sum_(0 <= i < n)(fib i) + \sum_(0 <= i < n)(fib i.+1) =
     \sum_(0 <= i < n)(fib i.+2).
   Proof.
     rewrite -big_split.
-    (* Σf + Σg = Σ(f + g) *)
-    (* https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf *)
-    done.
-  Qed.
-
-  Lemma l1_sub2' (n : nat) :
-    1 <= n -> \sum_(1 <= i < n.+1)(fib i) = fib 1 + \sum_(1 <= i < n)(fib i.+1).
-  Proof.
-    move=> H.
-    rewrite -big_nat_recl; last done.
-    done.
-  Qed.
-
-  Lemma test : fib 1 = \sum_(0 <= i < 1)(fib i.+1).
-  Proof.
-      by rewrite big_cons big_nil.
-  Qed.
-  
-  Lemma test0 : \sum_(0 <= i < 1)(fib i) = 0.
-  Proof.
-      by rewrite big_cons big_nil.
-  Qed.
-  
-  Lemma test1 (n : nat) : 1 <= n -> index_iota 0 1 ++ index_iota 1 n = index_iota 0 n.
-  Proof.
-    move=> Hn.
-    rewrite /index_iota.
-    rewrite -iota_add.
-    rewrite !subn0.
-    rewrite subnKC //=.
-  Qed.
-
-  Lemma test21 (n : nat) : 1 <= n -> index_iota 1 2 ++ index_iota 2 n.+1 =
-                                     index_iota 1 n.+1.
-  Proof.
-    move=> Hn.
-    rewrite /index_iota.
-    rewrite -iota_add.
-  Admitted.
-  
-  Lemma test2 (n : nat) :
-    1 <= n ->
-    \sum_(0 <= i < 1)(fib i.+1) + \sum_(1 <= i < n)(fib i.+1) =
-    \sum_(0 <= i < n)(fib i.+1).
-  Proof.
-    move=> Hn.
-      by rewrite -big_cat test1.
-  Qed.
-  
-  Lemma l1_sub2 (n : nat) :
-    1 <= n -> \sum_(1 <= i < n.+1)(fib i) = \sum_(0 <= i < n)(fib i.+1).
-  Proof.
-    move=> H.
-    rewrite big_nat_recl; last done.
-      by rewrite test test2.
-  Qed.
-
-  Lemma test22' : fib 2 = \sum_(1 <= i < 2)(fib i.+1).
-  Proof.
-      by rewrite big_cons big_nil.
-  Qed.
-
-  Lemma test22 (n : nat) :
-    1 <= n ->
-    \sum_(1 <= i < 2)(fib i.+1) + \sum_(2 <= i < n.+1)(fib i.+1) =
-    \sum_(0 <= i < n)(fib i.+2).
-  Proof.
-    move=> Hn.
-    rewrite -big_cat.
-    rewrite test21.
-    rewrite big_nat_recl; last done.
-  Admitted.
-
-
-  Lemma l1_sub22 (n : nat) :
-    1 <= n -> \sum_(2 <= i < n.+2)(fib i) = \sum_(0 <= i < n)(fib i.+2).
-  Proof.
-    move=> H.
-    rewrite big_nat_recl; last done.
-    rewrite test22'.
-    rewrite test22.
-    done.
     done.
   Qed.
   
-  Lemma test100 n : \sum_(1 <= i < n.+1)(fib i) = fib 1 + \sum_(2 <= i < n.+1)(fib i).
-  Proof.
-  Admitted.
+(**
+### index を 0起源に振りなおす。
 
-  Lemma test101 n : \sum_(2 <= i < n.+2) fib i = \sum_(2 <= i < n.+1)(fib i) + fib n.+2.
+```Σ(i=m..n+m)f(i) = Σ(i=0..n)f(i+m)```
+ *)
+  Lemma l_reindex (m n : nat) :             (* 不使用 *)
+    \sum_(m <= i < n + m)(fib i) = \sum_(0 <= i < n)(fib (i + m)).
   Proof.
+    rewrite -{1}[m]add0n.
+    rewrite big_addn.
+    have -> : n + m - m = n by ssromega.
+    done.
+  Qed.
+  
+  Lemma l_reindex_1 (n : nat) :
+    \sum_(1 <= i < n.+1)(fib i) = \sum_(0 <= i < n)(fib i.+1).
+  Proof.
+      by rewrite big_add1 succnK.
+  Qed.
+  
+  Lemma l_reindex_2 (n : nat) :
+    \sum_(2 <= i < n.+2)(fib i) = \sum_(0 <= i < n)(fib i.+2).
+  Proof.
+      by rewrite 2!big_add1 2!succnK.
+  Qed.
+  
+
+(**
+### 最初の1項を取り出す。
+
+```Σ(i=m..n)f(i) = f(m) + Σ(i=m+1..n)f(i)```
+ *)
+  Lemma l_first m n :
+    m < n ->
+    \sum_(m <= i < n)(fib i) = fib m + \sum_(m.+1 <= i < n)(fib i).
+  Proof.
+    move=> Hn.
+    rewrite big_ltn; last done.
+    done.
+  Qed.
+  
+(**
+### 最後の1項を取り出す。
+
+```Σ(i=m..n)f(i) = Σ(i=m..n-1)f(i) + f(n)```
+ *)
+(**
+### 最後の1項を取り出す。
+
+```Σ(i=m..n)f(i) = Σ(i=m..n-1)f(i) + f(n)```
+ *)
+  Lemma l_last m n :
+    m <= n ->
+    \sum_(m <= i < n.+1)(fib i) = \sum_(m <= i < n)(fib i) + fib n.
+  Proof.
+    move=> Hn.
+    rewrite big_nat_rev /=.
+    rewrite big_ltn; last done.
+    have -> : m + n.+1 - m.+1 = n. by ssromega.
+    rewrite [\sum_(m <= i < n) fib i + fib n]addnC.
+    rewrite -addn1.
+    rewrite big_addn.
+    rewrite subn1.
+    rewrite succnK.
+    rewrite -addn1.
+    rewrite big_nat_rev /=.
+    
+    have H i : i <= m + n -> i < m + n ->  m + (n + 1) - (m + n - i.+1 + 1).+1 = i.
+    - move=> Hi Hi2.
+      rewrite -addSn.
+      rewrite subnSK; last done.
+      rewrite addnA.
+      rewrite subnDr.
+      rewrite subKn; last done.
+      done.
+    - admit.                                (* ***** *)
   Admitted.
   
-  Lemma test102 m n k : m + k = n + k -> m = n.
+  Lemma eq_add m n k : (m + k = n + k) <-> (m = n).
   Proof.
-  Admitted.
+    split=> H.
+    - apply/eqP.
+      rewrite -(eqn_add2r k).
+        by apply/eqP.
+    - by rewrite H.
+  Qed.
 
-  Lemma lemma1 (n : nat) :
-    1 <= n -> \sum_(0 <= i < n)(fib i) = fib n.+2 - 1.
+(**
+### 定理
+*)
+
+(**
+Coqらしい定義：
+
+```Σ(i=0..n-1)fib(i) = fib n+1 - 1```
+*)
+  Lemma lemma1' (n : nat) :
+    1 <= n -> \sum_(0 <= i < n)(fib i) = fib n.+1 - 1.
   Proof.  
     move=> Hn.
-    have H := l1_sub1 n.
-    rewrite -l1_sub2 in H; last done.
-    rewrite -l1_sub22 in H; last done.
-    rewrite test100 test101 in H.
+    have H := l_sum_of_seq n.
+    rewrite -l_reindex_1 -l_reindex_2 in H.
+    rewrite [\sum_(1 <= i < n.+1)(fib i)]l_first in H; last done.
+    rewrite [\sum_(2 <= i < n.+2)(fib i)]l_last in H; last done.
     rewrite addnA in H.
-    rewrite [\sum_(2 <= i < n.+1) fib i + fib n.+2]addnC in H.
-    move/test102 in H.
+    rewrite [\sum_(2 <= i < n.+1) fib i + fib n.+1]addnC in H.
+    move/eq_add in H.
     rewrite -H.
     rewrite [fib 1]/=.
-    rewrite addn1 subn1 succnK.
-    done.
+      by rewrite addn1 subn1 succnK.
   Qed.
   
+(**
+教科書に忠実な定義：
+
+```Σ(i=0..n)fib(i) = fib n+2 - 1```
+*)
+  Lemma lemma1 (n : nat) :
+    1 <= n -> \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
+  Proof.  
+    move=> Hn.
+    have H := l_sum_of_seq n.+1.
+    rewrite -l_reindex_1 -l_reindex_2 in H.
+    rewrite [\sum_(1 <= i < n.+2)(fib i)]l_first in H; last done.
+    rewrite [\sum_(2 <= i < n.+3)(fib i)]l_last in H; last done.
+    rewrite addnA in H.
+    rewrite [\sum_(2 <= i < n.+2) fib i + fib n.+2]addnC in H.
+    move/eq_add in H.
+    rewrite -H.
+    rewrite [fib 1]/=.
+      by rewrite addn1 subn1 succnK.
+  Qed.
+
 End Fib_1.
 
-(* END *)
+(* 使わなかった補題 *)
 
-
-
-
-
-
-
-
-  Lemma l1_sub2' (n : nat) :
-    1 <= n -> fib 1 + \sum_(1 <= i < n)(fib i.+1) = \sum_(1 <= i < n.+1) fib i.
-  Proof.
-    move=> H.
-    Check (big_nat_recl n 1 _ H).
-    rewrite -big_nat_recl; last done.
-    
-
-  Lemma l1_sub2' (n : nat) :
-    1 <= n -> \sum_(1 <= i < n.+1)(fib i) = \sum_(0 <= i < n)(fib i.+1).
-  Proof.
-    move=> H.
-    Check (big_nat_recl n 1 _ H).
-    rewrite big_nat_recl; last done.
-    
-
-    Admitted.
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
+Section Backup.
 
   Lemma fib_0 n : fib 0 * fib n = 0.
   Proof.
@@ -219,68 +208,7 @@ End Fib_1.
     done.
   Qed.
 
-End Fibonacci.
-
-(* END *)
-
-
-
-(**
-# 参考
-
-SFの古い版にあった even の証明に使う帰納法の例。
-*)
-  Definition nat_ind2 :
-    forall (P : nat -> Prop),
-    P 0 ->
-    P 1 ->
-    (forall n : nat, P n -> P n.+2) ->
-    forall n : nat , P n :=
-       fun P => fun P0 => fun P1 => fun PSS =>
-          fix f (n : nat) := match n return P n with
-                             0 => P0
-                           | 1 => P1
-                           | n'.+2 => PSS n' (f n')
-                           end.
-  
-  Check nat_ind2
-    : forall P : nat -> Prop,
-      P 0 ->
-      P 1 ->
-      (forall n : nat, P n -> P n.+2) ->
-      forall n : nat, P n.
-
-(**
-# fib の証明に使う帰納法
-
-公理として与える。修正すること。
-*)
-  Axiom nat_fib_ind : forall P : nat -> Prop,
-      P 0 ->
-      P 1 ->
-      (forall n : nat, P n -> P n.+1 -> P n.+2) ->
-      forall n : nat, P n.
-
-
-
-
-  保存版
-
-
-
-    Lemma l1_sub2 (n : nat) :
-    \sum_(0 <= i < n)(fib i.+1) = \sum_(1 <= i < n)(fib i.+1).
-  Proof.
-    have H : 0 <= n by rewrite leq0n.
-    Check (big_nat_recl n 0 _ H).
-    rewrite big_nat_recl; last done.
-      by rewrite add0n.
-  Qed.
-
-
-
-
-    Lemma l1_sub2' (n : nat) :
+  Lemma l1_sub2 (n : nat) :
     \sum_(0 <= i < n.+1)(fib i) = \sum_(0 <= i < n)(fib i.+1).
   Proof.
     have H : 0 <= n by rewrite leq0n.
@@ -288,7 +216,7 @@ SFの古い版にあった even の証明に使う帰納法の例。
     rewrite big_nat_recl; last done.
       by rewrite add0n.
   Qed.
-
+  
   Lemma l1_sub3 (n : nat) :
     \sum_(0 <= i < n.+1)(fib i.+1) = 1 + \sum_(0 <= i < n)(fib i.+2).
   Proof.
@@ -298,9 +226,58 @@ SFの古い版にあった even の証明に使う帰納法の例。
       by rewrite [fib 1]/=.
   Qed.
   
-  Lemma test : fib 1 = \sum_(0 <= i < 1)(fib i.+1).
+  Lemma test1 : fib 1 = \sum_(0 <= i < 1)(fib i.+1).
   Proof.
     rewrite big_cons.
     rewrite big_nil.
     done.
   Qed.
+  
+  Lemma l1_sub2' (n : nat) :
+    1 <= n -> \sum_(1 <= i < n.+1)(fib i) = fib 1 + \sum_(1 <= i < n)(fib i.+1).
+  Proof.
+    move=> H.
+    rewrite -big_nat_recl; last done.
+    done.
+  Qed.
+
+  Lemma test2 : fib 1 = \sum_(0 <= i < 1)(fib i.+1).
+  Proof.
+      by rewrite big_cons big_nil.
+  Qed.
+  
+  Lemma test0 : \sum_(0 <= i < 1)(fib i) = 0.
+  Proof.
+      by rewrite big_cons big_nil.
+  Qed.
+  
+  Lemma cat_iota (n : nat) : 1 <= n -> index_iota 0 1 ++ index_iota 1 n = index_iota 0 n.
+  Proof.
+    move=> Hn.
+    rewrite /index_iota.
+    rewrite -iota_add.
+    rewrite !subn0.
+    rewrite subnKC //=.
+  Qed.
+
+  Lemma test4 (n : nat) :
+    1 <= n ->
+    \sum_(0 <= i < 1)(fib i) + \sum_(1 <= i < n)(fib i) =
+    \sum_(0 <= i < n)(fib i).
+  Proof.
+    move=> Hn.
+    rewrite -big_cat.
+    rewrite cat_iota; last done.
+    done.
+    
+    (* l_first を使えばよい。 *)
+    Restart.
+    move=> Hn.
+    rewrite (l_first Hn).
+    congr (_ + _).
+    by rewrite big_cons big_nil.
+  Qed.
+
+End Backup.
+
+(* END *)
