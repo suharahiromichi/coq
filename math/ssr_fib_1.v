@@ -122,38 +122,12 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
 
 (**
 ### 定理
-*)
-
-(**
-Coqらしい定義：
-
-```Σ(i=0..n-1)fib(i) = fib n+1 - 1```
-*)
-  Lemma lemma1' (n : nat) :
-    1 <= n -> \sum_(0 <= i < n)(fib i) = fib n.+1 - 1.
-  Proof.  
-    move=> Hn.
-    have H := l_sum_of_seq n.
-    rewrite -l_reindex_1 -l_reindex_2 in H.
-    rewrite [\sum_(1 <= i < n.+1)(fib i)]l_first in H; last done.
-    rewrite [\sum_(2 <= i < n.+2)(fib i)]l_last in H; last done.
-    rewrite addnA in H.
-    rewrite [\sum_(2 <= i < n.+1) fib i + fib n.+1]addnC in H.
-    move/eq_add in H.
-    rewrite -H.
-    rewrite [fib 1]/=.
-      by rewrite addn1 subn1 succnK.
-  Qed.
-  
-(**
-教科書に忠実な定義：
 
 ```Σ(i=0..n)fib(i) = fib n+2 - 1```
 *)
   Lemma lemma1 (n : nat) :
-    1 <= n -> \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
+    \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
   Proof.  
-    move=> Hn.
     have H := l_sum_of_seq n.+1.
     rewrite -l_reindex_1 -l_reindex_2 in H.
     rewrite [\sum_(1 <= i < n.+2)(fib i)]l_first in H; last done.
