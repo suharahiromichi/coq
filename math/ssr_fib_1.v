@@ -81,52 +81,36 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
 
 ```Σ(i=m..n)f(i) = f(m) + Σ(i=m+1..n)f(i)```
  *)
-  Lemma l_first m n :
+  Lemma l_first m n f :
     m < n ->
-    \sum_(m <= i < n)(fib i) = fib m + \sum_(m.+1 <= i < n)(fib i).
+    \sum_(m <= i < n)(f i) = f m + \sum_(m.+1 <= i < n)(f i).
   Proof.
     move=> Hn.
-    rewrite big_ltn; last done.
-    done.
+      by rewrite big_ltn.
   Qed.
   
 (**
 ### 最後の1項を取り出す。
 
 ```Σ(i=m..n)f(i) = Σ(i=m..n-1)f(i) + f(n)```
- *)
-(**
-### 最後の1項を取り出す。
 
-```Σ(i=m..n)f(i) = Σ(i=m..n-1)f(i) + f(n)```
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
+
+ただし、f(n)が前に出ていて、見落としてしまう。つぎの p.136 も見よ。
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
  *)
-  Lemma l_last m n :
+  Lemma l_last m n f :
     m <= n ->
-    \sum_(m <= i < n.+1)(fib i) = \sum_(m <= i < n)(fib i) + fib n.
+    \sum_(m <= i < n.+1)(f i) = \sum_(m <= i < n)(f i) + f n.
   Proof.
-    move=> Hn.
-    rewrite big_nat_rev /=.
-    rewrite big_ltn; last done.
-    have -> : m + n.+1 - m.+1 = n. by ssromega.
-    rewrite [\sum_(m <= i < n) fib i + fib n]addnC.
-    rewrite -addn1.
-    rewrite big_addn.
-    rewrite subn1.
-    rewrite succnK.
-    rewrite -addn1.
-    rewrite big_nat_rev /=.
-    
-    have H i : i <= m + n -> i < m + n ->  m + (n + 1) - (m + n - i.+1 + 1).+1 = i.
-    - move=> Hi Hi2.
-      rewrite -addSn.
-      rewrite subnSK; last done.
-      rewrite addnA.
-      rewrite subnDr.
-      rewrite subKn; last done.
-      done.
-    - admit.                                (* ***** *)
-  Admitted.
+    move=> Hmn.
+      by rewrite big_nat_recr.
+  Qed.
   
+(**
+## コンギュランス
+*)
   Lemma eq_add m n k : (m + k = n + k) <-> (m = n).
   Proof.
     split=> H.
@@ -273,8 +257,7 @@ Section Backup.
     (* l_first を使えばよい。 *)
     Restart.
     move=> Hn.
-    rewrite (l_first Hn).
-    congr (_ + _).
+    rewrite [\sum_(0 <= i < n) fib i]l_first; last done.
     by rewrite big_cons big_nil.
   Qed.
 
