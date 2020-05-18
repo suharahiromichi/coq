@@ -188,7 +188,7 @@ Section Fib_2.
   Qed.
 
 (**
-## 性質７（nがmで割り切れるならば，ＦnはＦmで割り切れる。）
+## 性質7（nがmで割り切れるならば，ＦnはＦmで割り切れる。）
 
 n = qm ならば，ＦnはＦmで割り切れる。
 *)
@@ -212,7 +212,31 @@ n = qm ならば，ＦnはＦmで割り切れる。
     rewrite prednK in H' ; last ssromega.
     done.
   Qed.
+
+(**
+## 性質8（ＦmとＦm+nの最大公約数 ＝ ＦmとＦnの最大公約数）
+
+```gcd (fib m) (fib m+n) = gcd (fib m) (fib n)```
+*)
+  Lemma lemma8' (m n : nat) :
+    1 <= n -> gcdn (fib m) (fib (m + n.+1)) = gcdn (fib m) (fib n.+1).
+  Proof.
+    move=> H.
+    rewrite fib_addition'.
+    rewrite addnC gcdnMDl.
+    rewrite Gauss_gcdl; last by rewrite lemma5.
+    done.
+  Qed.
   
+  Lemma lemma8 (m n : nat) :
+    1 <= n -> gcdn (fib m) (fib (m + n)) = gcdn (fib m) (fib n).
+  Proof.
+    move=> H.
+    rewrite fib_addition; last done.
+    rewrite addnC gcdnMDl.
+    rewrite Gauss_gcdl; last by rewrite lemma5.
+    done.
+  Qed.
   
 End Fib_2.
   
