@@ -186,6 +186,33 @@ Section Fib_2.
     have H' := fib_addition' n m.-1.
       by rewrite prednK in H'.
   Qed.
+
+(**
+## 性質７（nがmで割り切れるならば，ＦnはＦmで割り切れる。）
+
+n = qm ならば，ＦnはＦmで割り切れる。
+*)
+  Lemma lemma7' (m q : nat) : fib m.+1 %| fib (q.+1 * m.+1).
+  Proof.
+    elim: q => [| q IHq].
+    - by rewrite mulSn mul0n addn0.
+    - rewrite [q.+2 * m.+1]mulSn.
+      rewrite addnC.
+      rewrite fib_addition'.
+      apply: dvdn_add.
+      + by apply: dvdn_mulr.
+      + by apply: dvdn_mull.
+  Qed.
+  
+  Lemma lemma7 (m q : nat) : 1 <= m -> 1 < q -> fib m %| fib (q * m).
+  Proof.
+    move=> Hm Hq.
+    have H' := lemma7' m.-1 q.-1.
+    rewrite prednK in H' ; last done.
+    rewrite prednK in H' ; last ssromega.
+    done.
+  Qed.
+  
   
 End Fib_2.
   
