@@ -204,7 +204,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
       + by apply: dvdn_mull.
   Qed.
   
-  Lemma lemma7 (m q : nat) : 1 <= m -> 1 < q -> fib m %| fib (q * m).
+  Lemma lemma7 (m q : nat) : 1 <= m -> 1 <= q -> fib m %| fib (q * m).
   Proof.
     move=> Hm Hq.
     have H' := lemma7' m.-1 q.-1.
@@ -216,18 +216,17 @@ n = qm ならば，ＦnはＦmで割り切れる。
 (**
 ## 性質8（ＦmとＦm+nの最大公約数 ＝ ＦmとＦnの最大公約数）
 
-```gcd (fib m) (fib m+n) = gcd (fib m) (fib n)```
+```gcd (F m) (F m+n) = gcd (F m) (F n)```
 *)
   Lemma lemma8' (m n : nat) :
-    1 <= n -> gcdn (fib m) (fib (m + n.+1)) = gcdn (fib m) (fib n.+1).
+    gcdn (fib m) (fib (m + n.+1)) = gcdn (fib m) (fib n.+1).
   Proof.
-    move=> H.
     rewrite fib_addition'.
     rewrite addnC gcdnMDl.
     rewrite Gauss_gcdl; last by rewrite lemma5.
     done.
   Qed.
-  
+
   Lemma lemma8 (m n : nat) :
     1 <= n -> gcdn (fib m) (fib (m + n)) = gcdn (fib m) (fib n).
   Proof.
@@ -237,7 +236,97 @@ n = qm ならば，ＦnはＦmで割り切れる。
     rewrite Gauss_gcdl; last by rewrite lemma5.
     done.
   Qed.
+
+(**
+## 補題9_1（m を n で割ったときのあまりを r とすると，
+ＦmとＦnの最大公約数 ＝ ＦnとＦrの最大公約数）
+ *)
+  Lemma lemma91' (n q r : nat) :
+    gcdn (fib (q.+1 * n.+1 + r.+1)) (fib n.+1) = gcdn (fib n.+1) (fib r.+1).
+  Proof.
+    elim: q => [| q IHq].
+    - rewrite mul1n gcdnC.
+      rewrite lemma8'.
+      done.
+    - rewrite gcdnC mulSn addnC -?addnA addnCA.
+      rewrite lemma8.
+      + by rewrite gcdnC addnC.
+      + by rewrite addnC addnS ltn0Sn.
+  Qed.
   
+  Lemma lemma91'' (n q r : nat) :
+    gcdn (fib (q.+1 * n + r.+1)) (fib n) = gcdn (fib n) (fib r.+1).
+  Proof.
+    elim: q => [| q IHq].
+    - by rewrite mul1n gcdnC lemma8'.
+    - rewrite gcdnC mulSn addnC -?addnA addnCA.
+      rewrite lemma8.
+      + by rewrite gcdnC addnC.
+      + by rewrite addnC addnS ltn0Sn.
+  Qed.
+  
+  Lemma lemma91''' (n q r : nat) :
+    gcdn (fib (q * n + r.+1)) (fib n) = gcdn (fib n) (fib r.+1).
+  Proof.
+    elim: q => [| q IHq].
+    - by rewrite gcdnC mul0n add0n.
+    - rewrite gcdnC mulSn addnC -?addnA addnCA.
+      rewrite lemma8.
+      + by rewrite gcdnC addnC.
+      + by rewrite addnC addnS ltn0Sn.
+  Qed.
+
+  Lemma lemma91_r1 (n q r : nat) :
+    1 <= r ->
+    gcdn (fib (q * n + r)) (fib n) = gcdn (fib n) (fib r).
+  Proof.
+    move=> H.
+    have H' := lemma91''' n q r.-1.
+      by rewrite prednK in H'.
+  Qed.
+
+  Lemma gcdn0 (n : nat) : gcdn n 0 = n.
+  Proof.
+    by elim: n.
+  Qed.
+  
+  (* r = 0 の特別な場合は、性質7である。 *)
+  Lemma lemma91_r0 (n q : nat) :
+    1 <= n ->
+    1 <= q ->
+    gcdn (fib (q * n)) (fib n) = gcdn (fib n) (fib 0).
+  Proof.
+    move=> Hn Hq.
+    rewrite [fib 0]/= gcdn0.
+    apply/gcdn_idPr.
+      by apply/lemma7.
+  Qed.
+
+  Lemma lemma91 (n q r : nat) :
+    1 <= n ->
+    1 <= q ->
+    gcdn (fib (q * n + r)) (fib n) = gcdn (fib n) (fib r).
+  Proof.  
+    move=> Hn Hq.
+    case Hr : (r == 0).
+    - move/eqP in Hr.
+      rewrite Hr addn0.
+        by apply: lemma91_r0.
+    - move/eqP in Hr.
+      move/PeanoNat.Nat.neq_0_lt_0 in Hr.
+      move/ltP in Hr.
+      by rewrite lemma91_r1.
+  Qed.
+  
+(**
+## 性質9（ＦmとＦnの最大公約数 ＝ Ｆ(mとnの最大公約数)）
+
+```gcd (F m) (F n) = F (gcd m n)```
+*)
+  Lemma gcdn (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
+  Proof.
+  Admitted.
+
 End Fib_2.
   
 (* END *)
