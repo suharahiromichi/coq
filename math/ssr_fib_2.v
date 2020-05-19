@@ -290,6 +290,11 @@ n = qm ならば，ＦnはＦmで割り切れる。
     by elim: n.
   Qed.
   
+  Lemma gcd0n (n : nat) : gcdn 0 n = n.
+  Proof.
+    by elim: n.
+  Qed.
+  
   (* r = 0 の特別な場合は、性質7である。 *)
   Lemma lemma91_r0 (n q : nat) :
     1 <= n ->
@@ -318,15 +323,120 @@ n = qm ならば，ＦnはＦmで割り切れる。
       by rewrite lemma91_r1.
   Qed.
   
+ Lemma lemma912 (m n : nat) :
+   1 <= m ->
+   1 <= n ->
+   n <= m ->
+   gcdn (fib m) (fib n) = gcdn (fib n) (fib (m %% n)).
+ Proof.
+   move=> Hm Hn Hnm.
+   have Hq : 1 <= m %/ n by rewrite divn_gt0.
+   have H := @lemma91 n (m %/ n) (m %%n) Hn Hq.
+     by rewrite -divn_eq in H.
+ Qed.
+ 
 (**
 ## 性質9（ＦmとＦnの最大公約数 ＝ Ｆ(mとnの最大公約数)）
 
 ```gcd (F m) (F n) = F (gcd m n)```
 *)
+ Lemma test (m n : nat) :
+   1 <= m -> 1 <= n -> n <= m ->
+   (gcdn (fib n) (fib (m %% n)) = fib (gcdn n (m %% n))) ->
+   (gcdn (fib m) (fib n) = fib (gcdn m n)).
+ Proof.
+   move=> Hm Hn Hnm H.
+   rewrite -[gcdn m n]gcdn_modl [gcdn (m %% n) n]gcdnC.
+   rewrite lemma912; last done; last done; last done.
+   done.
+ Qed.
+
+ Lemma test0 (n : nat) :
+   1 <= n ->
+   (gcdn (fib n) (fib 0) = fib (gcdn n 0)).
+ Proof.
+   move=> Hn.
+   rewrite [fib 0]/=.
+   by rewrite !gcdn0.
+ Qed.
+ 
+
+ 
+ Lemma gcdn (m n : nat) :
+   1 <= m ->
+   1 <= n ->
+   n <= m ->
+   gcdn (fib m) (fib n) = fib (gcdn m n).
+ Proof.
+   move=> Hm Hn Hnm.
+   rewrite -[gcdn m n]gcdn_modl [gcdn (m %% n) n]gcdnC.
+   rewrite lemma912; last done; last done; last done.
+   
+   
+
+
+  Axiom gcd_ind' :
+    forall P : nat -> nat -> nat -> Prop,
+      (forall m n : nat, m = 0 -> P 0 n n) ->
+      (forall m n : nat,
+          P m n (gcdn n (m %% n)) ->
+          P m n (gcdn m n)) ->
+      forall m n : nat, P m n (gcdn m n).
+  
+  Lemma gcdn' (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
+  Proof.
+    elim: (@gcd_ind' (fun m n q => gcdn (fib m) (fib n) = fib q) _ _ m n).
+    - done.
+    - move=> m0 n0 _.
+        by rewrite [fib 0]/= gcd0n.
+    - move=> m0 n0 IHm.
+      rewrite gcdn_modr in IHm.
+      rewrite IHm.
+      rewrite gcdnC.
+      done.
+  Qed.
+  
+
+  Axiom gcd_ind :
+    forall P : nat -> nat -> Prop,
+    forall m n : nat,
+      (forall p q : nat, P 0 0) ->
+      (forall p q : nat,
+          P (gcdn m n) (gcdn p q) ->
+          P (gcdn n (m %% n)) (gcdn q (p %% q))) ->
+      forall p q : nat, P (gcdn m n) (gcdn p q).
+
   Lemma gcdn (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
   Proof.
-  Admitted.
-
+    Check @gcd_ind (fun p q => p = fib q) (fib m) (fib n) _ _ m n.
+    elim: (@gcd_ind (fun p q => p = fib q) (fib m) (fib n) _ _ m n).
+    - done.
+    - admit.
+    - move=> p q IHm.
+      rewrite [gcdn q (p %% q)]gcdn_modr.
+      rewrite  gcdn_modr.      
+      rewrite lemma912.
+      by rewrite gcdnC.
+  Qed.
+  
+(*
+  Axiom gcd_ind :
+    forall P : nat -> nat -> nat -> Prop,
+      (forall m n : nat, m = 0 -> P 0 n n) ->
+      (forall m n m' : nat,
+        m = S m' ->
+        P (n %% m') m (gcdn (n %% m') m) ->
+        P (S m') n (gcdn (n %% m') m)) ->
+      forall m n : nat, P m n (gcdn m n).
+*)  
+  
 End Fib_2.
   
 (* END *)
+  Axiom gcd_ind :
+    forall P : nat -> nat -> Prop,
+      (forall m n p q : nat, P 0 0) ->
+      (forall m n p q : nat,
+          P (gcdn m n) (gcdn p q) ->
+          P (gcdn n (m %% n)) (gcdn q (p %% q))) ->
+      forall m n p q : nat, P (gcdn m n) (gcdn p q).
