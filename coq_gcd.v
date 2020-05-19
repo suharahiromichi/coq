@@ -57,13 +57,17 @@ Proof.
   Search well_founded.
   exact lt_wf.
 Defined.
-Check gcd_ind
-  : forall P : nat -> nat -> nat -> Prop,
-    (forall m n : nat, m = 0 -> P 0 n n) ->
-    (forall m n m' : nat,
+Print gcd_ind.
+(* 
+gcd_ind = 
+fun P : nat -> nat -> nat -> Prop => gcd_rect P
+     : forall P : nat -> nat -> nat -> Prop,
+       (forall m n : nat, m = 0 -> P 0 n n) ->
+       (forall m n m' : nat,
         m = S m' ->
         P (mod_safe n m') m (gcd (mod_safe n m') m) ->
-        P (S m') n (gcd (mod_safe n m') m)) -> forall m n : nat, P m n (gcd m n).
+        P (S m') n (gcd (mod_safe n m') m)) -> forall m n : nat, P m n (gcd m n)
+ *)
 
 (* divides m n は、 m が n を割り切る。 *)
 Inductive divides (m : nat) : nat -> Prop :=
@@ -199,6 +203,6 @@ Proof.
 
   (* divides g (S m') *)
   apply Hgm.
-Qed.
+Admitted.
 
 (* END *)
