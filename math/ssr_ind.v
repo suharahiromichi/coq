@@ -2,6 +2,7 @@
 *)
 
 From mathcomp Require Import all_ssreflect.
+Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -147,7 +148,14 @@ Proof.
   move=> n IH /=.
   apply ltnW.
   apply IH.
+    (* (n < n.+2)%coq_nat *)
   by apply/ltP.
+Qed.
+
+Lemma test n m : (n.+1 < m.+1) -> (n < m).
+Proof.
+  move=> H.
+  ssromega.
 Qed.
 
 Goal forall m, div2 m <= m.
@@ -163,7 +171,16 @@ Proof.
        (forall m : nat, m <= n -> div2 m <= m)
        -> forall m : nat, m <= n.+1
        -> div2 m <= m *)
-    Admitted.
+    move=> n IHm m' Hm'.
+    move: m' n Hm' IHm.
+    case; first by [].
+    case; first by [].
+    move=> n m Hm' IHm.
+    apply: ltnW.
+    apply: (IHm n).
+    move/test in Hm'.
+    ssromega.
+Qed.
 
 
 (** Functional Scheme の例 *)
