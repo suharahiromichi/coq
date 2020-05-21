@@ -8,7 +8,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
-# 完全帰納法 Complete inStrong induction
+# 完全帰納法 Complete induction, 
+
+（強化帰納法 strengthening induction, Strong induction）
 
 Coq/SSReflectでたった1行のコマンドで完全帰納法を適用する方法
 
@@ -18,15 +20,20 @@ https://qiita.com/nekonibox/items/514da8edfc6107b57254
 Goal forall P (n : nat), P n.
 Proof.
   move=> P n.
-  elim : n {-2}n (leqnn n).
+  (* elim : n {-2}n (leqnn n). *)
+  move: (leqnn n).                     (* n <= n をスタックに積む。 *)
+  move: {-2}n.                         (* n <= n の右側の n を汎化する。 *)
+  (* forall n0 : nat, n0 <= n -> P n0 *)
+  elim: n.
   -
     (* forall n : nat, n <= 0 -> P n *)
     admit.
   -
     (* forall n : nat,
-       (forall n0 : nat, n0 <= n -> P n0) -> forall n0 : nat, n0 <= n.+1 -> P n0 *)
+       (forall n0 : nat, n0 <= n -> P n0)
+       -> forall n0 : nat, n0 <= n.+1
+       -> P n0 *)
     admit.
-
 Admitted.
 
 (* 使用例 *)
@@ -60,6 +67,41 @@ Admitted.
 
 
 (**
+## Mathcomp 身近なライブラリの例
+ *)
+Print edivn.                             (* Euclideanで定義した剰余 *)
+Print modn.                              (* 引算で定義した剰余 *)
+
+Lemma modn_def m d : (modn m d) = (edivn m d).2.
+Proof.
+  case: d => //= d; rewrite /modn /edivn /=.
+  elim: m {-2}m 0 (leqnn m) => [|n IHn] [|m] q //=.
+  rewrite ltnS !subn_if_gt; case: (d <= m) => // le_mn.
+    by apply: IHn; apply: leq_trans le_mn; exact: leq_subr.
+Qed.
+
+(**
+## MCBの例
+
+3.2.4 Application: strengthening induction
+*)
+
+Lemma stamps n : 12 <= n -> exists s4 s5, s4 * 4 + s5 * 5 = n.
+Proof.
+  elim: n {-2}n (leqnn n) =>[|n IHn]; first by case.
+  do 12! [ case; first by [] ].            (* < 12c *)
+  case; first by exists 3, 0.              (* 12c = 3 * 4c *)
+  case; first by exists 2, 1.              (* 13c = 2 * 4c + 1 * 5c *)
+  case; first by exists 1, 2.              (* 14c = 1 * 4c + 2 * 5c *)
+  case; first by exists 0, 3.              (* 15c = 3 * 5c *)
+  move=> m'; set m := _.+1; move=> mn m11.
+  case: (IHn (m-4) _ isT) => [|s4 [s5 def_m4]].
+    by rewrite leq_subLR (leq_trans mn) // addSnnS leq_addl.
+      by exists s4.+1, s5; rewrite mulSn -addnA def_m4 subnKC.
+Qed.
+
+
+(**
 # Custum Induction
 *)
 
@@ -88,11 +130,18 @@ Proof.
 Abort.
 
 (* 完全帰納法の例 *)
+Check Wf_nat.lt_wf_ind
+  : forall (n : nat) (P : nat -> Prop),
+    (forall n0 : nat, (forall m : nat, (m < n0)%coq_nat -> P m) -> P n0) -> P n.
+      
 Goal forall m, div2 m <= m.
 Proof.
   move=> m.
   pattern m.
   apply Wf_nat.lt_wf_ind => {m}.
+  (* forall n : nat,
+     (forall m : nat, (m < n)%coq_nat -> div2 m <= m)
+     -> div2 n <= n *)
   case; first by [].
   case; first by [].
   move=> n IH /=.
@@ -101,7 +150,23 @@ Proof.
   by apply/ltP.
 Qed.
 
+Goal forall m, div2 m <= m.
+Proof.
+  move=> m.
+  move: (leqnn m).
+  move: {-2}m.
+  elim: m.
+  - (* forall m : nat, m <= 0 -> div2 m <= m *)
+    move=> m.
+      by rewrite leqn0 => /eqP ->.
+  - (* forall n : nat,
+       (forall m : nat, m <= n -> div2 m <= m)
+       -> forall m : nat, m <= n.+1
+       -> div2 m <= m *)
+    Admitted.
 
+
+(** Functional Scheme の例 *)
 Functional Scheme div2_ind := Induction for div2 Sort Prop.
 (*
 div2_equation is defined
