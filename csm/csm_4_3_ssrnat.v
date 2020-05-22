@@ -90,17 +90,16 @@ Print mult.        (* Notation mult := Nat.mul (Standard Coq での定義) *)
 
 (**
 ## nosimpl とは
+ *)
+Print nosimpl.        (* Notation nosimpl t := (let 'tt := tt in t) *)
 
-match や let: 定義の中でを使うと、simplが機能しないことを利用する。
+(**
+match や let: を関数の定義の中で使うと、simplが機能しないことを利用する。
 （定義を展開unfoldすると、simplは機能することに注意）
 
 https://coq.inria.fr/refman/proof-engine/ssreflect-proof-language.html#locking-unlocking
 の後半 We found that 以降。
-
 *)
-
-Print nosimpl.        (* Notation nosimpl t := (let 'tt := tt in t) *)
-
 Definition add1 := (match tt with tt => Nat.add end).
 Definition add2 := (let: tt := tt in Nat.add).
 Definition add3 := (let tt := tt in Nat.add). (* これは simpl される。 *)
@@ -120,15 +119,15 @@ simpl タクティクは、β簡約またはι簡約をおこなうが、ι簡�
 という性質を使う。以下の例を参照のこと：
 *)
 
-(* 単なるι簡約：できる。 *)
+(* 単なるι簡約：常にできる。 *)
 Goal (match 0 with 0 => 1 | _ => 1 end) = 1. Proof. simpl. reflexivity. Qed.
 Goal (match tt with tt => 1 end) = 1. Proof. simpl. reflexivity. Qed.
 
-(* δ簡約して、ι簡約：できる。 *)
+(* δ簡約して、ι簡約：これはできる。 *)
 Definition one1 (n : nat) := (match n with 0 => 1 | _ => 1 end).
 Goal one1 0 = 1. Proof. simpl. reflexivity. Qed. (* 1 = 1 *)
 
-(* δ簡約しても、それでι簡約できるわけではない。 *)
+(* ι簡約しないなら、δ簡約してくれない。 *)
 Definition one2 (n : nat) := (match tt with tt => 1 end).
 Goal one2 0 = 1. Proof. simpl. Admitted.    (* one2 0 = 1 *)
 
