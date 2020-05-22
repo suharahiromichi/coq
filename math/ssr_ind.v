@@ -1,4 +1,8 @@
 (**
+完全帰納法 complete induction について
+
+強化帰納法 strengthening induction, strong induction、
+あるいは、累積帰納法ともいう。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -9,63 +13,184 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
-# 完全帰納法 Complete induction, 
-
-（強化帰納法 strengthening induction, Strong induction）
+# 完全帰納法 complete induction
 
 Coq/SSReflectでたった1行のコマンドで完全帰納法を適用する方法
 
 https://qiita.com/nekonibox/items/514da8edfc6107b57254
  *)
 
-Goal forall P (n : nat), P n.
+Fixpoint div2 (n : nat) : nat :=
+match n with
+| 0 => 0
+| 1 => 0
+| n'.+2 => (div2 n').+1
+end.
+
+Compute div2 10.                            (* 5 *)
+
+(**
+## うまくいかない例
+ *)
+Goal forall m, div2 m <= m.
 Proof.
-  move=> P n.
-  (* elim : n {-2}n (leqnn n). *)
-  move: (leqnn n).                     (* n <= n をスタックに積む。 *)
-  move: {-2}n.                         (* n <= n の右側の n を汎化する。 *)
-  (* forall n0 : nat, n0 <= n -> P n0 *)
-  elim: n.
-  -
-    (* forall n : nat, n <= 0 -> P n *)
-    admit.
-  -
-    (* forall n : nat,
-       (forall n0 : nat, n0 <= n -> P n0)
-       -> forall n0 : nat, n0 <= n.+1
-       -> P n0 *)
-    admit.
-Admitted.
+  elim.
+    by [].
+  move=> n.
+  (* div2 n <= n -> div2 n.+1 <= n.+1 *)
+  simpl.
+Abort.
 
-(* 使用例 *)
-
-Variable (T:Type).
-Variable (R:rel T).
-
-Lemma qsort_ind (P:seq T -> Prop) :
-  P [::] ->
-  (forall x s, P [seq y <- s | R y x] ->
-               P [seq y <- s | ~~ R y x] ->
-               P (x :: s)) ->
-  forall s, P s.
+(**
+## Standard Coq の帰納法の原理をつかう
+ *)
+Check Wf_nat.lt_wf_ind
+  : forall (n : nat) (P : nat -> Prop),
+    (forall n0 : nat, (forall m : nat, (m < n0)%coq_nat -> P m) -> P n0) -> P n.
+      
+Goal forall m, div2 m <= m.
 Proof.
-  move => Hnil Hcons s.
-  elim : s {-2}s (leqnn (size s)) =>[|xs s IHs][]//= xl l Hsize.
-  (* by apply : Hcons; exact : IHs (leq_trans (filter_size _ _) Hsize). *)
-Admitted.
+  move=> m.
+  pattern m.
+  apply Wf_nat.lt_wf_ind => {m}.
+  (* forall n : nat,
+     (forall m : nat, (m < n)%coq_nat -> div2 m <= m)
+     -> div2 n <= n *)
+  case; first by [].
+  case; first by [].
+  move=> n IH /=.
+  apply ltnW.
+  apply IH.
+    (* (n < n.+2)%coq_nat *)
+  by apply/ltP.
+Qed.
 
-Lemma qsort_ind' (P:seq T -> Prop) :
-  P [::] ->
-  (forall x s, P [seq y <- s | R y x] ->
-               P [seq y <- s | ~~ R y x] ->
-               P (x :: s)) ->
-  forall s, P s.
+(**
+## MathComp のイデオム (elim: m {-2}m (leqnn m)) を使う
+ *)
+Lemma test n m : (n.+1 < m.+1) -> (n < m).
 Proof.
-  move => Hnil Hcons s.
-  elim : (size s) {-2}s (leqnn (size s)) =>[|n IHn][]//= xl l Hsize.
-(* by apply : Hcons; exact : IHn (leq_trans (filter_size _ _) Hsize). *)
-Admitted.
+  move=> H.
+  ssromega.
+Qed.
 
+Goal forall m, div2 m <= m.
+Proof.
+  move=> m.
+  move: (leqnn m).
+  move: {-2}m.
+  elim: m.
+  - (* forall m : nat, m <= 0 -> div2 m <= m *)
+    move=> m.
+      by rewrite leqn0 => /eqP ->.
+  - (* forall n : nat,
+       (forall m : nat, m <= n -> div2 m <= m)
+       -> forall m : nat, m <= n.+1
+       -> div2 m <= m *)
+    move=> n IHm m' Hm'.
+    move: m' n Hm' IHm.
+    case; first by [].
+    case; first by [].
+    move=> n m Hm' IHm.
+    apply: ltnW.
+    apply: (IHm n).
+    move/test in Hm'.
+    ssromega.
+Qed.
+
+(**
+## 完全帰納法の原理を証明してから
+*)
+
+Lemma complete_ind (P:nat -> Prop) :
+  (forall n, (forall m, m < n -> P m) -> P n) ->
+  forall n, P n.
+Proof.
+  move => H n.
+    by elim : n {-2}n (leqnn n) =>[[_|//]|n IHn m Hm];
+       apply : H => l Hl //; exact : IHn (leq_trans Hl Hm).
+Qed.
+
+Goal forall m, div2 m <= m.
+Proof.
+  move=> m.
+  elim/complete_ind : m.
+  case; first by [].
+  case; first by [].
+  move=> n IH /=.
+  apply ltnW.
+  apply IH.
+  ssromega.
+Qed.
+
+(**
+# Custum Induction
+
+完全帰納法 を使うわけではない。
+*)
+
+(**
+## Funcutonal Scheme
+
+http://www.a-k-r.org/d/2019-04.html#a2019_04_25_1
+ *)
+
+Require Import FunInd.
+Functional Scheme div2_ind := Induction for div2 Sort Prop.
+(*
+div2_equation is defined
+div2_ind is defined
+ *)
+Check div2_ind
+  : forall P : nat -> nat -> Prop,
+    (forall n : nat, n = 0 -> P 0 0) ->
+    (forall n n0 : nat, n = n0.+1 -> n0 = 0 -> P 1 0) ->
+    (forall n n0 : nat,
+        n = n0.+1 ->
+        forall n' : nat, n0 = n'.+1 -> P n' (div2 n') -> P n'.+2 (div2 n').+1) ->
+    forall n : nat, P n (div2 n).
+
+Goal forall m, div2 m <= m.
+Proof.
+  move=> m.
+  functional induction (div2 m).
+    by [].
+      by [].
+        by apply ltnW.
+Qed.
+
+(**
+## Funcutonal Scheme の発展形が Function である。
+
+http://www.a-k-r.org/d/2019-05.html#a2019_05_03_1
+
+https://people.irisa.fr/David.Pichardie/papers/flops06.pdf
+*)
+
+Function div2'' (n : nat) : nat :=
+match n with
+| 0 => 0
+| 1 => 0
+| n'.+2 => (div2'' n').+1
+end.
+Check div2''_ind
+  : forall P : nat -> nat -> Prop,
+    (forall n : nat, n = 0 -> P 0 0) ->
+    (forall n : nat, n = 1 -> P 1 0) ->
+       (forall n n' : nat, n = n'.+2 -> P n' (div2'' n') -> P n'.+2 (div2'' n').+1) ->
+       forall n : nat, P n (div2'' n).
+                         
+Lemma leq_div2'' m : div2'' m <= m.
+Proof.
+  functional induction (div2'' m).
+    by [].
+      by [].
+        by apply ltnW.
+Qed.
+
+(**
+# Mathcomp イデオムの例
+*)
 
 (**
 ## Mathcomp 身近なライブラリの例
@@ -101,138 +226,4 @@ Proof.
       by exists s4.+1, s5; rewrite mulSn -addnA def_m4 subnKC.
 Qed.
 
-
-(**
-# Custum Induction
-*)
-
-(**
-## Funcutonal Scheme
-
-http://www.a-k-r.org/d/2019-04.html#a2019_04_25_1
- *)
-
-Require Import FunInd.
-
-Fixpoint div2 (n:nat) : nat :=
-match n with
-| O => 0
-| S O => 0
-| S (S n') => S (div2 n')
-end.
-
-Goal forall m, div2 m <= m.
-Proof.
-  elim.
-    by [].
-  move=> n.
-  (* div2 n <= n -> div2 n.+1 <= n.+1 *)
-  simpl.
-Abort.
-
-(* 完全帰納法の例 *)
-Check Wf_nat.lt_wf_ind
-  : forall (n : nat) (P : nat -> Prop),
-    (forall n0 : nat, (forall m : nat, (m < n0)%coq_nat -> P m) -> P n0) -> P n.
-      
-Goal forall m, div2 m <= m.
-Proof.
-  move=> m.
-  pattern m.
-  apply Wf_nat.lt_wf_ind => {m}.
-  (* forall n : nat,
-     (forall m : nat, (m < n)%coq_nat -> div2 m <= m)
-     -> div2 n <= n *)
-  case; first by [].
-  case; first by [].
-  move=> n IH /=.
-  apply ltnW.
-  apply IH.
-    (* (n < n.+2)%coq_nat *)
-  by apply/ltP.
-Qed.
-
-Lemma test n m : (n.+1 < m.+1) -> (n < m).
-Proof.
-  move=> H.
-  ssromega.
-Qed.
-
-Goal forall m, div2 m <= m.
-Proof.
-  move=> m.
-  move: (leqnn m).
-  move: {-2}m.
-  elim: m.
-  - (* forall m : nat, m <= 0 -> div2 m <= m *)
-    move=> m.
-      by rewrite leqn0 => /eqP ->.
-  - (* forall n : nat,
-       (forall m : nat, m <= n -> div2 m <= m)
-       -> forall m : nat, m <= n.+1
-       -> div2 m <= m *)
-    move=> n IHm m' Hm'.
-    move: m' n Hm' IHm.
-    case; first by [].
-    case; first by [].
-    move=> n m Hm' IHm.
-    apply: ltnW.
-    apply: (IHm n).
-    move/test in Hm'.
-    ssromega.
-Qed.
-
-
-(** Functional Scheme の例 *)
-Functional Scheme div2_ind := Induction for div2 Sort Prop.
-(*
-div2_equation is defined
-div2_ind is defined
- *)
-Check div2_ind
-  : forall P : nat -> nat -> Prop,
-    (forall n : nat, n = 0 -> P 0 0) ->
-    (forall n n0 : nat, n = n0.+1 -> n0 = 0 -> P 1 0) ->
-    (forall n n0 : nat,
-        n = n0.+1 ->
-        forall n' : nat, n0 = n'.+1 -> P n' (div2 n') -> P n'.+2 (div2 n').+1) ->
-    forall n : nat, P n (div2 n).
-
-Goal forall m, div2 m <= m.
-Proof.
-  move=> m.
-  functional induction (div2 m).
-    by [].
-      by [].
-        by apply ltnW.
-Qed.
-
-(**
-## Funcutonal Scheme の発展形が Function である。
-
-http://www.a-k-r.org/d/2019-05.html#a2019_05_03_1
-
-https://people.irisa.fr/David.Pichardie/papers/flops06.pdf
-*)
-
-Function div2'' (n:nat) : nat :=
-match n with
-| O => 0
-| S O => 0
-| S (S n') => S (div2'' n')
-end.
-Check div2''_ind
-  : forall P : nat -> nat -> Prop,
-    (forall n : nat, n = 0 -> P 0 0) ->
-    (forall n : nat, n = 1 -> P 1 0) ->
-    (forall n n' : nat, n = n'.+2 -> P n' (div2'' n') -> P n'.+2 (div2'' n').+1) ->
-    forall n : nat, P n (div2'' n).
-
-Lemma leq_div2'' m: div2'' m <= m.
-Proof.
-  functional induction (div2'' m).
-    by [].
-      by [].
-        by apply ltnW.
-        
 (* END *)
