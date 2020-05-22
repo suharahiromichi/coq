@@ -18,8 +18,11 @@ Unset Printing Implicit Defensive.
 Coq/SSReflectでたった1行のコマンドで完全帰納法を適用する方法
 
 https://qiita.com/nekonibox/items/514da8edfc6107b57254
+
+MathComp のイデオム 「elim: m {-2}m (leqnn m)」 の説明です。
  *)
 
+(* -2 を繰り返すことで、2で割る関数。 *)
 Fixpoint div2 (n : nat) : nat :=
 match n with
 | 0 => 0
@@ -27,7 +30,7 @@ match n with
 | n'.+2 => (div2 n').+1
 end.
 
-Compute div2 10.                            (* 5 *)
+Compute div2 10.                            (* = 5 *)
 
 (**
 ## うまくいかない例
@@ -42,7 +45,7 @@ Proof.
 Abort.
 
 (**
-## Standard Coq の帰納法の原理をつかう
+## Standard Coq の帰納法の原理を使う
  *)
 Check Wf_nat.lt_wf_ind
   : forall (n : nat) (P : nat -> Prop),
@@ -59,27 +62,22 @@ Proof.
   case; first by [].
   case; first by [].
   move=> n IH /=.
-  apply ltnW.
-  apply IH.
+  apply: ltnW.
+  apply: IH.
     (* (n < n.+2)%coq_nat *)
   by apply/ltP.
 Qed.
 
 (**
-## MathComp のイデオム (elim: m {-2}m (leqnn m)) を使う
+## MathComp のイデオムを使う
  *)
-Lemma test n m : (n.+1 < m.+1) -> (n < m).
-Proof.
-  move=> H.
-  ssromega.
-Qed.
+Lemma ltS n m : (n.+1 < m.+1) = (n < m).
+Proof. apply/idP/idP => H; by ssromega. Qed.
 
 Goal forall m, div2 m <= m.
 Proof.
   move=> m.
-  move: (leqnn m).
-  move: {-2}m.
-  elim: m.
+  elim: m {-2}m (leqnn m).                  (* ！！ここ！！ *)
   - (* forall m : nat, m <= 0 -> div2 m <= m *)
     move=> m.
       by rewrite leqn0 => /eqP ->.
@@ -87,15 +85,15 @@ Proof.
        (forall m : nat, m <= n -> div2 m <= m)
        -> forall m : nat, m <= n.+1
        -> div2 m <= m *)
-    move=> n IHm m' Hm'.
-    move: m' n Hm' IHm.
+    move=> n IHm m'.
+    move: m' n IHm.               (* ラムダ変数の順番を入れ替える。 *)
     case; first by [].
     case; first by [].
-    move=> n m Hm' IHm.
+    move=> n m IHm Hm'.
     apply: ltnW.
     apply: (IHm n).
-    move/test in Hm'.
-    ssromega.
+    rewrite ltS in Hm'.
+      by apply: ltnW.
 Qed.
 
 (**
@@ -115,12 +113,15 @@ Goal forall m, div2 m <= m.
 Proof.
   move=> m.
   elim/complete_ind : m.
+  (* forall n : nat,
+     (forall m : nat, m < n -> div2 m <= m)
+     -> div2 n <= n *)
   case; first by [].
   case; first by [].
   move=> n IH /=.
-  apply ltnW.
-  apply IH.
-  ssromega.
+  apply: ltnW.
+  apply: IH.
+    by apply: ltnW.
 Qed.
 
 (**
