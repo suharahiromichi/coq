@@ -7,7 +7,6 @@ http://www.suguru.jp/Fibonacci/
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
-Require Import ssr_fib_1.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -19,8 +18,16 @@ ffibonacci
 
 Section Fib_2.
 
-  Print fib.                                (* ****** *)
-  
+(**
+# fibonacci 関数の定義
+*)
+  Fixpoint fib (n : nat) : nat :=
+    match n with
+    | 0 => 0
+    | 1 => 1
+    | (ppn.+1 as pn).+1 => fib ppn + fib pn (* fib n.-2 + fib n.-1 *)
+    end.
+ 
   Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
   Proof.
     done.
@@ -32,6 +39,25 @@ Section Fib_2.
     rewrite fib_n.
     rewrite addn_gt0.
       by apply/orP/or_intror.
+  Qed.
+
+(**
+### 最後の1項を取り出す。
+
+```Σ(i=m..n)f(i) = Σ(i=m..n-1)f(i) + f(n)```
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
+
+ただし、f(n)が前に出ていて、見落としてしまう。つぎの p.136 も見よ。
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
+ *)
+  Lemma l_last m n f :
+    m <= n ->
+    \sum_(m <= i < n.+1)(f i) = \sum_(m <= i < n)(f i) + f n.
+  Proof.
+    move=> Hmn.
+      by rewrite big_nat_recr.
   Qed.
 
 (**
@@ -47,7 +73,7 @@ Section Fib_2.
     elim: n => [| n IHn].
     - rewrite big_cons big_nil /=.
         by ssromega.
-    - rewrite l_last; last done.            (* ****** *)
+    - rewrite l_last; last done.
       rewrite IHn.
       rewrite addnBAC; last by rewrite fib_1_le_fib2.
       congr (_ - _).
@@ -339,104 +365,22 @@ n = qm ならば，ＦnはＦmで割り切れる。
 ## 性質9（ＦmとＦnの最大公約数 ＝ Ｆ(mとnの最大公約数)）
 
 ```gcd (F m) (F n) = F (gcd m n)```
+
+https://proofwiki.org/wiki/GCD_of_Fibonacci_Numbers
 *)
- Lemma test (m n : nat) :
-   1 <= m -> 1 <= n -> n <= m ->
-   (gcdn (fib n) (fib (m %% n)) = fib (gcdn n (m %% n))) ->
+ Lemma lemma9 (m n : nat) :
+   3 <= m ->
+   3 <= n ->
    (gcdn (fib m) (fib n) = fib (gcdn m n)).
  Proof.
-   move=> Hm Hn Hnm H.
-   rewrite -[gcdn m n]gcdn_modl [gcdn (m %% n) n]gcdnC.
-   rewrite lemma912; last done; last done; last done.
-   done.
- Qed.
+ Admitted.
 
- Lemma test0 (n : nat) :
-   1 <= n ->
-   (gcdn (fib n) (fib 0) = fib (gcdn n 0)).
- Proof.
-   move=> Hn.
-   rewrite [fib 0]/=.
-   by rewrite !gcdn0.
- Qed.
+(**
+## 性質10（Ｆn が Ｆm で割り切れるならば，nはmで割り切れる。）
+
+性質7の逆
+*)
  
-
- 
- Lemma gcdn (m n : nat) :
-   1 <= m ->
-   1 <= n ->
-   n <= m ->
-   gcdn (fib m) (fib n) = fib (gcdn m n).
- Proof.
-   move=> Hm Hn Hnm.
-   rewrite -[gcdn m n]gcdn_modl [gcdn (m %% n) n]gcdnC.
-   rewrite lemma912; last done; last done; last done.
-   
-   
-
-
-  Axiom gcd_ind' :
-    forall P : nat -> nat -> nat -> Prop,
-      (forall m n : nat, m = 0 -> P 0 n n) ->
-      (forall m n : nat,
-          P m n (gcdn n (m %% n)) ->
-          P m n (gcdn m n)) ->
-      forall m n : nat, P m n (gcdn m n).
-  
-  Lemma gcdn' (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
-  Proof.
-    elim: (@gcd_ind' (fun m n q => gcdn (fib m) (fib n) = fib q) _ _ m n).
-    - done.
-    - move=> m0 n0 _.
-        by rewrite [fib 0]/= gcd0n.
-    - move=> m0 n0 IHm.
-      rewrite gcdn_modr in IHm.
-      rewrite IHm.
-      rewrite gcdnC.
-      done.
-  Qed.
-  
-
-  Axiom gcd_ind :
-    forall P : nat -> nat -> Prop,
-    forall m n : nat,
-      (forall p q : nat, P 0 0) ->
-      (forall p q : nat,
-          P (gcdn m n) (gcdn p q) ->
-          P (gcdn n (m %% n)) (gcdn q (p %% q))) ->
-      forall p q : nat, P (gcdn m n) (gcdn p q).
-
-  Lemma gcdn (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
-  Proof.
-    Check @gcd_ind (fun p q => p = fib q) (fib m) (fib n) _ _ m n.
-    elim: (@gcd_ind (fun p q => p = fib q) (fib m) (fib n) _ _ m n).
-    - done.
-    - admit.
-    - move=> p q IHm.
-      rewrite [gcdn q (p %% q)]gcdn_modr.
-      rewrite  gcdn_modr.      
-      rewrite lemma912.
-      by rewrite gcdnC.
-  Qed.
-  
-(*
-  Axiom gcd_ind :
-    forall P : nat -> nat -> nat -> Prop,
-      (forall m n : nat, m = 0 -> P 0 n n) ->
-      (forall m n m' : nat,
-        m = S m' ->
-        P (n %% m') m (gcdn (n %% m') m) ->
-        P (S m') n (gcdn (n %% m') m)) ->
-      forall m n : nat, P m n (gcdn m n).
-*)  
-  
 End Fib_2.
-  
+
 (* END *)
-  Axiom gcd_ind :
-    forall P : nat -> nat -> Prop,
-      (forall m n p q : nat, P 0 0) ->
-      (forall m n p q : nat,
-          P (gcdn m n) (gcdn p q) ->
-          P (gcdn n (m %% n)) (gcdn q (p %% q))) ->
-      forall m n p q : nat, P (gcdn m n) (gcdn p q).
