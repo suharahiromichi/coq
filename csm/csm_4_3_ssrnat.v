@@ -31,7 +31,7 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 
 Standard Soq の S と pred を rename したもの。nosimpl ではないことに注意してください。
 
-次節にある .*2 (double) は nosimple です。csm_3_6_3_simpl.v に誤記がありました。
+後述する .*2 (double) は nosimple です。csm_3_6_3_simpl.v に誤記がありました。
 *)
 
 Locate ".+1".           (* S n : nat_scope (default interpretation) *)
@@ -39,7 +39,6 @@ Print S.                (* Inductive nat : Set :=  O : nat | S : nat -> nat *)
 
 Locate ".-1".    (* Nat.pred n : nat_scope (default interpretation) *)
 Print Nat.pred.  (* Nat.pred = fun n : nat => match n with | 0 => n | u.+1 => u end *)
-
 
 (**
 重大な注意
@@ -155,27 +154,41 @@ Goal 1 * 1 = 1. Proof. rewrite -multE. simpl. reflexivity. Qed. (* (1 * 1)%coq_n
 *)
 
 (**
+## MathComp の比較（不等式）
+
 leq m n := (m - n == 0) で定義されている。「<=」は leq の Notation である。
 
 「<」はleqで定義されている。ltn は「<」で定義されている。
 *)
 
 Locate "m <= n".    (* leq m n : nat_scope (default interpretation) *)
+Check leq : nat -> nat -> bool.
 Print leq.          (* leq = fun m n : nat => m - n == 0 *)
 
 Locate "m < n".  (* leq m.+1 n : nat_scope (default interpretation) *)
+Check ltn : nat -> nat -> bool.
 Print ltn.       (* [rel m n | m < n] *)
 
 (**
 MathComp の「<=」などの不等式はboolである。leq は、nosimpl でないので、done で証明できる。
+ *)
 
+(**
+## Standard Coq の比較（不等式）
+*)
+Check le : nat -> nat -> Prop.
+Check lt : nat -> nat -> Prop.
+(*
 Standard Coq の不等式は Prop であり、 <= と < は、%coq_nat と表示される。
 Stadnard Coq の不等式は done できない。
+ *)
+
+(**
+## 相互変換のための補題：leP と ltP
 
 boolの不等式と、Propの不等式(%coq_nat)の相互変換は、leP と ltP を使う。
 一旦 %coq_nat に変換すれば、Standard Coq の omega などが使用できる。
 *)
-
 Goal forall n, n <= n.+1.
 Proof.
   move=> n.
@@ -209,7 +222,7 @@ Check 0 <= 1.                               (* 0 <= 1 *)
 Check 1 >= 0.                               (* 0 <= 1  *)
 
 (**
-場合分けのための補題： leqP と ltnP （これは覚えるべき補題）。
+## 場合分けのための補題： leqP と ltnP （これは覚えるべき補題）
 
 (leP と ltP と紛らわしいが、別なもの）
 *)
