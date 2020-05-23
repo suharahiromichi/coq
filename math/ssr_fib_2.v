@@ -7,6 +7,8 @@ http://www.suguru.jp/Fibonacci/
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
+Require Import FunInd.                      (* Functional Scheme *)
+Require Import Recdef.                      (* Function *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -21,7 +23,6 @@ Section Fib_2.
 (**
 # fibonacci 関数の定義
 *)
-  Require Import FunInd.
   Function fib (n : nat) : nat :=
     match n with
     | 0 => 0
