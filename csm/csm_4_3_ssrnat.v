@@ -29,7 +29,7 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 (**
 # successor and predecessor
 
-Standard Soq の S と pred を rename したもの。nosimpl ではないことに注意してください。
+Standard Coq の S と pred を rename したもの。nosimpl ではないことに注意してください。
 
 後述する .*2 (double) は nosimple です。csm_3_6_3_simpl.v に誤記がありました。
 *)
