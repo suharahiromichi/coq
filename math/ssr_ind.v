@@ -46,19 +46,28 @@ Abort.
 
 (**
 ## Standard Coq の帰納法の原理を使う
+
+帰納法の仮定：任意のn0 に対して m0 < n0 であるm0に対して P(m0) のとき。
+証明するべき：上記のn0に対して、P(n0)が成り立つ。
+結論：任意のnに対して、P(n)が成り立つ
  *)
 Check Wf_nat.lt_wf_ind
-  : forall (n : nat) (P : nat -> Prop),
-    (forall n0 : nat, (forall m : nat, (m < n0)%coq_nat -> P m) -> P n0) -> P n.
-      
+  : forall n  (P : nat -> Prop),
+    (forall n0,
+        (forall m0 : nat, (m0 < n0)%coq_nat -> P m0) -> (* 帰納法の仮定 *)
+        P n0)                               (* 証明するべきもの *)
+    ->
+    P n.                                    (* 導ける結論 *)
+
 Goal forall m, div2 m <= m.
 Proof.
   move=> m.
   pattern m.
   apply Wf_nat.lt_wf_ind => {m}.
-  (* forall n : nat,
-     (forall m : nat, (m < n)%coq_nat -> div2 m <= m)
-     -> div2 n <= n *)
+  (* forall n0 : nat,
+     (forall m0 : nat, (m0 < n0)%coq_nat -> div2 m0 <= m0) ... 帰納法の仮定
+     -> div2 n0 <= n0 ........................................ 証明するべき
+   *)
   case; first by [].
   case; first by [].
   move=> n IH /=.
@@ -77,19 +86,40 @@ Proof. apply/idP/idP => H; by ssromega. Qed.
 Goal forall m, div2 m <= m.
 Proof.
   move=> m.
-  elim: m {-2}m (leqnn m).                  (* ！！ここ！！ *)
+  (* ここから *)
+  move: (leqnn m).                          (* ゴールに (m <= m) をプッシュする。 *)
+  (* m <= m -> P m *)
+  move: {-2}m.                              (* ゴールの2番め意外のmを汎化する。 *)
+  (* forall m0, m0 <= m -> P m0 *)
+  elim: m.                                  (* m について、数学的帰納法をする。 *)
+(*
+帰納法の仮定：任意のn0に対して、m0 ≦ n0 であるm0で、P(m0) のとき。
+証明するべきもの：上記のn0に対して、m1 ≦ n0+1 であるm1で、P(m1)が成り立つ。
+結論：任意のnに対して、P(n)が成り立つ。
+*)
+(*
+  forall m0, m0 <= 0 -> P m0 ... これは数学的帰納法の「底」であるが、
+  .............................. 完全帰納法としては冗長である。
+ *)
+(*  
+  forall n0, (forall m0, m0 <= n0 -> P m0) ....... 帰納法の仮定
+  ->         (forall m1, m1 <= n0.+1 -> P m1) .... 証明するべき
+ *)
+  Undo 3.
+  (* ここまで *)
+  elim: m {-2}m (leqnn m).                  (* ！！イデオム！！ *)
   - (* forall m : nat, m <= 0 -> div2 m <= m *)
     move=> m.
       by rewrite leqn0 => /eqP ->.
   - (* forall n : nat,
-       (forall m : nat, m <= n -> div2 m <= m)
-       -> forall m : nat, m <= n.+1
-       -> div2 m <= m *)
-    move=> n IHm m'.
-    move: m' n IHm.               (* ラムダ変数の順番を入れ替える。 *)
-    case; first by [].
-    case; first by [].
-    move=> n m IHm Hm'.
+       (forall m : nat, m <= n -> div2 m <= m) ->
+       (forall m : nat, m <= n.+1 -> div2 m <= m)
+     *)
+    move=> n IHm m1.
+    move: m1 n IHm.                (* ラムダ変数の順番を入れ替える。 *)
+    case; first by [].             (* m1 を 0 と 1以上で場合分けする。 *)
+    case; first by [].             (* n を 0 と 1以上で場合分けする。 *)
+    move=> n m1 IHm Hm'.
     apply: ltnW.
     apply: (IHm n).
     rewrite ltS in Hm'.
@@ -98,11 +128,17 @@ Qed.
 
 (**
 ## 完全帰納法の原理を証明してから
+
+帰納法の仮定：任意のn0 に対して m0 < n0 であるm0に対して P(m0) のとき。
+証明するべき：上記のn0に対して、P(n0)が成り立つ。
+結論：任意のnに対して、P(n)が成り立つ
 *)
 
 Lemma complete_ind (P:nat -> Prop) :
-  (forall n, (forall m, m < n -> P m) -> P n) ->
-  forall n, P n.
+  (forall n0, (forall m0, m0 < n0 -> P m0) -> (* 帰納法の仮定 *)
+              P n0)                           (* 証明するべき *)
+  ->
+  (forall n, P n).                          (* 導ける結論 *)
 Proof.
   move => H n.
     by elim : n {-2}n (leqnn n) =>[[_|//]|n IHn m Hm];
@@ -113,9 +149,10 @@ Goal forall m, div2 m <= m.
 Proof.
   move=> m.
   elim/complete_ind : m.
-  (* forall n : nat,
-     (forall m : nat, m < n -> div2 m <= m)
-     -> div2 n <= n *)
+  (* forall n0 : nat,
+     (forall m0 : nat, m0 < n0 -> div2 m0 <= m0)  ............ 帰納法の仮定
+     -> div2 n0 <= n0 ........................................ 証明するべき
+   *)
   case; first by [].
   case; first by [].
   move=> n IH /=.
@@ -128,6 +165,8 @@ Qed.
 # Custum Induction
 
 完全帰納法 を使うわけではない。
+
+Funcutonal Scheme の発展形が Function であるので、後者を使うべき。
 *)
 
 (**
@@ -161,29 +200,29 @@ Proof.
 Qed.
 
 (**
-## Funcutonal Scheme の発展形が Function である。
+## Function コマンド
 
 http://www.a-k-r.org/d/2019-05.html#a2019_05_03_1
 
 https://people.irisa.fr/David.Pichardie/papers/flops06.pdf
 *)
 
-Function div2'' (n : nat) : nat :=
+Function div2a (n : nat) : nat :=
 match n with
 | 0 => 0
 | 1 => 0
-| n'.+2 => (div2'' n').+1
+| n'.+2 => (div2a n').+1
 end.
-Check div2''_ind
+Check div2a_ind
   : forall P : nat -> nat -> Prop,
     (forall n : nat, n = 0 -> P 0 0) ->
     (forall n : nat, n = 1 -> P 1 0) ->
-       (forall n n' : nat, n = n'.+2 -> P n' (div2'' n') -> P n'.+2 (div2'' n').+1) ->
-       forall n : nat, P n (div2'' n).
+       (forall n n' : nat, n = n'.+2 -> P n' (div2a n') -> P n'.+2 (div2a n').+1) ->
+       forall n : nat, P n (div2a n).
                          
-Lemma leq_div2'' m : div2'' m <= m.
+Lemma leq_div2a m : div2a m <= m.
 Proof.
-  functional induction (div2'' m).
+  functional induction (div2a m).
     by [].
       by [].
         by apply ltnW.
@@ -208,8 +247,9 @@ Proof.
 Qed.
 
 (**
-## MCBの例
+## Match-Comp-Book (MCB) の例
 
+https://math-comp.github.io/mcb/
 3.2.4 Application: strengthening induction
 *)
 
