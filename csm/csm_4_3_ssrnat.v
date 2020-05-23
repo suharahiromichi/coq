@@ -29,9 +29,9 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 (**
 # successor and predecessor
 
-Standard Coq の S と pred を rename したもの。nosimpl ではないことに注意してください。
-
-後述する .*2 (double) は nosimple です。csm_3_6_3_simpl.v に誤記がありました。
+Standard Coq の S (successor) と pred (predecessor) の構文糖衣(Notation)である。
+nosimpl ではない。後述する .*2 (double) は nosimple です。
+csm_3_6_3_simpl.v に誤記がありました。
 *)
 
 Locate ".+1".           (* S n : nat_scope (default interpretation) *)
@@ -48,7 +48,7 @@ n.-1.+1 = n は、n≧1 でなければならない。 0.-1.+1 = 0.+1 = 1 なの
 *)
 
 Check succnK : forall n : nat, n = n.+1.-1.
-Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n.
+Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n. (* 1 <= n *)
 
 (**
 nat_eqType、eqType のインスタンス
@@ -213,9 +213,12 @@ Locate "m < n".  (* leq m.+1 n : nat_scope (default interpretation) *)
 Locate "m >= n". (* leq n m : nat_scope (default interpretation) *)
 Locate "m > n".  (* leq n.+1 m : nat_scope (default interpretation) *)
 
-(* <= 以外は、Notation である。 *)
-(* そのため、< を使っていなくても、m.+1 <= n が m < n と表示される場合がある。 *)
-(* 以下のように、< が一番よく使われるので、おどろかないようにする。 *)
+(**
+<= 以外は、<= で定義されている。
+そのため、m.+1 <= n が m < n と表示される場合がある。
+CoqはできるだけNotationを使って表示しようとするためであり、結果として、
+以下のように、< が一番よく使われるので、おどろかないようにする。
+ *)
 Check 1 <= 2.                               (* 0 < 2 *)
 Check 2 >= 1.                               (* 0 < 2 *)
 Check 0 <= 1.                               (* 0 <= 1 *)
@@ -231,7 +234,9 @@ Goal forall m n, (if m <= n then n else m) = maxn n m.
 Proof.
   move=> m n.
   rewrite /maxn.
-    by case: leqP.
+  case: leqP.
+  - done.                                   (* m <= n -> n = n *)
+  - done.                                   (* n < m -> m = m *)
 Qed.    
 (* if then else は = より結合度が低いので、括弧がいる。 *)
 
@@ -239,7 +244,44 @@ Goal forall m n, (if m <= n then m else n) = minn n m.
 Proof.
   move=> m n.
   rewrite /minn.
-    by case: ltnP.
+  case: ltnP.
+  - done.                                   (* n < m -> n = n *)
+  - done.                                   (* m <= n -> m = m *)
+Qed.    
+
+(**
+## 補足説明
+ *)
+(**
+m <= n で場合分けする。ちょっとめんどう。
+ *)
+Goal forall m n, (if m <= n then n else m) = maxn n m.
+Proof.
+  move=> m n.
+  rewrite /maxn.
+  case H : (m <= n).
+  (* n = (if n < m then m else n) *)
+  - rewrite leqNgt ltnS H.
+    done.
+  (* m = (if n < m then m else n) *)
+  - rewrite leqNgt ltnS H.
+    done.
+Qed.
+
+(**
+ifP で場合分けする。
+ *)
+Goal forall m n, (if m <= n then n else m) = maxn n m.
+Proof.
+  move=> m n.
+  rewrite /maxn.
+  case: ifP => H.
+  (* m <= n -> n = (if n < m then m else n) *)
+  - rewrite leqNgt ltnS H.
+    done.
+  (* (m <= n) = false -> m = (if n < m then m else n) *)
+  - rewrite leqNgt ltnS H.
+    done.
 Qed.    
 
 (**
