@@ -21,11 +21,12 @@ Section Fib_2.
 (**
 # fibonacci 関数の定義
 *)
-  Fixpoint fib (n : nat) : nat :=
+  Require Import FunInd.
+  Function fib (n : nat) : nat :=
     match n with
     | 0 => 0
     | 1 => 1
-    | (ppn.+1 as pn).+1 => fib ppn + fib pn (* fib n.-2 + fib n.-1 *)
+    | (m.+1 as pn).+1 => fib m + fib pn (* fib n.-2 + fib n.-1 *)
     end.
  
   Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
@@ -161,41 +162,38 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
 
 フィボナッチ数列の加法定理
  *)
-  Axiom nat_fib_ind : forall P : nat -> Prop,
-      P 0 ->
-      P 1 ->
-      (forall n : nat, P n -> P n.+1 -> P n.+2) ->
-      forall n : nat, P n.
+  Check fib_ind
+    : forall P : nat -> nat -> Prop,
+      (forall n : nat, n = 0 -> P 0 0) ->
+       (forall n : nat, n = 1 -> P 1 1) ->
+       (forall n m : nat,
+           n = m.+2 -> P m (fib m) -> P m.+1 (fib m.+1) -> P m.+2 (fib m + fib m.+1)) ->
+       forall n : nat, P n (fib n).
   
   Lemma fib_addition' n m :
     fib (n + m.+1) = fib m.+1 * fib n.+1 + fib m * fib n.
   Proof.
-    elim/nat_fib_ind : m.
+    functional induction (fib m).
     - rewrite addn1.
-      rewrite [fib 1]/= mul1n.
-      rewrite [fib 0]/= mul0n !addn0.
+      rewrite [fib 1]/= mul1n mul0n addn0.
       done.
       
     - rewrite addn2.
-      rewrite [fib 2]/= add0n mul1n.
-      rewrite [fib 1]/= mul1n.
-      rewrite fib_n.
-      rewrite addnC.
+      rewrite [fib 2]/= add0n 2!mul1n.
+      rewrite addnC -fib_n.
       done.
-
-    - move=> m IHm IHm1.
-      rewrite fib_n mulnDl.
-      rewrite {2}fib_n mulnDl.
+      
+    - rewrite fib_n 2!mulnDl.
       
       (* F(n + m.+1) の項をまとめて置き換える *)
       rewrite ?addnA [_ + fib m * fib n]addnC. (* この項を先頭に。 *)
       rewrite ?addnA [_ + fib m.+1 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
-      rewrite -IHm.
+      rewrite -IHn0.
        
       (* F(n + m.+2) の項をまとめて置き換える *)
       rewrite ?addnA [_ + fib m.+1 * fib n]addnC. (* この項を先頭に。 *)
       rewrite ?addnA [_ + fib m.+2 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
-      rewrite -IHm1.
+      rewrite -IHn1.
       
       have -> : n + m.+3 = (m + n).+3 by ssromega.
       have -> : n + m.+2 = (m + n).+2 by ssromega.
