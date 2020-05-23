@@ -8,6 +8,7 @@ F(k * n) は F(k) の倍数である、など。
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
+Require Import Recdef.                      (* Function *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -46,25 +47,27 @@ SFの古い版にあった even の証明に使う帰納法の例。
 
 (**
 # fib の証明に使う帰納法
-
-公理として与える。修正すること。
 *)
-  Axiom nat_fib_ind : forall P : nat -> Prop,
-      P 0 ->
-      P 1 ->
-      (forall n : nat, P n -> P n.+1 -> P n.+2) ->
-      forall n : nat, P n.
 
 (**
 # fibonacci 関数の定義
 *)
-  Fixpoint fib (n: nat) : nat :=
+  (* Require Import Recdef. *)
+  Function fib (n: nat) : nat :=
     match n with
     | 0 => 0
     | 1 => 1
-    | (ppn.+1 as pn).+1 => fib ppn + fib pn (* fib n.-2 + fib n.-1 *)
+    | (m.+1 as pn).+1 => fib m + fib pn (* fib n.-2 + fib n.-1 *)
     end.
-
+  (* functional induction (fib m) で使われる。 *)
+  Check fib_ind
+     : forall P : nat -> nat -> Prop,
+       (forall n : nat, n = 0 -> P 0 0) ->
+       (forall n : nat, n = 1 -> P 1 1) ->
+       (forall n m : nat,
+        n = m.+2 -> P m (fib m) -> P m.+1 (fib m.+1) -> P m.+2 (fib m + fib m.+1)) ->
+       forall n : nat, P n (fib n).
+  
   Lemma fib_0 n : fib 0 * fib n = 0.
   Proof.
       by rewrite mul0n.
@@ -88,8 +91,6 @@ SFの古い版にあった even の証明に使う帰納法の例。
 (**
 補題：フィボナッチ数列の加法定理
 
-nat_fib_ind を使って解く。
-
 参考文献では、
 
 ```F(m + n) = F(m) * F(n+1) + F(m-1) * F(n)```
@@ -97,11 +98,10 @@ nat_fib_ind を使って解く。
 一旦、mをm+1に変更し（右辺を昇順にして）証明した。
 さらに、m ≧ 1 の条件を追加して証明した。
 *)  
-
   Lemma fib_addition' m n :
     fib (m + n + 1) = fib m * fib n + fib m.+1 * fib n.+1.
   Proof.
-    elim/nat_fib_ind : m.
+    functional induction (fib m).           (* fib_ind *)
     - rewrite add0n addn1.
       rewrite fib_0 fib_1 add0n.
       done.
@@ -111,17 +111,16 @@ nat_fib_ind を使って解く。
       rewrite -fib_n.
       done.
       
-    - move=> m IHm IHm1.
-      rewrite 2!fib_n 2!mulnDl.      
+    - rewrite 2!fib_n 2!mulnDl.      
       
       (* F(m + n + 1) の項をまとめて置き換える *)
       rewrite ?addnA [_ + fib m.+1 * fib n.+1]addnC ?addnA.
       rewrite [fib m.+1 * fib n.+1 + fib m * fib n]addnC.
-      rewrite -IHm.
+      rewrite -IHn0.
       
       (* F(m.+1 + n + 1) の項をまとめて置き換える *)
       rewrite -?[fib (m + n + 1) + fib m.+1 * fib n + fib m.+2 * fib n.+1]addnA.
-      rewrite -IHm1.
+      rewrite -IHn1.
       
       have -> : m.+2 + n + 1 = (m + n + 1).+2 by ssromega.
       have -> : m.+1 + n + 1 = (m + n + 1).+1 by ssromega.
