@@ -32,6 +32,16 @@ Section Fib3.
         by rewrite ltn_mod.
     - by apply: lt_wf.
   Qed.
+  Check gcd_ind
+    : forall P : nat -> nat -> nat -> Prop,
+      (forall m n : nat, m = 0 -> P 0 n n) ->
+      (forall m n _x : nat,
+          m = _x ->
+          match _x with
+          | 0 => False
+          | _.+1 => True
+          end -> P (n %% m) m (gcd (n %% m) m) -> P _x n (gcd (n %% m) m)) ->
+      forall m n : nat, P m n (gcd m n).
   
   (* GCDの補題 *)
   Lemma gcdnE m n : gcd m n = gcd (n %% m) m.
@@ -45,6 +55,10 @@ Section Fib3.
 
   Lemma gcdnn m : gcd m m = m.
     Check gcdnn m : gcdn m m = m.
+  Admitted.
+
+  Lemma gcdn0 m : gcd m 0 = m.
+    Check gcdn0 m : gcdn m 0 = m.
   Admitted.
   
   (* 補題 *)
@@ -69,6 +83,9 @@ Section Fib3.
 m <= n としても一般性を失わない。
 m = n は自明だが、lemma912 で必要なので残しておく。
 *)
+  Compute gcdn 0 0.                         (* 0 *)
+  Compute fib 0.                            (* 0 *)
+
   Lemma lemma9 (m n : nat) :
     1 <= m ->
     1 <= n ->
@@ -79,12 +96,13 @@ m = n は自明だが、lemma912 で必要なので残しておく。
     rewrite lemma912.
     - rewrite [gcd m n]gcdnE.
       functional induction (gcd m n).
-      + done.
+      + done.                               (* Hm の矛盾 *)
       + rewrite lemma912.
         * rewrite [gcd (n %% _x) _x]gcdnE.
           apply: IHn0.
         
           ** (* 0 < n %% _x *)
+            (* ゴールの 1 <= m のが反映される。 *)
             admit.                          (* 754 *)
           
           ** (* 0 < _x *)
@@ -108,7 +126,40 @@ m = n は自明だが、lemma912 で必要なので残しておく。
     - (* m < n *)
       done.
   Admitted.
+
+(* ******************** *)
+(* 条件をはずしてみる。 *)
+(* ******************** *)
   
+  Lemma lemma912' m n :
+    gcd (fib m) (fib n) = gcd (fib (n %% m)) (fib m).
+    (* see. ssr_fib_2.v *)
+  Admitted.
+  
+  Lemma lemma9' (m n : nat) :
+    (gcd (fib m) (fib n) = fib (gcd m n)).
+  Proof.
+    rewrite lemma912'.
+    - rewrite [gcd m n]gcdnE.
+      functional induction (gcd m n).
+      + rewrite modn0 /=.
+        by rewrite 2!gcdn0.
+        
+      + rewrite lemma912.
+        * rewrite [gcd (n %% _) _]gcdnE.
+            by apply: IHn0.
+          
+        * (* 0 < n %% m *)
+          admit.
+          
+        * (* 0 < m *)
+          admit.
+
+        * (* n %% m <= m *)
+          (* 0 %% 0 = 0 なので、どちらかは 1以上であること。 *)
+          admit.
+  Admitted.
+
 End Fib3.
 
 (* END *)
