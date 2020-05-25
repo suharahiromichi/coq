@@ -27,14 +27,32 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 *)
 
 (**
+# seq
+
+seq はpolymorphicな型である。
+
+Standard Coqのlistをリネームしたものであるので、CICに基づく帰納法の原理は、
+list_indである。seq_indではない。
+ *)
+Check list_ind
+  : forall (A : Type) (P : seq A -> Prop),
+    P [::] ->
+    (forall (a : A) (l : seq A), P l -> P (a :: l)) -> forall l : seq A, P l.
+
+
+(**
 # rcons
 
-rcons は再帰的に定義されている。後ろにcatする定義とは異なる。
+rcons は再帰的に定義されている。
+
+Fixpoint rcons s z := if s is x :: s' then x :: rcons s' z else [:: z].
+
+教科書にあるような、リストの後ろにcat (++, append) する定義とは異なる。
  *)
 Definition rcons' (T : Type) (s : seq T) (z : T) : seq T := s ++ [:: z].
 
 (**
-両者が同値であることは証明できる。
+しかし、両者が同値であることは証明できる。
 *)
 Goal forall (T : Type) (s : seq T) (z : T), rcons s z = rcons' s z.
 Proof.
@@ -50,7 +68,9 @@ Qed.
 
 
 (**
-# cat に関する補題
+# cat (++, append) 
+
+## cat に関する補題
 *)
 
 Check cat0s : forall (T : Type) (s : seq T), [::] ++ s = s.
@@ -70,30 +90,36 @@ Check cat_take_drop
   : forall (n0 : nat) (T : Type) (s : seq T), take n0 s ++ drop n0 s = s.
 
 (**
-# 特別な帰納法 last_ind (rcons でする帰納法の例）
-
+## Inductive に定義した append と cat の同値を証明する。
 *)
+Section Lists1.
+  Variable A : Type.
 
-Check last_ind
-  : forall (T : Type) (P : seq T -> Type),
-    P [::] ->
-    (forall (s : seq T) (x : T), P s -> P (rcons s x)) -> forall s : seq T, P s.
-
+  Inductive append : seq A -> seq A -> seq A -> Prop :=
+  | append_nil (b : seq A) : append [::] b b
+  | append_cons (h : A) (a b c : seq A) :
+      append a b c -> append (h :: a) b (h :: c).
+  Hint Constructors append.
+  
+  Lemma append_cat (a b c : seq A) : append a b c <-> a ++ b = c.
+  Proof.
+    split.
+    - elim=> b'' //= a' b' c' H IH.
+        by rewrite IH.
+    - elim: a b c => //= [b c -> // | n' a' IH b' c' <-].
+      apply: append_cons.
+        by apply: IH.
+  Qed.
 (**
-https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_palindrome.v
-
-回文の証明で使用した cons と rcons でする帰納法の例：
-
-alt_list_ind : 
-    P [::] ->
-    (forall (x : X), P [:: x]) ->
-    (forall (l : seq X), P l -> forall (x y : X), P (x :: (l ++ [:: y]))) ->
-    forall (ln : seq X), P ln.
+補足： <-> のかたちの補題を適用するときは、apply/V を使う。
 *)
+End Lists1.
 
-
+  
 (**
-# has と all
+# has と all と nth
+
+## 説明
 
 リストのある要素（すべての要素）に対して、条件が成立する。
  *)
@@ -105,7 +131,9 @@ Compute all odd [:: 1; 2; 3].               (* false *)
 Compute all odd [:: 1; 3; 5].               (* true *)
 
 (**
-has（all）は再帰関数として定義されているが、forall（exists) を使った定義もある。
+## forall や exists を使った定義
+
+has や all は再帰関数として定義されているが、exists や forall を使った定義もある。
 それとのリフレクションが定義されている。
  *)
 
@@ -125,47 +153,37 @@ Check forall (A : Type) (x : A) (P : Prop), (exists x : A, P).
 Check forall (A : Type) (x : A) (P Q : Prop), (exists2 x : A, P & Q).
 
 (**
+## Standard Coq の 命題
+
 Standard Coq の List.v には、インダクティブな命題として、
-Exists（Forall）が定義されている。それとのリフレクションを定義した例：
+Exists と Forall が定義されている。それとのリフレクションを定義した例：
 
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
  *)
 
 (**
-# catrev (末尾再帰) と rev
- *)
+## has と all と nth についての補題
+*)
 
+(* *** 後で追加する。*** *)
+
+
+(**
+# rev
+
+## 説明
+
+rev は catrev (末尾再帰) を使って定義されている。
+ *)
 Print rev.
 (* Definition rev := catrev^~ [::] *)
 (* Definition rev s := catrev s [::] *)
 
-Section Lists.
+Section Lists2.
   Variable A : Type.
 
 (**
-Inductive に定義した append と cat の同値を証明する。
-*)
-  Inductive append : seq A -> seq A -> seq A -> Prop :=
-  | append_nil (b : seq A) : append [::] b b
-  | append_cons (h : A) (a b c : seq A) :
-      append a b c -> append (h :: a) b (h :: c).
-  Hint Constructors append.
-  
-  Lemma append_cat (a b c : seq A) : append a b c <-> a ++ b = c.
-  Proof.
-    split.
-    - elim=> b'' //= a' b' c' H IH.
-        by rewrite IH.
-    - elim: a b c => //= [b c -> // | n' a' IH b' c' <-].
-      apply: append_cons.
-        by apply: IH.
-  Qed.
-(**
-補足： <-> のかたちの補題を適用するときは、apply/V を使う。
-*)
-  
-(**
-Inductive に定義した reverse と rev の同値を証明する。
+## Inductive に定義した reverse と rev の同値を証明する。
 *)
   Inductive reverse : seq A -> seq A -> Prop :=
   | reverse_nil (s : seq A) : reverse [::] [::]
@@ -215,10 +233,10 @@ Inductive に定義した reverse と rev の同値を証明する。
       + apply: reverse_cons.
           by apply: IH.
   Qed.      
-End Lists.
+End Lists2.
 
 (**
-rev に関する補題
+## rev に関する補題
  *)
 Check catrev_catl
   : forall (T : Type) (s t u : seq T), catrev (s ++ t) u = catrev t (catrev s u).
@@ -254,7 +272,26 @@ Check all_rev
   : forall (T : Type) (a : pred T) (s : seq T), all a (rev s) = all a s.
 
 (**
-# seq_predType (\in が使える)
+# == と \in について
+ *)
+
+(**
+## seq_eqType (== が使える)
+
+eqType 型クラス（インターフェース）のインスタンスとして seq_eqType を定義している。
+すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、== の左右に書けるようになる。
+*)
+
+Check [:: 1; 2] : seq_eqType nat_eqType.
+Compute [:: 1; 2] == [:: 3; 4].             (* false *)
+
+(**
+== の定義として eqseq が使われる。
+*)
+Check @eqseq : forall T : eqType, seq T -> seq T -> bool.
+
+(*
+## seq_predType (\in が使える)
 
 predType 型クラス（インターフェース）のインスタンスとして seq_predType を定義している。
 すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、\in の右に書けるようになる。
@@ -269,19 +306,21 @@ In が定義されている。それとのリフレクションを定義した�
 
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
  *)
+(**
+\in の定義として mem_seq が使われる。
+*)
+Check @mem_seq : forall T : eqType, seq T -> T -> bool.
 
 (**
-# seq_eqType (== が使える)
+## \in についての補題
+ *)
 
-eqType 型クラス（インターフェース）のインスタンスとして seq_eqType を定義している。
-すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、== の左右に書けるようになる。
-*)
-
-Check [:: 1; 2] : seq_eqType nat_eqType.
-Compute [:: 1; 2] == [:: 3; 4].             (* false *)
+(* *** 後で追加する。*** *)
 
 (**
 # map と filter
+
+## 説明
 *)
 
 Compute map succn [::  1; 2; 3].            (* [:: 2; 3; 4] *)
@@ -309,6 +348,8 @@ Compute [seq succn x | x <- [seq x <- [:: 1;2;3] | odd x]]. (* [:: 2; 4] *)
 
 
 (**
+## map と filter の補題
+
 map と filter についてのいくつかの補題が証明されている。かなり便利である。
  *)
 Check map_cons
@@ -347,5 +388,70 @@ Check filter_rcons
     [seq x <- rcons s x | a x] =
     (if a x then rcons [seq x <- s | a x] x else [seq x <- s | a x]).
                                                        
+(**
+# foldr と foldl
+ *)
+
+(* *** 後で追加する。*** *)
+
+
+
+(**
+# 特別な帰納法
+ *)
+
+(**
+## lastP
+
+(これは帰納法でないが) ゴールを ``[::]`` と ``rcons p x`` に分ける。
+ *)
+
+(* *** 後で追加する。*** *)
+
+
+(**
+## last_ind
+
+rcons でする帰納法である。
+*)
+Check last_ind
+  : forall (T : Type) (P : seq T -> Type),
+    P [::] ->
+    (forall (s : seq T) (x : T), P s -> P (rcons s x)) -> forall s : seq T, P s.
+
+Section FoldLeft.
+
+  Variables (T R : Type) (f : R -> T -> R).
+  
+  Lemma foldl_rev (z : R) (s : seq T) :
+    foldl f z (rev s) = foldr (fun x z => f z x) z s.
+  Proof.
+    elim/last_ind: s z => [|s x IHs] z //=.
+      by rewrite rev_rcons -cats1 foldr_cat -IHs.
+  Qed.
+End FoldLeft.
+
+(**
+## seq2_ind
+ *)
+Lemma seq2_ind T1 T2 (P : seq T1 -> seq T2 -> Type) :
+    P [::] [::] -> (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
+  forall s1 s2, size s1 = size s2 -> P s1 s2.
+Proof. by move=> Pnil Pcons; elim=> [|x s IHs] [] //= x2 s2 [] /IHs/Pcons. Qed.
+
+
+(**
+## alt_list_ind
+
+https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_palindrome.v
+
+回文の証明で使用した cons と rcons でする帰納法の例：
+
+alt_list_ind : 
+    P [::] ->
+    (forall (x : X), P [:: x]) ->
+    (forall (l : seq X), P l -> forall (x y : X), P (x :: (l ++ [:: y]))) ->
+    forall (ln : seq X), P ln.
+*)
 
 (* END *)
