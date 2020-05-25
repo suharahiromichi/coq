@@ -216,7 +216,7 @@ Section Lists2.
   Qed.
 
 (**
-末尾再帰ではない rev につていも、同様に証明する。
+## （演習）末尾再帰ではない rev (ntrev) と rev の同値を証明する。
  *)
   Fixpoint ntrev (s : seq A) : seq A :=
     match s with
@@ -317,6 +317,7 @@ Check @mem_seq : forall T : eqType, seq T -> T -> bool.
 
 (* *** 後で追加する。*** *)
 
+
 (**
 # map と filter
 
@@ -406,8 +407,27 @@ Check filter_rcons
 (これは帰納法でないが) ゴールを ``[::]`` と ``rcons p x`` に分ける。
  *)
 
-(* *** 後で追加する。*** *)
+Section Last.
+  Variable T : Type.
+  
+  Lemma size0nil (s : seq T) :
+    size s = 0 -> s = [::].
+  Proof.
+    case: s => [| a l] H.
+    - done.                   (* [::] = [::] *)
+    - done.                   (* H : size (a :: l) = 0 ..... 前提矛盾
+                                 a :: l = [::] *)
+  Qed.
+  
+  Lemma size0nil' (s : seq T) :
+    size s = 0 -> s = [::].
+  Proof.
+    case/lastP : s => [| a l] H.
+    - done.                   (* [::] = [::] *)
+    - admit.                  (* rcons a l = [::] *)
+  Admitted.
 
+End Last.
 
 (**
 ## last_ind
@@ -420,7 +440,6 @@ Check last_ind
     (forall (s : seq T) (x : T), P s -> P (rcons s x)) -> forall s : seq T, P s.
 
 Section FoldLeft.
-
   Variables (T R : Type) (f : R -> T -> R).
   
   Lemma foldl_rev (z : R) (s : seq T) :
