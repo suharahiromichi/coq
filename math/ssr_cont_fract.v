@@ -80,8 +80,6 @@ Section CF.
  *)
   Admitted.
 
-
-
 (**
 continuant polynomial
 
@@ -247,7 +245,35 @@ Concrete Mathematics, 6.7 CONTINUANTS (6.128)
     - admit.
   Admitted.
 
+(**
+cf2f (f2cf p) = p は証明できない（pが簡約される）ので、
+f2cf (cf2f s) = s を証明する。
+*)  
+  Lemma f2cfE (n m : nat) : f2cf' n m = (n %/ m) :: f2cf' m (n %% m).
+  Proof.
+  Admitted.
+
+  Lemma test1 n m r : (n * m + r) %/ m = n.
+  Proof.
+  Admitted.
+  Lemma test2 n m r : (n * m + r) %% m = r.
+  Proof.
+  Admitted.
   
+  Goal forall s, f2cf (cf2f' s) = s.
+  Proof.
+    elim.
+    - done.
+    - move=> n s IHs.
+      simpl.
+      rewrite /f2cf /=.
+      rewrite f2cfE /=.
+      rewrite test1.
+      rewrite test2.
+      rewrite /f2cf in IHs.
+      rewrite IHs.
+      done.
+  Qed.
 
 End CF.
 
