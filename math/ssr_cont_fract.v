@@ -78,7 +78,7 @@ Section CF.
   ============================
   cf2f (f2cf (n, m.+1)) = (n, m.+1)
  *)
-  Admitted.
+  Admitted.                                 (* OK *)
 
 (**
 continuant polynomial
@@ -91,7 +91,6 @@ Concrete Mathematics
 有澤健治
 https://leo.aichi-u.ac.jp/~keisoken/research/books/book51/book51.pdf
  *)
-
   Program Fixpoint GaussH' (s : seq nat) {measure (size s)} : nat :=
     match s with
     | [::] => 1
@@ -142,7 +141,7 @@ https://leo.aichi-u.ac.jp/~keisoken/research/books/book51/book51.pdf
     - done.
     - by rewrite /cf2f muln1 addn0.
     - admit.
-  Admitted.
+  Admitted.                                 (* OK *)
   
   
   Fixpoint cf2f' (sa : seq nat)  : (nat * nat) :=
@@ -209,7 +208,10 @@ Concrete Mathematics, 6.7 CONTINUANTS (6.128)
   Lemma GaussHE (n0 n1 : nat) (s : seq nat) :
     GaussH (n0 :: n1 :: s) = n0 * GaussH (n1 :: s) + GaussH s.
   Proof.
-  Admitted.
+    functional induction (GaussH s).
+    - done.
+    - done.
+    - Admitted.                             (* あきらめ *)
   
   Goal forall n, GaussH (nseq n 1) = fib n.+1.
   Proof.
@@ -228,23 +230,41 @@ Concrete Mathematics, 6.7 CONTINUANTS (6.128)
   Compute (GaussH [:: 1;2;3] * GaussH [:: 4;5]) + (GaussH [:: 1;2] * GaussH [:: 5]).
   (* 225 *)
 
+  Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
+    GaussH (rcons (rcons s n1) n0) = n0 * GaussH (rcons s n1) + GaussH s.
+  Proof.
+    functional induction (GaussH s).
+    - rewrite GaussHE /GaussH /=.
+      by rewrite mulnC.
+    - rewrite GaussHE /GaussH /=.
+    (* n * (n1 * n0 + 1) + n0 = n0 * (n * n1 + 1) + n *)
+      rewrite !mulnDr !mulnA !muln1.
+      rewrite ?addnA addnAC.                (* n を最後に。 *)
+      rewrite ?mulnA mulnAC.                (* n1 を最後に。 *)
+      rewrite -?mulnA mulnCA.               (* n0 を最初に。 *)
+      done.
+    - rewrite /=.
+      rewrite GaussHE IHn0 /=.
+      rewrite GaussHE IHn /=.
+      rewrite !mulnDr.
+      rewrite ?addnA.
+      rewrite [n2 * (n0 * GaussH (n3 :: rcons s' n1))]mulnCA.
+      ssromega.
+  Qed.
   
-
-
-
-
-
-
-
   Goal forall s, GaussH s = GaussH (rev s).
   Proof.
     move=> s.
     functional induction (GaussH s).
     - done.
     - done.
-    - admit.
-  Admitted.
-
+      rewrite !rev_cons.
+      rewrite GaussHEr.
+      rewrite -rev_cons.
+      rewrite IHn IHn0.
+      done.
+  Qed.
+  
 (**
 cf2f (f2cf p) = p は証明できない（pが簡約される）ので、
 f2cf (cf2f s) = s を証明する。
@@ -253,11 +273,18 @@ f2cf (cf2f s) = s を証明する。
   Proof.
   Admitted.
 
+  Search _ ((_ * _ + _) %/ _). 
   Lemma test1 n m r : (n * m + r) %/ m = n.
   Proof.
+    rewrite divnMDl.
+    (* n + r %/ m = n *)
   Admitted.
+
+  Search _ ((_ * _ + _) %% _).   
   Lemma test2 n m r : (n * m + r) %% m = r.
   Proof.
+    rewrite modnMDl.
+    (* r %% m = r *)
   Admitted.
   
   Goal forall s, f2cf (cf2f' s) = s.
