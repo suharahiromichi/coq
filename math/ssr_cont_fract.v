@@ -237,9 +237,8 @@ Section CP.
       ssromega.
   Qed.
   
-  Goal forall s, GaussH s = GaussH (rev s).
+  Lemma GaussH__GaussH_rev s : GaussH s = GaussH (rev s).
   Proof.
-    move=> s.
     functional induction (GaussH s).
     - done.
     - done.
@@ -250,6 +249,85 @@ Section CP.
       done.
   Qed.
 
+(**
+## K
+ *)
+  Fixpoint tail (s : seq nat) : nat :=
+    match s with
+    | [::] => 0
+    | [:: a] => a
+    | a :: s => tail s
+    end.
+  
+  Fixpoint body (s : seq nat) : seq nat :=
+    match s with
+    | [::] => [::]
+    | [:: a] => [::]
+    | a :: s => a :: body s
+    end.
+
+  Lemma size_body_2 s : size (body (body s)) < size s.
+  Proof.
+  Admitted.
+  
+  Lemma size_body s : size (body s) < size s.
+  Proof.
+  Admitted.
+  
+  Lemma tail_rcons s n : tail (rcons s n) = n. (* notu *)
+  Proof.
+  Admitted.
+
+  Lemma body_rcons s n : body (rcons s n) = s. (* notu *)
+  Proof.
+  Admitted.
+
+  Lemma tail_rev n s : tail (rev (n :: s)) = n.
+  Proof.
+  Admitted.
+
+  Lemma body_rev n s : body (rev (n :: s)) = rev s.
+  Proof.
+  Admitted.
+  
+  Function EulerK (s : seq nat) {measure size s} : nat :=
+    match s with
+    | [::] => 1
+    | [:: n] => n
+    | _ => tail s * EulerK (body s) + EulerK (body (body s))
+    end.
+  - move=> s n s' n' s'' H1 H2.
+      by apply/ltP/size_body_2.
+  - move=> s n s' n' s'' H1 H2.
+      by apply/ltP/size_body.
+  Defined.
+
+  Compute EulerK  [:: 3; 3; 1; 2].          (* 36 *)
+  Compute EulerK  [:: 3; 1; 2].             (* 11 *)
+
+  Lemma EulerKE s : EulerK s = tail s * EulerK (body s) + EulerK (body (body s)).
+  Proof.
+  Admitted.
+
+  Lemma EulerK_rev__GaussH s : EulerK (rev s) = GaussH s.
+  Proof.
+    functional induction (GaussH s).
+    - done.
+    - done.
+    - rewrite EulerKE.
+      rewrite tail_rev 2!body_rev.
+      rewrite IHn -IHn0.
+      done.
+  Qed.
+  
+  Lemma EulerK_GaussH s : EulerK s = GaussH s.
+  Proof.
+    rewrite -(revK s).
+    rewrite EulerK_rev__GaussH GaussH__GaussH_rev.
+    rewrite revK.
+    done.
+  Qed.
+  
 (**
 ## 黄金比はフィボナッチ数に等しい。
 *)
