@@ -137,6 +137,16 @@ Concrete Mathematics
  *)
 Section CP.
 
+(**
+## Gauss の H関数
+
+```
+H() = 1
+H(x_1) = x_1
+H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
+```
+*)
+
   (* notu *)
   Program Fixpoint GaussHp (s : seq nat) {measure (size s)} : nat :=
     match s with
@@ -255,8 +265,16 @@ Section CP.
   Qed.
 
 (**
-## K
- *)
+## Euler の K関数
+
+```
+K() = 1
+K(x_1) = x_1
+K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
+```
+*)
+
+(*
   Fixpoint tail (s : seq nat) : nat :=
     match s with
     | [::] => 0
@@ -270,19 +288,23 @@ Section CP.
     | [:: a] => [::]
     | a :: s => a :: body s
     end.
+ *)
+  Definition tail (s : seq nat) : nat := head 0 (rev s).
+  Compute tail [:: 1; 2; 3].                (* 3 *)
 
+  Definition body (s : seq nat) : seq nat := rev (drop 1 (rev s)).
+  Compute body [:: 1; 2; 3].                (* [:: 1; 2] *)
+  
   Lemma tail_rcons s n : tail (rcons s n) = n.
   Proof.
-    elim: s => // n' s IHs /=.
-    rewrite IHs.
-    case H : (rcons s n).
-    - rewrite -cats1 in H.
-  Admitted.                                 (* ***** *)
+      by rewrite /tail rev_rcons.
+  Qed.
   
   Lemma body_rcons s n : body (rcons s n) = s.
   Proof.
-  Admitted.                                 (* ***** *)
-
+      by rewrite /body rev_rcons /= drop0 revK.
+  Qed.
+  
   Lemma size_body s : s != [::] -> size (body s) < size s.
   Proof.
     elim/last_ind : s => // s n IHs Hs.
@@ -290,12 +312,20 @@ Section CP.
     done.
   Qed.
   
+  Lemma size_body' n s : s != [::] -> s != [:: n] -> size (body (body s)) < size (body s).
+  Proof.
+    move=> Hs0 Hs1.
+    rewrite size_body => //=.
+  Admitted.                                 (* ****** *)
+  
   Lemma size_body_2 n s : s != [::] -> s != [:: n] -> size (body (body s)) < size s.
   Proof.
-    elim/last_ind : s => // s n' IHs Hs0 Hs1.
-    rewrite body_rcons size_rcons.
-    Check size_body Hs0.
-  Admitted.                                 (* ***** *)
+    move=> Hs0 Hs1.
+    Check @ltn_trans (size (body s)) (size (body (body s))) (size s).
+    apply: (@ltn_trans (size (body s)) (size (body (body s))) (size s)).
+    - by apply: (@size_body' n s).
+    - by apply: size_body.
+  Qed.
   
   Lemma tail_rev n s : tail (rev (n :: s)) = n.
   Proof.
@@ -316,11 +346,18 @@ Section CP.
     | _ => tail s * EulerK (body s) + EulerK (body (body s))
     end.
   - move=> s n s' n' s'' H1 H2.
-      by apply/ltP/size_body_2.
+    apply/ltP.
+    Check @size_body_2 n [:: n, n' & s''].
+    apply: (@size_body_2 n [:: n, n' & s'']).
+    + done.
+    + by apply/eqP.
   - move=> s n s' n' s'' H1 H2.
-      by apply/ltP/size_body.
+    apply/ltP.
+    Check @size_body [:: n, n' & s''].
+    apply: (@size_body [:: n, n' & s'']).
+    done.
   Defined.
-
+  
   Compute EulerK  [:: 3; 3; 1; 2].          (* 36 *)
   Compute EulerK  [:: 3; 1; 2].             (* 11 *)
 
