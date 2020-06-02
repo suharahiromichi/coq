@@ -271,29 +271,43 @@ Section CP.
     | a :: s => a :: body s
     end.
 
-  Lemma size_body_2 s : size (body (body s)) < size s.
+  Lemma tail_rcons s n : tail (rcons s n) = n.
   Proof.
-  Admitted.
+    elim: s => // n' s IHs /=.
+    rewrite IHs.
+    case H : (rcons s n).
+    - rewrite -cats1 in H.
+  Admitted.                                 (* ***** *)
   
-  Lemma size_body s : size (body s) < size s.
+  Lemma body_rcons s n : body (rcons s n) = s.
   Proof.
-  Admitted.
+  Admitted.                                 (* ***** *)
+
+  Lemma size_body s : s != [::] -> size (body s) < size s.
+  Proof.
+    elim/last_ind : s => // s n IHs Hs.
+    rewrite body_rcons size_rcons.
+    done.
+  Qed.
   
-  Lemma tail_rcons s n : tail (rcons s n) = n. (* notu *)
+  Lemma size_body_2 n s : s != [::] -> s != [:: n] -> size (body (body s)) < size s.
   Proof.
-  Admitted.
-
-  Lemma body_rcons s n : body (rcons s n) = s. (* notu *)
-  Proof.
-  Admitted.
-
+    elim/last_ind : s => // s n' IHs Hs0 Hs1.
+    rewrite body_rcons size_rcons.
+    Check size_body Hs0.
+  Admitted.                                 (* ***** *)
+  
   Lemma tail_rev n s : tail (rev (n :: s)) = n.
   Proof.
-  Admitted.
-
+    rewrite rev_cons.
+      by rewrite tail_rcons.
+  Qed.
+  
   Lemma body_rev n s : body (rev (n :: s)) = rev s.
   Proof.
-  Admitted.
+    rewrite rev_cons.
+      by rewrite body_rcons.
+  Qed.
   
   Function EulerK (s : seq nat) {measure size s} : nat :=
     match s with
@@ -312,7 +326,7 @@ Section CP.
 
   Lemma EulerKE s : EulerK s = tail s * EulerK (body s) + EulerK (body (body s)).
   Proof.
-  Admitted.
+  Admitted.                                 (* あきらめ *)
 
   Lemma EulerK_rev__GaussH s : EulerK (rev s) = GaussH s.
   Proof.
