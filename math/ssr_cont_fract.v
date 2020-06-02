@@ -88,19 +88,22 @@ f2cf (cf2f s) = s を証明する。
   Proof.
   Admitted.                                 (* あきらめ *)
 
-  Search _ ((_ * _ + _) %/ _). 
-  Lemma test1 n m r : (n * m + r) %/ m = n.
+  Lemma div_m__n n m r : 0 < m -> r < m -> (n * m + r) %/ m = n.
   Proof.
-    rewrite divnMDl.
-    (* n + r %/ m = n *)
-  Admitted.                                 (* あきらめ *)
-
-  Search _ ((_ * _ + _) %% _).   
-  Lemma test2 n m r : (n * m + r) %% m = r.
+    move=> Hm Hrm.
+    rewrite divnMDl; last done.
+    rewrite divn_small; last done.
+      by rewrite addn0.
+  Qed.
+  
+  Lemma mod_m__r n m r : r < m -> (n * m + r) %% m = r.
   Proof.
+    move=> Hrm.
+    Check modnMDl.                     (* (p * d + m) %% d = m %% d *)
     rewrite modnMDl.
-    (* r %% m = r *)
-  Admitted.                                 (* あきらめ *)
+    rewrite modn_small; last done.
+    done.
+  Qed.
   
   Goal forall s, f2cf (cf2f s) = s.
   Proof.
@@ -110,12 +113,14 @@ f2cf (cf2f s) = s を証明する。
       simpl.
       rewrite /f2cf /=.
       rewrite f2cfE /=.
-      rewrite test1.
-      rewrite test2.
-      rewrite /f2cf in IHs.
-      rewrite IHs.
-      done.
-  Qed.
+      rewrite div_m__n.
+      rewrite mod_m__r.
+      + rewrite /f2cf in IHs.
+        by rewrite IHs.
+      + admit.                              (* (cf2f s).2 < (cf2f s).1 *)
+      + admit.                              (* 0 < (cf2f s).1 *)
+      + admit.                              (* (cf2f s).2 < (cf2f s).1 *)
+  Admitted.
 End CF.
 
 (**
