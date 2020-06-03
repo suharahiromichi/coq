@@ -1,6 +1,6 @@
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
-Require Import FunInd.                      (* Functional Scheme *)
+(* Require Import FunInd.                      (* Functional Scheme *) *)
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
 Require Import Program.Wf.                  (* Program wf *)
@@ -43,8 +43,9 @@ Section CF.
         by rewrite ltn_mod.
     - by apply: lt_wf.
   Defined.                                (* Defined が必要である。 *)
-  (* functional inducntion が可能になる。 *)
-
+  (* functional inducntion が可能になる。
+     また、不動点を示す等式 f2cf'_equation が定義される。 *)
+  
   Definition f2cf (p : (nat * nat)) : (seq nat) := f2cf' p.1 p.2.
   Compute f2cf (36, 11).
   
@@ -307,26 +308,30 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
       by rewrite /body rev_rcons /= drop0 revK.
   Qed.
   
-  Lemma size_body s : s != [::] -> size (body s) < size s.
+  Lemma size_body_1 s : 1 <= size s -> size (body s) < size s.
   Proof.
-    elim/last_ind : s => // s n IHs Hs.
+    case/lastP : s => // s n Hs.
     rewrite body_rcons size_rcons.
     done.
   Qed.
   
-  Lemma size_body' n s : s != [::] -> s != [:: n] -> size (body (body s)) < size (body s).
+  Lemma size_body_21 s : 2 <= size s -> size (body (body s)) < size (body s).
   Proof.
-    move=> Hs0 Hs1.
-    rewrite size_body => //=.
-  Admitted.                                 (* ****** *)
+    case/lastP : s => // s n Hs.
+    rewrite body_rcons.
+    apply: size_body_1.
+    rewrite size_rcons in Hs.
+      by ssromega.
+  Qed.
   
-  Lemma size_body_2 n s : s != [::] -> s != [:: n] -> size (body (body s)) < size s.
+  Lemma size_body_2 s : 2 <= size s -> size (body (body s)) < size s.
   Proof.
-    move=> Hs0 Hs1.
+    move=> Hs.
     Check @ltn_trans (size (body s)) (size (body (body s))) (size s).
     apply: (@ltn_trans (size (body s)) (size (body (body s))) (size s)).
-    - by apply: (@size_body' n s).
-    - by apply: size_body.
+    - by apply: (@size_body_21 s).
+    - apply: size_body_1.
+        by ssromega.
   Qed.
   
   Lemma tail_rev n s : tail (rev (n :: s)) = n.
@@ -349,14 +354,13 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
     end.
   - move=> s n s' n' s'' H1 H2.
     apply/ltP.
-    Check @size_body_2 n [:: n, n' & s''].
-    apply: (@size_body_2 n [:: n, n' & s'']).
-    + done.
-    + by apply/eqP.
+    Check @size_body_2 [:: n, n' & s''].
+    apply: (@size_body_2 [:: n, n' & s'']).
+    done.
   - move=> s n s' n' s'' H1 H2.
     apply/ltP.
-    Check @size_body [:: n, n' & s''].
-    apply: (@size_body [:: n, n' & s'']).
+    Check @size_body_1 [:: n, n' & s''].
+    apply: (@size_body_1 [:: n, n' & s'']).
     done.
   Defined.
   
