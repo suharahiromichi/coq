@@ -84,10 +84,14 @@ Section CF.
 cf2f (f2cf p) = p は証明できない（pが簡約される）ので、
 f2cf (cf2f s) = s を証明する。
 *)  
-  Lemma f2cfE (n m : nat) : f2cf' n m = (n %/ m) :: f2cf' m (n %% m).
+  Lemma f2cfE (n m : nat) : m != 0 -> f2cf' n m = (n %/ m) :: f2cf' m (n %% m).
   Proof.
-  Admitted.                                 (* あきらめ *)
-
+    case: m.
+    - done.
+    - move=> n' Hm.
+      apply: f2cf'_equation.
+  Qed.
+  
   Lemma div_m__n n m r : 0 < m -> r < m -> (n * m + r) %/ m = n.
   Proof.
     move=> Hm Hrm.
@@ -225,10 +229,8 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
   Lemma GaussHE (n0 n1 : nat) (s : seq nat) :
     GaussH (n0 :: n1 :: s) = n0 * GaussH (n1 :: s) + GaussH s.
   Proof.
-    functional induction (GaussH s).
-    - done.
-    - done.
-    - Admitted.                             (* あきらめ *)
+    by rewrite GaussH_equation.
+  Qed.
   
   Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
     GaussH (rcons (rcons s n1) n0) = n0 * GaussH (rcons s n1) + GaussH s.
@@ -361,19 +363,35 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
   Compute EulerK  [:: 3; 3; 1; 2].          (* 36 *)
   Compute EulerK  [:: 3; 1; 2].             (* 11 *)
 
-  Lemma EulerKE s : EulerK s = tail s * EulerK (body s) + EulerK (body (body s)).
+  Lemma revI (T : Type) (n : T) : rev [:: n] = [:: n].
   Proof.
-  Admitted.                                 (* あきらめ *)
-
+    done.
+  Qed.
+  
+  Lemma EulerKE s :
+    2 <= size s ->
+    EulerK s = tail s * EulerK (body s) + EulerK (body (body s)).
+  Proof.
+    case: s.
+    - done.
+    - move=> n0 s.
+      case: s.
+      + done.
+      + move=> n1 s Hs.
+        by rewrite EulerK_equation.
+  Qed.
+  
   Lemma EulerK_rev__GaussH s : EulerK (rev s) = GaussH s.
   Proof.
     functional induction (GaussH s).
     - done.
     - done.
     - rewrite EulerKE.
-      rewrite tail_rev 2!body_rev.
-      rewrite IHn -IHn0.
-      done.
+      + rewrite tail_rev 2!body_rev.
+        rewrite IHn -IHn0.
+        done.
+      + rewrite size_rev.
+        by rewrite /=.
   Qed.
   
   Lemma EulerK_GaussH s : EulerK s = GaussH s.
