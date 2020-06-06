@@ -367,11 +367,6 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
   Compute EulerK  [:: 3; 3; 1; 2].          (* 36 *)
   Compute EulerK  [:: 3; 1; 2].             (* 11 *)
 
-  Lemma revI (T : Type) (n : T) : rev [:: n] = [:: n].
-  Proof.
-    done.
-  Qed.
-  
   Lemma EulerKE s :
     2 <= size s ->
     EulerK s = tail s * EulerK (body s) + EulerK (body (body s)).
