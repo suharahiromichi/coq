@@ -410,24 +410,50 @@ Check filter_rcons
 Section Last.
   Variable T : Type.
   
-  Lemma size0nil (s : seq T) :
-    size s = 0 -> s = [::].
+  Definition hbody (s : seq T) : seq T := drop 1 s.
+  
+  Lemma hbody_cons x s : hbody (x :: s) = s.
   Proof.
-    case: s => [| a l] H.
-    - done.                   (* [::] = [::] *)
-    - done.                   (* H : size (a :: l) = 0 ..... 前提矛盾
-                                 a :: l = [::] *)
+      by rewrite /hbody drop_cons drop0.
   Qed.
   
-  Lemma size0nil' (s : seq T) :
-    size s = 0 -> s = [::].
+  Definition tbody (s : seq T) : seq T := rev (drop 1 (rev s)).
+  
+  Lemma tbody_rcons s x : tbody (rcons s x) = s.
   Proof.
-    case/lastP : s => [| a l] H.
-    - done.                   (* [::] = [::] *)
-    - admit.                  (* rcons a l = [::] *)
-  Admitted.
-
+    by rewrite /tbody rev_rcons /= drop0 revK.
+  Qed.
+  
+(**
+s = [::] だと ``size (hbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
+証明は、s を [::] と x :: s に場合分けして、前者の場合は前提矛盾で成立とする。
+*)
+  Lemma size_hbody_1 s : 1 <= size s -> size (hbody s) < size s.
+  Proof.
+    case: s => // x s Hs.
+    rewrite hbody_cons /=.
+      (* size s < (size s).+1 *)
+      by apply: ltnSn.
+  Qed.
+  
+(**
+s = [::] だと ``size (tbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
+証明は、s を [::] と rocns s x に場合分けして、前者の場合は前提矛盾で成立とする。
+*)
+  Lemma size_tbody_1 s : 1 <= size s -> size (tbody s) < size s.
+  Proof.
+    case/lastP: s => // s x Hs.
+    rewrite tbody_rcons size_rcons.
+      (* size s < (size s).+1 *)
+      by apply: ltnSn.
+  Qed.
 End Last.
+
+Compute hbody [::].                         (* [::] *)
+Compute hbody [:: 1; 2; 3].                 (* [:: 2; 3] *)
+
+Compute tbody [::].                         (* [::] *)
+Compute tbody [:: 1; 2; 3].                 (* [:: 1; 2] *)
 
 (**
 ## last_ind
