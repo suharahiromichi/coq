@@ -128,50 +128,40 @@ Section lemma_size.
   Proof.
       (* ~~ (size s == 0) = ~~ (s == [::]) なので、size_eq0 で書き換えられる。 *)
       by rewrite size_eq0.
-(*
-    apply/idP/idP => H.
-    - apply/eqP => Hn.
-      move/eqP in H.
-      apply: H.
-      apply/eqP.
-      rewrite size_eq0.
-        by apply/eqP.
-    - apply/eqP => Hn.
-      move/eqP in H.
-      apply: H.
-      apply/eqP.
-      rewrite -size_eq0.
-      by apply/eqP.
-*)
   Qed.
 
   Lemma size_ge1 (s : seq T) : (1 <= size s) = (s != [::]).  
   Proof.
       by rewrite lt0n size_eq0.
-(*
-    rewrite lt0n.
-      by apply: size_not_eq0.
-*)
   Qed.
-
+  
+  Lemma size_eq0_P (s : seq T) : reflect (size s == 0) (s == [::]).
+  Proof.
+    apply: (iffP idP) => H.
+    - by rewrite size_eq0.
+    - by rewrite -size_eq0.
+  Qed.
+  
+  Lemma size_neq0_P (s : seq T) : reflect (size s != 0) (s != [::]).
+  Proof.
+    apply: (iffP idP) => H.
+    - by rewrite size_eq0.
+    - by rewrite -size_eq0.
+  Qed.
+  
+  Lemma size_ge1_P (s : seq T) : reflect (1 <= size s) (s != [::]).
+  Proof.
+    rewrite lt0n.
+    by apply: size_neq0_P.
+  Qed.
+  
   Lemma size_ge1_P' (s : seq T) : (1 <= size s) <-> (s <> [::]).
   Proof.
     split=> H.
-    - apply/eqP.
-      rewrite -size_not_eq0.
-        by rewrite -lt0n.
-    - rewrite lt0n.
-      rewrite size_not_eq0.
-        by apply/eqP.
+    - by apply/eqP/size_ge1_P.
+    - by apply/size_ge1_P/eqP.
   Qed.
-
-  Lemma size_ge1_P (s : seq T) : reflect (1 <= size s) (s != [::]).  
-  Proof.
-    apply: (iffP idP) => H.
-    - by rewrite size_ge1.
-    - by rewrite -size_ge1.
-  Qed.
-
+  
 End lemma_size.
 
 Section size_body.
