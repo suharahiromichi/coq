@@ -123,9 +123,12 @@ Section lemma_size.
   Variable T : eqType.
   
   Check size_eq0 : forall (T : eqType) (s : seq T), (size s == 0) = (s == [::]).
-
+  
   Lemma size_not_eq0 (s : seq T) : (size s != 0) = (s != [::]).
   Proof.
+      (* ~~ (size s == 0) = ~~ (s == [::]) なので、size_eq0 で書き換えられる。 *)
+      by rewrite size_eq0.
+(*
     apply/idP/idP => H.
     - apply/eqP => Hn.
       move/eqP in H.
@@ -139,12 +142,16 @@ Section lemma_size.
       apply/eqP.
       rewrite -size_eq0.
       by apply/eqP.
+*)
   Qed.
 
   Lemma size_ge1 (s : seq T) : (1 <= size s) = (s != [::]).  
   Proof.
+      by rewrite lt0n size_eq0.
+(*
     rewrite lt0n.
       by apply: size_not_eq0.
+*)
   Qed.
 
   Lemma size_ge1_P' (s : seq T) : (1 <= size s) <-> (s <> [::]).
