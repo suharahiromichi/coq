@@ -39,7 +39,6 @@ Check list_ind
     P [::] ->
     (forall (a : A) (l : seq A), P l -> P (a :: l)) -> forall l : seq A, P l.
 
-
 (**
 # rcons
 
@@ -49,23 +48,126 @@ Fixpoint rcons s z := if s is x :: s' then x :: rcons s' z else [:: z].
 
 教科書にあるような、リストの後ろにcat (++, append) する定義とは異なる。
  *)
-Definition rcons' (T : Type) (s : seq T) (z : T) : seq T := s ++ [:: z].
+Section Rcons.
+  Variable T : Type.
+  
+  Definition rcons' (T : Type) (s : seq T) (z : T) : seq T := s ++ [:: z].
 
 (**
-しかし、両者が同値であることは証明できる。
+（演習）両者が同値であることは証明する。
 *)
-Goal forall (T : Type) (s : seq T) (z : T), rcons s z = rcons' s z.
-Proof.
-  move=> T s z.
-  elim: s => //.
-  move=> a s IH /=.
-    by rewrite IH /rcons' /=.
+  Goal forall (s : seq T) (z : T), rcons s z = rcons' s z.
+  Proof.
+    move=> s z.
+    elim: s => //.
+    move=> a s IH /=.
+      by rewrite IH /rcons' /=.
 
-  Restart.
-  move=> T s z.
-    by rewrite /rcons' cats1.
-Qed.
+      Restart.
+      move=> s z.
+        by rewrite /rcons' cats1.
+  Qed.
+End Rcons.
 
+(**
+# head と last
+
+see. csm_4_4_x_seq_head_last.v
+*)
+
+(**
+# size (seq の寸法）
+ *)
+Section Size.
+  
+  Variable T : Type.
+
+(**
+## size_cons
+
+自明であるが x :: s の寸法は、sの寸法の.+1である。
+ *)
+  Lemma size_cons (x : T) (s : seq T) : size (x :: s) = (size s).+1.
+  Proof.
+    done.
+  Qed.
+
+(*
+## size に関する補題
+
+大抵の関数に関するsizeの補題が証明さているので、使うべきである。
+ *)
+  Check size_cat
+    : forall (T : Type) (s1 s2 : seq T), size (s1 ++ s2) = size s1 + size s2.
+  Check size_rcons
+    : forall (T : Type) (s : seq T) (x : T), size (rcons s x) = (size s).+1.
+  Check size_drop
+    : forall (n0 : nat) (T : Type) (s : seq T), size (drop n0 s) = size s - n0.
+  Check size_rev : forall (T : Type) (s : seq T), size (rev s) = size s.
+  Check size_behead  : forall (T : Type) (s : seq T), size (behead s) = (size s).-1.
+(**
+このうち、size_behead は直観に反している。``0.-1 = 0`` であることに注意してください。
+*)
+End Size.
+
+(**
+## 空リストとサイズの関係
+ *)
+Section Size1.
+(**
+重要な補題：寸法0と空リストの関係を示す。
+ *)
+  Variable T : eqType.
+  
+  Check size_eq0 : forall (T : eqType) (s : seq T), (size s == 0) = (s == [::]).
+  
+(**
+これの否定を証明しておく。
+ *)
+  Lemma size_not_eq0 (s : seq T) : (size s != 0) = (s != [::]).
+  Proof.
+(**
+s は 本当は seq_eqType なので「==」と「!=」が使える。
+また、右辺は ``~~ (s == [::])`` なので、右辺の書き換えで証明できる。
+ *)
+      by rewrite size_eq0.
+  Qed.
+
+(**
+使い方。寸法に関する命題と空リストか判定する命題とを相互に書き換えできる。
+
+splitしているので煩瑣だが、実際の証明では、どちらかの「->」だけを証明することになる。
+*)
+  Goal forall (s : seq T), (1 <= size s) <-> (s <> [::]).
+  Proof.
+    move=> s.
+    Check lt0n : forall n : nat, (0 < n) = (n != 0). (* 覚えておくとよい。 *)
+    rewrite lt0n.
+    split=> H.
+    - apply/eqP.
+        by rewrite -size_not_eq0.
+    - move/eqP in H.
+        by rewrite size_not_eq0.
+  Qed.
+  
+(**
+nilp s は size s == 0 で定義されている。これのリフレクション補題が証明されている。
+*)
+  Print nilp. (*= fun (T : Type) (s : seq T) => size s == 0 *)
+  Check @nilP : forall T s, reflect (s = [::]) (nilp s).
+
+(**
+使い方。寸法に関する命題と空リストか判定する命題とを相互に変換（リフレクト）できる。
+*)
+  Goal forall (s : seq T), (1 <= size s) <-> (s <> [::]).
+  Proof.
+    move=> s.
+    Check lt0n : forall n : nat, (0 < n) = (n != 0). (* 覚えておくとよい。 *)
+    rewrite lt0n.
+    split=> H; by apply/nilP.
+  Qed.
+
+End Size1.
 
 (**
 # cat (++, append) 
