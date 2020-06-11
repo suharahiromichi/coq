@@ -36,8 +36,13 @@ list_indである。seq_indではない。
  *)
 Check list_ind
   : forall (A : Type) (P : seq A -> Prop),
-    P [::] ->
-    (forall (a : A) (l : seq A), P l -> P (a :: l)) -> forall l : seq A, P l.
+    P [::]
+    ->
+    (forall (a : A) (l : seq A), P l        (* 帰納法の仮定 *)
+                                 ->
+                                 P (a :: l)) (* 証明するべきもの *)
+    ->
+    forall l : seq A, P l.                  (* 結論 *)
 
 (**
 # rcons
@@ -166,7 +171,6 @@ nilp s は size s == 0 で定義されている。これのリフレクション
     rewrite lt0n.
     split=> H; by apply/nilP.
   Qed.
-
 End Size1.
 
 (**
@@ -223,7 +227,7 @@ End Lists1.
 
 ## 説明
 
-リストのある要素（すべての要素）に対して、条件が成立する。
+リストのある要素、または、すべての要素に対して、条件が成立する。
  *)
 
 Compute has odd [:: 1; 2; 3].               (* true *)
@@ -233,9 +237,9 @@ Compute all odd [:: 1; 2; 3].               (* false *)
 Compute all odd [:: 1; 3; 5].               (* true *)
 
 (**
-## forall や exists を使った定義
+## forall（∀）や exists（∃）を使った定義
 
-has や all は再帰関数として定義されているが、exists や forall を使った定義もある。
+has や all は再帰関数として定義されているが、exists や forall を使った同値な命題もある。
 それとのリフレクションが定義されている。
  *)
 
@@ -249,10 +253,24 @@ Check @allP : forall (eT : eqType) (a : pred eT) (s : seq eT),
 なお、exists2 は、論理式をふたつとれる「∃」。
 MathComp ぽい命名だが、バニラCoqで定義されている。
 *)
-Check ex : forall A : Type, (A -> Prop) -> Prop.
-Check ex2 : forall A : Type, (A -> Prop) -> (A -> Prop) -> Prop.
-Check forall (A : Type) (x : A) (P : Prop), (exists x : A, P).
-Check forall (A : Type) (x : A) (P Q : Prop), (exists2 x : A, P & Q).
+Print ex2.
+(**
+Inductive ex2 (A : Type) (P Q : A -> Prop) : Prop :=
+    ex_intro2 : forall x : A, P x -> Q x -> exists2 x : A, P x & Q x
+*)
+Check forall eT a s, exists2 x : eT, x \in s & a x.
+Check forall eT a s, ex2 (fun x : eT => x \in s) (fun x : eT => a x).
+
+(**
+参考。普通のexists。
+*)
+Print ex.
+(**
+Inductive ex (A : Type) (P : A -> Prop) : Prop :=
+    ex_intro : forall x : A, P x -> exists y, P y
+*)
+Check forall eT a s, exists x : eT, a x.
+Check forall eT a s, ex (fun x : eT => a x).
 
 (**
 ## Standard Coq の 命題
@@ -492,12 +510,25 @@ Check filter_rcons
     (if a x then rcons [seq x <- s | a x] x else [seq x <- s | a x]).
                                                        
 (**
-# foldr と foldl
+# foldl と foldr
+
+OCamil と引数の順番が異なることに注意してください。
  *)
+Check @foldl : forall T R : Type, (R -> T -> R) -> R -> seq T -> R.
+Check @foldr : forall T R : Type, (T -> R -> R) -> R -> seq T -> R.
 
-(* *** 後で追加する。*** *)
-
-
+(**
+## foldl と foldr についての補題
+*)
+Check foldr_cat : forall (T2 R : Type) (f : T2 -> R -> R) (z0 : R) (s1 s2 : seq T2),
+    foldr f z0 (s1 ++ s2) = foldr f (foldr f z0 s2) s1.
+Check foldl_cat : forall (T R : Type) (f : R -> T -> R) (z : R) (s1 s2 : seq T),
+    foldl f z (s1 ++ s2) = foldl f (foldl f z s1) s2.
+(**
+foldl と foldr は、rev すると同じになる。
+*)
+Check foldl_rev : forall (T R : Type) (f : R -> T -> R) (z : R) (s : seq T),
+    foldl f z (rev s) = foldr (fun (x : T) (y : R) => f y x) z s.
 
 (**
 # 特別な帰納法
@@ -564,8 +595,11 @@ rcons でする帰納法である。
 *)
 Check last_ind
   : forall (T : Type) (P : seq T -> Type),
-    P [::] ->
-    (forall (s : seq T) (x : T), P s -> P (rcons s x)) -> forall s : seq T, P s.
+    P [::]
+    ->
+    (forall (s : seq T) (x : T), P s -> P (rcons s x))
+    ->
+    forall s : seq T, P s.                  (* 結論 *)
 
 Section FoldLeft.
   Variables (T R : Type) (f : R -> T -> R).
@@ -579,13 +613,78 @@ Section FoldLeft.
 End FoldLeft.
 
 (**
-## seq2_ind
- *)
+## map2 の帰納法
+*)
+Check @seq_ind2
+  : forall (S T : Type) (P : seq S -> seq T -> Type),
+    P [::] [::]
+    ->
+    (forall (x : S) (y : T) (s : seq S) (t : seq T), (* 帰納法の仮定 *)
+        size s = size t -> P s t
+        ->
+        P (x :: s) (y :: t))                (* 証明するべきもの *)
+    ->
+    forall (s : seq S) (t : seq T), size s = size t -> P s t. (* 結論 *)
+
+(* 古い版では seq2_ind だった。帰納法の仮定に寸法がなかった。 *)
 Lemma seq2_ind T1 T2 (P : seq T1 -> seq T2 -> Type) :
-    P [::] [::] -> (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
+  P [::] [::] -> (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
   forall s1 s2, size s1 = size s2 -> P s1 s2.
 Proof. by move=> Pnil Pcons; elim=> [|x s IHs] [] //= x2 s2 [] /IHs/Pcons. Qed.
 
+Section Map2.
+  Variable T : Type.
+  
+(**
+seq bool で seq T をマスクする mask 関数に関する証明に使う。
+ *)
+  Compute mask [:: true; false; true] [:: 1; 2; 3].
+  
+  Goal forall (m : seq bool) (s : seq T),   (* size_mask *)
+      size m = size s -> size (mask m s) = count id m.
+  Proof.
+    apply: seq_ind2 => // x m s t /= Hs IHs.
+    rewrite -IHs.
+    case: ifP => Hx /=.
+    - by rewrite IHs.
+    - by rewrite add0n.
+  Qed.
+
+  Goal forall (m1 m2 : seq bool) (s1 s2 : seq T), (* mask_cat *)
+      size m1 = size s1 -> mask (m1 ++ m2) (s1 ++ s2) = mask m1 s1 ++ mask m2 s2.
+  Proof.
+    move=> m1 m2 s1 s2.
+    move: m1 s1.
+    apply: seq_ind2 => // x y m s /= Hs IHs.
+    case: ifP => Hx /=; by rewrite IHs.
+  Qed.
+
+(**
+MathComp には map2 はないので定義してみる。
+*)
+  Fixpoint map2 op (s1 s2 : seq T) : seq T :=
+    match s1, s2 with
+    | [::], _ => [::]
+    | _, [::] => [::]
+    | x1 :: s1, x2 :: s2 => (op x1 x2) :: map2 op s1 s2
+    end.
+
+  Lemma map2_cons f (x1 x2 : T) (s1 s2 : seq T) :
+    map2 f (x1 :: s1) (x2 :: s2) = f x1 x2 :: map2 f s1 s2.
+  Proof.
+      by [].
+  Qed.
+  
+  Lemma map2_cat f (s11 s12 s21 s22 : seq T) :
+    size s11 = size s21 -> 
+    map2 f (s11 ++ s12) (s21 ++ s22) = map2 f s11 s21 ++ map2 f s12 s22.
+  Proof.
+    move: s11 s21.
+    (* ゴールのスタックに、s11 s21 と size を残すことに注意！ *)
+    apply: seq_ind2 => // x1 x2 s11 s21 Hsize IHs /=.
+      by rewrite IHs.
+  Qed.    
+End Map2.
 
 (**
 ## alt_list_ind
