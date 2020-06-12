@@ -221,73 +221,6 @@ Section Lists1.
 *)
 End Lists1.
 
-  
-(**
-# has と all と nth
-
-## 説明
-
-リストのある要素、または、すべての要素に対して、条件が成立する。
- *)
-
-Compute has odd [:: 1; 2; 3].               (* true *)
-Compute has odd [:: 2; 4; 6].               (* false *)
-
-Compute all odd [:: 1; 2; 3].               (* false *)
-Compute all odd [:: 1; 3; 5].               (* true *)
-
-(**
-## forall（∀）や exists（∃）を使った定義
-
-has や all は再帰関数として定義されているが、exists や forall を使った同値な命題もある。
-それとのリフレクションが定義されている。
- *)
-
-Check @hasP : forall (eT : eqType) (a : pred eT) (s : seq eT),
-    reflect (exists2 x : eT, x \in s & a x) (has a s).
-
-Check @allP : forall (eT : eqType) (a : pred eT) (s : seq eT),
-    reflect (forall x : eT, x \in s -> a x) (all a s).
-
-(**
-なお、exists2 は、論理式をふたつとれる「∃」。
-MathComp ぽい命名だが、バニラCoqで定義されている。
-*)
-Print ex2.
-(**
-Inductive ex2 (A : Type) (P Q : A -> Prop) : Prop :=
-    ex_intro2 : forall x : A, P x -> Q x -> exists2 x : A, P x & Q x
-*)
-Check forall eT a s, exists2 x : eT, x \in s & a x.
-Check forall eT a s, ex2 (fun x : eT => x \in s) (fun x : eT => a x).
-
-(**
-参考。普通のexists。
-*)
-Print ex.
-(**
-Inductive ex (A : Type) (P : A -> Prop) : Prop :=
-    ex_intro : forall x : A, P x -> exists y, P y
-*)
-Check forall eT a s, exists x : eT, a x.
-Check forall eT a s, ex (fun x : eT => a x).
-
-(**
-## Standard Coq の 命題
-
-Standard Coq の List.v には、インダクティブな命題として、
-Exists と Forall が定義されている。それとのリフレクションを定義した例：
-
-https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
- *)
-
-(**
-## has と all と nth についての補題
-*)
-
-(* *** 後で追加する。*** *)
-
-
 (**
 # rev
 
@@ -392,6 +325,99 @@ Check all_rev
   : forall (T : Type) (a : pred T) (s : seq T), all a (rev s) = all a s.
 
 (**
+# has と all
+
+## 説明
+
+リストのある要素、または、すべての要素に対して、条件が成立する。
+ *)
+
+Compute has odd [:: 1; 2; 3].               (* true *)
+Compute has odd [:: 2; 4; 6].               (* false *)
+
+Compute all odd [:: 1; 2; 3].               (* false *)
+Compute all odd [:: 1; 3; 5].               (* true *)
+
+(**
+## forall（∀）や exists（∃）を使った定義
+
+has や all は再帰関数として定義されているが、exists や forall を使った同値な命題もある。
+それとのリフレクションが定義されている。
+ *)
+
+Check @hasP : forall (eT : eqType) (a : pred eT) (s : seq eT),
+    reflect (exists2 x : eT, x \in s & a x) (has a s).
+
+Check @allP : forall (eT : eqType) (a : pred eT) (s : seq eT),
+    reflect (forall x : eT, x \in s -> a x) (all a s).
+
+(**
+なお、exists2 は、論理式をふたつとれる「∃」。
+MathComp ぽい命名だが、バニラCoqで定義されている。
+*)
+Print ex2.
+(**
+Inductive ex2 (A : Type) (P Q : A -> Prop) : Prop :=
+    ex_intro2 : forall x : A, P x -> Q x -> exists2 x : A, P x & Q x
+*)
+Check forall eT a s, exists2 x : eT, x \in s & a x.
+Check forall eT a s, ex2 (fun x : eT => x \in s) (fun x : eT => a x).
+
+(**
+参考。普通のexists。
+*)
+Print ex.
+(**
+Inductive ex (A : Type) (P : A -> Prop) : Prop :=
+    ex_intro : forall x : A, P x -> exists y, P y
+*)
+Check forall eT a s, exists x : eT, a x.
+Check forall eT a s, ex (fun x : eT => a x).
+
+(**
+## Standard Coq の 命題
+
+Standard Coq の List.v には、インダクティブな命題として、
+Exists と Forall が定義されている。それとのリフレクションを定義した例：
+
+https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
+ *)
+
+(**
+## has と all についての補題
+*)
+
+Check has_nil : forall (T : Type) (a : pred T), has a [::] = false.
+Check has_seq1 : forall (T : Type) (a : pred T) (x : T), has a [:: x] = a x.
+Check has_cat : forall (T : Type) (a : pred T) (s1 s2 : seq T),
+    has a (s1 ++ s2) = has a s1 || has a s2.
+Check has_rcons : forall (T : Type) (a : pred T) (s : seq T) (x : T),
+    has a (rcons s x) = a x || has a s.
+
+Check all_nil : forall (T : Type) (a : pred T), all a [::] = true.
+Check all_seq1 : forall (T : Type) (a : pred T) (x : T), all a [:: x] = a x.
+Check all_cat : forall (T : Type) (a : pred T) (s1 s2 : seq T),
+    all a (s1 ++ s2) = all a s1 && all a s2.
+Check all_rcons : forall (T : Type) (a : pred T) (s : seq T) (x : T),
+    all a (rcons s x) = a x && all a s.
+
+(**
+# nth
+ *)
+
+(**
+## nth についての補題
+*)
+
+(**
+# take と drop
+ *)
+
+(**
+## take と drop についての補題
+*)
+
+(**
 # == と \in について
  *)
 
@@ -401,7 +427,7 @@ Check all_rev
 eqType 型クラス（インターフェース）のインスタンスとして seq_eqType を定義している。
 すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、== の左右に書けるようになる。
 *)
-
+Check [:: 1; 2] : seq nat.
 Check [:: 1; 2] : seq_eqType nat_eqType.
 Compute [:: 1; 2] == [:: 3; 4].             (* false *)
 
@@ -432,11 +458,51 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
 Check @mem_seq : forall T : eqType, seq T -> T -> bool.
 
 (**
+## 任意の eqType について
+ *)
+Section In.
+  Variable eT : eqType.
+  Variable a b c : eT.
+
+  Check [:: a; b; c] : seq eT.
+  Check [:: a; b; c] : seq_eqType eT.
+
+  Goal [:: a] == [:: a].
+  Proof.
+    rewrite eqseq_cons.
+    apply/andP.
+    done.
+  Qed.
+  
+  Goal a \in [:: a; b; c].
+  Proof.
+    rewrite !in_cons.
+    apply/orP/or_introl.
+    done.
+  Qed.
+End In.
+
+(**
 ## \in についての補題
  *)
 
-(* *** 後で追加する。*** *)
+Check in_cons : forall (T : eqType) (y : T) (s : seq T) (x : T),
+    (x \in y :: s) = (x == y) || (x \in s).
+Check in_nil : forall (T : eqType) (x : T), (x \in [::]) = false.
 
+Check @mem_seq1 : forall (T : eqType) (x y : T),
+    (x \in [:: y]) = (x == y).
+Check mem_cat : forall (T : eqType) (x : T) (s1 s2 : seq T),
+    (x \in s1 ++ s2) = (x \in s1) || (x \in s2).
+Check mem_head : forall (T : eqType) (x : T) (s : seq T), x \in x :: s.
+Check mem_last : forall (T : eqType) (x : T) (s : seq T), last x s \in x :: s.
+
+Check mem_nth : forall (T : eqType) (x0 : T) (s : seq T) (n : nat),
+    n < size s -> nth x0 s n \in s.
+Check mem_take : forall (n0 : nat) (T : eqType) (s : seq T) (x : T),
+    x \in take n0 s -> x \in s.
+Check mem_drop : forall (n0 : nat) (T : eqType) (s : seq T) (x : T),
+    x \in drop n0 s -> x \in s.
 
 (**
 # map と filter
