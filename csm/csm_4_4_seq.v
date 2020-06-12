@@ -53,7 +53,7 @@ Fixpoint rcons s z := if s is x :: s' then x :: rcons s' z else [:: z].
 
 教科書にあるような、リストの後ろにcat (++, append) する定義とは異なる。
  *)
-Section Rcons.
+Section RconsQ.
   Variable T : Type.
   
   Definition rcons' (T : Type) (s : seq T) (z : T) : seq T := s ++ [:: z].
@@ -63,16 +63,9 @@ Section Rcons.
 *)
   Goal forall (s : seq T) (z : T), rcons s z = rcons' s z.
   Proof.
-    move=> s z.
-    elim: s => //.
-    move=> a s IH /=.
-      by rewrite IH /rcons' /=.
+  Admitted.
 
-      Restart.
-      move=> s z.
-        by rewrite /rcons' cats1.
-  Qed.
-End Rcons.
+End RconsQ.
 
 (**
 # head と last
@@ -236,6 +229,19 @@ Section Lists2.
   Variable A : Type.
 
 (**
+## （演習）末尾再帰ではない rev (ntrev) と rev の同値を証明する。
+ *)
+  Fixpoint ntrev (s : seq A) : seq A :=
+    match s with
+    | [::] => [::]
+    | x :: a => rcons (ntrev a) x
+    end.
+  
+  Goal forall (s : seq A), rev s = ntrev s.
+  Proof.
+  Admitted.
+  
+(**
 ## Inductive に定義した reverse と rev の同値を証明する。
 *)
   Inductive reverse : seq A -> seq A -> Prop :=
@@ -269,14 +275,8 @@ Section Lists2.
   Qed.
 
 (**
-## （演習）末尾再帰ではない rev (ntrev) と rev の同値を証明する。
- *)
-  Fixpoint ntrev (s : seq A) : seq A :=
-    match s with
-    | [::] => [::]
-    | x :: a => rcons (ntrev a) x
-    end.
-  
+## Inductive に定義した reverse と ntrev の同値を証明する。
+*)
   Lemma rev_ntrev (s t : seq A) : reverse s t <-> ntrev s = t.
   Proof.
     split.
@@ -765,5 +765,44 @@ alt_list_ind :
     (forall (l : seq X), P l -> forall (x y : X), P (x :: (l ++ [:: y]))) ->
     forall (ln : seq X), P ln.
 *)
+
+(**
+# 演習の答え
+*)
+
+Section RconsA.
+  Variable T : Type.
+  
+(**
+（演習）両者が同値であることは証明する。
+*)
+  Goal forall (s : seq T) (z : T), rcons s z = rcons' s z.
+  Proof.
+    move=> s z.
+    elim: s => //.
+    move=> a s IH /=.
+      by rewrite IH /rcons' /=.
+
+      Restart.
+      move=> s z.
+        by rewrite /rcons' cats1.
+  Qed.
+End RconsA.
+
+Section NtRevA.
+  Variable A : Type.
+
+(**
+## （演習）末尾再帰ではない rev (ntrev) と rev の同値を証明する。
+ *)
+  Goal forall (s : seq A), rev s = ntrev s.
+  Proof.
+    elim => // a s IHs /=.
+    rewrite -IHs.
+    rewrite /rev.
+    rewrite !catrevE !rev_cons !cats0.
+    done.
+  Qed.
+End NtRevA.
 
 (* END *)
