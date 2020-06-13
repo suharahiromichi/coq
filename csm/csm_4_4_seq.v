@@ -257,7 +257,11 @@ Section Lists2.
   Inductive isreverse : seq A -> seq A -> Prop :=
   | reverse_nil (s : seq A) : isreverse [::] [::]
   | reverse_cons (x : A) (s t : seq A) :
-      isreverse s t -> isreverse (x :: s) (rcons t x).
+      isreverse s t -> isreverse (x :: s) (t ++ [:: x]).
+(**
+isreverse (x :: s)  (rcons t x) とすると、証明は少し変わる。
+いずれにせよ、Inductiveな定義の中に、複雑な関数を書いてもかまわない。
+ *)
   Hint Constructors isreverse.
 
   Lemma rev0 : @rev A [::] = [::].
@@ -273,17 +277,19 @@ Section Lists2.
   Lemma rev_catrev (s t : seq A) : isreverse s t <-> rev s = t.
   Proof.
     split.
-    - elim=> [s' | x s' t' H IH].
+    - elim=> [s' | x s' t' /= H IH].
       + by rewrite /rev.
-      + by rewrite rev_cons IH.
+      + rewrite -IH.
+        rewrite -rev1 -rev_cat /=.
+        done.
     - elim: s t => //= [t <- | x s IH t' <-].
       + rewrite rev0.
           by apply: reverse_nil.
-      + rewrite rev_cons.
+      + rewrite rev_cons -cats1.
         apply: reverse_cons.
           by apply: IH.
   Qed.
-
+  
 (**
 ## Inductive に定義した isreverse と reverse の同値を証明する。
 *)
@@ -293,14 +299,13 @@ Section Lists2.
     - elim=> [s' | x s' t' H IHs /=].
       + done.
       + rewrite IHs.
-        by rewrite cats1.
+          by rewrite cats1.
     - elim: s t => [s' /= H | x s' IHs /= H1 H2].
       + rewrite -H.
           by apply: reverse_nil.
-      + rewrite cats1 in H2.
-        rewrite -H2.
+      + rewrite -H2.
         apply reverse_cons.
-        by apply: IHs.
+          by apply: IHs.
   Qed.
 End Lists2.
 
