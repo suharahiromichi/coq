@@ -63,7 +63,7 @@ Section RconsQ.
 *)
   Goal forall (s : seq T) (z : T), rcons s z = rcons' s z.
   Proof.
-  Admitted.
+  Admitted.                                 (* 演習問題 *)
 
 End RconsQ.
 
@@ -191,7 +191,7 @@ Check cat_take_drop
 (**
 ## Inductive に定義した append と cat の同値を証明する。
 *)
-Section Lists1.
+Section Append.
   Variable A : Type.
 
   Inductive append : seq A -> seq A -> seq A -> Prop :=
@@ -212,7 +212,7 @@ Section Lists1.
 (**
 補足： <-> のかたちの補題を適用するときは、apply/V を使う。
 *)
-End Lists1.
+End Append.
 
 (**
 # rev
@@ -224,31 +224,41 @@ rev は catrev (末尾再帰) を使って定義されている。
 Print rev.
 (* Definition rev := catrev^~ [::] *)
 (* Definition rev s := catrev s [::] *)
+Print catrev.
+(**
+fun T : Type =>
+fix catrev (s1 s2 : seq T) {struct s1} : seq T :=
+  match s1 with
+  | [::] => s2
+  | x :: s1' => catrev s1' (x :: s2)
+  end
+*)
 
 Section Lists2.
   Variable A : Type.
 
 (**
-## （演習）末尾再帰ではない rev (ntrev) と rev の同値を証明する。
+## （演習）末尾再帰ではない reverse と rev の同値を証明する。
  *)
-  Fixpoint ntrev (s : seq A) : seq A :=
-    match s with
-    | [::] => [::]
-    | x :: a => rcons (ntrev a) x
-    end.
+  Fixpoint reverse (xs : seq A) :=
+  match xs with
+  | nil => nil
+  | x :: xs' =>
+    reverse xs' ++ [:: x] (* rcons にしてもよいが、証明がかなり変わる *)
+  end.
   
-  Goal forall (s : seq A), rev s = ntrev s.
+  Goal forall (s : seq A), rev s = reverse s.
   Proof.
-  Admitted.
+  Admitted.                                 (* 演習問題 *)
   
 (**
-## Inductive に定義した reverse と rev の同値を証明する。
+## Inductive に定義した isreverse と rev の同値を証明する。
 *)
-  Inductive reverse : seq A -> seq A -> Prop :=
-  | reverse_nil (s : seq A) : reverse [::] [::]
+  Inductive isreverse : seq A -> seq A -> Prop :=
+  | reverse_nil (s : seq A) : isreverse [::] [::]
   | reverse_cons (x : A) (s t : seq A) :
-      reverse s t -> reverse (x :: s) (rcons t x).
-  Hint Constructors reverse.
+      isreverse s t -> isreverse (x :: s) (rcons t x).
+  Hint Constructors isreverse.
 
   Lemma rev0 : @rev A [::] = [::].
   Proof.
@@ -260,7 +270,7 @@ Section Lists2.
       by rewrite /rev.
   Qed.
   
-  Lemma rev_catrev (s t : seq A) : reverse s t <-> rev s = t.
+  Lemma rev_catrev (s t : seq A) : isreverse s t <-> rev s = t.
   Proof.
     split.
     - elim=> [s' | x s' t' H IH].
@@ -275,17 +285,23 @@ Section Lists2.
   Qed.
 
 (**
-## Inductive に定義した reverse と ntrev の同値を証明する。
+## Inductive に定義した isreverse と reverse の同値を証明する。
 *)
-  Lemma rev_ntrev (s t : seq A) : reverse s t <-> ntrev s = t.
+  Lemma rev_reverse (s t : seq A) : isreverse s t <-> reverse s = t.
   Proof.
     split.
-    - elim=> [s' | x s' t' H <-] //=.
-    - elim: s t => //= [t <- | x s IH t' <-].
-      + by apply: reverse_nil.
-      + apply: reverse_cons.
-          by apply: IH.
-  Qed.      
+    - elim=> [s' | x s' t' H IHs /=].
+      + done.
+      + rewrite IHs.
+        by rewrite cats1.
+    - elim: s t => [s' /= H | x s' IHs /= H1 H2].
+      + rewrite -H.
+          by apply: reverse_nil.
+      + rewrite cats1 in H2.
+        rewrite -H2.
+        apply reverse_cons.
+        by apply: IHs.
+  Qed.
 End Lists2.
 
 (**
@@ -783,19 +799,37 @@ Section RconsA.
     move=> a s IH /=.
       by rewrite IH /rcons' /=.
 
-      Restart.
-      move=> s z.
-        by rewrite /rcons' cats1.
+    Restart.
+    move=> s z.
+      by rewrite /rcons' cats1.             (* 実はMathCompに補題がある。*)
   Qed.
 End RconsA.
 
-Section NtRevA.
+Section ReverseA.
   Variable A : Type.
 
 (**
-## （演習）末尾再帰ではない rev (ntrev) と rev の同値を証明する。
+## （演習）末尾再帰ではない reverseと rev の同値を証明する。
  *)
-  Goal forall (s : seq A), rev s = ntrev s.
+  Goal forall (s : seq A), rev s = reverse s.
+  Proof.
+    elim => // a s IHs /=.
+    rewrite -IHs.
+    rewrite -rev1 -rev_cat /=.
+    done.
+  Qed.
+
+(**
+## rcons を使使って reverse' を定義する場合：
+ *)
+  Fixpoint reverse' (xs : seq A) :=
+  match xs with
+  | nil => nil
+  | x :: xs' =>
+    rcons (reverse' xs') x
+  end.
+  
+  Goal forall (s : seq A), rev s = reverse' s.
   Proof.
     elim => // a s IHs /=.
     rewrite -IHs.
@@ -803,6 +837,6 @@ Section NtRevA.
     rewrite !catrevE !rev_cons !cats0.
     done.
   Qed.
-End NtRevA.
+End ReverseA.
 
 (* END *)
