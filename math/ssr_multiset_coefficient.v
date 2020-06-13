@@ -61,36 +61,77 @@ Section MC.
   Check bin0n : forall m : nat, 'C(0, m) = (m == 0).
   Check binS : forall n m : nat, 'C(n.+1, m.+1) = 'C(n, m.+1) + 'C(n, m).
   Check bin1 : forall n : nat, 'C(n, 1) = n.
+  Check bin_fact : forall n m : nat, m <= n -> 'C(n, m) * (m`! * (n - m)`!) = n`!.
   Check bin_ffact : forall (n m : nat), 'C(n, m) * m`! = n ^_ m.
   Check bin_ffactd : forall (n m : nat), 'C(n, m) = n ^_ m %/ m`!.
-
-  Lemma mulE : multiset = multiset_rec.
+  
+  (* multset coefficient から msc とする。mul だと衝突するため。 *)
+  Lemma mscE : multiset = multiset_rec.
   Proof. by []. Qed.
   
-  Lemma mul0 (n : nat) : 'H(n, 0) = 1.
+  Lemma msc0 (n : nat) : 'H(n, 0) = 1.
   Proof. by case: n. Qed.
 
-  Lemma mul0n (m : nat) : 'H(0, m) = (m == 0).
+  Lemma msc0n (m : nat) : 'H(0, m) = (m == 0).
   Proof. by case: m. Qed.
   
-  Lemma mulS n m : 'H(n.+1, m.+1) = 'H(n, m.+1) + 'H(n.+1, m).
+  Lemma mscS n m : 'H(n.+1, m.+1) = 'H(n, m.+1) + 'H(n.+1, m).
   Proof.
       by rewrite /multiset multiset_rec_equation.
   Qed.
   
-  Lemma mul1 n : 'H(n, 1) = n.
+  Lemma msc1 n : 'H(n, 1) = n.
   Proof.
     elim: n => //=.
     move=> n IHn.
-      by rewrite mulS mul0 IHn addn1.
+      by rewrite mscS msc0 IHn addn1.
   Qed.
 
-  Lemma mul_ffact : forall (n m : nat), 'H(n, m) * m`! = (n + m - 1) ^_ m.
+  Compute 'C(0, 0).                         (* 1 *)
+  Compute 'C(0, 1).                         (* 0 *)
+  Compute 'C(0, 2).                         (* 0 *)
+  Compute 'C(1, 2).                         (* 0 *)
+
+  Compute 'H(0, 0).                         (* 1 *)
+  Compute 'H(0, 1).                         (* 0 *)
+  Compute 'H(0, 2).                         (* 0 *)
+  Compute 'H(1, 2).                         (* 1 *)
+  
+  Lemma msc_small n m : n < m -> 'H(n, m) = 0.
+(*
+  Proof. by rewrite ltnNge -bin_gt0; case: posnP. Qed.
+ *)
+  Admitted. 
+  
+Lemma bin_ffact n m : 'C(n, m) * m`! = n ^_ m.
+Proof.
+apply/eqP; have [lt_n_m | le_m_n] := ltnP n m.
+  by rewrite bin_small ?ffact_small.
+by rewrite -(eqn_pmul2r (fact_gt0 (n - m))) ffact_fact // -mulnA bin_fact.
+Qed.
+
+  Lemma msc_ffact (n m : nat) : 'H(n, m) * m`! = (n + m - 1) ^_ m.
   Proof.
+    apply/eqP; have [lt_n_m | le_m_n] := ltnP n m.
+    - rewrite msc_small.
+      rewrite mul0n.
+      + rewrite ?ffact_small.
+        done.
+      + 
+      
+    rewrite /multiset multiset_rec_equation.
+    apply/eqP.
+    
+
+
+(*
+      by rewrite msc_small ?ffact_small.
+        by rewrite -(eqn_pmul2r (fact_gt0 (n - m))) ffact_fact // -mulnA bin_fact.
+*)
   Admitted.
 
-  Lemma mul_ffactd n m : 'H(n, m) = (n  + m - 1) ^_ m %/ m`!.
-  Proof. by rewrite -mul_ffact mulnK ?fact_gt0. Qed.
+  Lemma msc_ffactd n m : 'H(n, m) = (n  + m - 1) ^_ m %/ m`!.
+  Proof. by rewrite -msc_ffact mulnK ?fact_gt0. Qed.
   
   (* ************************* *)
   (* H(n, m) = C(n + m - 1, m) *)
@@ -103,7 +144,7 @@ Section MC.
   Proof.
     move=> n m.
     rewrite bin_ffactd.
-    rewrite mul_ffactd.
+    rewrite msc_ffactd.
       by rewrite addSn subn1 -pred_Sn.
   Qed.
   
@@ -112,9 +153,9 @@ Section MC.
   Proof.
     move=> n m.
     elim : m.
-    - by rewrite mul0 bin0.
+    - by rewrite msc0 bin0.
     - move=> m IHm.
-      rewrite addnS binS mulS IHm.
+      rewrite addnS binS mscS IHm.
       congr (_ + _).
       (* 'H(n, m.+1) = 'C(n + m, m.+1) *)
   Admitted.
