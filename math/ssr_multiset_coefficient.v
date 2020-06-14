@@ -226,6 +226,23 @@ Section MC.
     
   Compute 'H(4, 3) * 3`!.                   (* 120 *)
   Compute (4 + 3 - 1) ^_ 3.                 (* 120 *)
+
+  Lemma test (n m : nat) :
+    ((n + m)`! %/ (n`! * m`!)) * m`! = (n + m)`! %/ (n + m - m)`!.
+  Proof.
+    Search _ (_ %/ _ * _).
+    rewrite divn_mulAC.                     (* ******* *)
+    - Search _ ((_ * _) %/ (_ * _)).    
+      rewrite divnMr.
+      + Search _ (_ + _ - _).
+        rewrite -addnBA.
+        * Search _ (_ - _ = 0).
+            by rewrite subnn addn0.         (* subnn n : n - n = 0 *)
+        * done.
+      + Search _ (0 < _`!).
+          by rewrite fact_gt0.
+    - (* n`! * m`! %| (n + m)`! *)
+  Admitted.                                 (* ******* *)
   
   Lemma msc_ffact (n m : nat) : 'H(n, m) * m`! = (n + m - 1) ^_ m.
   Proof.
@@ -234,30 +251,23 @@ Section MC.
       rewrite msc0n.
       case: m => [| m].
       + rewrite mul1n.
-        rewrite subn1 PeanoNat.Nat.pred_0.
+        rewrite subn1 PeanoNat.Nat.pred_0.  (* 0.-1 = 0 *)
         rewrite fact0 ffact0n.
         done.
       + rewrite ffact_small; first by done.
         rewrite subn1.
         ssromega.
-    -  rewrite ffact_factd.
-       + rewrite msc_factd.
-         rewrite addSn subn1.
-         rewrite -pred_Sn.
-         rewrite -[n + m - m]addnBA; last done.
-         have H : m - m = 0.
-         * by apply/eqP; rewrite subn_eq0.
-         * rewrite H addn0.
-       + rewrite divn_mulAC.
-         * rewrite divnMr.
-           ** done.
-           ** by rewrite fact_gt0.
-         *                                (* n`! * m`! %| (n + m)`! *)
-           admit.
-  Admitted.
+    - rewrite ffact_factd.
+      + rewrite msc_factd.
+        rewrite addSn subn1 -pred_Sn.
+          by rewrite test.
+      + by ssromega.
+  Qed.
   
   Lemma msc_ffactd n m : 'H(n, m) = (n  + m - 1) ^_ m %/ m`!.
-  Proof. by rewrite -msc_ffact mulnK ?fact_gt0. Qed.
+  Proof.
+      by rewrite -msc_ffact mulnK ?fact_gt0.
+  Qed.
   
   (* ************************* *)
   (* H(n, m) = C(n + m - 1, m) *)
@@ -275,47 +285,49 @@ Section MC.
   Compute 'H(1, 0).                         (* 2 *)
   Compute 'C(0, 0).                         (* 2 *)
   
-  Goal forall (n m : nat), 'H(n.+1, m) = 'C(n + m, m).
+  (* **************** *)
+  (* 求めたかったもの *)
+  (* **************** *)
+  
+  Lemma multiset_binominal (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
-    move=> n m.
     rewrite bin_ffactd.
     rewrite msc_ffactd.
       by rewrite addSn subn1 -pred_Sn.
   Qed.
   
-  (* ************************* *)
-  (* ************************* *)
-  (* ************************* *)
-  (* 帰納法による直接証明。途中 *)
-  (* ************************* *)
-  (* ************************* *)
-  (* ************************* *)
+  (* ******************* *)
+  (* 帰納法による直接証明 *)
+  (* ******************* *)
   
-  Goal forall (n m : nat), 'H(n.+1, m) = 'C(n + m, m).
+  Lemma multiset_binominal' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
-    move=> n m.
-    elim: m => [| m IHm].
+    elim: m n => [n | m IHm n].
     - by rewrite msc0 bin0.
     - elim: n IHm => [IHm | n IHn IHm].
-      + rewrite add0n in IHm.
-        rewrite add0n.
+      + rewrite add0n.
         rewrite binS.
         rewrite mscS.
         rewrite IHm.
         f_equal.
-        Compute 'H(0, 1).                   (* 0 *)
-        Compute 'C(1, 2).                   (* 0 *)
-        admit.                              (* 両辺とも 0 *)
+        (* 両辺とも 0 になる。 *)
+        Compute 'H(0, 4).                   (* 0 *)
+        Compute 'C(3, 5).                   (* 0 *)
+        rewrite msc0n.
+        rewrite bin_small.
+        * done.
+        * done.
       + rewrite mscS.
         rewrite [n.+1 + m.+1]addnC addnS binS.
         rewrite IHm.
         f_equal.
         rewrite IHn.
-        * admit.                            (* 簡単 *)
-        * admit.                            (* ゴールとおなじ！ *)
-        * admit.                            (* 簡単 *)
-  Admitted.
-  
+        * by rewrite addnS addSn addnC.
+        * move=> n'.
+          by rewrite IHm.
+        * by rewrite 2!addSn addnC.
+  Qed.
+
 End MC.
 
 (* END *)
