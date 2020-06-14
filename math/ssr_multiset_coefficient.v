@@ -194,29 +194,45 @@ Section MC.
 (* Multiply to move diagonally down and right in the Pascal triangle. *)
 
   (* 参考 *)
-(* m の帰納法 *)
-Lemma mul_bin_diag n m : n * 'C(n.-1, m) = m.+1 * 'C(n, m.+1).
-Proof.
-rewrite [RHS]mulnC; elim: n m => [|[|n] IHn] [|m] //=; first by rewrite bin1.
-by rewrite mulSn [in _ * _]binS mulnDr addnCA !IHn -mulnS -mulnDl -binS.
-Qed.
-
-(* n の帰納法 *)
-Lemma bin_fact n m : m <= n -> 'C(n, m) * (m`! * (n - m)`!) = n`!.
-Proof.
-elim: n m => [|n IHn] [|m] // le_m_n; first by rewrite bin0 !mul1n.
-by rewrite !factS -!mulnA mulnCA mulnA -mul_bin_diag -mulnA IHn.
-Qed.
+  (* m の帰納法 *)
+  Lemma mul_bin_diag n m : n * 'C(n.-1, m) = m.+1 * 'C(n, m.+1).
+  Proof.
+    rewrite [RHS]mulnC.
+    elim: n m => [|[|n] IHn] [|m] //=.
+    - by rewrite bin1.
+    - by rewrite mulSn [in _ * _]binS mulnDr addnCA !IHn -mulnS -mulnDl -binS.
+  Qed.
+  
+  (* n の帰納法 *)
+  Lemma bin_fact n m : m <= n -> 'C(n, m) * (m`! * (n - m)`!) = n`!.
+  Proof.
+    elim: n m => [|n IHn] [|m] // le_m_n.
+    - by rewrite bin0 !mul1n.
+    - by rewrite !factS -!mulnA mulnCA mulnA -mul_bin_diag -mulnA IHn.
+  Qed.
   (* 参考。終わり *)
-
+  
   Compute 3 * 'H(3.+1, 2).                  (* 30 *)
   Compute 2.+1 * 'H(3, 2.+1).               (* 30 *)
-
-  (* ！！！！根本的にこれが解けない！！！！ *)
+  
+  (* m の帰納法だが、n の汎化を忘れないようにする？ *)
   Lemma mul_msc_diag m n : m * 'H(m.+1, n) = n.+1 * 'H(m, n.+1).
   Proof.
-  (* m の帰納法だが、n の汎化を忘れないようにする？ *)
-  Admitted.
+    elim: m n.
+    - move=> n.
+      by rewrite mul0n msc0n /= muln0.
+    - move=> m IHm n.
+      elim: n m IHm.
+      + move=> m IHm.
+          by rewrite msc0 muln1 msc1 mul1n.
+      + move=> n IHn m IHm.
+        rewrite mscS mulnDr IHn.
+        * rewrite ['H(m.+1, n.+2)]mscS mulnDr -IHm.
+          rewrite -!mulnDl.
+          congr (_ * _).
+          ssromega.
+        * done.
+  Qed.
   
   (* n の帰納法 *)
   Lemma msc_fact m n : 'H(m.+1, n) * m`! * n`! = (m + n)`!.
