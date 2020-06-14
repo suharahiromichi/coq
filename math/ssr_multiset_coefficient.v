@@ -87,49 +87,292 @@ Section MC.
       by rewrite mscS msc0 IHn addn1.
   Qed.
 
+  Lemma msc1n (n : nat) : 'H(1, n) = 1.
+  Proof.
+    elim: n => //=.
+    move=> n IHn.
+    rewrite mscS msc0n add0n.
+    done.
+  Qed.
+  
   Compute 'C(0, 0).                         (* 1 *)
-  Compute 'C(0, 1).                         (* 0 *)
-  Compute 'C(0, 2).                         (* 0 *)
-  Compute 'C(1, 2).                         (* 0 *)
+  Compute 'C(0, 1).                         (**0**)
+  
+  Compute 'C(1, 0).                         (* 1 *)
+  Compute 'C(1, 1).                         (* 1 *)
+  Compute 'C(1, 2).                         (**0**)
+  
+  Compute 'C(2, 0).                         (* 1 *)
+  Compute 'C(2, 1).                         (* 2 *)
+  Compute 'C(2, 2).                         (* 1 *)
+  Compute 'C(2, 3).                         (**0**)
+
+  Compute 'C(3, 0).                         (* 1 *)
+  Compute 'C(3, 1).                         (* 3 *)
+  Compute 'C(3, 2).                         (* 3 *)
+  Compute 'C(3, 3).                         (* 1 *)
+  Compute 'C(3, 4).                         (**0**)
+  
+  Compute 'C(4, 0).                         (* 1 *)
+  Compute 'C(4, 1).                         (* 4 *)
+  Compute 'C(4, 2).                         (* 6 *)
+  Compute 'C(4, 3).                         (* 4 *)
+  Compute 'C(4, 4).                         (* 1 *)
+  Compute 'C(4, 5).                         (**0**)
+
+  (* **** *)
 
   Compute 'H(0, 0).                         (* 1 *)
-  Compute 'H(0, 1).                         (* 0 *)
-  Compute 'H(0, 2).                         (* 0 *)
+  Compute (0  + 0 - 1) ^_ 0 %/ 0`!.         (* 0 *)
+
+  Compute 'H(0, 1).                         (**0**)
+  Compute (0  + 1 - 1) ^_ 1 %/ 1`!.         (* 0 *)
+  
+  Compute 'H(1, 0).                         (* 1 *)
+  Compute 'H(1, 1).                         (* 1 *)
   Compute 'H(1, 2).                         (* 1 *)
   
-  Lemma msc_small n m : n < m -> 'H(n, m) = 0.
-(*
-  Proof. by rewrite ltnNge -bin_gt0; case: posnP. Qed.
- *)
-  Admitted. 
+  Compute 'H(2, 0).                         (* 1 *)
+  Compute 'H(2, 1).                         (* 2 *)
+  Compute 'H(2, 2).                         (* 3 *)
+  Compute 'H(2, 3).                         (* 4 *)
+  Compute 'H(2, 4).                         (* 5 *)
+  Compute 'H(2, 5).                         (* 6 *)
+  Compute 'H(2, 6).                         (* 7 *)
+  Compute 'H(2, 7).                         (* 8 *)
+  Compute 'H(2, 8).                         (* 9 *)
+
+  Compute 'H(3, 0).                         (* 1 *)
+  Compute 'H(3, 1).                         (* 3 *)
+  Compute 'H(3, 2).                         (* 6 *)
+  Compute 'H(3, 3).                         (* 10 *)
+  Compute 'H(3, 4).                         (* 15 *)
+  Compute 'H(3, 5).                         (* 21 *)
+  Compute 'H(3, 6).                         (* 28 *)
+  Compute 'H(3, 7).                         (* 36 *)
+  Compute 'H(3, 8).                         (* 45 *)
   
-Lemma bin_ffact n m : 'C(n, m) * m`! = n ^_ m.
+  Compute 'H(4, 0).                         (* 1 *)
+  Compute 'H(4, 1).                         (* 4 *)
+  Compute 'H(4, 2).                         (* 10 *)
+  Compute 'H(4, 3).                         (* 20 *)
+  Compute 'H(4, 4).                         (* 35 *)
+  Compute 'H(4, 5).                         (* 56 *)
+  Compute 'H(4, 6).                         (* 84 *)
+  Compute 'H(4, 7).                         (* 120 *)
+  Compute 'H(4, 8).                         (* 165 *)
+  Compute (4  + 8 - 1) ^_ 8 %/ 8`!.         (* 165 *)
+  
+  Compute 'H(1, 0) * 0`! * (1 - 1)`!.       (* 1 *)
+  Compute (1 + 0 - 1)`!.                    (* 1 *)
+  
+  Compute 'H(2, 0) * 0`! * (2 - 1)`!.       (* 1 *)
+  Compute (1 + 1 - 1)`!.                    (* 1 *)
+
+  Compute 'H(2, 1) * 1`! * (2 - 1)`!.       (* 2 *)
+  Compute (2 + 1 - 1)`!.                    (* 2 *)
+  
+(*
+  Lemma msc_fact n m : 'H(n, m) * m`! * (n - 1)`! = (n + m - 1)`!.
+*)
+
+  Compute 'H(1, 0) * 0`! * 0`!.             (* 1 *)
+  Compute (0 + 0)`!.                        (* 1 *)
+  
+  Compute 'H(1, 0) * 1`! * 0`!.             (* 1 *)
+  Compute (1 + 0)`!.                        (* 1 *)
+
+  Compute 'H(2, 1) * 1`! * 1`!.             (* 2 *)
+  Compute (1 + 1)`!.                        (* 2 *)
+
+  Compute 'H(3, 3) * 2`! * 3`!.             (* 120 *)
+  Compute (2 + 3)`!.                        (* 120 *)
+  
+  Compute 'H(4, 3) * 3`! * 3`!.             (* 720 *)
+  Compute (3 + 3)`!.                        (* 720 *)
+  
+(* Multiply to move diagonally down and right in the Pascal triangle. *)
+
+  (* 参考 *)
+(* m の帰納法 *)
+Lemma mul_bin_diag n m : n * 'C(n.-1, m) = m.+1 * 'C(n, m.+1).
 Proof.
-apply/eqP; have [lt_n_m | le_m_n] := ltnP n m.
-  by rewrite bin_small ?ffact_small.
-by rewrite -(eqn_pmul2r (fact_gt0 (n - m))) ffact_fact // -mulnA bin_fact.
+rewrite [RHS]mulnC; elim: n m => [|[|n] IHn] [|m] //=; first by rewrite bin1.
+by rewrite mulSn [in _ * _]binS mulnDr addnCA !IHn -mulnS -mulnDl -binS.
 Qed.
 
-  Lemma msc_ffact (n m : nat) : 'H(n, m) * m`! = (n + m - 1) ^_ m.
+(* n の帰納法 *)
+Lemma bin_fact n m : m <= n -> 'C(n, m) * (m`! * (n - m)`!) = n`!.
+Proof.
+elim: n m => [|n IHn] [|m] // le_m_n; first by rewrite bin0 !mul1n.
+by rewrite !factS -!mulnA mulnCA mulnA -mul_bin_diag -mulnA IHn.
+Qed.
+  (* 参考。終わり *)
+
+  Compute 3 * 'H(3.+1, 2).                  (* 30 *)
+  Compute 2.+1 * 'H(3, 2.+1).               (* 30 *)
+
+  Lemma mul_msc_diag m n : m * 'H(m.+1, n) = n.+1 * 'H(m, n.+1).
   Proof.
-    apply/eqP; have [lt_n_m | le_m_n] := ltnP n m.
-    - rewrite msc_small.
-      rewrite mul0n.
-      + rewrite ?ffact_small.
-        done.
-      + 
+  (* m の帰納法だが、n の汎化を忘れないようにする。 *)
+  Admitted.
+  
+  (* n の帰納法 *)
+  Lemma msc_fact m n : 'H(m.+1, n) * m`! * n`! = (m + n)`!.
+  Proof.
+    elim: n m.
+    - move=> m.
+      rewrite msc0.
+      admit.                                (* かんたん *)
+    - move=> n IHn m.
+      rewrite [(n.+1)`!]factS.
+      rewrite !mulnA.
+      rewrite [_ * n.+1]mulnC.
+      rewrite !mulnA.
+      rewrite -mul_msc_diag.
       
-    rewrite /multiset multiset_rec_equation.
-    apply/eqP.
-    
+      rewrite [_ * m`!]mulnC mulnA.
+      rewrite [m`! * m.+1]mulnC -factS.
+      rewrite [(m.+1)`! * 'H(m.+2, n)]mulnC.
+      rewrite IHn.
+      admit.                                (* かんたん *)
+  Admitted.
+  
+
+  (* ********************* *)
+  (* ********************* *)
+  (* ********************* *)
+  (* ********************* *)
+  (* ********************* *)
+  (* 以下削除してよい。 *)
 
 
-(*
-      by rewrite msc_small ?ffact_small.
-        by rewrite -(eqn_pmul2r (fact_gt0 (n - m))) ffact_fact // -mulnA bin_fact.
-*)
+  (* 帰納法による直接証明。途中 *)
+  Goal forall (n m : nat), 'H(n.+1, m) = 'C(n + m, m).
+  Proof.
+    move=> n m.
+    elim: m => [| m IHm].
+    - by rewrite msc0 bin0.
+    - elim: n m IHm => [m IHm | n IHn m IHm].
+      + admit.                              (* 両辺とも 0 *)
+      + rewrite mscS.
+        rewrite [n.+1 + m.+1]addnC addnS binS.
+        rewrite IHm.
+        f_equal.
+        rewrite IHn.
+        * admit.                            (* 簡単 *)
+        * 
+        * admit.                            (* 簡単 *)
   Admitted.
 
+
+
+
+  
+
+
+
+
+
+
+
+  (* m の帰納法で証明する。 *)
+  Lemma mul_Sm_mscm m n : m.+1 * 'H(m, n) = n.+1 * 'H(m.+1, n).
+  Admitted.
+  
+
+  (* n の帰納法で証明する。 *)
+  Lemma msc_fact m n : 'H(m.+1, n) * m`! * n`! = (m + n)`!.
+  Proof.
+    elim: n.
+    - rewrite add0n.
+      rewrite fact0 muln1.
+      rewrite msc1n mul1n.
+      done.
+    - move=> n IHn.
+      elim: m IHn => m.
+      + rewrite msc0 mul1n.
+        rewrite fact0 muln1.
+        rewrite addn0.
+        done.
+      + move=> IHn IHm.
+        (*  *)
+        rewrite mscS 2!mulnDl.
+        rewrite {1}factS.
+        rewrite -['H(n.+1, m.+1) * (n.+1 * n`!) * (m.+1)`!]mulnA.
+        rewrite -[n.+1 * n`! * (m.+1)`!]mulnA.
+        rewrite [n.+1 * _]mulnC.
+        rewrite ['H(n.+1, m.+1) * (n`! * (m.+1)`! * n.+1)]mulnA.
+        rewrite ['H(n.+1, m.+1) * (n`! * (m.+1)`!)]mulnA.
+        rewrite IHm.
+
+        rewrite [(m.+1)`!]factS.
+        rewrite -['H(n.+2, m) * (n.+1)`! * (m.+1 * m`!)]mulnA.
+        rewrite [m.+1 * _]mulnC.
+        rewrite ['H(n.+2, m) * ((n.+1)`! * (m`! * m.+1))]mulnA.
+        rewrite ['H(n.+2, m) * (n.+1)`! * (m`! * m.+1)]mulnA.
+        rewrite IHn.
+
+        * admit.                            (* 簡単 *)
+        * admit.                            (* 最初のゴール *)
+  Admitted.
+  
+
+  lemma test (m : nat) : m != 0 -> m.-1 < m.
+  Proof.
+  Admitted.
+
+  Compute 'H(4, 3) * 3`!.                   (* 120 *)
+  Compute (4 + 3 - 1) ^_ 3.                 (* 120 *)
+  
+  Lemma msc_ffact (n m : nat) : 'H(n, m) * m`! = (n + m - 1) ^_ m.
+  Proof.
+    elim: n => [| n IHn].
+    - rewrite add0n.
+      rewrite msc0n.
+      case: m => [| m].
+      + rewrite mul1n.
+        rewrite subn1 PeanoNat.Nat.pred_0.
+        rewrite fact0 ffact0n.
+        done.
+      + rewrite ffact_small; first by done.
+        rewrite subn1.
+        rewrite test; first by done.
+        done.
+    - elim: m IHn => [| m IHn IHm].
+      + rewrite msc0 mul1n.
+        rewrite fact0.
+        rewrite addn0.
+        rewrite !ffactn0.
+        done.
+      + rewrite mscS.
+        rewrite mulnDl.
+        rewrite IHm.
+
+        rewrite factS.
+        rewrite [m.+1 * m`!]mulnC.
+        rewrite mulnA.
+        rewrite IHn.
+        * admit.
+(*
+      rewrite mulnC.
+      rewrite mulnA.
+      
+      Search _ ((_ .+1) `!).
+
+      re
+
+      rewrite factS.
+      rewrite ffactnS.
+
+
+      rewrite -mulnCA.
+      rewrite mulnDl.
+      rewrite IHn.
+      (* rewrite IHm. *)
+*)
+  Admitted.
+  
   Lemma msc_ffactd n m : 'H(n, m) = (n  + m - 1) ^_ m %/ m`!.
   Proof. by rewrite -msc_ffact mulnK ?fact_gt0. Qed.
   
@@ -139,6 +382,15 @@ Qed.
   
   Compute 'H(3, 2).                         (* 6 *)
   Compute 'C(4, 2).                         (* 6 *)
+  
+  Compute 'H(5, 3).                         (* 6 *)
+  Compute 'C(7, 3).                         (* 6 *)
+
+  Compute 'H(2, 1).                         (* 2 *)
+  Compute 'C(2, 1).                         (* 2 *)
+  
+  Compute 'H(1, 0).                         (* 2 *)
+  Compute 'C(0, 0).                         (* 2 *)
   
   Goal forall (n m : nat), 'H(n.+1, m) = 'C(n + m, m).
   Proof.
@@ -151,6 +403,49 @@ Qed.
   (* 帰納法による直接証明。途中 *)
   Goal forall (n m : nat), 'H(n.+1, m) = 'C(n + m, m).
   Proof.
+(*
+    move=> n m.
+    elim: m => [| m IHm].
+    - by rewrite msc0 bin0.
+    - elim: n.+1 IHm => [IHm | n' IHn IHm].
+      + rewrite msc0n.
+        rewrite addnS binS.
+        rewrite -IHm.
+        rewrite msc0n.
+        admit.
+      + rewrite mscS.
+        rewrite [n + m.+1]addnS binS.
+        rewrite IHm.
+        f_equal.
+        
+
+      Search _ ('H(0, _)).
+*)
+
+
+    move=> n m.
+    elim: m => [| m IHm].
+    - by rewrite msc0 bin0.
+    - elim: n IHm => [IHm | n IHn IHm].
+      + rewrite add0n in IHm.
+        rewrite add0n.
+        rewrite binS.
+        rewrite mscS.
+        rewrite IHm.
+        f_equal.
+        Compute 'H(0, 1).                   (* 0 *)
+        Compute 'C(1, 2).                   (* 0 *)
+        admit.                              (* 両辺とも 0 *)
+      + rewrite mscS.
+        rewrite [n.+1 + m.+1]addnC addnS binS.
+        rewrite IHm.
+        f_equal.
+        rewrite IHn.
+        * admit.                            (* 簡単 *)
+        * admit.                            (* ゴールとおなじ！ *)
+        * admit.                            (* 簡単 *)
+(*
+
     move=> n m.
     elim : m.
     - by rewrite msc0 bin0.
@@ -158,6 +453,7 @@ Qed.
       rewrite addnS binS mscS IHm.
       congr (_ + _).
       (* 'H(n, m.+1) = 'C(n + m, m.+1) *)
+*)
   Admitted.
 
 End MC.
