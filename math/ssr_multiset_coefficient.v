@@ -218,6 +218,7 @@ Section MC.
       done.
   Qed.
   
+  (* こんな補題くらいは、証明されていないのだろうか？ *)
   Compute 0`! * 0`! %| (0 + 0)`!.   (* true *)
   Compute 1`! * 0`! %| (1 + 0)`!.   (* true *)
   Compute 1`! * 1`! %| (1 + 1)`!.   (* true *)
@@ -225,32 +226,13 @@ Section MC.
   Compute 2`! * 2`! %| (2 + 2)`!.   (* true *)
   Compute 3`! * 1`! %| (3 + 1)`!.   (* true *)
   
-  Lemma test' (n m : nat) : n`! * m`! %| (n + m)`!.
+  (* この証明に、msc を使うのが味噌である。 *)
+  Lemma fact_mul__fact_add (n m : nat) : n`! * m`! %| (n + m)`!.
   Proof.
     rewrite -msc_fact.
     rewrite -[n`! * m`!]mul1n.
     rewrite -['H(n.+1, m) * n`! * m`!]mulnA.
-    apply: dvdn_mul.
-    - done.
-    - done.
-  Qed.
-  
-  Lemma test (n m : nat) :
-    ((n.+1 + m)`! %/ (n.+1`! * m`!)) * m`! = (n.+1 + m)`! %/ (n.+1 + m - m)`!.
-  Proof.
-    Search _ (_ %/ _ * _).
-    rewrite divn_mulAC.                     (* ******* *)
-    - Search _ ((_ * _) %/ (_ * _)).    
-      rewrite divnMr.
-      + Search _ (_ + _ - _).
-        rewrite -addnBA.
-        * Search _ (_ - _ = 0).
-            by rewrite subnn addn0.         (* subnn n : n - n = 0 *)
-        * done.
-      + Search _ (0 < _`!).
-          by rewrite fact_gt0.
-    - Search _ (_.+1`!).
-        by rewrite test'.
+      by apply: dvdn_mul.
   Qed.
   
   Lemma msc_ffact (n m : nat) : 'H(n.+1, m) * m`! = (n + m) ^_ m.
@@ -261,8 +243,12 @@ Section MC.
       done.
     - rewrite ffact_factd.
       + rewrite msc_factd.
-        rewrite test.
-        done.
+        rewrite divn_mulAC.
+        * rewrite divnMr.
+          ** rewrite -addnBA; last done.
+               by rewrite subnn addn0.    (* subnn n : n - n = 0 *)
+          ** by rewrite fact_gt0.
+        * by rewrite fact_mul__fact_add.
       + by ssromega.
   Qed.
   
