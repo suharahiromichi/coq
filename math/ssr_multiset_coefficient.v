@@ -67,8 +67,6 @@ Section MC.
   Check bin_ffactd : forall (n m : nat), 'C(n, m) = n ^_ m %/ m`!.
   
   (* multset coefficient から msc とする。mul だと衝突するため。 *)
-  Lemma mscE : multiset = multiset_rec.
-  Proof. by []. Qed.
   
   Lemma msc0 (n : nat) : 'H(n, 0) = 1.
   Proof. by case: n. Qed.
@@ -208,25 +206,37 @@ Section MC.
       done.
   Qed.
   
-  (* 条件が必要かも *)
   Lemma msc_factd (n m : nat) : 'H(n.+1, m) = (n + m)`! %/ (n`! * m`!).
   Proof.
-    Proof.
-      rewrite -msc_fact.
-      rewrite -mulnA.
-      Search _ ((_ * _) %/ _).
-      rewrite mulnK.
-      + done.
-      + rewrite muln_gt0.
-        rewrite 2!fact_gt0.
-        done.
-    Qed.
-    
-  Compute 'H(4, 3) * 3`!.                   (* 120 *)
-  Compute (4 + 3 - 1) ^_ 3.                 (* 120 *)
-
+    rewrite -msc_fact.
+    rewrite -mulnA.
+    Search _ ((_ * _) %/ _).
+    rewrite mulnK.
+    + done.
+    + rewrite muln_gt0.
+      rewrite 2!fact_gt0.
+      done.
+  Qed.
+  
+  Compute 0`! * 0`! %| (0 + 0)`!.   (* true *)
+  Compute 1`! * 0`! %| (1 + 0)`!.   (* true *)
+  Compute 1`! * 1`! %| (1 + 1)`!.   (* true *)
+  Compute 2`! * 1`! %| (2 + 1)`!.   (* true *)
+  Compute 2`! * 2`! %| (2 + 2)`!.   (* true *)
+  Compute 3`! * 1`! %| (3 + 1)`!.   (* true *)
+  
+  Lemma test' (n m : nat) : n`! * m`! %| (n + m)`!.
+  Proof.
+    rewrite -msc_fact.
+    rewrite -[n`! * m`!]mul1n.
+    rewrite -['H(n.+1, m) * n`! * m`!]mulnA.
+    apply: dvdn_mul.
+    - done.
+    - done.
+  Qed.
+  
   Lemma test (n m : nat) :
-    ((n + m)`! %/ (n`! * m`!)) * m`! = (n + m)`! %/ (n + m - m)`!.
+    ((n.+1 + m)`! %/ (n.+1`! * m`!)) * m`! = (n.+1 + m)`! %/ (n.+1 + m - m)`!.
   Proof.
     Search _ (_ %/ _ * _).
     rewrite divn_mulAC.                     (* ******* *)
@@ -239,30 +249,24 @@ Section MC.
         * done.
       + Search _ (0 < _`!).
           by rewrite fact_gt0.
-    - (* n`! * m`! %| (n + m)`! *)
-  Admitted.                                 (* ******* *)
+    - Search _ (_.+1`!).
+        by rewrite test'.
+  Qed.
   
-  Lemma msc_ffact (n m : nat) : 'H(n, m) * m`! = (n + m - 1) ^_ m.
+  Lemma msc_ffact (n m : nat) : 'H(n.+1, m) * m`! = (n + m) ^_ m.
   Proof.
     case: n => [| n].
-    - rewrite add0n.
-      rewrite msc0n.
-      case: m => [| m].
-      + rewrite mul1n.
-        rewrite subn1 PeanoNat.Nat.pred_0.  (* 0.-1 = 0 *)
-        rewrite fact0 ffact0n.
-        done.
-      + rewrite ffact_small; first by done.
-        rewrite subn1.
-        ssromega.
+    - rewrite msc1n mul1n.
+      rewrite add0n ffactnn.
+      done.
     - rewrite ffact_factd.
       + rewrite msc_factd.
-        rewrite addSn subn1 -pred_Sn.
-          by rewrite test.
+        rewrite test.
+        done.
       + by ssromega.
   Qed.
   
-  Lemma msc_ffactd n m : 'H(n, m) = (n  + m - 1) ^_ m %/ m`!.
+  Lemma msc_ffactd n m : 'H(n.+1, m) = (n + m) ^_ m %/ m`!.
   Proof.
       by rewrite -msc_ffact mulnK ?fact_gt0.
   Qed.
@@ -291,13 +295,14 @@ Section MC.
   Proof.
     rewrite bin_ffactd.
     rewrite msc_ffactd.
-      by rewrite addSn subn1 -pred_Sn.
+    done.
   Qed.
   
   (* ******************* *)
   (* 帰納法による直接証明 *)
   (* ******************* *)
   
+  (* m -> n の順番 *)
   Lemma multiset_binominal' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
     elim: m n => [n | m IHm n].
@@ -325,7 +330,28 @@ Section MC.
           by rewrite IHm.
         * by rewrite 2!addSn addnC.
   Qed.
-
+  
+  (* n -> m の順番 *)
+  Lemma multiset_binominal'' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
+  Proof.
+    elim: n m => [m |n IHn m].
+    - by rewrite msc1n add0n binn.
+    - elim: m IHn => [IHn | m IHm IHn].
+      + by rewrite msc0 bin0.
+      + rewrite mscS.
+        rewrite [n.+1 + m.+1]addnC addnS binS.
+        rewrite IHm => [| m'].
+        * rewrite [n.+1 + m]addSn.
+          rewrite [m.+1 + n]addSn.
+          rewrite [m + n]addnC.
+          f_equal.
+          rewrite IHn.
+          rewrite [n + m.+1]addnS.
+          done.
+        * rewrite IHn.
+          done.
+  Qed.
+  
 End MC.
 
 (* END *)
