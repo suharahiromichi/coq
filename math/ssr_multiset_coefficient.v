@@ -24,29 +24,30 @@ Section MC.
   Fail Fixpoint multiset_rec n m : nat :=
     match n, m with
     | n'.+1, m'.+1 => multiset_rec n' m + multiset_rec n m'
-    | _, 0 => 1
-    | 0, _.+1 => 0
+    | _.+1, 0 => 1
+    | (_, 0) => 1                           (* H(0, 0) = 1 になる。 *)
+    | (0, _.+1) => 0 
     end.
   
   (* nat と nat ペアの合計 *)
-  Definition ptotal (p : nat * nat) : nat :=
+  Definition sum (p : nat * nat) : nat :=
     match p with
     | (n, m) => n + m
     end.
 
-  Function multiset_rec p {measure ptotal p} : nat :=
+  Function multiset_rec p {measure sum p} : nat :=
     match p with
     | (n'.+1 as n, m'.+1 as m)  => multiset_rec (n', m) + multiset_rec (n, m')
-    | (_, 0) => 1
-    | (0, _.+1) => 0                        (* (0, _) でもよい。 *)
+    | (_, 0) => 1                           (* H(0, 0) = 1 になる。 *)
+    | (0, _.+1) => 0 
     end.
   Proof.
     - move=> p n m n' _ m' _ _.
-      rewrite /ptotal.
+      rewrite /sum.
       apply/ltP.
         by rewrite [n'.+1 + m'.+1]addnS.
     - move=> p n m n' _ m' _ _.
-      rewrite /ptotal.
+      rewrite /sum.
       apply/ltP.
         by rewrite [n'.+1 + m'.+1]addSn.
   Defined.
@@ -122,11 +123,8 @@ Section MC.
 
   (* **** *)
 
-  Compute 'H(0, 0).                         (* 1 *)
-  Compute (0  + 0 - 1) ^_ 0 %/ 0`!.         (* 0 *)
-
-  Compute 'H(0, 1).                         (**0**)
-  Compute (0  + 1 - 1) ^_ 1 %/ 1`!.         (* 0 *)
+  Compute 'H(0, 0).                         (**1**) (* 漸化式では使わない。 *)
+  Compute 'H(0, 1).                         (* 0 *)
   
   Compute 'H(1, 0).                         (* 1 *)
   Compute 'H(1, 1).                         (* 1 *)
@@ -167,51 +165,51 @@ Section MC.
   Compute 3 * 'H(3.+1, 2).                  (* 30 *)
   Compute 2.+1 * 'H(3, 2.+1).               (* 30 *)
   
-  Lemma mul_msc_diag m n : m * 'H(m.+1, n) = n.+1 * 'H(m, n.+1).
+  Lemma mul_msc_diag n m : n * 'H(n.+1, m) = m.+1 * 'H(n, m.+1).
   Proof.
-    elim: m n.
-    - move=> n.
+    elim: n m.
+    - move=> m.
       by rewrite mul0n msc0n /= muln0.
-    - move=> m IHm n.
-      elim: n m IHm.
-      + move=> m IHm.
+    - move=> n IHn m.
+      elim: m n IHn.
+      + move=> n IHn.
           by rewrite msc0 muln1 msc1 mul1n.
-      + move=> n IHn m IHm.
-        rewrite mscS mulnDr IHn.
-        * rewrite ['H(m.+1, n.+2)]mscS mulnDr -IHm.
+      + move=> m IHm n IHn.
+        rewrite mscS mulnDr IHm.
+        * rewrite ['H(n.+1, m.+2)]mscS mulnDr -IHn.
           rewrite -!mulnDl.
           congr (_ * _).
           ssromega.
         * done.
   Qed.
   
-  (* n の帰納法 *)
-  Lemma msc_fact m n : 'H(m.+1, n) * m`! * n`! = (m + n)`!.
+  (* m の帰納法 *)
+  Lemma msc_fact n m : 'H(n.+1, m) * n`! * m`! = (n + m)`!.
   Proof.
-    elim: n m.
-    - move=> m.
+    elim: m n.
+    - move=> n.
       rewrite msc0 mul1n.
       rewrite fact0 muln1.
       rewrite addn0.
       done.
-    - move=> n IHn m.
-      rewrite [(n.+1)`!]factS.
+    - move=> m IHm n.
+      rewrite [(m.+1)`!]factS.
       rewrite !mulnA.
-      rewrite [_ * n.+1]mulnC.
+      rewrite [_ * m.+1]mulnC.
       rewrite !mulnA.
       rewrite -mul_msc_diag.
       
-      rewrite [_ * m`!]mulnC mulnA.
-      rewrite [m`! * m.+1]mulnC -factS.
-      rewrite [(m.+1)`! * 'H(m.+2, n)]mulnC.
-      rewrite IHn.
+      rewrite [_ * n`!]mulnC mulnA.
+      rewrite [n`! * n.+1]mulnC -factS.
+      rewrite [(n.+1)`! * 'H(n.+2, m)]mulnC.
+      rewrite IHm.
       
       rewrite addSnnS addnS.
       done.
   Qed.
   
   (* 条件が必要かも *)
-  Lemma msc_factd m n : 'H(m.+1, n) = (m + n)`! %/ (m`! * n`!).
+  Lemma msc_factd (n m : nat) : 'H(n.+1, m) = (n + m)`! %/ (n`! * m`!).
   Proof.
     Proof.
       rewrite -msc_fact.
