@@ -24,9 +24,8 @@ Section MC.
   Fail Fixpoint multiset_rec n m : nat :=
     match n, m with
     | n'.+1, m'.+1 => multiset_rec n' m + multiset_rec n m'
-    | _.+1, 0 => 1
-    | (_, 0) => 1                           (* H(0, 0) = 1 になる。 *)
-    | (0, _.+1) => 0 
+    | _, 0 => 1                           (* H(0, 0) = 1 になる。 *)
+    | 0, _.+1 => 0 
     end.
   
   (* nat と nat ペアの合計 *)
@@ -227,7 +226,7 @@ Section MC.
   Compute 3`! * 1`! %| (3 + 1)`!.   (* true *)
   
   (* この証明に、msc を使うのが味噌である。 *)
-  Lemma fact_mul__fact_add (n m : nat) : n`! * m`! %| (n + m)`!.
+  Lemma divn_fact_mul_add_fact (n m : nat) : n`! * m`! %| (n + m)`!.
   Proof.
     rewrite -msc_fact.
     rewrite -[n`! * m`!]mul1n.
@@ -248,7 +247,7 @@ Section MC.
           ** rewrite -addnBA; last done.
                by rewrite subnn addn0.    (* subnn n : n - n = 0 *)
           ** by rewrite fact_gt0.
-        * by rewrite fact_mul__fact_add.
+        * by rewrite divn_fact_mul_add_fact.
       + by ssromega.
   Qed.
   
