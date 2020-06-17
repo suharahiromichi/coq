@@ -234,6 +234,18 @@ Section MC.
       by apply: dvdn_mul.
   Qed.
   
+  (* bin を使っても証明できる。こちらのほうがよいかもしれない。 *)
+  Lemma divn_fact_mul_add_fact' (n m : nat) : n`! * m`! %| (n + m)`!.
+  Proof.
+    have H : 'C(n + m, m) * (n`! * m`!) = (n + m)`!.
+    - rewrite -(@bin_fact (n + m) m); last by rewrite leq_addl.
+      rewrite -[n + m - m]addnBA; last by rewrite leqnn.
+        by rewrite subnn addn0 [m`! * n`!]mulnC.
+    - rewrite -H.
+      rewrite -{1}[n`! * m`!]mul1n.
+        by apply: dvdn_mul.
+  Qed.  
+  
   Lemma msc_ffact (n m : nat) : 'H(n.+1, m) * m`! = (n + m) ^_ m.
   Proof.
     case: n => [| n].
