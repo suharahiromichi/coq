@@ -30,7 +30,7 @@ Section RFACT.
 
   Lemma rfactSS n m : n * n.+1 ^^ m.+1 = n ^^ m * (n + m) * (n + m + 1).
   Proof.
-    elim: m n => [n | m IHm n].
+    elim: m n => [| m IHm] n.
     - rewrite rfactn0 mul1n addn0 addn1.
       rewrite rfactn1.
       done.
@@ -42,17 +42,14 @@ Section RFACT.
   
   Lemma rfactnSr n m : n ^^ m.+1 = n ^^ m * (n + m).
   Proof.
-    elim: m n => [n | m IHm n].
+    elim: m n => [|m IHm] n.
     - rewrite rfactn1.
         by rewrite rfactn0 mul1n addn0.
-    - rewrite IHm.
-      rewrite rfactnS.
+    - rewrite rfactnS.
       rewrite IHm.
-      rewrite !mulnA.
-      f_equal; last ssromega.
-      rewrite -IHm.
+      rewrite mulnA.
       rewrite rfactnS.
-      done.
+        by rewrite addSn addnS.
   Qed.
   
   Compute 0 ^^ 0.                           (* 1 *)
@@ -96,7 +93,15 @@ Section RFACT.
   
   Lemma rfact_fact n m : n`! * n.+1 ^^ m = (n + m)`!.
   Proof.
-  Admitted.
+    elim: m n => [| m IHn] n.
+    - by rewrite rfactn0 muln1 addn0.
+    - rewrite rfactnS.
+      have -> : n + m.+1 = n.+1 + m by ssromega.
+      rewrite -IHn.
+      rewrite !mulnA.
+      rewrite factS [n.+1 * n`!]mulnC.
+      done.
+  Qed.
   
   Compute 0.+1 ^^ 0 = (0 + 0)`! %/ 0`!.     (* 0 0 *)
   Compute 1.+1 ^^ 0 = (1 + 0)`! %/ 1`!.     (* 1 0 *)
@@ -106,8 +111,10 @@ Section RFACT.
   
   Lemma rfact_factd n m : n.+1 ^^ m = (n + m)`! %/ n`!.
   Proof.
-  Admitted.
-
+    rewrite -rfact_fact.
+    rewrite mulnC mulnK; first done.
+      by rewrite fact_gt0.
+  Qed.
 End RFACT.
 
 (* END *)
