@@ -115,6 +115,27 @@ Section RFACT.
     rewrite mulnC mulnK; first done.
       by rewrite fact_gt0.
   Qed.
+  
+  (* ***************** *)
+  (* 証明したかったもの *)
+  (* ***************** *)
+  
+  Lemma rfact_ffact n m : n.+1 ^^ m = (n + m) ^_ m.
+  Proof.
+    elim: m n => [| m IHm] n.
+    - by rewrite ffactn0 rfactn0.
+    - rewrite rfactnS.
+      rewrite ffactnS.
+      have -> : (n + m.+1).-1 = n + m by ssromega.
+      rewrite -IHm.
+      rewrite -rfactnS.
+      rewrite [RHS]mulnC.
+      have -> : n + m.+1 = m.+1 + n by ssromega.
+      rewrite rfactnSr.
+      rewrite !addSn [m + n]addnC.
+      done.
+  Qed.
+  
 End RFACT.
 
 (* END *)
