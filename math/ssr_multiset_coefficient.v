@@ -216,7 +216,7 @@ Section LEMMAS.
   (* 求めたかったもの *)
   (* **************** *)
   
-  Lemma multiset_binominal (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
+  Lemma multiset_binomial (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
     rewrite bin_ffactd.
     rewrite msc_ffactd.
@@ -228,7 +228,7 @@ Section LEMMAS.
   (* ******************* *)
   
   (* m -> n の順番 *)
-  Lemma multiset_binominal' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
+  Lemma multiset_binomial' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
     elim: m n => [n | m IHm n].
     - by rewrite msc0 bin0.
@@ -257,7 +257,7 @@ Section LEMMAS.
   Qed.
   
   (* n -> m の順番 *)
-  Lemma multiset_binominal'' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
+  Lemma multiset_binomial'' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
     elim: n m => [m |n IHn m].
     - by rewrite msc1n add0n binn.
