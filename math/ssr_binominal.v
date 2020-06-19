@@ -119,7 +119,7 @@ Section Bin.
   Check rfactnn : forall n : nat, 1 ^^ n = n`!.
   Check rfact_fact : forall n m : nat, n`! * n.+1 ^^ m = (n + m)`!.
   Check rfact_factd : forall n m : nat, n.+1 ^^ m = (n + m)`! %/ n`!.
-
+  
   Check rfact_ffact : forall n m : nat, n.+1 ^^ m = (n + m) ^_ m.
 
   (* **** *)
@@ -154,6 +154,8 @@ Section Bin.
 
   Check multiset_binominal : forall n m : nat, 'H(n.+1, m) = 'C(n + m, m).
   
+  Check msc_rfact : forall n m : nat, 'H(n, m) * m`! = n ^^ m.
+  Check msc_rfactd : forall n m : nat, 'H(n, m) = n ^^ m %/ m`!.
 End Bin.
 
 (* END *)
