@@ -5,8 +5,6 @@ Require Import Wf_nat.                      (* wf *)
 Require Import Program.Wf.                  (* Program wf *)
 (* Import Program とすると、リストなど余計なものがついてくるので、Wfだけにする。 *)
 
-Require Import Extraction.
-
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -17,7 +15,7 @@ Unset Printing Implicit Defensive.
 
 https://ja.wikipedia.org/wiki/重複組合せ
 *)
-Section MC.
+Section DEFINE.
 
   Definition ltnn (p : nat * nat) : Prop := True.
 
@@ -52,19 +50,14 @@ Section MC.
   Defined.
 
   Definition multiset := nosimpl multiset_rec.
+
+End DEFINE.
   
-  (* Homogeneous Product *)
-  Notation "''H' ( n , m )" := (multiset (n, m))
-  (at level 8, format "''H' ( n ,  m )") : nat_scope.
+(* Homogeneous Product *)
+Notation "''H' ( n , m )" := (multiset (n, m))
+(at level 8, format "''H' ( n ,  m )") : nat_scope.
   
-  Check bin0 : forall n : nat, 'C(n, 0) = 1.
-  Check bin0n : forall m : nat, 'C(0, m) = (m == 0).
-  Check binS : forall n m : nat, 'C(n.+1, m.+1) = 'C(n, m.+1) + 'C(n, m).
-  Check bin1 : forall n : nat, 'C(n, 1) = n.
-  Check bin_fact : forall n m : nat, m <= n -> 'C(n, m) * (m`! * (n - m)`!) = n`!.
-  Check bin_ffact : forall (n m : nat), 'C(n, m) * m`! = n ^_ m.
-  Check bin_ffactd : forall (n m : nat), 'C(n, m) = n ^_ m %/ m`!.
-  
+Section LEMMAS.
   (* multset coefficient から msc とする。mul だと衝突するため。 *)
   
   Lemma msc0 (n : nat) : 'H(n, 0) = 1.
@@ -93,70 +86,6 @@ Section MC.
     done.
   Qed.
   
-  Compute 'C(0, 0).                         (* 1 *)
-  Compute 'C(0, 1).                         (**0**)
-  
-  Compute 'C(1, 0).                         (* 1 *)
-  Compute 'C(1, 1).                         (* 1 *)
-  Compute 'C(1, 2).                         (**0**)
-  
-  Compute 'C(2, 0).                         (* 1 *)
-  Compute 'C(2, 1).                         (* 2 *)
-  Compute 'C(2, 2).                         (* 1 *)
-  Compute 'C(2, 3).                         (**0**)
-
-  Compute 'C(3, 0).                         (* 1 *)
-  Compute 'C(3, 1).                         (* 3 *)
-  Compute 'C(3, 2).                         (* 3 *)
-  Compute 'C(3, 3).                         (* 1 *)
-  Compute 'C(3, 4).                         (**0**)
-  
-  Compute 'C(4, 0).                         (* 1 *)
-  Compute 'C(4, 1).                         (* 4 *)
-  Compute 'C(4, 2).                         (* 6 *)
-  Compute 'C(4, 3).                         (* 4 *)
-  Compute 'C(4, 4).                         (* 1 *)
-  Compute 'C(4, 5).                         (**0**)
-
-  (* **** *)
-
-  Compute 'H(0, 0).                         (**1**) (* 漸化式では使わない。 *)
-  Compute 'H(0, 1).                         (* 0 *)
-  
-  Compute 'H(1, 0).                         (* 1 *)
-  Compute 'H(1, 1).                         (* 1 *)
-  Compute 'H(1, 2).                         (* 1 *)
-  
-  Compute 'H(2, 0).                         (* 1 *)
-  Compute 'H(2, 1).                         (* 2 *)
-  Compute 'H(2, 2).                         (* 3 *)
-  Compute 'H(2, 3).                         (* 4 *)
-  Compute 'H(2, 4).                         (* 5 *)
-  Compute 'H(2, 5).                         (* 6 *)
-  Compute 'H(2, 6).                         (* 7 *)
-  Compute 'H(2, 7).                         (* 8 *)
-  Compute 'H(2, 8).                         (* 9 *)
-
-  Compute 'H(3, 0).                         (* 1 *)
-  Compute 'H(3, 1).                         (* 3 *)
-  Compute 'H(3, 2).                         (* 6 *)
-  Compute 'H(3, 3).                         (* 10 *)
-  Compute 'H(3, 4).                         (* 15 *)
-  Compute 'H(3, 5).                         (* 21 *)
-  Compute 'H(3, 6).                         (* 28 *)
-  Compute 'H(3, 7).                         (* 36 *)
-  Compute 'H(3, 8).                         (* 45 *)
-  
-  Compute 'H(4, 0).                         (* 1 *)
-  Compute 'H(4, 1).                         (* 4 *)
-  Compute 'H(4, 2).                         (* 10 *)
-  Compute 'H(4, 3).                         (* 20 *)
-  Compute 'H(4, 4).                         (* 35 *)
-  Compute 'H(4, 5).                         (* 56 *)
-  Compute 'H(4, 6).                         (* 84 *)
-  Compute 'H(4, 7).                         (* 120 *)
-  Compute 'H(4, 8).                         (* 165 *)
-
 (** ### *)
 
   Compute 3 * 'H(3.+1, 2).                  (* 30 *)
@@ -225,7 +154,6 @@ Section MC.
   Compute 2`! * 2`! %| (2 + 2)`!.   (* true *)
   Compute 3`! * 1`! %| (3 + 1)`!.   (* true *)
   
-  (* この証明に、msc を使うのが味噌である。 *)
   Lemma divn_fact_mul_add_fact (n m : nat) : n`! * m`! %| (n + m)`!.
   Proof.
     rewrite -msc_fact.
@@ -349,6 +277,6 @@ Section MC.
           done.
   Qed.
   
-End MC.
+End LEMMAS.
 
 (* END *)

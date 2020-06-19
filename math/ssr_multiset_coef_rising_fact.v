@@ -8,15 +8,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
-Notation "n ^^ m" := (rising_factorial n m)
-(at level 30, right associativity) : nat_scope.
-
-Notation "''H' ( n , m )" := (multiset (n, m))
-(at level 8, format "''H' ( n ,  m )") : nat_scope.
-
 Section RFACT_MC.
   
-  Lemma msc_small (m : nat) : 0 < m -> 'H(0, m) = 0.
+  Lemma msc_small (m : nat) : 0 < m -> 'H(0, m) = 0. (* notu *)
   Proof.
     by case: m.
   Qed.
@@ -42,11 +36,12 @@ Section RFACT_MC.
   Proof.
     move: n m => [[| m] | n m] .
     - done.                                 (* n,m = 0,0 *)
-    - rewrite msc_small; last done.         (* n,m = 0,m.+1 *)
+    - rewrite msc0n.                        (* n,m = 0,m.+1 *)
       rewrite rfact0n /=.
         by rewrite div0n.
     - by rewrite rfact_ffact msc_ffactd.    (* n,m = n.+1,m+1 *)
   Qed.
+
 End RFACT_MC.
 
 (* END *)

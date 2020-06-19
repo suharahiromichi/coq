@@ -7,16 +7,18 @@ Unset Printing Implicit Defensive.
 (* Set Print All. *)
 
 (**
-# Rising Factorial
-
+# Rising Factorial 上昇階乗冪
 *)
-Section RFACT.
+Section DEFINE.
   Fixpoint rfact_rec n m := if m is m'.+1 then n * rfact_rec n.+1 m' else 1.
   
   Definition rising_factorial := nosimpl rfact_rec.
+End DEFINE.
   
-  Notation "n ^^ m" := (rising_factorial n m)
-  (at level 30, right associativity) : nat_scope.
+Notation "n ^^ m" := (rising_factorial n m)
+(at level 30, right associativity).
+
+Section LEMMAS.
   
   Lemma rfactE : rising_factorial = rfact_rec. Proof. by []. Qed.
   
@@ -116,9 +118,9 @@ Section RFACT.
       by rewrite fact_gt0.
   Qed.
   
-  (* ***************** *)
-  (* 証明したかったもの *)
-  (* ***************** *)
+  (* ****************************** *)
+  (* 上昇階乗冪 と 下降階乗冪 の関係 *)
+  (* ****************************** *)
   
   Lemma rfact_ffact n m : n.+1 ^^ m = (n + m) ^_ m.
   Proof.
@@ -136,6 +138,6 @@ Section RFACT.
       done.
   Qed.
   
-End RFACT.
+End LEMMAS.
 
 (* END *)
