@@ -152,7 +152,7 @@ Section Bin.
   Check msc_ffact : forall n m : nat, 'H(n.+1, m) * m`! = (n + m) ^_ m.
   Check msc_ffactd : forall n m : nat, 'H(n.+1, m) = (n + m) ^_ m %/ m`!.
 
-  Check multiset_binominal : forall n m : nat, 'H(n.+1, m) = 'C(n + m, m).
+  Check multiset_binomial : forall n m : nat, 'H(n.+1, m) = 'C(n + m, m).
   
   Check msc_rfact : forall n m : nat, 'H(n, m) * m`! = n ^^ m.
   Check msc_rfactd : forall n m : nat, 'H(n, m) = n ^^ m %/ m`!.
