@@ -223,7 +223,7 @@ Section Problem.
   
   Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
-    elim: k => [| k IHk] //.
+    elim: k => [| k IHk] //=.
     rewrite lemma_1.
     rewrite lemma_2.
     rewrite -[in RHS]IHk.
