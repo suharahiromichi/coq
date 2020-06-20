@@ -42,6 +42,56 @@ Section Fraction.
   Canonical fraction_countType := CountType fraction fraction_countMixin.
   Canonical fraction_subCountType := [subCountType of fraction].
 
+  Lemma gcdnlel m n : 0 < m -> gcdn m n <= m.
+  Proof.
+    move=> H.
+    Check dvdn_leq : forall d m : nat, 0 < m -> d %| m -> d <= m.
+    Check dvdn_gcdl : forall m n : nat, gcdn m n %| m.
+    apply: dvdn_leq => //.
+      by apply: dvdn_gcdl.
+  Qed.
+  
+  Lemma gcdnler m n : 0 < n -> gcdn m n <= n.
+  Proof.
+    move=> H.
+    Check dvdn_gcdr : forall m n : nat, gcdn m n %| n.
+    apply: dvdn_leq => //.
+      by apply: dvdn_gcdr.
+  Qed.
+  
+  Lemma ltn_gcdn x y : y != 0 -> 0 < y %/ (gcdn x y).
+  Proof.
+    move=> H.
+    rewrite divn_gt0.
+    - apply: gcdnler.
+        by rewrite lt0n.
+    - rewrite gcdn_gt0.
+      apply/orP/or_intror.
+        by rewrite lt0n.
+  Qed.
+
+  Lemma muln_c x c : 0 < c -> x * c = c -> x = 1.
+  Proof.
+    move=> H0c /eqP H.
+    apply/eqP.
+      by rewrite -(eqn_pmul2r H0c) mul1n.
+  Qed.
+  
+  Lemma coprime_gcdn m n : 0 < n -> forall d,
+      d = gcdn m n -> coprime (m %/ d) (n %/ d).
+  Proof.
+    move=> H0n d H.
+    rewrite /coprime.
+    apply/eqP.
+    have Hd : 0 < d by rewrite H gcdn_gt0; apply/orP/or_intror/H0n.
+    apply: (muln_c Hd).
+    rewrite (@muln_gcdl (m %/ d) (n %/d) d).
+    have Hm : gcdn m n %| m by rewrite dvdn_gcdl.
+    have Hn : gcdn m n %| n by rewrite dvdn_gcdr.
+    rewrite H (divnK Hm) (divnK Hn).
+    done.
+  Qed.
+
   Definition fraq_fact (m d : nat) :=
     if (d == 0) then (0, 1) else (m %/ (gcdn m d), d %/ (gcdn m d)).
   
@@ -54,9 +104,9 @@ Section Fraction.
     case: eqP => /eqP //= H.                (* H : d != 0 *)
     apply/andP.
     split.
-    - admit.
-    - admit.
-  Admitted.
+    - by rewrite ltn_gcdn.
+    - by rewrite coprime_gcdn // lt0n.
+  Qed.
   
   Definition fraq (x : (nat * nat)) := @Fraction(_, _) (fraq_subproof x).
   
@@ -88,17 +138,25 @@ Section Fraction.
   Qed.
   
   (* 通分・約分 *)
+  Compute fraq (1, 2) == fraq (2, 4).       (* true *)
+  
   Lemma num_den_fraq (p : fraction) : fraq (num p, den p) = p.
   Proof.
-    (* eqType として一致すること。 *)
+    case: p; case.
+    move=> a [|b] Ha //=.
+  (* eqType として一致すること。 *)
+  Admitted.
+  
+  Lemma num_fraq (n d : nat) : num (fraq (n, d)) = n %/ (gcdn n d).
+  Proof.
+    rewrite /fraq /fraq_fact /num /=.
+    case: d => //=.
   Admitted.
 
-  Lemma num_fraq (n d :  nat) : num (fraq (n, d)) = n %/ (gcdn n d).
+  Lemma den_fraq (n d : nat) : den (fraq (n, d)) = d %/ (gcdn n d).
   Proof.
-  Admitted.
-
-  Lemma den_fraq (n d :  nat) : den (fraq (n, d)) = d %/ (gcdn n d).
-  Proof.
+    rewrite /fraq /fraq_fact /den /=.
+    case: d => //=.
   Admitted.
 
   Lemma reduce_fraq_r (m n d : nat) : fraq (m * d, n * d) = fraq (m, n).
@@ -223,7 +281,7 @@ Section Problem.
   
   Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
-    elim: k => [| k IHk] //=.
+    elim: k => [| k IHk] //.
     rewrite lemma_1.
     rewrite lemma_2.
     rewrite -[in RHS]IHk.
