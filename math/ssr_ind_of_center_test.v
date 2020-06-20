@@ -177,18 +177,19 @@ End Fraction.
 
 Section Problem.
 
-  Function a (n : nat) {measure id n} : fraction :=
-    match n with
+  (* 【２】の式 (a_k の定義) *)
+  Function a (k : nat) {measure id k} : fraction :=
+    match k with
     | 0 => fraq (3, 1)
     | 1 => fraq (3, 1)
     | 2 => fraq (3, 1)
-    | n'.+3 => divq (addq (a n') (a n'.+1)) (a n'.+2)
+    | k'.+3 => divq (addq (a k') (a k'.+1)) (a k'.+2)
   end.
-  - move=> n3 n2 n1 n Hn1 Hn2 Hn3.
+  - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
       by ssromega.
-  - move=> n3 n2 n1 n Hn1 Hn2 Hn3.
+  - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
       by ssromega.
-  - move=> n3 n2 n1 n Hn1 Hn2 Hn3.
+  - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
       by ssromega.
   Defined.
 
@@ -201,34 +202,42 @@ Section Problem.
   Compute a 6.                              (* (3, 1) *)
   Compute a 7.                              (* (14, 9) *)
 
-  Definition b (n : nat) := a n.*2.
-  Definition c (n : nat) := a n.*2.+1.
+  Definition b (k : nat) := a k.*2.
+  Definition c (k : nat) := a k.*2.+1.
 
-  Lemma lemma_b (k : nat) : b k.+2 = divq (addq (c k) (b k.+1)) (c k.+1).
+  Lemma lemma_1 (k : nat) :                 (* 計算で得た式(1) *)
+    b k.+2 = divq (addq (c k) (b k.+1)) (c k.+1).
   Proof.
     rewrite /b !doubleS a_equation.
     rewrite /c doubleS.
     done.
   Qed.
   
-  Lemma lemma_c (k : nat) : c k.+1 = divq (addq (b k) (c k)) (b k.+1).
+  Lemma lemma_2 (k : nat) :                 (* 計算で得た式(2) *)
+    c k.+1 = divq (addq (b k) (c k)) (b k.+1).
   Proof.
     rewrite /c !doubleS a_equation.
     rewrite /b doubleS.
     done.
   Qed.
   
-  Goal forall k, b k = b k.+1.
+  Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
-    elim=> [| k IHk] //.
-    rewrite lemma_b.
-    rewrite lemma_c.
-    rewrite -[in addq (c k) (b k.+1)]IHk.
-    rewrite addqC.
+    elim: k => [| k IHk] //.
+    rewrite lemma_1.
+    rewrite lemma_2.
+    rewrite -[in RHS]IHk.
+    rewrite [addq (b k) (c k)]addqC.
     rewrite divKq.
     done.
   Qed.
-
+  
+  Goal forall k, b k = fraq (3, 1).         (* b の一般項 *)
+  Proof.
+    elim=> [| k IHk] //.
+      by rewrite -lemma_3.
+  Qed.
+  
 End Problem.
 
 (* END *)
