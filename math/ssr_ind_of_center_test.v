@@ -60,8 +60,8 @@ Section Fraction.
   
   Definition fraq (x : (nat * nat)) := @Fraction(_, _) (fraq_subproof x).
   
-  Definition num (z : fraction) : nat := (valq z).1.
-  Definition den (z : fraction) : nat := (valq z).2.
+  Definition num (p : fraction) : nat := (valq p).1.
+  Definition den (p : fraction) : nat := (valq p).2.
 
   Compute num (fraq (1, 2)).                (* 1 *)
   Compute den (fraq (1, 2)).                (* 2 *)
@@ -72,21 +72,23 @@ Section Fraction.
   
   (* 加算 *)
   
-  Definition addq (m n : fraction) : fraction :=
-    fraq ((num m) * (den n) + (num n) * (den m), den m * den n).
+  Definition addq (p q : fraction) : fraction :=
+    fraq ((num p) * (den q) + (den p) * (num q), den p * den q).
   
   Compute addq (fraq (2, 4)) (fraq (1, 2)). (* (1,1) *)
 
-  Lemma addqC (n m : fraction) : addq n m = addq m n.
+  Lemma addqC (p q : fraction) : addq p q = addq q p.
   Proof.
     rewrite /addq.
-    rewrite [den m * den n]mulnC.
-    rewrite [num m * den n + num n * den m]addnC.
+    rewrite [den q * den p]mulnC.
+    rewrite [num q * den p + den q * num p]addnC.
+    rewrite [den q * num p]mulnC.
+    rewrite [num q * den p]mulnC.
     done.
   Qed.
   
   (* 通分・約分 *)
-  Lemma num_den_fraq (n : fraction) : fraq (num n, den n) = n.
+  Lemma num_den_fraq (p : fraction) : fraq (num p, den p) = p.
   Proof.
     (* eqType として一致すること。 *)
   Admitted.
@@ -122,49 +124,49 @@ Section Fraction.
 
   (* 乗算・除算 *)
   
-  Definition mulq (m n : fraction) : fraction :=
-    fraq ((num m) * (num n), (den m) * (den n)).
+  Definition mulq (p q : fraction) : fraction :=
+    fraq (num p * num q, den p * den q).
 
   Compute mulq (fraq (4, 3)) (fraq (1, 2)). (* (2,3) *)
   
-  Definition divq (m n : fraction) : fraction :=
-    fraq ((num m) * (den n), (den m) * (num n)).
+  Definition divq (p q : fraction) : fraction :=
+    fraq (num p * den q, den p * num q).
 
   Compute divq (fraq (4, 3)) (fraq (2, 1)). (* (2,3) *)
-
-  Lemma divqA (m n p : fraction) : divq m (divq n p) = (divq (mulq m p) n).
+  
+  Lemma divqA (p q r : fraction) : divq p (divq q r) = (divq (mulq p r) q).
   Proof.
     rewrite /divq /mulq.
     rewrite !num_fraq !den_fraq.
-    rewrite [(num m * num p) %/ gcdn (num m * num p) (den m * den p) * den n]mulnC.
-    rewrite [(den m * den p) %/ gcdn (num m * num p) (den m * den p) * num n]mulnC.
     rewrite muln_divA; last by rewrite dvdn_gcdr.
     rewrite muln_divA; last by rewrite dvdn_gcdl.
+    rewrite [(num p * num r) %/ gcdn (num p * num r) (den p * den r) * den q]mulnC.
+    rewrite [(den p * den r) %/ gcdn (num p * num r) (den p * den r) * num q]mulnC.
     rewrite muln_divA; last by rewrite dvdn_gcdl.
     rewrite muln_divA; last by rewrite dvdn_gcdr.
     rewrite 2!reduced_fraq_r.
     rewrite !mulnA.
-    rewrite [den n * num m in RHS]mulnC.
-    rewrite [num n * den m in RHS]mulnC.
+    rewrite [den q * num p in RHS]mulnC.
+    rewrite [num q * den p in RHS]mulnC.
     done.
   Qed.
   
-  Lemma mulKq (m d : fraction) : divq (mulq d m) d = m.
+  Lemma mulKq (p q : fraction) : divq (mulq p q) p = q.
   Proof.
     rewrite /divq /mulq.
     rewrite num_fraq den_fraq.
-    rewrite [(num d * num m) %/ gcdn (num d * num m) (den d * den m) * den d]mulnC.
-    rewrite [(den d * den m) %/ gcdn (num d * num m) (den d * den m) * num d]mulnC.
+    rewrite [(num p * num q) %/ gcdn (num p * num q) (den p * den q) * den p]mulnC.
+    rewrite [(den p * den q) %/ gcdn (num p * num q) (den p * den q) * num p]mulnC.
     rewrite muln_divA; last by rewrite dvdn_gcdl.
     rewrite muln_divA; last by rewrite dvdn_gcdr.
     rewrite reduced_fraq_r.
     rewrite !mulnA.
-    rewrite [num d * den d]mulnC.
+    rewrite [den p * num p]mulnC.
     rewrite reduce_fraq_l.
       by rewrite num_den_fraq.
   Qed.
-
-  Lemma divKq (m n : fraction) : divq m (divq m n) = n.
+  
+  Lemma divKq (p q : fraction) : divq p (divq p q) = q.
   Proof.
     by rewrite divqA mulKq.
   Qed.
