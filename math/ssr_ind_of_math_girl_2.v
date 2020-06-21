@@ -84,9 +84,32 @@ Qed.
 
 Section Lemmas.
 
+  Lemma divqA (p q r : rat) : p / (q / r) = (p * r) / q.
+  Proof.
+    rewrite invrM.                 (* p * (r^-1^-1 / q) = p * r / q *)
+    - rewrite invrK.               (* p * (r / q) = p * r / q *)
+      rewrite -div1r.              (* p * (r * (1 / q)) = p * r * (1 / q) *)
+      rewrite !mulrA.
+      done.
+    - admit.                                (* q \is a GRing.unit *)
+    - admit.                                (* r^-1 \is a GRing.unit *)
+  Admitted.
+  
+  Lemma mulKq (p q : rat) : (p * q) / p = q.
+  Proof.
+    rewrite [p * q]mulrC.                   (* q * p / p = q *)
+    (* rewrite -div1r. *)
+    rewrite -mulrA.                         (* q * (p / p) = q *)
+    (* rewrite div1r. *)
+    rewrite divrr.                          (* q * 1 = q *)
+    - by rewrite mulr1.
+    - admit.                                (* p \is a GRing.unit *)
+  Admitted.
+  
   Lemma divKq (p q : rat) : p / (p / q) = q.
   Proof.
-  Admitted.
+    by rewrite divqA mulKq.
+  Qed.
 
 End Lemmas.
 
