@@ -84,32 +84,38 @@ Qed.
 
 Section Lemmas.
 
-  Lemma divqA (p q r : rat) : p / (q / r) = (p * r) / q.
+  Lemma divqA (p q r : rat) : 0 < q -> 0 < r -> p / (q / r) = (p * r) / q.
   Proof.
+    move=> Hq Hr.
     rewrite invrM.                 (* p * (r^-1^-1 / q) = p * r / q *)
     - rewrite invrK.               (* p * (r / q) = p * r / q *)
       rewrite -div1r.              (* p * (r * (1 / q)) = p * r * (1 / q) *)
       rewrite !mulrA.
       done.
-    - admit.                                (* q \is a GRing.unit *)
-    - admit.                                (* r^-1 \is a GRing.unit *)
-  Admitted.
+    - by apply: unitf_gt0.                  (* q \is a GRing.unit *)
+    - rewrite -invr_gt0 in Hr.             (* r^-1 \is a GRing.unit *)
+        by apply: unitf_gt0.
+  Qed.
   
-  Lemma mulKq (p q : rat) : (p * q) / p = q.
+  Lemma mulKq (p q : rat) : 0 < p -> (p * q) / p = q.
   Proof.
+    move=> Hp.
     rewrite [p * q]mulrC.                   (* q * p / p = q *)
     (* rewrite -div1r. *)
     rewrite -mulrA.                         (* q * (p / p) = q *)
     (* rewrite div1r. *)
     rewrite divrr.                          (* q * 1 = q *)
     - by rewrite mulr1.
-    - admit.                                (* p \is a GRing.unit *)
-  Admitted.
-  
-  Lemma divKq (p q : rat) : p / (p / q) = q.
-  Proof.
-    by rewrite divqA mulKq.
+    - by rewrite unitf_gt0.                 (* p \is a GRing.unit *)
   Qed.
+  
+  Lemma divKq (p q : rat) : 0 < p -> 0 < q -> p / (p / q) = q.
+  Proof.
+    move=> Hp Hq.
+    rewrite divqA; last done; last done.
+    rewrite mulKq; last done.
+    done.
+Qed.
 
 End Lemmas.
 
@@ -161,6 +167,54 @@ Section Problem.
     rewrite /b doubleS.
     done.
   Qed.
+
+  Lemma le0_eq0 (k : nat) : (k <= 0)%N = (k == 0)%N.
+  Proof.
+    rewrite leq_eqVlt ltn0 /=.
+    by rewrite orbF.
+  Qed.
+  
+  Lemma ak_gt_0 k : 0 < a k.
+  Proof.
+    elim: k {-2}k (leqnn k).                (* 完全帰納法のイデオム *)
+    - move=> k.
+      rewrite le0_eq0 => /eqP ->.
+      done.
+    - move=> n IHk.
+      case => //.
+      case => //.
+      case => // k' Hk.
+      rewrite a_equation.
+      rewrite divr_gt0 //.
+      + rewrite addr_gt0 //.
+        * apply: IHk.
+            by ssromega.
+        * apply: IHk.
+            by ssromega.
+      + apply: IHk.
+          by ssromega.
+  Qed.
+  
+  Lemma bk_gt_0 k : 0 < b k.
+  Proof.
+    rewrite /b.
+      by apply: ak_gt_0.
+  Qed.
+  
+  Lemma ck_gt_0 k : 0 < c k.
+  Proof.
+    rewrite /c.
+      by apply: ak_gt_0.
+(*
+    elim: k => //= k IHk.
+    rewrite lemma_2.
+    rewrite divr_gt0 //.
+    - apply: addr_gt0.
+      + by apply: bk_gt_0.
+      + done.
+    - by apply: bk_gt_0.
+*)
+  Qed.
   
   Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
@@ -170,7 +224,11 @@ Section Problem.
     rewrite -[in RHS]IHk.
     rewrite [b k + c k]addqC.
     rewrite [RHS]divKq.
-    done.
+    - done.
+    - apply: addr_gt0.
+      + by apply: ck_gt_0.
+      + by apply: bk_gt_0.
+    - by apply: bk_gt_0.
   Qed.
   
   Goal forall k, b k = ratz 3.              (* b の一般項 *)
