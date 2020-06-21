@@ -159,6 +159,19 @@ b_k を a_2k （偶数番）、c_k を a_2k+1 （奇数番）とする。
 
 Section Problem.
 
+(**
+## 数列 a_k の漸化式
+
+数列 a_k の漸化式 を Coq の関数で定義します。
+Coq はこの関数が止まることを自動判定できないので、
+Function コマンドを使い、k の値が減ることを明示します。
+
+すると、``k.+2 < k.+3`` と ``k.+1 < k.+3`` と ``k < k.+3`` 
+を証明することを求めてくるので、ssromega タクティク（文献 [5]）を使って証明します。
+なお、ここでは文献[5]のうちの sssromega の定義の部分だけを取り出してて、
+最初に ``Require Import ssromega`` で読み込んでします。
+*)
+
   (* 【２】の式 (a_k の定義) *)
   Function a (k : nat) {measure id k} : rat :=
     match k with
@@ -174,22 +187,27 @@ Section Problem.
   - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
       by ssromega.
   Defined.               (* 実際に計算できるように、Defined で終える。 *)
-
-(**
-実際に計算してみます。
-*)
-  Compute a 0.                              (* 3 *)
-  Compute a 1.                              (* 3 *)
-  Compute a 2.                              (* 3 *)
-  Compute a 3.                              (* 2 *)
-  Compute a 4.                              (* 3 *)
-  Compute a 5.                              (* 5/3 *)
-  Compute a 6.                              (* 3 *)
-  Compute a 7.                              (* 14/9 *)
-
+  
   Definition b (k : nat) : rat := a k.*2.
   Definition c (k : nat) : rat := a k.*2.+1.
+  
+(**
+実際に計算してみます。正しそうですね。
+*)
+  Compute a 0.                              (* b_0 = 3 *)
+  Compute a 1.                              (* c_0 = 3 *)
+  Compute a 2.                              (* b_1 = 3 *)
+  Compute a 3.                              (* c_1 = 2 *)
+  Compute a 4.                              (* b_2 = 3 *)
+  Compute a 5.                              (* c_2 = 5/3 *)
+  Compute a 6.                              (* b_3 = 3 *)
+  Compute a 7.                              (* c_3 = 14/9 *)
 
+(**
+## b_k+2 と c_k+1 の式
+
+誘導問題に従い、b_k+2 と c_k+1 の式を求めます。
+*)
   Lemma lemma_1 (k : nat) :                 (* 計算で得た式(1) *)
     b k.+2 = (c k + b k.+1) / c k.+1.
   Proof.
@@ -206,6 +224,9 @@ Section Problem.
     done.
   Qed.
 
+(**
+## a_k, b_k, c_k のそれぞれが ``> 0``
+*)  
   Lemma ak_gt_0 k : 0 < a k.
   Proof.
     elim: k {-2}k (leqnn k).                (* 完全帰納法のイデオム *)
@@ -237,7 +258,10 @@ Section Problem.
     rewrite /c.
       by apply: ak_gt_0.
   Qed.
-  
+
+(**
+## ``b_k = b_k+1``
+*)  
   Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
     elim: k => [| k IHk] //.
@@ -252,9 +276,12 @@ Section Problem.
     - by apply: bk_gt_0.
   Qed.
   
-  Goal forall k, b k = ratz 3.              (* b の一般項 *)
+(**
+## 求めたかったもの : ``b_k = 3``
+*)  
+  Theorem bk_3 (k : nat) : b k = ratz 3.    (* b の一般項 *)
   Proof.
-    elim=> [| k IHk] //.
+    elim: k => [| k IHk] //.
       by rewrite -lemma_3.
   Qed.
   
