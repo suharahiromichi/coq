@@ -98,9 +98,9 @@ Section Problem.
   (* 【２】の式 (a_k の定義) *)
   Function a (k : nat) {measure id k} : rat :=
     match k with
-    | 0 => fracq (3%:Z, 1%:Z)
-    | 1 => fracq (3%:Z, 1%:Z)
-    | 2 => fracq (3%:Z, 1%:Z)
+    | 0 => ratz 3                           (* fracq (3%:Z, 1%:Z) *)
+    | 1 => ratz 3                           (* fracq (3%:Z, 1%:Z) *)
+    | 2 => ratz 3                           (* fracq (3%:Z, 1%:Z) *)
     | k'.+3 => (a k' + a k'.+1) / a k'.+2
   end.
   - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
@@ -150,7 +150,7 @@ Section Problem.
     done.
   Qed.
   
-  Goal forall k, b k = fracq (3%:Z, 1).     (* b の一般項 *)
+  Goal forall k, b k = ratz 3.              (* b の一般項 *)
   Proof.
     elim=> [| k IHk] //.
       by rewrite -lemma_3.
