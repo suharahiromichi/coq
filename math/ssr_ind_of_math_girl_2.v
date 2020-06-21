@@ -157,7 +157,7 @@ b_k を a_2k （偶数番）、c_k を a_2k+1 （奇数番）とする。
 - b_k が 3 であることを証明する。
  *)
 
-Section Problem.
+Section Question.
 
 (**
 ## 数列 a_k の漸化式
@@ -305,7 +305,7 @@ divKq で書き換えることで、分母を払います。
   Qed.
   
 (**
-## 求めたかったもの : ``b_k = 3``
+## 求めたかったもの : b_k の一般項 ``b_k = 3``
 *)  
   Theorem bk_3 (k : nat) : b k = ratz 3.    (* b の一般項 *)
   Proof.
@@ -313,7 +313,7 @@ divKq で書き換えることで、分母を払います。
       by rewrite -lemma_3.
   Qed.
   
-End Problem.
+End Question.
 
 (**
 # 文献
@@ -330,6 +330,7 @@ End Problem.
 
 
 [3] 2013年大学入試センター試験 数学II・数学B 第3問、
+
 https://school.js88.com/sd_article/dai/dai_center_data/pdf/2013sugaku2B_q.pdf
 
 
@@ -337,14 +338,17 @@ https://school.js88.com/sd_article/dai/dai_center_data/pdf/2013sugaku2B_q.pdf
 
 
 [5] Mathematical Components Book、
+
 https://math-comp.github.io/mcb/
 
 
 [6] MathComp, ssralg.v,
+
 https://github.com/math-comp/math-comp/blob/master/mathcomp/algebra/ssralg.v
 
 
 [7] Affeldt Reynald, Library ssrnat_ext,
+
 https://staff.aist.go.jp/reynald.affeldt/coqdev/ssrnat_ext.html
 *)
 
