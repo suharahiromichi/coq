@@ -26,7 +26,7 @@ Coqのような定理証明器（定理証明支援システム）の得意と�
 
 - その補題を適用するときに、分子が零ではないことを示す必要があり、
 数列の項が ``> 0`` であることを（一般項を使わずに）証明する必要があった。
-このとき、完全帰納法 (complete induction) が必要になった。
+このとき、完全帰納法 (complete induction, strengthening induction) が必要になった。
 
 - 与えられた漸化式をCoqの関数で定義しようとすると、停止性の証明が必要となる。
 
@@ -66,15 +66,15 @@ Section Lemmas.
 
 ```p / (p / q) = q```
 
-であることを証明します。この補題を ``Coq/MathComp`` のルールにしたがって、
-``divKq`` と命名します。
+であることを証明します。分母を払うためのものですが、
+この補題を ``Coq/MathComp`` のルールにしたがって、``divKq`` と命名します。
 有理数(q)の割算(div)で、もとに戻る(K, cancel) の意味です。
 
 ここで証明した補題の段階では、``0 < p`` と ``0 < q`` の前提が残ることに注意してください。
 
 ``divKq`` を直接証明してもよいのですが、
 ``divqA`` と ``mulKq`` の別の補題を証明して使っています。
-その証明には、MathComp の環 (ring) の補題を使っています（文献 [5]）。
+その証明には、MathComp の環 (ring) の補題を使っています（文献 [6]）。
 *)
   
   Lemma divqA (p q r : rat) : 0 < q -> 0 < r -> p / (q / r) = (p * r) / q.
@@ -167,8 +167,8 @@ Coq はこの関数が止まることを自動判定できないので、
 Function コマンドを使い、k の値が減ることを明示します。
 
 すると、``k.+2 < k.+3`` と ``k.+1 < k.+3`` と ``k < k.+3`` 
-を証明することを求めてくるので、ssromega タクティク（文献 [5]）を使って証明します。
-なお、ここでは文献[5]のうちの sssromega の定義の部分だけを取り出してて、
+を証明することを求めてくるので、ssromega タクティク（文献 [7]）を使って証明します。
+なお、ここでは文献[7]のうちの sssromega の定義の部分だけを取り出してて、
 最初に ``Require Import ssromega`` で読み込んでします。
 *)
 
@@ -187,6 +187,14 @@ Function コマンドを使い、k の値が減ることを明示します。
   - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
       by ssromega.
   Defined.               (* 実際に計算できるように、Defined で終える。 *)
+
+(**
+Function コマンドで定義した場合、関数定義を展開するときおに、
+``rewrite /a`` (Standard Coq の unfold タクティク)は使用できず。
+ a_equation による書き換えを使わなければいけません。
+
+これは、関数 a の定義に余計な証明が付随するからです。
+*)
   
   Definition b (k : nat) : rat := a k.*2.
   Definition c (k : nat) : rat := a k.*2.+1.
@@ -207,6 +215,8 @@ Function コマンドを使い、k の値が減ることを明示します。
 ## b_k+2 と c_k+1 の式
 
 誘導問題に従い、b_k+2 と c_k+1 の式を求めます。
+
+a_k の漸化式（の関数）の定義を展開するときは、a_equation を使っています。
 *)
   Lemma lemma_1 (k : nat) :                 (* 計算で得た式(1) *)
     b k.+2 = (c k + b k.+1) / c k.+1.
@@ -226,16 +236,31 @@ Function コマンドを使い、k の値が減ることを明示します。
 
 (**
 ## a_k, b_k, c_k のそれぞれが ``> 0``
-*)  
+
+``0 < a_k`` がであることを証明するには、
+a_k-1, a_k-2, a_k-3 の値が ``> 0`` であることが必要になります。
+
+そこで、``k0 < k`` なる k0 に対して、``a_k0 < 0`` であることを帰納法の仮定とする
+完全帰納法 (complete induction) を使うと便利です。
+k についての完全帰納法を使うとき、MathComp の場合は、``elim: k {-2}k (leqnn k)``
+というイデオムを使います（文献 [5] の 3.2.4 Application: strengthening induction）。
+
+a_k' の k' について条件分け（0か1以上か）を繰り返すことで、a_k'+3 を取り出しています。
+
+補題 divr_gt0 と addr_gt0 を適用することで、``0 < (a k' + a k'.+1) / a k'.+2`` を
+``0 < a k'`` と ``0 < a k'.+1`` と ``0 < a k'.+2`` に分解します。
+
+それぞれに対して（完全）帰納法の仮定を適用することで得られた不等式は、
+ssromgaで片付けています。
+*)
+
   Lemma ak_gt_0 k : 0 < a k.
   Proof.
     elim: k {-2}k (leqnn k).                (* 完全帰納法のイデオム *)
     - move=> k.
         by rewrite le0_eq0 => /eqP ->.
     - move=> k IHk.
-      case => //.
-      case => //.
-      case => // k' Hk.
+      case=> [| [| [| k']]] Hk //. (* 条件分けで a k'+3 を取り出す。 *)
       rewrite a_equation.
       rewrite divr_gt0 //.
       + rewrite addr_gt0 //.
@@ -261,6 +286,9 @@ Function コマンドを使い、k の値が減ることを明示します。
 
 (**
 ## ``b_k = b_k+1``
+
+divKq で書き換えることで、分母を払います。
+このとき分母が ``> 0`` である条件を示すために、前節の補題を使います。
 *)  
   Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
@@ -308,11 +336,15 @@ https://school.js88.com/sd_article/dai/dai_center_data/pdf/2013sugaku2B_q.pdf
 [4] 萩原学 アフェルト・レナルド、「Coq/SSReflect/MathCompによる定理証明」、森北出版
 
 
-[5] MathComp, ssralg.v,
+[5] Mathematical Components Book、
+https://math-comp.github.io/mcb/
+
+
+[6] MathComp, ssralg.v,
 https://github.com/math-comp/math-comp/blob/master/mathcomp/algebra/ssralg.v
 
 
-[6] Affeldt Reynald, Library ssrnat_ext,
+[7] Affeldt Reynald, Library ssrnat_ext,
 https://staff.aist.go.jp/reynald.affeldt/coqdev/ssrnat_ext.html
 *)
 
