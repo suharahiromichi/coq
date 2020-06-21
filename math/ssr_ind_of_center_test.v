@@ -140,10 +140,19 @@ Section Fraction.
   (* 通分・約分 *)
   Compute fraq (1, 2) == fraq (2, 4).       (* true *)
   
+  Lemma test m n : coprime m n -> gcdn m n = 1.
+  Proof.
+  Admitted.
+
+  Search _ (coprime _ _).
+  
   Lemma num_den_fraq (p : fraction) : fraq (num p, den p) = p.
   Proof.
     case: p; case.
-    move=> a [|b] Ha //=.
+    move=> a [| b] /= Ha //=.
+    Check (test Ha).
+    
+    
   (* eqType として一致すること。 *)
   Admitted.
   
@@ -161,6 +170,9 @@ Section Fraction.
 
   Lemma reduce_fraq_r (m n d : nat) : fraq (m * d, n * d) = fraq (m, n).
   Proof.
+    rewrite /fraq /fraq_fact /=.
+    case: (@Fraction (m, n)).
+    case H : (n == 0).
     (* eqType として一致すること。 *)
   Admitted.
 
@@ -174,7 +186,7 @@ Section Fraction.
     (* eqType として一致すること。 *)
   Admitted.
 
-  Lemma reduced_fraq_l (d m n : nat) : fraq (d %/ m, d %/ n) = fraq (m, n).
+  Lemma reduced_fraq_l (d m n : nat) : fraq (d %/ m, d %/ n) = fraq (n, m).
   Proof.
     (* eqType として一致すること。 *)
   Admitted.
