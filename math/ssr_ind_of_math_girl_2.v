@@ -8,7 +8,7 @@
  *)
 
 (**
-結城浩さんの「数学ガールの秘密ノート」には、数学的帰納法をテーマにした商があります
+結城浩さんの「数学ガールの秘密ノート」に数学的帰納法の話題があります
 （文献 [1][2]）。
 
 数学ガールシリーズにしてはめずらしく、入試問題を題材にしています（文献 [3]）。
@@ -62,7 +62,7 @@ Section Lemmas.
 
 ## 有理数の補題
 
-最初に、0でない(1以上の)有理数 p と q に対して、
+最初に、0でない(1を越える)有理数 p と q に対して、
 
 ```p / (p / q) = q```
 
@@ -162,15 +162,24 @@ Section Question.
 (**
 ## 数列 a_k の漸化式
 
-数列 a_k の漸化式 を Coq の関数で定義します。しかし、
-Coq はこの関数が、任意の自然数 k に対して計算できる、
-すなわち、計算が止まって値が求まること（計算の停止性）を自動判定できないので、
-定義に際して、k の値が減ることを明示する必要があります（Function コマンドを使う）。
+数列 a_k の漸化式 を Coq の関数で定義します。
+自然数 k を引数とする再帰関数として定義することになりますが、
+Coq はこの関数が、任意の自然数 k に対して計算できること、
+すなわち、再帰が止まって値が求まること（計算の停止性）を
+自動判定できない、というエラーを出力します。
+
+そこで、定義に際して、再帰の毎に k の値が減ることを明示してやります
+（Function コマンドを使う。文献 [9]）。
 
 すると、Function コマンドは、``k.+2 < k.+3`` と ``k.+1 < k.+3`` と ``k < k.+3``
-を証明することを求めてくるので、ssromega タクティク（文献 [7]）を使って証明します。
+を証明することを求めてきます（証明責務ですね）。
+FunctionコマンドはStarndard Coqのコマンドなので、
+StandardCoqの不等式 (例：``(k.+2 < k.+3)%coq_nat``) を出力します。
+これは ``apply/ltP`` を使って、
+MathCompの不等式（例：``(k.+2 < k.+3)%N``）に変換できます。
+MathCompに変換したあとも``%N``が残るのは、先に説明したのと同じ理由です。
 
-
+そして、ssromega タクティク（文献 [7]）を使って証明します。
 なお、ここでは文献[7]のうちの sssromega の定義の部分だけを取り出して、
 最初に ``Require Import ssromega`` で読み込んでいます。
 *)
@@ -184,17 +193,20 @@ Coq はこの関数が、任意の自然数 k に対して計算できる、
     | k'.+3 => (a k' + a k'.+1) / a k'.+2
   end.
   - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
+    apply/ltP.
       by ssromega.
   - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
+    apply/ltP.
       by ssromega.
   - move=> k3 k2 k1 k Hk1 Hk2 Hk3.
+    apply/ltP.
       by ssromega.
   Defined.               (* 実際に計算できるように、Defined で終える。 *)
 
 (**
 関数をその定義で
 展開するときには、``rewrite /a`` (Standard Coq の unfold タクティク)
-は使用できず。a_equation による書き換えを使わなければいけません。
+は使用できず。a_equation による書き換えを使わなければいけません（文献 [9]）。
 
 これは、Function コマンドで定義した関数 a には、
 その定義に余計な証明が付随するからです。
@@ -256,10 +268,13 @@ a_k の漸化式（の関数）の定義を展開するときは、a_equation �
 - ``0 < a_k`` であることを証明するには、
 a_k-1, a_k-2, a_k-3 の値が ``> 0`` であることが必要になります。
 
-そこで、``k0 < k`` なる k0 に対して、``a_k0 < 0`` であることを帰納法の仮定とする
-完全帰納法 (complete induction) を使うと便利です。
+そこで、帰納法の仮定 ``k' < k`` の k' に対して ``a_k' < 0`` が成り立つとして、
+``k' < k+1`` の k' に対して ``a_k' < 0`` が成り立つことを示す
+完全帰納法 (complete induction) を使って証明します。
+
 k についての完全帰納法を使うとき、MathComp の場合は、``elim: k {-2}k (leqnn k)``
-というイデオムを使います（文献 [5] の 3.2.4 Application: strengthening induction）。
+というイデオムを使います
+（文献 [8]、および、[5] の 3.2.4 Application: strengthening induction）。
 
 - ``[| [| [| k']]]`` はパズルのようですが、a_k' の k' について条件分け（0か1以上か）
 を3回繰り返すことで、a_k'+3 を取り出すためのものです。
@@ -272,11 +287,9 @@ k についての完全帰納法を使うとき、MathComp の場合は、``elim
 *)
   Lemma ak_gt_0 k : 0 < a k.
   Proof.
-    elim: k {-2}k (leqnn k).                (* 完全帰納法のイデオム *)
-    - move=> k.
-        by rewrite le0_eq0 => /eqP ->.
-    - move=> k IHk.
-      case=> [| [| [| k']]] Hk //. (* 条件分けで a k'+3 を取り出す。 *)
+    elim: k {-2}k (leqnn k) => [k | k IHk]. (* 完全帰納法のイデオム *)
+    - by rewrite le0_eq0 => /eqP ->.
+    - case=> [| [| [| k']]] Hk //. (* 条件分けで a k'+3 を取り出す。 *)
       rewrite a_equation.
       rewrite divr_gt0 //.
       + rewrite addr_gt0 //.
@@ -308,8 +321,13 @@ k についての完全帰納法を使うとき、MathComp の場合は、``elim
 (**
 ## ``b_k = b_k+1``
 
-divKq で書き換えることで、分母を払います。
-このとき分母が ``> 0`` である条件を示すために、前節の補題を使います。
+k についての数学的帰納法を使い、
+帰納法の仮定 ``b_k = b_k+1`` が成り立つとして、``b_k+1 = b_k+2`` を示すことで証明します。
+先に証明した、lemma_1とlemma_2と、帰納法の仮定を使って書き換えることで得られた、
+``b_k = (c_k + b_k) / ((c_k + b_k) / b_k)`` から、
+divKq で書き換えることで、``(c_k + b_k)`` を消し（分母を払い）ます。
+
+このとき分母 ``(c_k + b_k)`` が ``> 0`` である条件を示すために、前節の補題を使います。
 *)  
   Lemma lemma_3 (k : nat) : b k = b k.+1.
   Proof.
@@ -317,6 +335,7 @@ divKq で書き換えることで、分母を払います。
     rewrite lemma_1.
     rewrite lemma_2.
     rewrite -[in RHS]IHk.
+    rewrite -[in LHS]IHk.
     rewrite [b k + c k]addqC.
     rewrite [RHS]divKq; first by rewrite IHk.
     - apply: addr_gt0.
@@ -371,6 +390,16 @@ https://github.com/math-comp/math-comp/blob/master/mathcomp/algebra/ssralg.v
 [7] Affeldt Reynald, Library ssrnat_ext,
 
 https://staff.aist.go.jp/reynald.affeldt/coqdev/ssrnat_ext.html
+
+
+[8] Coq/SSReflectでたった1行のコマンドで完全帰納法を適用する方法
+
+https://qiita.com/nekonibox/items/514da8edfc6107b57254
+
+
+[9] Advanced recursive functions
+
+https://coq.inria.fr/refman/language/gallina-extensions.html#advanced-recursive-functions
 *)
 
 (* END *)
