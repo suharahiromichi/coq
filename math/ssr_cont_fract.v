@@ -144,16 +144,18 @@ f2cf (cf2f s) = s を証明する。
   Goal forall s, f2cf (cf2f s) = s.
   Proof.
     elim => // n s IHs /=.
-      rewrite /f2cf /=.
-      rewrite f2cfE /=.
-      rewrite div_m__n.
-      rewrite mod_m__r.
-      + rewrite /f2cf in IHs.
-        by rewrite IHs.
-      + admit.                              (* (cf2f s).2 < (cf2f s).1 *)
-      + admit.                              (* 0 < (cf2f s).1 *)
-      + admit.                              (* (cf2f s).2 < (cf2f s).1 *)
+    rewrite /f2cf /=.
+    - rewrite f2cfE /=.
+      + rewrite div_m__n.
+        * rewrite mod_m__r.
+          -- rewrite /f2cf in IHs.
+               by rewrite IHs.
+          -- admit.                      (* (cf2f s).2 < (cf2f s).1 *)
+        * admit.                         (* 0 < (cf2f s).1 *)
+        * admit.                         (* (cf2f s).2 < (cf2f s).1 *)
+    - admit.                             (* (cf2f s).1 != 0 *)  
   Admitted.
+  
 End CF.
 
 (**
