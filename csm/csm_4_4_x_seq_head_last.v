@@ -116,54 +116,6 @@ Section lemma_belast'.
   
 End lemma_belast'.
 
-(* おまけ *)
-
-Section lemma_size.
-  
-  Variable T : eqType.
-  
-  Check size_eq0 : forall (T : eqType) (s : seq T), (size s == 0) = (s == [::]).
-  
-  Lemma size_not_eq0 (s : seq T) : (size s != 0) = (s != [::]).
-  Proof.
-      (* ~~ (size s == 0) = ~~ (s == [::]) なので、size_eq0 で書き換えられる。 *)
-      by rewrite size_eq0.
-  Qed.
-
-  Lemma size_ge1 (s : seq T) : (1 <= size s) = (s != [::]).  
-  Proof.
-      by rewrite lt0n size_eq0.
-  Qed.
-  
-  Lemma size_eq0_P (s : seq T) : reflect (size s == 0) (s == [::]).
-  Proof.
-    apply: (iffP idP) => H.
-    - by rewrite size_eq0.
-    - by rewrite -size_eq0.
-  Qed.
-  
-  Lemma size_neq0_P (s : seq T) : reflect (size s != 0) (s != [::]).
-  Proof.
-    apply: (iffP idP) => H.
-    - by rewrite size_eq0.
-    - by rewrite -size_eq0.
-  Qed.
-  
-  Lemma size_ge1_P (s : seq T) : reflect (1 <= size s) (s != [::]).
-  Proof.
-    rewrite lt0n.
-    by apply: size_neq0_P.
-  Qed.
-  
-  Lemma size_ge1_P' (s : seq T) : (1 <= size s) <-> (s <> [::]).
-  Proof.
-    split=> H.
-    - by apply/eqP/size_ge1_P.
-    - by apply/size_ge1_P/eqP.
-  Qed.
-  
-End lemma_size.
-
 Section size_body.
 
   Variable T : eqType.
@@ -177,7 +129,7 @@ Section size_body.
 s = [::] だと ``size (tbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
 証明は、s を [::] と rocns s x に場合分けして、前者の場合は前提矛盾で成立とする。
 *)
-  Lemma size_belast' (s : seq T) : 1 <= size s -> size (belast' s) < size s.
+  Lemma size_belast'' (s : seq T) : 1 <= size s -> size (belast' s) < size s.
   Proof.
     case/lastP: s.
     - rewrite /=.                           (* 0 < 0 -> 0 < 0 、前提矛盾。 *)
@@ -187,6 +139,12 @@ s = [::] だと ``size (tbody s) = size s`` になるので、``1 <= size s`` �
         by rewrite size_rcons.
   Qed.
 
+  Lemma size_belast' (s : seq T) : size (belast' s) = (size s).-1.
+  Proof.
+    case/lastP: s => // s IHs.
+      by rewrite belast'_rcons size_rcons.
+  Qed.
+  
 End size_body.
 
 (* END *)
