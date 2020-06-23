@@ -59,7 +59,7 @@ Section RconsQ.
   Definition rcons' (T : Type) (s : seq T) (z : T) : seq T := s ++ [:: z].
 
 (**
-（演習）両者が同値であることは証明する。
+（演習）両者が同値であることを証明してください。
 *)
   Goal forall (s : seq T) (z : T), rcons s z = rcons' s z.
   Proof.
@@ -69,6 +69,9 @@ End RconsQ.
 
 (**
 # head と last
+
+- head は最初の要素をとりだす。behead はその残りの要素。空なら空。
+- last は最後の要素をとりだす。belast は？
 
 see. csm_4_4_x_seq_head_last.v
 *)
@@ -110,7 +113,12 @@ End Size.
 
 (**
 ## 空リストとサイズの関係
+
+以下の ``0 < size s`` を ``1 <= size s`` にしても同じ。
+「<」は「<=」で定義されているため。
  *)
+Locate "_ < _".                            (* "m < n" := leq m.+1 n *)
+
 Section Size1.
 (**
 重要な補題：寸法0と空リストの関係を示す。
@@ -173,6 +181,8 @@ End Size1.
 
 ## cat に関する補題
 *)
+
+Locate "_ ++ _". (* := cat x y : seq_scope (default interpretation) *)
 
 Check cat0s : forall (T : Type) (s : seq T), [::] ++ s = s.
 Check cats0 : forall (T : Type) (s : seq T), s ++ [::] = s.
@@ -266,15 +276,14 @@ isreverse (x :: s)  (rcons t x) とすると、証明は少し変わる。
  *)
   Hint Constructors isreverse.
 
+(**
+自明な補題を証明しておく。
+*)
   Lemma rev0 : @rev A [::] = [::].
-  Proof.
-      by rewrite /rev.
-  Qed.
+  Proof. done. Qed.
   
   Lemma rev1 (x : A) : @rev A [:: x] = [:: x].
-  Proof.
-      by rewrite /rev.
-  Qed.
+  Proof. done. Qed.
   
   Lemma rev_catrev (s t : seq A) : isreverse s t <-> rev s = t.
   Proof.
@@ -331,8 +340,7 @@ Check rev_cat
 Check rev_rcons
   : forall (T : Type) (s : seq T) (x : T), rev (rcons s x) = x :: rev s.
 
-Check revK                                  (* rev (rev s) = s *)
-  : involutive rev.
+Check revK : involutive rev. (* rev (rev s) = s 、 覚えておくこと。 *)
 
 Check nth_rev
   : forall (T : Type) (x0 : T) (n : nat) (s : seq T),
@@ -441,11 +449,11 @@ Check all_rcons : forall (T : Type) (a : pred T) (s : seq T) (x : T),
 *)
 
 (**
-# == と \in について
+# == と \in について （seq はpolymorphicな型）
  *)
 
 (**
-## seq_eqType (== が使える)
+## (seq_eqType T_eqType) ... 「==」 が使える
 
 eqType 型クラス（インターフェース）のインスタンスとして seq_eqType を定義している。
 すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、== の左右に書けるようになる。
@@ -460,7 +468,7 @@ Compute [:: 1; 2] == [:: 3; 4].             (* false *)
 Check @eqseq : forall T : eqType, seq T -> seq T -> bool.
 
 (*
-## seq_predType (\in が使える)
+## (seq_predType T_eqTYpe) ... 「\in」 が使える
 
 predType 型クラス（インターフェース）のインスタンスとして seq_predType を定義している。
 すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、\in の右に書けるようになる。
@@ -797,7 +805,7 @@ Section RconsA.
   Variable T : Type.
   
 (**
-（演習）両者が同値であることは証明する。
+（演習）両者が同値であることを証明してください。
 *)
   Goal forall (s : seq T) (z : T), rcons s z = rcons' s z.
   Proof.
