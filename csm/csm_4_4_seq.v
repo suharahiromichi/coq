@@ -156,6 +156,8 @@ nilp s は size s == 0 で定義されている。これのリフレクション
 
 (**
 使い方。寸法に関する命題と空リストか判定する命題とを相互に変換（リフレクト）できる。
+
+apply/nilP または move/nilP で、相互に変換できるので便利であろう。
 *)
   Goal forall (s : seq T), (1 <= size s) <-> (s <> [::]).
   Proof.
@@ -836,6 +838,10 @@ Section ReverseA.
   
   Goal forall (s : seq A), rev s = reverse' s.
   Proof.
+    elim/last_ind => // a s IHs.
+    (* rev の中に rcons が出現するので、この場合が簡単にならない。 *)
+    Undo 1.
+    
     elim => // a s IHs /=.
     rewrite -IHs.
     rewrite /rev.
