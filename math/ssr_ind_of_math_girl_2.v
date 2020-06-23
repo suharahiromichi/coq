@@ -60,8 +60,6 @@ Section Lemmas.
 (**
 # 補題
 
-## 有理数の補題
-
 最初に、0でない(1を越える)有理数 p と q に対して、
 
 ```p / (p / q) = q```
@@ -107,25 +105,9 @@ Section Lemmas.
     rewrite divqA; last done; last done.
     rewrite mulKq; last done.
     done.
-Qed.
-
-(**
-## 自然数の補題
-
-自然数 k について、``k <= 0`` と ``k = 0`` が同値であるという
-の簡単な補題を証明しておきます。
-
-``%N`` は、その式が自然数型であることを示します。
-省略時解釈（ディフォルト）が環になっているため、必要です。
-*)  
-  Lemma le0_eq0 (k : nat) : (k <= 0)%N = (k == 0)%N.
-  Proof.
-    rewrite leq_eqVlt ltn0 /=.
-    by rewrite orbF.
   Qed.
 
 End Lemmas.
-
 
 (**
 # 試験問題
@@ -288,7 +270,7 @@ k についての完全帰納法を使うとき、MathComp の場合は、``elim
   Lemma ak_gt_0 k : 0 < a k.
   Proof.
     elim: k {-2}k (leqnn k) => [k | k IHk]. (* 完全帰納法のイデオム *)
-    - by rewrite le0_eq0 => /eqP ->.
+    - by rewrite leqn0 => /eqP ->.
     - case=> [| [| [| k']]] Hk //. (* 条件分けで a k'+3 を取り出す。 *)
       rewrite a_equation.
       rewrite divr_gt0 //.
