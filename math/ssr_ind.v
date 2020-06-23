@@ -71,10 +71,11 @@ Proof.
   case; first by [].
   case; first by [].
   move=> n IH /=.
+  Check ltnW : forall m n : nat, m < n -> m <= n.
   apply: ltnW.
   apply: IH.
     (* (n < n.+2)%coq_nat *)
-  by apply/ltP.
+    by apply/ltP.
 Qed.
 
 (**
@@ -219,7 +220,7 @@ Check div2a_ind
     (forall n : nat, n = 1 -> P 1 0) ->
        (forall n n' : nat, n = n'.+2 -> P n' (div2a n') -> P n'.+2 (div2a n').+1) ->
        forall n : nat, P n (div2a n).
-                         
+
 Lemma leq_div2a m : div2a m <= m.
 Proof.
   functional induction (div2a m).
