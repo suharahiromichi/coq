@@ -32,7 +32,7 @@ Section CF.
 (**
 ### 正則連分数から有理数
 
-得られた有理数は、結果として既約になる。証明が必要か？
+得られた有理数は、結果として既約になる。ただし証明が必要。
 *)  
   Fixpoint cf2f (sa : seq nat)  : (nat * nat) :=
     match sa with
@@ -118,10 +118,8 @@ f2cf (cf2f s) = s を証明する。
 *)  
   Lemma f2cfE (n d : nat) : d != 0 -> f2cf' n d = (n %/ d) :: f2cf' d (n %% d).
   Proof.
-    case: d.
-    - done.
-    - move=> n' Hd.
-      apply: f2cf'_equation.
+    case: d => //= n' Hd.
+      by apply: f2cf'_equation.
   Qed.
   
   Lemma div_d__n n d r : 0 < d -> r < d -> (n * d + r) %/ d = n.
@@ -188,9 +186,7 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
     end.
   Obligation 2.
   Proof.
-    apply/ltP => /=.
-    (* size s' < (size s').+2 *)
-      by ssromega.
+    apply/ltP => //=.
   Qed.
 
   Function GaussH (s : seq nat) {measure size s} : nat :=
@@ -225,14 +221,11 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
 *)
   Lemma cf2fE n0 n1 s :
     (cf2f [:: n0, n1 & s]).1 = n0 * (cf2f (n1 :: s)).1 + (cf2f s).1.
-  Proof.
-    done.
-  Qed.
+  Proof. done. Qed.
   
   Lemma num_GaussH s : (cf2f s).1 = GaussH s.
   Proof.
-    functional induction (GaussH s).
-    - done.
+    functional induction (GaussH s) => //.
     - by rewrite /cf2f muln1 addn0.
     - rewrite -IHn -IHn0.
       rewrite -cf2fE.
@@ -241,14 +234,13 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
   
   Lemma den_GaussH n s : (cf2f (n :: s)).2 = GaussH s.
   Proof.
-    functional induction (GaussH s).
-    - done.
+    functional induction (GaussH s) => //.
     - by rewrite /cf2f muln1 addn0.
     - rewrite -IHn0 -IHn1.
       rewrite -cf2fE.
       done.
   Qed.
-
+  
 (**
 ### continuant の性質
 *)
@@ -260,6 +252,12 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
   Compute (GaussH [:: 1;2;3] * GaussH [:: 4;5]) + (GaussH [:: 1;2] * GaussH [:: 5]).
   (* 225 *)
 
+  Lemma GaussH1 : GaussH [::] = 1.
+  Proof. done. Qed.
+
+  Lemma GaussHn n : GaussH [:: n] = n.
+  Proof. done. Qed.
+  
   Lemma GaussHE (n0 n1 : nat) (s : seq nat) :
     GaussH (n0 :: n1 :: s) = n0 * GaussH (n1 :: s) + GaussH s.
   Proof.
@@ -290,7 +288,7 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
   
   Lemma GaussH__GaussH_rev s : GaussH s = GaussH (rev s).
   Proof.
-    functional induction (GaussH s) => //=.
+    functional induction (GaussH s) => //.
     rewrite !rev_cons.
     rewrite GaussHEr.
     rewrite -rev_cons.
@@ -407,26 +405,22 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
     2 <= size s ->
     EulerK s = tail s * EulerK (body s) + EulerK (body (body s)).
   Proof.
+    case: s => //= n0 s.
     case: s.
-    - done.
-    - move=> n0 s.
-      case: s.
-      + done.
-      + move=> n1 s Hs.
+    + done.
+    + move=> n1 s Hs.
         by rewrite EulerK_equation.
   Qed.
   
   Lemma EulerK_rev__GaussH s : EulerK (rev s) = GaussH s.
   Proof.
-    functional induction (GaussH s).
-    - done.
-    - done.
-    - rewrite EulerKE.
-      + rewrite tail_rev 2!body_rev.
-        rewrite IHn -IHn0.
-        done.
-      + rewrite size_rev.
-        by rewrite /=.
+    functional induction (GaussH s) => [//= | //= |].
+    rewrite EulerKE.
+    - rewrite tail_rev 2!body_rev.
+      rewrite IHn -IHn0.
+      done.
+    - rewrite size_rev.
+      done.
   Qed.
   
   Lemma EulerK_GaussH s : EulerK s = GaussH s.
@@ -463,9 +457,7 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
     end.
   
   Lemma fibE n : fib n.+2 = fib n + fib n.+1.
-  Proof.
-    done.
-  Qed.
+  Proof. done. Qed.
   
   Lemma GaussH_fib n : GaussH (nseq n 1) = fib n.+1.
   Proof.
@@ -476,7 +468,7 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
     rewrite [nseq _.+1 1]/=.
       by rewrite addnC.
   Qed.
-
+  
 (**
 （参考）フィボナッチ数列の隣接2項の商は、黄金数φに収束する。  
 *)
