@@ -49,10 +49,10 @@ Section CF.
 (**
 ### 有理数から正則連分数
 *)
-  Program Fixpoint f2cf'p (n m : nat) {wf lt m} : (seq nat) := (* notu *)
-    match m with
+  Program Fixpoint f2cf'p (n d : nat) {wf lt d} : (seq nat) := (* notu *)
+    match d with
     | 0 => [::]
-    | _ => (n %/ m) :: f2cf'p m (n %% m)
+    | _ => (n %/ d) :: f2cf'p d (n %% d)
     end.
   Obligation 1.
   Proof.
@@ -62,13 +62,13 @@ Section CF.
   Qed.
   Compute f2cf'p 36 11.                     (* [:: 3; 3; 1; 2] *)
   
-  Function f2cf' (n m : nat) {wf lt m} : (seq nat) :=
-    match m with
+  Function f2cf' (n d : nat) {wf lt d} : (seq nat) :=
+    match d with
     | 0 => [::]
-    | _ => (n %/ m) :: f2cf' m (n %% m)
+    | _ => (n %/ d) :: f2cf' d (n %% d)
     end.
   Proof.
-    - move=> n m m0 _.
+    - move=> n d d0 _.
       apply/ltP.
         by rewrite ltn_mod.
     - by apply: lt_wf.
@@ -95,18 +95,18 @@ Section CF.
 *)
   Goal forall p, cf2f (f2cf p) = p.
   Proof.
-    case=> n m.
-    functional induction (f2cf' n m).
+    case=> n d.
+    functional induction (f2cf' n d).
     - rewrite /=.
       (* (1, 0) = (n, 0) .... p は既約になるので。 *)
       admit.
-    - case: m y IHl => [H IHl | m H IHl].
+    - case: d y IHl => [H IHl | d H IHl].
       + done.
       + admit.
 (**
-  IHl : cf2f (f2cf (m.+1, n %% m.+1)) = (m.+1, n %% m.+1)
+  IHl : cf2f (f2cf (d.+1, n %% d.+1)) = (d.+1, n %% d.+1)
   ============================
-  cf2f (f2cf (n, m.+1)) = (n, m.+1)
+  cf2f (f2cf (n, d.+1)) = (n, d.+1)
  *)
   Admitted.                                 (* OK *)
 
@@ -116,25 +116,25 @@ Section CF.
 cf2f (f2cf p) = p は証明できない（pが約分される）ので、
 f2cf (cf2f s) = s を証明する。
 *)  
-  Lemma f2cfE (n m : nat) : m != 0 -> f2cf' n m = (n %/ m) :: f2cf' m (n %% m).
+  Lemma f2cfE (n d : nat) : d != 0 -> f2cf' n d = (n %/ d) :: f2cf' d (n %% d).
   Proof.
-    case: m.
+    case: d.
     - done.
-    - move=> n' Hm.
+    - move=> n' Hd.
       apply: f2cf'_equation.
   Qed.
   
-  Lemma div_m__n n m r : 0 < m -> r < m -> (n * m + r) %/ m = n.
+  Lemma div_d__n n d r : 0 < d -> r < d -> (n * d + r) %/ d = n.
   Proof.
-    move=> Hm Hrm.
+    move=> Hd Hrd.
     rewrite divnMDl; last done.
     rewrite divn_small; last done.
       by rewrite addn0.
   Qed.
   
-  Lemma mod_m__r n m r : r < m -> (n * m + r) %% m = r.
+  Lemma mod_d__r n d r : r < d -> (n * d + r) %% d = r.
   Proof.
-    move=> Hrm.
+    move=> Hrd.
     Check modnMDl.                     (* (p * d + m) %% d = m %% d *)
     rewrite modnMDl.
     rewrite modn_small; last done.
@@ -146,8 +146,8 @@ f2cf (cf2f s) = s を証明する。
     elim => // n s IHs /=.
     rewrite /f2cf /=.
     - rewrite f2cfE /=.
-      + rewrite div_m__n.
-        * rewrite mod_m__r.
+      + rewrite div_d__n.
+        * rewrite mod_d__r.
           -- rewrite /f2cf in IHs.
                by rewrite IHs.
           -- admit.                      (* (cf2f s).2 < (cf2f s).1 *)
@@ -250,7 +250,7 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
       rewrite -cf2fE.
       done.
   Qed.
-  
+
 (**
 ### continuant の性質
 *)
