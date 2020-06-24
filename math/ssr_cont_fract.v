@@ -229,9 +229,8 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
     done.
   Qed.
   
-  Goal forall s, (cf2f s).1 = GaussH s.
+  Lemma num_GaussH s : (cf2f s).1 = GaussH s.
   Proof.
-    move=> s.
     functional induction (GaussH s).
     - done.
     - by rewrite /cf2f muln1 addn0.
@@ -240,9 +239,8 @@ H(x_1 ... x_n) = x_1 * K(x_2 ... x_n) + K(x_3 ... x_n)
       done.
   Qed.
   
-  Goal forall n s, (cf2f (n :: s)).2 = GaussH s.
+  Lemma den_GaussH n s : (cf2f (n :: s)).2 = GaussH s.
   Proof.
-    move=> n s.
     functional induction (GaussH s).
     - done.
     - by rewrite /cf2f muln1 addn0.
@@ -469,9 +467,8 @@ K(x_1 ... x_n) = K(x_1 ... x_n-1) * x_n + K(x_1 ... x_n-2)
     done.
   Qed.
   
-  Goal forall n, GaussH (nseq n 1) = fib n.+1.
+  Lemma GaussH_fib n : GaussH (nseq n 1) = fib n.+1.
   Proof.
-    move=> n.
     functional induction (fib n) => [//= | //= |].
     rewrite fibE -IHn0 -IHn1.
     rewrite [nseq _.+2 1]/=.
