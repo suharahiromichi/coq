@@ -8,7 +8,9 @@ Coq/SSReflect/MathComp による証明の例
 
 (1) 二種類のプログラムが同じ結果になることを証明する。
 
-(2) 2回実行するともとに戻ることを証明する。
+(2) 2回実行するともとに戻ることを証明する(involutive)。
+
+(3) 単射であることを証明する(injective)。
 *)
 From mathcomp Require Import all_ssreflect.
 
@@ -21,7 +23,7 @@ Section Rev.
   Variable T : Type.
   
   (** * 二種類のリスト反転のプログラムの定義 *)
-  (** ** rcons を使ったプログラム *)
+  (** rcons を使ったプログラム *)
   (* リストの末尾に要素を置く関数を使う。 *)
   Definition rcons' l (a : T) := l ++ [:: a].
   
@@ -31,7 +33,7 @@ Section Rev.
     | h :: t => rcons' (reverse t) h
     end.
   
-  (** ** 末尾再帰を使ったプログラム *)
+  (** 末尾再帰を使ったプログラム *)
   Fixpoint catrev (l1 l2 : seq T) : seq T :=
     match l1 with
     | [::] => l2
@@ -62,7 +64,7 @@ Section Rev.
   Qed.
   
   (** (2) 2回実行するともとに戻ることを証明 *)
-  (** ** reverse について証明 *)
+  (** reverse について証明 *)
   Lemma rcons_reverse (x : T) (l : seq T) : reverse (rcons' l x) = x :: (reverse l).
   Proof.
     elim: l => [| x' l IHl] /=.
@@ -80,7 +82,7 @@ Section Rev.
       done.
   Qed.
   
-  (** ** rev について証明。reverseを経由する例 *)
+  (** rev について証明。reverseを経由する例 *)
   (* すでにある定理を再利用する。 *)
   Theorem rev_involutive (l : seq T) : rev (rev l) = l.
   Proof.
@@ -88,7 +90,7 @@ Section Rev.
     apply: reverse_involutive.
   Qed.
   
-  (** ** rev について証明。直接証明する例 *)
+  (** rev について証明。直接証明する例 *)
   (* catrevの第1引数がappendのときの補題 *)
   Lemma l_rev_cat_l (l l1 l2 : seq T) :
     catrev (l ++ l1) l2 = catrev l1 [::] ++ catrev l l2.
@@ -110,6 +112,30 @@ Section Rev.
       rewrite IHl.
       done.
   Qed.
+  
+  (** (3) reverse が単射であることを証明 *)
+  (** reverse について証明 *)
+  Theorem reverse_injective l1 l2 : reverse l1 = reverse l2 -> l1 = l2.
+  Proof.
+    move=> H.
+    rewrite -(reverse_involutive l1).
+    rewrite H.
+    rewrite (reverse_involutive l2).
+    done.
+  Qed.
+  
+  (** rev について証明 *)
+  Theorem rev_injective l1 l2 : rev l1 = rev l2 -> l1 = l2.
+  Proof.
+    move=> H.
+    rewrite -(rev_involutive l1).
+    rewrite H.
+    rewrite (rev_involutive l2).
+    done.
+  Qed.
+  
+  (** 「<-」は自明で、実際は全単射である。 *)
+  
 End Rev.
 
 (** * 参考文献 *)
