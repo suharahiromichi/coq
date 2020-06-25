@@ -32,22 +32,22 @@ Section Rev.
     end.
   
   (** ** 末尾再帰を使ったプログラム *)
-  Fixpoint catrev (l m : seq T) : seq T :=
-    match l with
-    | [::] => m
-    | x :: l => catrev l (x :: m)
+  Fixpoint catrev (l1 l2 : seq T) : seq T :=
+    match l1 with
+    | [::] => l2
+    | x :: l1 => catrev l1 (x :: l2)
     end.
   Definition rev (l : seq T) : seq T := catrev l [::].
   
   (** (1) 二種類のプログラムが同じであることの証明 *)
   (* catrevの第2引数がappendのときの補題 *)
-  Lemma l_rev_cat_r (l m n : seq T) :
-    catrev l (m ++ n) = catrev l m ++ n.
+  Lemma l_rev_cat_r (l l1 l2 : seq T) :
+    catrev l (l1 ++ l2) = catrev l l1 ++ l2.
   Proof.
-    elim: l m => [| x l IHl m] /=.
+    elim: l l1 => [| x l IHl l1] /=.
     - done.
-    - rewrite -[x :: m ++ n]cat_cons.
-      rewrite (IHl (x :: m)).
+    - rewrite -[x :: l1 ++ l2]cat_cons.
+      rewrite (IHl (x :: l1)).
       done.
   Qed.
   
@@ -90,10 +90,10 @@ Section Rev.
   
   (** ** rev について証明。直接証明する例 *)
   (* catrevの第1引数がappendのときの補題 *)
-  Lemma l_rev_cat_l (l m n : seq T) :
-    catrev (l ++ m) n = catrev m [::] ++ catrev l n.
+  Lemma l_rev_cat_l (l l1 l2 : seq T) :
+    catrev (l ++ l1) l2 = catrev l1 [::] ++ catrev l l2.
   Proof.
-    elim: l n => [n | a l IHl n] /=.
+    elim: l l2 => [n | a l IHl l2] /=.
     - rewrite -l_rev_cat_r.
       done.
     - rewrite IHl.
