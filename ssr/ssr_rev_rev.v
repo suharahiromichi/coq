@@ -49,11 +49,11 @@ Section Rev.
   
   (* catrevの第2引数がappendのときの補題 *)
   Lemma l_rev_cat_r (s s1 s2 : seq T) :
-    catrev s (s1 ++ s2) = catrev s s1 ++ s2.
+    catrev s (s1 ++ s2) = (catrev s s1) ++ s2.
   Proof.
     elim: s s1 => [| x s IHs s1] /=.
     - done.
-    - rewrite -[x :: s1 ++ s2]cat_cons.
+    - rewrite -[x :: (s1 ++ s2)]cat_cons.
       rewrite (IHs (x :: s1)).
       done.
   Qed.
@@ -61,7 +61,7 @@ Section Rev.
   Theorem reverse_rev (s : seq T) : reverse s = rev s.
   Proof.
     rewrite /rev.
-    elim: s => [| x l IHs] /=.
+    elim: s => [| x s IHs] /=.
     - done.
     - admit.                                (* 答え参照 *)
   Admitted.
@@ -91,6 +91,7 @@ Section Rev.
     admit.                                  (* 答え参照 *)
   Admitted.
   
+  
   (** * 説明 *)
   (** (あ) リストの反転 reverse のような、誰でも書いてみる・良く使うコードにも、
       involutive や injective といった数学的な構造を持っています。
@@ -99,6 +100,7 @@ Section Rev.
       (い) reverse_injective は Software Fundations の 4 stars の問題です。
       それも比較的簡単に証明できてしまいました。
    *)
+
   
   (** * おまけ *)
   (** (2') 2回実行するともとに戻ることを証明 *)
@@ -150,7 +152,7 @@ Section Rev.
   Theorem a_reverse_rev (s : seq T) : reverse s = rev s.
   Proof.
     rewrite /rev.
-    elim: s => [| x l IHs] /=.
+    elim: s => [| x s IHs] /=.
     - done.
     - rewrite IHs /rcons'.
       rewrite -l_rev_cat_r.
