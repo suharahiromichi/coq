@@ -42,6 +42,11 @@ Section Rev.
   Definition rev (l : seq T) : seq T := catrev l [::].
   
   (** (1) 二種類のプログラムが同じであることの証明 *)
+  (* 良く使う補題 *)
+  Lemma cat_cons (x : T) (l1 l2 : seq T) :
+    (x :: l1) ++ l2 = x :: (l1 ++ l2).
+  Proof. done. Qed.
+  
   (* catrevの第2引数がappendのときの補題 *)
   Lemma l_rev_cat_r (l l1 l2 : seq T) :
     catrev l (l1 ++ l2) = catrev l l1 ++ l2.
@@ -82,6 +87,28 @@ Section Rev.
       done.
   Qed.
   
+  (** (3) reverse が単射であることを証明 *)
+  (** reverse について証明 *)
+  Theorem reverse_injective l1 l2 : reverse l1 = reverse l2 -> l1 = l2.
+  Proof.
+    move=> H.
+    rewrite -[l1]reverse_involutive.
+    rewrite H.
+    rewrite [LHS]reverse_involutive.
+    done.
+  Qed.
+  
+  (** * 説明 *)
+  (** (あ) リストの反転 reverse のような、誰でも書いてみる・良く使うコードにも、
+      involutive や injective といった数学的な構造を持っています。
+      ++ と reverse の分配法則というのもあります（証明してください！）。
+  
+      (い) reverse_injective は Software Fundations の 4 stars の問題です。
+      それも比較的簡単に証明できてしまいました。
+   *)
+  
+  (** * おまけ *)
+  (** (2') 2回実行するともとに戻ることを証明 *)
   (** rev について証明。reverseを経由する例 *)
   (* すでにある定理を再利用する。 *)
   Theorem rev_involutive (l : seq T) : rev (rev l) = l.
@@ -90,6 +117,7 @@ Section Rev.
     apply: reverse_involutive.
   Qed.
   
+  (** (2'') 2回実行するともとに戻ることを証明 *)
   (** rev について証明。直接証明する例 *)
   (* catrevの第1引数がappendのときの補題 *)
   Lemma l_rev_cat_l (l l1 l2 : seq T) :
@@ -113,28 +141,16 @@ Section Rev.
       done.
   Qed.
   
-  (** (3) reverse が単射であることを証明 *)
-  (** reverse について証明 *)
-  Theorem reverse_injective l1 l2 : reverse l1 = reverse l2 -> l1 = l2.
-  Proof.
-    move=> H.
-    rewrite -(reverse_involutive l1).
-    rewrite H.
-    rewrite (reverse_involutive l2).
-    done.
-  Qed.
-  
+  (** (3') reverse が単射であることを証明 *)
   (** rev について証明 *)
   Theorem rev_injective l1 l2 : rev l1 = rev l2 -> l1 = l2.
   Proof.
     move=> H.
-    rewrite -(rev_involutive l1).
+    rewrite -[l1]rev_involutive.
     rewrite H.
-    rewrite (rev_involutive l2).
+    rewrite [LHS]rev_involutive.
     done.
   Qed.
-  
-  (** 「<-」は自明で、実際は全単射である。 *)
   
 End Rev.
 
@@ -149,6 +165,11 @@ End Rev.
 (**
 [2.] 萩原学 アフェルト・レナルド 「Coq/SSReflect/MathCompによる定理証明」 森北出版
 [http://www.morikita.co.jp/books/book/3287]
+*)
+
+(**
+[3.] Benjamin C. Pierce "Software Fundations - Logical Fundataion"
+[https://softwarefoundations.cis.upenn.edu/lf-current/Lists.html]
 *)
 
 (** * ProofCafe - 名古屋Coq勉強会 について *)
