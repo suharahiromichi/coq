@@ -25,74 +25,74 @@ Section Rev.
   (** * 二種類のリスト反転のプログラムの定義 *)
   (** rcons を使ったプログラム *)
   (* リストの末尾に要素を置く関数を使う。 *)
-  Definition rcons' l (a : T) := l ++ [:: a].
+  Definition rcons' s (a : T) := s ++ [:: a].
   
-  Fixpoint reverse (l : seq T) : seq T :=
-    match l with
+  Fixpoint reverse (s : seq T) : seq T :=
+    match s with
     | nil    => nil
     | h :: t => rcons' (reverse t) h
     end.
   
   (** 末尾再帰を使ったプログラム *)
-  Fixpoint catrev (l1 l2 : seq T) : seq T :=
-    match l1 with
-    | [::] => l2
-    | x :: l1 => catrev l1 (x :: l2)
+  Fixpoint catrev (s1 s2 : seq T) : seq T :=
+    match s1 with
+    | [::] => s2
+    | x :: s1 => catrev s1 (x :: s2)
     end.
-  Definition rev (l : seq T) : seq T := catrev l [::].
+  Definition rev (s : seq T) : seq T := catrev s [::].
   
   (** (1) 二種類のプログラムが同じであることの証明 *)
   (* 良く使う補題 *)
-  Lemma cat_cons (x : T) (l1 l2 : seq T) :
-    (x :: l1) ++ l2 = x :: (l1 ++ l2).
+  Lemma cat_cons (x : T) (s1 s2 : seq T) :
+    (x :: s1) ++ s2 = x :: (s1 ++ s2).
   Proof. done. Qed.
   
   (* catrevの第2引数がappendのときの補題 *)
-  Lemma l_rev_cat_r (l l1 l2 : seq T) :
-    catrev l (l1 ++ l2) = catrev l l1 ++ l2.
+  Lemma l_rev_cat_r (s s1 s2 : seq T) :
+    catrev s (s1 ++ s2) = catrev s s1 ++ s2.
   Proof.
-    elim: l l1 => [| x l IHl l1] /=.
+    elim: s s1 => [| x s IHs s1] /=.
     - done.
-    - rewrite -[x :: l1 ++ l2]cat_cons.
-      rewrite (IHl (x :: l1)).
+    - rewrite -[x :: s1 ++ s2]cat_cons.
+      rewrite (IHs (x :: s1)).
       done.
   Qed.
   
-  Theorem reverse_rev (l : seq T) : reverse l = rev l.
+  Theorem reverse_rev (s : seq T) : reverse s = rev s.
   Proof.
     rewrite /rev.
-    elim: l => [| a l IHl] /=.
+    elim: s => [| a l IHs] /=.
     - done.
-    - rewrite IHl /rcons'.
+    - rewrite IHs /rcons'.
       rewrite -l_rev_cat_r.
       done.
   Qed.
   
   (** (2) 2回実行するともとに戻ることを証明 *)
   (** reverse について証明 *)
-  Lemma rcons_reverse (x : T) (l : seq T) : reverse (rcons' l x) = x :: (reverse l).
+  Lemma rcons_reverse (x : T) (s : seq T) : reverse (rcons' s x) = x :: (reverse s).
   Proof.
-    elim: l => [| x' l IHl] /=.
+    elim: s => [| x' s IHs] /=.
     - done.
-    - rewrite IHl.
+    - rewrite IHs.
       done.
   Qed.
   
-  Theorem reverse_involutive (l : seq T) : reverse (reverse l) = l.
+  Theorem reverse_involutive (s : seq T) : reverse (reverse s) = s.
   Proof.
-    elim: l => [| n l IHl] /=.
+    elim: s => [| n s IHs] /=.
     - done.
     - rewrite rcons_reverse.
-      rewrite IHl.
+      rewrite IHs.
       done.
   Qed.
   
   (** (3) reverse が単射であることを証明 *)
   (** reverse について証明 *)
-  Theorem reverse_injective l1 l2 : reverse l1 = reverse l2 -> l1 = l2.
+  Theorem reverse_injective s1 s2 : reverse s1 = reverse s2 -> s1 = s2.
   Proof.
     move=> H.
-    rewrite -[l1]reverse_involutive.
+    rewrite -[s1]reverse_involutive.
     rewrite H.
     rewrite [LHS]reverse_involutive.
     done.
@@ -111,7 +111,7 @@ Section Rev.
   (** (2') 2回実行するともとに戻ることを証明 *)
   (** rev について証明。reverseを経由する例 *)
   (* すでにある定理を再利用する。 *)
-  Theorem rev_involutive (l : seq T) : rev (rev l) = l.
+  Theorem rev_involutive (s : seq T) : rev (rev s) = s.
   Proof.
     rewrite -!reverse_rev.
     apply: reverse_involutive.
@@ -120,33 +120,33 @@ Section Rev.
   (** (2'') 2回実行するともとに戻ることを証明 *)
   (** rev について証明。直接証明する例 *)
   (* catrevの第1引数がappendのときの補題 *)
-  Lemma l_rev_cat_l (l l1 l2 : seq T) :
-    catrev (l ++ l1) l2 = catrev l1 [::] ++ catrev l l2.
+  Lemma l_rev_cat_l (s s1 s2 : seq T) :
+    catrev (s ++ s1) s2 = catrev s1 [::] ++ catrev s s2.
   Proof.
-    elim: l l2 => [n | a l IHl l2] /=.
+    elim: s s2 => [n | a s IHs s2] /=.
     - rewrite -l_rev_cat_r.
       done.
-    - rewrite IHl.
+    - rewrite IHs.
       done.
   Qed.
   
-  Theorem rev_involutive' (l : seq T) : rev (rev l) = l.
+  Theorem rev_involutive' (s : seq T) : rev (rev s) = s.
   Proof.
     rewrite /rev.
-    elim: l => [| a l IHl] /=.
+    elim: s => [| a s IHs] /=.
     - done.
-    - rewrite (l_rev_cat_r l [::] [:: a]).
-      rewrite (l_rev_cat_l (catrev l [::]) [:: a] [::]).
-      rewrite IHl.
+    - rewrite (l_rev_cat_r s [::] [:: a]).
+      rewrite (l_rev_cat_l (catrev s [::]) [:: a] [::]).
+      rewrite IHs.
       done.
   Qed.
   
   (** (3') reverse が単射であることを証明 *)
   (** rev について証明 *)
-  Theorem rev_injective l1 l2 : rev l1 = rev l2 -> l1 = l2.
+  Theorem rev_injective s1 s2 : rev s1 = rev s2 -> s1 = s2.
   Proof.
     move=> H.
-    rewrite -[l1]rev_involutive.
+    rewrite -[s1]rev_involutive.
     rewrite H.
     rewrite [LHS]rev_involutive.
     done.
