@@ -63,40 +63,33 @@ Section Rev.
     rewrite /rev.
     elim: s => [| a l IHs] /=.
     - done.
-    - rewrite IHs /rcons'.
-      rewrite -l_rev_cat_r.
-      done.
-  Qed.
+    - admit.                                (* 答え参照 *)
+  Admitted.
   
   (** (2) 2回実行するともとに戻ることを証明 *)
   (** reverse について証明 *)
-  Lemma rcons_reverse (x : T) (s : seq T) : reverse (rcons' s x) = x :: (reverse s).
+  Lemma rcons_reverse (x : T) (s : seq T) :
+    reverse (rcons' s x) = x :: (reverse s).
   Proof.
     elim: s => [| x' s IHs] /=.
     - done.
-    - rewrite IHs.
-      done.
-  Qed.
+    - admit.                                (* 答え参照 *)
+  Admitted.
   
   Theorem reverse_involutive (s : seq T) : reverse (reverse s) = s.
   Proof.
     elim: s => [| n s IHs] /=.
     - done.
-    - rewrite rcons_reverse.
-      rewrite IHs.
-      done.
-  Qed.
+    - admit.                                (* 答え参照 *)
+  Admitted.
   
   (** (3) reverse が単射であることを証明 *)
   (** reverse について証明 *)
   Theorem reverse_injective s1 s2 : reverse s1 = reverse s2 -> s1 = s2.
   Proof.
     move=> H.
-    rewrite -[s1]reverse_involutive.
-    rewrite H.
-    rewrite [LHS]reverse_involutive.
-    done.
-  Qed.
+    admit.                                  (* 答え参照 *)
+  Admitted.
   
   (** * 説明 *)
   (** (あ) リストの反転 reverse のような、誰でも書いてみる・良く使うコードにも、
@@ -151,7 +144,46 @@ Section Rev.
     rewrite [LHS]rev_involutive.
     done.
   Qed.
+
+
+  (** * 答え *)
+  Theorem a_reverse_rev (s : seq T) : reverse s = rev s.
+  Proof.
+    rewrite /rev.
+    elim: s => [| a l IHs] /=.
+    - done.
+    - rewrite IHs /rcons'.
+      rewrite -l_rev_cat_r.
+      done.
+  Qed.
   
+  Lemma a_rcons_reverse (x : T) (s : seq T) :
+    reverse (rcons' s x) = x :: (reverse s).
+  Proof.
+    elim: s => [| x' s IHs] /=.
+    - done.
+    - rewrite IHs.
+      done.
+  Qed.
+  
+  Theorem a_reverse_involutive (s : seq T) : reverse (reverse s) = s.
+  Proof.
+    elim: s => [| n s IHs] /=.
+    - done.
+    - rewrite rcons_reverse.
+      rewrite IHs.
+      done.
+  Qed.
+  
+  Theorem a_reverse_injective s1 s2 : reverse s1 = reverse s2 -> s1 = s2.
+  Proof.
+    move=> H.
+    rewrite -[s1]reverse_involutive.
+    rewrite H.
+    rewrite [LHS]reverse_involutive.
+    done.
+  Qed.
+
 End Rev.
 
 (** * 参考文献 *)
