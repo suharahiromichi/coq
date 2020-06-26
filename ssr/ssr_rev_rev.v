@@ -61,7 +61,7 @@ Section Rev.
   Theorem reverse_rev (s : seq T) : reverse s = rev s.
   Proof.
     rewrite /rev.
-    elim: s => [| a l IHs] /=.
+    elim: s => [| x l IHs] /=.
     - done.
     - admit.                                (* 答え参照 *)
   Admitted.
@@ -78,7 +78,7 @@ Section Rev.
   
   Theorem reverse_involutive (s : seq T) : reverse (reverse s) = s.
   Proof.
-    elim: s => [| n s IHs] /=.
+    elim: s => [| x s IHs] /=.
     - done.
     - admit.                                (* 答え参照 *)
   Admitted.
@@ -150,7 +150,7 @@ Section Rev.
   Theorem a_reverse_rev (s : seq T) : reverse s = rev s.
   Proof.
     rewrite /rev.
-    elim: s => [| a l IHs] /=.
+    elim: s => [| x l IHs] /=.
     - done.
     - rewrite IHs /rcons'.
       rewrite -l_rev_cat_r.
@@ -168,7 +168,7 @@ Section Rev.
   
   Theorem a_reverse_involutive (s : seq T) : reverse (reverse s) = s.
   Proof.
-    elim: s => [| n s IHs] /=.
+    elim: s => [| x s IHs] /=.
     - done.
     - rewrite rcons_reverse.
       rewrite IHs.
