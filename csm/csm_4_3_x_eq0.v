@@ -38,14 +38,40 @@ Section LE0.
 (**
 ## 同値の関係の命題
 *)
-  Check leqn0 : forall n : nat, (n <= 0) = (n == 0).
-  Goal forall n : nat, (n < 1) = (n == 0).
-  Proof. apply: leqn0. Qed.
-
+  (**
+     "<" は leq ("<=") の表記(Notation、構文糖)であるため、
+     "<=" も "<" を使って表示される。
+     Coq はできるだけ、表記を使おうとするため (pretty-print) 。
+   *)
+  Locate "_ < _".                           (* leq m.+1 n *)
+  
+  (* 1 <= n と 0 < n とは表記として、同じ。 *)
+  Goal forall n, (1 <= n) = (0 < n).
+  Proof.
+    move=> n.
+    (* (0 < n) = (0 < n) *)
+    done.
+  Qed.
+  
+  (* n <= 0 と n < 1 とは表記(Notation)としては、異なる。 *)
+  Goal forall n, (n <= 0) = (n < 1).
+  Proof.
+    move=> n.
+    rewrite /leq.
+    (* ((n - 0) == 0) = ((n.+1 - 1) == 0) *)
+    done.
+  Qed.
+  
   Check lt0n : forall n : nat, (0 < n) = (n != 0).
   Goal forall n : nat, (1 <= n) = (n != 0).
   Proof. apply: lt0n. Qed.
   
+  Check leqn0 : forall n : nat, (n <= 0) = (n == 0).
+  Goal forall n : nat, (n < 1) = (n == 0).
+  Proof. apply: leqn0. Qed.
+  
+  (* このあたりは、boolの式の問題 *)
+  (* https://qiita.com/suharahiromichi/items/85773d5af998ae3fe148 *)
   Check eqn0Ngt : forall n : nat_eqType, (n == 0) = ~~ (0 < n).
   Check neq0_lt0n : forall n : nat_eqType, (n == 0) = false -> 0 < n.
   
@@ -75,10 +101,23 @@ Section LE0.
   Check ltnn : forall n : nat, (n < n) = false.
   
 (**
-# その他
+## その他
  *)
   Check eq_leq : forall m n : nat, m = n -> m <= n.
 
+(**
+論理バズルで取り上げられる（有名？）な補題だが、
+Coq の場合、証明図を下から上に積み上げていくので、結論を前提に置き換えていくので、
+なにも考えずに、手当たり次第に apply していくと、
+ *)  
+  Goal 2 <= 3.
+  Proof.
+    apply: eq_leq.                          (* 2 = 3 *)
+  (**
+     Coqの証明が行き詰まることの多くは、大抵こんなことが原因である。
+   *)
+  Admitted.
+    
 End LE0.
 
 (**
