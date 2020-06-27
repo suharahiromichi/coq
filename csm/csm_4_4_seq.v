@@ -172,7 +172,9 @@ apply/nilP または move/nilP で、相互に変換できるので便利であ�
     move=> s.
     Check lt0n : forall n : nat, (0 < n) = (n != 0). (* 覚えておくとよい。 *)
     rewrite lt0n.
-    split=> H; by apply/nilP.
+    split=> H.
+    - by apply/nilP.
+    - by apply/nilP.
   Qed.
 End Size1.
 
@@ -420,14 +422,14 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_list_1.v
 ## has と all についての補題
 *)
 
-Check has_nil : forall (T : Type) (a : pred T), has a [::] = false.
+Check has_nil : forall (T : Type) (a : pred T), has a [::] = false. (* hasの定義から *)
 Check has_seq1 : forall (T : Type) (a : pred T) (x : T), has a [:: x] = a x.
 Check has_cat : forall (T : Type) (a : pred T) (s1 s2 : seq T),
     has a (s1 ++ s2) = has a s1 || has a s2.
 Check has_rcons : forall (T : Type) (a : pred T) (s : seq T) (x : T),
     has a (rcons s x) = a x || has a s.
 
-Check all_nil : forall (T : Type) (a : pred T), all a [::] = true.
+Check all_nil : forall (T : Type) (a : pred T), all a [::] = true. (* allの定義から *)
 Check all_seq1 : forall (T : Type) (a : pred T) (x : T), all a [:: x] = a x.
 Check all_cat : forall (T : Type) (a : pred T) (s1 s2 : seq T),
     all a (s1 ++ s2) = all a s1 && all a s2.
