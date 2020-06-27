@@ -31,8 +31,8 @@ opamでインストールしている場合は、ssrbool.v のソースは、た
 
 seq はpolymorphicな型である。
 
-Standard Coqのlistをリネームしたものであるので、CICに基づく帰納法の原理は、
-list_indである。seq_indではない。
+Standard Coqのlistをリネーム (Definiton seq := list) したものであるので、
+CICに基づく帰納法の原理は、list_indである。seq_indではない。
  *)
 Check list_ind
   : forall (A : Type) (P : seq A -> Prop),
@@ -73,7 +73,7 @@ End RconsQ.
 - head は最初の要素をとりだす。behead はその残りの要素。空なら空。
 - last は最後の要素をとりだす。belast は？
 
-see. csm_4_4_x_seq_head_last.v
+see. csm_4_4_x_seq_head_last.v (次回)
 *)
 
 (**
@@ -96,7 +96,7 @@ Section Size.
 (*
 ## size に関する補題
 
-大抵の関数に関するsizeの補題が証明さているので、使うべきである。
+大抵の関数に関するsizeの補題が証明されているので、使うべきである。
  *)
   Check size_cat
     : forall (T : Type) (s1 s2 : seq T), size (s1 ++ s2) = size s1 + size s2.
@@ -234,7 +234,7 @@ End Append.
 rev は catrev (末尾再帰) を使って定義されている。
  *)
 Print rev.
-(* Definition rev := catrev^~ [::] *)
+(* Definition rev := catrev ^~ [::] *)
 (* Definition rev s := catrev s [::] *)
 Print catrev.
 (**
@@ -396,6 +396,8 @@ Check forall eT a s, ex2 (fun x : eT => x \in s) (fun x : eT => a x).
 
 (**
 参考。普通のexists。
+
+「Coq/SSReflect/MathComp による定理証明」 p.77
 *)
 Print ex.
 (**
@@ -449,7 +451,7 @@ Check all_rcons : forall (T : Type) (a : pred T) (s : seq T) (x : T),
 *)
 
 (**
-# == と \in について （seq はpolymorphicな型）
+# == と \in について （seq_eqType と seq_predType は polymorphicな型）
  *)
 
 (**
@@ -559,7 +561,8 @@ Compute [seq x <- [:: 1;2;3] | ~~ odd x].        (* [:: 2] *)
 
 
 (**
-まとめてひとつの [seq ... ] で書けるわけではない。
+まとめてひとつの [seq ... ] で書けるわけではないので、ネストさせる必要がある。
+ネストした例：
  *)
 Compute [seq x <- [seq succn x | x <- [:: 1; 2; 3]]  | odd x]. (* [:: 3] *)
 Compute [seq succn x | x <- [seq x <- [:: 1;2;3] | odd x]]. (* [:: 2; 4] *)
@@ -591,11 +594,7 @@ Lemma filter_cons (T : Type) (a : pred T) (x : T) (s : seq T) :
   [seq x <- x :: s | a x] =
   (if a x then x :: [seq x <- s | a x] else [seq x <- s | a x]).
 Proof.
-  elim : s => /=.
-  Undo 1.
-  elim/last_ind : s => /=.
-  - by [].
-  - by [].
+    by elim : s => //.
 Qed.
 
 Check filter_cat
@@ -634,7 +633,7 @@ Check foldl_rev : forall (T R : Type) (f : R -> T -> R) (z : R) (s : seq T),
 (**
 ## lastP
 
-(これは帰納法でないが) ゴールを ``[::]`` と ``rcons p x`` に分ける。
+(これは帰納法でないが) ゴールを ``[::]`` と ``rcons s x`` に分ける。
  *)
 
 Section Last.
@@ -660,9 +659,10 @@ s = [::] だと ``size (hbody s) = size s`` になるので、``1 <= size s`` �
 *)
   Lemma size_hbody_1 s : 1 <= size s -> size (hbody s) < size s.
   Proof.
-    case: s => // x s Hs.
-    rewrite hbody_cons /=.
-      (* size s < (size s).+1 *)
+    case: s => [| x s Hs].             (* [::] と x :: s に分ける。 *)
+    - done.
+    - rewrite hbody_cons /=.
+        (* size s < (size s).+1 *)
       by apply: ltnSn.
   Qed.
   
@@ -672,10 +672,11 @@ s = [::] だと ``size (tbody s) = size s`` になるので、``1 <= size s`` �
 *)
   Lemma size_tbody_1 s : 1 <= size s -> size (tbody s) < size s.
   Proof.
-    case/lastP: s => // s x Hs.
-    rewrite tbody_rcons size_rcons.
-      (* size s < (size s).+1 *)
-      by apply: ltnSn.
+    case/lastP: s => [| s x Hs].    (* [::] と rcons s x に分ける。 *)
+    - done.
+    - rewrite tbody_rcons size_rcons.
+        (* size s < (size s).+1 *)
+        by apply: ltnSn.
   Qed.
 End Last.
 
