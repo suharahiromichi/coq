@@ -1,4 +1,3 @@
-
 (**
 Coq/SSReflect/MathComp による証明の例
 
@@ -12,6 +11,8 @@ Coq/SSReflect/MathComp による証明の例
 (2) 2回実行するともとに戻ることを証明する(involutive)。
 
 (3) 単射であることを証明する(injective)。
+
+(4) append と reverse の分配則を証明してください。
 *)
 From mathcomp Require Import all_ssreflect.
 
@@ -43,6 +44,7 @@ Section Rev.
   Definition rev (s : seq T) : seq T := catrev s [::].
   
   (** (1) 二種類のプログラムが同じであることの証明 *)
+  
   (* 良く使う補題 *)
   Lemma cat_cons (x : T) (s1 s2 : seq T) :
     (x :: s1) ++ s2 = x :: (s1 ++ s2).
@@ -93,16 +95,41 @@ Section Rev.
   Admitted.
   
   
+  (** (4) reverse と append の分配法則の証明 *)
+  (** reverse について証明 *)
+  (** ProofCafe #100, 参加 y. 氏の解答に基づく。 *)
+  
+  Lemma cats0 (s : seq T) : s ++ [::] = s.
+  Proof.
+    elim: s => //= x s IHs.
+      by rewrite IHs.
+  Qed.
+  
+  Lemma catA (s1 s2 s3 : seq T) :
+    (s1 ++ s2) ++ s3 = s1 ++ (s2 ++ s3).
+  Proof.
+    elim: s1 => //= x s1 IHs.
+      by rewrite IHs.
+  Qed.
+  
+  Theorem distr_reverse s1 s2 : reverse (s1 ++ s2) = reverse s2 ++ reverse s1.
+  Proof.
+    elim: s1 => [| x s1 IHs] /=.
+    - by rewrite cats0.
+    - rewrite IHs.
+      rewrite /rcons'.
+      rewrite catA.
+      done.
+  Qed.
+  
   (** * 説明 *)
   (** (あ) リストの反転 reverse のような、誰でも書いてみる・良く使うコードにも、
       involutive や injective といった数学的な構造を持っています。
-      ++ と reverse の分配法則というのもあります（証明してください！）。
-  
+      
       (い) reverse_injective は Software Fundations の 4 stars の問題です。
       それも比較的簡単に証明できてしまいました。
    *)
 
-  
   (** * おまけ *)
   (** (2') 2回実行するともとに戻ることを証明 *)
   (** rev について証明。reverseを経由する例 *)
@@ -165,7 +192,8 @@ Section Rev.
   Proof.
     elim: s => [| x' s IHs] /=.
     - done.
-    - rewrite IHs.
+    - rewrite /rcons' in IHs.
+      rewrite IHs.
       done.
   Qed.
   
@@ -181,7 +209,7 @@ Section Rev.
   Theorem a_reverse_injective s1 s2 : reverse s1 = reverse s2 -> s1 = s2.
   Proof.
     move=> H.
-    rewrite -[s1]reverse_involutive.
+    rewrite -[LHS]reverse_involutive.
     rewrite H.
     rewrite [LHS]reverse_involutive.
     done.
