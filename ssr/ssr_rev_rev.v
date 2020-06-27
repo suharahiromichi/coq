@@ -1,3 +1,4 @@
+
 (**
 Coq/SSReflect/MathComp による証明の例
 
@@ -51,10 +52,10 @@ Section Rev.
   Lemma l_rev_cat_r (s s1 s2 : seq T) :
     catrev s (s1 ++ s2) = (catrev s s1) ++ s2.
   Proof.
-    elim: s s1 => [| x s IHs s1] /=.
+    elim: s s1 => [| x s IHs s1] /=.        (* s1 を汎化する。 *)
     - done.
     - rewrite -[x :: (s1 ++ s2)]cat_cons.
-      rewrite (IHs (x :: s1)).
+      rewrite IHs.
       done.
   Qed.
   
