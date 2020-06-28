@@ -1,5 +1,5 @@
 (**
-カタラン数をCoqで語らん
+(Coqで)カタラン数を語らん
 ========================
 
 @suharahiromichi
@@ -14,7 +14,8 @@ Coq/MathComp には binomial.v というパッケージがあって、
 二項係数（順列・組合せの「組合せ」）の定義と
 基本的ないくつかの補題が証明されています。これを使ってなにか証明してみましょう。
 
-二項係数を使って定義される、カタラン数 (Catalan Number) というものがあるります。
+二項係数を使って定義される、カタラン数 (Catalan Number) というものがあるります
+（文献[1]）。
 nが自然数のとき、以下で定義されます。
 
 ```math
@@ -23,7 +24,7 @@ c_n =
 \frac{1}{n + 1}\dbinom{2 n}{n}
 ```
 
-これの意味については、「カタラン数を語らん」としているサイト（文献[1]）に譲ります。
+これの意味については、「カタラン数を語らん」としているサイト（文献[2]）に譲ります。
 
 ここでは、n番めのカタラン数について、
 
@@ -35,6 +36,7 @@ c_n = \dbinom{2 n}{n} - \dbinom{2 n}{n - 1}、ただし 0 \lt n
 が成り立つことを証明したい思います。実際には、上記ふたつの式を整理した、
 
 ```math
+
 n \dbinom{2 n}{n} = (n + 1) \dbinom{2 n}{n - 1}、ただし 0 \lt n
 
 ```
@@ -44,8 +46,8 @@ n \dbinom{2 n}{n} = (n + 1) \dbinom{2 n}{n - 1}、ただし 0 \lt n
 
 (**
 以下では、``n``、``m`` を（0以上の）自然数とします。また、MathCompの表記にあわせて、
-二項係数 $\dbinom{n}{m}$ を ``C(n, m)`` で、
-``n | m`` で「m は n で割り切れる」を示す（除数のほうが前）ことにします。
+二項係数 $\dbinom{n}{m}$ を ``C(n, m)`` で、また、
+「m は n で割り切れる」を``n | m`` で示します（除数のほうが前）。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -61,7 +63,7 @@ Unset Printing Implicit Defensive.
 Section LEMMAS.
 
 (**
-# ``n! = n * (n - 1)!`` 、ただし ``0 < n``
+## ``n! = n * (n - 1)!`` 、ただし ``0 < n``
 
 階乗の定義から自明ですが、MathComp では ``(n + 1) = (n + 1) * n!``
 でしか証明されていないので、証明しておきます。
@@ -77,7 +79,7 @@ Section LEMMAS.
 (**
 ## ``n! * m! | (n + m)!``
 
-さらに、階乗についての補題を証明します。
+階乗の剰余についての補題を証明します。
 ちょっと直観に反する補題ですが、二項係数の定義から導くことができます。
 また、便利です。
 *)  
@@ -93,101 +95,97 @@ Section LEMMAS.
         by apply: dvdn_mul.
   Qed.  
 
-  Lemma test5 n : 0 < n -> (n * n.-1`! * n`!) %| n.*2`!.
+(**
+次のふたつは、階乗の剰余の応用ですが、少し長くなるので、別に証明しておきます。
+*)
+  Lemma divn_n2_l n : 0 < n -> (n * n.-1`! * n`!) %| n.*2`!.
   Proof.
     move=> H.
-    rewrite -fact_pred; last done.
-    rewrite divn_fact_mul_add_fact; first done.
-      (* n + n = n.*2 *)
-      by rewrite -addnn.
+    rewrite -[n * n.-1`!]fact_pred; last done.
+    apply: divn_fact_mul_add_fact.
+    rewrite -addnn.
+    done.
   Qed.
 
-  Lemma test6 n : 0 < n -> n.+1 * n`! * n.-1`! %| n.*2`!.
+  Lemma divn_n2_r n : 0 < n -> n.+1 * n`! * n.-1`! %| n.*2`!.
   Proof.
     move=> H.
     rewrite -[n.+1 * n`!]fact_pred; last done.
     apply: divn_fact_mul_add_fact.
-    (* n.+1 + n.-1 = n.*2 *)
-    have -> : n.+1 + n.-1 = n + n by ssromega.
-    by rewrite -addnn.
-(*
-    rewrite -subn1.
-    rewrite addnBA; last done.
-    rewrite -addn1.
-    rewrite -addnAC.
-    rewrite addn1.
-    rewrite subn1.
-    Search _.+1.-1.
-    rewrite -[(n + n).+1.-1]pred_Sn.
-  *)
-    done.
+    rewrite -addnn.
+      by ssromega.
   Qed.
 
-(**
-カタラン数の定義 : ``c_n = (1 / (n + 1)) * 'C(2*n, n)`` に対して、
-   
-```c_n = 'C(2*n, n) - 'C(2*n, n - 1)```
-
-が成り立つ。ここで 'C(n, m) は二項係数 nCm。
-
-```(1/(n+1)) * 'C(2*n, n) = 'C(2*n, n) - 'C(2*n, n - 1)```
-
-を変形した、
-
-```n * 'C(n*2, n) = (n+1) * 'C(n*2, n+1)```
-
-を証明する。
-*)  
-
+End LEMMAS.
   
+Section TH.
 (**
-方針
-左辺と右辺それぞれに、
+# 定理
+
+証明の概略を示します。
+
+(1) ``C(n, m) = n! / (m! * (n - m)!)`` を使って、二項係数を階乗の式に変換する。
+すこし整理すると、
+
+```math
+
+n \frac{(2 n)!}{n (n-1)! n!} = (n+1) \frac{(2 n)!}{(n+1) n! (n-1)!}
+```
+
+が得られる。
+
+
+(2) 補題``muln_divA``を使い、左辺は ``(n * □) / (n * ■)`` に変換する。また、
+右辺は ``(n.+1 * ○) / (n.+1 * ●)`` に変換する。
+
+
+```math
+
+\frac{n (2 n)!}{n (n-1)! n!} = \frac{(n+1)(2 n)!}{(n+1) n! (n-1)!}
+```
+
+(3) 補題``divnMl``を使い、左辺から ``n``、右辺から ``n+1``を消す。
+
+```math
+
+\frac{(2 n)!}{(n-1)! n!} = \frac{(2 n)!}{n! (n-1)!}
+```
 *)
   Check muln_divA : forall d m n : nat, d %| n -> m * (n %/ d) = (m * n) %/ d.
-(**
-で、(N * X) %/ (N * Y) のかたちにする。
-*)    
   Check divnMl : forall p m d : nat, 0 < p -> (p * m) %/ (p * d) = m %/ d.
-(**
-で、それを消す。
-*)    
 
- Theorem catalan_rel n : 0 < n -> n * 'C(n.*2, n) = n.+1 * 'C(n.*2, n.+1).
+  Theorem catalan_rel n : 0 < n -> n * 'C(n.*2, n) = n.+1 * 'C(n.*2, n.+1).
   Proof.
     move=> Hn.
     
     (* LHS *)
+    (* (1) *)
     rewrite bin_factd; last by rewrite double_gt0.
     have -> : n.*2 - n = n by rewrite -addnn; ssromega.
     rewrite {1}[in n`! * n`!]fact_pred; last done.
-    (* (n * X) %/ (n * Y) にする。 *)
-    rewrite muln_divA; last by rewrite test5.
+    (* (2) *)
+    rewrite muln_divA; last by rewrite divn_n2_l.
     rewrite -mulnA divnMl; last done.
     rewrite [(n.-1)`! * n`!]mulnC.
     
     (* RHS *)
+    (* (1) *)
     rewrite bin_factd; last by rewrite double_gt0.
     have -> : n.*2 - n.+1 = n.-1 by rewrite -addnn; ssromega.
-    rewrite factS.
-    (* (n.+1 * X) %/ (n.+1 * Y) にする。 *)
-    rewrite muln_divA; last by rewrite test6.
+    rewrite [n.+1`!]factS.
+    (* (2) *)
+    rewrite muln_divA; last by rewrite divn_n2_r.
     rewrite -mulnA divnMl; last done.
+    
     done.
   Qed.
 
-End LEMMAS.
+End TH.
 
-(**
-# 文献
-
-[1] カタラン数を語らん、https://www.google.com/search?&q="カタラン数を語らん"
-*)
-  
 (**
 # おまけ
 
-Catalan Number カタラン数
+カタラン数には、漸化式を使った表現もあります。これが一致することを証明できるでしょうか。
 *)
 
 Section DEFINE.
@@ -210,5 +208,14 @@ Section DEFINE.
   Compute catalan_rec 2.
 
 End DEFINE.
+
+(**
+# 文献
+
+[1] https://ja.wikipedia.org/wiki/カタラン数
+
+
+[2] https://www.google.com/search?&q=カタラン数を語らん
+*)
 
 (* END *)
