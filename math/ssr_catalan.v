@@ -4,6 +4,8 @@ Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
 Require Import Program.Wf.                  (* Program wf *)
 
+Require Import ssr_multiset_coefficient.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -38,32 +40,77 @@ Section LEMMAS.
 
   Lemma test n : 0 < n -> 0 < n.*2.
   Proof.
-  Admitted.
-
+    by rewrite double_gt0.
+  Qed.
+  
   Lemma test2 n : n.*2 - n = n.
   Proof.
-  Admitted.
+    rewrite -addnn.
+    ssromega.
+  Qed.
   
   Check factS : forall n : nat, n.+1`! = n.+1 * n`!.
   Lemma test3 n : 0 < n -> n`! = n * n.-1`!.
   Proof.
-  Admitted.
-
+    move=> H.
+    have Hf :(n.-1.+1)`! = n.-1.+1 * (n.-1)`! by apply: factS.
+    rewrite prednK in Hf; last done.
+    done.
+  Qed.
+  
   Lemma test4 n : n.*2 - n.+1 = n.-1.
   Proof.
-  Admitted.
-
-  Lemma test5 n : (n * n.-1`! * n`!) %| n.*2`!.
-  Proof.
-    rewrite -[n * n.-1`!]test3.
-    (* n`! * n`! %| (n.*2)`! *)
-  Admitted.
+    rewrite -addnn.
+    ssromega.
+  Qed.
   
-  Lemma test6 n : n.+1 * n`! * n.-1`! %| n.*2`!.
+  Lemma test5 n : 0 < n -> (n * n.-1`! * n`!) %| n.*2`!.
   Proof.
+    move=> H.
+    rewrite -test3; last done.
+    rewrite -addnn.
+      by rewrite divn_fact_mul_add_fact.
+  Qed.
+
+  Lemma test0 n m p : n + m = p -> n`! * m`! %| p`!.
+  Proof.
+    move=> <-.
+    by apply: divn_fact_mul_add_fact.
+  Qed.
+  
+  Lemma test6 n : 0 < n -> n.+1 * n`! * n.-1`! %| n.*2`!.
+  Proof.
+    move=> H.
     rewrite -[n.+1 * n`!]test3; last done.
-    (* (n.+1)`! * (n.-1)`! %| (n.*2)`! *)
-  Admitted.
+    apply: test0.
+    rewrite -subn1.
+    rewrite addnBA; last done.
+    rewrite -addn1.
+    rewrite -addnAC.
+    rewrite addn1.
+    rewrite subn1.
+    Search _.+1.-1.
+    rewrite -[(n + n).+1.-1]pred_Sn.
+    rewrite addnn.
+    done.
+  Qed.
+
+(**
+カタラン数の定義 : ``c_n = (1 / (n + 1)) * 'C(2*n, n)`` に対して、
+   
+```c_n = 'C(2*n, n) - 'C(2*n, n - 1)```
+
+が成り立つ。ここで 'C(n, m) は二項係数 nCm。
+
+```(1/(n+1)) * 'C(2*n, n) = 'C(2*n, n) - 'C(2*n, n - 1)```
+
+を変形した、
+
+```n * 'C(n*2, n) = (n+1) * 'C(n*2, n+1)```
+
+を証明する。
+*)  
+
   
 (**
 方針
