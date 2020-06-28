@@ -63,7 +63,7 @@ Unset Printing Implicit Defensive.
 Section LEMMAS.
 
 (**
-## ``n! = n * (n - 1)!`` 、ただし ``0 < n``
+## ``n! = n (n - 1)!`` 、ただし ``0 < n``
 
 階乗の定義から自明ですが、MathComp では ``(n + 1) = (n + 1) * n!``
 でしか証明されていないので、証明しておきます。
@@ -77,13 +77,12 @@ Section LEMMAS.
   Qed.
   
 (**
-## ``n! * m! | (n + m)!``
+## ``(n! m!) | (n + m)!``
 
 階乗の剰余についての補題を証明します。
 ちょっと直観に反する補題ですが、二項係数の定義から導くことができます。
-また、便利です。
 *)  
-  Lemma divn_fact_mul_add_fact (n m p : nat) : n + m = p -> n`! * m`! %| p`!.
+  Lemma divn_fact_mul_add_fact (n m p : nat) : n + m = p -> (n`! * m`!) %| p`!.
   Proof.
     move=> <-.
     have H : 'C(n + m, m) * (n`! * m`!) = (n + m)`!.
@@ -107,7 +106,7 @@ Section LEMMAS.
     done.
   Qed.
 
-  Lemma divn_n2_r n : 0 < n -> n.+1 * n`! * n.-1`! %| n.*2`!.
+  Lemma divn_n2_r n : 0 < n -> (n.+1 * n`! * n.-1`!) %| n.*2`!.
   Proof.
     move=> H.
     rewrite -[n.+1 * n`!]fact_pred; last done.
@@ -124,22 +123,16 @@ Section TH.
 
 証明の概略を示します。
 
-(1) ``C(n, m) = n! / (m! * (n - m)!)`` を使って、二項係数を階乗の式に変換する。
+(1) ``C(n, m) = n! / (m! (n - m)!)`` を使って、二項係数を階乗の式に変換する。
 整理すると、
 
 ```math
 
-n \frac{(2n)!}{(2n-n)! n!} = (n+1) \frac{(2n)!}{(n-1)! (2n-(n-1))!}
-```
+n \frac{(2n)!}{(2n-n)! n!} = (n+1) \frac{(2n)!}{(n-1)! (2n-(n-1))!}\\
 
 
-```math
+n \frac{(2n)!}{n! n!} = (n+1) \frac{(2n)!}{(n-1)! (n+1)!}\\
 
-n \frac{(2n)!}{n! n!} = (n+1) \frac{(2n)!}{(n-1)! (n+1)!}
-```
-
-
-```math
 
 n \frac{(2n)!}{n (n-1)! n!} = (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 ```
@@ -148,7 +141,7 @@ n \frac{(2n)!}{n (n-1)! n!} = (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 
 
 (2) 補題``muln_divA``を使い、左辺は ``(n * □) / (n * ■)`` に変換する。また、
-右辺は ``(n.+1 * ○) / (n.+1 * ●)`` に変換する。
+右辺は ``((n+1) * ○) / ((n+1) * ●)`` に変換する。
 
 
 ```math
