@@ -13,8 +13,21 @@
 Coq/MathComp には binomial.v というパッケージがあって、
 二項係数（順列・組合せの「組合せ」）の定義と
 基本的ないくつかの補題が証明されています。これを使ってなにか証明してみましょう。
+
+このファイルは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/math/ssr_catalan.v
+
+
+また、
+
+https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+
+
+も必要です。
+
 MathCompの階層としては、
-有理数や環を導入する前なので、ここでは（0以上の）自然数の割算と剰余を使って証明を進めます。
+有理数や環を導入する前なので、自然数の割算と剰余を使って証明を進めます。
 
 
 二項係数を使って定義される、カタラン数 (Catalan Number) というものがあります
@@ -133,13 +146,15 @@ Section TH.
 
 ```math
 
-n \frac{(2n)!}{n! (2n-n)!} = (n+1) \frac{(2n)!}{(n-1)! (2n-(n-1))!}\\
+\begin{eqnarray}
 
+n \frac{(2n)!}{n! (2n-n)!} &=& (n+1) \frac{(2n)!}{(n-1)! (2n-(n-1))!}\\
 
-n \frac{(2n)!}{n! n!} = (n+1) \frac{(2n)!}{(n-1)! (n+1)!}\\
+n \frac{(2n)!}{n! n!} &=& (n+1) \frac{(2n)!}{(n-1)! (n+1)!}\\
 
+n \frac{(2n)!}{n (n-1)! n!} &=& (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 
-n \frac{(2n)!}{n (n-1)! n!} = (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
+\end{eqnarray}
 ```
 
 が得られる。
@@ -159,9 +174,6 @@ n \frac{(2n)!}{n (n-1)! n!} = (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 ```math
 
 \frac{(2n)!}{(n-1)! n!} = \frac{(2n)!}{n! (n-1)!}\\
-
-
-\frac{(2n)!}{n! (n-1)!} = \frac{(2n)!}{n! (n-1)!}
 ```
 
 ``左辺 = 右辺`` で証明が終わりです。
@@ -180,6 +192,7 @@ n \frac{(2n)!}{n (n-1)! n!} = (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
     rewrite {1}[in n`! * n`!]fact_pred; last done.
     (* (2) *)
     rewrite muln_divA; last by rewrite divn_n2_l.
+    (* (3) *)
     rewrite -mulnA divnMl; last done.
     rewrite [(n.-1)`! * n`!]mulnC.
     
@@ -190,6 +203,7 @@ n \frac{(2n)!}{n (n-1)! n!} = (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
     rewrite [n.+1`!]factS.
     (* (2) *)
     rewrite muln_divA; last by rewrite divn_n2_r.
+    (* (3) *)
     rewrite -mulnA divnMl; last done.
     
     done.
