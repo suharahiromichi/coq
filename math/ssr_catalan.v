@@ -157,8 +157,10 @@ n \frac{(2n)!}{n (n-1)! n!} &=& (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 ```
 
 が得られる。
-
-
+*)
+  
+  Check muln_divA : forall d m n : nat, d %| n -> m * (n %/ d) = (m * n) %/ d.
+(**
 (2) 補題``muln_divA``を使い、左辺は ``(n * □) / (n * ■)`` に変換する。また、
 右辺は ``((n+1) * ○) / ((n+1) * ●)`` に変換する。
 このとき、先に証明した階乗の積と和の補題を使います。
@@ -167,7 +169,10 @@ n \frac{(2n)!}{n (n-1)! n!} &=& (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 
 \frac{n (2n)!}{n (n-1)! n!} = \frac{(n+1)(2n)!}{(n+1) n! (n-1)!}
 ```
-
+ *)
+  
+  Check divnMl : forall p m d : nat, 0 < p -> (p * m) %/ (p * d) = m %/ d.
+(**  
 (3) 補題``divnMl``を使い、左辺から ``n``、右辺から ``n+1``を消す。
 
 ```math
@@ -177,9 +182,6 @@ n \frac{(2n)!}{n (n-1)! n!} &=& (n+1) \frac{(2n)!}{(n+1) n! (n-1)!}
 
 ``左辺 = 右辺`` で証明が終わりです。
 *)
-  Check muln_divA : forall d m n : nat, d %| n -> m * (n %/ d) = (m * n) %/ d.
-  Check divnMl : forall p m d : nat, 0 < p -> (p * m) %/ (p * d) = m %/ d.
-
   Theorem catalan_rel n : 0 < n -> n * 'C(n.*2, n) = n.+1 * 'C(n.*2, n.+1).
   Proof.
     move=> Hn.
