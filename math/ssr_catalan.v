@@ -103,15 +103,14 @@ Section LEMMAS.
   Lemma divn_fact_mul_add_fact (n m p : nat) : n + m = p -> (n`! * m`!) %| p`!.
   Proof.
     move=> <-.
-    have H : 'C(n + m, m) * (n`! * m`!) = (n + m)`!.
+    have <- : 'C(n + m, m) * (n`! * m`!) = (n + m)`!.
     - rewrite -(@bin_fact (n + m) m); last by rewrite leq_addl.
       rewrite -[n + m - m]addnBA; last by rewrite leqnn.
         by rewrite subnn addn0 [m`! * n`!]mulnC.
-    - rewrite -H.
-      rewrite -{1}[n`! * m`!]mul1n.
+    - rewrite -{1}[n`! * m`!]mul1n.
         by apply: dvdn_mul.
-  Qed.  
-
+  Qed.
+  
 (**
 次のふたつは、先の階乗の積と和の剰余の応用ですが、少し長くなるので、別に証明しておきます。
 *)
