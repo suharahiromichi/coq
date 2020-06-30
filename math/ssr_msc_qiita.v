@@ -118,7 +118,6 @@ $$ C(n + m, m) = H(n + 1, m) $$
 
 単純な再帰関数として定義します。演算子``^^``を定義します。
 *)
-
 Section DEFINE1.
   Fixpoint rfact_rec n m := if m is m'.+1 then n * rfact_rec n.+1 m' else 1.
   
@@ -156,7 +155,7 @@ Section LEMMAS1.
   
   Lemma rfactnSr n m : n ^^ m.+1 = n ^^ m * (n + m).
   Proof.
-    elim: m n => [|m IHm] n.
+    elim: m n => [| m IHm] n.
     - rewrite rfactn1.
         by rewrite rfactn0 mul1n addn0.
     - rewrite rfactnS.
@@ -168,7 +167,7 @@ Section LEMMAS1.
   
   Lemma rfactnn n : 1 ^^ n = n`!.
   Proof.
-    elim: n => [|n IHn] //.
+    elim: n => [| n IHn] //.
     rewrite rfactnSr add1n IHn.
       by rewrite factS mulnC.
   Qed.
@@ -218,7 +217,7 @@ End TH1.
 
 漸化式で定義しますが、そのまま再帰関数にしただけでは、停止性が判定できないので、
 CoqのFunctionコマンドを使い、再帰呼出の毎に、ふたつの引数の合計が少なくなることを
-明示します。そして、要求にしたがって証明をつけます。
+明示します。そして、要求にしたがって証明をつけ``Defined``で終わります。
 *)
 
 Section DEFINE2.
@@ -247,7 +246,10 @@ Section DEFINE2.
   
   Definition multiset := nosimpl multiset_rec.
 End DEFINE2.
-  
+
+(**
+演算子``H(_,_)``を定義します。
+*)
 Notation "''H' ( n , m )" := (multiset (n, m))
 (at level 8, format "''H' ( n ,  m )") : nat_scope.
   
@@ -291,15 +293,11 @@ Section LEMMAS2.
   
   Lemma mul_msc_diag n m : n * 'H(n.+1, m) = m.+1 * 'H(n, m.+1).
   Proof.
-    elim: n m.
-    - move=> m.
-      by rewrite mul0n msc0n /= muln0.
-    - move=> n IHn m.
-      elim: m n IHn.
-      + move=> n IHn.
-          by rewrite msc0 muln1 msc1 mul1n.
-      + move=> m IHm n IHn.
-        rewrite mscS mulnDr IHm.
+    elim: n m => [| n IHn] m.
+    - by rewrite mul0n msc0n /= muln0.
+    - elim: m n IHn => [| m IHm] n IHn.
+      + by rewrite msc0 muln1 msc1 mul1n.
+      + rewrite mscS mulnDr IHm.
         * rewrite ['H(n.+1, m.+2)]mscS mulnDr -IHn.
           rewrite -!mulnDl.
           congr (_ * _).
@@ -309,14 +307,12 @@ Section LEMMAS2.
   
   Lemma msc_fact n m : 'H(n.+1, m) * n`! * m`! = (n + m)`!.
   Proof.
-    elim: m n.
-    - move=> n.
-      rewrite msc0 mul1n.
+    elim: m n => [| m IHm] n.
+    - rewrite msc0 mul1n.
       rewrite fact0 muln1.
       rewrite addn0.
       done.
-    - move=> m IHm n.
-      rewrite [(m.+1)`!]factS.
+    - rewrite [(m.+1)`!]factS.
       rewrite !mulnA.
       rewrite [_ * m.+1]mulnC.
       rewrite !mulnA.
@@ -335,8 +331,7 @@ Section LEMMAS2.
   Proof.
     rewrite -msc_fact.
     rewrite -mulnA.
-    Search _ ((_ * _) %/ _).
-    rewrite mulnK.
+     rewrite mulnK.
     + done.
     + rewrite muln_gt0.
       rewrite 2!fact_gt0.
@@ -344,24 +339,12 @@ Section LEMMAS2.
   Qed.
 
 (**
-多重集合係数と上昇階乗冪
- *)
-  Lemma msc_rfact (n m : nat) : 'H(n, m) * m`! = n ^^ m.
-  Proof.
-    elim: m n => [| m IHm] n.
-    - by rewrite msc0 mul1n.
-    - rewrite factS mulnA ['H(n, m.+1) * m.+1]mulnC.
-      rewrite -mul_msc_diag -mulnA.
-        by rewrite IHm.
-  Qed.
-  
-  Lemma msc_rfactd n m : 'H(n, m) = (n ^^ m) %/ m`!.
-  Proof.
-      by rewrite -msc_rfact mulnK ?fact_gt0.
-  Qed.
-  
-(**
 ここで、``(n! m!) | (n + m)!`` を証明しておきます。
+
+``H(n, m) n! m! = (n + m)!`` から自明ですが、
+``C(n, m) m! (n - m)! = n!`` からも証明することができます。
+
+https://qiita.com/suharahiromichi/items/9e0eb6d8e762cf31d047
 *)  
   Lemma divn_fact_mul_add_fact (n m : nat) : n`! * m`! %| (n + m)`!.
   Proof.
@@ -372,7 +355,7 @@ Section LEMMAS2.
   Qed.
 
 (**
-多重集合係数と下降階乗冪
+多重集合係数と下降階乗冪の関係です。
 *)  
   Lemma msc_ffact (n m : nat) : 'H(n.+1, m) * m`! = (n + m) ^_ m.
   Proof.
@@ -395,66 +378,33 @@ Section LEMMAS2.
   Proof.
       by rewrite -msc_ffact mulnK ?fact_gt0.
   Qed.
+
+(**
+多重集合係数と上昇階乗冪の関係です。
+ *)
+  Lemma msc_rfact (n m : nat) : 'H(n, m) * m`! = n ^^ m.
+  Proof.
+    elim: m n => [| m IHm] n.
+    - by rewrite msc0 mul1n.
+    - rewrite factS mulnA ['H(n, m.+1) * m.+1]mulnC.
+      rewrite -mul_msc_diag -mulnA.
+        by rewrite IHm.
+  Qed.
+  
+  Lemma msc_rfactd n m : 'H(n, m) = (n ^^ m) %/ m`!.
+  Proof.
+      by rewrite -msc_rfact mulnK ?fact_gt0.
+  Qed.
 End LEMMAS2.
 
 (**
 # 定理：二項係数と多重集合の関係
+
+二項係数と下降階乗冪、多重集合と下降階乗冪の関係を使って証明できます。
 *)
 Section TH2.  
-  (* m -> n の順番 *)
-  Lemma multiset_binomial' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
-  Proof.
-    elim: m n => [n | m IHm n].
-    - by rewrite msc0 bin0.
-    - elim: n IHm => [IHm | n IHn IHm].
-      + rewrite add0n.
-        rewrite binS.
-        rewrite mscS.
-        rewrite IHm.
-        f_equal.
-        (* 両辺とも 0 になる。 *)
-        Compute 'H(0, 4).                   (* 0 *)
-        Compute 'C(3, 5).                   (* 0 *)
-        rewrite msc0n.
-        rewrite bin_small.
-        * done.
-        * done.
-      + rewrite mscS.
-        rewrite [n.+1 + m.+1]addnC addnS binS.
-        rewrite IHm.
-        f_equal.
-        rewrite IHn.
-        * by rewrite addnS addSn addnC.
-        * move=> n'.
-          by rewrite IHm.
-        * by rewrite 2!addSn addnC.
-  Qed.
   
-  (* n -> m の順番 *)
-  Lemma multiset_binomial'' (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
-  Proof.
-    elim: n m => [m |n IHn m].
-    - by rewrite msc1n add0n binn.
-    - elim: m IHn => [IHn | m IHm IHn].
-      + by rewrite msc0 bin0.
-      + rewrite mscS.
-        rewrite [n.+1 + m.+1]addnC addnS binS.
-        rewrite IHm => [| m'].
-        * rewrite [n.+1 + m]addSn.
-          rewrite [m.+1 + n]addSn.
-          rewrite [m + n]addnC.
-          f_equal.
-          rewrite IHn.
-          rewrite [n + m.+1]addnS.
-          done.
-        * rewrite IHn.
-          done.
-  Qed.
-
-(**
-当然、二項係数と下降階乗冪、多重集合と下降階乗冪の関係を使って証明することも可能です。
-*)  
-  Goal forall (n m : nat), 'H(n.+1, m) = 'C(n + m, m).
+  Lemma multiset_binomial (n m : nat) : 'H(n.+1, m) = 'C(n + m, m).
   Proof.
     rewrite bin_ffactd.
     rewrite msc_ffactd.
