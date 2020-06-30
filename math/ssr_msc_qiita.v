@@ -29,16 +29,29 @@ Coq/MathComp の binomial.v ライブラリで遊んでいます。
 これらに良く似た（対応した）、上昇階乗冪 (rising factorial) と、
 重複組合せ（多重集合係数、multiset coeficent, Homogeneous Product）を定義して、
 いくつかの性質を証明してみます。
+
+このファイルは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/math/ssr_msc_qiita.v
+
+
+また、
+
+https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+
+
+も必要です。
+
 *)
 (**
 ## 定義
 
-- 下降階乗冪は、nをからそれを含むm個の下降積です。
+- 下降階乗冪（binomial.vで定義）は、nをからそれを含むm個の下降積です。
 MathCompでは、「$n^\underline{m}$=``n^_m``」と表記します。
 
 $$ n^\underline{m} = \prod_{k=1}^{m}(n - k + 1) $$
 
-- 二項係数は、MathCompでは、
+- 二項係数は（binomial.vで定義）、MathCompでは、
 
 ```math
 
@@ -55,13 +68,13 @@ C(n, m) &=& C(n-1, m-1) C(n-1, m)\\
 \end{eqnarray}
 ```
 
-- 上昇階乗冪は、nをからそれを含むm個の上昇積です。
+- 上昇階乗冪（ここで定義）は、nをからそれを含むm個の上昇積です。
 MathCompでは、「$n^\overline{m}$=``n^^m``」と表記します。
 
 $$ n^\overline{m} = \prod_{k=1}^{m}(n + k - 1) $$
 
 
-- 多重集合係数は、
+- 多重集合係数（ここで定義）は、
 
 ```math
 
