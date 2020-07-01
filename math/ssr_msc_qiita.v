@@ -69,7 +69,7 @@ C(n, m) &=& C(n-1, m-1) C(n-1, m)\\
 ```
 
 - 上昇階乗冪（ここで定義）は、nをからそれを含むm個の上昇積です。
-MathCompでは、「$n^\overline{m}$=``n^^m``」と表記します。
+「$n^\overline{m}$=``n^^m``」と表記します。
 
 $$ n^\overline{m} = \prod_{k=1}^{m}(n + k - 1) $$
 
