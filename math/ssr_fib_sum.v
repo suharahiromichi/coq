@@ -101,42 +101,32 @@ $$ \sum_{i=0}^{0}f(i) = f(0) $$
   Qed.
   
 (**
-### fib数列の和の加算
-
-```Σf + Σg = Σ(f + g)```
-
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
-*)
-  Lemma l_sum_of_seq (n : nat) :
-    \sum_(0 <= i < n)(fib i) + \sum_(0 <= i < n)(fib i.+1) =
-    \sum_(0 <= i < n)(fib i.+2).
-  Proof.
-    rewrite -big_split.
-    done.
-  Qed.
-  
-(**
 ### index を 0起源に振りなおす。
 
 ```Σ(i=m..n+m)f(i) = Σ(i=0..n)f(i+m)```
  *)
-  Lemma l_reindex (m n : nat) :             (* 不使用 *)
-    \sum_(m <= i < n + m)(fib i) = \sum_(0 <= i < n)(fib (i + m)).
+
+  Lemma l_reindex (m n : nat) f :             (* 不使用 *)
+    \sum_(m <= i < n + m)(f i) = \sum_(0 <= i < n)(f (i + m)).
   Proof.
     rewrite -{1}[m]add0n.
     rewrite big_addn.
     have -> : n + m - m = n by ssromega.
     done.
   Qed.
-  
-  Lemma l_reindex_1 (n : nat) :
-    \sum_(1 <= i < n.+1)(fib i) = \sum_(0 <= i < n)(fib i.+1).
+
+  (* 一般化できるが、書き換えにおいて、
+     Σの中の i.+1 を (i + 1) に書き換えられないため、
+     個別に用意せざるを得ない。  *)
+
+  Lemma l_reindex_1 (n : nat) f :
+    \sum_(1 <= i < n.+1)(f i) = \sum_(0 <= i < n)(f i.+1).
   Proof.
       by rewrite big_add1 succnK.
   Qed.
-  
-  Lemma l_reindex_2 (n : nat) :
-    \sum_(2 <= i < n.+2)(fib i) = \sum_(0 <= i < n)(fib i.+2).
+
+  Lemma l_reindex_2 (n : nat) f :
+    \sum_(2 <= i < n.+2)(f i) = \sum_(0 <= i < n)(f i.+2).
   Proof.
       by rewrite 2!big_add1 2!succnK.
   Qed.
@@ -147,7 +137,7 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
 
 ```Σ(i=m..n)f(i) = f(m) + Σ(i=m+1..n)f(i)```
  *)
-  Lemma l_first m n f :
+  Lemma sum_first m n f :
     m < n ->
     \sum_(m <= i < n)(f i) = f m + \sum_(m.+1 <= i < n)(f i).
   Proof.
@@ -185,6 +175,24 @@ $$ \sum_{i=m}^{n}f(i) = \sum_{i=m}^{n-1}f(i) + f(n) $$
 *)
 
 (**
+## 性質0 (数列の和の加算)
+
+$$ \sum_{i=0}^{n}F_i + \sum_{i=0}^{n}F_{i+1} = \sum_{i=0}^{n}F_{i+2} $$
+
+```Σf + Σg = Σ(f + g)```
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
+*)
+  Lemma l_sum_of_seq (n : nat) :
+    \sum_(0 <= i < n)(fib i) + \sum_(0 <= i < n)(fib i.+1) =
+    \sum_(0 <= i < n)(fib i.+2).
+  Proof.
+    rewrite -big_split.
+    done.
+  Qed.
+  
+
+(**
 ## 性質1（フィボナッチ数列の和）
 
 $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
@@ -195,7 +203,7 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
   Proof.  
     have H := l_sum_of_seq n.+1.
     rewrite -l_reindex_1 -l_reindex_2 in H.
-    rewrite [\sum_(1 <= i < n.+2)(fib i)]l_first in H; last done.
+    rewrite [\sum_(1 <= i < n.+2)(fib i)]sum_first in H; last done.
     rewrite [\sum_(2 <= i < n.+3)(fib i)]sum_last in H; last done.
     rewrite addnA in H.
     rewrite [\sum_(2 <= i < n.+2) fib i + fib n.+2]addnC in H.
@@ -366,10 +374,10 @@ Section Backup.
     rewrite cat_iota; last done.
     done.
     
-    (* l_first を使えばよい。 *)
+    (* sum_first を使えばよい。 *)
     Restart.
     move=> Hn.
-    rewrite [\sum_(0 <= i < n) fib i]l_first; last done.
+    rewrite [\sum_(0 <= i < n) fib i]sum_first; last done.
     by rewrite big_cons big_nil.
   Qed.
 
