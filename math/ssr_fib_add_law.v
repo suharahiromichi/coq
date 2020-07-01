@@ -9,7 +9,6 @@
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
-Require Import FunInd.                      (* Functional Scheme *)
 Require Import Recdef.                      (* Function *)
 
 Set Implicit Arguments.
@@ -29,6 +28,18 @@ $$ F_{n + m} = F_m F_{n+1} + F_{m-1} F_n $$
 
 そこで、Coqの「特定の再帰関数に専用の帰納法」のための
 コマンド ``functional induction`` を使って解いてみましょう。
+
+このファイルは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_add_law.v
+
+
+また、
+
+https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+
+
+も必要です。
  *)
 
 Section Fib_2.
