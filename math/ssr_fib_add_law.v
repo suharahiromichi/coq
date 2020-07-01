@@ -103,13 +103,22 @@ $$ F_(n + m + 1) = F_(m + 1) F_(n+1) + F_m F_n $$
   Lemma fib_addition' n m :
     fib (n + m.+1) = fib m.+1 * fib n.+1 + fib m * fib n.
   Proof.
-    (* F_m に対する帰納法をおおこなう。mの帰納法ではない。 *)
+(**
+F_m に対する帰納法をおおこなう。mだけの帰納法ではない。
+*)
     functional induction (fib m).
-    - rewrite addn1.                        (* P(0, F_0) のとき。 *)
+
+(**
+- P(m=0, F_0) を証明する。
+*)
+    - rewrite addn1.
       rewrite [fib 1]/= mul1n mul0n addn0.
       done.
       
-    - rewrite addn2.                        (* P(1, F_1) のとき *)
+(**
+- P(m=1, F_1) を証明する。
+*)
+    - rewrite addn2.
       rewrite [fib 2]/= add0n 2!mul1n.
       rewrite addnC -fib_n.
       done.
