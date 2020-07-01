@@ -20,7 +20,7 @@ Unset Printing Implicit Defensive.
 フィボナッチ ffibonacci 数列の和はいくつかのおもしろい性質があります（文献[1]）。
 どれも、中学の数学で証明できるものですが、
 ここでは、``Σ``の定義と関連する
-補題を含む MathComp の big.v ライブラリ（文献[2][3]）を使って証明してみましょう。
+補題を含む MathComp の bigop.v ライブラリ（文献[2][3]）を使って証明してみましょう。
 
 このファイルは、以下にあります。
 
@@ -49,20 +49,30 @@ Section Fib_1.
  
 (**
 # 簡単な補題
+
+定義から導かれる補題を証明しておきます。
 *)
   Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
   Proof.
     done.
   Qed.
 
-  Lemma fib2_ge_1 n : 1 <= fib n.+2.
+  Lemma fibn1_ge_1 n : 1 <= fib n.+1.
   Proof.
     elim: n => // n IHn.
     rewrite fib_n.
     rewrite addn_gt0.
       by apply/orP/or_intror.
   Qed.
-
+  
+  Lemma fibn2_ge_1 n : 1 <= fib n.+2.
+  Proof.
+    elim: n => // n IHn.
+    rewrite fib_n.
+    rewrite addn_gt0.
+      by apply/orP/or_intror.
+  Qed.
+  
 (**
 # Σの補題
 
@@ -101,12 +111,14 @@ $$ \sum_{i=0}^{0}f(i) = f(0) $$
   Qed.
   
 (**
-### index を 0起源に振りなおす。
+## インデックスを0起源に振りなおす（reindexする)。
 
-```Σ(i=m..n+m)f(i) = Σ(i=0..n)f(i+m)```
+項の中のインデックスの足し算を調整して、mからn+mまでのインデックスを
+0からnまでに振り直します。
+
+$$ \sum_{i=m}^{n+m}f(i) = \sum_{i=0}^{n}f(i+m) $$
  *)
-
-  Lemma l_reindex (m n : nat) f :             (* 不使用 *)
+  Lemma l_reindex (m n : nat) f :
     \sum_(m <= i < n + m)(f i) = \sum_(0 <= i < n)(f (i + m)).
   Proof.
     rewrite -{1}[m]add0n.
@@ -115,10 +127,11 @@ $$ \sum_{i=0}^{0}f(i) = f(0) $$
     done.
   Qed.
 
-  (* 一般化できるが、書き換えにおいて、
-     Σの中の i.+1 を (i + 1) に書き換えられないため、
-     個別に用意せざるを得ない。  *)
-
+(**
+reindex は、任意のmで成り立ちますが、``Σ``の中の項のインデクスの``i.+1``を
+``i + 1`` に書き換えられないため、``i.+1`` と ``i.+2`` の場合については、
+reindex を個別に用意する必要があります。実際はこちらの方を使います。
+*)
   Lemma l_reindex_1 (n : nat) f :
     \sum_(1 <= i < n.+1)(f i) = \sum_(0 <= i < n)(f i.+1).
   Proof.
@@ -135,7 +148,7 @@ $$ \sum_{i=0}^{0}f(i) = f(0) $$
 (**
 ### 最初の1項を取り出す。
 
-```Σ(i=m..n)f(i) = f(m) + Σ(i=m+1..n)f(i)```
+$$ \sum_{i=m}^{n-1}f(i) = f(m) + \sum_{i=m+1}^{n-1}f(i)  $$
  *)
   Lemma sum_first m n f :
     m < n ->
@@ -159,15 +172,16 @@ $$ \sum_{i=m}^{n}f(i) = \sum_{i=m}^{n-1}f(i) + f(n) $$
   Qed.
 
 (**
-## コンギュランス
+## split
+
+$$ \forall i, f(i) + g(i) = h(i) \to
+\sum_{i=0}^{n}f(i) + \sum_{i=0}^{n}g(i) = \sum_{i=0}^{n}h(i) $$
 *)
-  Lemma eq_add m n k : (m + k = n + k) <-> (m = n).
+  Lemma sum_split n f g :
+    \sum_(0 <= i < n)(f i) + \sum_(0 <= i < n)(g i) =
+    \sum_(0 <= i < n)(f i + g i).
   Proof.
-    split=> H.
-    - apply/eqP.
-      rewrite -(eqn_add2r k).
-        by apply/eqP.
-    - by rewrite H.
+      by rewrite big_split.
   Qed.
   
 (**
@@ -179,19 +193,14 @@ $$ \sum_{i=m}^{n}f(i) = \sum_{i=m}^{n-1}f(i) + f(n) $$
 
 $$ \sum_{i=0}^{n}F_i + \sum_{i=0}^{n}F_{i+1} = \sum_{i=0}^{n}F_{i+2} $$
 
-```Σf + Σg = Σ(f + g)```
-
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
 *)
   Lemma l_sum_of_seq (n : nat) :
     \sum_(0 <= i < n)(fib i) + \sum_(0 <= i < n)(fib i.+1) =
     \sum_(0 <= i < n)(fib i.+2).
   Proof.
-    rewrite -big_split.
-    done.
+      by rewrite sum_split.
   Qed.
   
-
 (**
 ## 性質1（フィボナッチ数列の和）
 
@@ -207,14 +216,22 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
     rewrite [\sum_(2 <= i < n.+3)(fib i)]sum_last in H; last done.
     rewrite addnA in H.
     rewrite [\sum_(2 <= i < n.+2) fib i + fib n.+2]addnC in H.
-    move/eq_add in H.
+    
+    (* 前提 H の両辺の共通項を消す。 *)
+    move/eqP in H.
+    rewrite eqn_add2r in H.
+    move/eqP in H.
+
     rewrite -H.
     rewrite [fib 1]/=.
       by rewrite addn1 subn1 succnK.
   Qed.
 
 (**
-ここでは、帰納法で解く。
+別証明として、n についての数学的帰納法で解いてみます。
+
+こちらのほうが随分簡単そうなので、
+以降の性質も帰納法で証明してみます。
  *)
   Lemma lemma1' (n : nat) :
     \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
@@ -223,7 +240,7 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
     - by rewrite sum_f0.
     - rewrite sum_last; last done.
       rewrite IHn.
-      rewrite addnBAC; last by rewrite fib2_ge_1.
+      rewrite addnBAC; last by rewrite fibn2_ge_1.
       congr (_ - _).
         by rewrite addnC.
   Qed.
@@ -381,6 +398,18 @@ Section Backup.
     by rewrite big_cons big_nil.
   Qed.
 
+(**
+## コンギュランス
+*)
+  Lemma eq_add m n k : (m + k = n + k) <-> (m = n).
+  Proof.
+    split=> H.
+    - apply/eqP.
+      rewrite -(eqn_add2r k).
+        by apply/eqP.
+    - by rewrite H.
+  Qed.
+  
 End Backup.
 
 
