@@ -22,7 +22,7 @@ Unset Printing Implicit Defensive.
 フィボナッチ ffibonacci 数列には、加法定理 addition theorem
 (加法法則 addition law) が成り立ちます。 $ 1 \le m$ のとき、
 
-$$ F_(n + m) = F_m F_(n+1) + F_(m-1) F_n $$
+$$ F_{n + m} = F_m F_{n+1} + F_{m-1} F_n $$
 
 フィボナッチ数列の定義は、だれでも知っている単純なものですが、
 1個前と2個前の項を参照する、という意味で、帰納法としては複雑なかたちをしています。
@@ -105,7 +105,7 @@ Section Fib_2.
 最初にCoqで扱い易い、引き算の無いかたちで証明します。
 この場合 n、m とも任意の自然数でよいです。
 
-$$ F_(n + m + 1) = F_(m + 1) F_(n+1) + F_m F_n $$
+$$ F_{n + m + 1} = F_{m + 1} F_{n+1} + F_m F_n $$
  *)
   Lemma fib_addition' n m :
     fib (n + m.+1) = fib m.+1 * fib n.+1 + fib m * fib n.
@@ -160,7 +160,7 @@ F_m に対する帰納法をおおこなう。mだけの帰納法ではない。
 (**
 最後に、$1 \le m$ の条件のもとで、定理を証明します。
 
-$$ F_(n + m) = F_m F_(n+1) + F_(m-1) F_n $$
+$$ F_{n + m} = F_m F_{n+1} + F_{m-1} F_n $$
 *)  
   Lemma fib_addition n m :
     1 <= m -> fib (n + m) = fib m * fib n.+1 + fib m.-1 * fib n.
