@@ -49,23 +49,23 @@ Section Fib_2.
 (**
 ``Function``コマンドをで定義すると、``functional induction``を行うための``fib_ind``が定義されます。
 
-簡単にいうと、
+簡単にいうと、命題 P(m, F_m) に対して、次の帰納法をおこなう。
 
-- 命題が、P(m=0, F_0) で成り立つ場合を証明する。F_0 = 0 なので P(0, 0)
-- 命題が、P(m=1, F_1) で成り立つ場合を証明する。F_1 = 1 なので P(1, 1)
-- 命題が、P(m=m, F_m) と P(m = m+1, F_m+1) で成り立つと仮定して、P(m=m+2, F_m + F_m+1)
+- 命題が、P(0, F_0) で成り立つ場合を証明する。F_0 = 0 なので P(0, 0)
+- 命題が、P(1, F_1) で成り立つ場合を証明する。F_1 = 1 なので P(1, 1)
+- 命題が、P(k, F_k) と P(m=k+1, F_k+1) で成り立つと仮定して、P(m=k+2, F_k + F_k+1)
 で成り立つこと証明する。
-- 以上から、命題は、任意の P(n, F_n) で成り立つ。
+- 以上から、命題は、任意の P(m, F_m) で成り立つ。
 
 という、フィボナッチ数列の定義そのものです。
 *)  
   Check fib_ind
     : forall P : nat -> nat -> Prop,
-      (forall n : nat, n = 0 -> P 0 0) ->
-      (forall n : nat, n = 1 -> P 1 1) ->
-      (forall n m : nat,
-          n = m.+2 -> P m (fib m) -> P m.+1 (fib m.+1) -> P m.+2 (fib m + fib m.+1)) ->
-      forall n : nat, P n (fib n).
+      (forall m : nat, m = 0 -> P 0 0) ->
+      (forall m : nat, m = 1 -> P 1 1) ->
+      (forall m k : nat,
+          m = k.+2 -> P k (fib k) -> P k.+1 (fib k.+1) -> P k.+2 (fib k + fib k.+1)) ->
+      forall m : nat, P m (fib m).
   
 (**
 また、関数の展開をするための``fib_equation``が定義されます。
@@ -124,18 +124,20 @@ F_m に対する帰納法をおおこなう。mだけの帰納法ではない。
       done.
       
 (**
-- IHn0 : P(m = m, F_m) で成り立つ。
-- IHn1 : P(m = m+1, F_m+1) で成り立つ。
-- Goal : P(m = m+2, F_m + F_m+1) で成り立つことを証明する。
+- IHn0 : P(m=m, F_m) で成り立つ。
+- IHn1 : P(m=m+1, F_m+1) で成り立つ。
+- Goal : P(m=m+2, F_m + F_m+1) で成り立つことを証明する。
+
+前節での説明上の k が、ここでは m になっています。
 *)
     - rewrite fib_n 2!mulnDl.
       
-      (* F(n + m.+1) の項をまとめて置き換える *)
+      (* F_(n + m.+1) の項をまとめて置き換える *)
       rewrite ?addnA [_ + fib m * fib n]addnC. (* この項を先頭に。 *)
       rewrite ?addnA [_ + fib m.+1 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
       rewrite -IHn0.
        
-      (* F(n + m.+2) の項をまとめて置き換える *)
+      (* F_(n + m.+2) の項をまとめて置き換える *)
       rewrite ?addnA [_ + fib m.+1 * fib n]addnC. (* この項を先頭に。 *)
       rewrite ?addnA [_ + fib m.+2 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
       rewrite -IHn1.
