@@ -70,7 +70,7 @@ Section Summation.
 
 \sum_{i=0}^{n-1}(a_i c) = (\sum_{i=0}^{n-1}a_i) c \\
 
-```math
+```
 *)
   Lemma sum_split n a b :
     \sum_(0 <= i < n)(a i) + \sum_(0 <= i < n)(b i) = \sum_(0 <= i < n)(a i + b i).
@@ -165,13 +165,26 @@ Section Fib_1.
 (**
 # フィボナッチ fibonacci 数列の定義
 
-フィボナッチ数列 $ a_n $ を再帰関数として定義します。
+フィボナッチ数列 $ a_n $ を index についての関数として定義します。
+
+```math
+
+\begin{eqnarray}
+F_0 &=& 0 \\
+F_1 &=& 1 \\
+F_n &=& F_{n - 2} + F_{n - 1} \\
+\end{eqnarray}
+
+```
+
+フィボナッチ数列の定義そのままなので、再帰関数になります。
+
 *)
   Fixpoint fib (n : nat) : nat :=
     match n with
     | 0 => 0
     | 1 => 1
-    | (m.+1 as pn).+1 => fib m + fib pn (* fib n.-2 + fib n.-1 *)
+    | (m.+1 as n).+1 => fib m + fib n (* fib n.-2 + fib n.-1 *)
     end.
  
 (**
