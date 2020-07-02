@@ -104,19 +104,19 @@ $$ \sum_{i=n}^{n}a_i = a_n $$
 
 総和をとる範囲がひとつの項の場合（n以上n以下）は、``a_n`` となります。
  *)
-  Lemma sum_an n a :
+  Lemma sum_nat1 n a :
     \sum_(n <= i < n.+1)(a i) = a n.
   Proof. by rewrite big_nat1. Qed.
   
 (**
-## インデックスを0起源に振りなおす（reindexする)。
+## インデックスを0起源に振りなおす。
 
 項の中のインデックスの足し算を調整して、mからn+mまでのインデックスを
 0からnまでに振り直します。
 
 $$ \sum_{i=m}^{n+m}a_i = \sum_{i=0}^{n}a_{i+m} $$
  *)
-  Lemma reindex (m n : nat) a :
+  Lemma sum_addn (m n : nat) a :
     \sum_(m <= i < n + m)(a i) = \sum_(0 <= i < n)(a (i + m)).
   Proof.
     rewrite -{1}[m]add0n.
@@ -126,15 +126,15 @@ $$ \sum_{i=m}^{n+m}a_i = \sum_{i=0}^{n}a_{i+m} $$
   Qed.
 
 (**
-reindex は、任意のmで成り立ちますが、``Σ``の中の項のインデクスの``i.+1``を
+これは、任意のmで成り立ちますが、``Σ``の中の項のインデクスの``i.+1``を
 ``i + 1`` に書き換えられないため、``i.+1`` と ``i.+2`` の場合については、
-reindex を個別に用意する必要があります。実際はこちらの方を使います。
+個別に用意する必要があります。実際はこちらの方を使います。
 *)
-  Lemma reindex_1 n a :
+  Lemma sum_add1 n a :
     \sum_(1 <= i < n.+1)(a i) = \sum_(0 <= i < n)(a i.+1).
   Proof. by rewrite big_add1 succnK. Qed.
 
-  Lemma reindex_2 n a :
+  Lemma sum_add2 n a :
     \sum_(2 <= i < n.+2)(a i) = \sum_(0 <= i < n)(a i.+2).
   Proof. by rewrite 2!big_add1 2!succnK. Qed.
   
@@ -149,6 +149,19 @@ $$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i $$
   Proof.
     move=> Hn.
       by rewrite big_ltn.
+  Qed.
+
+(**
+総和の範囲を変えずにインデックスをずらす補題もある。
+
+$$ \sum_{i=m}^{n}a_i = a_m + \sum_{i=m}^{n}a_{i + 1} $$
+*)
+  Lemma sum_first' m n a :
+    m <= n ->
+    \sum_(m <= i < n.+1)(a i) = a m + \sum_(m <= i < n)(a i.+1).
+  Proof.
+    move=> Hn.
+      by rewrite big_nat_recl.
   Qed.
   
 (**
@@ -240,7 +253,7 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
     \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
   Proof.  
     have H := sum_of_sum_of_seq_of_fib n.
-    rewrite -reindex_1 -reindex_2 in H.
+    rewrite -sum_add1 -sum_add2 in H.
     rewrite [\sum_(1 <= i < n.+2)(fib i)]sum_first in H; last done.
     rewrite [\sum_(2 <= i < n.+3)(fib i)]sum_last in H; last done.
     rewrite addnA in H.
@@ -266,7 +279,7 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
     \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
   Proof.  
     elim: n => [| n IHn].
-    - by rewrite sum_an.
+    - by rewrite sum_nat1.
     - rewrite sum_last; last done.
       rewrite IHn.
       rewrite addnBAC; last by rewrite fibn2_ge_1.
