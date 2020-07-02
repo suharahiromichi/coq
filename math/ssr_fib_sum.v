@@ -5,6 +5,9 @@
 @suharahiromichi
 
 2020/07/01
+
+
+2020/07/02 構成をみなおした。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -20,7 +23,7 @@ Unset Printing Implicit Defensive.
 フィボナッチ ffibonacci 数列の和はいくつかのおもしろい性質があります（文献[1]）。
 どれも、中学の数学で証明できるものですが、
 ここでは、``Σ``の定義と関連する
-補題を含む MathComp の bigop.v ライブラリ（文献[2][3]）を使って証明してみましょう。
+補題を含む MathComp の bigop.v ライブラリ（文献[3][4]）を使って証明してみましょう。
 
 このファイルは、以下にあります。
 
@@ -48,6 +51,9 @@ bigop.v は、モノイド則の成り立つ演算子に対して、繰返し演
 
 なお、本節において ``a n`` は任意の数列の項を示します（フィボナッチ数列に
 限定しません）。
+
+また、特別な意味のある場合をのぞいて、$ \sum_{i=0}^{n-1}a_i $
+（MathCompのコード上は、``\sum_(0 <= i < n)``） で証明します。
  *)
 
 Section Summation.
@@ -89,7 +95,7 @@ $$ \sum_{φ}a_i = 0 $$
   Qed.
   
 (**
-## a_n 項を取り出す。
+## ``a_n``項を取り出す。
 
 $$ \sum_{i=n}^{n}a_i = a_n $$
  *)
@@ -126,7 +132,6 @@ reindex を個別に用意する必要があります。実際はこちらの方
   Lemma reindex_2 n a :
     \sum_(2 <= i < n.+2)(a i) = \sum_(0 <= i < n)(a i.+2).
   Proof. by rewrite 2!big_add1 2!succnK. Qed.
-  
 
 (**
 ### 最初の1項を取り出す。
@@ -194,29 +199,29 @@ Section Fib_1.
   
 (**
 # フィボナッチ数列の性質
+
+定理は、概ね文献[2]にそいます。$ 1 \le n $ の自然数とします。
 *)
 
 (**
 ## 性質0 (数列の和の加算)
 
-$$ \sum_{i=0}^{n-1}F_i + \sum_{i=0}^{n-1}F_{i+1} = \sum_{i=0}^{n-1}F_{i+2} $$
-
+$$ \sum_{i=0}^{n}F_i + \sum_{i=0}^{n}F_{i+1} = \sum_{i=0}^{n}F_{i+2} $$
 *)
-  Lemma sum_of_seq (n : nat) :
-    \sum_(0 <= i < n)(fib i) + \sum_(0 <= i < n)(fib i.+1) =
-    \sum_(0 <= i < n)(fib i.+2).
+  Lemma sum_of_sum_of_seq_of_fib (n : nat) :
+    \sum_(0 <= i < n.+1)(fib i) + \sum_(0 <= i < n.+1)(fib i.+1) =
+    \sum_(0 <= i < n.+1)(fib i.+2).
   Proof. by rewrite sum_split. Qed.
   
 (**
 ## 性質1 (フィボナッチ数列の和)
 
 $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
-
  *)
-  Lemma lemma1 (n : nat) :
+  Lemma sum_of_seq_of_fib (n : nat) :
     \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
   Proof.  
-    have H := sum_of_seq n.+1.
+    have H := sum_of_sum_of_seq_of_fib n.
     rewrite -reindex_1 -reindex_2 in H.
     rewrite [\sum_(1 <= i < n.+2)(fib i)]sum_first in H; last done.
     rewrite [\sum_(2 <= i < n.+3)(fib i)]sum_last in H; last done.
@@ -239,7 +244,7 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
 こちらのほうが随分簡単そうなので、
 以降の性質も帰納法で証明してみます。
  *)
-  Lemma lemma1' (n : nat) :
+  Lemma sum_of_seq_of_fib' (n : nat) :
     \sum_(0 <= i < n.+1)(fib i) = fib n.+2 - 1.
   Proof.  
     elim: n => [| n IHn].
@@ -252,16 +257,16 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
   Qed.
 
 (**
-## 性質2 (積の和)
+## 性質2 (二乗の和)
 
-$$ \sum_{i=0}^{n}(F_i F_1) = F_{n} F_{n+1} $$
+$$ \sum_{i=1}^{n}(F_i F_1) = F_{n} F_{n + 1} $$
 
 *)
-  Lemma lemma2 (n : nat) :
-    \sum_(0 <= i < n.+1)(fib i * fib i) = fib n * fib n.+1.
+  Lemma sum_of_seq_of_sqr_of_fib (n : nat) :
+    \sum_(1 <= i < n.+1)(fib i * fib i) = fib n * fib n.+1.
   Proof.
     elim: n => [| n IHn].
-    - by rewrite sum_an.
+    - by rewrite sum_nil.
     - rewrite sum_last; last done.
       rewrite IHn.
       rewrite -mulnDl.
@@ -272,11 +277,11 @@ $$ \sum_{i=0}^{n}(F_i F_1) = F_{n} F_{n+1} $$
 (**
 ## 性質3 (奇数の和)
 
-$$ \sum_{i=0}^{n-1}F_{2 i + 1} = F_{2n} $$
+$$ \sum_{i=1}^{n}F_{2 i - 1} = F_{2n} $$
 
 *)  
-  Lemma lemma3 (n : nat) :
-    \sum_(0 <= i < n)(fib i.*2.+1) = fib n.*2.
+  Lemma sum_of_seq_of_odd_index_of_fib (n : nat) :
+    \sum_(1 <= i < n.+1)(fib i.*2.-1) = fib n.*2.
   Proof.
     elim: n => [| n IHn].
     - by rewrite sum_nil.
@@ -288,18 +293,18 @@ $$ \sum_{i=0}^{n-1}F_{2 i + 1} = F_{2n} $$
         rewrite IHn.
           by congr (_ + _).
   Qed.
-
+  
 (**
 ## 性質4 (偶数の和)
 
-$$ \sum_{i=0}^{n}F_{2 i} + 1 = F_{2n+1} $$
+$$ \sum_{i=1}^{n}F_{2 i} = F_{2 n + 1} - 1 $$
 
 *)
-  Lemma lemma4 (n : nat) :
-    \sum_(0 <= i < n.+1)(fib i.*2) + 1 = fib n.*2.+1.
+  Lemma l_sum_of_seq_of_even_index_of_fib (n : nat) :
+    \sum_(1 <= i < n.+1)(fib i.*2) + 1 = fib n.*2.+1.
   Proof.
     elim: n => [| n IHn].
-    - by rewrite sum_an.
+    - by rewrite sum_nil.
     - have H : n.+1.*2 = n.*2.+2
         by rewrite -addn1 -!muln2 addn1 2!muln2 doubleS.
       
@@ -316,13 +321,20 @@ $$ \sum_{i=0}^{n}F_{2 i} + 1 = F_{2n+1} $$
       rewrite -H -addnA.
       done.
   Qed.
-
+  
+  Lemma sum_of_seq_of_even_index_of_fib (n : nat) :
+    \sum_(1 <= i < n.+1)(fib i.*2) = fib n.*2.+1 - 1.
+  Proof.
+    rewrite -l_sum_of_seq_of_even_index_of_fib.
+      by rewrite addn1 subn1 -pred_Sn.
+  Qed.
+  
 (**
 # おまけ
 
 ## 性質5 (となりどうしのフィボナッチ数列は互いに素である)
  *)
-  Lemma lemma5 (n : nat) : coprime (fib n) (fib n.+1).
+  Lemma coprime_cons_fibs (n : nat) : coprime (fib n) (fib n.+1).
   Proof.
     rewrite /coprime.
     elim: n => [//= | n IHn].
@@ -339,10 +351,18 @@ End Fib_1.
 http://www.suguru.jp/Fibonacci/
 
 
-[2] 萩原学 アフェルト・レナルド、「Coq/SSReflect/MathCompによる定理証明」、森北出版
+[2] ProofWiki
+
+- https://proofwiki.org/wiki/Sum_of_Sequence_of_Fibonacci_Numbers
+- https://proofwiki.org/wiki/Sum_of_Sequence_of_Squares_of_Fibonacci_Numbers
+- https://proofwiki.org/wiki/Sum_of_Sequence_of_Odd_Index_Fibonacci_Numbers
+- https://proofwiki.org/wiki/Sum_of_Sequence_of_Even_Index_Fibonacci_Numbers
+- https://proofwiki.org/wiki/Consecutive_Fibonacci_Numbers_are_Coprime
+
+[3] 萩原学 アフェルト・レナルド、「Coq/SSReflect/MathCompによる定理証明」、森北出版
 
 
-[3] Reynald Affeldt, cheat sheet bigop.v
+[4] Reynald Affeldt, cheat sheet bigop.v
 
 https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_doc.pdf
 *)
