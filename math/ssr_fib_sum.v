@@ -41,32 +41,36 @@ https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
 (**
 # Σの補題
 
-bigop.v は、モノイド則の成り立つ演算子に対して、繰返し演算を提供するものです
-自然数の加算 addn に対応するのが ``Σ`` ですが、
-補題は繰返し演算の一般で示されているので、必要なもを探すのが大変です。
+bigop.v は、モノイド則の成り立つ演算子と単位元に対して、繰返し演算を提供するものです。
+自然数の加算 addn と 1 に対応するのが ``Σ`` (``sum``) ですが、
+補題は繰返し演算(``big``)の一般で示されているので、必要なもを探すのが大変です。
 
 今回は、もっぱら``Σ``を通して bigop.v に慣れることを目標にしますから、
 煩瑣になりますが、``Σ``についてだけの補題を証明して置きます。
 慣れたならば、直接 bigop.v の補題を使うほうがよいかもしれません。
 
-なお、本節において ``a n`` は任意の数列の項を示します（フィボナッチ数列に
+なお、本節において $a_n$ は任意の数列の項を示します（フィボナッチ数列に
 限定しません）。
 
 また、特別な意味のある場合をのぞいて、$ \sum_{i=0}^{n-1}a_i $
-（MathCompのコード上は、``\sum_(0 <= i < n)``） で証明します。
+（MathCompのコード上は、``\sum_(0 <= i < n)(a i)``） で証明します。
  *)
 
 Section Summation.
 (**
 ## 総和の結合と分配
 
-$$ \sum_{i=0}^{n-1}a_i + \sum_{i=0}^{n-1}b_i = \sum_{i=0}^{n-1}(a_i + b_i) $$
+高校で習う、総和についての公式です。
 
-$$ \sum_{i=0}^{n-1}(c a_i) = c \sum_{i=0}^{n-1}a_i $$
+```math
 
-$$ \sum_{i=0}^{n-1}(a_i c) = \sum_{i=0}^{n-1}a_i c$$
+\sum_{i=0}^{n-1}a_i + \sum_{i=0}^{n-1}b_i = \sum_{i=0}^{n-1}(a_i + b_i) \\
 
-$$ \sum_{i=0}^{n-1}1 = n  1 $$
+\sum_{i=0}^{n-1}(c a_i) = c \sum_{i=0}^{n-1}a_i \\
+
+\sum_{i=0}^{n-1}(a_i c) = (\sum_{i=0}^{n-1}a_i) c \\
+
+```math
 *)
   Lemma sum_split n a b :
     \sum_(0 <= i < n)(a i) + \sum_(0 <= i < n)(b i) = \sum_(0 <= i < n)(a i + b i).
@@ -79,9 +83,6 @@ $$ \sum_{i=0}^{n-1}1 = n  1 $$
   Lemma sum_distrl n a c :
     \sum_(0 <= i < n)((a i) * c) = (\sum_(0 <= i < n)(a i)) * c.
   Proof. by rewrite big_distrl. Qed.
-
-  Lemma sum_n n : \sum_(0 <= i < n)(1) = n.-1.
-  Proof. Admitted.
 
 (**
 ## 0を取り出す。
@@ -132,11 +133,11 @@ reindex を個別に用意する必要があります。実際はこちらの方
   Lemma reindex_2 n a :
     \sum_(2 <= i < n.+2)(a i) = \sum_(0 <= i < n)(a i.+2).
   Proof. by rewrite 2!big_add1 2!succnK. Qed.
-
+  
 (**
-### 最初の1項を取り出す。
+### 最初の項を取り出す。
 
-$$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i  $$
+$$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i $$
  *)
   Lemma sum_first m n a :
     m < n ->
@@ -147,7 +148,7 @@ $$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i  $$
   Qed.
   
 (**
-## 最後の1項を取り出す。
+## 最後の項を取り出す。
 
 $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
  *)
@@ -164,7 +165,7 @@ Section Fib_1.
 (**
 # フィボナッチ fibonacci 数列の定義
 
-フィボナッチ数列 ``a_n`` を再帰関数として定義します。
+フィボナッチ数列 $ a_n $ を再帰関数として定義します。
 *)
   Fixpoint fib (n : nat) : nat :=
     match n with
@@ -235,9 +236,9 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
 
     rewrite -H.
     rewrite [fib 1]/=.
-      by rewrite addn1 subn1 succnK.
+      by ssromega.                   (* rewrite addn1 subn1 succnK. *)
   Qed.
-
+  
 (**
 別証明として、n についての数学的帰納法で解いてみます。
 
@@ -306,14 +307,11 @@ $$ \sum_{i=1}^{n}F_{2 i} = F_{2 n + 1} - 1 $$
     elim: n => [| n IHn].
     - by rewrite sum_nil.
     - have H : n.+1.*2 = n.*2.+2
-        by rewrite -addn1 -!muln2 addn1 2!muln2 doubleS.
+        by rewrite doubleS; ssromega.
+      (* rewrite -addn1 -!muln2 addn1 2!muln2 doubleS. *)
       
       (* 右辺 *)
-      rewrite H.
-      rewrite !fib_n.
-      rewrite -{1}IHn.
-      rewrite -addnA.
-      rewrite -fib_n.
+      rewrite H !fib_n -{1}IHn -addnA -fib_n.
       rewrite [1 + fib n.*2.+2]addnC.
       
       (* 左辺 *)      
@@ -352,12 +350,12 @@ http://www.suguru.jp/Fibonacci/
 
 
 [2] ProofWiki
-
 - https://proofwiki.org/wiki/Sum_of_Sequence_of_Fibonacci_Numbers
 - https://proofwiki.org/wiki/Sum_of_Sequence_of_Squares_of_Fibonacci_Numbers
 - https://proofwiki.org/wiki/Sum_of_Sequence_of_Odd_Index_Fibonacci_Numbers
 - https://proofwiki.org/wiki/Sum_of_Sequence_of_Even_Index_Fibonacci_Numbers
 - https://proofwiki.org/wiki/Consecutive_Fibonacci_Numbers_are_Coprime
+
 
 [3] 萩原学 アフェルト・レナルド、「Coq/SSReflect/MathCompによる定理証明」、森北出版
 
