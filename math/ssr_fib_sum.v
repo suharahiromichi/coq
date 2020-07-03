@@ -103,16 +103,17 @@ $$ \sum_{φ}a_i = 0 $$
   Proof.
       by rewrite big_nil.
   Qed.
-
+  
 (**
-上記の補題は、1以上1未満の場合にも適用できますが、任意のnで証明しておきます。
+上記の補題は、1以上1未満などの場合にも適用できてしまいますが、任意のmとnで証明しておきます。
 *)
-  Lemma sum_nil n a : \sum_(n <= i < n)(a i) = 0.
+  Lemma sum_nil m n a : n <= m -> \sum_(m <= i < n)(a i) = 0.
   Proof.
-    have H : \sum_(n <= i < n)(a i) = \sum_(i <- [::])(a i).
+    move=> Hmn.
+    have H : \sum_(m <= i < n)(a i) = \sum_(i <- [::])(a i).
     - apply: congr_big => //=.
       rewrite /index_iota.
-      have -> : n - n = 0 by ssromega. (* apply/eqP; rewrite subn_eq0. *)
+      have -> : n - m = 0 by ssromega. (* apply/eqP; rewrite subn_eq0. *)
       done.
     - rewrite H.
         by rewrite big_nil.
