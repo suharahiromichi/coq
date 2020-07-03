@@ -101,6 +101,28 @@ Section LE0.
   Check ltnn : forall n : nat, (n < n) = false.
   
 (**
+## n - n = 0
+
+案外とこの補題が用意されていない。
+ *)
+  Lemma le_subn m n : m <= n -> m - n = 0.
+  Proof. move=> H. apply/eqP. by rewrite subn_eq0. Qed.
+  
+  Lemma eq_subn n : n - n = 0.
+  Proof. apply/eqP. by rewrite subn_eq0. Qed.
+  
+(**
+補題を用意するのが面倒なので、have で前提に用意してもよい。
+*)
+  Goal forall m n, iota m (n - n) = [::].
+  Proof.
+    move=> m n.
+    have -> : n - n = 0 by apply/eqP; rewrite subn_eq0.
+    (* have -> : n - n = 0 by ssroega. *)
+    done.
+  Qed.
+
+(**
 ## その他
  *)
   Check eq_leq : forall m n : nat, m = n -> m <= n.
