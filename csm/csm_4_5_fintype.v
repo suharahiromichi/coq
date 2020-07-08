@@ -35,7 +35,34 @@ opamでインストールしている場合は、ソースは、たとえば以�
 *)
 
 (**
+公理の内容は、以下である。ballがこれを満たすことは、あとで調べる。
+*)
+Print Finite.axiom.
+(**
+conunt_mem を展開すると、つぎのようになる。
+*)
+Check fun (T : eqType) (e : seq T) =>
+        forall x : T, count [pred y | x == y] e = 1.
+(**
+とりあえあず ``[pred y | x == y]`` は ``fun y => x == y`` と思ってよい。
+ *)
+
+(**
 ## ball_finType
+ *)
+
+(**
+### ball_eqType, ball_choiceType, ball_countType を定義する。
+
+ball と bool が1対1対応であることを証明して、それを使って、
+型クラスeqType のインスタンスの ball_eqType型を定義する。
+型クラスchoiceType のインスタンスの ball_choiceType型を定義する。
+型クラスcountType のインスタンスの ball_countType型を定義する。
+
+eqType の公理を直接証明するのは、以下を参照のこと。
+https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_2_eqtype.v
+
+Coutable の公理 (unpick と pick) はともかく、Choice の公理を証明するのは大変。
 *)
 
 (**
@@ -71,10 +98,19 @@ Definition ball_countMixin := CanCountMixin can_b2b.
 Canonical ball_countType := CountType ball ball_countMixin.
 
 (**
-ball の本来の定義を使ってfinTypeを定義する。
+### ball の本来の定義を使ってfinTypeを定義する。
  *)
 Definition ball_enum := [:: red; white].
 
+(**
+ball_eqType で導入した「==」が、Finite.axiom を満たすことを確かめます。
+*)
+Compute count [pred y | red == y] ball_enum.   (* 1 *)
+Compute count [pred y | white == y] ball_enum. (* 1 *)
+
+(**
+定理として証明します。
+*)
 Lemma ball_uniq : forall x, count_mem x ball_enum = 1.
 Proof. by case. Qed.
 
@@ -82,7 +118,7 @@ Definition ball_finMixin' := @FinMixin ball_countType ball_enum ball_uniq.
 Canonical ball_finType' := FinType ball ball_finMixin'.
 
 (**
-ball2bool の単射性をつかってfinTypeを定義する。
+### ball2bool の単射性をつかってfinTypeを定義する。
  *)
 Definition ball_finMixin := CanFinMixin can_b2b.
 Canonical ball_finType := FinType ball ball_finMixin.
@@ -94,7 +130,7 @@ Check red : ball : predArgType.
 (**
 ball の定義のときに predArgType を明示しない場合：
 ball : predArgType は成り立つ。 predArgType = Type なので。
-しかし、finType の定義のなかで、濃度の定義がされない。
+しかし、finType の定義のなかで、濃度の定義がされない。card は mem_pred T -> nat であるため。
 *)
 Check red : ball_finType : finType.
 Check red : Finite.sort ball_finType : predArgType.
@@ -108,7 +144,7 @@ Check red \in ball.          (* 最初に predArgType を明示すること。 *
 Check #| ball | == 2.        (* predArgType に対する finType なら濃度が定義される。 *)
 
 (**
-# その他の finType のインスタンス
+# その他の finType のインスタンス型
 *)
 
 Check bool_finType       : finType.         (* bool型 *)
@@ -208,7 +244,7 @@ Lemma s0_s4 : s0 \subset s4.
 Proof.
   apply/subsetP.
   rewrite /s0 /s4 => x.
-  rewrite /mem /in_mem /=.
+  rewrite /in_mem /=.
     by move/eqP => ->.
 Qed.
 
