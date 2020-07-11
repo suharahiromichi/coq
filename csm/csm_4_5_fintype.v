@@ -205,46 +205,44 @@ Definition p4 (x : 'I_5) := x <= s4.        (* 'I_5 -> bool *)
 出来上がったもの：
 *)
 Check s1 : 'I_5 : predArgType.            (* ordinal は predArgType *)
-Check s1 : ordinal_finType 5 : finType.
-Check s1 : Finite.sort (ordinal_finType 5) : predArgType.
-
 (**
 ``'I_5`` (``ordinal 5``) は、Finite.sort 関数についての
 ``ordinal_finType 5`` のカノニカル解なので、
 Coq は ``Finite.sort (ordinal_finType 5)`` が ``'I_5`` であることを推論できる
 （テキスト 3.15.2 参照）。
 *)
-Check ordinal_finType 5 : finType.
+Check s1 : ordinal_finType 5 : finType.
+Check s1 : Finite.sort (ordinal_finType 5) : predArgType.
 Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
 
+Compute val s1.                             (* ***** *)
 
 (**
 ## 順序数の定義に基づいた定義
-*)
 
-Definition s0' : 'I_5. Proof. by apply: (@Ordinal 5 0). Defined.
-Definition s1' : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
-Definition s2' : 'I_5. Proof. by apply: (@Ordinal 5 2). Defined.
-Definition s3' : 'I_5. Proof. by apply: (@Ordinal 5 3). Defined.
-Definition s4' : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
-
-(**
-ふたつの定義が同じだという証明
+s1 == s1' であることの証明をすること。。。
 *)
-Goal s0 = s0'.
-Proof. by apply/eqP. Qed.
+Definition s1' : 'I_5.
+Proof. by apply: (@Ordinal 5 1). Defined.   (* Defined で終わる。 *)
+Compute val s1'.                            (* 1 *)
+
+Lemma le15 : 1 <= 5. Proof. done. Qed.
+Definition s1'' := @Ordinal 5 1 le15.
+Compute val s1''.                           (* 1 *)
+
 
 
 (**
 ## 型を変換する関数
 *)
-Check @widen_ord 5 6 _ s0 : 'I_6.
+Lemma le_5_6 : 5 <= 6. Proof. done. Qed.
+Check @widen_ord 5 6 le_5_6 s1 : 'I_6.
 
-Definition s0'' : 'I_6.
+Definition s1''' : 'I_6.
 Proof.
   apply: (@widen_ord 5 6).
   - done.
-  - apply: s0.
+  - apply: s1.
 Defined.
 
 (**
@@ -257,8 +255,7 @@ Proof.
   - by apply: s.
 Defined.
 
-Check widen_ord_1 (widen_ord_1 s0) : 'I_7.
-Compute (widen_ord_1 (widen_ord_1 s0)).
+Check widen_ord_1 (widen_ord_1 s1) : 'I_7.
 
 
 (**
