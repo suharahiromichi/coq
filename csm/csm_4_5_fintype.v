@@ -426,6 +426,39 @@ Compute nat_of_ord s4.                      (* = 4 *)
 
 Compute s0 < 4.                     (* 不等式はコアーションが効く。 *)
 
+(**
+## ordinal 型の値を作る関数
+
+"n is inferred from the context" とは、この場合、``: 'I_5`` のところ。
+ *)
+Definition s2 : 'I_5 := inord 2.
+Definition s0' : 'I_5 := ord0.
+Definition s4' : 'I_5 := ord_max.
+
+(**
+## 型を変換する関数
+*)
+Check @widen_ord 5 6 _ s0 : 'I_6.
+
+Definition s0' : 'I_6.
+Proof.
+  apply: (@widen_ord 5 6).
+  - done.
+  - apply: s0.
+Defined.
+
+(**
+順序数の型（範囲）をひとつだけ増やす関数。
+ *)
+Definition widen_ord_1 {n : nat} (s : 'I_n) : 'I_n.+1.
+Proof.
+  apply: widen_ord.
+  - by apply: leqnSn.
+  - by apply: s.
+Defined.
+
+Check widen_ord_1 (widen_ord_1 s0) : 'I_7.
+Compute (widen_ord_1 (widen_ord_1 s0)).
 
 (**
 ## 補題 val と nat_of_ord が単射である。
@@ -445,5 +478,6 @@ Check card_ord : forall n : nat, #|'I_n| = n.
 
 Check widen_ord_proof : forall (n m : nat) (i : 'I_n), n <= m -> i < m.
 Check cast_ord_proof : forall (n m : nat) (i : 'I_n), n = m -> i < m.
+
 
 (* END *)
