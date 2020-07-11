@@ -136,6 +136,18 @@ Check red : ball_finType : finType.
 Check red : Finite.sort ball_finType : predArgType.
 
 (**
+ここでは、ball型 と bool型 との要素の対応で定義したが、
+Ordinal型との要素の対応で定義もできる。MCBの7.5節参照。
+
+[MCB] Mathematical Components (MathComp Book)
+https://math-comp.github.io
+
+https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-windrose.v
+*)
+
+(**
+### MathComp の三点セット（？）
+
 以上で、==, \in, #|_| の「三点セット」が成り立つよういなる。
 *)
 Check red == red.
@@ -194,9 +206,28 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_ex_card.v
  *)
 
 (**
-# forall と exists
+# forall と exists (boolean quantifiers)
+
+bool型を返す量化子（∀と∃）であり、``T : finType`` のとき、
+bool型を返す述語 ``P : T -> bool`` において、
+T型の要素を量化の範囲として、その「すべて」、「ある」要素に対して
+``P x`` が true を返すとき、
+[forall x in T, P x]、[exists x in T, P x] は true を返す。
+``in T`` は省略できる。
 *)
 
+(**
+順序数 (ordinal n) は、``0``〜``n-1`` の範囲の自然数（後述）
+
+``'I_5`` (``ordinal 5``) は、Finite.sort 関数についての
+``ordinal_finType 5`` のカノニカル解なので、
+Coq は ``Finite.sort (ordinal_finType 5)`` が ``'I_5`` であることを推論できる
+（テキスト 3.15.2 参照）。
+*)
+Check ordinal_finType 5 : finType.
+Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
+
+Set Printing All.
 Goal [forall x in 'I_5, x < 5].
 Proof.
   apply/forallP.
@@ -204,34 +235,33 @@ Proof.
     by case=> m i.
 Qed.  
 
-Definition p0 : 'I_5. Proof. by apply: (@Ordinal 5 0). Defined.
-Definition p4 : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
+Definition s0 : 'I_5. Proof. by apply: (@Ordinal 5 0). Defined.
+Definition s4 : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
 
-Definition s0 (x : 'I_5) := (x == p0).
-Definition s4 (x : 'I_5) := x <= p4.
-
+Definition p0 (x : 'I_5) := (x == s0).      (* 'I_5 -> bool *)
+Definition p4 (x : 'I_5) := x <= s4.        (* 'I_5 -> bool *)
 
 Check @forallP
   : forall (T : finType) (P : pred T), reflect (forall x : T, P x) [forall x, P x].
 Check @existsP
   : forall (T : finType) (P : pred T), reflect (exists x : T, P x) [exists x, P x].
 
-Goal [forall x, s4 x].
+Goal [forall x, p4 x].              (* すべての 'I_5 の要素は、4以下である。 *)
 Proof.
   apply/forallP.
-  rewrite /s4 /p4.
+  rewrite /p4 /s4.
   (* forall x : ordinal_finType 5, x <= p4 *)
   case=> m /=.
   (* m < 5 -> m <= 4 *)
   done.
 Qed.
 
-Goal [exists x, s0 x].
+Goal [exists x, p0 x].             (* ある 'I_5 の要素は、0である。 *)
 Proof.
   apply/existsP.
-  rewrite /s0.
+  rewrite /p0.
   (* exists x : ordinal_finType 5, x == p0  *)
-  exists p0.
+  exists s0.
   (* p0 == p0 *)
   done.
 Qed.
@@ -240,20 +270,20 @@ Qed.
 # \subset と \proper
 *)
 
-Lemma s0_s4 : s0 \subset s4.
+Lemma p0_p4 : p0 \subset p4.
 Proof.
   apply/subsetP.
-  rewrite /s0 /s4 => x.
+  rewrite /p0 /p4 => x.
   rewrite /in_mem /=.
     by move/eqP => ->.
 Qed.
 
-Goal s0 \proper s4.
+Goal p0 \proper p4.
 Proof.
   apply/properP.
   split.
-  - by apply: s0_s4.
-  - exists p4.
+  - by apply: p0_p4.
+  - exists s4.
     + done.
     + done.
 Qed.
@@ -269,8 +299,8 @@ https://qiita.com/suharahiromichi/items/789b007b54e5d6d4ed1c
 Section Test.
   Variable T : finType.
   
-  Lemma mySubsetP' (s1 s2 : pred T) :
-    (forall x, x \in s1 -> x \in s2) <-> [forall x, (x \in s1) ==> (x \in s2)].
+  Lemma mySubsetP' (q1 q2 : pred T) :
+    (forall x, x \in q1 -> x \in q2) <-> [forall x, (x \in q1) ==> (x \in q2)].
   Proof.
     split=> H.
     - apply/forallP => x.
@@ -283,8 +313,8 @@ Section Test.
       done.
   Qed.
   
-  Lemma mySubsetP (s1 s2 : pred T) :
-    s1 \subset s2 <-> (forall x, x \in s1 -> x \in s2).
+  Lemma mySubsetP (q1 q2 : pred T) :
+    q1 \subset q2 <-> (forall x, x \in q1 -> x \in q2).
   Proof.
     split.
     - move/subsetP.
@@ -295,8 +325,8 @@ Section Test.
         by apply/mySubsetP'.
   Qed.
   
-  Lemma mySubsetE (s1 s2 : pred T) :
-    s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
+  Lemma mySubsetE (q1 q2 : pred T) :
+    q1 \subset q2 = [forall x, (x \in q1) ==> (x \in q2)].
   Proof.
     apply/idP/idP.
     - move=> H.
@@ -319,43 +349,45 @@ End Test.
 つまり「論理式 A を満たし、論理式 B を満たさない要素の数が 0 である」というぐあいに
 濃度から導いていて、最初に証明したように、はこれが一番易しい。でも使いではあまりない。
 *)
-Check s0_s4 : s0 \subset s4.                (* 上で証明した。 *)
+Check p0_p4 : p0 \subset p4.                (* 上で証明した。 *)
 
 (**
 ## {subset A <= B}
 - {subset A <= B} の定義は ssrbool.v にある。
 *)
-Goal forall x, x \in s0 -> x \in s4.        (* {subset A <= B} *)
+Goal forall x, x \in p0 -> x \in p4.        (* {subset A <= B} *)
 Proof.
   apply/mySubsetP.
-    by apply: s0_s4.
+    by apply: p0_p4.
 Qed.
 
 (**
 ## MathCopmp 的に欲しいもの（？）
  *)
-Goal [forall x, (x \in s0) ==> (x \in s4)].
+Goal [forall x, (x \in p0) ==> (x \in p4)].
 Proof.
   rewrite -mySubsetE.
-    by apply: s0_s4.
+    by apply: p0_p4.
 Qed.
 
 
 (**
-# Ordinal
+# 順序数（Ordinal）
+
+順序数 (ordinal n) は、``0``〜``n-1`` の範囲の自然数
  *)
 
 (**
 ## 作り方は Qed でなく、Defined で終わること。
 *)
-Definition p1 : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
+Definition s1 : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
 
 (**
 出来上がったもの：
  *)
-Check p1 : 'I_5 : predArgType.            (* ordinal は predArgType *)
-Check p1 : ordinal_finType 5 : finType.
-Check p1 : Finite.sort (ordinal_finType 5) : predArgType.
+Check s1 : 'I_5 : predArgType.            (* ordinal は predArgType *)
+Check s1 : ordinal_finType 5 : finType.
+Check s1 : Finite.sort (ordinal_finType 5) : predArgType.
 
 (**
 ## val または  nat_of_ord で自然数の値を取り出す。後者はコアーション。
@@ -363,13 +395,13 @@ Check p1 : Finite.sort (ordinal_finType 5) : predArgType.
 Check val : 'I_5 -> nat.
 Check @nat_of_ord 5  : 'I_5 -> nat.
 
-Compute val p0.                             (* = 0 *)
-Compute nat_of_ord p0.                      (* = 0 *)
+Compute val s0.                             (* = 0 *)
+Compute nat_of_ord s0.                      (* = 0 *)
 
-Compute val p4.                             (* = 4 *)
-Compute nat_of_ord p4.                      (* = 4 *)
+Compute val s4.                             (* = 4 *)
+Compute nat_of_ord s4.                      (* = 4 *)
 
-Compute p0 < 4.                     (* 不等式はコアーションが効く。 *)
+Compute s0 < 4.                     (* 不等式はコアーションが効く。 *)
 
 
 (**
