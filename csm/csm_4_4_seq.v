@@ -70,11 +70,21 @@ End RconsQ.
 (**
 # head と last
 
-- head は最初の要素をとりだす。behead はその残りの要素。空なら空。
-- last は最後の要素をとりだす。belast は？
+- head は最初の要素をとりだす（空なら第1引数）。behead はその残りの要素（空なら空）。
+- last は最後の要素をとりだす（空なら第1引数）。belast は？
+
+## ``belast' [::] = [::]`` の定義を使う例
 
 see. csm_4_4_x_seq_head_last.v (次回)
+
+## ``ohead``
+
+ohead は最初の要素を option型（Some なんとか) で取り出す（空ならNONE）。
 *)
+
+Compute ohead [::].                         (* None *)
+Compute ohead [:: 1; 2; 3].                 (* Some 1 *)
+
 
 (**
 # size (seq の寸法）
