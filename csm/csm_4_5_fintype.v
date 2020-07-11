@@ -208,6 +208,8 @@ https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_ex_card.v
 (**
 # forall と exists (boolean quantifiers)
 
+## 定義
+
 bool型を返す量化子（∀と∃）であり、``T : finType`` のとき、
 bool型を返す述語 ``P : T -> bool`` において、
 T型の要素を量化の範囲として、その「すべて」、「ある」要素に対して
@@ -227,7 +229,6 @@ Coq は ``Finite.sort (ordinal_finType 5)`` が ``'I_5`` であることを推�
 Check ordinal_finType 5 : finType.
 Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
 
-Set Printing All.
 Goal [forall x in 'I_5, x < 5].
 Proof.
   apply/forallP.
@@ -241,6 +242,9 @@ Definition s4 : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
 Definition p0 (x : 'I_5) := (x == s0).      (* 'I_5 -> bool *)
 Definition p4 (x : 'I_5) := x <= s4.        (* 'I_5 -> bool *)
 
+(**
+## 用意されている同値の補題
+*)
 Check @forallP
   : forall (T : finType) (P : pred T), reflect (forall x : T, P x) [forall x, P x].
 Check @existsP
@@ -268,49 +272,93 @@ Qed.
 
 (**
 # \subset と \proper
-*)
 
-Lemma p0_p4 : p0 \subset p4.
+## 定義
+
+``T : finType`` のとき、
+bool型を返す述語 ``P : T -> bool`` において、
+それがtrueを返す、Tの要素についての包含関係（部分集合と真部分集合）を考えることができる。
+ *)
+
+Check p0 \subset p4.
+(**
+``p0 \subset p4`` は、濃度が0であることで定義されている。すなわち、
+*)
+Check (fun x : 'I_5 => ~~ (p0 x) && (p4 x)) : pred 'I_5.
+(**
+p0 x が false かつ p4 x が true という論理式を考え、
+ *)
+Check card (mem (predD (fun x => p0 x) (fun x => p4 x))) == 0.
+(**
+それを満たす x の個数が 0個である、と定義されている。
+
+次の補題は、\subset の定義を展開しただけのものである。
+*)
+Check subsetE
+  : forall (T : finType) (A B : predPredType T),
+    (A \subset B) = pred0b [predD A & B].
+
+(**
+\proper は \subset から定義されている。
+*)
+Check p0 \proper p4.
+Check (p0 \subset p4) && ~~(p4 \subset p0).
+
+
+(**
+## Prop型の命題 ``{subset p0 <= p4} == (x \in p0 -> x \in p4)``
+*)
+Lemma p0_p4' : {subset p0 <= p4}.
 Proof.
-  apply/subsetP.
   rewrite /p0 /p4 => x.
   rewrite /in_mem /=.
     by move/eqP => ->.
 Qed.
 
-Goal p0 \proper p4.
+(**
+補題が用意されている。
+*)
+Check @subsetP
+  : forall (T : finType) (A B : predPredType T),
+    reflect {subset A <= B} (A \subset B).
+Check @properP
+  : forall (T : finType) (A B : predPredType T),
+    reflect (A \subset B /\ (exists2 x : T, x \in B & x \notin A)) (A \proper B).
+
+Lemma p0_p4 : p0 \subset p4.
+Proof.
+  by apply/subsetP/p0_p4'.
+Qed.
+
+Lemma p0_p4'' : p0 \proper p4.
 Proof.
   apply/properP.
   split.
   - by apply: p0_p4.
-  - exists s4.
-    + done.
-    + done.
+  - by exists s4.
 Qed.
 
-(*
-## subset の補題
-
-https://qiita.com/suharahiromichi/items/789b007b54e5d6d4ed1c
-
-の内容と同じだが、証明をみなおして簡単にしている。
- *)
-
+(**
+## bool型の命題 ``[forall x, (x \in p0) ==> (x \in p4)]``
+*)
 Section Test.
   Variable T : finType.
   
+(**
+命題型とbool型の同値関係を証明しておく。
+
+(forall x, x \in q1 -> x \in q2) <-> [forall x, (x \in q1) ==> (x \in q2)]
+*)
   Lemma mySubsetP' (q1 q2 : pred T) :
-    (forall x, x \in q1 -> x \in q2) <-> [forall x, (x \in q1) ==> (x \in q2)].
+    {subset q1 <= q2} <-> [forall x, (x \in q1) ==> (x \in q2)].
   Proof.
     split=> H.
     - apply/forallP => x.
-      apply/implyP.
-        by apply: H.
-    - move=> x.
+        by apply/implyP/H.
+      - move=> x.
       apply/implyP.
       move: x.
-      apply/forallP.
-      done.
+        by apply/forallP.
   Qed.
   
   Lemma mySubsetP (q1 q2 : pred T) :
@@ -340,36 +388,11 @@ Section Test.
   Qed.
 End Test.
 
-(**
-## A \subset B
-
-- A \subset B の定義は fintype.v にある。 #| predD A B | == 0 と定義。
-- predD A B の定義は ssrbool.v にある。 fun x => ~~ A x && B x と定義。
-
-つまり「論理式 A を満たし、論理式 B を満たさない要素の数が 0 である」というぐあいに
-濃度から導いていて、最初に証明したように、はこれが一番易しい。でも使いではあまりない。
-*)
-Check p0_p4 : p0 \subset p4.                (* 上で証明した。 *)
-
-(**
-## {subset A <= B}
-- {subset A <= B} の定義は ssrbool.v にある。
-*)
-Goal forall x, x \in p0 -> x \in p4.        (* {subset A <= B} *)
-Proof.
-  apply/mySubsetP.
-    by apply: p0_p4.
-Qed.
-
-(**
-## MathCopmp 的に欲しいもの（？）
- *)
 Goal [forall x, (x \in p0) ==> (x \in p4)].
 Proof.
   rewrite -mySubsetE.
     by apply: p0_p4.
 Qed.
-
 
 (**
 # 順序数（Ordinal）
