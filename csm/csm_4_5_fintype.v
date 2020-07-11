@@ -175,7 +175,128 @@ Check set_finType (ordinal_finType 5) : finType. (* 濃度5の順序数を要素
 Check perm_finType (ordinal_finType 5) : finType. (* 濃度5の順序数の順列 *)
 
 (**
-# 濃度 Cardinal が定義されている。
+# 順序数 (ordinal n)
+
+``0``〜``n-1`` の範囲の自然数である。
+*)
+
+Goal [forall x in 'I_5, x < 5].
+Proof.
+  apply/forallP.
+    (* forall x, (x \in 'I_5) ==> (x < 5) *)
+    by case=> m i.
+Qed.  
+
+(**
+## ordinal 型の値を作る関数
+
+"n is inferred from the context" とは、この場合、``: 'I_5`` のところ。
+ *)
+Definition s0 : 'I_5 := ord0.
+Definition s1 : 'I_5 := inord 1.
+Definition s2 : 'I_5 := inord 2.
+Definition s3 : 'I_5 := inord 3.
+Definition s4 : 'I_5 := ord_max.
+
+Definition p0 (x : 'I_5) := (x == s0).      (* 'I_5 -> bool *)
+Definition p4 (x : 'I_5) := x <= s4.        (* 'I_5 -> bool *)
+
+(**
+出来上がったもの：
+*)
+Check s1 : 'I_5 : predArgType.            (* ordinal は predArgType *)
+Check s1 : ordinal_finType 5 : finType.
+Check s1 : Finite.sort (ordinal_finType 5) : predArgType.
+
+(**
+``'I_5`` (``ordinal 5``) は、Finite.sort 関数についての
+``ordinal_finType 5`` のカノニカル解なので、
+Coq は ``Finite.sort (ordinal_finType 5)`` が ``'I_5`` であることを推論できる
+（テキスト 3.15.2 参照）。
+*)
+Check ordinal_finType 5 : finType.
+Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
+
+
+(**
+## 順序数の定義に基づいた定義
+*)
+
+Definition s0' : 'I_5. Proof. by apply: (@Ordinal 5 0). Defined.
+Definition s1' : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
+Definition s2' : 'I_5. Proof. by apply: (@Ordinal 5 2). Defined.
+Definition s3' : 'I_5. Proof. by apply: (@Ordinal 5 3). Defined.
+Definition s4' : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
+
+(**
+ふたつの定義が同じだという証明
+*)
+Goal s0 = s0'.
+Proof. by apply/eqP. Qed.
+
+
+(**
+## 型を変換する関数
+*)
+Check @widen_ord 5 6 _ s0 : 'I_6.
+
+Definition s0'' : 'I_6.
+Proof.
+  apply: (@widen_ord 5 6).
+  - done.
+  - apply: s0.
+Defined.
+
+(**
+順序数の型（範囲）をひとつだけ増やす関数。
+ *)
+Definition widen_ord_1 {n : nat} (s : 'I_n) : 'I_n.+1.
+Proof.
+  apply: widen_ord.
+  - by apply: leqnSn.
+  - by apply: s.
+Defined.
+
+Check widen_ord_1 (widen_ord_1 s0) : 'I_7.
+Compute (widen_ord_1 (widen_ord_1 s0)).
+
+
+(**
+## val または  nat_of_ord で自然数の値を取り出す。後者はコアーション。
+*)
+Check val : 'I_5 -> nat.
+Check @nat_of_ord 5  : 'I_5 -> nat.
+
+Compute val s0.                             (* = 0 *)
+Compute nat_of_ord s0.                      (* = 0 *)
+
+Compute val s4.                             (* = 4 *)
+Compute nat_of_ord s4.                      (* = 4 *)
+
+Compute s0 < 4.                     (* 不等式はコアーションが効く。 *)
+
+(**
+## 補題 val と nat_of_ord が単射である。
+*)
+
+Check @val_inj : forall (T : Type) (P : pred T) (sT : subType P), injective val.
+Check ord_inj : forall n : nat, injective (nat_of_ord (n:=n)).
+
+(**
+## Ordinal についての補題：
+*)
+
+Check ltn_ord : forall (n : nat) (i : 'I_n), i < n.
+Check leq_ord : forall (n' : nat) (i : 'I_n'.+1), i <= n'.
+
+Check card_ord : forall n : nat, #|'I_n| = n.
+
+Check widen_ord_proof : forall (n m : nat) (i : 'I_n), n <= m -> i < m.
+Check cast_ord_proof : forall (n m : nat) (i : 'I_n), n = m -> i < m.
+
+
+(**
+# 濃度 Cardinal
 *)
 
 Goal #| 'I_5  | = 5.
@@ -217,30 +338,6 @@ T型の要素を量化の範囲として、その「すべて」、「ある」�
 [forall x in T, P x]、[exists x in T, P x] は true を返す。
 ``in T`` は省略できる。
 *)
-
-(**
-順序数 (ordinal n) は、``0``〜``n-1`` の範囲の自然数（後述）
-
-``'I_5`` (``ordinal 5``) は、Finite.sort 関数についての
-``ordinal_finType 5`` のカノニカル解なので、
-Coq は ``Finite.sort (ordinal_finType 5)`` が ``'I_5`` であることを推論できる
-（テキスト 3.15.2 参照）。
-*)
-Check ordinal_finType 5 : finType.
-Compute Finite.sort (ordinal_finType 5).    (* 'I_5 *)
-
-Goal [forall x in 'I_5, x < 5].
-Proof.
-  apply/forallP.
-    (* forall x, (x \in 'I_5) ==> (x < 5) *)
-    by case=> m i.
-Qed.  
-
-Definition s0 : 'I_5. Proof. by apply: (@Ordinal 5 0). Defined.
-Definition s4 : 'I_5. Proof. by apply: (@Ordinal 5 4). Defined.
-
-Definition p0 (x : 'I_5) := (x == s0).      (* 'I_5 -> bool *)
-Definition p4 (x : 'I_5) := x <= s4.        (* 'I_5 -> bool *)
 
 (**
 ## 用意されている同値の補題
@@ -393,91 +490,5 @@ Proof.
   rewrite -mySubsetE.
     by apply: p0_p4.
 Qed.
-
-(**
-# 順序数（Ordinal）
-
-順序数 (ordinal n) は、``0``〜``n-1`` の範囲の自然数
- *)
-
-(**
-## 作り方は Qed でなく、Defined で終わること。
-*)
-Definition s1 : 'I_5. Proof. by apply: (@Ordinal 5 1). Defined.
-
-(**
-出来上がったもの：
- *)
-Check s1 : 'I_5 : predArgType.            (* ordinal は predArgType *)
-Check s1 : ordinal_finType 5 : finType.
-Check s1 : Finite.sort (ordinal_finType 5) : predArgType.
-
-(**
-## val または  nat_of_ord で自然数の値を取り出す。後者はコアーション。
-*)
-Check val : 'I_5 -> nat.
-Check @nat_of_ord 5  : 'I_5 -> nat.
-
-Compute val s0.                             (* = 0 *)
-Compute nat_of_ord s0.                      (* = 0 *)
-
-Compute val s4.                             (* = 4 *)
-Compute nat_of_ord s4.                      (* = 4 *)
-
-Compute s0 < 4.                     (* 不等式はコアーションが効く。 *)
-
-(**
-## ordinal 型の値を作る関数
-
-"n is inferred from the context" とは、この場合、``: 'I_5`` のところ。
- *)
-Definition s2 : 'I_5 := inord 2.
-Definition s0' : 'I_5 := ord0.
-Definition s4' : 'I_5 := ord_max.
-
-(**
-## 型を変換する関数
-*)
-Check @widen_ord 5 6 _ s0 : 'I_6.
-
-Definition s0' : 'I_6.
-Proof.
-  apply: (@widen_ord 5 6).
-  - done.
-  - apply: s0.
-Defined.
-
-(**
-順序数の型（範囲）をひとつだけ増やす関数。
- *)
-Definition widen_ord_1 {n : nat} (s : 'I_n) : 'I_n.+1.
-Proof.
-  apply: widen_ord.
-  - by apply: leqnSn.
-  - by apply: s.
-Defined.
-
-Check widen_ord_1 (widen_ord_1 s0) : 'I_7.
-Compute (widen_ord_1 (widen_ord_1 s0)).
-
-(**
-## 補題 val と nat_of_ord が単射である。
-*)
-
-Check @val_inj : forall (T : Type) (P : pred T) (sT : subType P), injective val.
-Check ord_inj : forall n : nat, injective (nat_of_ord (n:=n)).
-
-(**
-## Ordinal についての補題：
-*)
-
-Check ltn_ord : forall (n : nat) (i : 'I_n), i < n.
-Check leq_ord : forall (n' : nat) (i : 'I_n'.+1), i <= n'.
-
-Check card_ord : forall n : nat, #|'I_n| = n.
-
-Check widen_ord_proof : forall (n m : nat) (i : 'I_n), n <= m -> i < m.
-Check cast_ord_proof : forall (n m : nat) (i : 'I_n), n = m -> i < m.
-
 
 (* END *)
