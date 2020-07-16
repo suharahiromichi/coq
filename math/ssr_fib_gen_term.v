@@ -21,9 +21,10 @@ Unset Printing Implicit Defensive.
 
 フィボナッチ ffibonacci 数列の一般項を証明します。フィボナッチ数列の一般項は、
 
-$$ F_n = \frac{1}{\sqrt 5}(
+$$ F_n = \frac{1}{\sqrt 5}\left[
 \left(\frac{1 + \sqrt 5}{2}\right)^n -
-\left(\frac{1 - \sqrt 5}{2}\right)^n) $$
+\left(\frac{1 - \sqrt 5}{2}\right)^n
+\right] $$
 
 で知られていますが、
 
