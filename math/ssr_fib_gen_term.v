@@ -46,6 +46,14 @@ $$ a = - b = \frac{1}{\phi - \psi} $$ になるからです。
 
 $ F_0 = 0 = a + b $ から $ a = - b $ また、
 $ F_1 = 1 = a \phi + b \psi $ から $ a = \frac{1}{\phi - \psi} $ です。
+
+
+φとψおよび、それで定義されたフィボナッチ数の一般項の型は実数になりますが、
+ここでは、それを抽象的な体、正確には ``F : finType`` である ``F`` 型であるとします。
+
+そうすることで、実数という具体的な型を定義せずに、
+フィボナッチ数の一般項と、漸化式で定義されたフィボナッチ数とが、
+一致することを証明したいと思います。
 *)
 
 
@@ -59,7 +67,8 @@ Section DEFN.
     | 1 => 1
     | (m.+1 as pn).+1 => fibn m + fibn pn (* fibn n.-2 + fibn n.-1 *)
     end.
-  Check fibn_ind.
+  
+  Check fibn_ind.   (* フィボナッチ数の定義に基づく帰納法が成り立つ。 *)
 End DEFN.
 
 (**
@@ -69,47 +78,38 @@ Import GRing.Theory.         (* mulrA などを使えるようにする。 *)
 Import Num.Theory.           (* unitf_gt0 などを使えるようにする。 *)
 Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
-Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
+Open Scope ring_scope.       (* %R を省略時解釈とする。 *)
 
 Section DEFR.
-  Variable R : fieldType.                   (* unitRingType. *)
-  Variable g h : R.
+  Variable F : fieldType.                   (* 四則演算が成り立つ。 *)
+  Variable g h : F.
 
-  Definition fibr (n : nat) := (g^n - h^n) / (g - h).
-  Check fibr.
+  Definition fibf (n : nat) : F := (g^n - h^n) / (g - h).
   
-  Axiom sol_g : g^2 = g + 1.        (* x^2 - x - 1 = 0 の解である。 *)
-  Axiom sol_h : h^2 = h + 1.        (* x^2 - x - 1 = 0 の解である。 *)
-  Axiom neq_gh : g != h.            (* 重解ではない。 *)
+  Axiom g2__g_1 : g^2 = g + 1.        (* x^2 - x - 1 = 0 の解である。 *)
+  Axiom h2__h_1 : h^2 = h + 1.        (* x^2 - x - 1 = 0 の解である。 *)
+  Axiom neq_gh : g != h.              (* 重解ではない。 *)
 
 (**
 # 補題
  *)
-  Lemma test2 : (g - h) / (g - h) = 1.
+  Lemma neq__div_1 (x y : F) : x != y -> (x - y) / (x - y) = 1.
   Proof.
-    Check divff : forall (F : fieldType) (x : F), x != 0 -> x / x = 1.
-    (* ここで、g - h が体でなければなならい。 *)
+    move=> H.
     rewrite divff.
     - done.                                 (* 1 = 1 *)
     - apply/eqP.
-      Check (@subr0_eq R g h).
+      Check (@subr0_eq F x y).
       move/subr0_eq.
-        by apply/eqP/neq_gh.
-  Qed.
-  
-  Lemma test (n : int) : n - n = 0%:Z.      (* notu *)
-  Proof.
-    apply/eqP.
-    rewrite subr_eq0.
-    done.
+        by apply/eqP.
   Qed.
   
 (**
 # 定理
  *)
-  Lemma fibn_fibr (n : nat) : (fibn n)%:R = fibr n.
+  Lemma fibn_fibf (n : nat) : (fibn n)%:R = fibf n.
   Proof.
-    rewrite /fibr.
+    rewrite /fibf.
     functional induction (fibn n).
     - rewrite 2!expr0z.
       rewrite addrN.
@@ -117,9 +117,9 @@ Section DEFR.
 
     - rewrite 2!expr1z.
       rewrite divrr; first done.
-        by rewrite unitrE test2.
+        by rewrite unitrE neq__div_1 // neq_gh.
       
-    - rewrite -add2n 2!exprzD_nat sol_g sol_h.
+    - rewrite -add2n 2!exprzD_nat g2__g_1 h2__h_1.
       rewrite 2![(_ + 1) * _ ^ m]mulrDl.
       rewrite 2!mul1r.
       rewrite -2![_ * _ ^ m]exprSz.
@@ -139,4 +139,3 @@ Section DEFR.
 End DEFR.
 
 (* END *)
-
