@@ -99,8 +99,8 @@ Locate "_ + _".
 "m + n" := Nat.add m n : coq_nat_scope
 "A + B" := addsmx A B : matrix_set_scope
 "m + n" := addn_rec m n : nat_rec_scope
-"m + n" := addn m n : nat_scope
-"x + y" := addq x y : rat_scope (default interpretation)
+"m + n" := addn m n : nat_scope ← 通常、これが省略時解釈。
+"x + y" := addq x y : rat_scope ← ここでは、これが省略時解釈。
 "x + y" := GRing.add x y : ring_scope
 "x + y" := GRing.Add x y : term_scope
 "x + y" := sum x y : type_scope
@@ -108,23 +108,51 @@ Locate "_ + _".
 *)
 
 (* 以下において、Checkの出力の %X が消えることに注意してください。 *)
+(* ProofGeneral では、読み直さないといけない場合があります。 *)
+
+(* ssrnat.v:Delimit Scope coq_nat_scope with coq_nat. *)
 Open Scope coq_nat_scope.
 Check (1 + 1)%coq_nat : nat.
 
+(* ssrnat.v:Delimit Scope nat_scope with N. *)
 Open Scope nat_scope.
 Check (1 + 1)%N : nat.
 
+(* ssralg.v:Delimit Scope ring_scope with R. *)
 Open Scope ring_scope.
 Variable R : ringType.
 Check (1 + 1)%R : R.
 
+(* ssralg.v:Delimit Scope term_scope with T. *)
 Open Scope term_scope.
 Check (1 + 1)%T : GRing.term R.
 
 Open Scope type_scope.
 Check (nat + nat)%type : Set.
 
+(* rat.v:Delimit Scope rat_scope with Q. *)
 Open Scope rat_scope.
-Check (1 + 1)%Q.
+Check (1 + 1)%Q : rat.
+
+(* eqtype.v:Delimit Scope eq_scope with EQ. *)
+Open Scope eq_scope.                (* 通常は省略時解釈のまま使う。 *)
+Check (1 = 1)%EQ : Prop.
+
+(* bigop.v:Delimit Scope big_scope with BIG. *)
+Open Scope big_scope.               (* 通常は省略時解釈のまま使う。 *)
+Check (\sum_(i < 2)i)%BIG : nat.
+
+(* ssrbool.v:Delimit Scope bool_scope with B. *)
+Open Scope bool_scope.              (* 通常は省略時解釈のまま使う。 *)
+Check (true && true)%B : bool.
+
+(* ssrfun.v:Delimit Scope pair_scope with PAIR. *)
+Open Scope pair_scope.              (* 通常は省略時解釈のまま使う。 *)
+Check (1, 1)%PAIR : (rat * rat)%type.
+
+(* ssrint.v:Delimit Scope int_scope with Z. *)
+Open Scope int_scope.
+(* int は、+ - などはグローバルに定義されていない。 *)
+Check (addz 1 1)%Z : int.
 
 (* END *)
