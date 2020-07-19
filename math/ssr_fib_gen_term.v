@@ -56,42 +56,70 @@ $ F_1 = 1 = a \phi + b \psi $ から $ a = \frac{1}{\phi - \psi} $ です。
 一致することを証明したいと思います。
 *)
 
-
 (**
-# 漸化式の定義
- *)
-Section DEFN.
-  Function fibn (n : nat) : nat :=
-    match n with
-    | 0 => 0
-    | 1 => 1
-    | (m.+1 as pn).+1 => fibn m + fibn pn (* fibn n.-2 + fibn n.-1 *)
-    end.
-  
-  Check fibn_ind.   (* フィボナッチ数の定義に基づく帰納法が成り立つ。 *)
-End DEFN.
-
-(**
-# 一般項の定義
- *)
+# 諸設定
+*)
 Import GRing.Theory.         (* mulrA などを使えるようにする。 *)
 Import Num.Theory.           (* unitf_gt0 などを使えるようにする。 *)
 Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
 Open Scope ring_scope.       (* %R を省略時解釈とする。 *)
 
-Section DEFR.
-  Variable F : fieldType.                   (* 四則演算が成り立つ。 *)
-  Variable g h : F.
+(**
+# 漸化式の定義
 
-  Definition fibf (n : nat) : F := (g^n - h^n) / (g - h).
+最初に、フィボナッチ数列の漸化式を再帰関数として定義します。
+のちの証明で、functional induction コマンドを使って、
+フィボナッチ数の定義に基づく帰納法（いわゆる、カスタムインダクション）を使いたいので、
+Fixpoint コマンドではなく Function コマンドを使って定義します。これにより、
+そのカスタムインダクションのための帰納法の原理 ``fibn_ind`` が生成されます。
+
+
+上記の設定の ``ring_scope``で、四則演算子の省略時解釈を環にしているので、
+この定義の全体を自然数で計算するように、``(・)%N`` で囲みます。
+そうしないと、``fibn_ind`` が生成されないようです。
+ *)
+Section DEFN.
+  Function fibn (n : nat) : nat :=
+    (match n with
+    | 0 => 0
+    | 1 => 1
+    | (m.+1 as pn).+1 => fibn m + fibn pn   (* fib n.-2 + fib n.-1 *)
+    end)%N.
+  
+  Check fibn_ind.   (* フィボナッチ数の定義に基づく帰納法が成り立つ。 *)
+End DEFN.
+
+(**
+# 一般項の定義
+
+最初に説明したように、φとψを以下のように定義します。φは黄金数です。
+
+- 可換体の性質をもつ（ジェネリックな）型 Fを定義する。
+
+- φとψ は、F型とする。
+
+- $ x^2 - x - 1 = 0 $ の2解（重解ではない）を φとψとする。
+
+
+ついで、φとψを使って、フィボナッチ数の一般項を定義します。これもF型となります。
+なお、フィボナッチ数列のインデックスは、これまでとおり自然数です。
+ *)
+Section DEFR.
+  Variable F : fieldType.
+  Variable g h : F.
   
   Axiom g2__g_1 : g^2 = g + 1.        (* x^2 - x - 1 = 0 の解である。 *)
   Axiom h2__h_1 : h^2 = h + 1.        (* x^2 - x - 1 = 0 の解である。 *)
   Axiom neq_gh : g != h.              (* 重解ではない。 *)
 
+  Definition fibf (n : nat) : F := (g^n - h^n) / (g - h).
+  
 (**
 # 補題
+
+$ x \ne y $ のとき、 $ \frac{x - y}{x - y} = 1 $ としたいのですが、
+すこし証明が複雑なので、補題として用意しておきます。
  *)
   Lemma neq__div_1 (x y : F) : x != y -> (x - y) / (x - y) = 1.
   Proof.
