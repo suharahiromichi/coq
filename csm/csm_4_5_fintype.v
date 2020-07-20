@@ -35,16 +35,62 @@ opamでインストールしている場合は、ソースは、たとえば以�
 *)
 
 (**
-公理の内容は、以下である。ballがこれを満たすことは、あとで調べる。
+## 目次
+
+- finType型のインスタンス型に作り方
+
+- すでにあるfinType型
+
+- 順序数型 (Ordinal型)
+
+
+``fT : finType`` としたとき、bool述語 ``P : fT -> bool`` がtrueを返す fT の要素を考えると、
+濃度やforall, exists, subset, proper を定義できる。ただし、ここでは P を集合とは見なさない。
+
+（このような集合は、のちに finset.v で定義する。set_finTypeはfinTypeのインスタンス型なので、
+eqTypeのインスタンス型でもあるから、集合どうしの ``==`` が定義できる）。
+
+- 濃度
+
+- forall と exists (boolean quantifiers)
+
+- \subset と \proper
+*)
+
+(**
+# finType型のインスタンス型の作り方
+
+finType の定義は以下のとおりである。
+*)
+Print Finite.class_of.
+(*
+Record class_of (T : Type) : Type := Class
+  { base : Choice.class_of T;
+    mixin : Finite.mixin_of (EqType T base) }
+*)
+Print Finite.mixin_of.
+(*
+Record mixin_of (T : eqType) : Type := Mixin
+  { mixin_base : Countable.mixin_of T;
+    mixin_enum : seq T;
+    _ : Finite.axiom (T:=T) mixin_enum } *)
+
+
+(**
+最初に述べた公理の内容は、以下である。ballがこれを満たすことは、あとで調べる。
 *)
 Print Finite.axiom.
+(* = fun (T : eqType) (e : seq T) => forall x : T, (count_mem x) e = 1. *)
+
 (**
 conunt_mem を展開すると、つぎのようになる。
 *)
 Check fun (T : eqType) (e : seq T) =>
         forall x : T, count [pred y | x == y] e = 1.
 (**
-とりあえあず ``[pred y | x == y]`` は ``fun y => x == y`` と思ってよい。
+とりあえあず ``[pred y | x == y]`` は ``fun y => x == y`` と思ってよいので、
+
+要素に重複のない（どの要素の数も1個の）T型のリストがある、という意味
  *)
 
 (**
@@ -156,7 +202,7 @@ Check red \in ball.          (* 最初に predArgType を明示すること。 *
 Check #| ball | == 2.        (* predArgType に対する finType なら濃度が定義される。 *)
 
 (**
-# その他の finType のインスタンス型
+# すでにある finType のインスタンス型
 *)
 
 Check bool_finType       : finType.         (* bool型 *)
@@ -171,8 +217,22 @@ Check finfun_finType (ordinal_finType 5) (ordinal_finType 6)
 
 Check set_finType (ordinal_finType 5) : finType. (* 濃度5の順序数を要素とする集合 *)
 (* finset は、finType型を引数、bool型を値とする関数 finfun である。 *)
+Variable P Q : set_finType (ordinal_finType 5).
+Check P == Q.
 
 Check perm_finType (ordinal_finType 5) : finType. (* 濃度5の順序数の順列 *)
+
+(**
+finalg.v で定義される finRingType （や finFieldType） は、finTypeと同じ mixin を使用する。
+base 型には、ringType （と fieldType） を使う。これらの型は以下の性質をもつ。
+
+```
+Variable F : finRingType.
+Check F : ringType.
+Check F : finType.
+```
+*)
+
 
 (**
 # 順序数 (ordinal n)
