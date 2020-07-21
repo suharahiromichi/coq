@@ -134,32 +134,45 @@ $ x \ne y $ のとき、 $ \frac{x - y}{x - y} = 1 $ としたいのですが、
   
 (**
 # 定理
+
+functional induction コマンドを使って、(fibn n) についての帰納法をおこなうます。
+
+左辺は自然数、右辺は体なので、左辺を ring_scope に変換します。
  *)
   Lemma fibn_fibf (n : nat) : (fibn n)%:R = fibf n.
   Proof.
     rewrite /fibf.
     functional induction (fibn n).
+    (* 0%:R = (g ^ 0 - h ^ 0) / (g - h) *)
     - rewrite 2!expr0z.
-      rewrite addrN.
-        by rewrite mul0r.                   (* 割り算は掛け算 *)
-
+        by rewrite addrN mul0r.             (* 割算 *)
+        
+    (* 1%:R = (g ^ 1 - h ^ 1) / (g - h) *)
     - rewrite 2!expr1z.
-      rewrite divrr; first done.
-        by rewrite unitrE neq__div_1 // neq_gh.
-      
+        by rewrite (neq__div_1 neq_gh).     (* 補題を使う。 *)
+        
+    (* 
+  IHn0 : (fibn m)%:R = (g ^ m - h ^ m) / (g - h)
+  IHn1 : (fibn m.+1)%:R = (g ^ m.+1 - h ^ m.+1) / (g - h)
+  ============================
+  (fibn m + fibn m.+1)%:R = (g ^ m.+2 - h ^ m.+2) / (g - h)
+     *)
+    (* 左辺の分母を m乗 と m+1乗の 項からなる式にします。 *)
     - rewrite -add2n 2!exprzD_nat g2__g_1 h2__h_1.
       rewrite 2![(_ + 1) * _ ^ m]mulrDl.
       rewrite 2!mul1r.
       rewrite -2![_ * _ ^ m]exprSz.
       rewrite opprD addrA.
       
-      rewrite ?addrA.
-      rewrite [_ + (- h ^ m.+1)]addrC.
-      rewrite ?addrA.
-      rewrite [(- h ^ m.+1) + g ^ m.+1]addrC.
-      rewrite -addrA addrC.
+      (* (fibn m + fibn m.+1)%:R = (g ^ m.+1 + g ^ m - h ^ m.+1 - h ^ m) / (g - h) *)
+      (* 右辺の分母を移項します。 *)
+      rewrite -?addrA [(- h ^ m.+1) + _]addrC.      (* - h^m.+1 を最後にする。 *)
+      rewrite ?addrA [_ - h ^ m]addrC.              (* h ^ m を先頭にする。 *)
+      rewrite ?addrA [_ + g ^ m]addrC.              (* g ^ m を先頭にする。 *)
+      rewrite addrA -addrA.
       
-      rewrite mulrDl.
+      (* (fibn m + fibn m.+1)%:R = ((g ^ m - h ^ m) + (g ^ m.+1 - h ^ m.+1)) / (g - h) *)
+      rewrite mulrDl.                       (* 割算を分配する。 *)
       rewrite -IHn0 -IHn1.
       rewrite -natrD.
       done.
