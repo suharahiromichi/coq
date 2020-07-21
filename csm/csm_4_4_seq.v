@@ -487,7 +487,6 @@ Check @eqseq : forall T : eqType, seq T -> seq T -> bool.
 predType 型クラス（インターフェース）のインスタンスとして seq_predType を定義している。
 すると、seq eT 型 (ただし eT は、eqType のインスタンス） は、\in の右に書けるようになる。
 *)
-
 Check [:: 1; 2] : seq_predType nat_eqType.
 Compute 1 \in [:: 1; 2].                    (* true *)
 
@@ -639,18 +638,21 @@ Check foldl_rev : forall (T R : Type) (f : R -> T -> R) (z : R) (s : seq T),
     foldl f z (rev s) = foldr (fun (x : T) (y : R) => f y x) z s.
 
 (**
-# 特別な帰納法
- *)
-
-(**
-## lastP
-
-(これは帰納法でないが) ゴールを ``[::]`` と ``rcons s x`` に分ける。
+# 場合分け
  *)
 
 Section Last.
   Variable T : Type.
   
+(**
+## listP (ディフォルト)
+
+ゴールを ``[::]`` と ``x :: s`` に分ける。
+*)
+
+(**
+まず、リストの先頭の要素を取り除いた残りを返す関数を定義する。nilならnilを返すものとする。
+*)
   Definition hbody (s : seq T) : seq T := drop 1 s.
   
   Lemma hbody_cons x s : hbody (x :: s) = s.
@@ -658,34 +660,47 @@ Section Last.
       by rewrite /hbody drop_cons drop0.
   Qed.
   
-  Definition tbody (s : seq T) : seq T := rev (drop 1 (rev s)).
-  
-  Lemma tbody_rcons s x : tbody (rcons s x) = s.
-  Proof.
-    by rewrite /tbody rev_rcons /= drop0 revK.
-  Qed.
-  
 (**
+``size (hbody s) < size s`` を証明したい。
+
 s = [::] だと ``size (hbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
 証明は、s を [::] と x :: s に場合分けして、前者の場合は前提矛盾で成立とする。
 *)
   Lemma size_hbody_1 s : 1 <= size s -> size (hbody s) < size s.
   Proof.
-    case: s => [| x s Hs].             (* [::] と x :: s に分ける。 *)
-    - done.
+    case: s => [| x s Hs].    (* [::] と x :: s に分ける。 *)
+    - done.                   (* 前提 0 < size [::] は矛盾で成立。  *)
     - rewrite hbody_cons /=.
         (* size s < (size s).+1 *)
       by apply: ltnSn.
   Qed.
   
 (**
+## lastP
+
+ゴールを ``[::]`` と ``rcons s x`` に分ける。
+ *)
+
+(**
+まず、リストの最後の要素を取り除いた残りを返す関数を定義する。nilならnilを返すものとする。
+*)
+  Definition tbody (s : seq T) : seq T := rev (drop 1 (rev s)).
+  
+  Lemma tbody_rcons s x : tbody (rcons s x) = s.
+  Proof.
+    by rewrite /tbody rev_rcons /= drop0 revK.
+  Qed.
+
+(**
+``size (tbody s) < size s`` を証明したい。
+
 s = [::] だと ``size (tbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
 証明は、s を [::] と rocns s x に場合分けして、前者の場合は前提矛盾で成立とする。
 *)
   Lemma size_tbody_1 s : 1 <= size s -> size (tbody s) < size s.
   Proof.
     case/lastP: s => [| s x Hs].    (* [::] と rcons s x に分ける。 *)
-    - done.
+    - done.                   (* 前提 0 < size [::] は矛盾で成立。  *)
     - rewrite tbody_rcons size_rcons.
         (* size s < (size s).+1 *)
         by apply: ltnSn.
@@ -697,6 +712,10 @@ Compute hbody [:: 1; 2; 3].                 (* [:: 2; 3] *)
 
 Compute tbody [::].                         (* [::] *)
 Compute tbody [:: 1; 2; 3].                 (* [:: 1; 2] *)
+
+(**
+# 特別な帰納法
+ *)
 
 (**
 ## last_ind
