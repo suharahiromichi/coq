@@ -71,7 +71,7 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
 
 \sum_{i=m}^{n-1}a_i + \sum_{i=m}^{n-1}b_i = \sum_{i=m}^{n-1}(a_i + b_i) \\
 
-\sum_{i=m}^{n-1}(c a_i) = c \sum_{i=m}^{n-1}a_i \\
+\sum_{i=m}^{n-1}c a_i = c \sum_{i=m}^{n-1}a_i \\
 
 \sum_{i=m}^{n-1}(a_i c) = (\sum_{i=m}^{n-1}a_i) c \\
 
