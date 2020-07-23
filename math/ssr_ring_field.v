@@ -30,6 +30,10 @@ Section ZModule.
 
   Check @addrC V : forall x y : V, (x + y) = (y + x).
   Check @addrA V : forall x y z : V, (x + (y + z)) = (x + y + z).
+
+  (* opposite (単項マイナス演算子) は、 *)
+  Check @opprD V : {morph -%R : x y / x + y}.
+
 End ZModule.
 
 (**
@@ -74,19 +78,55 @@ End ComUnitRing.
 Section IntDomain.
   Variable R : idomainType.
 
-  Check @mulf_eq0 R
-    : forall x y : R, ((x * y) == 0) = (x == 0) || (y == 0).
+  Check @mulf_eq0 R : forall x y : R,
+      ((x * y) == 0) = (x == 0) || (y == 0).
 End IntDomain.
+
+(**
+# number domain (number field)
+
+order (順番) と norm (絶対値) のある整域（または体）(例：ガウス整数)
+*)
+Section NumDomain.
+  Variable R : numDomainType.
+
+  Check @ler_norm_add R : forall x y : R,
+      `|x + y| <= `|x| + `|y|.
+End NumDomain.
 
 (**
 # 体 field
 *)
 Section Field.
   Variable F : fieldType.
-
-  Check @divff F
-    : forall x : F, x != 0 -> (x / x) = 1.
+  
+  Check @divff F : forall x : F,
+      x != 0 -> (x / x) = 1.
 End Field.
+
+(**
+# real field
+
+要素に正負のある number field （例：実数）
+*)
+Section RealField.
+  Variables rF : realFieldType.
+  
+  Check @lerif_mean_square rF : forall x y : rF,
+      x * y <= (x ^+ 2 + y ^+ 2) / 2%:R ?= iff (x == y).
+  
+  (* 左辺の=が成り立つことと、x = y であることが同値  *)
+End RealField.
+
+(**
+# 閉体 closed field
+
+多項式の根がある体。
+*)
+Section ClosedField.
+  (* 補足すること。 *)
+End ClosedField.
+
 
 (**
 # おまけ
