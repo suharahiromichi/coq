@@ -650,7 +650,8 @@ Section Case.
 *)
 
 (**
-まず、リストの先頭の要素を取り除いた残りを返す関数を定義する。nilならnilを返すものとする。
+まず、リストの先頭の要素を取り除いた残りを返す関数 tail を定義する。
+nilならnilを返すものとする。
 *)
   Definition tail (s : seq T) : seq T :=
     match s with
@@ -658,6 +659,9 @@ Section Case.
     | [::] => [::]
     end.
   
+(**
+補題として、cons x s に対して、上記の関数を適用すると s が得られることを証明する。
+ *)
   Lemma tail_cons x s : tail (x :: s) = s.
   Proof.
     done.
@@ -687,7 +691,10 @@ s = [::] だと ``size (tail s) = size s`` になるので、``1 <= size s`` の
   Qed.
   
 (**
-## 類似な例
+## 自然数について類似な例
+
+``n / n = 1`` を証明したいが、n = 0 なら ``0 / 0 = 0`` で成立しないので、
+``0 < n`` の条件をつける。
  *)
   Lemma divNN (n : nat) : 0 < n -> n %/ n = 1.
   Proof.
@@ -715,11 +722,14 @@ s = [::] だと ``size (tail s) = size s`` になるので、``1 <= size s`` の
  *)
   
 (**
-まず、リストの最後の要素を取り除いた残りを返す関数を定義する。nilならnilを返すものとする。
+まず、リストの最後の要素を取り除いた残りを返す関数 init を定義する。
+nilならnilを返すものとする。
 *)
-
   Definition init (s : seq T) : (seq T) := rev (tail (rev s)).
   
+(**
+補題として、rcons s x に対して、上記の関数を適用すると s が得られることを証明する。
+ *)
   Lemma init_rcons s x : init (rcons s x) = s.
   Proof.
       by rewrite /init rev_rcons /tail revK.
@@ -775,11 +785,36 @@ Check last_ind
 Section FoldLeft.
   Variables (T R : Type) (f : R -> T -> R).
   
+(**
+foldl と folr が rev で、同じ結果になることを証明する。
+  *)
   Lemma foldl_rev (z : R) (s : seq T) :
     foldl f z (rev s) = foldr (fun x z => f z x) z s.
   Proof.
-    elim/last_ind: s z => [|s x IHs] z //=.
-      by rewrite rev_rcons -cats1 foldr_cat -IHs.
+    (* z を汎化すること。 *)
+    elim/last_ind : s z => [| s x IHs] z.
+    
+    (* foldl f z (rev [::]) = foldr (fun x : T => f^~ x) z [::] *)
+    - rewrite /=.                        (* 第3引数が [::] である。 *)
+      done.
+      
+    (* 
+IHs : forall z : R, foldl f z (rev s) = foldr (fun z x => f x z) z s.
+Goal : foldl f z (rev (rcons s x)) = foldr (fun z x => f x z) z (rcons s x)
+
+証明したいのは、``foldl f z (rev s) = ... `` であると仮定したとき、
+``foldl f z (rev (rcons s x)) = ...`` であるが、左辺の x を第3引数の外に出すと、
+``foldl (f z x) s = ... `` となる。これが成立することを証明する。
+     *)
+    (* ゴールの左辺 *)
+    rewrite rev_rcons.
+    rewrite [LHS]/=.
+    (* ゴールの右辺 *)
+    rewrite -cats1.
+    rewrite foldr_cat.
+    rewrite [RHS]/=.
+    rewrite -IHs.
+    done.
   Qed.
 End FoldLeft.
 
@@ -792,70 +827,117 @@ Check @seq_ind2
     ->
     (forall (x : S) (y : T) (s : seq S) (t : seq T), (* 帰納法の仮定 *)
         size s = size t -> P s t
+        (* ^^^^^^^^^^^  *)
         ->
         P (x :: s) (y :: t))                (* 証明するべきもの *)
     ->
     forall (s : seq S) (t : seq T), size s = size t -> P s t. (* 結論 *)
 
-(* 古い版では seq2_ind だった。帰納法の仮定に寸法がなかった。 *)
+(**
+古い版では seq2_ind だった。
+seq_ind2 になったときに帰納法の仮定に寸法追加され、「弱まった」が使い易くなった。
+ただし、今回は仮定は使っていません。
+ *)
 Lemma seq2_ind T1 T2 (P : seq T1 -> seq T2 -> Type) :
   P [::] [::] -> (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
   forall s1 s2, size s1 = size s2 -> P s1 s2.
 Proof. by move=> Pnil Pcons; elim=> [|x s IHs] [] //= x2 s2 [] /IHs/Pcons. Qed.
 
-Section Map2.
+Section Map2_Mask.
   Variable T : Type.
-  
 (**
+### mask 関数の証明
+
 seq bool で seq T をマスクする mask 関数に関する証明に使う。
  *)
   Compute mask [:: true; false; true] [:: 1; 2; 3].
   
+(**
+#### size_mask
+*)
   Goal forall (m : seq bool) (s : seq T),   (* size_mask *)
       size m = size s -> size (mask m s) = count id m.
   Proof.
+    (* 帰納法の原理を補題として用意した場合は、それを apply する。 *)
     apply: seq_ind2 => // x m s t /= Hs IHs.
     rewrite -IHs.
     case: ifP => Hx /=.
-    - by rewrite IHs.
-    - by rewrite add0n.
+    - rewrite IHs.
+      done.
+    - rewrite add0n.
+      done.
   Qed.
 
+(**
+#### mask_cat.
+*)
   Goal forall (m1 m2 : seq bool) (s1 s2 : seq T), (* mask_cat *)
       size m1 = size s1 -> mask (m1 ++ m2) (s1 ++ s2) = mask m1 s1 ++ mask m2 s2.
   Proof.
     move=> m1 m2 s1 s2.
     move: m1 s1.
-    apply: seq_ind2 => // x y m s /= Hs IHs.
-    case: ifP => Hx /=; by rewrite IHs.
+    (* ゴールのスタックに、m1 s1 と size を残すことに注意！ *)
+    apply: seq_ind2.
+    - by move=> /=.
+    - move=> /=.
+      move=> x y m s /= Hs IHs.
+      (* ``if x then .... else ...`` の then と else で場合分けする。  *)
+      case: ifP => Hx.
+      + rewrite IHs.                        (* x = true の場合 *)
+        done.
+      + rewrite IHs.                        (* x = false の場合 *)
+        done.
   Qed.
+End Map2_Mask.
 
 (**
+## map2 関数の定義
+
 MathComp には map2 はないので定義してみる。
 *)
+Section Map2_Def.
+  Variable T : Type.
+  
   Fixpoint map2 op (s1 s2 : seq T) : seq T :=
     match s1, s2 with
     | [::], _ => [::]
     | _, [::] => [::]
-    | x1 :: s1, x2 :: s2 => (op x1 x2) :: map2 op s1 s2
+    | (x1 :: s1), (x2 :: s2) => (op x1 x2) :: map2 op s1 s2
     end.
+End Map2_Def.
 
+Check map2 addn.
+Compute map2 addn [:: 0; 1; 1; 2; 3; 5; 8] [:: 1; 1; 2; 3; 5; 8].
+
+Section Map2_Lemma.
+  Variable T : Type.
+(**
+### map2_cons
+*)  
   Lemma map2_cons f (x1 x2 : T) (s1 s2 : seq T) :
     map2 f (x1 :: s1) (x2 :: s2) = f x1 x2 :: map2 f s1 s2.
   Proof.
       by [].
   Qed.
   
+(**
+### map2_cat
+*)  
   Lemma map2_cat f (s11 s12 s21 s22 : seq T) :
     size s11 = size s21 -> 
     map2 f (s11 ++ s12) (s21 ++ s22) = map2 f s11 s21 ++ map2 f s12 s22.
   Proof.
     move: s11 s21.
     (* ゴールのスタックに、s11 s21 と size を残すことに注意！ *)
-    apply: seq_ind2 => // x1 x2 s11 s21 Hsize IHs /=.
-      by rewrite IHs.
+    apply: seq_ind2.
+    - move=> /=.
+      done.
+    - move=> /=.
+      move=> x1 x2 s11 s21 Hsize IHs.
+      rewrite IHs.
+      done.
   Qed.    
-End Map2.
+End Map2_Lemma.
 
 (**
 ## alt_list_ind
