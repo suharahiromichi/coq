@@ -37,9 +37,9 @@ opamでインストールしている場合は、ソースは、たとえば以�
 (**
 ## 目次
 
-- finType型のインスタンス型に作り方
+- finType型のインスタンス型の作り方
 
-- すでにあるfinType型
+- すでにあるfinType型のインスタンス
 
 - 順序数型 (Ordinal型)
 
@@ -54,7 +54,7 @@ eqTypeのインスタンス型でもあるから、集合どうしの ``==`` が
 
 - forall と exists (boolean quantifiers)
 
-- \subset と \proper
+- \subset と \proper (⊆ と ⊂)
 *)
 
 (**
@@ -108,7 +108,7 @@ ball と bool が1対1対応であることを証明して、それを使って�
 eqType の公理を直接証明するのは、以下を参照のこと。
 https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_2_eqtype.v
 
-Coutable の公理 (unpick と pick) はともかく、Choice の公理を証明するのは大変。
+Countable の公理 (unpick と pick) はともかく、Choice の公理を証明するのは大変。
 *)
 
 (**
@@ -194,7 +194,7 @@ https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-win
 (**
 ### MathComp の三点セット（？）
 
-以上で、==, \in, #|_| の「三点セット」が成り立つよういなる。
+以上で、==, \in, #|_| の「三点セット」が成り立つようになる。
 *)
 Check red == red.
 Check red != white.
@@ -213,7 +213,7 @@ Check tuple_finType 3 (ordinal_finType 5)
 
 Check finfun_finType (ordinal_finType 5) (ordinal_finType 6)
   : finType. (* 濃度5の順序数を引数、濃度6の順序数を値とする関数である。 *)
-(* finfun は、一般に値は任意の型でよいので、finfun が finType とは限らない。 *)
+(* finfun は、値は任意の型でよいので、すべての finfun が finType とは限らない。 *)
 
 Check set_finType (ordinal_finType 5) : finType. (* 濃度5の順序数を要素とする集合 *)
 (* finset は、finType型を引数、bool型を値とする関数 finfun である。 *)
@@ -294,19 +294,23 @@ Compute val s1''.                           (* 1 *)
 
 (**
 ## 型を変換する関数
-*)
-Lemma le_5_6 : 5 <= 6. Proof. done. Qed.
-Check @widen_ord 5 6 le_5_6 s1 : 'I_6.
 
-Definition s1''' : 'I_6.
+'I_5 を 'I_10 に変換する。
+*)
+Lemma le_5_10 : 5 <= 10. Proof. done. Qed.
+Check @widen_ord 5 10 le_5_10 s1 : 'I_10.
+
+Definition s1''' : 'I_10.
 Proof.
-  apply: (@widen_ord 5 6).
+  apply: (@widen_ord 5 10).
   - done.
   - apply: s1.
 Defined.
 
 (**
 順序数の型（範囲）をひとつだけ増やす関数。
+
+'I_n を 'I_n.+1 に変換する。
  *)
 Definition widen_ord_1 {n : nat} (s : 'I_n) : 'I_n.+1.
 Proof.
@@ -315,6 +319,9 @@ Proof.
   - by apply: s.
 Defined.
 
+(**
+'I_5 を 'I_6 を経て 'I_7 に変換する。
+ *)
 Check widen_ord_1 (widen_ord_1 s1) : 'I_7.
 
 
@@ -343,9 +350,12 @@ Check ord_inj : forall n : nat, injective (nat_of_ord (n:=n)).
 ## Ordinal についての補題：
 *)
 
+(* 'I_n 型の要素は、n より小さい。 *)
 Check ltn_ord : forall (n : nat) (i : 'I_n), i < n.
+(* 'I_n.+1 型の要素は、n 以下である。 *)
 Check leq_ord : forall (n' : nat) (i : 'I_n'.+1), i <= n'.
 
+(* 'I_n 型の要素は n 個である。 *)
 Check card_ord : forall n : nat, #|'I_n| = n.
 
 Check widen_ord_proof : forall (n m : nat) (i : 'I_n), n <= m -> i < m.
@@ -361,24 +371,34 @@ Proof.
     by rewrite cardE size_enum_ord.
 Qed.
 
-Check cardE : forall (T : finType) (A : predPredType T), #|A| = size (enum A).
-Check eq_card : forall (T : finType) (A B : predPredType T), A =i B -> #|A| = #|B|.
+Check cardE : forall (T : finType) (A : predPredType T),
+    #|A| = size (enum A).
+
+Check eq_card : forall (T : finType) (A B : predPredType T),
+    A =i B -> #|A| = #|B|.
 Check eq_card_trans : forall (T : finType) (A B : predPredType T) (n : nat),
     #|A| = n -> B =i A -> #|B| = n.
-Check card0 : forall T : finType, #|pred0| = 0.
-Check card1 : forall (T : finType) (x : T), #|pred1 x| = 1.
-Check eq_card0 : forall (T : finType) (A : predPredType T), A =i pred0 -> #|A| = 0.
-Check eq_card1
-  : forall (T : finType) (x : T) (A : predPredType T), A =i pred1 x -> #|A| = 1.
+Check card0 : forall T : finType,
+    #|pred0| = 0.
+Check card1 : forall (T : finType) (x : T),
+    #|pred1 x| = 1.
+Check eq_card0 : forall (T : finType) (A : predPredType T),
+    A =i pred0 -> #|A| = 0.
+Check eq_card1 : forall (T : finType) (x : T) (A : predPredType T),
+    A =i pred1 x -> #|A| = 1.
 Check cardUI : forall (T : finType) (A B : predPredType T),
-    #|[predU A & B]| + #|[predI A & B]| = #|A| + #|B|.
+    #|[predU A & B]| + #|[predI A & B]| = #|A| + #|B|. (* |A∩B|+|A∪B| = |A|+|B| *)
 Check cardID : forall (T : finType) (B A : predPredType T),
-    #|[predI A & B]| + #|[predD A & B]| = #|A|.
-Check cardC : forall (T : finType) (A : predPredType T), #|A| + #|[predC A]| = #|T|.      Check cardU1 : forall (T : finType) (x : T) (A : predPredType T),
+    #|[predI A & B]| + #|[predD A & B]| = #|A|.        (* |A∩B|+|A-B| = |A| *)
+Check cardC : forall (T : finType) (A : predPredType T),
+    #|A| + #|[predC A]| = #|T|.             (* |A|+|A^c| = |T| *)
+Check cardU1 : forall (T : finType) (x : T) (A : predPredType T),
     #|[predU1 x & A]| = (x \notin A) + #|A|.
 
 (**
 濃度が存在することの証明：
+
+``∃ i, | p | = i``
 
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_ex_card.v
  *)
