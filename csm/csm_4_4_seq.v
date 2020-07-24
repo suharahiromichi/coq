@@ -640,12 +640,11 @@ Check foldl_rev : forall (T R : Type) (f : R -> T -> R) (z : R) (s : seq T),
 (**
 # 場合分け
  *)
-
-Section Last.
+Section Case.
   Variable T : Type.
   
 (**
-## listP (ディフォルト)
+## ディフォルトの場合分け
 
 ゴールを ``[::]`` と ``x :: s`` に分ける。
 *)
@@ -653,26 +652,60 @@ Section Last.
 (**
 まず、リストの先頭の要素を取り除いた残りを返す関数を定義する。nilならnilを返すものとする。
 *)
-  Definition hbody (s : seq T) : seq T := drop 1 s.
+  Definition tail (s : seq T) : seq T :=
+    match s with
+    | _ :: b => b
+    | [::] => [::]
+    end.
   
-  Lemma hbody_cons x s : hbody (x :: s) = s.
+  Lemma tail_cons x s : tail (x :: s) = s.
   Proof.
-      by rewrite /hbody drop_cons drop0.
+    done.
   Qed.
   
 (**
-``size (hbody s) < size s`` を証明したい。
+``size (tail s) < size s`` を証明したい。
 
-s = [::] だと ``size (hbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
+s = [::] だと ``size (tail s) = size s`` になるので、``1 <= size s`` の条件をつける。
 証明は、s を [::] と x :: s に場合分けして、前者の場合は前提矛盾で成立とする。
 *)
-  Lemma size_hbody_1 s : 1 <= size s -> size (hbody s) < size s.
+  Lemma size_tail_1 s : 1 <= size s -> size (tail s) < size s.
   Proof.
-    case: s => [| x s Hs].    (* [::] と x :: s に分ける。 *)
-    - done.                   (* 前提 0 < size [::] は矛盾で成立。  *)
-    - rewrite hbody_cons /=.
-        (* size s < (size s).+1 *)
-      by apply: ltnSn.
+    case: s => [| x s] Hs.          (* [::] と x :: s に分ける。 *)
+    
+    (* Hs : 0 < size [::] *)
+    (* Goal : size (tail [::]) < size [::]  ..... これは使わない。 *)
+    - rewrite /= in Hs.
+      done.        (* 前提 Hs は矛盾で、ゴールは無条件の成立する。  *)
+      
+    (* Hs : 0 < size (x :: s) ..... これは使わない。 *)
+    (* Goal : size (tail (x :: s)) < size (x :: s) *)
+    - rewrite tail_cons.                    (* 単に /= でもよい。 *)
+      rewrite size_cons.                    (* 単に /= でもよい。 *)
+      (* size s < (size s).+1 *)
+      done.
+  Qed.
+  
+(**
+## 類似な例
+ *)
+  Lemma divNN (n : nat) : 0 < n -> n %/ n = 1.
+  Proof.
+    case: n => [| n ] Hn.
+    (* Hn : 0 < 0 *)
+    - done.                                 (* 前提矛盾 *)
+      
+    (* Hn : 0 < n.+1 *)
+    (* n.+1 %/ n.+1 = 1 *)
+    - rewrite -{1}[n.+1]mul1n.
+      rewrite -[1 * n.+1]addn0.
+      (* Goal : (1 * n.+1 + 0) %/ n.+1 = 1 *)
+      Check divnMDl : forall q m d : nat, 0 < d -> (q * d + m) %/ d = q + m %/ d.
+      rewrite divnMDl.
+      (* Goal : 1 + 0 %/ n.+1 = 1 *)
+      + done.
+      (* Goal : 0 < n.+1 *)
+      + done.                           (* 前提 Hn を使う。 *)        
   Qed.
   
 (**
@@ -680,38 +713,47 @@ s = [::] だと ``size (hbody s) = size s`` になるので、``1 <= size s`` �
 
 ゴールを ``[::]`` と ``rcons s x`` に分ける。
  *)
-
+  
 (**
 まず、リストの最後の要素を取り除いた残りを返す関数を定義する。nilならnilを返すものとする。
 *)
-  Definition tbody (s : seq T) : seq T := rev (drop 1 (rev s)).
+
+  Definition init (s : seq T) : (seq T) := rev (tail (rev s)).
   
-  Lemma tbody_rcons s x : tbody (rcons s x) = s.
+  Lemma init_rcons s x : init (rcons s x) = s.
   Proof.
-    by rewrite /tbody rev_rcons /= drop0 revK.
+      by rewrite /init rev_rcons /tail revK.
   Qed.
-
+  
 (**
-``size (tbody s) < size s`` を証明したい。
+``size (init s) < size s`` を証明したい。
 
-s = [::] だと ``size (tbody s) = size s`` になるので、``1 <= size s`` の条件をつける。
+s = [::] だと ``size (init s) = size s`` になるので、``1 <= size s`` の条件をつける。
 証明は、s を [::] と rocns s x に場合分けして、前者の場合は前提矛盾で成立とする。
 *)
-  Lemma size_tbody_1 s : 1 <= size s -> size (tbody s) < size s.
+  Lemma size_init_1 s : 1 <= size s -> size (init s) < size s.
   Proof.
-    case/lastP: s => [| s x Hs].    (* [::] と rcons s x に分ける。 *)
-    - done.                   (* 前提 0 < size [::] は矛盾で成立。  *)
-    - rewrite tbody_rcons size_rcons.
-        (* size s < (size s).+1 *)
-        by apply: ltnSn.
+    case/lastP: s => [| s x] Hs.    (* [::] と rcons s x に分ける。 *)
+
+    (* Hs : 0 < size [::] *)
+    (* Goal : size (init [::]) < size [::]   ..... これは使わない。 *)
+    - rewrite /= in Hs.                     (*  *)
+      done.        (* 前提 Hs は矛盾で、ゴールは無条件の成立する。  *)
+      
+    (* Hs : 0 < size (rcons s x) ..... これは使わない。 *)
+    (* Goal : size (init (rcons s x)) < size (rcons s x) *)
+    - rewrite init_rcons.
+      rewrite size_rcons.
+      (* size s < (size s).+1 *)
+      done.
   Qed.
-End Last.
+End Case.
 
-Compute hbody [::].                         (* [::] *)
-Compute hbody [:: 1; 2; 3].                 (* [:: 2; 3] *)
+Compute tail [::].                          (* [::] *)
+Compute tail [:: 1; 2; 3].                  (* [:: 2; 3] *)
 
-Compute tbody [::].                         (* [::] *)
-Compute tbody [:: 1; 2; 3].                 (* [:: 1; 2] *)
+Compute init [::].                          (* [::] *)
+Compute init [:: 1; 2; 3].                  (* [:: 1; 2] *)
 
 (**
 # 特別な帰納法
