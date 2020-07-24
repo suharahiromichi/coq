@@ -143,6 +143,25 @@ Coq の場合、証明図を下から上に積み上げていくので、結論�
 End LE0.
 
 (**
+# ltnS のトリック
+
+これは Notation に関する、ただの等式なのである。
+ *)
+Section LtnS.
+  Variable m n : nat.
+  
+  Check ltnS m n : (m <= n) = (m <= n).
+  Check ltnS m n : (m <= n) = (m < n.+1).
+  Check ltnS m n : (m <= n) = (m.+1 <= n.+1).
+  Check ltnS m n : (m <= n) = (m.+1 < n.+2).
+  
+  Check ltnS m.+1 n : (m < n) = (m < n).
+  Check ltnS m.+1 n : (m < n) = (m.+1 <= n).
+  Check ltnS m.+1 n : (m < n) = (m.+1 < n.+1).
+  Check ltnS m.+1 n : (m < n) = (m.+2 <= n.+1).
+End LtnS.
+
+(**
 一般の m と n の関係については省略しています。
 *)
 
