@@ -757,6 +757,34 @@ s = [::] だと ``size (init s) = size s`` になるので、``1 <= size s`` の
       (* size s < (size s).+1 *)
       done.
   Qed.
+  
+(**
+## 補足 : init' を直接定義した場合、カスタムインダクションを使う
+*)
+  Require Import Recdef.                      (* Function コマンド *)
+  Function init' (s : seq T) : (seq T) :=
+    match s with
+    | [::] => [::]
+    | [:: x] => [::]
+    | x' :: s => x' :: init' s
+    end.
+
+  Lemma size_init'_1 s : 1 <= size s -> size (init' s) < size s.
+  Proof.
+    functional induction (init' s).
+    - done.
+    - done.
+    - move=> Hs /=.
+      Check ltnS : forall m n : nat, (m < n.+1) = (m <= n).
+      (* ここで、 m := m.+1 のとき、 (m.+1 < n.+1) = (m.+1 <= n) = (m < n) となる。 *)
+      (* ltnSのマジックは、csm_4_3_x_eq0.v を参照のこと。 *)
+      rewrite ltnS.
+      apply: IHl.
+      case: s0 y Hs.
+      + done.
+      + move=> x s _ Hs.
+        done.
+  Qed.
 End Case.
 
 Compute tail [::].                          (* [::] *)
@@ -764,6 +792,9 @@ Compute tail [:: 1; 2; 3].                  (* [:: 2; 3] *)
 
 Compute init [::].                          (* [::] *)
 Compute init [:: 1; 2; 3].                  (* [:: 1; 2] *)
+
+Compute init' [::].
+Compute init' [:: 1; 2; 3].
 
 (**
 # 特別な帰納法
