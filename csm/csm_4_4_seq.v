@@ -36,7 +36,7 @@ CICに基づく帰納法の原理は、list_indである。seq_indではない�
  *)
 Check list_ind
   : forall (A : Type) (P : seq A -> Prop),
-    P [::]
+    P [::]                                  (* 帰納法に基底 *)
     ->
     (forall (a : A) (l : seq A), P l        (* 帰納法の仮定 *)
                                  ->
@@ -75,7 +75,7 @@ End RconsQ.
 
 ## ``belast' [::] = [::]`` の定義を使う例
 
-see. csm_4_4_x_seq_head_last.v (次回)
+see. csm_4_4_x_seq_head_last.v
 
 ## ``ohead``
 
@@ -775,14 +775,17 @@ s = [::] だと ``size (init s) = size s`` になるので、``1 <= size s`` の
     - done.
     - done.
     - move=> Hs /=.
+      (* Hs : 0 < size s0 -> size (init' s0) < size s0 *)
+      (* Goal : (size (init' s0)).+1 < (size s0).+1 *)
       Check ltnS : forall m n : nat, (m < n.+1) = (m <= n).
       (* ここで、 m := m.+1 のとき、 (m.+1 < n.+1) = (m.+1 <= n) = (m < n) となる。 *)
       (* ltnSのマジックは、csm_4_3_x_eq0.v を参照のこと。 *)
       rewrite ltnS.
+      (* Goal : size (init' s0) < size s0 *)
       apply: IHl.
       case: s0 y Hs.
-      + done.
-      + move=> x s _ Hs.
+      + done.                               (* s0 が [::] *)
+      + move=> x s _ Hs.                    (* s0 が x :: s *)
         done.
   Qed.
 End Case.
@@ -807,9 +810,11 @@ rcons でする帰納法である。
 *)
 Check last_ind
   : forall (T : Type) (P : seq T -> Type),
-    P [::]
+    P [::]                                  (* 帰納法の基底 *)
     ->
-    (forall (s : seq T) (x : T), P s -> P (rcons s x))
+    (forall (s : seq T) (x : T), P s        (* 帰納法の仮定 *)
+                                 ->
+                                 P (rcons s x)) (* 証明するべきもの *)
     ->
     forall s : seq T, P s.                  (* 結論 *)
 
@@ -817,15 +822,18 @@ Section FoldLeft.
   Variables (T R : Type) (f : R -> T -> R).
   
 (**
-foldl と folr が rev で、同じ結果になることを証明する。
+foldl と foldr が rev で、同じ結果になることを証明する。
   *)
   Lemma foldl_rev (z : R) (s : seq T) :
     foldl f z (rev s) = foldr (fun x z => f z x) z s.
   Proof.
-    (* z を汎化すること。 *)
-    elim/last_ind : s z => [| s x IHs] z.
+    (* elim/last_ind : s z => [| s x IHs] z. *)
+    move: s z.
+    apply: last_ind => [| s x IHs] z.
     
-    (* foldl f z (rev [::]) = foldr (fun x : T => f^~ x) z [::] *)
+(*
+Goal : foldl f z (rev [::]) = foldr (fun z x => f x z) z [::]
+ *)
     - rewrite /=.                        (* 第3引数が [::] である。 *)
       done.
       
@@ -833,7 +841,7 @@ foldl と folr が rev で、同じ結果になることを証明する。
 IHs : forall z : R, foldl f z (rev s) = foldr (fun z x => f x z) z s.
 Goal : foldl f z (rev (rcons s x)) = foldr (fun z x => f x z) z (rcons s x)
 
-証明したいのは、``foldl f z (rev s) = ... `` であると仮定したとき、
+``foldl f z (rev s) = ... `` であると仮定して、証明したいのは、
 ``foldl f z (rev (rcons s x)) = ...`` であるが、左辺の x を第3引数の外に出すと、
 ``foldl (f z x) s = ... `` となる。これが成立することを証明する。
      *)
@@ -851,10 +859,12 @@ End FoldLeft.
 
 (**
 ## map2 の帰納法
+
+ふたつのリストを引数にとる場合の帰納法である。
 *)
 Check @seq_ind2
   : forall (S T : Type) (P : seq S -> seq T -> Type),
-    P [::] [::]
+    P [::] [::]                             (* 帰納法の基底 *)
     ->
     (forall (x : S) (y : T) (s : seq S) (t : seq T), (* 帰納法の仮定 *)
         size s = size t -> P s t
@@ -866,7 +876,7 @@ Check @seq_ind2
 
 (**
 古い版では seq2_ind だった。
-seq_ind2 になったときに帰納法の仮定に寸法追加され、「弱まった」が使い易くなった。
+seq_ind2 になったときに帰納法の仮定に寸法が追加され、「弱まった」が使い易くなった。
 ただし、今回は仮定は使っていません。
  *)
 Lemma seq2_ind T1 T2 (P : seq T1 -> seq T2 -> Type) :
@@ -881,7 +891,7 @@ Section Map2_Mask.
 
 seq bool で seq T をマスクする mask 関数に関する証明に使う。
  *)
-  Compute mask [:: true; false; true] [:: 1; 2; 3].
+  Compute mask [:: true; false; true] [:: 1; 2; 3]. (* [:: 1; 3] *)
   
 (**
 #### size_mask
@@ -889,7 +899,6 @@ seq bool で seq T をマスクする mask 関数に関する証明に使う。
   Goal forall (m : seq bool) (s : seq T),   (* size_mask *)
       size m = size s -> size (mask m s) = count id m.
   Proof.
-    (* 帰納法の原理を補題として用意した場合は、それを apply する。 *)
     apply: seq_ind2 => // x m s t /= Hs IHs.
     rewrite -IHs.
     case: ifP => Hx /=.
