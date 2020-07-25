@@ -30,8 +30,12 @@ opamでインストールしている場合は、ソースは、たとえば以�
 (**
 # finType とは
 
-要素の列挙(enum)のリストと、enumの要素に重複がないことを公理とする。
-具体的なインスタンスを生成するときに、この公理は証明済みの命題に置き換える。
+要素の列挙(enum)のリストと、enumの要素に重複がないことを公理とする型クラスである。
+インスタンスを生成するときに、この列挙リストに具体的な値を設定し、
+公理は証明済みの命題に置き換える。
+
+参考：eqType は、値が等しいことを決定する関数（ブール述語）が存在することと、
+それがCoq本来の「=」と同値であることを公理とする型クラスである。
 *)
 
 (**
@@ -180,6 +184,7 @@ ball : predArgType は成り立つ。 predArgType = Type なので。
 *)
 Check red : ball_finType : finType.
 Check red : Finite.sort ball_finType : predArgType.
+Compute Finite.sort ball_finType.           (* ball *)
 
 (**
 ここでは、ball型 と bool型 との要素の対応で定義したが、
@@ -261,6 +266,9 @@ Definition s4 : 'I_5 := ord_max.
 Definition p0 (x : 'I_5) := (x == s0).      (* 'I_5 -> bool *)
 Definition p4 (x : 'I_5) := x <= s4.        (* 'I_5 -> bool *)
 
+Compute p0 s0.                              (* true *)
+Compute s0 \in p0.                          (* true *)
+
 (**
 出来上がったもの：
 *)
@@ -324,7 +332,6 @@ Defined.
  *)
 Check widen_ord_1 (widen_ord_1 s1) : 'I_7.
 
-
 (**
 ## val または  nat_of_ord で自然数の値を取り出す。後者はコアーション。
 *)
@@ -368,7 +375,9 @@ Check cast_ord_proof : forall (n m : nat) (i : 'I_n), n = m -> i < m.
 
 Goal #| 'I_5  | = 5.
 Proof.
-    by rewrite cardE size_enum_ord.
+  rewrite cardE.
+  rewrite size_enum_ord.
+  done.
 Qed.
 
 Check cardE : forall (T : finType) (A : predPredType T),
@@ -429,7 +438,7 @@ Proof.
   apply/forallP.
   rewrite /p4 /s4.
   (* forall x : ordinal_finType 5, x <= p4 *)
-  case=> m /=.
+  case=> m /=.              (* Ordinal の定義にしたがって分解する。 *)
   (* m < 5 -> m <= 4 *)
   done.
 Qed.
@@ -440,29 +449,31 @@ Proof.
   rewrite /p0.
   (* exists x : ordinal_finType 5, x == p0  *)
   exists s0.
-  (* p0 == p0 *)
+  (* s0 == s0 *)
   done.
 Qed.
 
 (**
-# \subset と \proper
-
-## 定義
+# 包含関係（部分集合）
 
 ``T : finType`` のとき、
 bool型を返す述語 ``P : T -> bool`` において、
 それがtrueを返す、Tの要素についての包含関係（部分集合と真部分集合）を考えることができる。
  *)
 
+(**
+## 濃度による定義 (\subset と \proper)
+*)
+
 Check p0 \subset p4.
 (**
-``p0 \subset p4`` は、濃度が0であることで定義されている。すなわち、
+``p0 \subset p4`` は、p0 でなく p4 である要素の濃度が0であることで定義されている。すなわち、
 *)
 Check (fun x : 'I_5 => ~~ (p0 x) && (p4 x)) : pred 'I_5.
 (**
 p0 x が false かつ p4 x が true という論理式を考え、
  *)
-Check card (mem (predD (fun x => p0 x) (fun x => p4 x))) == 0.
+Check card (mem (predD p0 p4)) == 0.
 (**
 それを満たす x の個数が 0個である、と定義されている。
 
@@ -478,11 +489,10 @@ Check subsetE
 Check p0 \proper p4.
 Check (p0 \subset p4) && ~~(p4 \subset p0).
 
-
 (**
-## Prop型の命題 ``{subset p0 <= p4} == (x \in p0 -> x \in p4)``
+## Prop型の命題 ``{subset p0 <= p4} ≡ (x \in p0 -> x \in p4)``
 *)
-Lemma p0_p4' : {subset p0 <= p4}.
+Lemma p0_p4' : {subset p0 <= p4} : Prop.
 Proof.
   rewrite /p0 /p4 => x.
   rewrite /in_mem /=.
@@ -518,8 +528,15 @@ Qed.
 Section Test.
   Variable T : finType.
   
+  Lemma p0_p4''' : [forall x, (x \in p0) ==> (x \in p4)] : bool.
+  Proof.
+    apply/forallP => x.
+    apply/implyP => /eqP ->.
+    done.
+  Qed.
+
 (**
-命題型とbool型の同値関係を証明しておく。
+## 相互の同値関係
 
 (forall x, x \in q1 -> x \in q2) <-> [forall x, (x \in q1) ==> (x \in q2)]
 *)

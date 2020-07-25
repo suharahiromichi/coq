@@ -689,7 +689,7 @@ s = [::] だと ``size (tail s) = size s`` になるので、``1 <= size s`` の
       (* size s < (size s).+1 *)
       done.
   Qed.
-  
+
 (**
 ## 自然数について類似な例
 
@@ -768,7 +768,9 @@ s = [::] だと ``size (init s) = size s`` になるので、``1 <= size s`` の
     | [:: x] => [::]
     | x' :: s => x' :: init' s
     end.
-
+  Check init'_ind.
+  Check init'_equation.
+  
   Lemma size_init'_1 s : 1 <= size s -> size (init' s) < size s.
   Proof.
     functional induction (init' s).
@@ -882,6 +884,22 @@ seq_ind2 になったときに帰納法の仮定に寸法が追加され、「�
 Lemma seq2_ind T1 T2 (P : seq T1 -> seq T2 -> Type) :
   P [::] [::] -> (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
   forall s1 s2, size s1 = size s2 -> P s1 s2.
+Proof.
+    by move=> Pnil Pcons; elim=> [|x s IHs] [] //= x2 s2 [] /IHs/Pcons.
+
+  Restart.
+  move=> Pnil Pcons s1 s2.
+  elim: s1 s2 => [|x s IHs].
+  - move=> [] //=.
+  - move=> [] //=.
+    move=> x2 s2 [].
+    move/IHs/Pcons.                  (* スタックトップにapplyする。 *)
+    done.
+Qed.
+
+Lemma seq2_ind T1 T2 (P : seq T1 -> seq T2 -> Type) :
+  P [::] [::] -> (forall x1 x2 s1 s2, P s1 s2 -> P (x1 :: s1) (x2 :: s2)) ->
+  forall s1 s2, size s1 = size s2 -> P s1 s2.
 Proof. by move=> Pnil Pcons; elim=> [|x s IHs] [] //= x2 s2 [] /IHs/Pcons. Qed.
 
 Section Map2_Mask.
@@ -897,7 +915,7 @@ seq bool で seq T をマスクする mask 関数に関する証明に使う。
 #### size_mask
 *)
   Goal forall (m : seq bool) (s : seq T),   (* size_mask *)
-      size m = size s -> size (mask m s) = count id m.
+      size m = size s -> size (mask m s) = count id m. (* true の数を数える。 *)
   Proof.
     apply: seq_ind2 => // x m s t /= Hs IHs.
     rewrite -IHs.
