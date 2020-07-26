@@ -399,4 +399,88 @@ Lemma big_distrl I r a (P : pred I) F :
   \big[+%M/0]_(i <- r | P i) F i * a = \big[+%M/0]_(i <- r | P i) (F i * a).
  *)
 
+(**
+# 追加の定理
+
+$$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
+ *)
+Section Appendix.
+  
+  Lemma sum_cat' m n1 n2 a :
+    \sum_(m <= i < m + n1 + n2) a i =
+    \sum_(m <= i < m + n1) a i + \sum_(m + n1 <= i < m + n1 + n2) a i.
+  Proof.
+    rewrite -big_cat.
+    f_equal.                       (* iインデックス部分を取り出す。 *)
+    rewrite /index_iota.
+    Check iota_add
+      : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
+    have -> : m + n1 + n2 - m = n1 + n2 by ssromega.
+    have -> : m + n1 - m = n1 by ssromega.
+    have -> : m + n1 + n2 - (m + n1) = n2 by ssromega.
+    rewrite -iota_add.
+    done.
+  Qed.
+  
+  Lemma sum_cat m n p a :
+    m <= n -> n <= p ->
+    \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
+  Proof.
+    move=> Hmn Hnp.                         (* omega が使う。 *)
+    pose n1 := n - m.
+    pose n2 := p - n.
+    have -> : p = m + n1 + n2 by rewrite /n1 /n2; ssromega.
+    have -> : n = m + n1 by rewrite /n1; ssromega.
+      by apply: sum_cat'.
+  Qed.
+End Appendix.
+
+(**
+# 練習問題
+
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf, p.137
+https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_example.v
+*)
+
+Section Practice.
+  
+  Lemma exo34 n : 2 * (\sum_(0 <= x < n.+1) x) = n * n.+1.
+  Proof.
+    elim: n.
+    - rewrite big_nat_recr //=.
+      rewrite big_nil.
+      rewrite muln0.
+        by rewrite mul0n.
+    - move=> n IH.
+      rewrite big_nat_recr //=.  
+      rewrite mulnDr.
+      rewrite IH.
+      rewrite -mulnDl.
+      rewrite addn2.
+        by rewrite mulnC.
+  Qed.
+  
+  Lemma exo35 n : 6 * (\sum_(k < n .+1) k^2) = n * n.+1 * n.*2.+1.
+  Proof.
+  Admitted.
+  
+  Lemma exo36 (x n : nat) :
+    1 < x -> (x - 1) * (\sum_(k < n .+1) x ^ k) = x ^ n .+1 - 1.
+  Proof.
+  Admitted.
+  
+  Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
+        (vn : forall n, v n.+1 = \sum_(k < n .+1) v k) (n : nat)  :
+    n != 0 -> v n = 2 ^ n.-1.
+  Proof.
+  Admitted.
+  
+  Parameter n : nat.
+  Parameters a b : 'I_n.
+  Lemma bigA_distr_big_test : (a + b)^2 = a^2 + 2 * a * b + b^2.
+  Proof.
+  Admitted.
+
+End Practice.
+    
 (* END *)
