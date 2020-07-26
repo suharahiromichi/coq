@@ -221,7 +221,7 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
 # 入れ子（ネスト）
  *)
 (**
-## ネストの入れ替え
+## ネストの入れ替え（総和どうしの場合）
 *)
   Lemma exchamge_sum F m n :
     \sum_(0 <= i < m) (\sum_(0 <= j < n) F i j) =
@@ -229,23 +229,34 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
   Proof. by rewrite exchange_big. Qed.
   
 (**
-## 総和と総乗の可換についての補題（他の可換なopでも成り立つ）
+## ネストの入れ替え（総和と総乗の場合）
 *)
-  Fail Lemma prod_distr_sum F m n :
+  (* F : 'I_m -> 'I_n -> _ なので、Fより前にmとnを定義しないといけない。 *)
+  Lemma prod_distr_sum' m n F :
     \prod_(0 <= i < m) (\sum_(0 <= j < n) F i j) =
-    \sum_(f in _) (\prod_(0 <= i < m) F i (f i)).
+    \sum_(0 <= j < n) (\prod_(0 <= i < m) F i j).
   Proof.
-    (* ********************************** *)
-  Check bigA_distr_bigA.
-    
+  Admitted.
+  (* bigop どうしの分配則は、finType で定義されている。 *)
+  Check bigA_distr_bigA
+    : forall (R : Type) (zero one : R) (times : Monoid.mul_law zero)
+         (plus : Monoid.add_law zero times) (I J : finType) 
+         (F : I -> J -> R),
+       \big[times/one]_(i : I) \big[plus/zero]_(j : J) F i j =
+       \big[plus/zero]_(f : {ffun I -> J}) \big[times/one]_(i : I) F i (f i).
+  
+  (* 次のかたちでしか、証明できないようだ。 *)
+  Lemma prod_distr_sum m n F :
+    \prod_(i in 'I_m) (\sum_(j : 'I_n) F i j) =
+    \sum_(f : {ffun 'I_m -> 'I_n}) (\prod_(i : 'I_m) F i (f i)).
+  Proof. rewrite -bigA_distr_bigA. done. Qed.
+  
 (**
 F(i, j) が F(i, f(i)) になっている。
 
 こで、f は、 定義域 {0, 1}、値域 {0, 1, 2} である関数(finfun)のすべて。
 全部で 3^2 = 9 個ある。
- *)
 
-(**
 Π_i=1,2 Σ_j=1,3 Fij
 = (F00 + F01 + F02)(F10 + F11 + F12)
 = F00 F10 + F00 F11 + F00 F12
@@ -421,7 +432,8 @@ Section Appendix.
     rewrite -iota_add.
     done.
   Qed.
-  
+
+  (* big_cat_nat を使えば、直接証明できる。 *)
   Lemma sum_cat m n p a :
     m <= n -> n <= p ->
     \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
