@@ -218,7 +218,18 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
   Proof. by rewrite big_distrl. Qed.
 
 (**
-# 総和と総乗の可換についての補題（他の可換なopでも成り立つ）
+# 入れ子（ネスト）
+ *)
+(**
+## ネストの入れ替え
+*)
+  Lemma exchamge_sum F m n :
+    \sum_(0 <= i < m) (\sum_(0 <= j < n) F i j) =
+    \sum_(0 <= j < n) (\sum_(0 <= i < m) F i j).
+  Proof. by rewrite exchange_big. Qed.
+  
+(**
+## 総和と総乗の可換についての補題（他の可換なopでも成り立つ）
 *)
   Fail Lemma prod_distr_sum F m n :
     \prod_(0 <= i < m) (\sum_(0 <= j < n) F i j) =
@@ -245,7 +256,7 @@ F(i, j) が F(i, f(i)) になっている。
 *)
 
 (**
-# インデックスの扱いについての補題
+# Σを消す
  *)
 (**
 ## 0を取り出す。
@@ -284,7 +295,10 @@ $$ \sum_{i=n}^{n}a_i = a_n $$
   Lemma sum_nat1 n a :
     \sum_(n <= i < n.+1)(a i) = a n.
   Proof. by rewrite big_nat1. Qed.
-  
+
+(**
+# インデックスを調整する補題
+*)
 (**
 ## 総和の範囲を0起源に振りなおす。
 
@@ -314,6 +328,9 @@ $$ \sum_{i=m}^{n+m-1}a_i = \sum_{i=0}^{n-1}a_{i+m} $$
     \sum_(2 <= i < n.+2)(a i) = \sum_(0 <= i < n)(a i.+2).
   Proof. by rewrite 2!big_add1 2!succnK. Qed.
   
+(**
+# 最初の項、または、最後の項をΣの外に出す。
+ *)
 (**
 ## 最初の項をΣの外に出す。
 
