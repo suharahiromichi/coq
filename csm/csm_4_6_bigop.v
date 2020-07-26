@@ -426,6 +426,10 @@ Section Appendix.
     m <= n -> n <= p ->
     \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
   Proof.
+    move=> Hmn Hnp.
+      by rewrite -big_cat_nat.
+      
+    Restart.
     move=> Hmn Hnp.                         (* omega が使う。 *)
     pose n1 := n - m.
     pose n2 := p - n.
