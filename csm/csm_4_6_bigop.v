@@ -152,6 +152,10 @@ Check \big[cat/[::]]_(i <- L) i.
 Definition s5o_l1 := \sum_(i <- [:: 0; 1; 2; 3; 4] | odd i) i.
 Definition s5o_l2 := \sum_(i <- iota 0 5 | odd i) i.
 Definition s5o_l3 := \sum_(0 <= i < 5 | odd i) i.
+Check @BigOp.bigop nat nat O (index_iota O 5)
+      (fun i : nat => @BigBody nat nat i addn (odd i) i).
+(* i の型が nat,
+   インデックスのリストが inidex_iota 0 5 *)
 
 Goal s5o_l1 = s5o_l2. Proof. done. Qed.
 Goal s5o_l2 = s5o_l3. Proof. done. Qed.
@@ -160,20 +164,25 @@ Goal s5o_l3 = s5o_l1. Proof. done. Qed.
 (**
 ## finTypeによる範囲の表記
  *)
-Definition s5o_t1 := \sum_(i in 'I_5 | odd i) i.
+Definition s5o_t1 := \sum_(i in 'I_5 | odd i) i. (* 注 *)
 Definition s5o_t2 := \sum_(i : 'I_5 | odd i) i.
 Definition s5o_t3 := \sum_(i < 5 | odd i) i.
+Check @BigOp.bigop nat 'I_5 O (index_enum (ordinal_finType 5))
+      (fun i : 'I_5 => @BigBody nat 'I_5 i addn (odd (nat_of_ord i)) (nat_of_ord i)).
+(* i の型が 'I_5,
+   インデックスのリストが index_enum (ordinal_finType 5) *)
 
+(* 注： @BigBody の第5引数が、odd (nat_of_ord i) から、
+   andb (i \in 'I_5) (odd (nat_of_ord i)) になる。 意味がある？ *)
+         
 Goal s5o_t1 = s5o_t2. Proof. done. Qed.
 Goal s5o_t2 = s5o_t3. Proof. done. Qed.
 Goal s5o_t3 = s5o_t1. Proof. done. Qed.
 
 (**
-表記ははenumを取り出すことで、リストで定義される。
-ただし、相互に書き換えする一般的な方法はない。
+相互に書き換えする一般的な方法はない。
 *)
 Goal s5o_l1 = s5o_t1. Proof. Abort.
-
 (**
 これは Coq では、ローカルに束縛された変数を含む式を外から書き換えられないため。
 なので、どちらを使うか初めに決めるべきである。
