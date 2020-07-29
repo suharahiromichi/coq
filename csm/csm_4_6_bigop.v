@@ -428,6 +428,8 @@ Lemma big_distrl I r a (P : pred I) F :
 (**
 # 追加の定理
 
+## 数列の分割と結合
+
 $$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
  *)
 Section Appendix.
@@ -464,6 +466,7 @@ Section Appendix.
     have -> : n = m + n1 by rewrite /n1; ssromega.
       by apply: sum_cat'.
   Qed.
+
 End Appendix.
 
 (**
@@ -491,17 +494,55 @@ Section Practice.
         by rewrite mulnC.
   Qed.
   
-  Lemma exo35 n : 6 * (\sum_(k < n .+1) k^2) = n * n.+1 * n.*2.+1.
+  (* これまでに証明した補題が使えるので、nat 形式にする。 *)
+  Lemma exo35' n : 6 * (\sum_(0 <= k < n.+1) k^2) = n * n.+1 * n.*2.+1.
   Proof.
-  Admitted.
+    elim: n => [| n IHn].
+    + by rewrite sum_nat1.
+    + rewrite sum_last; last done.
+      rewrite mulnDr IHn.
+      (* n * n.+1 * n.*2.+1 + 6 * n.+1 ^ 2 = n.+1 * n.+2 * (n.+1).*2.+1 *)
+      (* 両辺とも  (n + 1)(2n^2 + 7n + 6) である。 *)
+
+      (* n.+1 を括り出す。 *)
+      rewrite -[RHS]mulnA.
+      rewrite [6 * n.+1 ^ 2]mulnC -mulnn.
+      rewrite [n * n.+1]mulnC.
+      rewrite -[n.+1 * n * n.*2.+1]mulnA.
+      rewrite -[n.+1 * n.+1 * 6]mulnA.
+      rewrite -[LHS]mulnDr.
+      congr (_ * _).
+
+      (* .+2 と .+1 を外す。 *)
+      rewrite -[n.+2]addn2.
+      rewrite -[n.+1]addn1.
+      rewrite -[n.*2.+1]addn1.
+      rewrite -[(n + 1).*2.+1]addn1.
+      rewrite -[(n + 1).*2]muln2.
+      
+      (* 左辺を展開して簡約する。 *)
+      rewrite [in LHS]mulnDr [in LHS]mulnDl [in LHS]muln1 [in LHS]mul1n.
+      have -> : n * n.*2 + n + (n * 6 + 6) = n * n.*2 + n * 7 + 6 by ssromega.
+
+      (* 右辺を展開して簡約する。 *)
+      rewrite ![in RHS]mulnDl ![in RHS]mulnDr [in RHS]mul1n [in RHS]muln1.
+      have -> : n * (n * 2) + n * 2 + n + (2 * (n * 2) + 2 * 2 + 2)
+                = n * (n * 2) + n * 7 + 6 by ssromega.
+      
+      rewrite muln2.
+      done.
+  Qed.
+  (* 出題の ord 形式で証明する。 *)
+  Lemma exo35 n : 6 * (\sum_(k < n.+1) k^2) = n * n.+1 * n.*2.+1.
+  Proof. by rewrite -exo35' big_mkord. Qed.
   
   Lemma exo36 (x n : nat) :
-    1 < x -> (x - 1) * (\sum_(k < n .+1) x ^ k) = x ^ n .+1 - 1.
+    1 < x -> (x - 1) * (\sum_(k < n.+1) x ^ k) = x ^ n.+1 - 1.
   Proof.
   Admitted.
   
   Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
-        (vn : forall n, v n.+1 = \sum_(k < n .+1) v k) (n : nat)  :
+        (vn : forall n, v n.+1 = \sum_(k < n.+1) v k) (n : nat)  :
     n != 0 -> v n = 2 ^ n.-1.
   Proof.
   Admitted.
