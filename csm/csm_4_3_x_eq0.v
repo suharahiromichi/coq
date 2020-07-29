@@ -57,6 +57,7 @@ Section LE0.
   Goal forall n, (n <= 0) = (n < 1).
   Proof.
     move=> n.
+    (* (n <= 0) = (n.+1 <= 1) *)
     rewrite /leq.
     (* ((n - 0) == 0) = ((n.+1 - 1) == 0) *)
     done.
