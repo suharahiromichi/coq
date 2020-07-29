@@ -154,6 +154,8 @@ Definition s5o_l2 := \sum_(i <- iota 0 5 | odd i) i.
 Definition s5o_l3 := \sum_(0 <= i < 5 | odd i) i.
 Check @BigOp.bigop nat nat O (index_iota O 5)
       (fun i : nat => @BigBody nat nat i addn (odd i) i).
+Check BigOp.bigop O (index_iota O 5)
+      (fun i : nat => BigBody i addn (odd i) i). (* BigBodyはコンストラクタ *)
 (* i の型が nat,
    インデックスのリストが inidex_iota 0 5 *)
 
@@ -169,6 +171,8 @@ Definition s5o_t2 := \sum_(i : 'I_5 | odd i) i.
 Definition s5o_t3 := \sum_(i < 5 | odd i) i.
 Check @BigOp.bigop nat 'I_5 O (index_enum (ordinal_finType 5))
       (fun i : 'I_5 => @BigBody nat 'I_5 i addn (odd (nat_of_ord i)) (nat_of_ord i)).
+Check BigOp.bigop O (index_enum (ordinal_finType 5))
+      (fun i : 'I_5 => BigBody i addn (odd i) i).
 (* i の型が 'I_5,
    インデックスのリストが index_enum (ordinal_finType 5) *)
 
@@ -180,14 +184,18 @@ Goal s5o_t2 = s5o_t3. Proof. done. Qed.
 Goal s5o_t3 = s5o_t1. Proof. done. Qed.
 
 (**
-相互に書き換えする一般的な方法はない。
+``0 <= i < 5`` から ``i < 5`` へは、書き換えできる。
 *)
-Goal s5o_l1 = s5o_t1. Proof. Abort.
-(**
-これは Coq では、ローカルに束縛された変数を含む式を外から書き換えられないため。
-なので、どちらを使うか初めに決めるべきである。
-とくに ``0 <= i < 5`` と ``i < 5`` は混ぜて使えないので、前者を使ったほうがよい。
-*)
+Goal s5o_l3 = s5o_t3.
+Proof.
+  rewrite /s5o_l3 /s5o_t3.
+  Check big_mkord
+     : forall (R : Type) (idx : R) (op : R -> R -> R) (n : nat)
+         (P : pred nat) (F : nat -> R),
+       \big[op/idx]_(0 <= i < n | P i) F i = \big[op/idx]_(i < n | P i) F i.
+  rewrite big_mkord.
+  done.
+Qed.
 
 (**
 # 総和についての補題（他のbigopでも成り立つ）
@@ -232,21 +240,25 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
 (**
 ## ネストの入れ替え（総和どうしの場合）
 *)
-  Lemma exchamge_sum F m n :
-    \sum_(0 <= i < m) (\sum_(0 <= j < n) F i j) =
-    \sum_(0 <= j < n) (\sum_(0 <= i < m) F i j).
+  Lemma exchamge_sum m n a :
+    \sum_(0 <= i < m) (\sum_(0 <= j < n) (a i j)) =
+    \sum_(0 <= j < n) (\sum_(0 <= i < m) (a i j)).
   Proof. by rewrite exchange_big. Qed.
   
 (**
 ## ネストの入れ替え（総和と総乗の場合）
 *)
-  (* F : 'I_m -> 'I_n -> _ なので、Fより前にmとnを定義しないといけない。 *)
-  Lemma prod_distr_sum' m n F :
-    \prod_(0 <= i < m) (\sum_(0 <= j < n) F i j) =
-    \sum_(0 <= j < n) (\prod_(0 <= i < m) F i j).
-  Proof.
-  Admitted.
-  (* bigop どうしの分配則は、finType で定義されている。 *)
+  (* F : 'I_m -> 'I_n -> _ なので、aより前にmとnを定義しないといけない。 *)
+  Lemma prod_distr_sum' m n a :
+    \prod_(0 <= i < m) (\sum_(0 <= j < n) (a i j)) =
+    \sum_(0 <= j < n) (\prod_(0 <= i < m) (a i j)).
+  Proof. Admitted.
+  
+  (* 次のかたちでしか、証明できないようだ。 *)
+  Lemma prod_distr_sum m n a :
+    \prod_(i in 'I_m) (\sum_(j : 'I_n)(a i j)) =
+    \sum_(f : {ffun 'I_m -> 'I_n}) (\prod_(i : 'I_m)(a i (f i))).
+  Proof. rewrite -bigA_distr_bigA. done. Qed.
   Check bigA_distr_bigA
     : forall (R : Type) (zero one : R) (times : Monoid.mul_law zero)
          (plus : Monoid.add_law zero times) (I J : finType) 
@@ -254,25 +266,19 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
        \big[times/one]_(i : I) \big[plus/zero]_(j : J) F i j =
        \big[plus/zero]_(f : {ffun I -> J}) \big[times/one]_(i : I) F i (f i).
   
-  (* 次のかたちでしか、証明できないようだ。 *)
-  Lemma prod_distr_sum m n F :
-    \prod_(i in 'I_m) (\sum_(j : 'I_n) F i j) =
-    \sum_(f : {ffun 'I_m -> 'I_n}) (\prod_(i : 'I_m) F i (f i)).
-  Proof. rewrite -bigA_distr_bigA. done. Qed.
-  
 (**
-F(i, j) が F(i, f(i)) になっている。
+a(i, j) が a(i, f(i)) になっている。
 
 こで、f は、 定義域 {0, 1}、値域 {0, 1, 2} である関数(finfun)のすべて。
 全部で 3^2 = 9 個ある。
 
-Π_i=1,2 Σ_j=1,3 Fij
-= (F00 + F01 + F02)(F10 + F11 + F12)
-= F00 F10 + F00 F11 + F00 F12
-+ F01 F10 + F01 F11 + F01 F12
-+ F02 F10 + F02 F11 + F02 F12
-= Σ_f F0(f0)F1(f1)
-= Σ_f Π_i=1,2 Fi(fi)
+Π_i=1,2 Σ_j=1,3 aij
+= (a00 + a01 + a02)(a10 + a11 + a12)
+= a00 a10 + a00 a11 + a00 a12
++ a01 a10 + a01 a11 + a01 a12
++ a02 a10 + a02 a11 + a02 a12
+= Σ_f a0(f0)a1(f1)
+= Σ_f Π_i=1,2 ai(fi)
 *)
 
 (**
