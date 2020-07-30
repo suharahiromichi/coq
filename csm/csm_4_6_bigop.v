@@ -32,7 +32,59 @@ opamでインストールしている場合は、ソースは、たとえば以�
 # bigop とは
 
 モノイド（単位元と、結合則を満たす二項演算がある）に対して、演算の繰り返しを可能とする。
+
+実態は foldr である。
 *)
+
+Goal \sum_(i <- [:: 0; 1; 2; 3; 4] | odd i) i = 4.
+Proof.
+  rewrite unlock /BigOp.bigop.
+  (* reducebig 0 [:: 0; 1; 2; 3; 4] (fun i : nat => BigBody i addn (odd i) i) = 9 *)
+  rewrite /reducebig /applybig.
+  (* 
+  foldr
+    ((fun (body : bigbody nat nat) (x : nat) =>
+      match body with
+      | BigBody _ op true v => op v x
+      | BigBody _ op false _ => x
+      end) \o (fun i : nat => BigBody i addn (odd i) i))
+    0
+    [:: 0; 1; 2; 3; 4]
+  = 4
+   *)
+(**  
+[:: 0; 1; 2; 3; 4] の要素のどれかが、
+(fun i : nat => BigBody i addn (odd i) i) の i に渡される。たとえば 1 なら、
+(BigBody 1 addn true 1) となる。
+これが、body に渡される。BigBody は値コンストラクタなので、要素どうしが対応して、
+
+- op <= addn
+- true <= true
+- v <= 1
+
+以上から、(fun x => addn 1 x) が foldr に渡される。同様に、
+
+- 0 なら (fun x => x)
+- 1 なら (fun x => addn 1 x)
+- 2 なら (fun x => x)
+- 3 なら (fun x => addn 3 x)
+- 4 なら (fun x => x)
+
+以上から、
+ *)
+  Compute ((fun x => x)
+             ((fun x => addn 1 x)
+                ((fun x => x)
+                   ((fun x => addn 3 x)
+                      ((fun x => x)
+                         0))))).            (* 4 *)
+  rewrite /=.
+  (* 1 + (3 + 0) = 4 *)
+  done.
+(**
+コンストラクタ bigbody BigBody を用意する理由は、math-comp-book の 5.8 を参照のこと。
+*)
+Qed.  
 
 (**
 # 用意されているモノイド
@@ -134,10 +186,19 @@ Definition L := [:: [:: 0]; [::1]; [:: 2]]. (* リストのリスト *)
 *)
 Check \big[cat/[::]]_(i <- L) i.
 
+(**
+## モノイドについての補足説明
+
+monoid は、単位元が存在し、結合律が成り立つ。
+
+(1) 可換律の成り立つ comoid と、分配則の成り立つ addoid も定義されている。
+(2) これらの定義のしかたは Telescopes と呼ぶ。
+MathComp 本体の Packed Class と異なるが共存できる。math-comp-book の 7.2 を参照のこと。
+ *)
+
 (*
 # インデックスの範囲の表記
  *)
-
 
 (*
 インデックスの範囲の表記には2種類ある。それぞにオプションで条件を追加できる。
@@ -403,8 +464,15 @@ End Summation1.
  *)
 
 (**
-## 一般的な表記 （スペースの位置に注意）
+## 補題のサーチのしかた
+
+このかたちでは、ほとんどヒットしない：
  *)
+Search _ "\sum_ ( _ <= _ < _ ) _".
+
+(**
+一般的な表記を使うこと（スペースの位置にも注意）。
+*)
 Search _ "\big [ _ / _ ]_ ( _ <- _ | _ ) _".
 
 (**
@@ -470,23 +538,35 @@ Section Appendix.
 End Appendix.
 
 (**
-# 練習問題
+# math-comp-book の関連箇所
 
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf, p.137
-https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_example.v
+[https://math-comp.github.io]
+
+- 5.7 The generic theory of \big" operators
+- 5.7.1 The generic notation for foldr
+- 5.7.2 Assumptions of a bigop lemma
+- 5.7.3 Searching the bigop library
+- 5.8 Stable notations for big operators
+- 5.9 Working with overloaded notations
+- 7.2 Telescopes
 *)
 
+(**
+# 練習問題
+
+[https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf], p.137
+[https://staff.aist.go.jp/reynald.affeldt/ssrcoq/bigop_example.v]
+*)
 Section Practice.
   
   Lemma exo34 n : 2 * (\sum_(0 <= x < n.+1) x) = n * n.+1.
   Proof.
-    elim: n.
+    elim: n => [| n IH].
     - rewrite big_nat_recr //=.
       rewrite big_nil.
       rewrite muln0.
         by rewrite mul0n.
-    - move=> n IH.
-      rewrite big_nat_recr //=.  
+    - rewrite big_nat_recr //=.  
       rewrite mulnDr.
       rewrite IH.
       rewrite -mulnDl.
