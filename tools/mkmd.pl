@@ -14,10 +14,11 @@ if ($filename =~ /\.v$/) {
 my $debug = 0;
 
 my $istext = 0;                             # Markdownの地のテキストである。
-my $lastistext = 0;
 
 my $isprog = 0;                             # Markdownのプログラム引用である。
 my $lastisprog = 0;
+
+my $ispint = 0;         # Markdownの地のテキストの中のプログラムや数式である。
 
 while (<>) {
     chop;
@@ -44,7 +45,14 @@ while (<>) {
     } else {
         $istext = 0;
     }
-        
+
+    # テキストの中のプログラムまたは数式かどうかを判定する。
+    if ($istext == 1 && /^``/) {
+        $ispint = 1;
+    } elsif ($ispint == 1 && /^``/) {
+        $ispint = 0;
+    }
+
     # プログラムの部分を```でくくる。
    if ($lastisprog == 0 && $isprog == 1) {       # 開始か？
        printf("\n\n```%s:\n", $lang);            # ```開く。
@@ -54,10 +62,11 @@ while (<>) {
     
     if ($debug == 1) {
         printf("\n");
-        printf("%d %d ", $isprog, $istext);
+        printf("%d %d %d", $isprog, $istext, $ispint);
     }
 
-    if ($istext == 0) {
+    # 行をつなげる。
+    if ($istext == 0 || $ispint == 0) {
         printf("\n");
     }
 
