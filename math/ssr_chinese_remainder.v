@@ -33,10 +33,12 @@ Wolfram Mathematica のような数式処理システム [4] のほうがずっ�
 
 ```math
 
+%%%%%\left\{
 \begin{eqnarray}
 x &=& a \pmod{m} \tag{1.1} \\
 x &=& b \pmod{n} \tag{1.2} \\
 \end{eqnarray}
+%%%%%\right.
 
 ```
 
@@ -165,7 +167,7 @@ x &<& 3・5
 
 ```
 
-### 解
+### 計算例
 
 3と5は互いに素なので、
 
@@ -237,7 +239,7 @@ x' &<& 3・5・7
 ```
 *)
 (**
-### 解
+### 計算例
 
 3で割った余り(式(11.1))と、5で割った余り(式(11.2))の連立については前節で示した。
 その解 $ x = 8 $ は、本節の解 x' に対して、
@@ -352,17 +354,194 @@ Print chinese.
 *)
 
 (**
-## chinese_modl と chinese_modr 補題
+## 解の存在 (chinese_modl と chinese_modr 補題)
 
-## chinese_mod 補題
-
+これらの補題は、chinese関数が、式(1.1)と式(1.2)を満たすことを述べてている。
+すなわち、解の存在を示している。
 *)
+
+Check chinese_modl : forall m n : nat,
+    coprime m n -> forall a b : nat, chinese m n a b = a %[mod m].
+
+Check chinese_modr : forall m n : nat,
+    coprime m n -> forall a b : nat, chinese m n a b = b %[mod n].
+
+
+(**
+## 解の一意性（chinese_mod 補題）
+
+y と m と n が式(1.1)と式(1.2)を満たすとする。すなわち、自然数 a と b が存在して、
+
+```math
+
+\begin{eqnarray}
+a &=& y \mod m \\
+b &=& y \mod n \\
+\end{eqnarray}
+
+```
+
+であるとき、``x = chiniese m n a b`` もまた、式(1.1)と式(1.2)を満たす。
+``x = y`` とは限らないが、式(2)のとおり``m * n`` を法として合同である。
+
+すなわち、chinese_mod 補題は、解の（$m n$を法とした）一意性を述べている。
+*)
+
+Check chinese_mod : forall m n : nat,
+    coprime m n ->
+    forall y : nat, y = chinese m n (y %% m) (y %% n) %[mod m * n].
+
+(**
+この補題の証明の途中で次の補題を使用しているが、みっつのyは異なっていてもよいので、
+これは式(1)と式(2)の特別なかたちである（要確認）。
+*)
+Check chinese_remainder : forall m n : nat,
+    coprime m n ->
+    forall x y : nat,
+      (x == y %[mod m * n]) = (x == y %[mod m]) && (x == y %[mod n]).
 
 (**
 # 不定方程式の解
+
+## 説明
+
+自然数m と n が互いに素であるとき、不定方程式式(31)が解u、vを持つ。
+
+$$ m u - n v = 1 \tag{31} $$
+
+なお、次の式(32)は、両辺を$gcd(m,n)$で割ると、式(31)と同じ意味になる。
+
+$$ m u - n v = gcd(m,u) \tag{32} $$
+
+また、任意の整数kに対して、u'、v'も同様に解となります。
+
+```math
+
+\begin{eqnarray}
+u' &=& u + k a \tag{33.1} \\
+v' &=& v + k b \tag{33.2} \\
+\end{eqnarray}
+
+```
+
+式(31)が成り立てば、式(4)は成り立つので、
+不定方程式の解としては任意の解を使うことができる。
+
+
+## 不定方程式の解の存在の証明
+
+（追記する）
+
+
+## 机上での計算例（その1）
+
+$$ 3 u - 5 v = 1 \tag{41} $$ の解 u, vを求める。
+
+互除法を適用すると
+
+```math
+
+\begin{eqnarray}
+3 - 5・0 &=& 3 \tag{42} \\
+5 - 3・1 &=& 2 \tag{43} \\
+3 - 2・1 &=& 1 \tag{44} \\
+\end{eqnarray}
+
+```
+
+式(42)を式(43)に代入すると、
+
+```math
+
+\begin{eqnarray}
+5 - (3 - 5・0)・1 = 2 \\
+3・(-1) - 5・(-1) = 2 \tag(43') \\
+\end{eqnarray}
+
+```
+
+式(43')を式(44)を代入して、式(44')を得る。
+
+```math
+
+\begin{eqnarray}
+3 - (3・(-1) - 5・(-1))・1 &=& 1 \\
+3・2 - 5・1 &=& 1 \tag{44'} \\
+\end{eqnarray}
+
+```
+
+式(44')から、次の解を得る。
+
+$$ u = 2, v = 1 $$
+
+
+## 机上での計算例（その2）
+
+$$ 5 p - 3 q = 1 \tag{51} $$ の解 p, qを求める。
+
+互除法を適用すると
+
+```math
+
+\begin{eqnarray}
+5 - 3・1 &=& 2 \tag{52} \\
+3 - 2・1 &=& 1 \tag{53} \\
+\end{eqnarray}
+
+```
+
+式(52)を式(53)を代入して、式(53')を得る。
+
+```math
+
+\begin{eqnarray}
+3 - (5 - 3・1)・1 &=& 1 \\
+-5 + 3 + 3 &=& 1 \\
+5・(-1) - 3・(-2) &=& 1 \tag{53'} \\
+\end{eqnarray}
+
+```
+
+式(53')から、次の解を得る。
+
+$$ u = -1, v = -2 $$
+
+式(4)に代入するならこの値でも構わないのだが、
+MathCompにあわせて自然数にする場合は、
+式(33)の $ k = 1 $ として、
+
+```math
+
+\begin{eqnarray}
+2 &=& -1 + 1・3 \\
+3 &=& -1 + 1・5 \\
+\end{eqnarray}
+
+```
+
+から、次の解を得る。
+
+$$ u = 3, v = 5 $$
+
+（直接 自然数 の解をもとめる方法を調べる。
+また MathCompの定義に沿った説明に入れ替える。）
+
+
+## Coq/MathComp での計算例
+
+式(31)または式(32)に不定方程式はユーグリッドの互除法で解くことができます。
+MathCompでは、拡張GCD関数を使って、以下で計算できます。
+
+```coq
+
+egcdn m n = (u, v)
+
+```
 *)
 
-
+Compute egcdn 3 5.                          (* (2, 1) *)
+Compute egcdn 5 3.                          (* (2, 3) *)
 
 (**
 # 文献
