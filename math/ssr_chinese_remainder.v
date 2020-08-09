@@ -359,7 +359,6 @@ Print chinese.
 これらの補題は、chinese関数が、式(1.1)と式(1.2)を満たすことを述べてている。
 すなわち、解の存在を示している。
 *)
-
 Check chinese_modl : forall m n : nat,
     coprime m n -> forall a b : nat, chinese m n a b = a %[mod m].
 
@@ -386,14 +385,15 @@ b &=& y \mod n \\
 
 すなわち、chinese_mod 補題は、解の（$m n$を法とした）一意性を述べている。
 *)
-
 Check chinese_mod : forall m n : nat,
     coprime m n ->
     forall y : nat, y = chinese m n (y %% m) (y %% n) %[mod m * n].
 
 (**
 この補題の証明の途中で次の補題を使用しているが、みっつのyは異なっていてもよいので、
-これは式(1)と式(2)の特別なかたちである（要確認）。
+これは式(1)と式(2)の特別な場合である（[5]の式(4.42)）。
+
+「=」の両辺はbool述語なので、「=」は「<->」の意味である。
 *)
 Check chinese_remainder : forall m n : nat,
     coprime m n ->
@@ -564,6 +564,9 @@ https://github.com/math-comp/math-comp/blob/master/mathcomp/ssreflect/div.v
 [4] Wolfram言語 ＆ システム ドキュメントセンター ChineseRemainder
 
 https://reference.wolfram.com/language/ref/ChineseRemainder.html
+
+
+[5] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
  *)
 
-(* 以上 *)
+(* END *)
