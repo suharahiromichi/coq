@@ -377,9 +377,9 @@ Check chinese_modr : forall m n : nat,
 (**
 MathComp の証明の概説：
 
-面倒に見えるが、``0 < n`` の場合にした後、egcdnP
+chinese_modl の証明は、面倒に見えるが、``0 < n`` の場合にした後、egcdnP
 を使って egcdn を不定方程式に展開しているだけである。
-一方だけ展開すれば、あとはなんとかなる。
+一方だけ展開すれば、あとはなんとかなる。chinese_modr も同じ。
  *)
 Lemma chinese_modl' m n a b : coprime m n -> chinese m n a b = a %[mod m].
 Proof.
@@ -411,7 +411,6 @@ Proof.
     rewrite modnMDl.
     done.
 Qed.  
-
 
 (**
 ## 解の一意性（chinese_mod 補題）
