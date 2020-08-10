@@ -354,6 +354,15 @@ Print chinese.
 *)
 
 (**
+## （補足）Section Chinese について
+
+``Section Chinese`` の中では、 ``Hypothesis co_m12 : coprime m1 m2 `` として、
+m1 と m2 (これまでの説明では m と n) が互いに素であることが定義されている。
+これは、Section の外からみると、補題の前提として（汎化して）見える。
+以下では、汎化したかたちで説明する。
+*)
+
+(**
 ## 解の存在 (chinese_modl と chinese_modr 補題)
 
 これらの補題は、chinese関数が、式(1.1)と式(1.2)を満たすことを述べてている。
@@ -364,6 +373,44 @@ Check chinese_modl : forall m n : nat,
 
 Check chinese_modr : forall m n : nat,
     coprime m n -> forall a b : nat, chinese m n a b = b %[mod n].
+
+(**
+MathComp の証明の概説：
+
+面倒に見えるが、``0 < n`` の場合にした後、egcdnP
+を使って egcdn を不定方程式に展開しているだけである。
+一方だけ展開すれば、あとはなんとかなる。
+ *)
+Lemma chinese_modl' m n a b : coprime m n -> chinese m n a b = a %[mod m].
+Proof.
+  rewrite /chinese.
+  move/eqP.                                 (* gcdn m n = 1 *)
+  
+  (* n = 0 と 0 < n に場合分けする。 *)
+  case: (posnP n).
+  (* n = 0 の場合、m = 1 でもある。 *)
+  - move=> ->.                              (* n = 0 で書き換える。 *)
+    rewrite gcdn0.
+    move=> ->.                              (* m = 1 で書き換える。 *)
+    rewrite !modn1.
+    done.
+    
+  (* 0 < n の場合 *)
+  - move=> n_gt0 co_mn.     (* 0 < n 条件と、coprime条件をpopする。 *)
+    (* Goal : a * n * (egcdn n m).1 + b * m * (egcdn m n).1 = a %[mod m] *)
+
+    (* egcdn n m を 不定方程式に書き換える。
+       egcdn_spec は、Inductiove で定義されているので case が要る。 *)
+    case: (@egcdnP n m n_gt0).
+    rewrite gcdnC co_mn.
+    move=> p q def_m _.
+    
+    (* 不定方程式 : p * n = q * m + 1 (式(3.2)) のもとで、ゴールを証明する。 *)
+    rewrite mulnAC -mulnA def_m mulnDr mulnA muln1.
+    rewrite addnAC (mulnAC _ m) -mulnDl.
+    rewrite modnMDl.
+    done.
+Qed.  
 
 
 (**
