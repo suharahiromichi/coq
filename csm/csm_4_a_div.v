@@ -32,6 +32,10 @@ Section Modulo.
 (**
 ## Concrete Mathematics [1] の公式
 *)
+  
+(**
+###
+ *)  
   Lemma m_addn m n p q d  :
     m = n %[mod d] -> p = q %[mod d] -> m + p = n + q %[mod d].
   Proof.
@@ -47,6 +51,9 @@ Section Modulo.
     - done.
   Qed.
 
+(**
+###
+ *)  
   Lemma m_muln m n p q d  :
     m = n %[mod d] -> p = q %[mod d] -> m * p = n * q %[mod d].
   Proof.
@@ -60,6 +67,17 @@ Section Modulo.
       by congr (_ * _).
   Qed.
   
+  (* 特別な場合。あとで使う。 *)
+  Lemma m_muln' m n p d  :
+    m = n %[mod d] -> m * p = n * p %[mod d].
+  Proof.
+    move=> H.
+      by apply: m_muln.
+  Qed.
+  
+(**
+###
+ *)  
   Lemma m_exprn p q m d :
     p = q %[mod d] -> p^m = q^m %[mod d].
   Proof.
@@ -73,13 +91,9 @@ Section Modulo.
       by congr (_ ^ m).
   Qed.
   
-  Lemma m_muln' m n p d  :
-    m = n %[mod d] -> m * p = n * p %[mod d].
-  Proof.
-    move=> H.
-      by apply: m_muln.
-  Qed.
-  
+(**
+###
+ *)  
   (* see also. coq/math/ssr_chinese_remainder.v *)
   Lemma m_divn_d_1 m n p d :
     coprime p d -> m * p = n * p %[mod d] -> m = n %[mod d].
@@ -107,31 +121,36 @@ Section Modulo.
       by rewrite 2!mulnDr 2!muln1 2!mulnA 2!modnMDl in H.
   Qed.
   
-  Lemma m_divn_d_2 m n p d :
-    m = n %[mod d] -> m * p = n * p %[mod d].
-  Proof.
-    move=> H.
-      by apply: m_muln.
-  Qed.
-
-  Lemma m_divn_d m n p d :
+  Lemma m_divn_d' m n p d :
     coprime p d -> (m * p = n * p %[mod d] <-> m = n %[mod d]).
   Proof.
     move=> Hco.
     split.
-    - by apply: m_divn_d_1.
-    - by apply: m_divn_d_2.
+    - by apply: m_divn_d_1.                 (* -> *)
+    - by apply: m_muln'.                    (* <- *)
   Qed.
 
-  Lemma m_divn_d' m n p d :
+  Lemma m_divn_d m n p d :
     coprime p d -> (m * p == n * p %[mod d]) = (m == n %[mod d]).
   Proof.
     move=> Hco.
     apply/idP/idP; move/eqP => H; apply/eqP.
-    - by apply: (@m_divn_d_1 _ _ p).
-    - by apply: m_divn_d_2.
+    - by apply: (@m_divn_d_1 _ _ p _).      (* -> *)
+    - by apply: m_muln'.                    (* <- *)
   Qed.
-  
+
+(**
+### 
+ *)  
+  Lemma m_divn_dp m n p d :
+    0 < p -> (m * p == n * p %[mod d * p]) = (m == n %[mod d]).
+  Proof.
+    move=> Hp.
+    rewrite -[RHS](eqn_pmul2r Hp).
+    rewrite 2!(muln_modl Hp).
+    done.
+  Qed.
+
 End Modulo.
 
 (**
