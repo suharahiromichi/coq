@@ -209,7 +209,10 @@ MathCompらしく、bool値の同値で証明しておきます。
   Qed.
   
 (**
-``n <= m`` と m < n`` で場合分けしたするときに使う補題です。
+``eqn_mod_dvd : (m == n %[mod d]) = (d %| (m - n))`` の補題を使って証明する都合上、
+` ``n <= m`` と m < n`` で場合分けします。このとき、
+後者の条件を ``m <= n`` に変形することで、場合分け後の証明を共通にすることができます。
+その変形をする補題を証明しておきます。
 *)
   Lemma le_m_n m n : (n <= m) = false -> m <= n.
   Proof.
@@ -217,28 +220,43 @@ MathCompらしく、bool値の同値で証明しておきます。
       by ssromega.
   Qed.
   
+(**
+式(4.41)の→の共通部分です。
+*)
+  Lemma m_divn_lcmn_1_1_1 m n d1 d2 :
+    n <= m -> m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
+  Proof.
+    move=> Hnm H.
+    apply/eqP.
+    Check eqn_mod_dvd
+      : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
+    rewrite eqn_mod_dvd; last done.
+    move/eqP in H.
+      rewrite eqn_mod_dvd in H; last done.
+        by move/lcmn_dvdn in H.
+  Qed.
+
+(**
+証明の中核となる部分です。場合分けしてそれぞれに共通部分を適用します。
+*)
   Lemma m_divn_lcm_1_1 m n d1 d2 :
     m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
   Proof.
     move=> H.
     case Hnm : (n <= m).
-    - apply/eqP.
-      Check eqn_mod_dvd
-        : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
-      rewrite eqn_mod_dvd; last done.
-      move/eqP in H.
-      rewrite eqn_mod_dvd in H; last done.
-        by move/lcmn_dvdn in H.
-    - apply/esym.                           (* 単なる等式の右辺と左辺 *)
-      move/esym in H.                     (* 単なる等式の右辺と左辺 *)
-      move/le_m_n in Hnm.
-      apply/eqP.
-      rewrite eqn_mod_dvd; last done.
-      move/eqP in H.
-      rewrite eqn_mod_dvd in H; last done.
-        by move/lcmn_dvdn in H.
+    (* n <= m である場合 *)
+    - by apply: m_divn_lcmn_1_1_1 H.
+      
+    (* m <= n である場合 *)
+    - move/le_m_n in Hnm.       (* n > m を m <= n にする。 *)
+      apply/esym.               (* 合同式の左辺と右辺を入れ替える。 *)
+      move/esym in H.           (* 合同式の左辺と右辺を入れ替える。 *)
+        by apply: m_divn_lcmn_1_1_1 H.
   Qed.
-
+  
+(**
+式(4.41)の→の証明です。（ここでは、使用していません）
+*)  
   Lemma m_divn_lcm_1 m n d1 d2 :
     m = n %[mod lcmn d1 d2] -> m = n %[mod d1] /\ m = n %[mod d2].
   Proof.
@@ -249,31 +267,42 @@ MathCompらしく、bool値の同値で証明しておきます。
         by apply: m_divn_lcm_1_1 H.
   Qed.
 
+
+(**
+式(4.41)の→の共通部分です。
+*)
+  Lemma m_divn_lcm_2_1 m n d1 d2 :
+    n <= m -> m = n %[mod d1] -> m = n %[mod d2] -> m = n %[mod lcmn d1 d2].
+  Proof.
+    move=> Hnm H1 H2.
+    apply/eqP.
+    rewrite eqn_mod_dvd; last done.
+    move/eqP in H1.
+    move/eqP in H2.
+    rewrite eqn_mod_dvd in H1; last done.
+    rewrite eqn_mod_dvd in H2; last done.
+      by apply: dvdn_lcmn.
+  Qed.
+  
+(**
+式(4.41)の←の証明です。
+*)  
   Lemma m_divn_lcm_2 m n d1 d2 :
     m = n %[mod d1] -> m = n %[mod d2] -> m = n %[mod lcmn d1 d2].
   Proof.
     move=> H1 H2.
     case Hnm : (n <= m).
-    - apply/eqP.
-      rewrite eqn_mod_dvd; last done.
-      move/eqP in H1.
-      move/eqP in H2.
-      rewrite eqn_mod_dvd in H1; last done.
-      rewrite eqn_mod_dvd in H2; last done.
-        by apply: dvdn_lcmn.
-    - apply/esym.                           (* 単なる等式の右辺と左辺 *)
-      move/esym in H1.                     (* 単なる等式の右辺と左辺 *)
-      move/esym in H2.                     (* 単なる等式の右辺と左辺 *)
-      move/le_m_n in Hnm.
-      apply/eqP.
-      rewrite eqn_mod_dvd; last done.
-      move/eqP in H1.
-      move/eqP in H2.
-      rewrite eqn_mod_dvd in H1; last done.
-      rewrite eqn_mod_dvd in H2; last done.
-        by apply: dvdn_lcmn.
+    - by apply: m_divn_lcm_2_1.
+    - move/le_m_n in Hnm.       (* n > m を m <= n にする。 *)
+      apply/esym.               (* 合同式の左辺と右辺を入れ替える。 *)
+      move/esym in H1.          (* 合同式の左辺と右辺を入れ替える。 *)
+      move/esym in H2.          (* 合同式の左辺と右辺を入れ替える。 *)
+        by apply: m_divn_lcm_2_1.
   Qed.
-
+  
+(**
+式(4.41)の証明です。MathComp風に、bool値の同値の式としました。
+*)  
   Lemma m_divn_lcm m n d1 d2 :
     (m == n %[mod lcmn d1 d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).
   Proof.
@@ -288,15 +317,24 @@ MathCompらしく、bool値の同値で証明しておきます。
 
 (**
 ### 中国人の剰余定理の特別な場合（式(4.42)）
+
+説明： 互いに素なら、LCMは積であることを証明します。
+補題 ``muln_lcm_gcd m n : lcmn m n * gcdn m n = m * n`` を使います。
 *)  
   Lemma coprime_lcm d1 d2 : coprime d1 d2 -> lcmn d1 d2 = d1 * d2.
   Proof.
     rewrite /coprime.
     move=> /eqP Hco.
-    Check muln_lcm_gcd :  forall m n : nat, lcmn m n * gcdn m n = m * n.
+    Check muln_lcm_gcd :
+      forall m n : nat, lcmn m n * gcdn m n = m * n.
       by rewrite -muln_lcm_gcd Hco muln1.
   Qed.
-  
+
+(**
+その補題を使用すれば、式(4.41)からただちに求められます。
+これは、中国人の剰余定理の特別な場合です。
+より一般的な証明は、``div.v`` を参照してください。
+*)  
   Lemma m_chinese_remainder m n d1 d2 :
     coprime d1 d2 ->
     (m == n %[mod d1 * d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).        
