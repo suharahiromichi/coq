@@ -51,6 +51,12 @@ Section Modulo.
     - done.
   Qed.
 
+  Lemma m_subn m n p q d  :
+    p <= m -> q <= n ->
+    m = n %[mod d] -> p = q %[mod d] -> m - p = n - q %[mod d].
+  Proof.
+  Admitted.
+
 (**
 ###
  *)  
@@ -151,6 +157,146 @@ Section Modulo.
     done.
   Qed.
 
+(**
+##
+ *)
+  Search _ ((_ %| _)).
+  Check modn_dvdm
+    : forall m n d : nat, d %| m -> n %% m = n %[mod d].
+  Check eqn_mod_dvd
+    : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
+  Check dvdn_lcm : forall d1 d2 m : nat, (lcmn d1 d2 %| m) = (d1 %| m) && (d2 %| m).
+
+  Lemma test2 m n : (n <= m) = false -> m <= n.
+  Proof.
+    move=> Hmn.
+    ssromega.
+  Qed.
+
+  
+  Search _ ((_ == _ %[mod _]) = (_ == _ %[mod _]) ).
+  Search _ (_ = _ -> _ -> _).
+  
+(*
+  Lemma m_divn m n d p : m = n %[mod d * p] -> m = n %[mod d].
+  Proof.
+    move=> H.
+    case Hnm : (n <= m).
+    - apply/eqP.
+      rewrite eqn_mod_dvd; last done.
+      move/eqP in H.
+      rewrite eqn_mod_dvd in H; last done.
+        by move/test in H.
+    - apply/esym.                           (* 単なる等式の右辺と左辺 *)
+      move/esym in H.                     (* 単なる等式の右辺と左辺 *)
+      move/test2 in Hnm.
+      apply/eqP.
+      rewrite eqn_mod_dvd; last done.
+      move/eqP in H.
+      rewrite eqn_mod_dvd in H; last done.
+        by move/test in H.
+  Qed.
+ *)  
+  
+  Lemma test3 d1 d2 m : lcmn d1 d2 %| m -> d1 %| m.
+  Proof.
+    Check dvdn_lcm d1 d2 m.
+    rewrite dvdn_lcm => /andP.
+      by case.
+  Qed.
+
+  Lemma test4 d1 d2 m : d1 %| m -> d2 %| m -> lcmn d1 d2 %| m.
+  Proof.
+    Check dvdn_lcm d1 d2 m.
+    rewrite dvdn_lcm => H1 H2.
+    apply/andP.
+      by split.
+  Qed.
+  
+  Lemma m_divn_lcm_1_1 m n d1 d2 :
+    m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
+  Proof.
+    move=> H.
+    case Hnm : (n <= m).
+    - apply/eqP.
+      rewrite eqn_mod_dvd; last done.
+      move/eqP in H.
+      rewrite eqn_mod_dvd in H; last done.
+        by move/test3 in H.
+    - apply/esym.                           (* 単なる等式の右辺と左辺 *)
+      move/esym in H.                     (* 単なる等式の右辺と左辺 *)
+      move/test2 in Hnm.
+      apply/eqP.
+      rewrite eqn_mod_dvd; last done.
+      move/eqP in H.
+      rewrite eqn_mod_dvd in H; last done.
+        by move/test3 in H.
+  Qed.
+
+  Lemma m_divn_lcm_1 m n d1 d2 :
+    m = n %[mod lcmn d1 d2] -> m = n %[mod d1] /\ m = n %[mod d2].
+  Proof.
+    split.
+    Check @m_divn_lcm_1_1 m n d1 d2.
+    - by apply: m_divn_lcm_1_1 H.
+    - rewrite lcmnC in H.
+        by apply: m_divn_lcm_1_1 H.
+  Qed.
+
+  Lemma m_divn_lcm_2 m n d1 d2 :
+    m = n %[mod d1] -> m = n %[mod d2] -> m = n %[mod lcmn d1 d2].
+  Proof.
+    move=> H1 H2.
+    case Hnm : (n <= m).
+    - apply/eqP.
+      rewrite eqn_mod_dvd; last done.
+      move/eqP in H1.
+      move/eqP in H2.
+      rewrite eqn_mod_dvd in H1; last done.
+      rewrite eqn_mod_dvd in H2; last done.
+        by apply: test4.
+    - apply/esym.                           (* 単なる等式の右辺と左辺 *)
+      move/esym in H1.                     (* 単なる等式の右辺と左辺 *)
+      move/esym in H2.                     (* 単なる等式の右辺と左辺 *)
+      move/test2 in Hnm.
+      apply/eqP.
+      rewrite eqn_mod_dvd; last done.
+      move/eqP in H1.
+      move/eqP in H2.
+      rewrite eqn_mod_dvd in H1; last done.
+      rewrite eqn_mod_dvd in H2; last done.
+        by apply: test4.
+  Qed.
+
+  Lemma m_divn_lcm m n d1 d2 :
+    (m == n %[mod lcmn d1 d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).
+  Proof.
+    apply/idP/idP => [/eqP H | /andP [/eqP H1 /eqP H2]].
+    - apply/andP; split; apply/eqP.
+      + by apply: m_divn_lcm_1_1 H.
+      + rewrite lcmnC in H.
+          by apply: m_divn_lcm_1_1 H.
+    - apply/eqP.
+        by apply: m_divn_lcm_2.
+  Qed.
+
+  Lemma coprime_lcm d1 d2 : coprime d1 d2 -> lcmn d1 d2 = d1 * d2.
+  Proof.
+    rewrite /coprime.
+    move=> /eqP Hco.
+    Check muln_lcm_gcd :  forall m n : nat, lcmn m n * gcdn m n = m * n.
+      by rewrite -muln_lcm_gcd Hco muln1.
+  Qed.
+  
+  Lemma m_chinese_remainder m n d1 d2 :
+    coprime d1 d2 ->
+    (m == n %[mod d1 * d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).        
+  Proof.
+    move=> Hco.
+    rewrite -coprime_lcm; last done.
+      by apply: m_divn_lcm.
+  Qed.
+  
 End Modulo.
 
 (**
