@@ -30,11 +30,18 @@ opamでインストールしている場合は、ソースは、たとえば以�
 Section Modulo.
 
 (**
-## Concrete Mathematics [1] の公式
+## Concrete Mathematics [1] （コンピュータの数学 [2]） 4.6 合同関係 の公式
+
+変数名 m n p q d d1 d2 の使い方は、MathComp の div.v [3] にあわせています。
 *)
   
 (**
-###
+### 合同式の加算
+
+「合同な要素を足しても、合同関係は崩れない。」
+
+
+なお、引き算の場合については、あとで補足します。
  *)  
   Lemma m_addn m n p q d  :
     m = n %[mod d] -> p = q %[mod d] -> m + p = n + q %[mod d].
@@ -51,14 +58,10 @@ Section Modulo.
     - done.
   Qed.
 
-  Lemma m_subn m n p q d  :
-    p <= m -> q <= n ->
-    m = n %[mod d] -> p = q %[mod d] -> m - p = n - q %[mod d].
-  Proof.
-  Admitted.
-
 (**
-###
+### 合同式の乗算
+
+「掛け算もうまくいく。」
  *)  
   Lemma m_muln m n p q d  :
     m = n %[mod d] -> p = q %[mod d] -> m * p = n * q %[mod d].
@@ -73,7 +76,9 @@ Section Modulo.
       by congr (_ * _).
   Qed.
   
-  (* 特別な場合。あとで使う。 *)
+(**
+``p = q`` である特別な場合について証明しておきます。後で使います。
+ *)
   Lemma m_muln' m n p d  :
     m = n %[mod d] -> m * p = n * p %[mod d].
   Proof.
@@ -82,7 +87,9 @@ Section Modulo.
   Qed.
   
 (**
-###
+### 合同式のべき乗
+
+「掛け算の性質を繰り返し適用すると、べき乗することもできる。」
  *)  
   Lemma m_exprn p q m d :
     p = q %[mod d] -> p^m = q^m %[mod d].
@@ -98,9 +105,15 @@ Section Modulo.
   Qed.
   
 (**
-###
+### 合同式の除算（式(4.37)）
+
+p と d が「互いに素の場合には、合同関係のもとでも割り算ができる。」
+
+
+説明：まず、[1]の式(4.37) の→を証明します。
+拡張したGCDを使用するので [3] の chinese_modl 補題の証明、および、
+その解説の [4] も参考にしてください。
  *)  
-  (* see also. coq/math/ssr_chinese_remainder.v *)
   Lemma m_divn_d_1 m n p d :
     coprime p d -> m * p = n * p %[mod d] -> m = n %[mod d].
   Proof.
@@ -119,14 +132,22 @@ Section Modulo.
     case: (@egcdnP p d p_gt0).
     rewrite Hco.
     move=> p' d' Hdef _ H.
+    (* 不定方程式 ``Hdef : p' * p = d' * d + 1`` を展開した状態である。 *)
+    
+    (* H の 両辺に p' をかける。 p' が ``1 / p`` のような働きをする。 *)
     Check @m_muln' (m * p) (n * p) p' d
       : m * p = n * p %[mod d] -> m * p * p' = n * p * p' %[mod d].
     move/(@m_muln' (m * p) (n * p) p' d) in H.
+    
+    (* 不定方程式 ``Hdef`` を H に代入して整理する。  *)
     rewrite -2!mulnA -[p * p']mulnC in H.
     rewrite Hdef in H.
       by rewrite 2!mulnDr 2!muln1 2!mulnA 2!modnMDl in H.
   Qed.
   
+(**
+[1]の式(4.37) の←は、掛け算の合同の公式から明らかです。
+*)
   Lemma m_divn_d' m n p d :
     coprime p d -> (m * p = n * p %[mod d] <-> m = n %[mod d]).
   Proof.
@@ -136,6 +157,9 @@ Section Modulo.
     - by apply: m_muln'.                    (* <- *)
   Qed.
 
+(**
+MathCompらしく、bool値の同値で証明しておきます。
+ *)
   Lemma m_divn_d m n p d :
     coprime p d -> (m * p == n * p %[mod d]) = (m == n %[mod d]).
   Proof.
@@ -146,71 +170,51 @@ Section Modulo.
   Qed.
 
 (**
-### 
+### 合同式の除算（式(4.38)、法を割る）
+
+「合同関係で割り算をするもうひとつの方法は、
+法とする自身も他の数と同じように割ることである。。。。
+これは、modの分配則だけに依存している。」
  *)  
-  Lemma m_divn_dp m n p d :
-    0 < p -> (m * p == n * p %[mod d * p]) = (m == n %[mod d]).
+  Lemma m_divn_dp m n d1 d2 :
+    0 < d1 -> (m * d1 == n * d1 %[mod d2 * d1]) = (m == n %[mod d2]).
   Proof.
-    move=> Hp.
-    rewrite -[RHS](eqn_pmul2r Hp).
-    rewrite 2!(muln_modl Hp).
+    move=> Hd1.
+    rewrite -[RHS](eqn_pmul2r Hd1).
+    rewrite 2!(muln_modl Hd1).
     done.
   Qed.
 
 (**
-##
+### 最大公約数を法とする合同式（式(4.41)）
+
+説明：まず、最大公約数とdivisibleの関係を使いやすい補題にしておきます。
  *)
-  Search _ ((_ %| _)).
-  Check modn_dvdm
-    : forall m n d : nat, d %| m -> n %% m = n %[mod d].
-  Check eqn_mod_dvd
-    : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
-  Check dvdn_lcm : forall d1 d2 m : nat, (lcmn d1 d2 %| m) = (d1 %| m) && (d2 %| m).
-
-  Lemma test2 m n : (n <= m) = false -> m <= n.
-  Proof.
-    move=> Hmn.
-    ssromega.
-  Qed.
-
+  Check dvdn_lcm
+    : forall d1 d2 m : nat, (lcmn d1 d2 %| m) = (d1 %| m) && (d2 %| m).
   
-  Search _ ((_ == _ %[mod _]) = (_ == _ %[mod _]) ).
-  Search _ (_ = _ -> _ -> _).
-  
-(*
-  Lemma m_divn m n d p : m = n %[mod d * p] -> m = n %[mod d].
-  Proof.
-    move=> H.
-    case Hnm : (n <= m).
-    - apply/eqP.
-      rewrite eqn_mod_dvd; last done.
-      move/eqP in H.
-      rewrite eqn_mod_dvd in H; last done.
-        by move/test in H.
-    - apply/esym.                           (* 単なる等式の右辺と左辺 *)
-      move/esym in H.                     (* 単なる等式の右辺と左辺 *)
-      move/test2 in Hnm.
-      apply/eqP.
-      rewrite eqn_mod_dvd; last done.
-      move/eqP in H.
-      rewrite eqn_mod_dvd in H; last done.
-        by move/test in H.
-  Qed.
- *)  
-  
-  Lemma test3 d1 d2 m : lcmn d1 d2 %| m -> d1 %| m.
+  Lemma lcmn_dvdn d1 d2 m : lcmn d1 d2 %| m -> d1 %| m.
   Proof.
     Check dvdn_lcm d1 d2 m.
     rewrite dvdn_lcm => /andP.
       by case.
   Qed.
 
-  Lemma test4 d1 d2 m : d1 %| m -> d2 %| m -> lcmn d1 d2 %| m.
+  Lemma dvdn_lcmn d1 d2 m : d1 %| m -> d2 %| m -> lcmn d1 d2 %| m.
   Proof.
     Check dvdn_lcm d1 d2 m.
     rewrite dvdn_lcm => H1 H2.
     apply/andP.
       by split.
+  Qed.
+  
+(**
+``n <= m`` と m < n`` で場合分けしたするときに使う補題です。
+*)
+  Lemma le_m_n m n : (n <= m) = false -> m <= n.
+  Proof.
+    move=> Hmn.
+      by ssromega.
   Qed.
   
   Lemma m_divn_lcm_1_1 m n d1 d2 :
@@ -219,18 +223,20 @@ Section Modulo.
     move=> H.
     case Hnm : (n <= m).
     - apply/eqP.
+      Check eqn_mod_dvd
+        : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
       rewrite eqn_mod_dvd; last done.
       move/eqP in H.
       rewrite eqn_mod_dvd in H; last done.
-        by move/test3 in H.
+        by move/lcmn_dvdn in H.
     - apply/esym.                           (* 単なる等式の右辺と左辺 *)
       move/esym in H.                     (* 単なる等式の右辺と左辺 *)
-      move/test2 in Hnm.
+      move/le_m_n in Hnm.
       apply/eqP.
       rewrite eqn_mod_dvd; last done.
       move/eqP in H.
       rewrite eqn_mod_dvd in H; last done.
-        by move/test3 in H.
+        by move/lcmn_dvdn in H.
   Qed.
 
   Lemma m_divn_lcm_1 m n d1 d2 :
@@ -254,18 +260,18 @@ Section Modulo.
       move/eqP in H2.
       rewrite eqn_mod_dvd in H1; last done.
       rewrite eqn_mod_dvd in H2; last done.
-        by apply: test4.
+        by apply: dvdn_lcmn.
     - apply/esym.                           (* 単なる等式の右辺と左辺 *)
       move/esym in H1.                     (* 単なる等式の右辺と左辺 *)
       move/esym in H2.                     (* 単なる等式の右辺と左辺 *)
-      move/test2 in Hnm.
+      move/le_m_n in Hnm.
       apply/eqP.
       rewrite eqn_mod_dvd; last done.
       move/eqP in H1.
       move/eqP in H2.
       rewrite eqn_mod_dvd in H1; last done.
       rewrite eqn_mod_dvd in H2; last done.
-        by apply: test4.
+        by apply: dvdn_lcmn.
   Qed.
 
   Lemma m_divn_lcm m n d1 d2 :
@@ -280,6 +286,9 @@ Section Modulo.
         by apply: m_divn_lcm_2.
   Qed.
 
+(**
+### 中国人の剰余定理の特別な場合（式(4.42)）
+*)  
   Lemma coprime_lcm d1 d2 : coprime d1 d2 -> lcmn d1 d2 = d1 * d2.
   Proof.
     rewrite /coprime.
@@ -300,7 +309,21 @@ Section Modulo.
 End Modulo.
 
 (**
-[1] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
+[1] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition, A.W.
+
+
+[2] 有澤、安村、萩野、石畑訳、「コンピュータの数学」共立出版
+
+
+[3] math-comp/mathcomp/ssreflect/div.v
+
+https://github.com/math-comp/math-comp/blob/master/mathcomp/ssreflect/div.v
+
+
+[4] 中国人の剰余定理
+
+https://qiita.com/suharahiromichi/items/1a135d9648a0f55f020a
+
  *)
 
 (* END *)
