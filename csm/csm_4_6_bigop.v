@@ -599,25 +599,29 @@ Section Practice.
       rewrite -[n.*2.+1]addn1.
       rewrite -[(n + 1).*2.+1]addn1.
       rewrite -[(n + 1).*2]muln2.
-      
+
       (* 左辺を展開して簡約する。 *)
       rewrite [in LHS]mulnDr [in LHS]mulnDl [in LHS]muln1 [in LHS]mul1n.
       have -> : n * n.*2 + n + (n * 6 + 6) = n * n.*2 + n * 7 + 6 by ssromega.
 
       (* 右辺を展開して簡約する。 *)
       rewrite ![in RHS]mulnDl ![in RHS]mulnDr [in RHS]mul1n [in RHS]muln1.
-      have -> : n * (n * 2) + n * 2 + n + (2 * (n * 2) + 2 * 2 + 2)
-                = n * (n * 2) + n * 7 + 6 by ssromega.
+      rewrite [in n * (n * 2)]muln2.
+      have -> : n * n.*2 + n * 2 + n + (2 * (n * 2) + 2 * 2 + 2)
+                = n * n.*2 + n * 7 + 6 by ssromega.
       
-      rewrite muln2.
       done.
   Qed.
+
   (* 出題の ord 形式で証明する。 *)
   Lemma exo35 n : 6 * (\sum_(k < n.+1) k^2) = n * n.+1 * n.*2.+1.
   Proof. by rewrite -exo35' big_mkord. Qed.
   
+  (* ****** *)
+  (* ****** *)
+
   Lemma exo36 (x n : nat) :
-    1 < x -> (x - 1) * (\sum_(k < n.+1) x ^ k) = x ^ n.+1 - 1.
+    1 < x -> (x - 1) * (\sum_(k < n.+1) x^k) = x^(n.+1) - 1.
   Proof.
   Admitted.
   
@@ -632,7 +636,46 @@ Section Practice.
   Lemma bigA_distr_big_test : (a + b)^2 = a^2 + 2 * a * b + b^2.
   Proof.
   Admitted.
-
 End Practice.
+
+Section Notprime.
+
+(**
+自然数 n が合成数なら、2^n - 1 も合成数である。
+ *)
+  Lemma l_e2_ab_1_notprime a b :
+    1 <= a -> 1 <= b ->
+    (2 ^ b - 1) * (\sum_(0 <= i < a) 2 ^ (i * b)) = 2 ^ (a * b) - 1.
+  Proof.
+    move=> Ha Hb.
     
+    rewrite mulnBl.
+    (* 左辺、第1項 *)
+    rewrite -sum_distrr; last done.
+    have H : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
+      by apply: eq_big_nat => i Hi; rewrite -expnD mulnC -mulnS mulnC.
+    rewrite H.
+    rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
+    rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last; last done.
+      
+    (* 左辺、第2項 *)
+    rewrite  mul1n.
+    rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first; last done.
+    rewrite mul0n expn0.
+    rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
+
+    rewrite subnDl.
+    done.
+  Qed.
+
+  Lemma e2_ab_1_notp (a b : nat) :
+    1 <= a -> 1 <= b -> exists (x y : nat), x * y = 2 ^ (a * b) - 1.
+  Proof.
+    move=> Ha Hb.
+    exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
+      by apply: l_e2_ab_1_notprime.
+  Qed.
+
+End Notprime.
+
 (* END *)
