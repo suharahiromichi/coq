@@ -562,16 +562,15 @@ Section Practice.
   Lemma exo34 n : 2 * (\sum_(0 <= x < n.+1) x) = n * n.+1.
   Proof.
     elim: n => [| n IH].
-    - rewrite big_nat_recr //=.
-      rewrite big_nil.
-      rewrite muln0.
-        by rewrite mul0n.
-    - rewrite big_nat_recr //=.  
+    - rewrite sum_last //=.                 (* big_nat_recr *)
+      rewrite sum_nil //=.                  (* big_nil *)
+    - rewrite sum_last //=.                 (* big_nat_recr *)
       rewrite mulnDr.
       rewrite IH.
       rewrite -mulnDl.
       rewrite addn2.
-        by rewrite mulnC.
+      rewrite mulnC.
+      done.
   Qed.
   
   (* これまでに証明した補題が使えるので、nat 形式にする。 *)
@@ -579,7 +578,7 @@ Section Practice.
   Proof.
     elim: n => [| n IHn].
     + by rewrite sum_nat1.
-    + rewrite sum_last; last done.
+    + rewrite sum_last //=.
       rewrite mulnDr IHn.
       (* n * n.+1 * n.*2.+1 + 6 * n.+1 ^ 2 = n.+1 * n.+2 * (n.+1).*2.+1 *)
       (* 両辺とも  (n + 1)(2n^2 + 7n + 6) である。 *)
@@ -652,11 +651,17 @@ Daniel J. Velleman, Amherst College, Massachusetts, "How To Prove it"
 
 https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-sets/how-prove-it-structured-approach-3rd-edition?format=HB&isbn=9781108424189
  *)
-  Lemma le2_le1 a : 2 <= a -> 1 <= a.
-  Proof. move=> H. by ssromega. Qed.
-  
+
+(**
+補題として、次の式を証明する。
+これは 1 <= a, 1 <= b で成り立ち、そのほうが証明が簡単である。
+
+$$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
+
+を証明する。
+*)
   Lemma l_e2_ab_1_notprime a b :
-    2 <= a -> 2 <= b ->
+    1 <= a -> 1 <= b ->
     (2 ^ b - 1) * (\sum_(0 <= i < a) 2 ^ (i * b)) = 2 ^ (a * b) - 1.
   Proof.
     move=> Ha Hb.
@@ -665,16 +670,16 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
     rewrite mulnBl.
     
     (* 左辺、第1項 *)
-    rewrite -sum_distrr; last by apply: le2_le1.
+    rewrite -sum_distrr //=.
     have -> : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
       (* eq_big_nat に注意してください。 *)
       by apply: eq_big_nat => i Hi; rewrite -expnD mulnC -mulnS mulnC.
     rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
-    rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last; last by apply: le2_le1.
+    rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last //=.
     
     (* 左辺、第2項 *)
     rewrite  mul1n.
-    rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first; last by apply: le2_le1.
+    rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first //=.
     rewrite mul0n expn0.
     rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
     
@@ -682,15 +687,25 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
     rewrite subnDl.
     done.
   Qed.
+
+(**
+2 <= a, 2 <= b で証明する。
+任意のxに、$ (2^{b} - 1) $ を
+任意にyに、$\sum_{i=0}^{a-1}2^{i b}$ を代入する。
+*)  
+  Lemma le2_le1 a : 2 <= a -> 1 <= a.
+  Proof. move=> H. by ssromega. Qed.
   
   Lemma e2_ab_1_notp (a b : nat) :
-    1 <= a -> 1 <= b -> exists (x y : nat), x * y = 2 ^ (a * b) - 1.
+    2 <= a -> 2 <= b ->
+    exists (x y : nat), x * y = 2 ^ (a * b) - 1.
   Proof.
-    move=> Ha Hb.
+    move/le2_le1 => Ha.
+    move/le2_le1 => Hb.
     exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
       by apply: l_e2_ab_1_notprime.
   Qed.
-
+  
 End Notprime.
 
 (* END *)
