@@ -642,32 +642,47 @@ Section Notprime.
 
 (**
 自然数 n が合成数なら、2^n - 1 も合成数である。
+
+nが、2以上の任意の2自然数に積であるとき（すなわち合成数であるとき）、
+2^n-1 もふたつの自然数の積（合成数）である。
+
+Daniel J. Velleman, Amherst College, Massachusetts, "How To Prove it" 
+
+証明はこの本の Introduction (p.3) からとりました。以下から当該ページを含む前半が読めます。
+
+https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-sets/how-prove-it-structured-approach-3rd-edition?format=HB&isbn=9781108424189
  *)
+  Lemma le2_le1 a : 2 <= a -> 1 <= a.
+  Proof. move=> H. by ssromega. Qed.
+  
   Lemma l_e2_ab_1_notprime a b :
-    1 <= a -> 1 <= b ->
+    2 <= a -> 2 <= b ->
     (2 ^ b - 1) * (\sum_(0 <= i < a) 2 ^ (i * b)) = 2 ^ (a * b) - 1.
   Proof.
     move=> Ha Hb.
     
+    (* 左辺を展開する。 *)
     rewrite mulnBl.
+    
     (* 左辺、第1項 *)
-    rewrite -sum_distrr; last done.
-    have H : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
+    rewrite -sum_distrr; last by apply: le2_le1.
+    have -> : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
+      (* eq_big_nat に注意してください。 *)
       by apply: eq_big_nat => i Hi; rewrite -expnD mulnC -mulnS mulnC.
-    rewrite H.
     rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
-    rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last; last done.
-      
+    rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last; last by apply: le2_le1.
+    
     (* 左辺、第2項 *)
     rewrite  mul1n.
-    rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first; last done.
+    rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first; last by apply: le2_le1.
     rewrite mul0n expn0.
     rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
-
+    
+    (* 左辺を整理する。 *)
     rewrite subnDl.
     done.
   Qed.
-
+  
   Lemma e2_ab_1_notp (a b : nat) :
     1 <= a -> 1 <= b -> exists (x y : nat), x * y = 2 ^ (a * b) - 1.
   Proof.
