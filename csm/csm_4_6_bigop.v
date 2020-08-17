@@ -245,7 +245,7 @@ Goal s5o_t2 = s5o_t3. Proof. done. Qed.
 Goal s5o_t3 = s5o_t1. Proof. done. Qed.
 
 (**
-``0 <= i < 5`` から ``i < 5`` へは、書き換えできる。
+``0 <= i < 5`` から ``i < 5`` へは、相互に書き換えできる。
 *)
 Goal s5o_l3 = s5o_t3.
 Proof.
@@ -295,6 +295,20 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
     \sum_(m <= i < n)((a i) * c) = (\sum_(m <= i < n)(a i)) * c.
   Proof. by rewrite big_distrl. Qed.
 
+(**
+# Σの中身の書き換え
+
+Σの中の i は、ローカルに束縛されている（ラムダ変数である）ので、
+直接書き換えることはできません。一旦、取り出して書き換えることになります。
+ *)
+  Lemma eq_sum m n a b : a =1 b ->
+                         \sum_(m <= i < n)(a i) = \sum_(m <= i < n)(b i).
+  Proof.
+    move=> Hab.                             (* =1 は第1階の=です。 *)
+    apply: eq_big_nat => i Hmn.
+      by rewrite Hab.
+  Qed.
+  
 (**
 # 入れ子（ネスト）
  *)
@@ -410,7 +424,7 @@ $$ \sum_{i=m}^{n+m-1}a_i = \sum_{i=0}^{n-1}a_{i+m} $$
   Lemma sum_add1 n a :
     \sum_(1 <= i < n.+1)(a i) = \sum_(0 <= i < n)(a i.+1).
   Proof. by rewrite big_add1 succnK. Qed.
-
+  
   Lemma sum_add2 n a :
     \sum_(2 <= i < n.+2)(a i) = \sum_(0 <= i < n)(a i.+2).
   Proof. by rewrite 2!big_add1 2!succnK. Qed.
@@ -457,6 +471,44 @@ $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
       by rewrite big_nat_recr.
   Qed.
 
+(**
+## 数列の分割と結合
+
+$$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
+ *)
+  Lemma sum_cat' m n1 n2 a :
+    \sum_(m <= i < m + n1 + n2) a i =
+    \sum_(m <= i < m + n1) a i + \sum_(m + n1 <= i < m + n1 + n2) a i.
+  Proof.
+    rewrite -big_cat.
+    f_equal.                       (* iインデックス部分を取り出す。 *)
+    rewrite /index_iota.
+    Check iota_add
+      : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
+    have -> : m + n1 + n2 - m = n1 + n2 by ssromega.
+    have -> : m + n1 - m = n1 by ssromega.
+    have -> : m + n1 + n2 - (m + n1) = n2 by ssromega.
+    rewrite -iota_add.
+    done.
+  Qed.
+  
+  (* big_cat_nat を使えば、直接証明できる。 *)
+  Lemma sum_cat m n p a :
+    m <= n -> n <= p ->
+    \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
+  Proof.
+    move=> Hmn Hnp.
+      by rewrite -big_cat_nat.
+      
+    Restart.
+    move=> Hmn Hnp.                         (* omega が使う。 *)
+    pose n1 := n - m.
+    pose n2 := p - n.
+    have -> : p = m + n1 + n2 by rewrite /n1 /n2; ssromega.
+    have -> : n = m + n1 by rewrite /n1; ssromega.
+      by apply: sum_cat'.
+  Qed.
+
 End Summation1.
 
 (**
@@ -494,51 +546,7 @@ Lemma big_distrl I r a (P : pred I) F :
  *)
 
 (**
-# 追加の定理
-
-## 数列の分割と結合
-
-$$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
- *)
-Section Appendix.
-  
-  Lemma sum_cat' m n1 n2 a :
-    \sum_(m <= i < m + n1 + n2) a i =
-    \sum_(m <= i < m + n1) a i + \sum_(m + n1 <= i < m + n1 + n2) a i.
-  Proof.
-    rewrite -big_cat.
-    f_equal.                       (* iインデックス部分を取り出す。 *)
-    rewrite /index_iota.
-    Check iota_add
-      : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
-    have -> : m + n1 + n2 - m = n1 + n2 by ssromega.
-    have -> : m + n1 - m = n1 by ssromega.
-    have -> : m + n1 + n2 - (m + n1) = n2 by ssromega.
-    rewrite -iota_add.
-    done.
-  Qed.
-
-  (* big_cat_nat を使えば、直接証明できる。 *)
-  Lemma sum_cat m n p a :
-    m <= n -> n <= p ->
-    \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
-  Proof.
-    move=> Hmn Hnp.
-      by rewrite -big_cat_nat.
-      
-    Restart.
-    move=> Hmn Hnp.                         (* omega が使う。 *)
-    pose n1 := n - m.
-    pose n2 := p - n.
-    have -> : p = m + n1 + n2 by rewrite /n1 /n2; ssromega.
-    have -> : n = m + n1 by rewrite /n1; ssromega.
-      by apply: sum_cat'.
-  Qed.
-
-End Appendix.
-
-(**
-# math-comp-book の関連箇所
+## math-comp-book の関連箇所
 
 [https://math-comp.github.io]
 
@@ -671,9 +679,9 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
     
     (* 左辺、第1項 *)
     rewrite -sum_distrr //=.
-    have -> : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
-      (* eq_big_nat に注意してください。 *)
-      by apply: eq_big_nat => i Hi; rewrite -expnD mulnC -mulnS mulnC.
+    have H : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
+      by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
+    rewrite H.
     rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
     rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last //=.
     
