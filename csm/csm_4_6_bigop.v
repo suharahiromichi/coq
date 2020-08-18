@@ -662,17 +662,17 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
 
 (**
 補題として、次の式を証明する。
-これは 1 <= a, 1 <= b で成り立ち、そのほうが証明が簡単である。
+これは 1 <= a で成り立ち、そのほうが証明が簡単である。
 
 $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
 
 を証明する。
 *)
   Lemma l_e2_ab_1_notprime a b :
-    1 <= a -> 1 <= b ->
+    1 <= a ->
     (2 ^ b - 1) * (\sum_(0 <= i < a) 2 ^ (i * b)) = 2 ^ (a * b) - 1.
   Proof.
-    move=> Ha Hb.
+    move=> Ha.
     
     (* 左辺を展開する。 *)
     rewrite mulnBl.
@@ -697,13 +697,13 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
   Qed.
 
 (**
-2 <= a, 2 <= b で証明する。a*bは合成数である。
+2 <= a, 2 <= b で証明できれば、a*bは合成数である。
 
 任意のxに、$ (2^{b} - 1) $ を
 任意にyに、$\sum_{i=0}^{a-1}2^{i b}$ を代入する。
 
 このとき、x*y が合成数であることを言わなければばらないが、
-一方が2以上であると言えれば十分である。なので 2 <= x を条件とする。
+一方が2以上であると言えれば十分である。なので 2 <= x を結論に加える。
 *)  
   Lemma e2b_1_gt1 b : 1 < b -> 1 < 2 ^ b - 1.
   Proof.
@@ -725,10 +725,11 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
     move=> Ha Hb.
     exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
     split.
-    - apply: e2b_1_gt1 => //.
+    - apply: e2b_1_gt1.
+      done.
     - move/le2_le1 in Ha.
-      move/le2_le1 in Hb.
-        by apply: l_e2_ab_1_notprime.
+      apply: l_e2_ab_1_notprime.
+      done.
   Qed.
   
 End Notprime.
