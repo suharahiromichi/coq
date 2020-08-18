@@ -679,7 +679,7 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
     
     (* 左辺、第1項 *)
     rewrite -sum_distrr //=.
-    have H : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
+    have H : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b).
       by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
     rewrite H.
     rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
@@ -697,21 +697,38 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
   Qed.
 
 (**
-2 <= a, 2 <= b で証明する。
+2 <= a, 2 <= b で証明する。a*bは合成数である。
+
 任意のxに、$ (2^{b} - 1) $ を
 任意にyに、$\sum_{i=0}^{a-1}2^{i b}$ を代入する。
+
+このとき、x*y が合成数であることを言わなければばらないが、
+一方が2以上であると言えれば十分である。なので 2 <= x を条件とする。
 *)  
+  Lemma e2b_1_gt1 b : 1 < b -> 1 < 2 ^ b - 1.
+  Proof.
+    move=> H.
+    rewrite ltn_subRL addn1.
+    rewrite -{1}(expn1 2).
+      by rewrite ltn_exp2l.
+  Qed.
+  
   Lemma le2_le1 a : 2 <= a -> 1 <= a.
   Proof. move=> H. by ssromega. Qed.
   
+  (* x が 1 を越えると解れば、x*y は合成数である。 *)
+
   Lemma e2_ab_1_notp (a b : nat) :
     2 <= a -> 2 <= b ->
-    exists (x y : nat), x * y = 2 ^ (a * b) - 1.
+    exists (x y : nat), 2 <= x /\ (x * y = 2 ^ (a * b) - 1).
   Proof.
-    move/le2_le1 => Ha.
-    move/le2_le1 => Hb.
+    move=> Ha Hb.
     exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
-      by apply: l_e2_ab_1_notprime.
+    split.
+    - apply: e2b_1_gt1 => //.
+    - move/le2_le1 in Ha.
+      move/le2_le1 in Hb.
+        by apply: l_e2_ab_1_notprime.
   Qed.
   
 End Notprime.
