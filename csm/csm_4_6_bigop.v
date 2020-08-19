@@ -645,8 +645,6 @@ Section Practice.
   Admitted.
 End Practice.
 
-Section Notprime.
-
 (**
 自然数 n が合成数なら、2^n - 1 も合成数である。
 
@@ -666,14 +664,13 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
  *)
 
 (**
-補題として、次の式を証明する。
-これは 1 <= a で成り立ち、そのほうが証明が簡単である。
+最初に補題として、次の式を証明する。これは 1 <= a で成り立つ。
 
 $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
-
-を証明する。
 *)
-  Lemma l_e2_ab_1_notprime a b :
+Section Notprime.
+
+  Lemma l_e2_ab_1 a b :
     1 <= a ->
     (2 ^ b - 1) * (\sum_(0 <= i < a) 2 ^ (i * b)) = 2 ^ (a * b) - 1.
   Proof.
@@ -707,15 +704,20 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
 任意のxに、$ (2^{b} - 1) $ を
 任意にyに、$\sum_{i=0}^{a-1}2^{i b}$ を代入する。
 
-そして、 x*y = 2^(a*b) - 1 を証明する。
-
 x*y が合成数であることも言わなければばらないが、
-2<=x, 2<=y であれば、x*yは合成数である。
+2<=x, 2<=y であれば、x*yは合成数であるといえる。
+
+そして先の補題で x*y = 2^(a*b) - 1 を証明する。
+
+以上より a*bが合成数なら、2^(a*b) - 1 は合成数である。
 *)  
+  
+  (* 何か所かで使う補題。 *)
   Lemma le2_le1 a : 2 <= a -> 1 <= a.
   Proof. move=> H. by ssromega. Qed.
   
-  Lemma e2b_1_ge2 b : 2 <= b -> 1 < 2 ^ b - 1.
+  (* 2 <= x の証明に使用する。 *)
+  Lemma e2b_1_ge2 b : 2 <= b -> 2 <= 2 ^ b - 1.
   Proof.
     move=> H.
     rewrite ltn_subRL addn1.
@@ -723,53 +725,31 @@ x*y が合成数であることも言わなければばらないが、
       by rewrite ltn_exp2l.
   Qed.
 
-  Definition zero (_ : nat) := 0.
-  
-  Lemma sum0_0 m n : \sum_(m <= i < n) zero i = 0.
-  Proof.
-    rewrite /zero.
-    rewrite sum_nat_const_nat.
-      by rewrite muln0.
-  Qed.
-  
-  Lemma ge0'_sum m n a :
-    (forall i, zero i <= a i) ->
-    \sum_(m <= i < n) zero i <= \sum_(m <= i < n) a i.
-  Proof.
-    move=> H.
-      by apply: leq_sum.
-  Qed.
-  
-  Lemma ge0_sum m n a : (forall i, 0 <= a i) -> 0 <= \sum_(m <= i < n) a i.
-  Proof.
-    move=> H.
-    rewrite -{1}(sum0_0 m n).
-    apply: ge0'_sum => i.
-      by rewrite /zero.
-  Qed.
-  
-  Lemma sum0_2_e2ib a b : 2 <= a -> 2 <= b -> 2 <= \sum_(0 <= i < a) 2 ^ (i * b).
+  (* 2 <= y の証明に使用する。 *)  
+  Lemma sum0_2_e2ib a b :
+    2 <= a -> 2 <= b -> 2 <= \sum_(0 <= i < a) 2 ^ (i * b).
   Proof.
     move=> Ha Hb.
     rewrite sum_first; last by apply: le2_le1.
     rewrite sum_first; last done.
     have H1 : 1 <= 2 ^ (0 * b) by rewrite mul0n expn0.
     have H2 : 1 <= 2 ^ (1 * b) by rewrite mul1n expn_gt0 orb_idr.
-    have H3 : 0 <= \sum_(2 <= i < a) 2 ^ (i * b) by apply: ge0_sum => i.
+    have H3 : 0 <= \sum_(2 <= i < a) 2 ^ (i * b) by done. (* 0以上は自明。 *)
       by ssromega.
   Qed.
   
-  Lemma e2_ab_1_notp (a b : nat) :
+  (* 証明したいもの *)
+  Lemma e2_ab_1_notprime (a b : nat) :
     2 <= a -> 2 <= b ->
     exists (x y : nat), 2 <= x /\ 2 <= y /\ (x * y = 2 ^ (a * b) - 1).
   Proof.
     move=> Ha Hb.
     exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
     split ; [| split].
-    - by apply: e2b_1_ge2.
-    - by apply: sum0_2_e2ib.
+    - by apply: e2b_1_ge2.                  (* 2 <= x *)
+    - by apply: sum0_2_e2ib.                (* 2 <= y *)
     - move/le2_le1 in Ha.
-        by apply: l_e2_ab_1_notprime.
+        by apply: l_e2_ab_1.                (* x * y *)
   Qed.
   
 End Notprime.
