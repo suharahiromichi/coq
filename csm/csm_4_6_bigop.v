@@ -658,6 +658,11 @@ Daniel J. Velleman, Amherst College, Massachusetts, "How To Prove it"
 証明はこの本の Introduction (p.3) からとりました。以下から当該ページを含む前半が読めます。
 
 https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-sets/how-prove-it-structured-approach-3rd-edition?format=HB&isbn=9781108424189
+
+この本では、
+合成数の定義を「それより小さい、ふたつの正の整数の積で表される整数」としていますが、
+ここでは、「ふたつの 2以上の自然数 の積で表される自然数」としています。
+これは同値です（証明してください！）。
  *)
 
 (**
@@ -697,39 +702,74 @@ $$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
   Qed.
 
 (**
-2 <= a, 2 <= b で証明できれば、a*bは合成数である。
+2<=a, 2<=b であれば、a*bは合成数である。
 
 任意のxに、$ (2^{b} - 1) $ を
 任意にyに、$\sum_{i=0}^{a-1}2^{i b}$ を代入する。
 
-このとき、x*y が合成数であることを言わなければばらないが、
-一方が2以上であると言えれば十分である。なので 2 <= x を結論に加える。
+そして、 x*y = 2^(a*b) - 1 を証明する。
+
+x*y が合成数であることも言わなければばらないが、
+2<=x, 2<=y であれば、x*yは合成数である。
 *)  
-  Lemma e2b_1_gt1 b : 1 < b -> 1 < 2 ^ b - 1.
+  Lemma le2_le1 a : 2 <= a -> 1 <= a.
+  Proof. move=> H. by ssromega. Qed.
+  
+  Lemma e2b_1_ge2 b : 2 <= b -> 1 < 2 ^ b - 1.
   Proof.
     move=> H.
     rewrite ltn_subRL addn1.
     rewrite -{1}(expn1 2).
       by rewrite ltn_exp2l.
   Qed.
-  
-  Lemma le2_le1 a : 2 <= a -> 1 <= a.
-  Proof. move=> H. by ssromega. Qed.
-  
-  (* x が 1 を越えると解れば、x*y は合成数である。 *)
 
+  Definition zero (_ : nat) := 0.
+  
+  Lemma sum0_0 m n : \sum_(m <= i < n) zero i = 0.
+  Proof.
+    rewrite /zero.
+    rewrite sum_nat_const_nat.
+      by rewrite muln0.
+  Qed.
+  
+  Lemma ge0'_sum m n a :
+    (forall i, zero i <= a i) ->
+    \sum_(m <= i < n) zero i <= \sum_(m <= i < n) a i.
+  Proof.
+    move=> H.
+      by apply: leq_sum.
+  Qed.
+  
+  Lemma ge0_sum m n a : (forall i, 0 <= a i) -> 0 <= \sum_(m <= i < n) a i.
+  Proof.
+    move=> H.
+    rewrite -{1}(sum0_0 m n).
+    apply: ge0'_sum => i.
+      by rewrite /zero.
+  Qed.
+  
+  Lemma sum0_2_e2ib a b : 2 <= a -> 2 <= b -> 2 <= \sum_(0 <= i < a) 2 ^ (i * b).
+  Proof.
+    move=> Ha Hb.
+    rewrite sum_first; last by apply: le2_le1.
+    rewrite sum_first; last done.
+    have H1 : 1 <= 2 ^ (0 * b) by rewrite mul0n expn0.
+    have H2 : 1 <= 2 ^ (1 * b) by rewrite mul1n expn_gt0 orb_idr.
+    have H3 : 0 <= \sum_(2 <= i < a) 2 ^ (i * b) by apply: ge0_sum => i.
+      by ssromega.
+  Qed.
+  
   Lemma e2_ab_1_notp (a b : nat) :
     2 <= a -> 2 <= b ->
-    exists (x y : nat), 2 <= x /\ (x * y = 2 ^ (a * b) - 1).
+    exists (x y : nat), 2 <= x /\ 2 <= y /\ (x * y = 2 ^ (a * b) - 1).
   Proof.
     move=> Ha Hb.
     exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
-    split.
-    - apply: e2b_1_gt1.
-      done.
+    split ; [| split].
+    - by apply: e2b_1_ge2.
+    - by apply: sum0_2_e2ib.
     - move/le2_le1 in Ha.
-      apply: l_e2_ab_1_notprime.
-      done.
+        by apply: l_e2_ab_1_notprime.
   Qed.
   
 End Notprime.
