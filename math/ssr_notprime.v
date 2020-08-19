@@ -64,9 +64,41 @@ End Summation1.
 Section Notprime.
 
 (**
+## さらに補題
+*)
+
+(**
+合成数の定義から、それが2以上（1を越える）自然数の積であることがただちに解る。
+それの補題を証明しておく。「ltn_Pmulrの逆」と思ってもよい。
+*)
+  Check ltn_Pmulr : forall a b : nat, 1 < b -> 0 < a -> a < a * b.
+  (* これの逆を証明しておく。 *)
+  
+  Lemma ltn_Pmulr_r a b : 0 < a -> a < a * b -> 1 < b.
+  Proof.
+    Check ltn_mul2l.
+    move=> Ha.
+    rewrite -{1}[a]muln1.
+    rewrite [a * 1 < a * b]ltn_mul2l.
+    move/andP.
+      by case.
+  Qed.
+
+(**
+2以上（1を越える）自然数を条件とすると、次の補題が成り立つ。
+*)
+  Lemma e2b_1_gt1 b : 1 < b -> 1 < 2^b - 1.
+  Proof.
+    move=> Hb1.
+    rewrite ltn_subRL addn1.
+    rewrite -{1}(expn1 2).
+      by rewrite ltn_exp2l.
+  Qed.
+
+(**
 ## 合成数の定義
 
-「それより小さい、ふたつの0でない自然数の積で表される、自然数」
+「それより小さい、ふたつの0でない自然数の積で表される、自然数」としてそのまま定義する。
 *)
   Definition notprime n :=
     exists a b, (0 < a) /\ (0 < b) /\ (a < n) /\ (b < n) /\ (a * b = n).
@@ -146,14 +178,6 @@ x*y もまた合成数であることを証明する必要がある。
   Qed.
   
   (* y < x*y *)
-  Lemma e2b_1_gt1 b : 1 < b -> 2 <= 2^b - 1.
-  Proof.
-    move=> Hb1.
-    rewrite ltn_subRL addn1.
-    rewrite -{1}(expn1 2).
-      by rewrite ltn_exp2l.
-  Qed.
-
   Lemma sum0a_e2ib_lt_e2ab_1 a b :
     0 < a -> 1 < b ->
     \sum_(0 <= i < a) 2^(i * b) < 2^(a * b) - 1.
@@ -167,19 +191,7 @@ x*y もまた合成数であることを証明する必要がある。
     (* 0 < \sum_(0 <= i < a) 2^(i * b) *)
     - by rewrite sum_first.
   Qed.
-
-  Check ltn_Pmulr : forall a b : nat, 1 < b -> 0 < a -> a < a * b.
-  (* これの逆を証明しておく。 *)
-  Lemma ltn_Pmulr_r a b : 0 < a -> a < a * b -> 1 < b.
-  Proof.
-    Check ltn_mul2l.
-    move=> Ha.
-    rewrite -{1}[a]muln1.
-    rewrite [a * 1 < a * b]ltn_mul2l.
-    move/andP.
-      by case.
-  Qed.
-
+  
 (**
 ## 証明したい定理
 *)  
