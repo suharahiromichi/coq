@@ -278,6 +278,8 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
 
 \sum_{i=m}^{n-1}(a_i c) = (\sum_{i=m}^{n-1}a_i) c \\
 
+\sum_{i=m}^{n-1} c = (n - m) c \\
+
 ```
 *)
   Lemma sum_split m n a b :
@@ -294,6 +296,9 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
     m < n ->
     \sum_(m <= i < n)((a i) * c) = (\sum_(m <= i < n)(a i)) * c.
   Proof. by rewrite big_distrl. Qed.
+
+  Check sum_nat_const_nat : forall m n c,
+      \sum_(m <= i < n) c = (n - m) * c.
 
 (**
 # Σの中身の書き換え
