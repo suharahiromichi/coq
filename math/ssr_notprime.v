@@ -217,83 +217,54 @@ x*y もまた合成数であることを証明する必要がある。
 
 End Notprime.
 
-(* END *)
+(**
+# "How To Prove it" での証明
+
+整数 n は合成数である。
+すなわち、それより小さいふたつの正整数 a と b の積であることを証明する。
+
+$$ a \lt n, b \lt n, n = a b $$
+
+のとき、
+
+(1) $[x y = 2^{n} - 1]$
+
+$ x = 2^{b} - 1, y = \sum_{i=0}^{a-1}2^{ib} $
+
+とすると、
+
+$$ x y = 2^{n}-1 $$
+
+が成り立つ。
 
 
+(2) $[x < x y]$
 
+$ b \lt n $ なので、 
 
-(* *************************** *)
-(* *************************** *)
-(* 以下はゴミゴミゴミ *)
-(* *************************** *)
-(* *************************** *)
+$$ x = 2^{b}-1 < 2^{n}-1 = x y $$ である。
 
+(3) $[y < x y]$
 
+$ a b = n > a $ から　$ 1 \lt b $、　さらに　$ 1 = 2^{1} - 1 < 2^{b}-1 = x $ である。
+$ 1 \lt x $ より $$ y \lt x y $$ が成り立つ。
 
-
-
-
-
-
-
+以上 (1)(2)(3)から、$ 2^{n}-1 $ は、
+それより小さいふたつの正整数数 x と y の積であることから、合成数である。
+ *)
 
 (**
-2<=a, 2<=b であれば、a*bは合成数である。
+# Σが0以上である証明
 
-任意のxに、$ (2^{b} - 1) $ を
-任意にyに、$\sum_{i=0}^{a-1}2^{i b}$ を代入する。
+自然数ドメインで扱うので、総和の値は0以上である。
+ *)
+Section SumGe0.
+  Goal forall m n a, 0 <= \sum_(m <= i < n) a i.
+  Proof. done. Qed.
 
-x*y が合成数であることも言わなければばらないが、
-2<=x, 2<=y であれば、x*yは合成数であるといえる。
-
-そして先の補題で x*y = 2^(a*b) - 1 を証明する。
-
-以上より a*bが合成数なら、2^(a*b) - 1 は合成数である。
-*)  
-  
-  (* 何か所かで使う補題。 *)
-  Lemma le2_le1 a : 2 <= a -> 1 <= a.
-  Proof. move=> H. by ssromega. Qed.
-  
-  (* 2 <= x の証明に使用する。 *)
-  Lemma e2b_1_ge2 b : 2 <= b -> 2 <= 2^b - 1.
-  Proof.
-    move=> H.
-    rewrite ltn_subRL addn1.
-    rewrite -{1}(expn1 2).
-      by rewrite ltn_exp2l.
-  Qed.
-
-  (* 2 <= y の証明に使用する。 *)  
-  Lemma sum0_2_e2ib a b :
-    2 <= a -> 2 <= b -> 2 <= \sum_(0 <= i < a) 2^(i * b).
-  Proof.
-    move=> Ha Hb.
-    rewrite sum_first; last by apply: le2_le1.
-    rewrite sum_first; last done.
-    have H1 : 1 <= 2^(0 * b) by rewrite mul0n expn0.
-    have H2 : 1 <= 2^(1 * b) by rewrite mul1n expn_gt0 orb_idr.
-    have H3 : 0 <= \sum_(2 <= i < a) 2^(i * b) by done. (* 0以上は自明。 *)
-      by ssromega.
-  Qed.
-  
-  (* 証明したいもの *)
-  Lemma e2_ab_1_notprime (a b : nat) :
-    2 <= a -> 2 <= b ->
-    exists (x y : nat), 2 <= x /\ 2 <= y /\ (x * y = 2^(a * b) - 1).
-  Proof.
-    move=> Ha Hb.
-    exists (2^b - 1), (\sum_(0 <= i < a) 2^(i * b)).
-    split ; [| split].
-    - by apply: e2b_1_ge2.                  (* 2 <= x *)
-    - by apply: sum0_2_e2ib.                (* 2 <= y *)
-    - move/le2_le1 in Ha.
-        by apply: l_e2_ab_1.                (* x * y *)
-  Qed.
-  
-
-
-
+(**
+∀a_i ≧ 0 のとき、総和の値が0以上になることを明示的に証明する。
+*)
   Definition zero (_ : nat) := 0.
   
   Lemma sum0_0 m n : \sum_(m <= i < n) zero i = 0.
@@ -311,15 +282,14 @@ x*y が合成数であることも言わなければばらないが、
       by apply: leq_sum.
   Qed.
   
-  Lemma ge0_sum m n a : (forall i, 0 <= a i) -> 0 <= \sum_(m <= i < n) a i.
+  Lemma ge0_sum m n a :
+    (forall i, 0 <= a i) -> 0 <= \sum_(m <= i < n) a i.
   Proof.
     move=> H.
     rewrite -{1}(sum0_0 m n).
     apply: ge0'_sum => i.
       by rewrite /zero.
   Qed.
-  
+End SumGe0.
 
-  
-
-
+(* END *)
