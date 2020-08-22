@@ -8,6 +8,8 @@ Coq/SSReflect/MathComp による定理証明
 ======
 
 2020_8_10 @suharahiromichi
+
+2020_9_16 @suharahiromichi
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -32,8 +34,202 @@ opamでインストールしている場合は、ソースは、たとえば以�
 ~/.opam/4.07.1/lib/coq/user-contrib/mathcomp/ssreflect/div.v
 *)
 
-Section Modulo.
+(**
+# 除算
+ *)
+(**
+## 除算の定義
 
+ユーグリッド除法 edivn_rec (末尾再起）で定義される。
+*)
+Print edivn_rec.
+(* 
+fun d : nat =>
+fix loop (m q : nat) {struct m} : nat * nat :=
+  match m - d with
+  | 0 => (q, m)
+  | m'.+1 => loop m' q.+1
+  end
+ *)
+Print edivn.
+(* 
+fun m d : nat => if 0 < d then edivn_rec d.-1 m 0 else (0, m)
+ *)
+Print divn.
+(*
+fun m d : nat => (edivn m d).1
+ *)
+Locate "_ %/ _". (* := divn m d : nat_scope (default interpretation) *)
+
+(**
+## 除法の仕様
+*)
+Print edivn_spec.
+(*
+Variant edivn_spec (m d : nat) : nat * nat -> Set :=
+    EdivnSpec : forall q r : nat,
+                m = q * d + r -> (0 < d) ==> (r < d) -> edivn_spec m d (q, r)
+
+除法の定義が、除法の仕様を満たすという補題：
+*)
+Check edivnP : forall m d : nat, edivn_spec m d (edivn m d).
+
+(**
+``q * d + r`` を d で割ると、q 余り r である。
+*)
+Check edivn_eq : forall d q r : nat, r < d -> edivn (q * d + r) d = (q, r).
+
+(**
+# 剰余計算
+
+ユーグリッド除法とは別に定義する。
+*)
+Print modn_rec.
+(*
+fun d : nat =>
+fix loop (m : nat) : nat := match m - d with
+                            | 0 => m
+                            | m'.+1 => loop m'
+                            end
+*)
+Print modn.
+(*
+fun m d : nat => if 0 < d then modn_rec d.-1 m else m
+*)
+Locate "_ %% _". (* := modn m d : nat_scope (default interpretation) *)
+
+(**
+## 剰余計算の補題（``0 < d`` を条件にするもの）
+*)
+
+(**
+### ``d / d = 1``
+
+``d = 0`` なら ``d / d = 0`` なので、その条件を除いている。
+*)
+Lemma divnn' d : 0 < d -> d %/ d = 1.
+Proof. by rewrite divnn => ->. Qed.
+
+(**
+### ``m % d < d``
+
+``d = 0`` なら ``m %% 0 = 0`` なので、その条件を除いている。
+ *)
+Lemma ltn_mod' m d : 0 < d -> m %% d < d.
+Proof. by rewrite ltn_mod. Qed.
+
+(**
+## 剰余計算の補題（odd を条件にするもの）
+*)
+(**
+### m %% 2 = 0 <-> ~~ odd m.
+
+奇数は剰余と独立に定義されている。
+ *)
+Lemma modn2' m : m %% 2 = 0 <-> ~~ odd m.
+Proof.
+  rewrite modn2.
+  split=> H.
+  
+  (* H は、 nat_of_bool のコアーションであるため、``odd m`` rewriteに使えない。 *)
+  Check H : nat_of_bool (odd m) = O.
+  
+  (* b == 0 は ~~b に書き換えることができる。 *)
+  Check eqb0 : forall b : bool, (nat_of_bool b == 0) = ~~ b.
+  
+  - move/eqP in H.
+      by rewrite eqb0 in H.
+  - apply/eqP.
+      by rewrite eqb0.
+Qed.
+
+(**
+## 2で割るの補題
+
+2で割る は、divn とは無関係に定義されている。
+*)
+Check divn2 : forall m : nat, m %/ 2 = m./2.
+
+(**
+# 可除
+ *)
+(**
+## 可除の定義
+ *)
+Print dvdn.                         (* bool述語 *)
+(* fun d m : nat => m %% d == 0 *)
+
+(* 除数のほうが前になる。 ``d \ m`` と書く方が一般的かも。  *)
+Locate "d %| m". (* := dvdn m d : nat_scope (default interpretation) *)
+
+(**
+## 可除の補題
+
+奇数は剰余と独立に定義されている。
+*)
+Lemma dvdn2' n : 2 %| n <-> ~~ odd n.
+Proof. by rewrite dvdn2. Qed.
+
+
+(**
+# GCD
+*)
+
+(**
+# LCM
+*)
+
+(**
+# 互いに素
+*)
+
+(**
+# 合同式
+ *)
+(**
+## 合同式の定義
+ *)
+Locate "_ = _ %[mod _ ]".              (* 3項演算子であることに注意 *)
+(* := eq (modn m d) (modn n d) : nat_scope (default interpretation) *)
+
+Locate "_ <> _ %[mod _ ]".             (* 3項演算子であることに注意 *)
+(* := not (eq (modn m d) (modn n d)) : nat_scope *)
+
+Locate "_ == _ %[mod _ ]".             (* 3項演算子であることに注意 *)
+(* := eq_op (modn m d) (modn n d) : nat_scope (default interpretation) *)
+
+Locate "_ != _ %[mod _ ]".             (* 3項演算子であることに注意 *)
+(* := negb (eq_op (modn m d) (modn n d)) : nat_scope (default interpretation) *)
+
+
+(**
+## rewrite による書き換え
+
+(m %% d) = (n %% d) の構文糖衣であるので、
+``%[mod _]`` すなわち ``%% _`` の部分が一致していれば、rewriteも可能である。
+*)
+Goal forall m n d, m = n %[mod d] -> n = m %[mod d].
+Proof. move=> m n d H. rewrite H. done. Qed.
+
+(**
+「=」「<>」「==」「!=」についての補題も適用可能である。
+*)
+Check @esym : forall (A : Type) (x y : A), x = y -> y = x.
+Goal forall m n d, m = n %[mod d] -> n = m %[mod d].
+Proof. move=> m n d H. by apply: esym. Qed.
+
+Check @nesym : forall (A : Type) (x y : A), x <> y -> y <> x.
+Goal forall m n d, m <> n %[mod d] -> n <> m %[mod d].
+Proof. move=> m n d H. by apply: nesym. Qed.
+
+Check eq_sym : forall (T : eqType) (x y : T), (x == y) = (y == x).
+Goal forall m n d, m == n %[mod d] -> n == m %[mod d].
+Proof. move=> m n d H. by rewrite eq_sym. Qed.
+
+Goal forall m n d, m != n %[mod d] -> n != m %[mod d].
+Proof. move=> m n d H. by rewrite eq_sym. Qed.
+
+Section Modulo.
 (**
 ## Concrete Mathematics [1] （コンピュータの数学 [2]） 4.6 合同関係 の公式
 
