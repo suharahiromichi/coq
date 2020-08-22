@@ -61,16 +61,27 @@ Proof.
   = 4
    *)
 (**  
-[:: 0; 1; 2; 3; 4] の要素のどれかが、
-(fun i : nat => BigBody i addn (odd i) i) の i に渡される。たとえば 1 なら、
-(BigBody 1 addn true 1) となる。
-これが、body に渡される。BigBody は値コンストラクタなので、要素どうしが対応して、
+[:: 0; 1; 2; 3; 4] の要素のそれぞれが、\oの右側の、
+(fun i : nat => BigBody i addn (odd i) i) の i に渡される。たとえば
+
+- 0 なら、(BigBody 0 addn false 0)
+- 1 なら、(BigBody 1 addn true 1)
+- 2 なら、(BigBody 2 addn false 2)
+- 3 なら、(BigBody 3 addn true 3)
+- 4 なら、(BigBody 4 addn false 4)
+
+ となる。
+ *)
+(**
+これが\o の左側のbody に渡される。
+BigBody は、（listのconsと同じ）値コンストラクタなので、要素どうしが対応して、
+(BigBody 1 addn true 1) の場合なら、
 
 - op <= addn
 - true <= true
 - v <= 1
 
-以上から、(fun x => addn 1 x) が foldr に渡される。同様に、
+から、(fun x => addn 1 x) が foldr に渡される。同様に、
 
 - 0 なら (fun x => x)
 - 1 なら (fun x => addn 1 x)
@@ -90,7 +101,7 @@ Proof.
   (* 1 + (3 + 0) = 4 *)
   done.
 (**
-コンストラクタ bigbody BigBody を用意する理由は、math-comp-book の 5.8 を参照のこと。
+コンストラクタ BigBody を用意する理由は、math-comp-book の 5.8 を参照のこと。
 *)
 Qed.  
 
@@ -203,6 +214,8 @@ monoid は、単位元が存在し、結合律が成り立つ。
 (2) これらの定義のしかたは Telescopes と呼ぶ。
 MathComp 本体の Packed Class と異なるが共存できる。math-comp-book の 7.2 を参照のこと。
  *)
+Compute addn_comoid. (* = Monoid.ComLaw addnC         : Monoid.com_law 0 *)
+Compute addn_addoid. (* = Monoid.AddLaw mulnDl mulnDr : Monoid.add_law 0 muln *)
 
 (*
 # インデックスの範囲の表記
@@ -218,9 +231,9 @@ MathComp 本体の Packed Class と異なるが共存できる。math-comp-book 
 (**
 ## リストによる範囲の表記
 *)
-Definition s5o_l1 := \sum_(i <- [:: 0; 1; 2; 3; 4] | odd i) i.
-Definition s5o_l2 := \sum_(i <- iota 0 5 | odd i) i.
-Definition s5o_l3 := \sum_(0 <= i < 5 | odd i) i.
+Definition s5o_l1 := \sum_(i <- [:: 0; 1; 2; 3; 4] | odd i) i. (* リスト直接 *)
+Definition s5o_l2 := \sum_(i <- iota 0 5 | odd i) i.           (* iota *)
+Definition s5o_l3 := \sum_(0 <= i < 5 | odd i) i.              (* 範囲 *)
 Check @BigOp.bigop nat nat O (index_iota O 5)
       (fun i : nat => @BigBody nat nat i addn (odd i) i).
 Check BigOp.bigop O (index_iota O 5)
@@ -228,6 +241,7 @@ Check BigOp.bigop O (index_iota O 5)
 (* i の型が nat,
    インデックスのリストが inidex_iota 0 5 *)
 
+(* 上記の3種類が同じである。 *)
 Goal s5o_l1 = s5o_l2. Proof. done. Qed.
 Goal s5o_l2 = s5o_l3. Proof. done. Qed.
 Goal s5o_l3 = s5o_l1. Proof. done. Qed.
@@ -246,13 +260,16 @@ Check BigOp.bigop O (index_enum (ordinal_finType 5))
    インデックスのリストが index_enum (ordinal_finType 5) *)
 
 (* 注： @BigBody の第5引数が、odd (nat_of_ord i) から、
-   andb (i \in 'I_5) (odd (nat_of_ord i)) になる。 意味がある？ *)
+   andb (i \in 'I_5) (odd (nat_of_ord i)) になる。 *)
          
+(* 上記の3種類が同じである。 *)
 Goal s5o_t1 = s5o_t2. Proof. done. Qed.
 Goal s5o_t2 = s5o_t3. Proof. done. Qed.
 Goal s5o_t3 = s5o_t1. Proof. done. Qed.
 
 (**
+## 2種類の表記の間の書き換え
+
 ``0 <= i < 5`` から ``i < 5`` へは、相互に書き換えできる。
 *)
 Goal s5o_l3 = s5o_t3.
@@ -272,8 +289,9 @@ Qed.
 ``\sum_(m <= i < n) a i`` または ``\sum_(m <= i < n.+1) a i`` の形式を使います。
 
 命題によっては、``m < n`` または ``m <= n`` の条件が必要になる場合があります。
+この範囲を満たさない場合は、単位元の0になってしまうためです（後述）。
 
-また ``0 <= i`` の場合もそれを略さないようにします（略すと finType形式になるため）。
+また ``0 <= i`` の場合もそれを略さないようにします（略すと finType形式になってしまうため）。
 *)
 
 (**
@@ -408,9 +426,15 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
     - rewrite H.
         by rewrite big_nil.
   Qed.
+
+(**
+なお ``0 <=`` は必ず成り立ちます。自然数領域で扱っているため、
+*)
+  Goal forall m n a, 0 <= \sum_(m <= i < n) a i.
+  Proof. done. Qed.
   
 (**
-## ``a n``項を取り出す。
+## ``a_n``項を取り出す。
 
 $$ \sum_{i=n}^{n}a_i = a_n $$
 
@@ -483,6 +507,8 @@ $$ \sum_{i=m}^{n}a_i = a_m + \sum_{i=m}^{n-1}a_{i + 1} $$
   
 (**
 ## 最後の項をΣの外に出す。
+
+n(インデックスの上限)についての帰納法と組み合わせて使います。
 
 $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
  *)
