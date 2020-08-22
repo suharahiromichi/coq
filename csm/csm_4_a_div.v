@@ -99,9 +99,38 @@ fun m d : nat => if 0 < d then modn_rec d.-1 m else m
 Locate "_ %% _". (* := modn m d : nat_scope (default interpretation) *)
 
 (**
-## 剰余計算の補題（``0 < d`` を条件にするもの）
+## 剰余計算の補題（0で割る場合）
 *)
+(**
+### ``0 / 0 = 0``
+*)
+Check divn0 : forall m : nat, m %/ 0 = 0.
 
+(**
+### ``m % 0 = m``
+ *)
+Check modn0 : forall m : nat, m %% 0 = m.
+
+(**
+### ``0 %| 0`` および ``~~ (0 %| m)``
+
+0は0で割りきれるが、0以外の数は割りきれない。
+ *)
+Lemma dvd00 : 0 %| 0.
+Proof. done. Qed.
+
+Lemma dvd0n' n : 0 < n -> ~~(0 %| n).
+Proof. by rewrite dvd0n lt0n. Qed.
+  
+(**
+### ``m = n %[mod 0]`` は ``m = n`` とおなじ。
+ *)
+Lemma modn0' m n : m = n %[mod 0] -> m = n.
+Proof. by rewrite 2!modn0. Qed.
+
+(**
+## 剰余計算の補題（``0 < d`` を条件にするもの。すなわち0割を避けるもの）
+*)
 (**
 ### ``d / d = 1``
 
@@ -113,7 +142,7 @@ Proof. by rewrite divnn => ->. Qed.
 (**
 ### ``m % d < d``
 
-``d = 0`` なら ``m %% 0 = 0`` なので、その条件を除いている。
+``d = 0`` なら ``m %% 0 = m`` なので、その条件を除いている。
  *)
 Lemma ltn_mod' m d : 0 < d -> m %% d < d.
 Proof. by rewrite ltn_mod. Qed.
@@ -144,7 +173,7 @@ Proof.
 Qed.
 
 (**
-## 2で割るの補題
+## 2で割る補題
 
 2で割る は、divn とは無関係に定義されている。
 *)
