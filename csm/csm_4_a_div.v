@@ -12,6 +12,11 @@ Coq/SSReflect/MathComp による定理証明
 
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
+(**
+https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
+ssromega.vo ができていることを確認してください。
+*)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -39,9 +44,6 @@ Section Modulo.
 ### 合同式の加算
 
 「合同な要素を足しても、合同関係は崩れない。」
-
-
-なお、引き算の場合については、あとで補足します。
  *)  
   Lemma m_addn m n p q d  :
     m = n %[mod d] -> p = q %[mod d] -> m + p = n + q %[mod d].
@@ -57,6 +59,10 @@ Section Modulo.
     - done.
     - done.
   Qed.
+
+(**
+引き算の場合については、あとで補足します。
+*)  
 
 (**
 ### 合同式の乗算
@@ -209,8 +215,8 @@ MathCompらしく、bool値の同値で証明しておきます。
   Qed.
   
 (**
-``eqn_mod_dvd : (m == n %[mod d]) = (d %| (m - n))`` の補題を使って証明する都合上、
-` ``n <= m`` と m < n`` で場合分けします。このとき、
+``eqn_mod_dvd : (m == n %[mod d]) = (d %| (m - n))`` の補題を使って証明する
+ために、``n <= m`` と m < n`` で場合分けします。このとき、
 後者の条件を ``m <= n`` に変形することで、場合分け後の証明を共通にすることができます。
 その変形をする補題を証明しておきます。
 *)
@@ -332,8 +338,8 @@ MathCompらしく、bool値の同値で証明しておきます。
 
 (**
 その補題を使用すれば、式(4.41)からただちに求められます。
-これは、中国人の剰余定理の特別な場合です。
-より一般的な証明は、``div.v`` を参照してください。
+これは、中国人の剰余定理の特別な場合です。``div.v`` の
+補題 ``chinese_remainder`` と同内容です。
 *)  
   Lemma m_chinese_remainder m n d1 d2 :
     coprime d1 d2 ->
@@ -344,6 +350,10 @@ MathCompらしく、bool値の同値で証明しておきます。
       by apply: m_divn_lcm.
   Qed.
   
+(**
+より一般的な証明は、``div.v`` の ``chinese_mod`` を参照してください。
+ただし導き方は異なります。
+ *)
 End Modulo.
 
 (**
