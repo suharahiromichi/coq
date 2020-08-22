@@ -343,7 +343,7 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
 直接書き換えることはできません。一旦、取り出して書き換えることになります。
  *)
   Lemma eq_sum m n a b : a =1 b ->
-                         \sum_(m <= i < n)(a i) = \sum_(m <= i < n)(b i).
+                         \sum_(m <= i < n)(a i) = \sum_(m <= j < n)(b j).
   Proof.
     move=> Hab.                             (* =1 は第1階の=です。 *)
     apply: eq_big_nat => i Hmn.
@@ -355,6 +355,9 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
  *)
 (**
 ## ネストの入れ替え（総和どうしの場合）
+
+$$ \sum_{i=0}^{m-1}(\sum_{j=0}^{n-1)} a_{i j} =
+   \sum_{j=0}^{n-1}(\sum_{i=0}^{m-1)} a_{i j} $$
 *)
   Lemma exchamge_sum m n a :
     \sum_(0 <= i < m) (\sum_(0 <= j < n) (a i j)) =
@@ -363,6 +366,9 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
   
 (**
 ## ネストの入れ替え（総和と総乗の場合）
+
+$$ \prod_{i=0}^{m-1}(\sum_{j=0}^{n-1)} a_{i j} =
+   \sum_{j=0}^{n-1}(\prod_{i=0}^{m-1)} a_{i j} $$
 *)
   (* F : 'I_m -> 'I_n -> _ なので、aより前にmとnを定義しないといけない。 *)
   Lemma prod_distr_sum' m n a :
@@ -616,6 +622,9 @@ Lemma big_distrl I r a (P : pred I) F :
 *)
 Section Practice.
   
+(**
+$$ 2 (\sum_{x=0}^{n} x) = n (n + 1) $$
+*)
   Lemma exo34 n : 2 * (\sum_(0 <= x < n.+1) x) = n * n.+1.
   Proof.
     elim: n => [| n IH].
@@ -630,12 +639,16 @@ Section Practice.
       done.
   Qed.
   
+(**
+$$ 6 (\sum_{k=0}^{n} k^{2}) = n (n + 1) (2 n + 1) $$
+*)
   (* これまでに証明した補題が使えるので、nat 形式にする。 *)
   Lemma exo35' n : 6 * (\sum_(0 <= k < n.+1) k^2) = n * n.+1 * n.*2.+1.
   Proof.
     elim: n => [| n IHn].
     + by rewrite sum_nat1.
     + rewrite sum_last //=.
+      
       rewrite mulnDr IHn.
       (* n * n.+1 * n.*2.+1 + 6 * n.+1 ^ 2 = n.+1 * n.+2 * (n.+1).*2.+1 *)
       (* 両辺とも  (n + 1)(2n^2 + 7n + 6) である。 *)
@@ -659,7 +672,7 @@ Section Practice.
       (* 左辺を展開して簡約する。 *)
       rewrite [in LHS]mulnDr [in LHS]mulnDl [in LHS]muln1 [in LHS]mul1n.
       have -> : n * n.*2 + n + (n * 6 + 6) = n * n.*2 + n * 7 + 6 by ssromega.
-
+      
       (* 右辺を展開して簡約する。 *)
       rewrite ![in RHS]mulnDl ![in RHS]mulnDr [in RHS]mul1n [in RHS]muln1.
       rewrite [in n * (n * 2)]muln2.
@@ -673,20 +686,50 @@ Section Practice.
   Lemma exo35 n : 6 * (\sum_(k < n.+1) k^2) = n * n.+1 * n.*2.+1.
   Proof. by rewrite -exo35' big_mkord. Qed.
   
-  (* ****** *)
-  (* ****** *)
+  
+(**
+等比数列の和の公式 @morita_hm さん
 
+$$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
+ *)
+  Lemma exo36' (x n : nat) :
+    1 < x -> (x - 1) * (\sum_(0 <= k < n.+1) x^k) = x^(n.+1) - 1.
+  Proof.
+    move=> Hxp.
+    elim: n => [| n IHn].
+    - rewrite sum_nat1 //=.
+        by rewrite expn0 expn1 muln1.
+    - rewrite sum_last //=.
+      rewrite mulnDr IHn.
+      rewrite addnBAC.
+      + have -> : x ^ n.+1 + (x - 1) * x ^ n.+1 = (1 + (x - 1)) * x ^ n.+1
+          by rewrite mulnDl mul1n.
+        rewrite subnKC.
+        * by rewrite -expnS.
+        * by ssromega.
+      + have H : n.+1 < x ^ n.+1 by apply: ltn_expl. (* 0 < x ^ n.+1 の証明 *)
+          by ssromega.
+  Qed.
+  
   Lemma exo36 (x n : nat) :
     1 < x -> (x - 1) * (\sum_(k < n.+1) x^k) = x^(n.+1) - 1.
   Proof.
-  Admitted.
-  
+    move=> Hxp.
+      by rewrite -exo36' // big_mkord.
+  Qed.
+
+(**
+XXX
+*)  
   Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
-        (vn : forall n, v n.+1 = \sum_(k < n.+1) v k) (n : nat)  :
+        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
     n != 0 -> v n = 2 ^ n.-1.
   Proof.
   Admitted.
   
+(**
+XXX
+*)  
   Parameter n : nat.
   Parameters a b : 'I_n.
   Lemma bigA_distr_big_test : (a + b)^2 = a^2 + 2 * a * b + b^2.
@@ -715,7 +758,7 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
 (**
 最初に補題として、次の式を証明する。これは 1 <= a で成り立つ。
 
-$$ (2^{b} - 1)(\sum_{i=0}^{a-1}2^{i b}) = 2^{a b} - 1 $$
+$$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
 *)
 Section Notprime.
 
