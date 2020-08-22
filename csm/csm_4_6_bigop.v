@@ -8,12 +8,20 @@ Coq/SSReflect/MathComp による定理証明
 ======
 
 2018_12_10 @suharahiromichi
+
+2020_8_22 @suharahiromichi
  *)
 
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import bigop matrix.
-Require Import ssromega.
 
+Require Import ssromega.
+(**
+https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
+ssromega.vo ができていることを確認してください。
+*)
+     
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -257,6 +265,16 @@ Proof.
   rewrite big_mkord.
   done.
 Qed.
+
+(**
+（重要）以下においては、リスト形式の
+
+``\sum_(m <= i < n) a i`` または ``\sum_(m <= i < n.+1) a i`` の形式を使います。
+
+命題によっては、``m < n`` または ``m <= n`` の条件が必要になる場合があります。
+
+また ``0 <= i`` の場合もそれを略さないようにします（略すと finType形式になるため）。
+*)
 
 (**
 # 総和についての補題（他のbigopでも成り立つ）
@@ -651,7 +669,7 @@ Section Practice.
 End Practice.
 
 (**
-自然数 n が合成数なら、2^n - 1 も合成数である。
+# 問題 - 自然数 n が合成数なら、``2^n - 1`` も合成数であることを証明してください。
 
 nが、2以上の任意の2自然数に積であるとき（すなわち合成数であるとき）、
 2^n-1 もふたつの自然数の積（合成数）である。
