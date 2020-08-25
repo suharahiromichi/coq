@@ -119,14 +119,9 @@ Qed.
 
 Lemma test7 (x y : int) : `|x * y| = `|x| * `|y|.
 Proof.
-  case: x; case: y.
-  done.
-  admit.
-  done.
-  done.
-  Check abszM : forall m1 m2 : int, `|(m1 * m2)%R|%N = (`|m1| * `|m2|)%N.
-  Check abszM x y.
+  About abszM.
 Admitted.
+
 
 Lemma test6 (m d q1 q2 r1 r2 : int) : 0 < d ->
                                       m = q1 * d + r1 ->
@@ -171,5 +166,146 @@ Proof.
   done.
 Qed.
 
-(* END *)
+(**
+# MathComp での定義
 
+floor & ceil を証明する。
+
+ *)
+
+Definition p10 : int := 10.                 (* Posz 10 *)
+Definition m10 : int := - 10%:Z.            (* Negz 2 *)
+Definition p3 : int := 3.                   (* Posz 3 *)
+Definition m3 : int := - 3%:Z.              (* Negz 2 *)
+
+Definition divz_d_K_n_absd (m d : int) :=
+  let: (K, n) := match m with Posz n => (Posz, n) | Negz n => (Negz, n) end in
+  (d, K, n, `|d|).
+
+
+(*                                                  d  K      n |d| *)
+Compute divz_d_K_n_absd p10 p3.             (*      3, Posz, 10, 3 *)
+Compute divz_d_K_n_absd p10 m3.             (* Negz 2, Posz, 10, 3 *)
+Compute divz_d_K_n_absd m10 p3.             (*      3, Negz,  9, 3 *)
+Compute divz_d_K_n_absd m10 m3.             (* Negz 2, Negz,  9, 3 *)
+
+Compute divz            p10 p3.             (* Posz 3 *)
+Compute divz            p10 m3.             (* Negz 2 = -3 *)
+Compute divz            m10 p3.             (* Negz 3 = -4 *)
+Compute divz            m10 m3.             (* Posz 4 *)     
+
+Compute (sgz (Posz 3)) * Posz (10 %/ 3).    (* Posz 3 *)
+Compute (sgz (Negz 2)) * Posz (10 %/ 3).    (* Negz 2 = -3 *)
+Compute (sgz (Posz 3)) * Negz ( 9 %/ 3).    (* Negz 3 = -4 *)
+Compute (sgz (Negz 2)) * Negz ( 9 %/ 3).    (* Posz 4 *)
+
+(* -1, 0, 1 を返す。 *)
+Compute sgz (Negz 2)%R.                     (* Negz 0 (= -1) *)
+Compute sgz (Posz 0)%R.                     (* Posz 0 *)
+Compute sgz (Posz 3)%R.                     (* Posz 1 *)
+
+Compute (Posz 1) * Posz (10 %/ 3).          (* Posz 3 *)
+Compute (Negz 0) * Posz (10 %/ 3).          (* Negz 2 = -3 *)
+Compute (Posz 1) * Negz ( 9 %/ 3).          (* Negz 3 = -4 *)
+Compute (Negz 0) * Negz ( 9 %/ 3).          (* Posz 4 *)
+
+Compute (Posz 1) * Posz 3.                  (* Posz 3 *)
+Compute (Negz 0) * Posz 3.                  (* Negz 2 = -3 *)
+Compute (Posz 1) * Negz 3.                  (* Negz 3 = -4 *)
+Compute (Negz 0) * Negz 3.                  (* Posz 4 *)
+
+(* Definition sgz x : int := if x == 0 then 0 else if x < 0 then -1 else 1. *)
+Definition divz (m d : int) :=
+  let: (K, n) := match m with Posz n => (Posz, n) | Negz n => (Negz, n) end in
+  sgz d * K (n %/ `|d|)%N.
+Definition modz (m d : int) : int := m - divz m d * d.
+
+Compute divz            p10 p3.             (* Posz 3 *)
+Compute divz            p10 m3.             (* Negz 2 = -3 *)
+Compute divz            m10 p3.             (* Negz 3 = -4 *)
+Compute divz            m10 m3.             (* Posz 4 *)     
+
+Compute modz            p10 p3.             (* Posz 1 *)
+Compute modz            p10 m3.             (* Posz 1 *)
+Compute modz            m10 p3.             (* Posz 2 *)
+Compute modz            m10 m3.             (* Posz 2 *)
+
+(*
+  m  =   q  *   d  + r
+  10 =   3  *   3  + 1
+  10 = (-3) * (-3) + 1
+- 10 = (-4) *   3  + 2
+- 10 =   4  * (-3) + 2
+ *)
+
+Definition divz' (m d : int) :=
+  if (m >= 0) then
+    sgz d * sgz m * (`|m| %/ `|d|)%N        (* floor *)
+  else
+    sgz d * sgz m *
+    (if (`|d| %| `|m|)%N then (`|m| %/ `|d|)%N else (`|m| %/ `|d| + 1)%N). (* ceil *)
+                                          
+Compute divz'           p10 p3.             (* Posz 3 *)
+Compute divz'           p10 m3.             (* Negz 2 = -3 *)
+Compute divz'           m10 p3.             (* Negz 3 = -4 *)
+Compute divz'           m10 m3.             (* Posz 4 *)     
+
+
+Definition p9 : int := 9.
+Definition p8 : int := 8.   
+Definition p7 : int := 7.
+Definition p6 : int := 6.
+Definition p5 : int := 5.    
+Definition p4 : int := 4.
+Definition p2 : int := 2.    
+Definition p1 : int := 1.    
+
+Definition m9 : int := - 9%:Z.
+Definition m8 : int := - 8%:Z.
+Definition m7 : int := - 7%:Z.
+Definition m6 : int := - 6%:Z.
+Definition m5 : int := - 5%:Z.
+Definition m4 : int := - 4%:Z.
+Definition m2 : int := - 2%:Z.
+Definition m1 : int := - 1%:Z.
+
+
+Compute divz' p9 p3.                        
+Compute divz' p8 p3.                        
+Compute divz' p7 p3.
+Compute divz' p6 p3.
+Compute divz' p5 p3.                        
+Compute divz' p4 p3.
+Compute divz' p3 p3.
+Compute divz' p2 p3.                        
+
+Compute divz' p9 m3.                        (* -3 *)
+Compute divz' p8 m3.                        (* -2 *)
+Compute divz' p7 m3.                        (* -2 *)
+Compute divz' p6 m3.                        (* -2 *)
+Compute divz' p5 m3.                        (* -1 *)
+Compute divz' p4 m3.                        (* -1 *)
+Compute divz' p3 m3.                        (* -1 *)
+Compute divz' p2 m3.                        (* 0 *)
+
+Compute divz' m9 p3.                        (* -3 *)
+Compute divz' m8 p3.                        
+Compute divz' m7 p3.
+Compute divz' m6 p3.
+Compute divz' m5 p3.                        (* -2 *)
+Compute divz' m4 p3.
+Compute divz' m3 p3.
+Compute divz' m2 p3.                        (* -1 *)
+Compute divz' m1 p3.                        (* -1 *)
+
+Compute divz' m9 m3.                        (* -9 = 3 * -3  *)
+Compute divz' m8 m3.                        (* -8 = 3 * -3 + 1 *)
+Compute divz' m7 m3.
+Compute divz' m6 m3.
+Compute divz' m5 m3.                        (* -5 = 2 * -3 + 1 *)
+Compute divz' m4 m3.
+Compute divz' m3 m3.
+Compute divz' m2 m3.                        (* -2 = 1 * -3 + 1 *)
+
+
+(* END *)
