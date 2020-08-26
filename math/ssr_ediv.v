@@ -24,6 +24,101 @@ Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
 Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
 
+Definition p10 : int := 10.                 (* Posz 10 *)
+Definition m10 : int := - 10%:Z.            (* Negz 2 *)
+Definition p3 : int := 3.                   (* Posz 3 *)
+Definition m3 : int := - 3%:Z.              (* Negz 2 *)
+
+(**
+# ユーグリッド除法の定義
+*)
+Definition divz_floor (m d : int) : int := (`|m| %/ `|d|)%Z.
+Compute divz_floor p10 p3.                  (* 3 *)
+
+Definition divz_ceil (m d : int) : int :=
+  if (d %| m)%Z then (`|m| %/ `|d|)%Z else (`|m| %/ `|d| + 1)%N.
+Check divz_ceil : int -> int -> int.
+Compute divz_ceil p3 p3.                    (* 1 *)
+Compute divz_ceil p10 p3.                   (* 4 *)
+Compute divz_ceil p10 m3.                   (* 4 *)
+Compute divz_ceil m10 p3.                   (* 4 *)
+Compute divz_ceil m10 m3.                   (* 4 *)
+
+Lemma divz_floorp (m d : int) : d != 0 -> (divz_floor m d) * `|d| <= `|m|.
+Proof.
+Admitted.
+
+Lemma divz_ceilp (m d : int) : d != 0 -> `|m| <= (divz_ceil m d) * `|d|.
+Proof.
+Admitted.
+
+
+Definition edivz (m d : int) : int :=
+  if (0 <= m) then
+    sgz d * divz_floor m d
+  else
+    - sgz d * divz_ceil m d.
+
+Definition emodz (m d : int) : int :=
+  m - (edivz m d) * d.
+
+Compute edivz p10 p3.                       (* 3 *)
+Compute edivz p10 m3.                       (* -3 *)
+Compute edivz m10 p3.                       (* -4 *)
+Compute edivz m10 m3.                       (* 4 *)
+
+Compute emodz p10 p3.                       (* 1 *)
+Compute emodz p10 m3.                       (* 1 *)
+Compute emodz m10 p3.                       (* 2 *)
+Compute emodz m10 m3.                       (* 2 *)
+
+(**
+## 剰余が正であることの証明
+*)
+Lemma ltz_m_abs (m : int) : m < 0 -> m = - `|m|.
+Proof. Admitted.
+
+Lemma ttttt (m : int) : (0 <= m) = false -> m < 0.
+Proof. Admitted.
+
+Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
+Proof.
+  move=> Hd.
+  rewrite /emodz /edivz.
+  case: ifP => H.
+  - rewrite /divz_floor.
+    rewrite -mulrAC.
+    Check abszEsg : forall m : int, `|m|%Z = sgz m * m.
+    rewrite -abszEsg mulrC.
+    rewrite subr_ge0.                       (* ssrnum *)
+    Check normr_idP.
+    move/normr_idP in H.
+    rewrite -{2}H.
+      (* (`|m| %/ `|d|)%Z * `|d|%N <= `|m| *)
+      by apply: divz_floorp.
+
+  (* m + - (- sgz d) * divz_ceil m d * d *)
+  (* m + - - (sgz d * divz_ceil m d * d) *)      
+  - rewrite !mulNr.
+    rewrite [- - (sgz d * divz_ceil m d * d)]oppzK.
+    rewrite /divz_ceil.
+    case: ifP => H2.
+    + rewrite -mulrAC.
+      rewrite -abszEsg mulrC.
+      Search _ (_ = false).
+      move/ttttt in H.
+      rewrite {1}(ltz_m_abs H).
+      rewrite addrC subr_ge0.               (* addzC でない！ *)
+        by rewrite divzK.
+    + rewrite -mulrAC.
+      rewrite -abszEsg mulrC.
+      Search _ (_ = false).
+      move/ttttt in H.
+      rewrite {1}(ltz_m_abs H).
+      rewrite addrC subr_ge0.               (* addzC でない！ *)
+      (* `|m| <= (`|m| %/ `|d| + 1)%N * `|d|%N *)
+      (* apply: divz_ceilp. *)
+Admitted.
 
 (**
 # ユーグリッド除法の一意性
@@ -168,15 +263,7 @@ Qed.
 
 (**
 # MathComp での定義
-
-floor & ceil を証明する。
-
  *)
-
-Definition p10 : int := 10.                 (* Posz 10 *)
-Definition m10 : int := - 10%:Z.            (* Negz 2 *)
-Definition p3 : int := 3.                   (* Posz 3 *)
-Definition m3 : int := - 3%:Z.              (* Negz 2 *)
 
 Definition divz_d_K_n_absd (m d : int) :=
   let: (K, n) := match m with Posz n => (Posz, n) | Negz n => (Negz, n) end in
@@ -245,6 +332,7 @@ Definition divz' (m d : int) :=
     sgz d * sgz m *
     (if (`|d| %| `|m|)%N then (`|m| %/ `|d|)%N else (`|m| %/ `|d| + 1)%N). (* ceil *)
                                           
+Check divz'.
 Compute divz'           p10 p3.             (* Posz 3 *)
 Compute divz'           p10 m3.             (* Negz 2 = -3 *)
 Compute divz'           m10 p3.             (* Negz 3 = -4 *)
