@@ -682,7 +682,7 @@ $$ 6 (\sum_{k=0}^{n} k^{2}) = n (n + 1) (2 n + 1) $$
       done.
   Qed.
 
-  (* 出題の ord 形式で証明する。 *)
+  (* 出題の k > n.+1 の形式で証明する。 *)
   Lemma exo35 n : 6 * (\sum_(k < n.+1) k^2) = n * n.+1 * n.*2.+1.
   Proof. by rewrite -exo35' big_mkord. Qed.
   
@@ -718,14 +718,75 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
       by rewrite -exo36' // big_mkord.
   Qed.
 
+
 (**
-XXX
-*)  
   Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
         (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
-    n != 0 -> v n = 2 ^ n.-1.
+    n != 0 -> v n = 2^n.-1.
+この命題は以下の2項間漸化式:
+    v 1 = 1, v n.+1 = v n + v n
+に言い換えられることに気付けば以下のような証明が可能になります
+
+@morita_hm さん
+ *)
+
+  (* v 1 = 1 を証明 *)
+  Lemma exo37_v_1 (v : nat -> nat ) (v0 : v 0 = 1)
+        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
+    v 1 = 1.
   Proof.
-  Admitted.
+    rewrite (vn 0).
+    rewrite sum_last.
+    - rewrite sum_nil.
+      + by rewrite add0n.
+      + by ssromega.
+    - by ssromega.
+  Qed.
+  
+  (* \sum を消去して隣接2項間漸化式をつくる *)
+  Lemma exo37_rec_formula (v : nat -> nat ) (v0 : v 0 = 1)
+        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
+    n != 0 -> v n.+1 = v n + v n.
+  Proof.
+    move=> Hnp.
+    rewrite vn sum_last //=.
+    have <- : v n = \sum_(0 <= k < n) v k
+      by rewrite -[n]prednK; [rewrite (vn n.-1) | rewrite lt0n].
+    done.
+  Qed.
+
+  (* 本題の証明 *)
+  Lemma exo37' (v : nat -> nat ) (v0 : v 0 = 1)
+        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
+    n != 0 -> v n = 2^n.-1.
+  Proof.
+    elim: n => [|k IHk].
+    - done.                                 (* 証明の対象外  *)
+    - elim k => [|l IHl].                   (* v 1 からの帰納法 *)
+      + move=> H1.
+        rewrite //= expn0.
+        by apply: exo37_v_1.
+      + move=> Hp.
+        move/exo37_rec_formula in vn.
+        rewrite vn.
+        * rewrite IHl //=.
+          have -> : 2 ^ l = 1 * 2^ l by rewrite mul1n.
+          rewrite -mulnDl.
+          have -> : 1+1 = 2 by [].
+            by rewrite expnS.
+        * done.
+    - done.
+  Qed.
+  
+  (* 出題の k > n.+1 の形式で証明する。 *)
+  Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
+        (vn : forall n, v n.+1 = \sum_(k < n.+1) v k) (n : nat)  :
+    n != 0 -> v n = 2^n.-1.
+  Proof.
+    move=> Hn.
+    apply: exo37' => // n'.
+      by rewrite big_mkord.
+  Qed.
   
 (**
 XXX
