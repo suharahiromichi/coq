@@ -75,13 +75,51 @@ Compute emodz m10 m3.                       (* 2 *)
 (**
 ## 剰余が正であることの証明
 *)
-Lemma ltz_m_abs (m : int) : m < 0 -> m = - `|m|.
-Proof. Admitted.
+Lemma nge0_lt0 (m : int) : (0 <= m) = false -> m < 0.
+Proof.
+  move=> H.
+  move/negbT in H.
+  Search _ (~~ (_ <= _)).
+  by rewrite -ltrNge in H.
+Qed.
 
-Lemma ttttt (m : int) : (0 <= m) = false -> m < 0.
-Proof. Admitted.
+Lemma ltz_m_abs (m : int) : m < 0 -> m = - `|m|.
+Proof.
+  move=> H.
+  rewrite ltr0_norm //=.
+    by rewrite opprK.                            (* oppz ではない。 *)
+Qed.
 
 Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
+Proof.
+  move=> Hd.
+  rewrite /emodz /edivz.
+  case: ifP => H.
+  - rewrite -mulrAC.
+    Check abszEsg : forall m : int, `|m|%Z = sgz m * m.
+    rewrite -abszEsg mulrC.
+    rewrite subr_ge0.                       (* ssrnum *)
+    Check normr_idP.
+    move/normr_idP in H.
+    rewrite -{2}H.
+      (* (`|m| %/ `|d|)%Z * `|d|%N <= `|m| *)
+      by apply: divz_floorp.
+
+  (* m + - (- sgz d) * divz_ceil m d * d *)
+  (* m + - - (sgz d * divz_ceil m d * d) *)      
+  - rewrite !mulNr.
+    rewrite [- - (sgz d * divz_ceil m d * d)]oppzK.
+    rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    move/nge0_lt0 in H.
+    rewrite {1}(ltz_m_abs H).
+    rewrite addrC subr_ge0.               (* addzC でない！ *)
+      by apply: divz_ceilp.
+Qed.
+
+
+(* 不要 ceil や floor を展開する必要はなかった。 *)
+Lemma ediv_mod_ge0' (m d : int) : d != 0 -> 0 <= emodz m d.
 Proof.
   move=> Hd.
   rewrite /emodz /edivz.
@@ -106,19 +144,24 @@ Proof.
     + rewrite -mulrAC.
       rewrite -abszEsg mulrC.
       Search _ (_ = false).
-      move/ttttt in H.
+      move/nge0_lt0 in H.
       rewrite {1}(ltz_m_abs H).
       rewrite addrC subr_ge0.               (* addzC でない！ *)
         by rewrite divzK.
     + rewrite -mulrAC.
       rewrite -abszEsg mulrC.
       Search _ (_ = false).
-      move/ttttt in H.
+      move/nge0_lt0 in H.
       rewrite {1}(ltz_m_abs H).
       rewrite addrC subr_ge0.               (* addzC でない！ *)
       (* `|m| <= (`|m| %/ `|d| + 1)%N * `|d|%N *)
       (* apply: divz_ceilp. *)
 Admitted.
+
+
+
+
+
 
 (**
 # ユーグリッド除法の一意性
