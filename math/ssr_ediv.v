@@ -148,15 +148,97 @@ Proof.
     by ssromega.
 Qed.
 
+Lemma test (x y : int) : x = y -> `|x| = `|y|.
+Proof.
+    by move=> ->.
+Qed.
+
 Lemma lemma3 (q1 q2 r1 r2 d : int) :
   q1 * d + r1 = q2 * d + r2 -> (`|((q1 - q2) * d)%R|)%N = `|r1 - r2|%N.
 Proof.
+  move/eqP.
+  Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
+  rewrite -subr_eq.
+  rewrite -addrA addrC eq_sym.
+  rewrite -subr_eq.
+  move/eqP/test.
+  rewrite distrC.
+  rewrite -mulrBl.
+  (* `|(q1 - q2) * d| = `|r1 - r2| -> `|((q1 - q2) * d)%R|%N = `|r1 - r2|%N *)
 Admitted.
 
-Lemma lemma2 (r1 r2 : int) (d : nat) :
-  r1 < d -> r2 < d -> `|r1 - r2| < d.
+Lemma test2 (x : int) : 0 <= x -> x = `|x|.
 Proof.
 Admitted.
+
+Lemma test3 (x : int) : x < 0 -> x <= 0.
+Proof.
+Admitted.
+
+
+Lemma lemma2 (r1 r2 : int) (d : nat) :
+  0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2| < d.
+Proof.
+  move=> Hr1 Hr2.
+  move/andP : Hr1 => [Hr1 Hr1d].
+  move/andP : Hr2 => [Hr2 Hr2d].
+
+  Search (_ < _ + _).
+  Check ltr_paddr Hr2 Hr2d.
+  move: (ltr_paddr Hr1 Hr1d) => Hr1dr1.
+  move: (ltr_paddr Hr2 Hr1d) => Hr1dr2.
+  move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.
+  move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.
+  rewrite (test2 Hr1) in Hr1d.
+  rewrite (test2 Hr2) in Hr2d.
+  rewrite (test2 Hr1) in Hr1dr1.
+  rewrite (test2 Hr1) in Hr1dr2.
+  rewrite (test2 Hr1) in Hr2dr1.
+  rewrite (test2 Hr2) in Hr1dr2.
+  rewrite (test2 Hr2) in Hr2dr1.
+  rewrite (test2 Hr2) in Hr2dr2.
+
+  case H : (r1 - r2 >= 0).
+  - move/normr_idP in H.
+    rewrite H.
+    rewrite (test2 Hr1).
+    rewrite (test2 Hr2).
+    have H2 := @ltn_sub2r `|r2| `|r1| (d + `|r2|) Hr2dr2 Hr1dr2.
+    rewrite -addnBA in H2 ; last done.
+    have H21 : (`|r2| - `|r2| = 0)%N by admit.
+    rewrite H21 in H2.
+    rewrite addn0 in H2.
+    admit.
+(*
+  H2 : (`|r1| - `|r2| < d)%N
+  ============================
+  `|r1| - `|r2| < d
+*)    
+  - move/negbT in H.
+    rewrite -ltrNge in H.
+    move/test3 in H.
+    rewrite ler0_def in H.
+    move/eqP in H.
+    rewrite H.
+    Search _ (- ( _ - _ )).
+    rewrite opprB.
+
+    rewrite (test2 Hr1).
+    rewrite (test2 Hr2).
+    Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
+    have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
+    rewrite -addnBA in H1 ; last done.
+    have H11 : (`|r1| - `|r1| = 0)%N by admit.
+    rewrite H11 in H1.
+    rewrite addn0 in H1.
+    admit.
+(*
+  H1 : (`|r2| - `|r1| < d)%N
+  ============================
+  `|r2| - `|r1| < d
+*)    
+Admitted.
+
 
 Lemma edivz_uniqness (r1 r2 q1 q2 m d : int) :
   0 <= r1 < `|d| ->
@@ -172,10 +254,10 @@ Proof.
   Check abszM.
   rewrite -abszM.
   rewrite Hq1 in Hq2.
-  
+(*  
   move/andP : Hr1 => [Hr1 Hr1d].
   move/andP : Hr2 => [Hr2 Hr2d].
-
+*)
   Check @lemma3 q1 q2 r1 r2 d.
   Check @lemma3 q1 q2 r1 r2 d Hq2.
   rewrite (@lemma3 q1 q2 r1 r2 d Hq2).
