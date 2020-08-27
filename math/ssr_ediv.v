@@ -121,23 +121,32 @@ Qed.
 # 一意性の証明
 *)
 
-Lemma test3 (x y : int) : (`|x - y| = 0)%N  <-> x = y.
+Lemma abseq0_eq (x y : int) : (`|x - y| = 0)%N  <-> x = y.
 Proof.
-(*
   split=> H.
-  - apply: subr0_eq.
-    move/normr0P in H.
-      by move/eqP in H.
-  - apply/normr0P.
-    rewrite subr_eq0.
-      by apply/eqP.
+  Search _ (`| _ |%N).
+  - move/eqP in H.
+    Check absz_eq0.
+    rewrite absz_eq0 in H.
+    Search _ (_ - _ == 0).
+    rewrite subr_eq0 in H.
+    move/eqP in H.
+    done.
+  - apply/eqP.
+    rewrite absz_eq0 subr_eq0.
+    move/eqP in H.
+    done.
 Qed.
- *)
-Admitted.
 
 Lemma lemma1 (q d : nat) : (q * d < d)%N -> (q = 0)%N.
 Proof.
-Admitted.
+  rewrite -{2}[d]mul1n.
+  Check ltn_mul2r
+    : forall m n1 n2 : nat, (n1 * m < n2 * m)%N = (0 < m)%N && (n1 < n2)%N.
+  rewrite ltn_mul2r.
+  move/andP => [Hd Hq].
+    by ssromega.
+Qed.
 
 Lemma lemma3 (q1 q2 r1 r2 d : int) :
   q1 * d + r1 = q2 * d + r2 -> (`|((q1 - q2) * d)%R|)%N = `|r1 - r2|%N.
@@ -157,7 +166,7 @@ Lemma edivz_uniqness (r1 r2 q1 q2 m d : int) :
                                 q1 = q2.
 Proof.
   move=> Hr1 Hr2 Hq1 Hq2.
-  apply/test3.
+  apply/abseq0_eq.
   Check @lemma1 `|q1 - q2| `|d|.
   apply: (@lemma1 `|q1 - q2| `|d|).
   Check abszM.
