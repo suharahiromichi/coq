@@ -148,7 +148,7 @@ Proof.
     by ssromega.
 Qed.
 
-Lemma test (x y : int) : x = y -> `|x| = `|y|.
+Lemma eq_eqabsabs (x y : int) : x = y -> `|x| = `|y|.
 Proof.
     by move=> ->.
 Qed.
@@ -161,20 +161,26 @@ Proof.
   rewrite -subr_eq.
   rewrite -addrA addrC eq_sym.
   rewrite -subr_eq.
-  move/eqP/test.
+  move/eqP/eq_eqabsabs.
   rewrite distrC.
   rewrite -mulrBl.
   (* `|(q1 - q2) * d| = `|r1 - r2| -> `|((q1 - q2) * d)%R|%N = `|r1 - r2|%N *)
 Admitted.
 
-Lemma test2 (x : int) : 0 <= x -> x = `|x|.
-Proof.
-Admitted.
+Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
+Proof. by move/normr_idP. Qed.
 
 Lemma test3 (x : int) : x < 0 -> x <= 0.
 Proof.
-Admitted.
+  move=> H.
+  Search _ (_ <= _).
+  rewrite ler_eqVlt.
+    by apply/orP/or_intror.
+Qed.
 
+(* 自然数の補題 *)
+Lemma eq_subn n : (n - n = 0)%N.
+Proof. apply/eqP. by rewrite subn_eq0. Qed.
 
 Lemma lemma2 (r1 r2 : int) (d : nat) :
   0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2| < d.
@@ -189,24 +195,23 @@ Proof.
   move: (ltr_paddr Hr2 Hr1d) => Hr1dr2.
   move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.
   move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.
-  rewrite (test2 Hr1) in Hr1d.
-  rewrite (test2 Hr2) in Hr2d.
-  rewrite (test2 Hr1) in Hr1dr1.
-  rewrite (test2 Hr1) in Hr1dr2.
-  rewrite (test2 Hr1) in Hr2dr1.
-  rewrite (test2 Hr2) in Hr1dr2.
-  rewrite (test2 Hr2) in Hr2dr1.
-  rewrite (test2 Hr2) in Hr2dr2.
+  rewrite (eq_abs Hr1) in Hr1d.
+  rewrite (eq_abs Hr2) in Hr2d.
+  rewrite (eq_abs Hr1) in Hr1dr1.
+  rewrite (eq_abs Hr1) in Hr1dr2.
+  rewrite (eq_abs Hr1) in Hr2dr1.
+  rewrite (eq_abs Hr2) in Hr1dr2.
+  rewrite (eq_abs Hr2) in Hr2dr1.
+  rewrite (eq_abs Hr2) in Hr2dr2.
 
   case H : (r1 - r2 >= 0).
   - move/normr_idP in H.
     rewrite H.
-    rewrite (test2 Hr1).
-    rewrite (test2 Hr2).
+    rewrite (eq_abs Hr1).
+    rewrite (eq_abs Hr2).
     have H2 := @ltn_sub2r `|r2| `|r1| (d + `|r2|) Hr2dr2 Hr1dr2.
     rewrite -addnBA in H2 ; last done.
-    have H21 : (`|r2| - `|r2| = 0)%N by admit.
-    rewrite H21 in H2.
+    rewrite (eq_subn `|r2|) in H2.
     rewrite addn0 in H2.
     admit.
 (*
@@ -223,13 +228,12 @@ Proof.
     Search _ (- ( _ - _ )).
     rewrite opprB.
 
-    rewrite (test2 Hr1).
-    rewrite (test2 Hr2).
+    rewrite (eq_abs Hr1).
+    rewrite (eq_abs Hr2).
     Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
     have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
     rewrite -addnBA in H1 ; last done.
-    have H11 : (`|r1| - `|r1| = 0)%N by admit.
-    rewrite H11 in H1.
+    rewrite (eq_subn `|r1|) in H1.
     rewrite addn0 in H1.
     admit.
 (*
