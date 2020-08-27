@@ -117,82 +117,13 @@ Proof.
       by apply: divz_ceilp.
 Qed.
 
-
-(* 不要 ceil や floor を展開する必要はなかった。 *)
-Lemma ediv_mod_ge0' (m d : int) : d != 0 -> 0 <= emodz m d.
-Proof.
-  move=> Hd.
-  rewrite /emodz /edivz.
-  case: ifP => H.
-  - rewrite /divz_floor.
-    rewrite -mulrAC.
-    Check abszEsg : forall m : int, `|m|%Z = sgz m * m.
-    rewrite -abszEsg mulrC.
-    rewrite subr_ge0.                       (* ssrnum *)
-    Check normr_idP.
-    move/normr_idP in H.
-    rewrite -{2}H.
-      (* (`|m| %/ `|d|)%Z * `|d|%N <= `|m| *)
-      by apply: divz_floorp.
-
-  (* m + - (- sgz d) * divz_ceil m d * d *)
-  (* m + - - (sgz d * divz_ceil m d * d) *)      
-  - rewrite !mulNr.
-    rewrite [- - (sgz d * divz_ceil m d * d)]oppzK.
-    rewrite /divz_ceil.
-    case: ifP => H2.
-    + rewrite -mulrAC.
-      rewrite -abszEsg mulrC.
-      Search _ (_ = false).
-      move/nge0_lt0 in H.
-      rewrite {1}(ltz_m_abs H).
-      rewrite addrC subr_ge0.               (* addzC でない！ *)
-        by rewrite divzK.
-    + rewrite -mulrAC.
-      rewrite -abszEsg mulrC.
-      Search _ (_ = false).
-      move/nge0_lt0 in H.
-      rewrite {1}(ltz_m_abs H).
-      rewrite addrC subr_ge0.               (* addzC でない！ *)
-      (* `|m| <= (`|m| %/ `|d| + 1)%N * `|d|%N *)
-      (* apply: divz_ceilp. *)
-Admitted.
-
-
-
-
-
-
 (**
-# ユーグリッド除法の一意性
+# 一意性の証明
 *)
-Lemma test2 (r1 r2 d : int) : 0 <= r1 < d ->
-                              0 <= r2 < d ->
-                              0 <= `| r1 - r2 | < d.
-Proof.
-  move/andP => [Hr1 Hr1d].
-  move/andP => [Hr2 Hr2d].
-  Search _ (`| _ - _ | < _).
-  rewrite ltr_distl.
-  apply/andP; split; [| apply/andP; split].
-  - done.
-  - rewrite ltr_subl_addr.
-    Search _ (_ < _ + _).    
-    Check ltr_paddl.
-      by apply: ltr_paddl.
-  - by apply: ltr_paddl.
-Qed.
 
+Lemma test3 (x y : int) : (`|x - y| = 0)%N  <-> x = y.
+Proof.
 (*
-    
-    Check ltr_subl_addr.
-    Check ltr_subr_addr.
-    Check ltr_subl_addl.
-    Check ltr_subr_addl.    
-*)
-
-Lemma test3 (x y : int) : `|x - y| = 0  <-> x = y.
-Proof.
   split=> H.
   - apply: subr0_eq.
     move/normr0P in H.
@@ -201,107 +132,48 @@ Proof.
     rewrite subr_eq0.
       by apply/eqP.
 Qed.
-
-(* D * Q = R *)
-Lemma test' (d q r : int) : 0 <= r < `|d| -> q = (r %/ d)%Z -> q = 0.
-Proof.
-  move=> Hqd H.
-  Check divz_small
-    : forall (r : int_numDomainType) (d : int), 0 <= r < `|d|%N -> (r %/ d)%Z = 0.
-  Check divz_small Hqd.
-    by rewrite -(divz_small Hqd).
-Qed.
-
-Lemma test4 (x y : int) : `|x - y| = 0 -> x = y.
-Proof.
-  Search _ (`| _ | = 0).
-  move/normr0P => H.
-  Search _ (_ - _ == 0).
-  rewrite subr_eq0 in H.
-    by move/eqP in H.
-Qed.
-
-Lemma test5 q r d : 0 < d -> q * d = r -> q = (r %/ d)%Z.
-Proof.
-  move=> Hd H.
-  apply/eqP.
-Check eqz_div : forall (d : int_ZmodType) (m : int) (n : int_Ring),
-       d != 0 -> (d %| m)%Z -> (n == (m %/ d)%Z) = (n * d == m).
-  rewrite eqz_div.
-  - by apply/eqP.
-  - by move/lt0r_neq0 in Hd.
-  - admit.                 (* (d %| r)%Z *)
-    Compute (5 %| 0)%Z.    (* r は 0 になるので、成り立つわけだが。 *)
+ *)
 Admitted.
 
-Goal forall r1 r2 q1 q2 d : int,
-    0 < d ->
-    0 <= r1 < `|d| ->
-    0 <= r2 < `|d| ->
-   `|q1 - q2| * d = `|r1 - r2| ->
-                                (* `|q1 - q2| = (`|r1 - r2| %/ d)%Z -> *)
-    q1 = q2.
+Lemma lemma1 (q d : nat) : (q * d < d)%N -> (q = 0)%N.
 Proof.
-  move=> r1 r2 q1 q2 d Hd Hr1 Hr2.
-  move=> Hdrq.
-  move: (test2 Hr1 Hr2) => H.
-  Check @test5 `|q1 - q2| `|r1 - r2| d Hd.
-  move/(@test5 `|q1 - q2| `|r1 - r2| d Hd) in Hdrq.
-  Check @test' d `|q1 - q2| `|r1 - r2| H.
-  Check @test' d `|q1 - q2| `|r1 - r2| H Hdrq.
-  move: (@test' d `|q1 - q2| `|r1 - r2| H Hdrq) => H1.
-  apply: test4.
-  done.
-Qed.
-
-
-Lemma test7 (x y : int) : `|x * y| = `|x| * `|y|.
-Proof.
-  About abszM.
 Admitted.
 
-
-Lemma test6 (m d q1 q2 r1 r2 : int) : 0 < d ->
-                                      m = q1 * d + r1 ->
-                                      m = q2 * d + r2 ->
-                                      (`|q1 - q2| * d)%Z = `|r1 - r2|.
+Lemma lemma3 (q1 q2 r1 r2 d : int) :
+  q1 * d + r1 = q2 * d + r2 -> (`|((q1 - q2) * d)%R|)%N = `|r1 - r2|%N.
 Proof.
-  move=> Hd H1 H2.
-  rewrite H2 in H1.
-  move=> {H2}.
-  move/esym in H1.
-  have H : q1 * d - q2 * d = r2 - r1 by admit.
-  Search _ (_ - _ = _).
-  Search _ (`| _ * _ |).
-  Search _ (`| _ |).
-  rewrite -[d]gtr0_norm //=.
-  rewrite -test7.
-  Search _ ((_ - _) * _).
-  rewrite mulrBl.
-  rewrite H.
-  rewrite distrC.
-  done.
 Admitted.
 
-Goal forall r1 r2 q1 q2 m d : int,
-    0 < d ->
-    0 <= r1 < `|d| ->
-    0 <= r2 < `|d| ->
-                   m = q1 * d + r1 ->
-                   m = q2 * d + r2 ->
-    q1 = q2.
+Lemma lemma2 (r1 r2 : int) (d : nat) :
+  r1 < d -> r2 < d -> `|r1 - r2| < d.
 Proof.
-  move=> r1 r2 q1 q2 m d Hd Hr1 Hr2.
-  move=> H1 H2.
-  Check test6 Hd H1 H2.
-  move: (test6 Hd H1 H2) => Hdrq.
-  move: (test2 Hr1 Hr2) => H.
-  Check @test5 `|q1 - q2| `|r1 - r2| d Hd.
-  move/(@test5 `|q1 - q2| `|r1 - r2| d Hd) in Hdrq.
-  Check @test' d `|q1 - q2| `|r1 - r2| H Hdrq.
-  move: (@test' d `|q1 - q2| `|r1 - r2| H Hdrq) => H12.
-  apply: test4.
-  done.
+Admitted.
+
+Lemma edivz_uniqness (r1 r2 q1 q2 m d : int) :
+  0 <= r1 < `|d| ->
+                 0 <= r2 < `|d| ->
+                                m = q1 * d + r1 ->
+                                m = q2 * d + r2 ->
+                                q1 = q2.
+Proof.
+  move=> Hr1 Hr2 Hq1 Hq2.
+  apply/test3.
+  Check @lemma1 `|q1 - q2| `|d|.
+  apply: (@lemma1 `|q1 - q2| `|d|).
+  Check abszM.
+  rewrite -abszM.
+  rewrite Hq1 in Hq2.
+  
+  move/andP : Hr1 => [Hr1 Hr1d].
+  move/andP : Hr2 => [Hr2 Hr2d].
+
+  Check @lemma3 q1 q2 r1 r2 d.
+  Check @lemma3 q1 q2 r1 r2 d Hq2.
+  rewrite (@lemma3 q1 q2 r1 r2 d Hq2).
+
+  apply: lemma2.
+  - done.
+  - done.
 Qed.
 
 (**
