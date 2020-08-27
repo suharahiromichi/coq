@@ -755,6 +755,21 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
     done.
   Qed.
 
+  Lemma exo37_rec_formula' (v : nat -> nat ) (* 予備 *)
+        (v0 : v 0 = 1) (vn : forall n, v n.+1 = v n + v n) (n : nat) :
+    v n = 2 ^ n.
+  Proof.
+    elim: n => [|n IHn].
+    - rewrite expn0.
+      exact v0.
+    - rewrite vn.
+      rewrite IHn.
+      have -> : 2 ^ n = 1 * 2^ n by rewrite mul1n.
+      rewrite -mulnDl.
+      have -> : 1+1 = 2 by [].
+      by rewrite expnS.
+  Qed.
+  
   (* 本題の証明 *)
   Lemma exo37' (v : nat -> nat ) (v0 : v 0 = 1)
         (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
