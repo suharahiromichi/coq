@@ -138,7 +138,7 @@ Proof.
     done.
 Qed.
 
-Lemma abseq0_eq' (x y : int) : (`|x - y| = 0)  <-> x = y.
+Lemma abseq0_eq' (x y : int) : (`|x - y| = 0)  <-> x = y. (* notu *)
 Proof.
   split=> H.
   Search _ (`| _ | = 0).
@@ -167,20 +167,6 @@ Proof.
     by move=> ->.
 Qed.
 
-Lemma eq_eqabsabs' (x y : int) : x = y -> (`|x| = `|y|)%N.
-Proof.
-    by move=> ->.
-Qed.
-
-Lemma lt_abs_nat_ring_P (r1 r2 : int) (d : nat) :
-  reflect (`|r1| - `|r2| < d)%N  (`|r1| - `|r2| < d).
-Proof. Admitted.                            (* XXXXXXX *)
-
-Lemma eq_nat_ring_P (q r : int) :
-  reflect (`|q| = `|r|)%N (`|q| == `|r|).
-Proof. Admitted.                            (* XXXXXXX *)
-
-
 Lemma lemma3 (q1 q2 r1 r2 d : int) :
   q1 * d + r1 = q2 * d + r2 -> (`|((q1 - q2) * d)%R|)%N = `|r1 - r2|%N.
 Proof.
@@ -200,14 +186,17 @@ Proof.
 
   move=> H.
   move/eqP in H.
-  move/eq_nat_ring_P in H.
+  apply/eqP.
+  (* Goal : `|((q1 - q2) * d)%R|%N == `|r1 - r2|%N *)
+  rewrite -eqz_nat.                         (* ***** *)
+  (* Goal :  `|(q1 - q2) * d| == `|r1 - r2| :> int *)
   done.
 Qed.
 
 Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
 Proof. by move/normr_idP. Qed.
 
-Lemma lt0_le0 (x : int) : x < 0 -> x <= 0.
+Lemma lt_le (x y : int) : x < y -> x <= y.
 Proof.
   move=> H.
   Search _ (_ <= _).
@@ -218,6 +207,13 @@ Qed.
 (* 自然数の補題 *)
 Lemma eq_subn n : (n - n = 0)%N.
 Proof. apply/eqP. by rewrite subn_eq0. Qed.
+
+Lemma lt_abs_nat_ringE (r1 r2 : int) (d : nat) :
+  (`|r1| - `|r2| < d)%N = (`|r1| - `|r2| < d).
+Proof.
+  rewrite -ltz_nat.
+Admitted.
+
 
 Lemma lemma2 (r1 r2 : int) (d : nat) :
   0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2| < d.
@@ -242,7 +238,12 @@ Proof.
   rewrite (eq_abs Hr2) in Hr2dr2.
 
   case H : (r1 - r2 >= 0).
-  - move/normr_idP in H.
+  - move: {+}H => H'.
+    rewrite (eq_abs Hr1) in H'.
+    rewrite (eq_abs Hr2) in H'.    
+    have H'' : `|r2| <= `|r1| by rewrite -subr_ge0.
+    
+    move/normr_idP in H.
     rewrite H.
     rewrite (eq_abs Hr1).
     rewrite (eq_abs Hr2).
@@ -256,25 +257,41 @@ Proof.
     rewrite -addnBA in H2 ; last done.
     rewrite (eq_subn `|r2|) in H2.
     rewrite addn0 in H2.
-      by apply/lt_abs_nat_ring_P.
+    (* ***** *)
+    rewrite -ltz_nat in H2.
+      by rewrite -subzn in H2.
       
-  - move/negbT in H.
-    rewrite -ltrNge in H.
-    move/lt0_le0 in H.
-    rewrite ler0_def in H.
-    move/eqP in H.
-    rewrite H.
-    Search _ (- ( _ - _ )).
-    rewrite opprB.
+  - move: {+}H => H'.
+    rewrite (eq_abs Hr1) in H'.
+    rewrite (eq_abs Hr2) in H'.    
+    have H'' : `|r1| <= `|r2|.
+    + move/nge0_lt0 in H'.
+      Search _ (_ - _ < 0).
+      rewrite subr_lt0 in H'.
+      move/lt_le in H'.
+      done.
 
-    rewrite (eq_abs Hr1).
-    rewrite (eq_abs Hr2).
-    Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
-    have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
-    rewrite -addnBA in H1 ; last done.
-    rewrite (eq_subn `|r1|) in H1.
-    rewrite addn0 in H1.
-      by apply/lt_abs_nat_ring_P.
+    + move/negbT in H.
+      rewrite -ltrNge in H.
+      move/lt_le in H.
+      rewrite ler0_def in H.
+      move/eqP in H.
+      rewrite H.
+      Search _ (- ( _ - _ )).
+      rewrite opprB.
+
+      rewrite (eq_abs Hr1).
+      rewrite (eq_abs Hr2).
+      Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
+      have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
+      rewrite -addnBA in H1 ; last done.
+      rewrite (eq_subn `|r1|) in H1.
+      rewrite addn0 in H1.
+      (* ***** *)
+      rewrite -ltz_nat in H1.
+      rewrite -subzn in H1.
+      * done.
+      * done.
 Qed.
 
 Lemma edivz_uniqness (r1 r2 q1 q2 m d : int) :
