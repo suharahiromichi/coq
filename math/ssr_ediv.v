@@ -29,6 +29,23 @@ Definition m10 : int := - 10%:Z.            (* Negz 2 *)
 Definition p3 : int := 3.                   (* Posz 3 *)
 Definition m3 : int := - 3%:Z.              (* Negz 2 *)
 
+Lemma lt_le (x y : int) : x < y -> x <= y.
+Proof.
+  move=> H.
+  Search _ (_ <= _).
+  rewrite ler_eqVlt.
+    by apply/orP/or_intror.
+Qed.
+
+Lemma eq_le (x y : int) : x = y -> x <= y.
+Proof.
+  move=> H.
+  Search _ (_ <= _).
+  rewrite ler_eqVlt.
+  apply/orP/or_introl.
+    by apply/eqP.
+Qed.
+
 (**
 # ユーグリッド除法の定義
 *)
@@ -36,7 +53,7 @@ Definition divz_floor (m d : int) : int := (`|m| %/ `|d|)%Z.
 Compute divz_floor p10 p3.                  (* 3 *)
 
 Definition divz_ceil (m d : int) : int :=
-  if (d %| m)%Z then (`|m| %/ `|d|)%Z else (`|m| %/ `|d| + 1)%N.
+  if (d %| m)%Z then (`|m| %/ `|d|)%Z else ((`|m| %/ `|d|)%Z + 1).
 Check divz_ceil : int -> int -> int.
 Compute divz_ceil p3 p3.                    (* 1 *)
 Compute divz_ceil p10 p3.                   (* 4 *)
@@ -46,12 +63,43 @@ Compute divz_ceil m10 m3.                   (* 4 *)
 
 Lemma divz_floorp (m d : int) : d != 0 -> (divz_floor m d) * `|d| <= `|m|.
 Proof.
-Admitted.
+  move=> Hd.
+  rewrite /divz_floor.
+  apply: lez_floor.
+  move/normr0P in Hd.
+    by apply/eqP.
+Qed.
+
+Check lez_floor
+  : forall (m : int) (d : int_ZmodType), d != 0 -> (m %/ d)%Z * d <= m.
+Check ltz_ceil
+  : forall m d : int_numDomainType, 0 < d -> m < ((m %/ d)%Z + 1) * d.
+
+Lemma leq_equal m d : d != 0 -> (d %| m)%Z -> (m %/ d)%Z * d = m.
+Proof.
+  move=> Hd Hdm.
+  apply/eqP.
+  Check dvdz_eq
+    : forall d m : int, (d %| m)%Z = ((m %/ d)%Z * d == m).
+  rewrite -dvdz_eq.
+  done.
+Qed.
 
 Lemma divz_ceilp (m d : int) : d != 0 -> `|m| <= (divz_ceil m d) * `|d|.
 Proof.
-Admitted.
-
+  move=> Hd.
+  rewrite /divz_ceil.
+  case: ifP => Hdm.
+  - apply: eq_le.
+    rewrite leq_equal.
+    + done.
+    + by rewrite normr_eq0.
+    + Search _ ( (_  %| _)%Z ).
+        by rewrite dvdzE in Hdm.
+  - apply: lt_le.
+    apply: ltz_ceil.
+      by rewrite normr_gt0.
+Qed.
 
 Definition edivz (m d : int) : int :=
   if (0 <= m) then
@@ -196,24 +244,10 @@ Qed.
 Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
 Proof. by move/normr_idP. Qed.
 
-Lemma lt_le (x y : int) : x < y -> x <= y.
-Proof.
-  move=> H.
-  Search _ (_ <= _).
-  rewrite ler_eqVlt.
-    by apply/orP/or_intror.
-Qed.
 
 (* 自然数の補題 *)
 Lemma eq_subn n : (n - n = 0)%N.
 Proof. apply/eqP. by rewrite subn_eq0. Qed.
-
-Lemma lt_abs_nat_ringE (r1 r2 : int) (d : nat) :
-  (`|r1| - `|r2| < d)%N = (`|r1| - `|r2| < d).
-Proof.
-  rewrite -ltz_nat.
-Admitted.
-
 
 Lemma lemma2 (r1 r2 : int) (d : nat) :
   0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2| < d.
