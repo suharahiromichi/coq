@@ -530,6 +530,96 @@ Qed.
 # MathComp での定義
  *)
 
+Print divz.
+
+Compute edivz (- 10%:Z) 1.                  (* -10 *)
+Compute edivz (- 10%:Z) 2.                  (* -5 *)
+Compute edivz (- 10%:Z) 3.                  (* -4 *)
+Compute edivz (- 10%:Z) 4.                  (* -3 *)
+Compute edivz (- 10%:Z) 5.                  (* -2 *)
+Compute edivz (- 10%:Z) 6.                  (* -2 *)
+Compute edivz (- 10%:Z) 7.                  (* -2 *)
+Compute edivz (- 10%:Z) 8.                  (* -2 *)
+Compute edivz (- 10%:Z) 9.                  (* -2 *)
+Compute edivz (- 10%:Z) 10.                 (* -1 *)
+
+Compute edivz (- 10%:Z) (- 1%:Z).           (* 10 *)
+Compute edivz (- 10%:Z) (- 2%:Z).           (* 5 *)
+Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
+Compute edivz (- 10%:Z) (- 4%:Z).           (* 3 *)
+Compute edivz (- 10%:Z) (- 5%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 6%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 7%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 8%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 9%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 10%:Z).          (* 1 *)
+
+Compute divz (- 10%:Z) 1.                  (* -10 *)
+Compute divz (- 10%:Z) 2.                  (* -5 *)
+Compute divz (- 10%:Z) 3.                  (* -4 *)
+Compute divz (- 10%:Z) 4.                  (* -3 *)
+Compute divz (- 10%:Z) 5.                  (* -2 *)
+Compute divz (- 10%:Z) 6.                  (* -2 *)
+Compute divz (- 10%:Z) 7.                  (* -2 *)
+Compute divz (- 10%:Z) 8.                  (* -2 *)
+Compute divz (- 10%:Z) 9.                  (* -2 *)
+Compute divz (- 10%:Z) 10.                 (* -1 *)
+
+Compute divz (- 10%:Z) (- 1%:Z).           (* 10 *)
+Compute divz (- 10%:Z) (- 2%:Z).           (* 5 *)
+Compute divz (- 10%:Z) (- 3%:Z).           (* 4 *)
+Compute divz (- 10%:Z) (- 4%:Z).           (* 3 *)
+Compute divz (- 10%:Z) (- 5%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 6%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 7%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 8%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 9%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 10%:Z).          (* 1 *)
+
+
+Lemma test1 (n d : nat) :
+  (d %| n.+1)%N -> (n %/ d).+1 = (n.+1 %/ d)%N.
+Proof.
+  move=> H.
+Admitted.
+
+Lemma test2 (n d : nat) :
+  ~~(d %| n.+1)%N -> ((n %/ d) = (n.+1 %/ d))%N.
+Proof.
+  move=> H.
+Admitted.
+
+Lemma divz_edivz (m d : int) : divz m d = edivz m d.
+Proof.
+  rewrite /divz /edivz.
+  case: m => n /=.
+  - done.
+  - rewrite /edivn_ceil.
+    case H3 : (`|d| %| `|Negz n|)%N.
+    + rewrite -mulrN.
+      rewrite ssrint.NegzE in H3.
+      rewrite intOrdered.abszN in H3.
+      f_equal.
+      rewrite ssrint.NegzE.
+      f_equal.
+      f_equal.
+      (* (n %/ `|d|).+1 = (n.+1 %/ `|d|)%N *)
+        by rewrite test1 //=.
+
+    + rewrite -mulrN.
+      rewrite ssrint.NegzE in H3.
+      rewrite intOrdered.abszN in H3.
+      move/negbT in H3.
+      f_equal.
+      rewrite ssrint.NegzE.
+      f_equal.
+      f_equal.
+      f_equal.
+      (* (n %/ `|d|)%N = (n.+1 %/ `|d|)%N *)
+        by rewrite test2 //=.
+Qed.
+
+
 Definition divz_d_K_n_absd (m d : int) :=
   let: (K, n) := match m with Posz n => (Posz, n) | Negz n => (Negz, n) end in
   (d, K, n, `|d|).
@@ -685,8 +775,7 @@ d &\lt& r \le 0         \tag{2.4} \\
 ```
 
 d は与えられるので、それを踏まえて、(2.1)〜(2.4)の式を選ぶことになる。
-
-
+*)
 
 (**
 ## 剰余が正（Pascal の ``mod``演算子）
