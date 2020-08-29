@@ -40,16 +40,16 @@ while (<>) {
 
     # テキストの部分かどうかを判定する。
     # Markdownの指示記号から始まる行は、テキストに含めない。
-    if ($isprog == 0 && /^\S/ && /^[^0-9#%=@\*\+\-\>\`]/) {
+    if ($isprog == 0 && /^\S/ && /^[^0-9#%=@\*\+\-\>\`\|]/) {
         $istext = 1;
     } else {
         $istext = 0;
     }
 
-    # テキストの中のプログラムまたは数式かどうかを判定する。
-    if ($istext == 1 && /^``/) {
+    # 数式かどうかを判定する。
+    if ($ispint == 0 && /^```/) {
         $ispint = 1;
-    } elsif ($ispint == 1 && /^``/) {
+    } elsif ($ispint == 1 && /^```/) {
         $ispint = 0;
     }
 
@@ -66,10 +66,12 @@ while (<>) {
     }
 
     # 行をつなげる。
-    if ($istext == 0 || $ispint == 0) {
-        printf("\n");
+    if ($isprog == 0 && $istext == 1 && $ispint == 0) {
+        ;                               # つなげるために、改行しない。
+    } else {
+        printf("\n");                     # つなげるために、改行する。
     }
-
+    
     printf("%s", $_);
     
     $lastisprog = $isprog;
