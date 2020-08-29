@@ -56,13 +56,13 @@ $$ 0 \le r \lt | d | $$
 (注2) m と d と q の符号は、奇数個の関係にあります。
 
 
-ここでは、後者の絶対値の割算を使う方法を採用します。そして、
+ここでは、後者の絶対値の除算を使う方法を採用します。そして、
 
 - r が 0 以上の制限を加えると、qとrが一意に決まることを証明する。
 - q と r を求める式を具体的に定義して、r が0以上であることを証明する。
 
 
-これによって、整数割算の健全性を示すことができるはずです。
+これによって、整数割算が持つ意味の健全性を示すことができるはずです。
 証明には Coq/MathComp を使います。
 
 最後に、ここで示した以外の整除法について言及します。
@@ -89,145 +89,23 @@ Import intRing.              (* mulz など *)
 Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
 
 (**
-# ユーグリッド除法の定義
+## 補題
+
+MathCompで整数に扱いになれていないひとのために（大抵のひとはそうでしょう）
+再利用性のありそうなスクリプトを補題としてまとめておきます。
 *)
-(**
-## 準備
-
-### 自然数の除算
-
-最初に、自然数の除算を定義します。
-
-切り捨て(floor)と切り上げ(ceil)の二種類です。
-切り上げに場合は単に``+1``するのではなく、mがdで割りきれない場合に限り``+1``します。
- *)
-Definition edivn_floor (m d : nat) : nat := (m %/ d)%N.
-
-Definition edivn_ceil (m d : nat) : nat :=
-  if (d %| m)%N then (m %/ d)%N else ((m %/ d).+1)%N.
-
-(**
-検算してみます。
-*)
-Compute edivn_floor  9 3.                   (* 3 *)
-Compute edivn_floor 10 3.                   (* 3 *)
-Compute edivn_ceil  9 3.                    (* 3 *)
-Compute edivn_ceil 10 3.                    (* 4 *)
-
-(**
-### 自然数の除算の補題
-
-自然数の除算の結果（商）に除数を掛けると、
-
-- 切り捨ての場合は被除数以下
-- 切り上げの場合は被除数以上
-
-
-になります。これを補題として証明しておきます。
-*)
-Lemma edivn_floorp (m d : nat) : (edivn_floor m d * d <= m)%N.
+Lemma nge_lt (m n : int) : (m <= n) = false -> n < m.
 Proof.
-  rewrite /edivn_floor.
-    by apply: leq_trunc_div.
-Qed.
-
-Lemma edivn_ceilp (m d : nat) : (d != 0)%N -> (m <= edivn_ceil m d * d)%N.
-Proof.
-  move=> Hd.
-  rewrite /edivn_ceil.
-  rewrite leq_eqVlt eq_sym.
-  case: ifP => Hmd.
-  (* m が d で、割りきれる場合 *)
-  - apply/orP/or_introl.
-      by rewrite -dvdn_eq.
-  (* m が d で、割りきれない場合 *)
-  - apply/orP/or_intror.
-    rewrite ltn_ceil //.
-      by rewrite lt0n.
-Qed.
-
-(**
-## ユーグリッド除数の定義
-
-直感的に説明するのが難しいので、数直線でも書いて納得してほしいのですが、
-剰余を正とするためには、
-
-- 被除数が正なら絶対値の割算で切り捨てしたあと除数の符号を反映します。
-- 被除数が負なら絶対値の割算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
-
-
-剰余は、被除数から、商と除数の積を引いて求めます。これは整数で計算します。
- *)
-Definition edivz (m d : int) : int :=
-  if (0 <= m) then
-    sgz d * (edivn_floor `|m| `|d|)
-  else
-    - (sgz d * (edivn_ceil `|m| `|d|)).
-
-Definition emodz (m d : int) : int := m - (edivz m d) * d.
-
-(**
-検算してみます。あっているようですね。
-*)
-Compute edivz 10 3.                         (* 3 *)
-Compute edivz 10 (- 3%:Z).                  (* -3 *)
-Compute edivz (- 10%:Z) 3.                  (* -4 *)
-Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
-
-Compute emodz 10 3.                         (* 1 *)
-Compute emodz 10 (- 3%:Z).                  (* 1 *)
-Compute emodz (- 10%:Z) 3.                  (* 2 *)
-Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
-
-(**
-# 剰余が正であることの証明
-*)
-Lemma nge0_lt0 (m : int) : (0 <= m) = false -> m < 0.
-Proof.
-  move=> H.
-  move/negbT in H.
-  Search _ (~~ (_ <= _)).
-  by rewrite -ltrNge in H.
+  move/negbT.
+    by rewrite -ltrNge.
 Qed.
 
 Lemma ltz_m_abs (m : int) : m < 0 -> m = - `|m|.
 Proof.
   move=> H.
   rewrite ltr0_norm //=.
-    by rewrite opprK.                            (* oppz ではない。 *)
+    by rewrite opprK.
 Qed.
-
-Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
-Proof.
-  move=> Hd.
-  rewrite /emodz /edivz.
-  case: ifP => H.
-  - rewrite -mulrAC.
-    Check abszEsg : forall m : int, `|m|%Z = sgz m * m.
-    rewrite -abszEsg mulrC.
-    rewrite subr_ge0.                       (* ssrnum *)
-    Check normr_idP.
-    move/normr_idP in H.
-    rewrite -{2}H.
-      (* (`|m| %/ `|d|)%Z * `|d|%N <= `|m| *)
-      by apply: edivn_floorp.
-
-  (* m + - (- sgz d) * divz_ceil m d * d *)
-  (* m + - - (sgz d * divz_ceil m d * d) *)      
-  - rewrite !mulNr.
-    rewrite [- - (sgz d * edivn_ceil `|m| `|d| * d)]oppzK.
-    rewrite -mulrAC.
-    rewrite -abszEsg mulrC.
-    move/nge0_lt0 in H.
-    rewrite {1}(ltz_m_abs H).
-    rewrite addrC subr_ge0.               (* addzC でない！ *)
-    apply: edivn_ceilp.
-      by rewrite -lt0n absz_gt0.
-Qed.
-
-(**
-# 一意性の証明
-*)
 
 Lemma abseq0_eq (x y : int) : (`|x - y| = 0)%N  <-> x = y.
 Proof.
@@ -260,6 +138,232 @@ Proof.
     done.
 Qed.
 
+Lemma eq_eqabsabs (x y : int) : x = y -> (`|x| = `|y|).
+Proof.
+    by move=> ->.
+Qed.
+
+Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
+Proof. by move/normr_idP. Qed.
+
+
+(* 自然数の補題 *)
+Lemma eq_subn n : (n - n = 0)%N.
+Proof. apply/eqP. by rewrite subn_eq0. Qed.
+
+Lemma lt_le (x y : int) : x < y -> x <= y.
+Proof.
+  move=> H.
+  Search _ (_ <= _).
+  rewrite ler_eqVlt.
+    by apply/orP/or_intror.
+Qed.
+
+(**
+# ユーグリッド除法の定義
+*)
+(**
+## 準備
+
+### 自然数の除算
+
+最初に、自然数の除算を定義します。
+
+切り捨て(floor)と切り上げ(ceil)の二種類です。
+
+切り捨ては、自然数で定義された除算 (divn) とおなじです。
+
+```math
+\lfloor m / d \rfloor = divn(m, d)
+
+```a
+
+切り上げは、divn の結果に``+1``します。ただし、mがdで割り切れる場合はそのまま、
+mがdで割りきれない場合は``+1``します。
+
+```math
+\lceil m / d \rceil =
+\left\{
+\begin{array}{ll}
+divn(m, d) & (d | m) \\
+divn(m, d) + 1 & (d \not| m)
+\end{array}
+\right.
+```
+
+ *)
+Definition edivn_floor (m d : nat) : nat := (m %/ d)%N.
+
+Definition edivn_ceil (m d : nat) : nat :=
+  if (d %| m)%N then (m %/ d)%N else ((m %/ d).+1)%N.
+
+(**
+検算してみます。
+*)
+Compute edivn_floor  9 3.                   (* 3 *)
+Compute edivn_floor 10 3.                   (* 3 *)
+Compute edivn_ceil  9 3.                    (* 3 *)
+Compute edivn_ceil 10 3.                    (* 4 *)
+
+(**
+### 自然数の除算の補題
+
+自然数の除算の結果（商）に除数を掛けると、
+
+- 切り捨ての場合は被除数以下
+- 切り上げの場合は被除数以上
+
+になります。
+切り上げにおいて、等号が成立するのはmがdで割り切れる場合で、
+そうでない場合は被除数未満となります。ふたつの条件をあわせて補題にしています。
+
+```math
+\lfloor m / d \rfloor d \le m \\
+\lceil m / d \rceil d \ge m
+```
+
+これを補題として証明しておきます。
+*)
+Lemma edivn_floorp (m d : nat) : (edivn_floor m d * d <= m)%N.
+Proof.
+  rewrite /edivn_floor.
+    by apply: leq_trunc_div.
+Qed.
+
+Lemma edivn_ceilp (m d : nat) : (d != 0)%N -> (m <= edivn_ceil m d * d)%N.
+Proof.
+  move=> Hd.
+  rewrite /edivn_ceil.
+  rewrite leq_eqVlt eq_sym.
+  case: ifP => Hmd.
+  (* m が d で、割りきれる場合 *)
+  - apply/orP/or_introl.
+      by rewrite -dvdn_eq.
+  (* m が d で、割りきれない場合 *)
+  - apply/orP/or_intror.
+    rewrite ltn_ceil //.
+      by rewrite lt0n.
+Qed.
+
+(**
+## ユーグリッド除数の定義
+
+直感的に説明するのが難しいので、数直線でも書いて納得してほしいのですが、
+剰余を正とするためには、
+
+- 被除数が正なら絶対値の割算で切り捨てしたあと除数の符号を反映します。
+- 被除数が負なら絶対値の割算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
+
+```math
+m / d =
+\left\{
+\begin{array}{ll}
+(sgn d) \lfloor |m| / |d| \rfloor & (m \ge 0) \\
+- (sgn d) \lceil |m| / |d| \rceil & (m \lt 0) \\
+\end{array}
+\right.
+```
+
+ここで、sgn は符号関数です。
+
+剰余は、被除数から商と除数の積を引いて求めます。これは整数で計算します。
+
+```math
+m\ rem\ d = m - (m / d) d
+```
+ *)
+Definition edivz (m d : int) : int :=
+  if (0 <= m) then
+    sgz d * (edivn_floor `|m| `|d|)
+  else
+    - (sgz d * (edivn_ceil `|m| `|d|)).
+
+Definition emodz (m d : int) : int := m - (edivz m d) * d.
+
+(**
+検算してみます。あっているようですね。
+*)
+Compute edivz 10 3.                         (* 3 *)
+Compute edivz 10 (- 3%:Z).                  (* -3 *)
+Compute edivz (- 10%:Z) 3.                  (* -4 *)
+Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
+
+Compute emodz 10 3.                         (* 1 *)
+Compute emodz 10 (- 3%:Z).                  (* 1 *)
+Compute emodz (- 10%:Z) 3.                  (* 2 *)
+Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
+
+(**
+# 剰余が正であることの証明
+
+先に、比較的やさしい剰余が正であることの証明をします。
+証明するべきは以下です。
+
+```math
+m\ rem\ d \ge 0
+```
+*)
+
+(**
+## 定理
+
+証明はmの正負、すなわち、自然数の除算の切り捨てか切り上げで場合分けしたのち、
+自然数の除算の歩再を適用するだけの単純なものです。
+*)
+Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
+Proof.
+  move=> Hd.
+  rewrite /emodz /edivz.
+  case: ifP => H.
+  - rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    rewrite subr_ge0.
+    move/normr_idP in H.
+    rewrite -{2}H.
+      by apply: edivn_floorp.
+
+  - rewrite mulNr.
+    (* m - - X は m + (- - X) なので、二重の負号 oppz を消します。 *)
+    rewrite [- - (sgz d * edivn_ceil `|m| `|d| * d)]oppzK.
+    rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    move/nge_lt in H.
+    rewrite {1}(ltz_m_abs H).
+    rewrite addrC subr_ge0.
+    apply: edivn_ceilp.
+      by rewrite -lt0n absz_gt0.
+Qed.
+
+(**
+# 一意性の証明
+
+式(1.1)から式(1.3)を満たす商qと剰余rがふたつあったとして、それが等しいことを証明します。
+すなわち、
+
+```math
+\left\{
+\begin{array}{ll}
+m = q_{1} d + r_{1} \\
+m = q_{2} d + r_{2} \\
+\end{array}
+\right
+```
+
+のとき、
+
+```math
+\left\{
+\begin{array}{ll}
+q_{1} = q_{2} \\
+r_{1} = r_{2} \\
+\end{array}
+\right
+```
+
+であることを証明します。先に $ q_{1} = q_{2} $ を証明し、
+ついで、$ r_{1} = r_{2} $ を証明します。
+*)
+
 Lemma lemma1 (q d : nat) : (q * d < d)%N -> (q = 0)%N.
 Proof.
   rewrite -{2}[d]mul1n.
@@ -268,11 +372,6 @@ Proof.
   rewrite ltn_mul2r.
   move/andP => [Hd Hq].
     by ssromega.
-Qed.
-
-Lemma eq_eqabsabs (x y : int) : x = y -> (`|x| = `|y|).
-Proof.
-    by move=> ->.
 Qed.
 
 Lemma lemma3 (q1 q2 r1 r2 d : int) :
@@ -299,22 +398,6 @@ Proof.
   rewrite -eqz_nat.                         (* ***** *)
   (* Goal :  `|(q1 - q2) * d| == `|r1 - r2| :> int *)
   done.
-Qed.
-
-Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
-Proof. by move/normr_idP. Qed.
-
-
-(* 自然数の補題 *)
-Lemma eq_subn n : (n - n = 0)%N.
-Proof. apply/eqP. by rewrite subn_eq0. Qed.
-
-Lemma lt_le (x y : int) : x < y -> x <= y.
-Proof.
-  move=> H.
-  Search _ (_ <= _).
-  rewrite ler_eqVlt.
-    by apply/orP/or_intror.
 Qed.
 
 Lemma lemma2 (r1 r2 : int) (d : nat) :
@@ -367,7 +450,7 @@ Proof.
     rewrite (eq_abs Hr1) in H'.
     rewrite (eq_abs Hr2) in H'.    
     have H'' : `|r1| <= `|r2|.
-    + move/nge0_lt0 in H'.
+    + move/nge_lt in H'.
       Search _ (_ - _ < 0).
       rewrite subr_lt0 in H'.
       rewrite ler_eqVlt.
@@ -397,7 +480,7 @@ Proof.
       * done.
 Qed.
 
-Lemma edivz_uniqness (r1 r2 q1 q2 m d : int) :
+Lemma edivz_uniqness_q (r1 r2 q1 q2 m d : int) :
   0 <= r1 < `|d| ->
                  0 <= r2 < `|d| ->
                                 m = q1 * d + r1 ->
@@ -424,6 +507,25 @@ Proof.
   - done.
 Qed.
 
+Lemma edivz_uniqness_r (r1 r2 q m d : int) :
+  m = q * d + r1 ->
+  m = q * d + r2 ->
+  r1 = r2.
+Proof.
+  move=> Hq1 Hq2.  
+  rewrite Hq1 in Hq2.
+  rewrite [RHS]addrC in Hq2.
+  rewrite [LHS]addrC in Hq2.
+  move/eqP in Hq2.
+  rewrite -subr_eq  in Hq2.
+  move/eqP in Hq2.
+  rewrite -[LHS]addrA in Hq2.
+  have H : q * d - q * d = 0 by rewrite addrC addNr. (* これは補題にしても *)
+  rewrite H in Hq2.
+  rewrite addr0 in Hq2.
+  done.
+Qed.
+
 (**
 # MathComp での定義
  *)
@@ -433,6 +535,7 @@ Definition divz_d_K_n_absd (m d : int) :=
   (d, K, n, `|d|).
 
 
+(*
 (*                                                  d  K      n |d| *)
 Compute divz_d_K_n_absd p10 p3.             (*      3, Posz, 10, 3 *)
 Compute divz_d_K_n_absd p10 m3.             (* Negz 2, Posz, 10, 3 *)
@@ -557,6 +660,7 @@ Compute divz' m5 m3.                        (* -5 = 2 * -3 + 1 *)
 Compute divz' m4 m3.
 Compute divz' m3 m3.
 Compute divz' m2 m3.                        (* -2 = 1 * -3 + 1 *)
+*)
 
 (**
 # 整除法のまとめ
