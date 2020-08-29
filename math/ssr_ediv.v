@@ -124,7 +124,7 @@ Proof.
     done.
 Qed.
 
-Lemma abseq0_eq' (x y : int) : (`|x - y| = 0)  <-> x = y. (* notu *)
+Lemma abseq0_eq' (x y : int) : `|x - y| = 0  <-> x = y. (* notu *)
 Proof.
   split=> H.
   Search _ (`| _ | = 0).
@@ -146,10 +146,11 @@ Qed.
 Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
 Proof. by move/normr_idP. Qed.
 
-
-(* 自然数の補題 *)
-Lemma eq_subn n : (n - n = 0)%N.
+Lemma eq_subn (n : nat) : (n - n = 0)%N.    (* 自然数の補題 *)
 Proof. apply/eqP. by rewrite subn_eq0. Qed.
+
+Lemma eq_subz (x : int) : x - x = 0.        (* 整数の補題 *)
+Proof. by rewrite addrC addNr. Qed.
 
 Lemma lt_le (x y : int) : x < y -> x <= y.
 Proof.
@@ -308,7 +309,7 @@ m\ rem\ d \ge 0
 ## 定理
 
 証明はmの正負、すなわち、自然数の除算の切り捨てか切り上げで場合分けしたのち、
-自然数の除算の歩再を適用するだけの単純なものです。
+自然数の除算の補題を適用するだけの単純なものです。
 *)
 Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
 Proof.
@@ -517,20 +518,102 @@ Proof.
   rewrite [RHS]addrC in Hq2.
   rewrite [LHS]addrC in Hq2.
   move/eqP in Hq2.
-  rewrite -subr_eq  in Hq2.
+  rewrite -subr_eq in Hq2.
   move/eqP in Hq2.
   rewrite -[LHS]addrA in Hq2.
-  have H : q * d - q * d = 0 by rewrite addrC addNr. (* これは補題にしても *)
-  rewrite H in Hq2.
+  rewrite eq_subz in Hq2.
   rewrite addr0 in Hq2.
   done.
 Qed.
 
 (**
-# MathComp での定義
+# MathComp での定義との同値の証明
  *)
-
 Print divz.
+(* 
+divz = 
+fun m d : int =>
+let
+'(K, n) := match m with
+           | Posz n => (Posz, n)
+           | Negz n => (Negz, n)
+           end in sgz d * K (n %/ `|d|)%N
+ *)
+Check gez0_abs.
+Check gtz0_abs.
+Check lez0_abs.
+Check ltz0_abs.
+
+(* 符号を移項するだけの補題 *)
+Lemma opptr (x y : int) : x = - y -> - x = y.
+Proof.
+  move=> ->.
+    by rewrite opprK.
+Qed.
+
+Check divz_nat : forall m d : nat, (m %/ d)%Z = (m %/ d)%N.
+
+Check divzN.
+Lemma divz_nat1 (m d : nat) : divz m (- d%:Z) = - divz m d.
+Proof. by rewrite divzN. Qed.
+
+Lemma divz_nat2 (m d : nat) : divz (- m%:Z) d = - divz m d.
+Proof.
+  Admitted.
+
+Lemma divz_nat3 (m d : nat) : divz (- m%:Z) (- d%:Z) = divz m d.
+Proof.
+  Admitted.
+
+
+Lemma edivz_nat (m d : nat) : edivz m d = (m %/ d)%N.
+Proof. by case: d => // d; rewrite /edivz /= mul1r. Qed.
+
+Lemma edivz_nat1 (m d : nat) : edivz m (- d%:Z) = - edivz m d.
+Proof.
+  rewrite /edivz.
+  case H : (0%:Z <= m) => //=.
+    by rewrite /edivn_floor abszN sgzN mulNr.
+Qed.
+
+Lemma edivz_nat2 (m d : nat) : edivz (- m%:Z) d = - edivz m d.
+Proof.
+  Admitted.
+
+Lemma edivz_nat3 (m d : nat) : edivz (- m%:Z) (- d%:Z) = edivz m d.
+Proof.
+  Admitted.
+
+
+Lemma divz_edivz (m d : int) : d != 0 -> divz m d = edivz m d.
+Proof.
+  move=> Hd.
+  case Hm : (0 <= m); case H : (0 <= d).
+  - rewrite -(gez0_abs Hm).
+    rewrite -(gez0_abs H).
+    rewrite divz_nat.
+    rewrite edivz_nat.
+    done.
+  - move/nge_lt in H.
+    rewrite -(gez0_abs Hm).
+    rewrite -(opptr (ltz0_abs H)).
+    rewrite divz_nat1 divz_nat.
+    rewrite edivz_nat1 edivz_nat.
+    done.
+  - move/nge_lt in Hm.
+    rewrite -(opptr (ltz0_abs Hm)).
+    rewrite -(gez0_abs H).
+    rewrite divz_nat2 divz_nat.
+    rewrite edivz_nat2 edivz_nat.
+    done.
+  - move/nge_lt in Hm.
+    move/nge_lt in H.
+    rewrite -(opptr (ltz0_abs Hm)).
+    rewrite -(opptr (ltz0_abs H)).
+    rewrite divz_nat3 divz_nat.
+    rewrite edivz_nat3 edivz_nat.
+    done.
+Qed.
 
 Compute edivz (- 10%:Z) 1.                  (* -10 *)
 Compute edivz (- 10%:Z) 2.                  (* -5 *)
@@ -576,181 +659,6 @@ Compute divz (- 10%:Z) (- 8%:Z).           (* 2 *)
 Compute divz (- 10%:Z) (- 9%:Z).           (* 2 *)
 Compute divz (- 10%:Z) (- 10%:Z).          (* 1 *)
 
-
-Lemma test1 (n d : nat) :
-  (d %| n.+1)%N -> (n %/ d).+1 = (n.+1 %/ d)%N.
-Proof.
-  move=> H.
-Admitted.
-
-Lemma test2 (n d : nat) :
-  ~~(d %| n.+1)%N -> ((n %/ d) = (n.+1 %/ d))%N.
-Proof.
-  move=> H.
-Admitted.
-
-Lemma divz_edivz (m d : int) : divz m d = edivz m d.
-Proof.
-  rewrite /divz /edivz.
-  case: m => n /=.
-  - done.
-  - rewrite /edivn_ceil.
-    case H3 : (`|d| %| `|Negz n|)%N.
-    + rewrite -mulrN.
-      rewrite ssrint.NegzE in H3.
-      rewrite intOrdered.abszN in H3.
-      f_equal.
-      rewrite ssrint.NegzE.
-      f_equal.
-      f_equal.
-      (* (n %/ `|d|).+1 = (n.+1 %/ `|d|)%N *)
-        by rewrite test1 //=.
-
-    + rewrite -mulrN.
-      rewrite ssrint.NegzE in H3.
-      rewrite intOrdered.abszN in H3.
-      move/negbT in H3.
-      f_equal.
-      rewrite ssrint.NegzE.
-      f_equal.
-      f_equal.
-      f_equal.
-      (* (n %/ `|d|)%N = (n.+1 %/ `|d|)%N *)
-        by rewrite test2 //=.
-Qed.
-
-
-Definition divz_d_K_n_absd (m d : int) :=
-  let: (K, n) := match m with Posz n => (Posz, n) | Negz n => (Negz, n) end in
-  (d, K, n, `|d|).
-
-
-(*
-(*                                                  d  K      n |d| *)
-Compute divz_d_K_n_absd p10 p3.             (*      3, Posz, 10, 3 *)
-Compute divz_d_K_n_absd p10 m3.             (* Negz 2, Posz, 10, 3 *)
-Compute divz_d_K_n_absd m10 p3.             (*      3, Negz,  9, 3 *)
-Compute divz_d_K_n_absd m10 m3.             (* Negz 2, Negz,  9, 3 *)
-
-Compute divz            p10 p3.             (* Posz 3 *)
-Compute divz            p10 m3.             (* Negz 2 = -3 *)
-Compute divz            m10 p3.             (* Negz 3 = -4 *)
-Compute divz            m10 m3.             (* Posz 4 *)     
-
-Compute (sgz (Posz 3)) * Posz (10 %/ 3).    (* Posz 3 *)
-Compute (sgz (Negz 2)) * Posz (10 %/ 3).    (* Negz 2 = -3 *)
-Compute (sgz (Posz 3)) * Negz ( 9 %/ 3).    (* Negz 3 = -4 *)
-Compute (sgz (Negz 2)) * Negz ( 9 %/ 3).    (* Posz 4 *)
-
-(* -1, 0, 1 を返す。 *)
-Compute sgz (Negz 2)%R.                     (* Negz 0 (= -1) *)
-Compute sgz (Posz 0)%R.                     (* Posz 0 *)
-Compute sgz (Posz 3)%R.                     (* Posz 1 *)
-
-Compute (Posz 1) * Posz (10 %/ 3).          (* Posz 3 *)
-Compute (Negz 0) * Posz (10 %/ 3).          (* Negz 2 = -3 *)
-Compute (Posz 1) * Negz ( 9 %/ 3).          (* Negz 3 = -4 *)
-Compute (Negz 0) * Negz ( 9 %/ 3).          (* Posz 4 *)
-
-Compute (Posz 1) * Posz 3.                  (* Posz 3 *)
-Compute (Negz 0) * Posz 3.                  (* Negz 2 = -3 *)
-Compute (Posz 1) * Negz 3.                  (* Negz 3 = -4 *)
-Compute (Negz 0) * Negz 3.                  (* Posz 4 *)
-
-(* Definition sgz x : int := if x == 0 then 0 else if x < 0 then -1 else 1. *)
-Definition divz (m d : int) :=
-  let: (K, n) := match m with Posz n => (Posz, n) | Negz n => (Negz, n) end in
-  sgz d * K (n %/ `|d|)%N.
-Definition modz (m d : int) : int := m - divz m d * d.
-
-Compute divz            p10 p3.             (* Posz 3 *)
-Compute divz            p10 m3.             (* Negz 2 = -3 *)
-Compute divz            m10 p3.             (* Negz 3 = -4 *)
-Compute divz            m10 m3.             (* Posz 4 *)     
-
-Compute modz            p10 p3.             (* Posz 1 *)
-Compute modz            p10 m3.             (* Posz 1 *)
-Compute modz            m10 p3.             (* Posz 2 *)
-Compute modz            m10 m3.             (* Posz 2 *)
-
-(*
-  m  =   q  *   d  + r
-  10 =   3  *   3  + 1
-  10 = (-3) * (-3) + 1
-- 10 = (-4) *   3  + 2
-- 10 =   4  * (-3) + 2
- *)
-
-Definition divz' (m d : int) :=
-  if (m >= 0) then
-    sgz d * sgz m * (`|m| %/ `|d|)%N        (* floor *)
-  else
-    sgz d * sgz m *
-    (if (`|d| %| `|m|)%N then (`|m| %/ `|d|)%N else (`|m| %/ `|d| + 1)%N). (* ceil *)
-                                          
-Check divz'.
-Compute divz'           p10 p3.             (* Posz 3 *)
-Compute divz'           p10 m3.             (* Negz 2 = -3 *)
-Compute divz'           m10 p3.             (* Negz 3 = -4 *)
-Compute divz'           m10 m3.             (* Posz 4 *)     
-
-
-Definition p9 : int := 9.
-Definition p8 : int := 8.   
-Definition p7 : int := 7.
-Definition p6 : int := 6.
-Definition p5 : int := 5.    
-Definition p4 : int := 4.
-Definition p2 : int := 2.    
-Definition p1 : int := 1.    
-
-Definition m9 : int := - 9%:Z.
-Definition m8 : int := - 8%:Z.
-Definition m7 : int := - 7%:Z.
-Definition m6 : int := - 6%:Z.
-Definition m5 : int := - 5%:Z.
-Definition m4 : int := - 4%:Z.
-Definition m2 : int := - 2%:Z.
-Definition m1 : int := - 1%:Z.
-
-
-Compute divz' p9 p3.                        
-Compute divz' p8 p3.                        
-Compute divz' p7 p3.
-Compute divz' p6 p3.
-Compute divz' p5 p3.                        
-Compute divz' p4 p3.
-Compute divz' p3 p3.
-Compute divz' p2 p3.                        
-
-Compute divz' p9 m3.                        (* -3 *)
-Compute divz' p8 m3.                        (* -2 *)
-Compute divz' p7 m3.                        (* -2 *)
-Compute divz' p6 m3.                        (* -2 *)
-Compute divz' p5 m3.                        (* -1 *)
-Compute divz' p4 m3.                        (* -1 *)
-Compute divz' p3 m3.                        (* -1 *)
-Compute divz' p2 m3.                        (* 0 *)
-
-Compute divz' m9 p3.                        (* -3 *)
-Compute divz' m8 p3.                        
-Compute divz' m7 p3.
-Compute divz' m6 p3.
-Compute divz' m5 p3.                        (* -2 *)
-Compute divz' m4 p3.
-Compute divz' m3 p3.
-Compute divz' m2 p3.                        (* -1 *)
-Compute divz' m1 p3.                        (* -1 *)
-
-Compute divz' m9 m3.                        (* -9 = 3 * -3  *)
-Compute divz' m8 m3.                        (* -8 = 3 * -3 + 1 *)
-Compute divz' m7 m3.
-Compute divz' m6 m3.
-Compute divz' m5 m3.                        (* -5 = 2 * -3 + 1 *)
-Compute divz' m4 m3.
-Compute divz' m3 m3.
-Compute divz' m2 m3.                        (* -2 = 1 * -3 + 1 *)
-*)
 
 (**
 # 整除法のまとめ
@@ -888,3 +796,104 @@ $$ | d | \lt r \le 0| $$
 *)
 
 (* END *)
+
+Lemma test (n d k : nat) : (d %| n)%N -> (k < d)%N -> (n %/ d = (n + k) %/ d)%N.
+Proof.
+  move=> Hnd Hkd.
+  rewrite addnC.
+  rewrite divnDr //.
+  rewrite (divn_small Hkd).
+    by rewrite add0n.
+Qed.
+
+Lemma test' (n d k : nat) : (d %| n)%N -> (k < d)%N -> (((n - k) %/ d).+1 = n %/ d)%N.
+Proof.
+  move=> Hnd Hkd.
+  Admitted.
+
+Lemma test'' (n d k1 k2 : nat) : (d %| n)%N -> (k1 < k2 < d)%N ->
+                                 ((n - k1) %/ d = (n - k2) %/ d)%N.
+Proof.
+  move=> Hnd Hkd.
+  Admitted.
+
+Lemma test1 (n d : nat) :
+  (d %| n.+1)%N -> ((n %/ d).+1 = (n.+1 %/ d))%N.
+Proof.
+  Search _ (_  %/ _ <= _)%N.
+  move=> Hd.
+  Check @test' n.+1 d 1.
+  rewrite -(@test' n.+1 d 1) //=.
+  rewrite subn1 -pred_Sn.
+  done.
+Admitted.
+
+Lemma test2 (n d : nat) :
+  ~~(d %| n.+1)%N -> ((n %/ d) = (n.+1 %/ d))%N.
+Proof.
+  move=> H.
+Admitted.
+
+Lemma divz_edivz (m d : int) : d != 0 -> divz m d = edivz m d.
+Proof.
+  move=> Hd.
+  rewrite /divz /edivz.
+  case: m => n /=.
+  - done.
+  - rewrite /edivn_ceil.
+    case H3 : (`|d| %| `|Negz n|)%N.
+    + rewrite -mulrN.
+      rewrite ssrint.NegzE in H3.
+      rewrite intOrdered.abszN in H3.
+      f_equal.
+      rewrite ssrint.NegzE.
+      f_equal.
+      f_equal.
+      (* (n %/ `|d|).+1 = (n.+1 %/ `|d|)%N *)
+        by rewrite test1 //=.
+
+    + rewrite -mulrN.
+      rewrite ssrint.NegzE in H3.
+      rewrite intOrdered.abszN in H3.
+      move/negbT in H3.
+      f_equal.
+      rewrite ssrint.NegzE.
+      f_equal.
+      f_equal.
+      f_equal.
+      (* (n %/ `|d|)%N = (n.+1 %/ `|d|)%N *)
+        by rewrite test2 //=.
+Qed.
+
+(**
+Lemma edivz_nat (n d : nat) : (edivz n d)%Z = (n %/ d)%N.
+Proof. by case: d => // d; rewrite /edivz /= mul1r. Qed.
+
+Lemma edivzN m d : (edivz m (- d))%Z = - (m %/ d)%Z.
+Proof.
+  case H : (0 <= m).
+  - rewrite /edivz H.
+    rewrite /edivn_floor.
+    rewrite sgzN.
+    rewrite mulNr.
+Admitted.
+
+Lemma edivzN' m d : (edivz (- m) d)%Z = - (m %/ d)%Z.
+Proof.
+Admitted.
+
+
+Lemma divzN' m d : (- m %/ d)%Z = - (m %/ d)%Z.
+Proof. Admitted.
+
+Lemma divz_edivz (m d : int) : d != 0 -> divz m d = edivz m d.
+Proof.
+  move=> Hd.
+  case Hm : (0 <= m); case H : (0 <= d).
+  - admit.
+  - ree
+  
+
+*)
+
+  
