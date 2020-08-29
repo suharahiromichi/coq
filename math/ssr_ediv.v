@@ -75,7 +75,6 @@ From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 
 Require Import ssromega.                    (* ssromega タクティク *)
-Require Import Recdef.                      (* Function コマンド *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -87,101 +86,90 @@ Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
 Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
 
-Definition p10 : int := 10.                 (* Posz 10 *)
-Definition m10 : int := - 10%:Z.            (* Negz 2 *)
-Definition p3 : int := 3.                   (* Posz 3 *)
-Definition m3 : int := - 3%:Z.              (* Negz 2 *)
-
-Lemma lt_le (x y : int) : x < y -> x <= y.
-Proof.
-  move=> H.
-  Search _ (_ <= _).
-  rewrite ler_eqVlt.
-    by apply/orP/or_intror.
-Qed.
-
-Lemma eq_le (x y : int) : x = y -> x <= y.
-Proof.
-  move=> H.
-  Search _ (_ <= _).
-  rewrite ler_eqVlt.
-  apply/orP/or_introl.
-    by apply/eqP.
-Qed.
-
 (**
 # ユーグリッド除法の定義
 *)
-Definition divz_floor (m d : int) : int := (`|m| %/ `|d|)%Z.
-Compute divz_floor p10 p3.                  (* 3 *)
+(**
+## 準備
 
-Definition divz_ceil (m d : int) : int :=
-  if (d %| m)%Z then (`|m| %/ `|d|)%Z else ((`|m| %/ `|d|)%Z + 1).
-Check divz_ceil : int -> int -> int.
-Compute divz_ceil p3 p3.                    (* 1 *)
-Compute divz_ceil p10 p3.                   (* 4 *)
-Compute divz_ceil p10 m3.                   (* 4 *)
-Compute divz_ceil m10 p3.                   (* 4 *)
-Compute divz_ceil m10 m3.                   (* 4 *)
+### 自然数の除算
 
-Lemma divz_floorp (m d : int) : d != 0 -> (divz_floor m d) * `|d| <= `|m|.
+最初に、自然数の除算を定義します。
+
+切り捨て(floor)と切り上げ(ceil)の二種類です。
+切り上げに場合は単に``+1``するのではなく、mがdで割りきれない場合に限り``+1``します。
+ *)
+Definition edivn_floor (m d : nat) : nat := (m %/ d)%N.
+
+Definition edivn_ceil (m d : nat) : nat :=
+  if (d %| m)%N then (m %/ d)%N else ((m %/ d).+1)%N.
+
+(**
+検算してみます。
+*)
+Compute edivn_floor  9 3.                   (* 3 *)
+Compute edivn_floor 10 3.                   (* 3 *)
+Compute edivn_ceil  9 3.                    (* 3 *)
+Compute edivn_ceil 10 3.                    (* 4 *)
+
+(*
+### 自然数の除算の補題
+
+自然数の除算の結果（商）に除数を掛けると、切り捨ての場合は被除数以下になり、
+切り上げに場合は被除数以上になります。これを補題として証明しておきます。
+*)
+Lemma edivn_floorp (m d : nat) : (edivn_floor m d * d <= m)%N.
+Proof.
+  rewrite /edivn_floor.
+    by apply: leq_trunc_div.
+Qed.
+
+Lemma edivn_ceilp (m d : nat) : (d != 0)%N -> (m <= edivn_ceil m d * d)%N.
 Proof.
   move=> Hd.
-  rewrite /divz_floor.
-  apply: lez_floor.
-  move/normr0P in Hd.
-    by apply/eqP.
+  rewrite /edivn_ceil.
+  rewrite leq_eqVlt eq_sym.
+  case: ifP => Hmd.
+  (* m が d で、割りきれる場合 *)
+  - apply/orP/or_introl.
+      by rewrite -dvdn_eq.
+  (* m が d で、割りきれない場合 *)
+  - apply/orP/or_intror.
+    rewrite ltn_ceil //.
+      by rewrite lt0n.
 Qed.
 
-Check lez_floor
-  : forall (m : int) (d : int_ZmodType), d != 0 -> (m %/ d)%Z * d <= m.
-Check ltz_ceil
-  : forall m d : int_numDomainType, 0 < d -> m < ((m %/ d)%Z + 1) * d.
+(**
+## ユーグリッド除数の定義
 
-Lemma leq_equal m d : d != 0 -> (d %| m)%Z -> (m %/ d)%Z * d = m.
-Proof.
-  move=> Hd Hdm.
-  apply/eqP.
-  Check dvdz_eq
-    : forall d m : int, (d %| m)%Z = ((m %/ d)%Z * d == m).
-  rewrite -dvdz_eq.
-  done.
-Qed.
+直感的に説明するのが難しいので、数直線でも書いて納得してほしいのですが、
+剰余を正とするためには、
 
-Lemma divz_ceilp (m d : int) : d != 0 -> `|m| <= (divz_ceil m d) * `|d|.
-Proof.
-  move=> Hd.
-  rewrite /divz_ceil.
-  case: ifP => Hdm.
-  - apply: eq_le.
-    rewrite leq_equal.
-    + done.
-    + by rewrite normr_eq0.
-    + Search _ ( (_  %| _)%Z ).
-        by rewrite dvdzE in Hdm.
-  - apply: lt_le.
-    apply: ltz_ceil.
-      by rewrite normr_gt0.
-Qed.
+- 被除数が正なら絶対値の割算で切り捨てしたあと除数の符号を反映します。
+- 被除数が負なら絶対値の割算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
 
+剰余は、被除数から、商と除数の積を引いて求めます。これは整数で計算します。
+ *)
 Definition edivz (m d : int) : int :=
   if (0 <= m) then
-    sgz d * divz_floor m d
+    sgz d * (edivn_floor `|m| `|d|)
   else
-    - sgz d * divz_ceil m d.
+    - (sgz d * (edivn_ceil `|m| `|d|)).
 
-Definition emodz (m d : int) : int :=
-  m - (edivz m d) * d.
+Definition emodz (m d : int) : int := m - (edivz m d) * d.
 
-Compute edivz p10 p3.                       (* 3 *)
-Compute edivz p10 m3.                       (* -3 *)
-Compute edivz m10 p3.                       (* -4 *)
-Compute edivz m10 m3.                       (* 4 *)
+(**
+検算してみます。あっているようですね。
+*)
+Compute edivz 10 3.                         (* 3 *)
+Compute edivz 10 (- 3%:Z).                  (* -3 *)
+Compute edivz (- 10%:Z) 3.                  (* -4 *)
+Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
 
-Compute emodz p10 p3.                       (* 1 *)
-Compute emodz p10 m3.                       (* 1 *)
-Compute emodz m10 p3.                       (* 2 *)
-Compute emodz m10 m3.                       (* 2 *)
+Compute emodz 10 3.                         (* 1 *)
+Compute emodz 10 (- 3%:Z).                  (* 1 *)
+Compute emodz (- 10%:Z) 3.                  (* 2 *)
+Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
 
 (**
 # 剰余が正であることの証明
@@ -214,19 +202,22 @@ Proof.
     move/normr_idP in H.
     rewrite -{2}H.
       (* (`|m| %/ `|d|)%Z * `|d|%N <= `|m| *)
-      by apply: divz_floorp.
+      by apply: edivn_floorp.
 
   (* m + - (- sgz d) * divz_ceil m d * d *)
   (* m + - - (sgz d * divz_ceil m d * d) *)      
   - rewrite !mulNr.
-    rewrite [- - (sgz d * divz_ceil m d * d)]oppzK.
+    rewrite [- - (sgz d * edivn_ceil `|m| `|d| * d)]oppzK.
     rewrite -mulrAC.
     rewrite -abszEsg mulrC.
     move/nge0_lt0 in H.
     rewrite {1}(ltz_m_abs H).
     rewrite addrC subr_ge0.               (* addzC でない！ *)
-      by apply: divz_ceilp.
+    apply: edivn_ceilp.
+      by rewrite -lt0n absz_gt0.
 Qed.
+
+
 
 (**
 # 一意性の証明
@@ -312,6 +303,14 @@ Proof. by move/normr_idP. Qed.
 Lemma eq_subn n : (n - n = 0)%N.
 Proof. apply/eqP. by rewrite subn_eq0. Qed.
 
+Lemma lt_le (x y : int) : x < y -> x <= y.
+Proof.
+  move=> H.
+  Search _ (_ <= _).
+  rewrite ler_eqVlt.
+    by apply/orP/or_intror.
+Qed.
+
 Lemma lemma2 (r1 r2 : int) (d : nat) :
   0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2| < d.
 Proof.
@@ -365,11 +364,12 @@ Proof.
     + move/nge0_lt0 in H'.
       Search _ (_ - _ < 0).
       rewrite subr_lt0 in H'.
-      move/lt_le in H'.
-      done.
-
+      rewrite ler_eqVlt.
+        by apply/orP/or_intror.
+        
     + move/negbT in H.
       rewrite -ltrNge in H.
+
       move/lt_le in H.
       rewrite ler0_def in H.
       move/eqP in H.
