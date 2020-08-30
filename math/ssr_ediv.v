@@ -356,21 +356,6 @@ Qed.
 
  *)
 
-Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
-
-Lemma divn_eq' (m d : nat) : (m%:Z = (m %/ d * d)%N + (m %% d)%N).
-
-(* 証明したいもの *)
-Lemma edivn_floor_lt_d (m d : nat) : (0 < d)%N ->
-                                     m%:Z - (edivn_floor m d * d)%:Z < d.
-Proof.
-  move=> Hd.
-  rewrite /edivn_floor.
-  Check divn_eq m d.
-  rewrite {1}(divn_eq m d).
-  (* (m %/ d * d + m %% d)%N - (m %/ d * d)%N < d *)
-Admitted.
-
 
 (* 証明できるもの *)
 Lemma edivn_floor_lt_d' (m d : nat) : (0 < d)%N ->
@@ -389,10 +374,48 @@ Proof.
   by apply: ltn_pmod.
 Qed.
 
+Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
+(* divn_eq' の整数加算版を用意する。内容は自然数の divn と modn である。 *)
+Lemma divn_eq' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
+Proof.
+  rewrite /divn modn_def.
+  case: edivnP => q r //= Heq Hd.
+  rewrite Heq.
+  (* Goal : (q * d + r)%N = (q * d)%N + r *)
+  done.
+Qed.
+
+(* 証明したいもの *)
+Lemma edivn_floor_lt_d (m d : nat) : (0 < d)%N ->
+                                     m%:Z - (edivn_floor m d * d)%:Z < d.
+Proof.
+  move=> Hd.
+  rewrite /edivn_floor.
+  Check divn_eq' m d.
+  rewrite {1}(divn_eq' m d).
+  rewrite -addrAC eq_subz add0r.
+  Check ltn_pmod : forall m d : nat, (0 < d)%N -> (m %% d < d)%N.
+    by apply: ltn_pmod.
+Qed.
+
 Lemma edivn_ceil_lt_d (m d : nat) : (0 < d)%N ->
                                     (edivn_ceil m d)%:Z * d - m%:Z < d.
 Proof.
   move=> Hd.
+  rewrite /edivn_ceil.
+  rewrite {1}(divn_eq' m d).
+  case: ifP => H.
+  (* 割り切れるので、m %% d = 0 の場合 *)
+  - have H' : (d %| m)%N -> (m %% d = 0)%N by admit. (* XXXXX *)
+    rewrite H' //=.
+    rewrite addr0.
+    (* (m %/ d)%N * d - (m %/ d * d)%N < d *)
+      by rewrite eq_subz.
+      
+  - rewrite opprD.
+    rewrite addrCA addrA.
+    rewrite -addn1.
+    (* - (m %/ d * d)%N + (m %/ d + 1)%N * d - (m %% d)%N < d *)
 Admitted.
 
 Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|.
