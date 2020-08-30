@@ -59,7 +59,7 @@ $$ 0 \le r \lt | d | $$
 ここでは、後者の絶対値の除算を使う方法を採用します。そして、
 
 - r が 0 以上の制限を加えると、qとrが一意に決まることを証明する。
-- q と r を求める式を具体的に定義して、r が0以上であることを証明する。
+- q と r を求める式を具体的に定義して、r が0以上、d未満であることを証明する。
 
 
 これによって、整数割算が持つ意味の健全性を示すことができるはずです。
@@ -306,8 +306,9 @@ m\ rem\ d \ge 0
 *)
 
 (**
-## 定理
-
+## 定理 - 剰余は正
+ *)
+(**
 証明はmの正負、すなわち、自然数の除算の切り捨てか切り上げで場合分けしたのち、
 自然数の除算の補題を適用するだけの単純なものです。
 *)
@@ -334,6 +335,15 @@ Proof.
     apply: edivn_ceilp.
       by rewrite -lt0n absz_gt0.
 Qed.
+
+(**
+## 定理 - 剰余は除数より小
+
+XXXXXXX
+ *)
+Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|.
+Proof.
+Admitted.
 
 (**
 # 一意性の証明
@@ -526,138 +536,6 @@ Proof.
   done.
 Qed.
 
-(**
-# MathComp での定義との同値の証明
- *)
-Print divz.
-(* 
-divz = 
-fun m d : int =>
-let
-'(K, n) := match m with
-           | Posz n => (Posz, n)
-           | Negz n => (Negz, n)
-           end in sgz d * K (n %/ `|d|)%N
- *)
-Check gez0_abs.
-Check gtz0_abs.
-Check lez0_abs.
-Check ltz0_abs.
-
-(* 符号を移項するだけの補題 *)
-Lemma opptr (x y : int) : x = - y -> - x = y.
-Proof.
-  move=> ->.
-    by rewrite opprK.
-Qed.
-
-Check divz_nat : forall m d : nat, (m %/ d)%Z = (m %/ d)%N.
-
-Check divzN.
-Lemma divz_nat1 (m d : nat) : divz m (- d%:Z) = - divz m d.
-Proof. by rewrite divzN. Qed.
-
-Lemma divz_nat2 (m d : nat) : divz (- m%:Z) d = - divz m d.
-Proof.
-  Admitted.
-
-Lemma divz_nat3 (m d : nat) : divz (- m%:Z) (- d%:Z) = divz m d.
-Proof.
-  Admitted.
-
-
-Lemma edivz_nat (m d : nat) : edivz m d = (m %/ d)%N.
-Proof. by case: d => // d; rewrite /edivz /= mul1r. Qed.
-
-Lemma edivz_nat1 (m d : nat) : edivz m (- d%:Z) = - edivz m d.
-Proof.
-  rewrite /edivz.
-  case H : (0%:Z <= m) => //=.
-    by rewrite /edivn_floor abszN sgzN mulNr.
-Qed.
-
-Lemma edivz_nat2 (m d : nat) : edivz (- m%:Z) d = - edivz m d.
-Proof.
-  Admitted.
-
-Lemma edivz_nat3 (m d : nat) : edivz (- m%:Z) (- d%:Z) = edivz m d.
-Proof.
-  Admitted.
-
-
-Lemma divz_edivz (m d : int) : d != 0 -> divz m d = edivz m d.
-Proof.
-  move=> Hd.
-  case Hm : (0 <= m); case H : (0 <= d).
-  - rewrite -(gez0_abs Hm).
-    rewrite -(gez0_abs H).
-    rewrite divz_nat.
-    rewrite edivz_nat.
-    done.
-  - move/nge_lt in H.
-    rewrite -(gez0_abs Hm).
-    rewrite -(opptr (ltz0_abs H)).
-    rewrite divz_nat1 divz_nat.
-    rewrite edivz_nat1 edivz_nat.
-    done.
-  - move/nge_lt in Hm.
-    rewrite -(opptr (ltz0_abs Hm)).
-    rewrite -(gez0_abs H).
-    rewrite divz_nat2 divz_nat.
-    rewrite edivz_nat2 edivz_nat.
-    done.
-  - move/nge_lt in Hm.
-    move/nge_lt in H.
-    rewrite -(opptr (ltz0_abs Hm)).
-    rewrite -(opptr (ltz0_abs H)).
-    rewrite divz_nat3 divz_nat.
-    rewrite edivz_nat3 edivz_nat.
-    done.
-Qed.
-
-Compute edivz (- 10%:Z) 1.                  (* -10 *)
-Compute edivz (- 10%:Z) 2.                  (* -5 *)
-Compute edivz (- 10%:Z) 3.                  (* -4 *)
-Compute edivz (- 10%:Z) 4.                  (* -3 *)
-Compute edivz (- 10%:Z) 5.                  (* -2 *)
-Compute edivz (- 10%:Z) 6.                  (* -2 *)
-Compute edivz (- 10%:Z) 7.                  (* -2 *)
-Compute edivz (- 10%:Z) 8.                  (* -2 *)
-Compute edivz (- 10%:Z) 9.                  (* -2 *)
-Compute edivz (- 10%:Z) 10.                 (* -1 *)
-
-Compute edivz (- 10%:Z) (- 1%:Z).           (* 10 *)
-Compute edivz (- 10%:Z) (- 2%:Z).           (* 5 *)
-Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
-Compute edivz (- 10%:Z) (- 4%:Z).           (* 3 *)
-Compute edivz (- 10%:Z) (- 5%:Z).           (* 2 *)
-Compute edivz (- 10%:Z) (- 6%:Z).           (* 2 *)
-Compute edivz (- 10%:Z) (- 7%:Z).           (* 2 *)
-Compute edivz (- 10%:Z) (- 8%:Z).           (* 2 *)
-Compute edivz (- 10%:Z) (- 9%:Z).           (* 2 *)
-Compute edivz (- 10%:Z) (- 10%:Z).          (* 1 *)
-
-Compute divz (- 10%:Z) 1.                  (* -10 *)
-Compute divz (- 10%:Z) 2.                  (* -5 *)
-Compute divz (- 10%:Z) 3.                  (* -4 *)
-Compute divz (- 10%:Z) 4.                  (* -3 *)
-Compute divz (- 10%:Z) 5.                  (* -2 *)
-Compute divz (- 10%:Z) 6.                  (* -2 *)
-Compute divz (- 10%:Z) 7.                  (* -2 *)
-Compute divz (- 10%:Z) 8.                  (* -2 *)
-Compute divz (- 10%:Z) 9.                  (* -2 *)
-Compute divz (- 10%:Z) 10.                 (* -1 *)
-
-Compute divz (- 10%:Z) (- 1%:Z).           (* 10 *)
-Compute divz (- 10%:Z) (- 2%:Z).           (* 5 *)
-Compute divz (- 10%:Z) (- 3%:Z).           (* 4 *)
-Compute divz (- 10%:Z) (- 4%:Z).           (* 3 *)
-Compute divz (- 10%:Z) (- 5%:Z).           (* 2 *)
-Compute divz (- 10%:Z) (- 6%:Z).           (* 2 *)
-Compute divz (- 10%:Z) (- 7%:Z).           (* 2 *)
-Compute divz (- 10%:Z) (- 8%:Z).           (* 2 *)
-Compute divz (- 10%:Z) (- 9%:Z).           (* 2 *)
-Compute divz (- 10%:Z) (- 10%:Z).          (* 1 *)
 
 
 (**
@@ -797,6 +675,177 @@ $$ | d | \lt r \le 0| $$
 
 (* END *)
 
+(*
+以下は予備
+*)
+
+(**
+# MathComp での定義との同値の証明
+ *)
+Print divz.
+(* 
+divz = 
+fun m d : int =>
+let
+'(K, n) := match m with
+           | Posz n => (Posz, n)
+           | Negz n => (Negz, n)
+           end in sgz d * K (n %/ `|d|)%N
+ *)
+Check gez0_abs.
+Check gtz0_abs.
+Check lez0_abs.
+Check ltz0_abs.
+
+(* 符号を移項するだけの補題 *)
+Lemma opptr (x y : int) : x = - y -> - x = y.
+Proof.
+  move=> ->.
+    by rewrite opprK.
+Qed.
+
+Check divz_nat : forall m d : nat, (m %/ d)%Z = (m %/ d)%N.
+
+Check divzN.
+Lemma divz_nat1 (m d : nat) : divz m (- d%:Z) = - divz m d.
+Proof. by rewrite divzN. Qed.
+
+Lemma divz_nat2 (m d : nat) : divz (- m%:Z) d = - divz m d.
+Proof.
+  Admitted.
+
+Lemma divz_nat3 (m d : nat) : divz (- m%:Z) (- d%:Z) = divz m d.
+Proof.
+  Admitted.
+
+
+Lemma edivz_nat (m d : nat) : edivz m d = (m %/ d)%N.
+Proof. by case: d => // d; rewrite /edivz /= mul1r. Qed.
+
+Lemma edivz_nat1 (m d : nat) : edivz m (- d%:Z) = - edivz m d.
+Proof.
+  rewrite /edivz.
+  case Hm : (0%:Z <= m) => //=.
+    by rewrite /edivn_floor abszN sgzN mulNr.
+Qed.
+
+Lemma test (m : nat) : (0 <= - m%:Z) = true -> (m = 0)%N.
+Proof. Admitted.
+
+Lemma edivz_nat2 (m d : nat) : edivz (- m%:Z) d = - edivz m d.
+Proof.
+  rewrite /edivz.
+  case Hm : (0%:Z <= - m%:Z) => //=.
+  - move/test in Hm.                        (* 両辺は0 *)
+    rewrite Hm.
+    rewrite /edivn_floor.
+    rewrite abszN.
+    rewrite div0n.
+      by rewrite mulr0.
+  - f_equal.
+    f_equal.
+    f_equal.
+    (* 0 < m -> edivn_ceil `|- m| d = edivn_floor m d *)
+    rewrite /edivn_floor /edivn_ceil.
+    case H : (d %| `|- m%:Z|)%N.
+    + admit.
+    + f_equal.
+      f_equal.
+      f_equal.
+    (* (`|- m| %/ d).+1 = (m %/ d)%N *)
+  Admitted.
+
+Lemma edivz_nat3 (m d : nat) : edivz (- m%:Z) (- d%:Z) = edivz m d.
+Proof.
+  rewrite /edivz.
+  case Hm : (0%:Z <= - m%:Z) => //=.
+  - move/test in Hm.                        (* 両辺は0 *)
+    rewrite Hm.
+    rewrite /edivn_floor.
+    rewrite abszN div0n.                    (* 左辺が0にならない。 *)
+    admit.
+  - rewrite /edivn_floor /edivn_ceil.
+    case H : (`|- d%:Z| %| `|- m%:Z|)%N.
+    + admit.
+    + f_equal.
+      
+Admitted.
+    
+
+Lemma divz_edivz (m d : int) : d != 0 -> divz m d = edivz m d.
+Proof.
+  move=> Hd.
+  case Hm : (0 <= m); case H : (0 <= d).
+  - rewrite -(gez0_abs Hm).
+    rewrite -(gez0_abs H).
+    rewrite divz_nat.
+    rewrite edivz_nat.
+    done.
+  - move/nge_lt in H.
+    rewrite -(gez0_abs Hm).
+    rewrite -(opptr (ltz0_abs H)).
+    rewrite divz_nat1 divz_nat.
+    rewrite edivz_nat1 edivz_nat.
+    done.
+  - move/nge_lt in Hm.
+    rewrite -(opptr (ltz0_abs Hm)).
+    rewrite -(gez0_abs H).
+    rewrite divz_nat2 divz_nat.
+    rewrite edivz_nat2 edivz_nat.
+    done.
+  - move/nge_lt in Hm.
+    move/nge_lt in H.
+    rewrite -(opptr (ltz0_abs Hm)).
+    rewrite -(opptr (ltz0_abs H)).
+    rewrite divz_nat3 divz_nat.
+    rewrite edivz_nat3 edivz_nat.
+    done.
+Qed.
+
+Compute edivz (- 10%:Z) 1.                  (* -10 *)
+Compute edivz (- 10%:Z) 2.                  (* -5 *)
+Compute edivz (- 10%:Z) 3.                  (* -4 *)
+Compute edivz (- 10%:Z) 4.                  (* -3 *)
+Compute edivz (- 10%:Z) 5.                  (* -2 *)
+Compute edivz (- 10%:Z) 6.                  (* -2 *)
+Compute edivz (- 10%:Z) 7.                  (* -2 *)
+Compute edivz (- 10%:Z) 8.                  (* -2 *)
+Compute edivz (- 10%:Z) 9.                  (* -2 *)
+Compute edivz (- 10%:Z) 10.                 (* -1 *)
+
+Compute edivz (- 10%:Z) (- 1%:Z).           (* 10 *)
+Compute edivz (- 10%:Z) (- 2%:Z).           (* 5 *)
+Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
+Compute edivz (- 10%:Z) (- 4%:Z).           (* 3 *)
+Compute edivz (- 10%:Z) (- 5%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 6%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 7%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 8%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 9%:Z).           (* 2 *)
+Compute edivz (- 10%:Z) (- 10%:Z).          (* 1 *)
+
+Compute divz (- 10%:Z) 1.                  (* -10 *)
+Compute divz (- 10%:Z) 2.                  (* -5 *)
+Compute divz (- 10%:Z) 3.                  (* -4 *)
+Compute divz (- 10%:Z) 4.                  (* -3 *)
+Compute divz (- 10%:Z) 5.                  (* -2 *)
+Compute divz (- 10%:Z) 6.                  (* -2 *)
+Compute divz (- 10%:Z) 7.                  (* -2 *)
+Compute divz (- 10%:Z) 8.                  (* -2 *)
+Compute divz (- 10%:Z) 9.                  (* -2 *)
+Compute divz (- 10%:Z) 10.                 (* -1 *)
+
+Compute divz (- 10%:Z) (- 1%:Z).           (* 10 *)
+Compute divz (- 10%:Z) (- 2%:Z).           (* 5 *)
+Compute divz (- 10%:Z) (- 3%:Z).           (* 4 *)
+Compute divz (- 10%:Z) (- 4%:Z).           (* 3 *)
+Compute divz (- 10%:Z) (- 5%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 6%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 7%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 8%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 9%:Z).           (* 2 *)
+Compute divz (- 10%:Z) (- 10%:Z).          (* 1 *)
+
 Lemma test (n d k : nat) : (d %| n)%N -> (k < d)%N -> (n %/ d = (n + k) %/ d)%N.
 Proof.
   move=> Hnd Hkd.
@@ -896,4 +945,64 @@ Proof.
 
 *)
 
+
+Check ltn_pmod : forall m d : nat, (0 < d)%N -> (m %% d < d)%N.
+Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|.
+Proof.
+  move=> Hd.
+  rewrite /emodz /edivz.
+  case: ifP => Hm; case H : (0 <= d).
+  - rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    rewrite /edivn_floor.
+    (* m - (`|m| %/ `|d|)%N * `|d|%N < `|d| *)
+    admit.
+  - rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    rewrite /edivn_floor.
+    (* m - (`|m| %/ `|d|)%N * `|d|%N < `|d| *)
+    admit.
+  - rewrite opprK.
+    
+
+rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    rewrite /edivn_floor.
+    
+
+    
   
+  - rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    rewrite -subr_lt0.
+    move/normr_idP in H.
+    
+    rewrite -{2}H.
+    apply: edivn_floorp.
+
+    
+
+    rewrite subr_ge0.
+    move/normr_idP in H.
+    rewrite -{2}H.
+      by apply: edivn_floorp.
+
+  - rewrite mulNr.
+    (* m - - X は m + (- - X) なので、二重の負号 oppz を消します。 *)
+    rewrite [- - (sgz d * edivn_ceil `|m| `|d| * d)]oppzK.
+    rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    move/nge_lt in H.
+    rewrite {1}(ltz_m_abs H).
+    rewrite addrC subr_ge0.
+    apply: edivn_ceilp.
+      by rewrite -lt0n absz_gt0.
+  
+  
+(**
+これは定義から自明
+*)
+Lemma edivz_eq (m d : int) : m = (edivz m d)%Z * d + (emodz m d)%Z.
+Proof.
+  by rewrite addrC subrK.
+Qed.
