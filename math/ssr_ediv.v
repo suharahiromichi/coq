@@ -356,7 +356,6 @@ Qed.
 
  *)
 
-
 (* 証明できるもの *)
 Lemma edivn_floor_lt_d' (m d : nat) : (0 < d)%N ->
                                       (m - edivn_floor m d * d)%:Z < d.
@@ -398,6 +397,21 @@ Proof.
     by apply: ltn_pmod.
 Qed.
 
+(* 実は構文糖衣 *)
+Lemma test (d m : nat) : (d %| m)%N -> (m %% d = 0)%N.
+Proof.
+    by rewrite /dvdn => /eqP.
+Qed.
+
+Lemma test' (d m : nat) : (m %/ d + 1)%N%:Z * d = (m %/ d * d)%N%:Z + d.
+Proof.
+  apply/eqP.
+  rewrite eqz_nat.
+  rewrite mulnDl.
+  rewrite mul1n.
+  done.
+Qed.
+
 Lemma edivn_ceil_lt_d (m d : nat) : (0 < d)%N ->
                                     (edivn_ceil m d)%:Z * d - m%:Z < d.
 Proof.
@@ -406,8 +420,7 @@ Proof.
   rewrite {1}(divn_eq' m d).
   case: ifP => H.
   (* 割り切れるので、m %% d = 0 の場合 *)
-  - have H' : (d %| m)%N -> (m %% d = 0)%N by admit. (* XXXXX *)
-    rewrite H' //=.
+  - rewrite test //=.
     rewrite addr0.
     (* (m %/ d)%N * d - (m %/ d * d)%N < d *)
       by rewrite eq_subz.
@@ -416,7 +429,29 @@ Proof.
     rewrite addrCA addrA.
     rewrite -addn1.
     (* - (m %/ d * d)%N + (m %/ d + 1)%N * d - (m %% d)%N < d *)
-Admitted.
+    rewrite test' //=.
+    rewrite addrA.
+    Check (- (m %/ d * d)%N%:Z) + (m %/ d * d)%N%:Z + d - (m %% d)%N%:Z .
+    rewrite [(- (m %/ d * d)%N%:Z) + ((m %/ d * d)%N%:Z)]addrC.
+    rewrite eq_subz add0r.
+    Search _ (_ - _ < _).
+    rewrite ltr_subl_addl.
+    Search _ (_ < _ + _).
+    Check ltr_addr.
+    rewrite ltr_addr.
+    rewrite /dvdn in H.
+    rewrite ltz_nat.
+    rewrite -eqz_nat in H.
+    move/negbT in H.
+    Search _ (0 < _)%N.
+    rewrite lt0n.
+    apply/eqP => Hn.
+    move/eqP in H.
+    apply: H.
+    f_equal.
+    rewrite Hn.
+    done.
+Qed.
 
 Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|.
 Proof.
