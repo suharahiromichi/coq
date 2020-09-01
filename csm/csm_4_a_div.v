@@ -192,6 +192,27 @@ Print dvdn.                         (* bool述語 *)
 Locate "d %| m". (* := dvdn m d : nat_scope (default interpretation) *)
 
 (**
+%% と %| の間は、eqP によるリフレクションで変換できる。
+
+%| の定義から明らかだが、案外気がつかないかも。
+ *)
+Goal forall m d, m %% d = 0 <-> d %| m.
+Proof.
+  move=> m d.
+  split=> H.
+  - apply/eqP.
+    done.
+  - apply/eqP.
+    done.
+Qed.
+
+Goal forall m d, m %% d <> 0 <-> ~~(d %| m).
+Proof.
+  move=> m d.
+  split=> H; by apply/eqP.
+Qed.
+
+(**
 ## 可除の補題
 
 奇数は剰余と独立に定義されている。
@@ -209,7 +230,30 @@ Proof. by rewrite dvdn2. Qed.
 *)
 
 (**
-# 互いに素
+# 互いに素 (coprime, relatively prime)
+*)
+(**
+## 互いに素の定義
+*)
+
+Print coprime.                              (* boolena述語 *)
+(**
+fun m n : nat => gcdn m n == 1
+ *)
+
+(**
+## 互いに素の補題
+ *)
+Check coprime1n : forall n : nat, coprime 1 n.
+Check coprimen1 : forall n : nat, coprime n 1.
+Check coprime_sym : forall m n : nat, coprime m n = coprime n m.
+
+(**
+## ユーグリッド数は互いに素である
+
+Concrete Mathematics [1] （コンピュータの数学 [2] p.108）
+
+XXXXXXXXX
 *)
 
 (**
