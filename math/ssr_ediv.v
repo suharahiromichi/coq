@@ -37,7 +37,7 @@ m &=& q d + r           \tag{1.2} \\
 一意性を担保するには、剰余の範囲をより狭く制限する必要があります。
 たとえば、教科書に記載されるのは、
 
-$$ 0 \le r \lt | d | $$
+$$ 0 \le r \lt | d | \tag{3} $$
 
 にように、剰余を正の範囲に制限することです。
 これは、プログラミング言語Pascalの ``mod`` 演算で採用されています。
@@ -253,109 +253,6 @@ Proof.
       by rewrite lt0n.
 Qed.
 
-(**
-## ユーグリッド除数の定義
-
-直感的に説明するのが難しいので、数直線でも書いて納得してほしいのですが、
-剰余を正とするためには、
-
-- 被除数が正なら絶対値の割算で切り捨てしたあと除数の符号を反映します。
-- 被除数が負なら絶対値の割算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
-
-```math
-m / d =
-\left\{
-\begin{array}{ll}
-(sgn d) \lfloor |m| / |d| \rfloor & (m \ge 0) \\
-- (sgn d) \lceil |m| / |d| \rceil & (m \lt 0) \\
-\end{array}
-\right.
-```
-
-ここで、sgn は符号関数です。
-
-剰余は、被除数から商と除数の積を引いて求めます。これは整数で計算します。
-
-```math
-m\ rem\ d = m - (m / d) d
-```
- *)
-Definition edivz (m d : int) : int :=
-  if (0 <= m) then
-    sgz d * (edivn_floor `|m| `|d|)
-  else
-    - (sgz d * (edivn_ceil `|m| `|d|)).
-
-Definition emodz (m d : int) : int := m - (edivz m d) * d.
-
-(**
-検算してみます。あっているようですね。
-*)
-Compute edivz 10 3.                         (* 3 *)
-Compute edivz 10 (- 3%:Z).                  (* -3 *)
-Compute edivz (- 10%:Z) 3.                  (* -4 *)
-Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
-
-Compute emodz 10 3.                         (* 1 *)
-Compute emodz 10 (- 3%:Z).                  (* 1 *)
-Compute emodz (- 10%:Z) 3.                  (* 2 *)
-Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
-
-(**
-定義から自明ですが式(1.2)も成り立っています。
-*)
-Lemma edivz_eq (m d : int) : m = (edivz m d)%Z * d + (emodz m d)%Z.
-Proof.
-    by rewrite addrC subrK.
-Qed.
-
-(**
-# 剰余が正であることの証明
-
-先に、比較的やさしい剰余が正であることの証明をします。
-証明するべきは以下です。
-
-```math
-m\ rem\ d \ge 0
-```
-*)
-
-(**
-## 定理 - 剰余は正
- *)
-(**
-証明はmの正負、すなわち、自然数の除算の切り捨てか切り上げで場合分けしたのち、
-自然数の除算の補題を適用するだけの単純なものです。
-*)
-Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
-Proof.
-  move=> Hd.
-  rewrite /emodz /edivz.
-  case: ifP => H.
-  - rewrite -mulrAC.
-    rewrite -abszEsg mulrC.
-    rewrite subr_ge0.
-    move/normr_idP in H.
-    rewrite -{2}H.
-      by apply: edivn_floorp.
-
-  - rewrite mulNr.
-    (* m - - X は m + (- - X) なので、二重の負号 oppz を消します。 *)
-    rewrite [- - (sgz d * edivn_ceil `|m| `|d| * d)]oppzK.
-    rewrite -mulrAC.
-    rewrite -abszEsg mulrC.
-    move/nge_lt in H.
-    rewrite {1}(ltz_m_abs H).
-    rewrite addrC subr_ge0.
-    apply: edivn_ceilp.
-      by rewrite -lt0n absz_gt0.
-Qed.
-
-(**
-## 定理 - 剰余は除数より小
-
- *)
-
 (* 証明できるもの *)
 Lemma edivn_floor_lt_d' (m d : nat) : (0 < d)%N ->
                                       (m - edivn_floor m d * d)%:Z < d.
@@ -470,6 +367,109 @@ Proof.
     done.
 Qed.
 
+(**
+## ユーグリッド除数の定義
+
+直感的に説明するのが難しいので、数直線でも書いて納得してほしいのですが、
+剰余を正とするためには、
+
+- 被除数が正なら絶対値の割算で切り捨てしたあと除数の符号を反映します。
+- 被除数が負なら絶対値の割算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
+
+```math
+m / d =
+\left\{
+\begin{array}{ll}
+(sgn d) \lfloor |m| / |d| \rfloor & (m \ge 0) \\
+- (sgn d) \lceil |m| / |d| \rceil & (m \lt 0) \\
+\end{array}
+\right.
+```
+
+ここで、sgn は符号関数です。
+
+剰余は、被除数から商と除数の積を引いて求めます。これは整数で計算します。
+
+```math
+m\ rem\ d = m - (m / d) d
+```
+ *)
+Definition edivz (m d : int) : int :=
+  if (0 <= m) then
+    sgz d * (edivn_floor `|m| `|d|)
+  else
+    - (sgz d * (edivn_ceil `|m| `|d|)).
+
+Definition emodz (m d : int) : int := m - (edivz m d) * d.
+
+(**
+検算してみます。あっているようですね。
+*)
+Compute edivz 10 3.                         (* 3 *)
+Compute edivz 10 (- 3%:Z).                  (* -3 *)
+Compute edivz (- 10%:Z) 3.                  (* -4 *)
+Compute edivz (- 10%:Z) (- 3%:Z).           (* 4 *)
+
+Compute emodz 10 3.                         (* 1 *)
+Compute emodz 10 (- 3%:Z).                  (* 1 *)
+Compute emodz (- 10%:Z) 3.                  (* 2 *)
+Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
+
+(**
+定義から自明ですが式(1.2)も成り立っています。
+*)
+Lemma edivz_eq (m d : int) : m = (edivz m d)%Z * d + (emodz m d)%Z.
+Proof.
+    by rewrite addrC subrK.
+Qed.
+
+(**
+# 剰余が正であることの証明
+
+先に、比較的やさしい剰余が正であることの証明をします。
+証明するべきは以下です。
+
+```math
+m\ rem\ d \ge 0
+```
+*)
+
+(**
+## 定理 - 剰余は正
+ *)
+(**
+証明はmの正負、すなわち、自然数の除算の切り捨てか切り上げで場合分けしたのち、
+自然数の除算の補題を適用するだけの単純なものです。
+*)
+Lemma ediv_mod_ge0 (m d : int) : d != 0 -> 0 <= emodz m d.
+Proof.
+  move=> Hd.
+  rewrite /emodz /edivz.
+  case: ifP => H.
+  - rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    rewrite subr_ge0.
+    move/normr_idP in H.
+    rewrite -{2}H.
+      by apply: edivn_floorp.
+
+  - rewrite mulNr.
+    (* m - - X は m + (- - X) なので、二重の負号 oppz を消します。 *)
+    rewrite [- - (sgz d * edivn_ceil `|m| `|d| * d)]oppzK.
+    rewrite -mulrAC.
+    rewrite -abszEsg mulrC.
+    move/nge_lt in H.
+    rewrite {1}(ltz_m_abs H).
+    rewrite addrC subr_ge0.
+    apply: edivn_ceilp.
+      by rewrite -lt0n absz_gt0.
+Qed.
+
+(**
+## 定理 - 剰余は除数より小
+
+ *)
+
 Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|.
 Proof.
   move=> Hd.
@@ -512,6 +512,18 @@ Proof.
     apply: edivn_ceil_lt_d.
       by rewrite -normr_gt0 in Hd.
 Qed.
+
+(**
+まとめると、式(3)が成り立ちます。
+*)
+Lemma ediv_mod_ge0_ltd (m d : int) : d != 0 -> 0 <= emodz m d < `|d|.
+Proof.
+  move=> hd.
+  apply/andP; split.
+  - by apply: ediv_mod_ge0.
+  - by apply: ediv_mod_ltd.
+Qed.
+
 
 (**
 # 一意性の証明
@@ -839,6 +851,18 @@ $$ | d | \lt r \le 0| $$
 * 余りは、正または負で、絶対値が最小となる値。
 *)
 
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
+(* END *)
 (* END *)
 
 (**
