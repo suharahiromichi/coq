@@ -374,6 +374,18 @@ Proof.
 Qed.
 
 Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
+
+(* intdiv.v で定義されているもの *)
+Check divz_eq : forall m d : int, m = (m %/ d)%Z * d + (m %% d)%Z.
+
+(*
+Lemma test m d : (m %/ d)%N%:Z * d = (m %/ d * d)%N%:Z.
+Proof.
+  apply: subr0_eq.
+    by rewrite eq_subz.
+Qed.
+*)
+
 (* divn_eq' の整数加算版を用意する。内容は自然数の divn と modn である。 *)
 Lemma divn_eq' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
 Proof.
@@ -382,6 +394,15 @@ Proof.
   rewrite Heq.
   (* Goal : (q * d + r)%N = (q * d)%N + r *)
   done.
+  Restart.
+
+  (* intidiv.v の補題 を使って証明する。 *)
+  rewrite {1}(divz_eq m d).
+  Search _ (_ + _ = _%N + _%N).
+
+  f_equal.
+  - by rewrite divz_nat.
+  - by rewrite modz_nat.
 Qed.
 
 (* 証明したいもの *)
@@ -392,18 +413,13 @@ Proof.
   rewrite /edivn_floor.
   Check divn_eq' m d.
   rewrite {1}(divn_eq' m d).
+  (* (m %/ d * d)%N + (m %% d)%N - (m %/ d * d)%N < d *)
   rewrite -addrAC eq_subz add0r.
   Check ltn_pmod : forall m d : nat, (0 < d)%N -> (m %% d < d)%N.
     by apply: ltn_pmod.
 Qed.
 
-(* 実は構文糖衣 *)
-Lemma test (d m : nat) : (d %| m)%N -> (m %% d = 0)%N.
-Proof.
-    by rewrite /dvdn => /eqP.
-Qed.
-
-Lemma test' (d m : nat) : (m %/ d + 1)%N%:Z * d = (m %/ d * d)%N%:Z + d.
+Lemma l_distr (d m : nat) : (m %/ d + 1)%N%:Z * d = (m %/ d * d)%N%:Z + d.
 Proof.
   apply/eqP.
   rewrite eqz_nat.
@@ -420,7 +436,8 @@ Proof.
   rewrite {1}(divn_eq' m d).
   case: ifP => H.
   (* 割り切れるので、m %% d = 0 の場合 *)
-  - rewrite test //=.
+  - move/eqP in H.
+    rewrite H /=.
     rewrite addr0.
     (* (m %/ d)%N * d - (m %/ d * d)%N < d *)
       by rewrite eq_subz.
@@ -429,7 +446,7 @@ Proof.
     rewrite addrCA addrA.
     rewrite -addn1.
     (* - (m %/ d * d)%N + (m %/ d + 1)%N * d - (m %% d)%N < d *)
-    rewrite test' //=.
+    rewrite l_distr //=.
     rewrite addrA.
     Check (- (m %/ d * d)%N%:Z) + (m %/ d * d)%N%:Z + d - (m %% d)%N%:Z .
     rewrite [(- (m %/ d * d)%N%:Z) + ((m %/ d * d)%N%:Z)]addrC.
@@ -687,8 +704,6 @@ Proof.
   done.
 Qed.
 
-
-
 (**
 # 整除法のまとめ
 *)
@@ -826,6 +841,7 @@ $$ | d | \lt r \le 0| $$
 
 (* END *)
 
+(**
 # （予備）MathComp での定義との同値の証明
  *)
 Print divz.
