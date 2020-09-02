@@ -94,6 +94,23 @@ Open Scope ring_scope.       (* 環の四則演算を使えるようにする。
 ## 概説
  *)
 (**
+### m n : nat のときの m = n とはどういう意味か
+ *)
+Section INTRO.
+  Variables m n : nat.
+
+  (* 自然数文脈 *)
+  Check @eq nat m n.
+  Check m = n.
+  
+  (* 整数文脈、つぎの四者は同じ式の構文糖衣 *)
+  Check @eq int (Posz m) (Posz n).
+  Check Posz m = Posz n.
+  Check m%:Z = n%:Z.
+  Check m = n :> int.
+End INTRO.
+
+(**
 ### 整数演算と自然数演算の変換（%:Zの分配則）
 
 整数の文脈の中で、自然数を書くとコアーションで正整数になる（Posz これは _%:Z と同じ）。
@@ -108,22 +125,22 @@ Section INT.
   Variable m n d : nat.
   
   (* 左辺は自然数の加算、右辺は整数の加算であり、ディフォルトの環（整数）で比較している。 *)
-  Check PoszD m n : ((m + n)%N%:Z = m%:Z + n%:Z)%Z. (* m + n = (m + n)%N と見える。 *)
-  Check PoszM m n : ((m * n)%N%:Z = m%:Z * n%:Z)%Z. (* (m * n)%N = m * n *)
+  Check PoszD m n : (m + n)%N%:Z = m%:Z + n%:Z. (* m + n = (m + n)%N と見える。 *)
+  Check PoszM m n : (m * n)%N%:Z = m%:Z * n%:Z. (* (m * n)%N = m * n *)
 
-  Check subzn : forall m n : nat, (n <= m)%N -> (m%:Z - n%:Z = (m - n)%N)%Z.
-  Check lez_nat m n : ((m%:Z <= n%:Z) = (m <= n)%N)%Z.
-  Check ltz_nat m n : ((m%:Z < n%:Z) = (m < n)%N)%Z.
-  Check divz_nat n d : ((n %/ d)%Z = (n %/ d)%N)%Z.
-  Check modz_nat m d : ((m %% d)%Z = (m %% d)%N)%Z.
+  Check subzn : forall m n : nat, (n <= m)%N -> m%:Z - n%:Z = (m - n)%N.
+  Check lez_nat m n : (m%:Z <= n%:Z) = (m <= n)%N.
+  Check ltz_nat m n : (m%:Z < n%:Z) = (m < n)%N.
+  Check divz_nat n d : (n %/ d)%Z = (n %/ d)%N.
+  Check modz_nat m d : (m %% d)%Z = (m %% d)%N.
 End INT.
 
 (**
 ####
 *)
-Lemma oppz_add' (x y : int) : (- (x + y) = -x + -y)%R.
+Lemma oppz_add' (x y : int) : - (x + y) = -x + -y.
 Proof.
-  Check oppz_add x y : (- (x + y) = -x + -y)%R.
+  Check oppz_add x y : - (x + y) = -x + -y.
     by apply: oppz_add.
 Qed.
 
