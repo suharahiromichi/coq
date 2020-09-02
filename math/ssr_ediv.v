@@ -201,6 +201,8 @@ absz
 
 (**
 norm
+
+実際の証明では、norm は使わないようにしたので、以下は不使用である。
 *)
   (* 自然数 *)
   Lemma norm_nat (n : nat) : `| n%:Z | = n%:Z. (* `|n| = n *)
@@ -226,7 +228,7 @@ Proof.
       by apply/eqP.
 Qed.
 
-Lemma normq0_eq (x y : int) : `|x - y| = 0  <-> x = y. (* notu *)
+Lemma normq0_eq (x y : int) : `|x - y| = 0  <-> x = y.
 Proof.
   split=> H.
   Check @normr0P : forall (R : numDomainType) (x : R), reflect (`|x| = 0) (x == 0).
@@ -456,9 +458,9 @@ m\ rem\ d = m - (m / d) d
  *)
 Definition edivz (m d : int) : int :=
   if (0 <= m) then
-    sgz d * (edivn_floor `|m| `|d|)
+    sgz d * (edivn_floor `|m|%N `|d|%N)
   else
-    - (sgz d * (edivn_ceil `|m| `|d|)).
+    - (sgz d * (edivn_ceil `|m|%N `|d|%N)).
 
 Definition emodz (m d : int) : int := m - (edivz m d) * d.
 
@@ -531,7 +533,7 @@ Qed.
 
  *)
 
-Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|.
+Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|%N.
 Proof.
   move=> Hd.
   rewrite /emodz /edivz.
@@ -542,10 +544,12 @@ Proof.
     rewrite -abszEsg.
     rewrite mulrC.
     rewrite -{1}(gez0_abs Hm).
-    Search _ ((_ - _ <  _)%N).
     Check edivn_floor_lt_d.
     apply: edivn_floor_lt_d.
-      by rewrite -normr_gt0 in Hd.
+    Check normr_gt0 : forall (R : numDomainType) (x : R), (0 < `|x|) = (x != 0).
+    Search _ (_ != 0).
+      by rewrite -absz_gt0 in Hd.
+      (* by rewrite -normr_gt0 in Hd. *)
     
   (*  m - sgz d * edivn_floor `|m| `|d| * d < `|d| *)    
   - rewrite mulrAC.
@@ -553,7 +557,8 @@ Proof.
     rewrite mulrC.
     rewrite -{1}(gez0_abs Hm).
     apply: edivn_floor_lt_d.
-      by rewrite -normr_gt0 in Hd.
+      by rewrite -absz_gt0 in Hd.
+      (* by rewrite -normr_gt0 in Hd. *)
     
   (* m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)    
   - rewrite mulNr mulrAC -abszEsg mulrC.
@@ -562,7 +567,8 @@ Proof.
     rewrite -{1}(opptr (ltz0_abs Hm)).
     rewrite addrC.
     apply: edivn_ceil_lt_d.
-      by rewrite -normr_gt0 in Hd.
+      by rewrite -absz_gt0 in Hd.
+      (* by rewrite -normr_gt0 in Hd. *)
     
   (* m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)
   - rewrite mulNr mulrAC -abszEsg mulrC.
@@ -571,13 +577,14 @@ Proof.
     rewrite -{1}(opptr (ltz0_abs Hm)).
     rewrite addrC.
     apply: edivn_ceil_lt_d.
-      by rewrite -normr_gt0 in Hd.
+      by rewrite -absz_gt0 in Hd.
+      (* by rewrite -normr_gt0 in Hd. *)
 Qed.
 
 (**
 まとめると、式(1.3')が成り立ちます。
 *)
-Lemma ediv_mod_ge0_ltd (m d : int) : d != 0 -> 0 <= emodz m d < `|d|.
+Lemma ediv_mod_ge0_ltd (m d : int) : d != 0 -> 0 <= emodz m d < `|d|%N.
 Proof.
   move=> hd.
   apply/andP; split.
@@ -653,7 +660,7 @@ Proof.
 Qed.
 
 Lemma lemma2 (r1 r2 : int) (d : nat) :
-  0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2| < d.
+  0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2|%N < d :> int.
 Proof.
   move=> Hr1 Hr2.
   move/andP : Hr1 => [Hr1 Hr1d].
@@ -666,25 +673,26 @@ Proof.
   move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.
   move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.
   Check ger0_norm Hr1.
-  rewrite -(ger0_norm Hr1) in Hr1d.
-  rewrite -(ger0_norm Hr2) in Hr2d.
-  rewrite -(ger0_norm Hr1) in Hr1dr1.
-  rewrite -(ger0_norm Hr1) in Hr1dr2.
-  rewrite -(ger0_norm Hr1) in Hr2dr1.
-  rewrite -(ger0_norm Hr2) in Hr1dr2.
-  rewrite -(ger0_norm Hr2) in Hr2dr1.
-  rewrite -(ger0_norm Hr2) in Hr2dr2.
+  Check gez0_abs Hr1.
+  rewrite -(gez0_abs Hr1) in Hr1d.
+  rewrite -(gez0_abs Hr2) in Hr2d.
+  rewrite -(gez0_abs Hr1) in Hr1dr1.
+  rewrite -(gez0_abs Hr1) in Hr1dr2.
+  rewrite -(gez0_abs Hr1) in Hr2dr1.
+  rewrite -(gez0_abs Hr2) in Hr1dr2.
+  rewrite -(gez0_abs Hr2) in Hr2dr1.
+  rewrite -(gez0_abs Hr2) in Hr2dr2.
 
   case H : (r1 - r2 >= 0).
   - move: {+}H => H'.
-    rewrite -(ger0_norm Hr1) in H'.
-    rewrite -(ger0_norm Hr2) in H'.    
-    have H'' : `|r2| <= `|r1| by rewrite -subr_ge0.
+    rewrite -(gez0_abs Hr1) in H'.
+    rewrite -(gez0_abs Hr2) in H'.    
+    have H'' : `|r2|%N <= `|r1|%N :> int by rewrite -subr_ge0.
     
-    move/normr_idP in H.
+    move/gez0_abs in H.    (* move/normr_idP in H. *)
     rewrite H.
-    rewrite -(ger0_norm Hr1).
-    rewrite -(ger0_norm Hr2).
+    rewrite -(gez0_abs Hr1).
+    rewrite -(gez0_abs Hr2).
     
     Check ltn_sub2r : forall p m n : nat, (p < n)%N -> (m < n)%N -> (m - p < n - p)%N.
     Check @ltn_sub2r `|r2| `|r1| (d + `|r2|) Hr2dr2 Hr1dr2
@@ -700,8 +708,8 @@ Proof.
       by rewrite -subzn in H2.
       
   - move: {+}H => H'.
-    rewrite -(ger0_norm Hr1) in H'.
-    rewrite -(ger0_norm Hr2) in H'.    
+    rewrite -(gez0_abs Hr1) in H'.
+    rewrite -(gez0_abs Hr2) in H'.    
     have H'' : `|r1| <= `|r2|.
     + move/nge_lt in H'.
       Search _ (_ - _ < 0).
@@ -713,14 +721,16 @@ Proof.
       rewrite -ltrNge in H.
 
       move/lt_le in H.
-      rewrite ler0_def in H.
-      move/eqP in H.
+      Check ler0_def : forall (R : numDomainType) (x : R), (x <= 0) = (`|x| == - x).
+      Check lez0_abs : forall m : int, m <= 0 -> `|m|%N = - m :> int.
+      move/lez0_abs in H.                   (* rewrite ler0_def in H. *)
+      (* move/eqP in H. *)
       rewrite H.
       Search _ (- ( _ - _ )).
       rewrite opprB.
 
-      rewrite -(ger0_norm Hr1).
-      rewrite -(ger0_norm Hr2).
+      rewrite -(gez0_abs Hr1).
+      rewrite -(gez0_abs Hr2).
       Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
       have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
       rewrite -addnBA in H1 ; last done.
@@ -931,7 +941,8 @@ Section OPT.
     - by rewrite modz_nat.
   Qed.
   
-  (* ssrnum の norm の補題を使用することにした。 *)
+  (* ssrnum の norm の補題を直接使用することにした。 *)
+  (* さらに、`|x|%N に統一して、norm を使わないようにした。 *)
   Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
   Proof. by move/normr_idP. Qed.
 
@@ -942,12 +953,6 @@ Section OPT.
     rewrite ltr0_norm //=.
       by rewrite opprK.
   Qed.
-
-
-
-
-
-
 
 (* END *)
 (* END *)
