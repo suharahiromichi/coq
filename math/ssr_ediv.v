@@ -37,7 +37,7 @@ m &=& q d + r           \tag{1.2} \\
 一意性を担保するには、剰余の範囲をより狭く制限する必要があります。
 たとえば、教科書に記載されるのは、
 
-$$ 0 \le r \lt | d | \tag{3} $$
+$$ 0 \le r \lt | d | \tag{1.3'} $$
 
 にように、剰余を正の範囲に制限することです。
 これは、プログラミング言語Pascalの ``mod`` 演算で採用されています。
@@ -59,11 +59,11 @@ $$ 0 \le r \lt | d | \tag{3} $$
 ここでは、後者の絶対値の除算を使う方法を採用します。そして、
 
 - r が 0 以上の制限を加えると、qとrが一意に決まることを証明する。
-- q と r を求める式を具体的に定義して、``0 ≦ r ＜ |r|`` であることを証明する。
-
+- q と r を求める式を具体的に定義して、式(1.2)と式(1.3')が成り立つことを証明する。
 
 これによって、整数割算が持つ意味の健全性を示すことができるはずです。
 証明には Coq/MathComp を使います。
+MathCompにも``intdiv.v``で整数割算が定義されていますが、ここでは独自に実装してみます。
 
 最後に、ここで示した以外の整除法について言及します。
 
@@ -89,62 +89,79 @@ Import intRing.              (* mulz など *)
 Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
 
 (**
+# 整数について
+
+## 概説
+ *)
+(**
+### 整数演算と自然数演算の変換（%:Zの分配則）
+
+整数の文脈の中で、自然数を書くとコアーションで正整数になる（Posz これは _%:Z と同じ）。
+
+_%Nで自然数のスコープを明示することができるが、この外に出た時点で、
+同様にコアーションで正整数になる。すなわち、``_%:Z`` は分配できるわけである。
+
+addやsubやleやltやdivやmodの演算は、整数と自然数でまったく別の定義であることに注意すること。
+ *)
+
+Section INT.
+  Variable m n d : nat.
+  
+  (* 左辺は自然数の加算、右辺は整数の加算であり、ディフォルトの環（整数）で比較している。 *)
+  Check PoszD m n : ((m + n)%N%:Z = m%:Z + n%:Z)%Z. (* m + n = (m + n)%N と見える。 *)
+  Check PoszM m n : ((m * n)%N%:Z = m%:Z * n%:Z)%Z. (* (m * n)%N = m * n *)
+
+  Check subzn : forall m n : nat, (n <= m)%N -> (m%:Z - n%:Z = (m - n)%N)%Z.
+  Check lez_nat m n : ((m%:Z <= n%:Z) = (m <= n)%N)%Z.
+  Check ltz_nat m n : ((m%:Z < n%:Z) = (m < n)%N)%Z.
+  Check divz_nat n d : ((n %/ d)%Z = (n %/ d)%N)%Z.
+  Check modz_nat m d : ((m %% d)%Z = (m %% d)%N)%Z.
+End INT.
+
+(**
+####
+*)
+Lemma oppz_add' (x y : int) : (- (x + y) = -x + -y)%R.
+Proof.
+  Check oppz_add x y : (- (x + y) = -x + -y)%R.
+    by apply: oppz_add.
+Qed.
+
+(**
 ## 補題
 
 MathCompで整数に扱いになれていないひとのために（大抵のひとはそうでしょう）
 再利用性のありそうなスクリプトを補題としてまとめておきます。
 *)
+
+(**
+### ありがちな補題
+ *)
+
+(* 符号を移項するだけの補題 *)
+Lemma opptr (x y : int) : x = - y -> - x = y.
+Proof.
+  move=> ->.
+    by rewrite opprK.
+Qed.
+
+(* 絶対値を付けるだけの補題 *)
+Lemma eq_eqabsabs (x y : int) : x = y -> `|x| = `|y|.
+Proof. by move=> ->. Qed.
+
+(* いつも欲しくなる補題の整数版 *)
+Lemma lt_le (x y : int) : x < y -> x <= y.
+Proof.
+  move=> H.
+  rewrite ler_eqVlt.
+    by apply/orP/or_intror.
+Qed.
+
 Lemma nge_lt (m n : int) : (m <= n) = false -> n < m.
 Proof.
   move/negbT.
     by rewrite -ltrNge.
 Qed.
-
-Lemma ltz_m_abs (m : int) : m < 0 -> m = - `|m|.
-Proof.
-  move=> H.
-  rewrite ltr0_norm //=.
-    by rewrite opprK.
-Qed.
-
-Lemma abseq0_eq (x y : int) : (`|x - y| = 0)%N  <-> x = y.
-Proof.
-  split=> H.
-  Search _ (`| _ |%N).
-  - move/eqP in H.
-    Check absz_eq0.
-    rewrite absz_eq0 in H.
-    Search _ (_ - _ == 0).
-    rewrite subr_eq0 in H.
-    move/eqP in H.
-    done.
-  - apply/eqP.
-    rewrite absz_eq0 subr_eq0.
-    move/eqP in H.
-    done.
-Qed.
-
-Lemma abseq0_eq' (x y : int) : `|x - y| = 0  <-> x = y. (* notu *)
-Proof.
-  split=> H.
-  Search _ (`| _ | = 0).
-  - move/normr0P in H.
-    rewrite subr_eq0 in H.
-    move/eqP in H.
-    done.
-  - apply/normr0P.
-    rewrite subr_eq0.
-    apply/eqP.
-    done.
-Qed.
-
-Lemma eq_eqabsabs (x y : int) : x = y -> (`|x| = `|y|).
-Proof.
-    by move=> ->.
-Qed.
-
-Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
-Proof. by move/normr_idP. Qed.
 
 Lemma eq_subn (n : nat) : (n - n = 0)%N.    (* 自然数の補題 *)
 Proof. apply/eqP. by rewrite subn_eq0. Qed.
@@ -152,19 +169,73 @@ Proof. apply/eqP. by rewrite subn_eq0. Qed.
 Lemma eq_subz (x : int) : x - x = 0.        (* 整数の補題 *)
 Proof. by rewrite addrC addNr. Qed.
 
-Lemma lt_le (x y : int) : x < y -> x <= y.
+(**
+### 絶対値を操作する補題
+ *)
+Section ABS.
+  Variable m : nat.
+  Variable x : int.
+  
+(**
+自然数の文脈と整数の文脈とで、関数が異なる（当然だが）。
+ *)
+  Check absz : int -> nat.                  (* |x|%N *)
+  Check Num.Def.normr : int -> int.         (* |x|%Z *)
+
+(**
+両者の結果は、自然数から正整数へのコアーションで等しい。
+*)  
+  Check abszE x : `|x|%N%:Z = `|x|%Z.       (* `|x|%N = `|x| *)
+  
+(**
+absz
+*)  
+  (* 自然数 *)
+  Check absz_nat m : `| m%:Z |%N = m.       (* `|m|%N = m *)
+  (* 正整数 *)
+  Check gez0_abs : forall x : int, 0 <= x -> `|x|%N = x :> int. (* `|x|%N = x *)
+  Check gtz0_abs : forall x : int, 0 < x -> `|x|%N = x :> int.
+  (* 負整数 *)
+  Check lez0_abs : forall x : int, x <= 0 -> `|x|%N = - x :> int.  
+  Check ltz0_abs : forall x : int, x < 0 -> `|x|%N = - x :> int.  
+
+(**
+norm
+*)
+  (* 自然数 *)
+  Lemma norm_nat (n : nat) : `| n%:Z | = n%:Z. (* `|n| = n *)
+  Proof. by rewrite -abszE absz_nat. Qed.
+  (* 正整数 *)
+  Check @ger0_norm int_numDomainType x : 0 <= x -> `|x| = x :> int. (* `|x| = x *)
+  Check @gtr0_norm int_numDomainType x : 0 < x -> `|x| = x :> int.
+  (* 負整数 *)
+  Check @ler0_norm int_numDomainType x : x <= 0 -> `|x| = - x :> int.
+  Check @ltr0_norm int_numDomainType x : x < 0 -> `|x| = - x :> int.
+End ABS.
+
+Lemma abseq0_eq (x y : int) : (`|x - y| = 0)%N  <-> x = y.
 Proof.
-  move=> H.
-  Search _ (_ <= _).
-  rewrite ler_eqVlt.
-    by apply/orP/or_intror.
+  split=> H.
+  Check absz_eq0 : forall m : int, (`|m|%N == 0%N) = (m == 0).
+  Check subr_eq0 : forall (V : zmodType) (x y : V), (x - y == 0) = (x == y).
+  - move/eqP in H.
+    rewrite absz_eq0 subr_eq0 in H.
+      by apply/eqP.
+  - apply/eqP.
+    rewrite absz_eq0 subr_eq0.
+      by apply/eqP.
 Qed.
 
-(* 符号を移項するだけの補題 *)
-Lemma opptr (x y : int) : x = - y -> - x = y.
+Lemma normq0_eq (x y : int) : `|x - y| = 0  <-> x = y. (* notu *)
 Proof.
-  move=> ->.
-    by rewrite opprK.
+  split=> H.
+  Check @normr0P : forall (R : numDomainType) (x : R), reflect (`|x| = 0) (x == 0).
+  - move/normr0P in H.
+    rewrite subr_eq0 in H.
+      by apply/eqP.
+  - apply/normr0P.
+    rewrite subr_eq0.
+      by apply/eqP.
 Qed.
 
 (**
@@ -272,9 +343,6 @@ Qed.
 
 Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
 
-(* intdiv.v で定義されているもの *)
-Check divz_eq : forall m d : int, m = (m %/ d)%Z * d + (m %% d)%Z.
-
 (*
 Lemma test m d : (m %/ d)%N%:Z * d = (m %/ d * d)%N%:Z.
 Proof.
@@ -291,16 +359,8 @@ Proof.
   rewrite Heq.
   (* Goal : (q * d + r)%N = (q * d)%N + r *)
   done.
-  Restart.
-
-  (* intidiv.v の補題 を使って証明する。 *)
-  rewrite {1}(divz_eq m d).
-  Search _ (_ + _ = _%N + _%N).
-
-  f_equal.
-  - by rewrite divz_nat.
-  - by rewrite modz_nat.
 Qed.
+
 
 (* 証明したいもの *)
 Lemma edivn_floor_lt_d (m d : nat) : (0 < d)%N ->
@@ -459,7 +519,8 @@ Proof.
     rewrite -mulrAC.
     rewrite -abszEsg mulrC.
     move/nge_lt in H.
-    rewrite {1}(ltz_m_abs H).
+    Check opptr (ltr0_norm H).
+    rewrite -{1}(opptr (ltr0_norm H)).
     rewrite addrC subr_ge0.
     apply: edivn_ceilp.
       by rewrite -lt0n absz_gt0.
@@ -514,7 +575,7 @@ Proof.
 Qed.
 
 (**
-まとめると、式(3)が成り立ちます。
+まとめると、式(1.3')が成り立ちます。
 *)
 Lemma ediv_mod_ge0_ltd (m d : int) : d != 0 -> 0 <= emodz m d < `|d|.
 Proof.
@@ -604,25 +665,26 @@ Proof.
   move: (ltr_paddr Hr2 Hr1d) => Hr1dr2.
   move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.
   move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.
-  rewrite (eq_abs Hr1) in Hr1d.
-  rewrite (eq_abs Hr2) in Hr2d.
-  rewrite (eq_abs Hr1) in Hr1dr1.
-  rewrite (eq_abs Hr1) in Hr1dr2.
-  rewrite (eq_abs Hr1) in Hr2dr1.
-  rewrite (eq_abs Hr2) in Hr1dr2.
-  rewrite (eq_abs Hr2) in Hr2dr1.
-  rewrite (eq_abs Hr2) in Hr2dr2.
+  Check ger0_norm Hr1.
+  rewrite -(ger0_norm Hr1) in Hr1d.
+  rewrite -(ger0_norm Hr2) in Hr2d.
+  rewrite -(ger0_norm Hr1) in Hr1dr1.
+  rewrite -(ger0_norm Hr1) in Hr1dr2.
+  rewrite -(ger0_norm Hr1) in Hr2dr1.
+  rewrite -(ger0_norm Hr2) in Hr1dr2.
+  rewrite -(ger0_norm Hr2) in Hr2dr1.
+  rewrite -(ger0_norm Hr2) in Hr2dr2.
 
   case H : (r1 - r2 >= 0).
   - move: {+}H => H'.
-    rewrite (eq_abs Hr1) in H'.
-    rewrite (eq_abs Hr2) in H'.    
+    rewrite -(ger0_norm Hr1) in H'.
+    rewrite -(ger0_norm Hr2) in H'.    
     have H'' : `|r2| <= `|r1| by rewrite -subr_ge0.
     
     move/normr_idP in H.
     rewrite H.
-    rewrite (eq_abs Hr1).
-    rewrite (eq_abs Hr2).
+    rewrite -(ger0_norm Hr1).
+    rewrite -(ger0_norm Hr2).
     
     Check ltn_sub2r : forall p m n : nat, (p < n)%N -> (m < n)%N -> (m - p < n - p)%N.
     Check @ltn_sub2r `|r2| `|r1| (d + `|r2|) Hr2dr2 Hr1dr2
@@ -638,8 +700,8 @@ Proof.
       by rewrite -subzn in H2.
       
   - move: {+}H => H'.
-    rewrite (eq_abs Hr1) in H'.
-    rewrite (eq_abs Hr2) in H'.    
+    rewrite -(ger0_norm Hr1) in H'.
+    rewrite -(ger0_norm Hr2) in H'.    
     have H'' : `|r1| <= `|r2|.
     + move/nge_lt in H'.
       Search _ (_ - _ < 0).
@@ -657,8 +719,8 @@ Proof.
       Search _ (- ( _ - _ )).
       rewrite opprB.
 
-      rewrite (eq_abs Hr1).
-      rewrite (eq_abs Hr2).
+      rewrite -(ger0_norm Hr1).
+      rewrite -(ger0_norm Hr2).
       Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
       have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
       rewrite -addnBA in H1 ; last done.
@@ -851,6 +913,42 @@ $$ | d | \lt r \le 0| $$
 * 余りは、正または負で、絶対値が最小となる値。
 *)
 
+(**
+# 使用しなかった補題
+ *)
+Section OPT.
+  
+  (* intidiv.v の補題 を使って証明する。 *)
+  Lemma divn_eq'' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
+  Proof.
+    Check divz_eq : forall m d : int, m = (m %/ d)%Z * d + (m %% d)%Z.
+    
+    rewrite {1}(divz_eq m d).
+    Search _ (_ + _ = _%N + _%N).
+    
+    f_equal.
+    - by rewrite divz_nat.
+    - by rewrite modz_nat.
+  Qed.
+  
+  (* ssrnum の norm の補題を使用することにした。 *)
+  Lemma eq_abs (x : int) : 0 <= x -> x = `|x|.
+  Proof. by move/normr_idP. Qed.
+
+  Lemma ltz_m_abs (x : int) : x < 0 -> x = - `|x|.
+  Proof.
+    Set Printing All.
+    move=> H.
+    rewrite ltr0_norm //=.
+      by rewrite opprK.
+  Qed.
+
+
+
+
+
+
+
 (* END *)
 (* END *)
 (* END *)
@@ -864,6 +962,7 @@ $$ | d | \lt r \le 0| $$
 (* END *)
 (* END *)
 (* END *)
+
 
 (**
 # （予備）MathComp での定義との同値の証明
@@ -1181,3 +1280,6 @@ rewrite -mulrAC.
       by rewrite -lt0n absz_gt0.
   
   
+
+
+      
