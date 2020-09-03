@@ -51,7 +51,7 @@ $$ 0 \le r \lt | d | \tag{1.3'} $$
 
 符号を復元して(注2)、qとする。
 
-(注1) 自然数の割算における切り捨てと切り上げは後で定義します。
+(注1) 自然数の除算における切り捨てと切り上げは後で定義します。
 
 (注2) m と d と q の符号は、奇数個の関係にあります。
 
@@ -61,9 +61,9 @@ $$ 0 \le r \lt | d | \tag{1.3'} $$
 - r が 0 以上の制限を加えると、qとrが一意に決まることを証明する。
 - q と r を求める式を具体的に定義して、式(1.2)と式(1.3')が成り立つことを証明する。
 
-これによって、整数割算が持つ意味の健全性を示すことができるはずです。
+これによって、整数除算が持つ意味の健全性を示すことができるはずです。
 証明には Coq/MathComp を使います。
-MathCompにも``intdiv.v``で整数割算が定義されていますが、ここでは独自に実装してみます。
+MathCompにも``intdiv.v``で整数除算が定義されていますが、ここでは独自に実装してみます。
 
 最後に、ここで示した以外の整除法について言及します。
 
@@ -92,6 +92,27 @@ Open Scope ring_scope.       (* 環の四則演算を使えるようにする。
 # 整数について
 
 ## 概説
+
+int は、natとちがって、MathCompの型クラス階層の中で、zmodType、ringType、comRingType
+のインスタンスとして定義されています。int_ZmodType、int_Ring、int_ComRing。
+
+そのため、
+
+- 四則演算や剰余算については、当然定義がことなり、文脈（スコープ）によって選ばれます。
+
+- 加算、負号、乗算は環などの演算のインスタンスですから、環についての補題が使えます。
+
+- 減算は ``x - y = x + (- y)`` のように、加算の構文糖衣なので、加算についての補題が使えます。
+
+最後に注意するべきなのは絶対値記号です。``ssrint.v``で定義される絶対値記号は、
+``absz : int -> nat`` の型で nat_scope で定義されています。
+そのため、整数の文脈では `` `|n|%N `` と記載する必要があります。
+
+整数の文脈のディフォルト `` `|x|%Z `` は、環で定義された ``normr T:R : T -> T`` に
+整数を適用した ``normr : int -> int`` です。
+
+本資料では、絶対値は absz の方を使うことにして、`` `|n|%N `` のように ``%N``を省かない
+こにします。
  *)
 (**
 ### m n : nat のときの m = n とはどういう意味か
@@ -101,13 +122,19 @@ Section INTRO.
 
   (* 自然数文脈 *)
   Check @eq nat m n.
-  Check m = n.
+  Check (m = n)%N.
   
   (* 整数文脈、つぎの四者は同じ式の構文糖衣 *)
   Check @eq int (Posz m) (Posz n).
   Check Posz m = Posz n.
   Check m%:Z = n%:Z.
   Check m = n :> int.
+  
+(**
+両者は同値です。しかし、次の両辺がbool値で比較されていることに注意してください。
+型が違うので、自然数の文脈を整数の文脈に書き換えるとはできません。
+ *)
+  Check eqz_nat m n : (m == n :> int) = (m == n)%N.
 End INTRO.
 
 (**
@@ -122,7 +149,7 @@ addやsubやleやltやdivやmodの演算は、整数と自然数でまったく�
  *)
 
 Section INT.
-  Variable m n d : nat.
+  Variables m n d : nat.
   
   (* 左辺は自然数の加算、右辺は整数の加算であり、ディフォルトの環（整数）で比較している。 *)
   Check PoszD m n : (m + n)%N%:Z = m%:Z + n%:Z. (* m + n = (m + n)%N と見える。 *)
@@ -133,16 +160,11 @@ Section INT.
   Check ltz_nat m n : (m%:Z < n%:Z) = (m < n)%N.
   Check divz_nat n d : (n %/ d)%Z = (n %/ d)%N.
   Check modz_nat m d : (m %% d)%Z = (m %% d)%N.
-End INT.
-
-(**
-####
-*)
-Lemma oppz_add' (x y : int) : - (x + y) = -x + -y.
-Proof.
+  
+  Variables x y : int.
+  (* これも morphism で定義されている *)
   Check oppz_add x y : - (x + y) = -x + -y.
-    by apply: oppz_add.
-Qed.
+End INT.
 
 (**
 ## 補題
@@ -187,14 +209,26 @@ Lemma eq_subz (x : int) : x - x = 0.        (* 整数の補題 *)
 Proof. by rewrite addrC addNr. Qed.
 
 (**
+自然数の除算について、商と被除数の積と剰余の和が除数になる補題が証明されています。
+*)
+Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
+(**
+同じ補題を整数スコープで証明しておくと便利です。
+*)
+Lemma divn_eq' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
+Proof.
+  apply/eqP.
+    by rewrite eqz_nat -divn_eq.
+Qed.
+
+(**
 ### 絶対値を操作する補題
  *)
 Section ABS.
   Variable m : nat.
   Variable x : int.
-  
 (**
-自然数の文脈と整数の文脈とで、関数が異なる（当然だが）。
+自然数の文脈と整数の文脈とで関数が異なるので、注意が必要です。
  *)
   Check absz : int -> nat.                  (* |x|%N *)
   Check Num.Def.normr : int -> int.         (* |x|%Z *)
@@ -215,21 +249,6 @@ absz
   (* 負整数 *)
   Check lez0_abs : forall x : int, x <= 0 -> `|x|%N = - x :> int.  
   Check ltz0_abs : forall x : int, x < 0 -> `|x|%N = - x :> int.  
-
-(**
-norm
-
-実際の証明では、norm は使わないようにしたので、以下は不使用である。
-*)
-  (* 自然数 *)
-  Lemma norm_nat (n : nat) : `| n%:Z | = n%:Z. (* `|n| = n *)
-  Proof. by rewrite -abszE absz_nat. Qed.
-  (* 正整数 *)
-  Check @ger0_norm int_numDomainType x : 0 <= x -> `|x| = x :> int. (* `|x| = x *)
-  Check @gtr0_norm int_numDomainType x : 0 < x -> `|x| = x :> int.
-  (* 負整数 *)
-  Check @ler0_norm int_numDomainType x : x <= 0 -> `|x| = - x :> int.
-  Check @ltr0_norm int_numDomainType x : x < 0 -> `|x| = - x :> int.
 End ABS.
 
 Lemma abseq0_eq (x y : int) : (`|x - y| = 0)%N  <-> x = y.
@@ -244,6 +263,24 @@ Proof.
     rewrite absz_eq0 subr_eq0.
       by apply/eqP.
 Qed.
+
+Section NORM.
+  Variable x : int.
+(**
+norm
+
+実際の証明では、norm は使わないようにしたので、以下は不使用である。
+*)
+  (* 自然数 *)
+  Lemma norm_nat (n : nat) : `| n%:Z | = n%:Z. (* `|n| = n *)
+  Proof. by rewrite -abszE absz_nat. Qed.
+  (* 正整数 *)
+  Check @ger0_norm int_numDomainType x : 0 <= x -> `|x| = x :> int. (* `|x| = x *)
+  Check @gtr0_norm int_numDomainType x : 0 < x -> `|x| = x :> int.
+  (* 負整数 *)
+  Check @ler0_norm int_numDomainType x : x <= 0 -> `|x| = - x :> int.
+  Check @ltr0_norm int_numDomainType x : x < 0 -> `|x| = - x :> int.
+End NORM.
 
 Lemma normq0_eq (x y : int) : `|x - y| = 0  <-> x = y.
 Proof.
@@ -267,16 +304,16 @@ Qed.
 
 最初に、自然数の除算を定義します。
 
-切り捨て(floor)と切り上げ(ceil)の二種類です。
+切り捨て(floor)除算と、切り上げ(ceil)除算の二種類です。
 
-切り捨ては、自然数で定義された除算 (divn) とおなじです。
+切り捨て除算は、自然数で定義された除算 (divn) とおなじです。
 
 ```math
 \lfloor m / d \rfloor = divn(m, d)
 
 ```a
 
-切り上げは、divn の結果に``+1``します。ただし、mがdで割り切れる場合はそのまま、
+切り上げ除算は、divn の結果に``+1``します。ただし、mがdで割り切れる場合はそのまま、
 mがdで割りきれない場合は``+1``します。
 
 ```math
@@ -308,12 +345,12 @@ Compute edivn_ceil 10 3.                    (* 4 *)
 
 自然数の除算の結果（商）に除数を掛けると、
 
-- 切り捨ての場合は被除数以下
-- 切り上げの場合は被除数以上
+- 切り捨て除算の場合は被除数以下
+- 切り上げ除算の場合は被除数以上
 
 になります。
 切り上げにおいて、等号が成立するのはmがdで割り切れる場合で、
-そうでない場合は被除数未満となります。ふたつの条件をあわせて補題にしています。
+そうでない場合は被除数未満となります。このふたつの条件をあわせて補題にしています。
 
 ```math
 \lfloor m / d \rfloor d \le m \\
@@ -328,7 +365,7 @@ Proof.
     by apply: leq_trunc_div.
 Qed.
 
-Lemma edivn_ceilp (m d : nat) : (d != 0)%N -> (m <= edivn_ceil m d * d)%N.
+Lemma edivn_ceilp (m d : nat) : (0 < d)%N -> (m <= edivn_ceil m d * d)%N.
 Proof.
   move=> Hd.
   rewrite /edivn_ceil.
@@ -339,69 +376,26 @@ Proof.
       by rewrite -dvdn_eq.
   (* m が d で、割りきれない場合 *)
   - apply/orP/or_intror.
-    rewrite ltn_ceil //.
-      by rewrite lt0n.
+      by rewrite ltn_ceil //.
 Qed.
 
-(* 証明できるもの *)
-Lemma edivn_floor_lt_d' (m d : nat) : (0 < d)%N ->
-                                      (m - edivn_floor m d * d)%:Z < d.
-Proof.
-  move=> Hd.
-  rewrite /edivn_floor.
-  (* rewrite ltz_nat. *)
-  Search _ (_ %/ _ * _)%N.
-  Check divn_eq m d.
-  rewrite {1}(divn_eq m d).
-  (* (m %/ d * d + m %% d - m %/ d * d)%N < d *)
+(**
+ついで、商と除数の積と被除数の差が、除数未満であることを証明します。
 
-  have -> (m' n' : nat) : (m' + n' - m' = n')%N by ssromega.
-  (* rewrite subnn add0n. *)
-  by apply: ltn_pmod.
-Qed.
-
-Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
-
-(*
-Lemma test m d : (m %/ d)%N%:Z * d = (m %/ d * d)%N%:Z.
-Proof.
-  apply: subr0_eq.
-    by rewrite eq_subz.
-Qed.
+```math
+m - \lfloor m / d \rfloor d \lt d \\
+\lceil m / d \rceil d - m   \lt d
+```
 *)
-
-(* divn_eq' の整数加算版を用意する。内容は自然数の divn と modn である。 *)
-Lemma divn_eq' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
-Proof.
-  rewrite /divn modn_def.
-  case: edivnP => q r //= Heq Hd.
-  rewrite Heq.
-  (* Goal : (q * d + r)%N = (q * d)%N + r *)
-  done.
-Qed.
-
-
-(* 証明したいもの *)
 Lemma edivn_floor_lt_d (m d : nat) : (0 < d)%N ->
                                      m%:Z - (edivn_floor m d * d)%:Z < d.
 Proof.
   move=> Hd.
   rewrite /edivn_floor.
-  Check divn_eq' m d.
   rewrite {1}(divn_eq' m d).
-  (* (m %/ d * d)%N + (m %% d)%N - (m %/ d * d)%N < d *)
   rewrite -addrAC eq_subz add0r.
   Check ltn_pmod : forall m d : nat, (0 < d)%N -> (m %% d < d)%N.
     by apply: ltn_pmod.
-Qed.
-
-Lemma l_distr (d m : nat) : (m %/ d + 1)%N%:Z * d = (m %/ d * d)%N%:Z + d.
-Proof.
-  apply/eqP.
-  rewrite eqz_nat.
-  rewrite mulnDl.
-  rewrite mul1n.
-  done.
 Qed.
 
 Lemma edivn_ceil_lt_d (m d : nat) : (0 < d)%N ->
@@ -411,39 +405,19 @@ Proof.
   rewrite /edivn_ceil.
   rewrite {1}(divn_eq' m d).
   case: ifP => H.
-  (* 割り切れるので、m %% d = 0 の場合 *)
+  (* m が d で、割り切れるので m %% d = 0 の場合 *)
   - move/eqP in H.
-    rewrite H /=.
-    rewrite addr0.
-    (* (m %/ d)%N * d - (m %/ d * d)%N < d *)
+    rewrite H /= addr0.
       by rewrite eq_subz.
-      
-  - rewrite opprD.
-    rewrite addrCA addrA.
-    rewrite -addn1.
-    (* - (m %/ d * d)%N + (m %/ d + 1)%N * d - (m %% d)%N < d *)
-    rewrite l_distr //=.
-    rewrite addrA.
-    Check (- (m %/ d * d)%N%:Z) + (m %/ d * d)%N%:Z + d - (m %% d)%N%:Z .
-    rewrite [(- (m %/ d * d)%N%:Z) + ((m %/ d * d)%N%:Z)]addrC.
-    rewrite eq_subz add0r.
-    Search _ (_ - _ < _).
-    rewrite ltr_subl_addl.
-    Search _ (_ < _ + _).
-    Check ltr_addr.
-    rewrite ltr_addr.
+  (* m が d で、割りきれない場合 *)
+  - rewrite opprD addrCA addrA -addn1.
+    have l_dist (m' : nat) : (m' + 1)%N%:Z * d = (m' * d)%N%:Z + d
+      by apply/eqP; rewrite eqz_nat mulnDl mul1n.
+    rewrite l_dist //= addrA [- _ + _]addrC.
+    rewrite eq_subz add0r ltr_subl_addl ltr_addr ltz_nat lt0n.
+    (* Goal : (m %% d)%N != 0 *)
     rewrite /dvdn in H.
-    rewrite ltz_nat.
-    rewrite -eqz_nat in H.
-    move/negbT in H.
-    Search _ (0 < _)%N.
-    rewrite lt0n.
-    apply/eqP => Hn.
-    move/eqP in H.
-    apply: H.
-    f_equal.
-    rewrite Hn.
-    done.
+      by move/negbT in H.
 Qed.
 
 (**
@@ -452,8 +426,8 @@ Qed.
 直感的に説明するのが難しいので、数直線でも書いて納得してほしいのですが、
 剰余を正とするためには、
 
-- 被除数が正なら絶対値の割算で切り捨てしたあと除数の符号を反映します。
-- 被除数が負なら絶対値の割算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
+- 被除数が正なら絶対値の除算で切り捨てしたあと除数の符号を反映します。
+- 被除数が負なら絶対値の除算で切り上げしたあと除数の符号を反映し、さらに符号を反転します。
 
 ```math
 m / d =
@@ -495,7 +469,7 @@ Compute emodz (- 10%:Z) 3.                  (* 2 *)
 Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
 
 (**
-定義から自明ですが式(1.2)も成り立っています。
+定義から自明ですが、式(1.2)も成り立っています。
 *)
 Lemma edivz_eq (m d : int) : m = (edivz m d)%Z * d + (emodz m d)%Z.
 Proof.
@@ -503,13 +477,12 @@ Proof.
 Qed.
 
 (**
-# 剰余が正であることの証明
+# 式(1.3')の証明
 
-先に、比較的やさしい剰余が正であることの証明をします。
-証明するべきは以下です。
+先に、比較的やさしいほうの証明をします。証明するべきは以下です。
 
 ```math
-m\ rem\ d \ge 0
+0 \le m\ rem\ d \lt | d |
 ```
 *)
 
@@ -542,14 +515,12 @@ Proof.
     rewrite -{1}(opptr (ltr0_norm H)).
     rewrite addrC subr_ge0.
     apply: edivn_ceilp.
-      by rewrite -lt0n absz_gt0.
+      by rewrite lt0n absz_eq0.
 Qed.
 
 (**
 ## 定理 - 剰余は除数より小
-
  *)
-
 Lemma ediv_mod_ltd (m d : int) : d != 0 -> emodz m d < `|d|%N.
 Proof.
   move=> Hd.
@@ -841,9 +812,9 @@ d \lt -r \le 0, ただし d \lt 0 \\`
 
 ```
 
-このふたつに式は、$|d|$を使ってひとつにまとめられる。
+このふたつの式は、$|d|$を使ってひとつにまとめられる。これが式(1.3')です。
 
-$$ 0 \le r \lt | d | $$
+$$ 0 \le r \lt | d | \tag{1.3'} $$
 
 | m  |  d | q  | r  | 実数除算 | 絶対値除算 | 例    |商  | 余  |
 |:--:|:--:|:--:|:--:|:-------:|:----------:|:-----:|:--:|:---:|
@@ -970,6 +941,29 @@ Section OPT.
     rewrite ltr0_norm //=.
       by rewrite opprK.
   Qed.
+
+  (* divn_eq の整数版の別証明 *)
+  Lemma divn_eq''' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
+  Proof.
+    rewrite /divn modn_def.
+    case: edivnP => q r //= Heq Hd.
+    rewrite Heq.
+    (* Goal : (q * d + r)%N = (q * d)%N + r *)
+    done.
+  Qed.
+
+  (* edivn_ceil_lt_d のミニ補題。自然数の文脈にすると簡単である。 *)
+  Lemma l_distr (d m : nat) : (m %/ d + 1)%N%:Z * d = (m %/ d * d)%N%:Z + d.
+  Proof.
+    apply/eqP.
+    rewrite eqz_nat.
+    rewrite mulnDl.
+    rewrite mul1n.
+    done.
+  Qed.
+  
+End OPT.
+
 
 (* END *)
 (* END *)
