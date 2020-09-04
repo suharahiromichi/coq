@@ -398,8 +398,8 @@ m - \lfloor m / d \rfloor d \lt d \\
 \lceil m / d \rceil d - m   \lt d
 ```
 *)
-Lemma edivn_floor_lt_d (m d : nat) : (0 < d)%N ->
-                                     m%:Z - (edivn_floor m d * d)%:Z < d.
+Lemma edivn_floor_ltd (m d : nat) : (0 < d)%N ->
+                                    m%:Z - (edivn_floor m d * d)%:Z < d.
 Proof.
   move=> Hd.
   rewrite /edivn_floor.
@@ -409,8 +409,8 @@ Proof.
     by apply: ltn_pmod.
 Qed.
 
-Lemma edivn_ceil_lt_d (m d : nat) : (0 < d)%N ->
-                                    (edivn_ceil m d)%:Z * d - m%:Z < d.
+Lemma edivn_ceil_ltd (m d : nat) : (0 < d)%N ->
+                                   (edivn_ceil m d)%:Z * d - m%:Z < d.
 Proof.
   move=> Hd.
   rewrite /edivn_ceil.
@@ -511,23 +511,28 @@ Proof.
   move=> Hd.
   rewrite /emodz /edivz.
   case: ifP => H.
-  - rewrite -mulrAC.
-    rewrite -abszEsg mulrC.
-    rewrite subr_ge0.
-    move/normr_idP in H.
+  (* 0 <= m の場合 *)
+  - rewrite -mulrAC -abszEsg mulrC subr_ge0.
+    move/gez0_abs in H.
     rewrite -{2}H.
+      (* edivn_floor `|m| `|d| * `|d|%N <= `|m| *)
       by apply: edivn_floorp.
 
+  (* 0 > m の場合 *)
+  (* よく見るとわかりますが、右辺の負号は括弧だけに掛かっているので、
+     右から掛けるdを中に入れます。 *)
+    Check m - (- (sgz d * edivn_ceil `|m| `|d|)) * d.
+    Check mulNr : forall (R : ringType) (x y : R), - x * y = - (x * y).
   - rewrite mulNr.
     (* m - - X は m + (- - X) なので、二重の負号 oppz を消します。 *)
-    rewrite [- - _]oppzK.
-    rewrite -mulrAC.
-    rewrite -abszEsg mulrC.
+    rewrite [- - _]oppzK -mulrAC -abszEsg mulrC.
     move/nge_lt in H.
-    Check opptr (ltr0_norm H).
-    rewrite -{1}(opptr (ltr0_norm H)).
+    Check opptr (ltz0_abs H) : - `|m|%N%:Z = m.
+    rewrite -{1}(opptr (ltz0_abs H)).
     rewrite addrC subr_ge0.
+    (* `|m| <= edivn_ceil `|m| `|d| * `|d|%N *)
     apply: edivn_ceilp.
+      (* (0 < `|d|)%N *)
       by rewrite lt0n absz_eq0.
 Qed.
 
@@ -539,51 +544,39 @@ Proof.
   move=> Hd.
   rewrite /emodz /edivz.
   case: ifP => Hm; case H : (0 <= d).
+  (* m が、0 <= m か 0 > m か、
+     d が、0 <= d か 0 > d か、で場合分けする。 *)
   
-  (* m - sgz d * edivn_floor `|m| `|d| * d < `|d| *)
-  - rewrite mulrAC.
-    rewrite -abszEsg.
-    rewrite mulrC.
+  (* Goal : m - sgz d * edivn_floor `|m| `|d| * d < `|d| *)
+  - rewrite mulrAC -abszEsg mulrC.          (* 商*除数の部分 *)
+    rewrite -{1}(gez0_abs Hm).              (* 被除数の部分 *)
+    apply: edivn_floor_ltd.                 (* 自然数割算の補題 *)
+      by rewrite -absz_gt0 in Hd.
+    
+  (* Goal : m - sgz d * edivn_floor `|m| `|d| * d < `|d| *)    
+  - rewrite mulrAC -abszEsg mulrC.
     rewrite -{1}(gez0_abs Hm).
-    Check edivn_floor_lt_d.
-    apply: edivn_floor_lt_d.
-    Check normr_gt0 : forall (R : numDomainType) (x : R), (0 < `|x|) = (x != 0).
-    Search _ (_ != 0).
+    apply: edivn_floor_ltd.
       by rewrite -absz_gt0 in Hd.
       (* by rewrite -normr_gt0 in Hd. *)
     
-  (*  m - sgz d * edivn_floor `|m| `|d| * d < `|d| *)    
-  - rewrite mulrAC.
-    rewrite -abszEsg.
-    rewrite mulrC.
-    rewrite -{1}(gez0_abs Hm).
-    apply: edivn_floor_lt_d.
-      by rewrite -absz_gt0 in Hd.
-      (* by rewrite -normr_gt0 in Hd. *)
-    
-  (* m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)    
-  - rewrite mulNr mulrAC -abszEsg mulrC.
+  (* Goal : m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)    
+  - rewrite mulNr mulrAC -abszEsg mulrC opprK.
     move/nge_lt in Hm.
-    rewrite opprK.
-    rewrite -{1}(opptr (ltz0_abs Hm)).
-    rewrite addrC.
-    apply: edivn_ceil_lt_d.
+    rewrite -{1}(opptr (ltz0_abs Hm)) addrC.
+    apply: edivn_ceil_ltd.
       by rewrite -absz_gt0 in Hd.
-      (* by rewrite -normr_gt0 in Hd. *)
-    
-  (* m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)
-  - rewrite mulNr mulrAC -abszEsg mulrC.
+      
+  (* Goal : m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)
+  - rewrite mulNr mulrAC -abszEsg mulrC opprK.
     move/nge_lt in Hm.
-    rewrite opprK.
-    rewrite -{1}(opptr (ltz0_abs Hm)).
-    rewrite addrC.
-    apply: edivn_ceil_lt_d.
+    rewrite -{1}(opptr (ltz0_abs Hm)) addrC.
+    apply: edivn_ceil_ltd.
       by rewrite -absz_gt0 in Hd.
-      (* by rewrite -normr_gt0 in Hd. *)
 Qed.
 
 (**
-まとめると、式(1.3')が成り立ちます。
+まとめると、式(1.3')が成り立つことが証明できます。
 *)
 Lemma ediv_mod_ge0_ltd (m d : int) : d != 0 -> 0 <= emodz m d < `|d|%N.
 Proof.
@@ -597,7 +590,7 @@ Qed.
 (**
 # 一意性の証明
 
-式(1.1)から式(1.3)を満たす商qと剰余rがふたつあったとして、それが等しいことを証明します。
+式(1.2)と式(1.3)を満たす商qと剰余rがふたつあったとして、それが等しいことを証明します。
 すなわち、
 
 ```math
@@ -635,29 +628,18 @@ Proof.
 Qed.
 
 Lemma lemma3 (q1 q2 r1 r2 d : int) :
-  q1 * d + r1 = q2 * d + r2 -> (`|((q1 - q2) * d)%R|)%N = `|r1 - r2|%N.
+  q1 * d + r1 = q2 * d + r2 -> `|((q1 - q2) * d)%R|%N = `|r1 - r2|%N.
 Proof.
   move/eqP.
   Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
-  rewrite -subr_eq.
-  rewrite -addrA addrC eq_sym.
-  rewrite -subr_eq.
+  rewrite -subr_eq -addrA addrC eq_sym -subr_eq.
   move/eqP/eq_eqabsabs.
-  Check distrC.
-  rewrite distrC.
-  rewrite -mulrBl.
-  (* ゴールの省略された型アノテーションを追加する。 *)
-  Check `|((q1 - q2)%R * d)%R|%R = `|r1 - r2|%R ->
-  `|((q1 - q2)%R * d)%R|%N = `|r1 - r2|%N.
-  Check abszE : forall m : int, `|m|%N = `|m| :> int.
-
-  move=> H.
-  move/eqP in H.
+  rewrite distrC -mulrBl => /eqP H.
   apply/eqP.
   (* Goal : `|((q1 - q2) * d)%R|%N == `|r1 - r2|%N *)
-  rewrite -eqz_nat.                         (* ***** *)
+  rewrite -eqz_nat.                     (* 整数スコープへ書き換える *)
   (* Goal :  `|(q1 - q2) * d| == `|r1 - r2| :> int *)
-  done.
+  done.                                     (* H とおなじ。 *)
 Qed.
 
 Lemma lemma2 (r1 r2 : int) (d : nat) :
@@ -667,15 +649,14 @@ Proof.
   move/andP : Hr1 => [Hr1 Hr1d].
   move/andP : Hr2 => [Hr2 Hr2d].
 
-  Search (_ < _ + _).
-  Check ltr_paddr Hr2 Hr2d.
-  move: (ltr_paddr Hr1 Hr1d) => Hr1dr1.
-  move: (ltr_paddr Hr2 Hr1d) => Hr1dr2.
-  move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.
-  move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.
-  Check ger0_norm Hr1.
-  Check gez0_abs Hr1.
-  rewrite -(gez0_abs Hr1) in Hr1d.
+  move: (ltr_paddr Hr1 Hr1d) => Hr1dr1.     (* Hr1dr1 : r1 < d + r1 *)
+  move: (ltr_paddr Hr2 Hr1d) => Hr1dr2.     (* Hr1dr2 : r1 < d + r2 *)
+  move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.     (* Hr2dr1 : r2 < d + r1 *)
+  move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.     (* Hr2dr2 : r2 < d + r2 *)
+  
+  (* r1 と r2 は0以上なので、絶対値記号をつけます。 *)
+  Check gez0_abs Hr1 : `|r1|%N%:Z = r1.
+  rewrite -(gez0_abs Hr1) in Hr1d.          (* `|r1|%N < d *)
   rewrite -(gez0_abs Hr2) in Hr2d.
   rewrite -(gez0_abs Hr1) in Hr1dr1.
   rewrite -(gez0_abs Hr1) in Hr1dr2.
@@ -683,7 +664,7 @@ Proof.
   rewrite -(gez0_abs Hr2) in Hr1dr2.
   rewrite -(gez0_abs Hr2) in Hr2dr1.
   rewrite -(gez0_abs Hr2) in Hr2dr2.
-
+  
   case H : (r1 - r2 >= 0).
   - move: {+}H => H'.
     rewrite -(gez0_abs Hr1) in H'.
@@ -752,23 +733,19 @@ Lemma edivz_uniqness_q (r1 r2 q1 q2 m d : int) :
                                 q1 = q2.
 Proof.
   move=> Hr1 Hr2 Hq1 Hq2.
-  apply/abseq0_eq.
-  Check @lemma1 `|q1 - q2| `|d|.
-  apply: (@lemma1 `|q1 - q2| `|d|).
-  Check abszM.
-  rewrite -abszM.
   rewrite Hq1 in Hq2.
-(*  
-  move/andP : Hr1 => [Hr1 Hr1d].
-  move/andP : Hr2 => [Hr2 Hr2d].
-*)
-  Check @lemma3 q1 q2 r1 r2 d.
-  Check @lemma3 q1 q2 r1 r2 d Hq2.
-  rewrite (@lemma3 q1 q2 r1 r2 d Hq2).
+  apply/abseq0_eq.
 
-  apply: lemma2.
-  - done.
-  - done.
+  Check @lemma1 `|q1 - q2| `|d| : (`|q1 - q2| * `|d| < `|d|)%N -> `|q1 - q2|%N = 0%N.
+  apply: (@lemma1 `|q1 - q2| `|d|).
+  
+  Check abszM : forall m1 m2 : int, `|(m1 * m2)%R|%N = (`|m1| * `|m2|)%N.
+  rewrite -abszM.
+  
+  Check @lemma3 q1 q2 r1 r2 d Hq2 : `|((q1 - q2) * d)%R|%N = `|r1 - r2|%N.
+  rewrite (@lemma3 q1 q2 r1 r2 d Hq2).
+  
+    by apply: lemma2.
 Qed.
 
 Lemma edivz_uniqness_r (r1 r2 q m d : int) :
@@ -965,7 +942,7 @@ Section OPT.
     done.
   Qed.
 
-  (* edivn_ceil_lt_d のミニ補題。自然数の文脈にすると簡単である。 *)
+  (* edivn_ceil_ltd のミニ補題。自然数の文脈にすると簡単である。 *)
   Lemma l_distr (d m : nat) : (m %/ d + 1)%N%:Z * d = (m %/ d * d)%N%:Z + d.
   Proof.
     apply/eqP.
