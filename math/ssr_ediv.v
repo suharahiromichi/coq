@@ -196,7 +196,7 @@ Proof.
 Qed.
 
 (* 絶対値を付けるだけの補題 *)
-Lemma eq_eqabsabs (x y : int) : x = y -> `|x| = `|y|.
+Lemma eq_eqabsabs (x y : int) : x = y -> `|x|%N = `|y|%N.
 Proof. by move=> ->. Qed.
 
 (* いつも欲しくなる補題の整数版 *)
@@ -640,17 +640,17 @@ Proof.
   (* 前提 *)
   move/eqP.
   Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
-  rewrite -subr_eq -addrA addrC eq_sym -subr_eq.
-  move/eqP/eq_eqabsabs.
-  rewrite distrC -mulrBl => /eqP H.
+  rewrite -subr_eq -addrA addrC eq_sym -subr_eq -mulrBl -[(q2 - q1)]opprB.
+  (* Goal : - (q1 - q2) * d = r1 - r2 *)
   
-  apply/eqP.
-  (* Goal : `|((q1 - q2) * d)%R|%N == `|r1 - r2|%N *)
-  rewrite -eqz_nat.                     (* 整数スコープへ書き換える *)
-  (* Goal :  `|(q1 - q2) * d| == `|r1 - r2| :> int *)
-  done.                                     (* H とおなじ。 *)
+  move/eqP/eq_eqabsabs.           (* 前提の両辺に絶対値記号をつける。 *)
+  rewrite mulNr abszN.            (* 前提左辺の絶対値の負号を消す。 *)
+  done.
 Qed.
 
+(**
+補題：
+*)
 Lemma lemma2 (r1 r2 : int) (d : nat) :
   0 <= r1 < d -> 0 <= r2 < d -> `|r1 - r2|%N < d :> int.
 Proof.
@@ -665,14 +665,12 @@ Proof.
   
   (* r1 と r2 は0以上なので、絶対値記号をつけます。 *)
   Check gez0_abs Hr1 : `|r1|%N%:Z = r1.
-  rewrite -(gez0_abs Hr1) in Hr1d.          (* `|r1|%N < d *)
-  rewrite -(gez0_abs Hr2) in Hr2d.
-  rewrite -(gez0_abs Hr1) in Hr1dr1.
-  rewrite -(gez0_abs Hr1) in Hr1dr2.
-  rewrite -(gez0_abs Hr1) in Hr2dr1.
-  rewrite -(gez0_abs Hr2) in Hr1dr2.
-  rewrite -(gez0_abs Hr2) in Hr2dr1.
-  rewrite -(gez0_abs Hr2) in Hr2dr2.
+  rewrite -(gez0_abs Hr1) in Hr1d.         (* `|r1|%N < d *)
+  rewrite -(gez0_abs Hr2) in Hr2d.         (* `|r2|%N < d *)
+  rewrite -(gez0_abs Hr1) in Hr1dr1.       (* `|r1|%N < d + `|r1|%N *)
+  rewrite -(gez0_abs Hr1) -(gez0_abs Hr2) in Hr1dr2. (* `|r1|%N < d + `|r2|%N *)
+  rewrite -(gez0_abs Hr1) -(gez0_abs Hr2) in Hr2dr1. (* `|r2|%N < d + `|r1|%N *)
+  rewrite -(gez0_abs Hr2) in Hr2dr2.       (* `|r2|%N < d + `|r2|%N *)
   
   case H : (r1 - r2 >= 0).
   (* r2 <= r1 の場合 *)
@@ -719,6 +717,9 @@ Proof.
       by apply: lt_le.
 Qed.
 
+(**
+定理：商 q は一意である。
+*)
 Lemma edivz_uniqness_q (r1 r2 q1 q2 m d : int) :
   0 <= r1 < `|d| ->
                  0 <= r2 < `|d| ->
@@ -742,21 +743,20 @@ Proof.
     by apply: lemma2.
 Qed.
 
+(**
+定理：剰余 r は一意である。
+*)
 Lemma edivz_uniqness_r (r1 r2 q m d : int) :
   m = q * d + r1 ->
   m = q * d + r2 ->
   r1 = r2.
 Proof.
-  move=> Hq1 Hq2.  
-  rewrite Hq1 in Hq2.
-  rewrite [RHS]addrC in Hq2.
-  rewrite [LHS]addrC in Hq2.
-  move/eqP in Hq2.
-  rewrite -subr_eq in Hq2.
-  move/eqP in Hq2.
-  rewrite -[LHS]addrA in Hq2.
-  rewrite eq_subz in Hq2.
-  rewrite addr0 in Hq2.
+  move=> -> H.
+  rewrite [RHS]addrC [LHS]addrC in H.
+  move/eqP in H.
+  rewrite -subr_eq in H.
+  move/eqP in H.
+  rewrite -[LHS]addrA eq_subz addr0 in H.
   done.
 Qed.
 
