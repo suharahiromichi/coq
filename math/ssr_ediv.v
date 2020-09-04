@@ -617,6 +617,10 @@ r_{1} = r_{2} \\
 ついで、$ r_{1} = r_{2} $ を証明します。
 *)
 
+(**
+補題： 自然数 q と d の積が d より小さいなら、q は0である。
+実数なら q は 1未満となるわけですが、自然数なので q は0になります。
+*)
 Lemma lemma1 (q d : nat) : (q * d < d)%N -> (q = 0)%N.
 Proof.
   rewrite -{2}[d]mul1n.
@@ -627,14 +631,19 @@ Proof.
     by ssromega.
 Qed.
 
+(**
+補題：``q1 * d + r1 = q2 * d + r2`` のとき、移項して絶対値で``=``をとる。
+*)
 Lemma lemma3 (q1 q2 r1 r2 d : int) :
   q1 * d + r1 = q2 * d + r2 -> `|((q1 - q2) * d)%R|%N = `|r1 - r2|%N.
 Proof.
+  (* 前提 *)
   move/eqP.
   Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
   rewrite -subr_eq -addrA addrC eq_sym -subr_eq.
   move/eqP/eq_eqabsabs.
   rewrite distrC -mulrBl => /eqP H.
+  
   apply/eqP.
   (* Goal : `|((q1 - q2) * d)%R|%N == `|r1 - r2|%N *)
   rewrite -eqz_nat.                     (* 整数スコープへ書き換える *)
@@ -666,63 +675,48 @@ Proof.
   rewrite -(gez0_abs Hr2) in Hr2dr2.
   
   case H : (r1 - r2 >= 0).
-  - move: {+}H => H'.
-    rewrite -(gez0_abs Hr1) in H'.
-    rewrite -(gez0_abs Hr2) in H'.    
-    have H'' : `|r2|%N <= `|r1|%N :> int by rewrite -subr_ge0.
+  (* r2 <= r1 の場合 *)
+  - move: {+}H => H'.                       (* 複製する。 *)
+    rewrite -(gez0_abs Hr1) -(gez0_abs Hr2) in H'.
+    (* H' : (0 <= `|r1|%N - `|r2|%N) = true *)
     
-    move/gez0_abs in H.    (* move/normr_idP in H. *)
-    rewrite H.
-    rewrite -(gez0_abs Hr1).
-    rewrite -(gez0_abs Hr2).
+    move/gez0_abs in H.
+    rewrite H -(gez0_abs Hr1) -(gez0_abs Hr2).
+    (* H : `|r1 - r2|%N = r1 - r2 *)
     
-    Check ltn_sub2r : forall p m n : nat, (p < n)%N -> (m < n)%N -> (m - p < n - p)%N.
-    Check @ltn_sub2r `|r2| `|r1| (d + `|r2|) Hr2dr2 Hr1dr2
-                                 : (`|r1| - `|r2| < d + `|r2| - `|r2|)%N.
     have H2 := @ltn_sub2r `|r2| `|r1| (d + `|r2|) Hr2dr2 Hr1dr2.
-    (* H2 : (`|r1| - `|r2| < d + `|r2| - `|r2|)%N ここでnatになる。 *)
-    
     rewrite -addnBA in H2 ; last done.
     rewrite (eq_subn `|r2|) in H2.
     rewrite addn0 in H2.
-    (* ***** *)
-    rewrite -ltz_nat in H2.
-      by rewrite -subzn in H2.
+    (* H2 : (`|r1| - `|r2| < d)%N *)
+    
+    rewrite -ltz_nat -subzn // in H2.
+      (* Goal : (`|r2| <= `|r1|)%N *)
+      by rewrite -lez_nat -subr_ge0.
       
+  (* r1 < r2 の場合 *)
   - move: {+}H => H'.
-    rewrite -(gez0_abs Hr1) in H'.
-    rewrite -(gez0_abs Hr2) in H'.    
-    have H'' : `|r1| <= `|r2|.
-    + move/nge_lt in H'.
-      Search _ (_ - _ < 0).
-      rewrite subr_lt0 in H'.
-      rewrite ler_eqVlt.
-        by apply/orP/or_intror.
-        
-    + move/negbT in H.
-      rewrite -ltrNge in H.
-
-      move/lt_le in H.
-      Check ler0_def : forall (R : numDomainType) (x : R), (x <= 0) = (`|x| == - x).
-      Check lez0_abs : forall m : int, m <= 0 -> `|m|%N = - m :> int.
-      move/lez0_abs in H.                   (* rewrite ler0_def in H. *)
-      (* move/eqP in H. *)
-      rewrite H.
-      Search _ (- ( _ - _ )).
-      rewrite opprB.
-
-      rewrite -(gez0_abs Hr1).
-      rewrite -(gez0_abs Hr2).
-      Check @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1.
-      have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
-      rewrite -addnBA in H1 ; last done.
-      rewrite (eq_subn `|r1|) in H1.
-      rewrite addn0 in H1.
-      (* ***** *)
-      rewrite -ltz_nat in H1.
-      rewrite -subzn in H1.
-      * done.
-      * done.
+    rewrite -(gez0_abs Hr1) -(gez0_abs Hr2) in H'.    
+    (* H' : (0 <= `|r1|%N - `|r2|%N) = false *)
+    
+    move/negbT in H.
+    rewrite -ltrNge in H.
+    move/lt_le/lez0_abs in H.
+    rewrite H opprB -(gez0_abs Hr1) -(gez0_abs Hr2).
+    (* H : `|r1 - r2|%N = - (r1 - r2) *)
+    
+    have H1 := @ltn_sub2r `|r1| `|r2| (d + `|r1|) Hr1dr1 Hr2dr1.
+    rewrite -addnBA in H1 ; last done.
+    rewrite (eq_subn `|r1|) in H1.
+    rewrite addn0 in H1.
+    (* H1 : (`|r2| - `|r1| < d)%N *)
+    
+    rewrite -ltz_nat -subzn // in H1.
+    (* Goal : (`|r1| <= `|r2|)%N *)
+    move/nge_lt in H'.
+    rewrite subr_lt0 in H'.
+    rewrite -lez_nat.
+      by apply: lt_le.
 Qed.
 
 Lemma edivz_uniqness_q (r1 r2 q1 q2 m d : int) :
