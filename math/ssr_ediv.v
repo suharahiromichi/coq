@@ -150,9 +150,11 @@ Section INTRO.
 m と n が自然数なので、整数文脈では、自然数から正整数へのコアーションが行われます。
 つまり Posz (``%:Z`` とおなじ) が埋め込まれるわけです。
 
-自然数文脈で等しければ整数文脈でも等しいので、両者は同値です。eqz_nat 補題。
+自然数文脈で等しければ整数文脈でも等しいので、両者は同値です（eqz_nat 補題）。
 しかし、その補題の両辺がbool値で比較されていることに注意してください。
-型が違うので、自然数の文脈を整数の文脈に書き換えるとはできません。
+
+自然数型の式を整数型の式に書き換えることはできませんが、
+自然数の文脈の等式を整数の文脈の等式に書き換えるとはできるわけです。
  *)
   Check eqz_nat m n : (m == n :> int) = (m == n)%N.
 End INTRO.
@@ -175,11 +177,11 @@ Section INT.
   Check PoszD m n : (m + n)%N%:Z = m%:Z + n%:Z. (* m + n = (m + n)%N と見える。 *)
   Check PoszM m n : (m * n)%N%:Z = m%:Z * n%:Z. (* (m * n)%N = m * n *)
 
-  Check subzn : forall m n : nat, (n <= m)%N -> m%:Z - n%:Z = (m - n)%N.
-  Check lez_nat m n : (m%:Z <= n%:Z) = (m <= n)%N.
-  Check ltz_nat m n : (m%:Z < n%:Z) = (m < n)%N.
-  Check divz_nat n d : (n %/ d)%Z = (n %/ d)%N.
-  Check modz_nat m d : (m %% d)%Z = (m %% d)%N.
+  Check subzn : forall m n : nat, (n <= m)%N -> m%:Z - n%:Z = (m - n)%N%:Z.
+  Check divz_nat n d : (n %/ d)%Z = (n %/ d)%N%:Z.
+  Check modz_nat m d : (m %% d)%Z = (m %% d)%N%:Z.
+  Check lez_nat m n : (m%:Z <= n%:Z) = (m <= n)%N. (* 両辺はbool *)
+  Check ltz_nat m n : (m%:Z < n%:Z) = (m < n)%N.   (* 両辺はbool *)
   
   Variables x y : int.
   (* これも morphism で定義されている *)
@@ -910,6 +912,27 @@ $$ | d | \lt r \le | 0 | $$
  *)
 Section OPT.
   
+  (* edivz と emodz についても、整数演算から自然数演算に変換できる。 *)
+  Lemma edivz_nat (m d : nat) : edivz m d = (m %/ d)%N.
+  Proof.
+      by case: d => // d; rewrite /edivz /= mul1r.
+  Qed.
+  
+  Lemma emodz_nat (m d : nat) : emodz m d = (m %% d)%N.
+  Proof.
+    rewrite /emodz edivz_nat.
+    rewrite {1}(divn_eq' m d).
+    rewrite addrAC eq_subz add0r.
+    done.
+  Qed.
+  
+  (* %:Z の分配とみると： *)
+  Check edivz_nat : forall (m d : nat), edivz m%:Z d%:Z = (m %/ d)%N%:Z.
+  Check emodz_nat : forall (m d : nat), emodz m%:Z d%:Z = (m %% d)%N%:Z.
+
+  (* *** *)
+  (* *** *)
+  
   (* intidiv.v の補題 を使って証明する。 *)
   Lemma divn_eq'' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N :> int.
   Proof.
@@ -930,7 +953,6 @@ Section OPT.
 
   Lemma ltz_m_abs (x : int) : x < 0 -> x = - `|x|.
   Proof.
-    Set Printing All.
     move=> H.
     rewrite ltr0_norm //=.
       by rewrite opprK.
@@ -955,10 +977,6 @@ Section OPT.
     rewrite mul1n.
     done.
   Qed.
-
-  (* 自然数の場合、edivz が自然数除算に等しい。定義から明らかだが *)
-  Lemma edivz_nat (m d : nat) : edivz m d = (m %/ d)%N.
-  Proof. by case: d => // d; rewrite /edivz /= mul1r. Qed.
 End OPT.
 
 (**
