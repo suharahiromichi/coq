@@ -40,7 +40,7 @@ opamでインストールしている場合は、ソースは、たとえば以�
 (**
 ## 除算の定義
 
-ユーグリッド除法 edivn_rec (末尾再起）で定義される。
+ユーグリッド除法 edivn_rec (末尾再帰）で定義される。
 *)
 Print edivn_rec.
 (* 
@@ -75,7 +75,10 @@ Variant edivn_spec (m d : nat) : nat * nat -> Set :=
 Check edivnP : forall m d : nat, edivn_spec m d (edivn m d).
 
 (**
+同様に除法の結果を等式で表した補題：
 ``q * d + r`` を d で割ると、q 余り r である。
+
+unfoldするより、これを使ったほうが便利です。
 *)
 Check edivn_eq : forall d q r : nat, r < d -> edivn (q * d + r) d = (q, r).
 
@@ -148,12 +151,19 @@ Lemma ltn_mod' m d : 0 < d -> m %% d < d.
 Proof. by rewrite ltn_mod. Qed.
 
 (**
-## 剰余計算の補題（odd を条件にするもの）
+補足： ``0 < d`` ではなく ``0 != d`` を使いたいときは、次の補題で書き換えてください。
 *)
+Check lt0n : forall n : nat, (0 < n) = (n != 0).
+
+(**
+## 奇偶についての補題
+*)
+Print odd.
+
 (**
 ### m %% 2 = 0 <-> ~~ odd m.
 
-奇数は剰余と独立に定義されている。
+奇数かどうかは剰余と独立に定義されているので、同値であることを示す補題：
  *)
 Lemma modn2' m : m %% 2 = 0 <-> ~~ odd m.
 Proof.
@@ -164,7 +174,7 @@ Proof.
     Fail rewrite H.
 (**
 H : odd m = 0 は、 nat_of_bool のコアーションであるため、``~~ odd m`` を ~~ 0 にする
-rewrite をすることができなう。
+rewrite をすることはできない。
  *)
     Check H : nat_of_bool (odd m) = O.
 
@@ -187,8 +197,11 @@ Qed.
 
 (**
 ## 2で割る補題
+ *)
+Print half.                                 (* ./2 *)
 
-2で割る は、divn とは無関係に定義されている。
+(**
+「2で割る」は、divn とは無関係に定義されている。
 *)
 Check divn2 : forall m : nat, m %/ 2 = m./2.
 
@@ -205,9 +218,9 @@ Print dvdn.                         (* bool述語 *)
 Locate "d %| m". (* := dvdn m d : nat_scope (default interpretation) *)
 
 (**
-%% と %| の間は、eqP によるリフレクションで変換できる。
+%% と ``%|`` の間は、``eqP`` によるリフレクションで変換できる。
 
-%| の定義から明らかだが、案外気がつかないかも。
+``d %| m`` の定義 ``m %% d == 0``  から明らかだが、案外気がつかないかも。
  *)
 Goal forall m d, m %% d = 0 <-> d %| m.
 Proof.
@@ -293,14 +306,6 @@ fun m n : nat => gcdn m n == 1
 Check coprime1n : forall n : nat, coprime 1 n.
 Check coprimen1 : forall n : nat, coprime n 1.
 Check coprime_sym : forall m n : nat, coprime m n = coprime n m.
-
-(**
-## ユーグリッド数は互いに素である
-
-Concrete Mathematics [1] （コンピュータの数学 [2] p.108）
-
-（別の機会に記載する）
-*)
 
 (**
 # 合同式
