@@ -281,7 +281,7 @@ Section GCDLCM.
 (**
 ユーグリッドの互除法の1回分の等式、unfold するよりもこれを使う。
 *)  
-  Cecck gcdnE m n : gcdn m n = if m == 0 then n else gcdn (n %% m) m.
+  Check gcdnE m n : gcdn m n = if m == 0 then n else gcdn (n %% m) m.
 
 (**
 有名な公式：
@@ -369,21 +369,20 @@ Section Modulo.
     m = n %[mod d] -> p = q %[mod d] -> m + p = n + q %[mod d].
   Proof.
     move=> Hmp Hnd.
-    Check modnDm
-      : forall m n d : nat, m %% d + n %% d = m + n %[mod d].
+    Check modnDm : forall m n d : nat, m %% d + n %% d = m + n %[mod d].
     rewrite -[LHS]modnDm -[RHS]modnDm.
-    congr (_ %% _).
-    (* 前提からは、より一般的な定理が導けるわけである。 *)
-    (* Goal : m %% d + p %% d = n %% d + q %% d *)
+    (* m %% d + p %% d = n %% d + q %% d %[mod d] *)
+    
+    congr (_ %% _).            (* %[mod d] を外す。 *)
+    (* m %% d + p %% d = n %% d + q %% d *)
+    
     congr (_ + _).
+    (* m %%d = n %% d *)
     - done.
+    (* p %%d = q %% d *)
     - done.
   Qed.
-
-(**
-引き算の場合については、あとで補足します。
-*)  
-
+  
 (**
 ### 合同式の乗算
 
@@ -393,11 +392,10 @@ Section Modulo.
     m = n %[mod d] -> p = q %[mod d] -> m * p = n * q %[mod d].
   Proof.
     move=> Hmp Hnd.
-    Search _ ((_ * _) %% _).
-    Check modnMm
-      : forall m n d : nat, m %% d * (n %% d) = m * n %[mod d].
+    Check modnMm : forall m n d : nat, m %% d * (n %% d) = m * n %[mod d].
     rewrite -[LHS]modnMm -[RHS]modnMm.
-    congr (_ %% _).
+    
+    congr (_ %% _). (* %[mod d] を外す。 *)
       (* Goal : m %% d * (p %% d) = n %% d * (q %% d) *)
       by congr (_ * _).
   Qed.
@@ -421,13 +419,12 @@ Section Modulo.
     p = q %[mod d] -> p^m = q^m %[mod d].
   Proof.
     move=> Hpq.
-    Search _ (_ ^ _ %% _).
-    Check modnXm
-      : forall m d p : nat, (p %% d) ^ m = p ^ m %[mod d].
+    Check modnXm : forall m d p : nat, (p %% d) ^ m = p ^ m %[mod d].
     rewrite -[LHS]modnXm -[RHS]modnXm.
+    
     congr (_ %% _).
       (* Goal : (p %% d) ^ m = (q %% d) ^ m *)
-      by congr (_ ^ m).
+      by congr (_ ^ _).
   Qed.
   
 (**
@@ -592,7 +589,6 @@ MathCompらしく、bool値の同値で証明しておきます。
     - rewrite lcmnC in H.
         by apply: m_divn_lcm_1_1 H.
   Qed.
-
 
 (**
 式(4.41)の→の共通部分です。
