@@ -160,15 +160,28 @@ Proof.
   rewrite modn2.
   split=> H.
   
-  (* H は、 nat_of_bool のコアーションであるため、``odd m`` rewriteに使えない。 *)
-  Check H : nat_of_bool (odd m) = O.
-  
-  (* b == 0 は ~~b に書き換えることができる。 *)
-  Check eqb0 : forall b : bool, (nat_of_bool b == 0) = ~~ b.
-  
-  - move/eqP in H.
+  - (* -> *)
+    Fail rewrite H.
+(**
+H : odd m = 0 は、 nat_of_bool のコアーションであるため、``~~ odd m`` を ~~ 0 にする
+rewrite をすることができなう。
+ *)
+    Check H : nat_of_bool (odd m) = O.
+
+    Check eqb0 : forall b : bool, (nat_of_bool b == 0) = ~~ b.
+    Check eqb0 (odd m) : (nat_of_bool (odd m) == 0) = ~~ (odd m).
+(**
+一旦、 nat_of_bool (odd m) == 0 にリフレクションすれば、
+eqb0 を使って、~~ odd m に書き換えることができる。
+ *)
+    move/eqP in H.
       by rewrite eqb0 in H.
-  - apply/eqP.
+
+  - (* <- *)
+(**
+逆も同様に証明できる。
+*)
+    apply/eqP.
       by rewrite eqb0.
 Qed.
 
@@ -180,10 +193,10 @@ Qed.
 Check divn2 : forall m : nat, m %/ 2 = m./2.
 
 (**
-# 可除
+# 整除可能
  *)
 (**
-## 可除の定義
+## 整除可能の定義
  *)
 Print dvdn.                         (* bool述語 *)
 (* fun d m : nat => m %% d == 0 *)
@@ -213,21 +226,55 @@ Proof.
 Qed.
 
 (**
-## 可除の補題
+## 整除可能の補題
 
-奇数は剰余と独立に定義されている。
+奇数（であることの判定）と、剰余とは、独立に定義されている。同値であることを証明する。
 *)
 Lemma dvdn2' n : 2 %| n <-> ~~ odd n.
 Proof. by rewrite dvdn2. Qed.
 
+(**
+# GCD・LCM
+
+GCDは、ユーグリッドの互除法で定義される。
+*)
+Print gcdn_rec.                             (* 略 *)
+Print gcdn.
+
+Section GCDLCM.
+  Variables m n p : nat.
+
+  Check gcdnn n : gcdn n n = n.
+  Check gcdnC n m : gcdn n m = gcdn m n.
+  Check gcdnA n m p : gcdn n (gcdn m p) = gcdn (gcdn n m) p.
+  Check gcd0n n : gcdn 0 n = n.
+  Check gcdn0 n : gcdn n 0 = n.
+  Check gcd1n n : gcdn 1 n = 1.
+  Check gcdn1 n : gcdn n 1 = 1.
+  (* 分配則 *)
+  Check muln_gcdr m n p : m * gcdn n p = gcdn (m * n) (m * p).
+  Check muln_gcdl m n p : gcdn m n * p = gcdn (m * p) (n * p).
+  
+  Check lcmnC n m : lcmn n m = lcmn m n.
+  Check lcmnA n m p : lcmn n (lcmn m p) = lcmn (lcmn n m) p.
+  Check lcm0n n : lcmn 0 n = 0.
+  Check lcmn0 n : lcmn n 0 = 0.
+  Check lcm1n n : lcmn 1 n = n.
+  Check lcmn1 n : lcmn n 1 = n.
+  (* 分配則 *)
+  Check muln_lcmr m n p : m * lcmn n p = lcmn (m * n) (m * p).
+  Check muln_lcml m n p : lcmn m n * p = lcmn (m * p) (n * p).
 
 (**
-# GCD
-*)
+ユーグリッドの互除法の1回分の等式、unfold するよりもこれを使う。
+*)  
+  Cecck gcdnE m n : gcdn m n = if m == 0 then n else gcdn (n %% m) m.
 
 (**
-# LCM
-*)
+有名な公式：
+*)  
+  Check muln_lcm_gcd m n : lcmn m n * gcdn m n = m * n.
+End GCDLCM.  
 
 (**
 # 互いに素 (coprime, relatively prime)
@@ -235,7 +282,6 @@ Proof. by rewrite dvdn2. Qed.
 (**
 ## 互いに素の定義
 *)
-
 Print coprime.                              (* boolena述語 *)
 (**
 fun m n : nat => gcdn m n == 1
@@ -253,7 +299,7 @@ Check coprime_sym : forall m n : nat, coprime m n = coprime n m.
 
 Concrete Mathematics [1] （コンピュータの数学 [2] p.108）
 
-XXXXXXXXX
+（別の機会に記載する）
 *)
 
 (**
