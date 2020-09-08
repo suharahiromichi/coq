@@ -336,6 +336,8 @@ Goal forall m n d, m = n %[mod d] -> n = m %[mod d].
 Proof. move=> m n d H. rewrite H. done. Qed.
 
 (**
+### 等式の補題の適用
+
 「=」「<>」「==」「!=」についての補題も適用可能である。
 *)
 Check @esym : forall (A : Type) (x y : A), x = y -> y = x.
@@ -352,6 +354,35 @@ Proof. move=> m n d H. by rewrite eq_sym. Qed.
 
 Goal forall m n d, m != n %[mod d] -> n != m %[mod d].
 Proof. move=> m n d H. by rewrite eq_sym. Qed.
+
+(**
+eqP で、Prop (=) と boolean (==) を変換できます。
+*)
+Goal forall m n d, m = n %[mod d] <-> m == n %[mod d].
+Proof.
+  move=> m n d.
+  split=> H; by apply/eqP.
+Qed.
+
+Goal forall m n d, m <> n %[mod d] <-> m != n %[mod d].
+Proof.
+  move=> m n d.
+  split=> H; by apply/eqP.
+Qed.
+
+(**
+### congr で、%[mod d] を外す
+
+ここで、外すとは``->``の右から左に変換することです。逆は成り立ちません。
+*)
+Goal forall m n d, m = n -> m = n %[mod d].
+Proof.
+  move=> m n d H.
+  (* Goal : m = n %[mod d] *)
+  congr (_ %% d).
+  (* Goal : m = n *)
+  done.
+Qed.
 
 Section Modulo.
 (**
