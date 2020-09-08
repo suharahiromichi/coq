@@ -828,7 +828,7 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
 この本では、
 合成数の定義を「それより小さい、ふたつの正の整数の積で表される整数」としていますが、
 ここでは、「ふたつの 2以上の自然数 の積で表される自然数」としています。
-これは同値です（証明してください！）。
+これは同値です（おまけを参照）。
  *)
 
 (**
@@ -920,6 +920,55 @@ x*y が合成数であることも言わなければばらないが、
         by apply: l_e2_ab_1.                (* x * y *)
   Qed.
   
+
+(**
+## おまけ 合成数の定義についての補題
+
+ある自然数が、より小さいふたつの自然数の積で表されるとき、
+そのふたつの自然数は1より大きい。
+ *)  
+
+(**
+2以上は、1を越える、と表記(Notation)だけが異なります。
+「1を越える」ほうが表記として複雑なので、Coqの清書系はそちらをつかいます。
+*)
+  Check 2 <= 10.                            (* 1 < 10 *)
+  
+  Lemma l_1m1n_mmn (m n : nat) : 1 < m -> 1 < n -> m < m * n.
+  Proof.
+    move=> Hm Hn.
+    rewrite ltn_Pmulr //.
+      by ssromega.                          (* 1 < m -> 0 < m *)
+  Qed.
+  
+  Lemma l_1m1n_nmn (m n : nat) : 1 < m -> 1 < n -> n < m * n.
+  Proof.
+    move=> Hm Hn.
+    rewrite ltn_Pmull //.
+      by ssromega.                          (* 1 < n -> 0 < n *)
+  Qed.
+  
+  Lemma l_nmn_1m (m n : nat) : n < m * n -> 1 < m.
+  Proof.
+    rewrite -{1}[n]mul1n ltn_mul2r.
+      by case/andP.
+  Qed.
+  
+  Lemma l_mmn_1n (m n : nat) : m < m * n -> 1 < n.
+  Proof.
+    rewrite -{1}[m]muln1 ltn_mul2l.
+      by case/andP.
+  Qed.
+
+  Lemma l_notprime (m n : nat) :
+    ((m < m * n) && (n < m * n)) = ((1 < m) && (1 < n)).
+  Proof.
+    apply/andP/andP; case=> Hm Hn; split.
+    - by apply: l_nmn_1m Hn.
+    - by apply: l_mmn_1n Hm.
+    - by apply: l_1m1n_mmn.
+    - by apply: l_1m1n_nmn.
+  Qed.
 End Notprime.
 
 (* END *)
