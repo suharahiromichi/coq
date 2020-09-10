@@ -10,7 +10,7 @@
 
 中国人の剰余定理 (中国剰余定理、Chinese remainder theorem) [1][2] は、
 連立一次合同式の解の存在と解の一意性を示すものです。
-Coq/MathComp の ``div.v`` ライブラリ [3] には、
+Coq/MathComp の ``div.v`` ライブラリ [4] には、
 その解を求める関数(chinese)と定理の証明があります。
 
 中国人の剰余定理の勉強を兼ねて、MathComp のchinese関数などについて調べてみます。
@@ -19,12 +19,14 @@ Coq/MathComp の ``div.v`` ライブラリ [3] には、
 そのため、整数で説明されている一般的な説明とは異なる箇所もあります。
 
 解だけを求めるのであれば、Coqのような定理証明系よりも、
-Wolfram Mathematica のような数式処理システム [4] のほうがずっと手軽であことを
+Wolfram Mathematica のような数式処理システム [5] のほうがずっと手軽であことを
 書き添えておきます。
 *)
 
 (**
-# 定理の説明
+# 定理の紹介
+
+最初に証明なしで、定理の証明をする。
 
 ## 解の存在
 
@@ -43,7 +45,8 @@ x &=& b \pmod{n} \tag{1.2} \\
 ```
 
 言い換えると、「互いに素な自然数mとnを法とする連立合同式には解がある」、あるいは、
-「mとnが互いに素なら、mで割ってa余り、nで割ってb余る数xが存在する」。
+「mとnが互いに素なら、mで割ってa余り、nで割ってb余る数xが存在する」
+ということになる。
 
 ## 解の一意性
 
@@ -54,8 +57,14 @@ $$ y = x \pmod{m n} \tag{2} $$
 
 言い換えると、「先の連立合同式の解は、$ m n $ を法として一意である」、あるいは、
 「数xから、$ m n $ を繰り返し引いても足しても、題意を満たす」
+ということになる。
 
-また、式(2)より、最小の解y'は $$ y' = x \mod mn $$ であり、$$ 0 \le y' \lt mn $$ である。
+
+また、式(2)を満たす最小の解y'は
+
+$$ 0 \le y' \lt mn $$
+
+であるといえる。
  *)
 
 (**
@@ -63,8 +72,11 @@ $$ y = x \pmod{m n} \tag{2} $$
 
 ## 解の存在の証明
 
-自然数mとnが互いに素なので、
-次の不定方程式(3.1)(3.2)が成り立ち、解u、v、p、qが存在する。
+自然数mとnが互いに素なので、Bézout の補題 [3] から、
+次の不定方程式(3.1)が成り立ち、解u、vが存在する。
+また、
+次の不定方程式(3.2)が成り立ち、解p、qが存在する。
+
 この解は、拡張ユーグリッド互除法で求めることができる。これについては後述する。
 
 ```math
@@ -76,7 +88,7 @@ n p - m q &=& 1 \tag{3.2} \\
 
 ```
 
-式(1.1)(1.2)を満たすxのひとつは、式(4)で表すことができる。
+式(3.1)(3.2)から、式(1.1)(1.2)を満たすxのひとつは、式(4)で表すことができる。
 
 ```math
 
@@ -84,7 +96,7 @@ x = n p a + m u b \tag{4}
 
 ```
 
-なぜなら、
+なぜなら、移項して、
 
 ```math
 
@@ -107,6 +119,7 @@ x &=& n p a + m u b \\
 
 ```
 
+次を得るので、
 式(4.1)から式(1.1)が、
 式(4.2)から式(1.2)が、
 成り立つことがわかる。
@@ -138,7 +151,19 @@ y &=& m t + a \\
 
 ```
 
-から、 $$ x - y = m (s - t) (= 0 \pmod{m}) $$ が成り立つため。
+から、 
+
+$$ x - y = m (s - t) $$
+
+すなわち、
+
+$$ x - y = 0 \pmod{m} $$
+
+が成り立ち、同様に、
+
+$$ x - y = 0 \pmod{n} $$
+
+が成り立つためである。
 
 
 そして、式(5.1)(5.2)から、式(6)が成り立つ。
@@ -146,6 +171,8 @@ y &=& m t + a \\
 $$ m n \mid{x - y} \tag{6} $$
 
 式(6)から、式(2)が成り立つ。
+
+$$ y = x \pmod{m n} \tag{2} $$
 *)
 
 (**
@@ -222,6 +249,9 @@ x &=& n p a + m u b \\
 
 (**
 ## 孫子算経の例
+
+中国人の剰余定理の原典である孫子算経の問題は、次のように解ける。
+
 
 ### 問題
 
@@ -337,8 +367,19 @@ Compute 758 %% (15 * 7).                    (* 23 *)
 計算式は、式(4)とまったく同じである。
  *)
 Print chinese.
-(* = fun m1 m2 r1 r2 : nat => r1 * m2 * (egcdn m2 m1).1 + r2 * m1 * (egcdn m1 m2).1 *)
-(* = fun m  n  a  b  : nat => a  * n  * (egcdn n  m ).1 + b  * m  * (egcdn m  n ).1 *)
+(**
+```
+chinese = fun m  n  a  b  : nat => a  * n  * (egcdn n  m ).1 + b  * m  * (egcdn m  n ).1
+```
+
+``chinese m n a b`` が式(4)の x であるから、
+
+```
+chinese m n a b = a (mod m) ................................ (補題 chinese_modl)
+chinese m n a b = b (mod n) ................................ (補題 chinese_modr)
+y = chinese m n a b (mod m * n) ............................ (補題 chinese_mod)
+```
+ *)
 
 (**
 ただし、
@@ -354,7 +395,7 @@ Print chinese.
 *)
 
 (**
-## （補足）Section Chinese について
+## （補足）``div.v`` の ``Section Chinese`` について
 
 ``Section Chinese`` の中では、 ``Hypothesis co_m12 : coprime m1 m2 `` として、
 m1 と m2 (これまでの説明では m と n) が互いに素であることが定義されている。
@@ -426,9 +467,15 @@ b &=& y \mod n \\
 
 ```
 
-であるとき、``x = chiniese m n a b`` もまた、式(1.1)と式(1.2)を満たす。
-``x = y`` とは限らないが、式(2)のとおり``m * n`` を法として合同である。
+であるとき、``x = chiniese m n a b`` もまた、式(1.1)と式(1.2)と式(2)を満たす。式(2)から、
 
+``y = chinese m n a b (mod m * n)``
+
+``a = y mod m`` から ``a = y %% m``、``b = y mod n`` から ``b = y %% n`` を代入すると、
+
+``y = chinese m n (y %% m) (y %% n) (mod m * n)``
+
+を得る。
 すなわち、chinese_mod 補題は、解の（$m n$を法とした）一意性を述べている。
 *)
 Check chinese_mod : forall m n : nat,
@@ -436,15 +483,21 @@ Check chinese_mod : forall m n : nat,
     forall y : nat, y = chinese m n (y %% m) (y %% n) %[mod m * n].
 
 (**
-この補題の証明の途中で次の補題を使用しているが、みっつのyは異なっていてもよいので、
-これは式(1)と式(2)の特別な場合である（[5]の式(4.42)）。
-
+この補題の証明の途中で次の補題 chinese_remainder を使用している。
 「=」の両辺はbool述語なので、「=」は「<->」の意味である。
+すると、これは、[6][6']の式(4.42) と同じものである。
 *)
 Check chinese_remainder : forall m n : nat,
     coprime m n ->
     forall x y : nat,
       (x == y %[mod m * n]) = (x == y %[mod m]) && (x == y %[mod n]).
+
+(**
+この補題と式(1)と式(2)を見比べると、左辺のyは式(2)のy（式(1)を満たす任意のx）であり、
+右辺のふたつのyは、aとbである。すなち、3つのyは異なっていても成立するわけである。
+よって、この補題は式(1)と式(2)の特別なかたち、
+すなわち、中国人の剰余定理の特別な場合になっている。
+*)
 
 (**
 # 不定方程式の解
@@ -501,7 +554,7 @@ $$ 3 u - 5 v = 1 \tag{41} $$ の解 u, vを求める。
 
 \begin{eqnarray}
 5 - (3 - 5・0)・1 = 2 \\
-3・(-1) - 5・(-1) = 2 \tag(43') \\
+3・(-1) - 5・(-1) = 2 \tag{43'} \\
 \end{eqnarray}
 
 ```
@@ -570,14 +623,14 @@ MathCompにあわせて自然数にする場合は、
 
 $$ u = 3, v = 5 $$
 
-（直接 自然数 の解をもとめる方法を調べる。
-また MathCompの定義に沿った説明に入れ替える。）
+（直接 自然数 の解をもとめる方法を調べること。
+また MathCompの定義に沿った説明に入れ替えること。）
 
 
 ## Coq/MathComp での計算例
 
-式(31)または式(32)に不定方程式はユーグリッドの互除法で解くことができます。
-MathCompでは、拡張GCD関数を使って、以下で計算できます。
+式(31)または式(32)に不定方程式はユーグリッドの互除法で解くことができる。
+MathCompでは、拡張GCD関数を使って、以下で計算できる。
 
 ```coq
 
@@ -602,17 +655,26 @@ https://ja.wikipedia.org/wiki/中国の剰余定理
 https://qiita.com/drken/items/ae02240cd1f8edfc86fd
 
 
-[3] math-comp div.v
+[3] 有理数とか有限体とかのはなし
+
+https://qiita.com/bra_cat_ket/items/689a76a7c3d8b9db42d1
+
+
+[4] math-comp div.v
 
 https://github.com/math-comp/math-comp/blob/master/mathcomp/ssreflect/div.v
 
 
-[4] Wolfram言語 ＆ システム ドキュメントセンター ChineseRemainder
+[5] Wolfram言語 ＆ システム ドキュメントセンター ChineseRemainder
 
 https://reference.wolfram.com/language/ref/ChineseRemainder.html
 
 
-[5] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
+[6] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
+
+
+[6'] 有澤、安村、萩野、石畑訳、「コンピュータの数学」共立出版
+
  *)
 
 (* END *)
