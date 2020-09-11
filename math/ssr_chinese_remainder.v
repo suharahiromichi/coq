@@ -35,13 +35,10 @@ Wolfram Mathematica のような数式処理システム [5] のほうがずっ�
 
 ```math
 
-%%%%%\left\{
 \begin{eqnarray}
 x &=& a \pmod{m} \tag{1.1} \\
 x &=& b \pmod{n} \tag{1.2} \\
 \end{eqnarray}
-%%%%%\right.
-
 ```
 
 言い換えると、「互いに素な自然数mとnを法とする連立合同式には解がある」、あるいは、
@@ -231,7 +228,7 @@ x &=& n p a + m u b \\
 
 ```
 
-そして、$ 38 \mod 3・5 = 8 $ となる。
+そして、$ 38 \mod\ 3・5 = 8 $ となる。
 
 検算すると、
 
@@ -323,7 +320,7 @@ x' &=& n' p' a' + m' u' b' \\
 
 ```
 
-そして、$ 758 \mod 15・7 = 23 $ となる。
+そして、$ 758 \mod\ 15・7 = 23 $ となる。
 
 検算すると、
 
@@ -364,31 +361,24 @@ Compute chinese 15 7 8 2.                   (* 758 *)
 Compute 758 %% (15 * 7).                    (* 23 *)
 
 (**
+ここで``%%`` は剰余計算 ($$ mod $$) とする。
+
 計算式は、式(4)とまったく同じである。
  *)
 Print chinese.
 (**
 ```
-chinese = fun m  n  a  b  : nat => a  * n  * (egcdn n  m ).1 + b  * m  * (egcdn m  n ).1
+chinese =
+    fun m  n  a  b  : nat => a  * n  * (egcdn n  m ).1 + b  * m  * (egcdn m  n ).1
 ```
 
-``chinese m n a b`` が式(4)の x であるから、
-
-```
-chinese m n a b = a (mod m) ................................ (補題 chinese_modl)
-chinese m n a b = b (mod n) ................................ (補題 chinese_modr)
-y = chinese m n a b (mod m * n) ............................ (補題 chinese_mod)
-```
- *)
-
-(**
-ただし、
+ただし、egcdn は拡張ユーグリッド互除法の関数であり、
 
 - ``egcdn n m`` は不定方程式 $ n p - m q = 1 $ の解 ``(p, q)``
 - ``egcdn m n`` は不定方程式 $ m u - n v = 1 $ の解 ``(u, v)``
 
 
-であり、さらに p と u を取り出している。
+を返す。その結果から p と u を取り出している。
 
 - ``(egcdn n m).1 = (p, q).1 = p``
 - ``(egcdn m n).1 = (u, v).1 = u``
@@ -408,6 +398,13 @@ m1 と m2 (これまでの説明では m と n) が互いに素であること�
 
 これらの補題は、chinese関数が、式(1.1)と式(1.2)を満たすことを述べてている。
 すなわち、解の存在を示している。
+
+``chinese m n a b`` は、式(4)の x であるから、式(1.1)と式(1.2)から以下を得る。
+
+```
+chinese m n a b = a %[mod m] ............................ (補題 chinese_modl)
+chinese m n a b = b %[mod n] ............................ (補題 chinese_modr)
+```
 *)
 Check chinese_modl : forall m n : nat,
     coprime m n -> forall a b : nat, chinese m n a b = a %[mod m].
@@ -441,7 +438,7 @@ Proof.
     (* Goal : a * n * (egcdn n m).1 + b * m * (egcdn m n).1 = a %[mod m] *)
 
     (* egcdn n m を 不定方程式に書き換える。
-       egcdn_spec は、Inductiove で定義されているので case が要る。 *)
+       egcdn_spec は、Inductiove で定義されているので、条件分けがなくても case が要る。 *)
     case: (@egcdnP n m n_gt0).
     rewrite gcdnC co_mn.
     move=> p q def_m _.
@@ -461,21 +458,24 @@ y と m と n が式(1.1)と式(1.2)を満たすとする。すなわち、自�
 ```math
 
 \begin{eqnarray}
-a &=& y \mod m \\
-b &=& y \mod n \\
+a &=& y \pmod m \\
+b &=& y \pmod n \\
 \end{eqnarray}
 
 ```
 
-であるとき、``x = chiniese m n a b`` もまた、式(1.1)と式(1.2)と式(2)を満たす。式(2)から、
+であるとき、``x = chiniese m n a b`` は、式(1.1)と式(1.2)と式(2)を満たす。式(2)から、
 
-``y = chinese m n a b (mod m * n)``
+``y = (chinese m n a b) %[mod m * n]`` が成り立つ。これに、
 
-``a = y mod m`` から ``a = y %% m``、``b = y mod n`` から ``b = y %% n`` を代入すると、
+``a = y %[mod m]`` から ``a = y %% m`` を代入し、
+``b = y %[mod n]`` から ``b = y %% n`` を代入すると、
 
-``y = chinese m n (y %% m) (y %% n) (mod m * n)``
+```
+y = (chinese m n (y %% m) (y %% n)) %[mod m * n] ........ (補題 chinese_mod)
+```
 
-を得る。
+が成り立つ。
 すなわち、chinese_mod 補題は、解の（$m n$を法とした）一意性を述べている。
 *)
 Check chinese_mod : forall m n : nat,
@@ -508,11 +508,11 @@ Check chinese_remainder : forall m n : nat,
 
 $$ m u - n v = 1 \tag{31} $$
 
-なお、次の式(32)は、両辺を$gcd(m,n)$で割ると、式(31)と同じ意味になる。
+なお、m と n が互いに素でない場合でも、
+両辺を $$ gcd(m, n) $$ で割ることで、式(31)を得る。
 
-$$ m u - n v = gcd(m,u) \tag{32} $$
-
-また、任意の整数kに対して、u'、v'も同様に解となります。
+また、任意の整数kに対して、u と（a を法として）合同な u'、
+v と（b を法として合同な） v' も同様に解となる。
 
 ```math
 
@@ -604,24 +604,25 @@ $$ 5 p - 3 q = 1 \tag{51} $$ の解 p, qを求める。
 
 式(53')から、次の解を得る。
 
-$$ u = -1, v = -2 $$
+$$ p = -1, q = -2 $$
 
 式(4)に代入するならこの値でも構わないのだが、
 MathCompにあわせて自然数にする場合は、
+p は 3 を法として合同、q は 5 を法として合同であればよいので、
 式(33)の $ k = 1 $ として、
 
 ```math
 
 \begin{eqnarray}
 2 &=& -1 + 1・3 \\
-3 &=& -1 + 1・5 \\
+3 &=& -2 + 1・5 \\
 \end{eqnarray}
 
 ```
 
 から、次の解を得る。
 
-$$ u = 3, v = 5 $$
+$$ p = 2, q = 3 $$
 
 （直接 自然数 の解をもとめる方法を調べること。
 また MathCompの定義に沿った説明に入れ替えること。）
@@ -630,7 +631,7 @@ $$ u = 3, v = 5 $$
 ## Coq/MathComp での計算例
 
 式(31)または式(32)に不定方程式はユーグリッドの互除法で解くことができる。
-MathCompでは、拡張GCD関数を使って、以下で計算できる。
+MathCompでは、拡張ユーグリッド互除法の関数 (egcdn) を使って、以下で計算できる。
 
 ```coq
 
