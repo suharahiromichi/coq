@@ -297,7 +297,76 @@ End GCDLCM.
 gcd_max は、dvdn_gcd に対応します。
 
 [https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2019_SS/ssrcoq5.pdf]
+
+補足説明：この講義資料では、GCDを通常の ``Fixpoint ... {struct m}`` では定義できないとして、
+清礎帰納法 ``Function ... {wf lt m}`` で定義しています。
 *)
+Section NU.
+  Fail Fixpoint gcd (m n : nat) {struct m} : nat :=
+    if m is 0 then n else gcd (n %% m) m.
+  
+  Require Import Recdef.
+  Require Import Wf_nat.
+  
+  Function gcd (m n : nat) {wf lt m} : nat :=
+    if m is 0 then n else gcd (n %% m) m.
+  Proof.
+    - move=> m n m0 _.
+      (* 除数が0でないことは、Coqにも判っているので、 *)
+      (* %% の除数が0でなければ、%% で値は減っていくことを証明する。 *)
+      apply/ltP.
+        (* Goal : n %% m0.+1 < m0.+1 *)
+        by rewrite ltn_mod.
+    - exact: lt_wf.
+  Qed.
+(**
+ことろで、MathComp では、前述のとおり ``gcdn``
+を ``Fixpoint ... {struct m}`` で定義できています（Fixpoint の場合省略時解釈
+で ``{struct id}`` となり、idはCoqが探してくれるのでした。この場合 ``{struct m}``
+に違いありません。
+
+``{struct id}`` は、再帰呼び出し毎に「idが単調減少すること」を示すと説明されますが、
+実際は、
+
+```
+Fixpoint f id := match id with id'.+1 => f id' | ..... end.
+``
+
+という ``fix ・・・ match`` の「構造」のなかで減少すること、
+つまり match によるパターンマッチを使って
+``id - 1 = id'`` という減算が行われることを意味します。
+
+なお、この match は ``if id is id'.+1 then f id' else ....`` というif式でもよいですが、
+bool の ``if b then ... else ...`` では、wfのレベルでエラーになるようです。
+
+具体的にいうと、次の ftest1 はFixpoint で定義できます。
+ *)
+  Fixpoint ftest1 m {struct m} := if m is m'.+1 then ftest1 m' else 0.
+
+(**
+パターンマッチではなく、``.-1`` によって減算する場合
+は、``{struct m}`` ではエラーになります。   
+*)
+  Fail Function ftest2 m {struct m} := if m is 0 then 0 else ftest2 m.-1.
+  
+(**
+整礎帰納法を使う必要があります。
+*)  
+  Function ftest3 m {wf lt m} := if m is 0 then 0 else ftest3 m.-1.
+  Proof.
+    move=> m m' H.
+    - have l_test n : n != 0 -> n.-1 < n by case: n.
+        by apply/ltP/l_test.
+    - by apply: lt_wf.
+  Qed.
+
+(**
+MathComp の ``gcdn`` の定義を見ると、技巧的に ``match``
+(``if ... is ... then ... else ...``) が使われていることが判ります。
+
+補足終わり。
+*)  
+End NU.
 
 (**
 # 互いに素 (coprime, relatively prime)
