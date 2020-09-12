@@ -613,6 +613,11 @@ $$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
 *)
   Lemma le_m_n m n : (n <= m) = false -> m <= n.
   Proof.
+    move/negbT => Hmn.
+    rewrite -ltnNge in Hmn.
+      by rewrite ltnW //.
+      
+    Restart.
     move=> Hmn.
       by ssromega.
   Qed.

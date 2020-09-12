@@ -166,4 +166,32 @@ End LtnS.
 一般の m と n の関係については省略しています。
 *)
 
+Section これだけは.
+  (* ssomega で解ける場合もあるが、手で解いておく。 *)
+  
+  (* 2より大きいなら、1より大きい。  *)
+  Lemma le1_le m x : m.+1 <= x -> m <= x.
+  Proof.
+    move=> H.
+      by rewrite ltnW.
+  Qed.
+  Check @le1_le 1 : forall x : nat, 2 <= x -> 1 <= x.
+  
+  Lemma lem_len m n x : m <= n -> n <= x -> m <= x.
+  Proof.
+    move=> Hmn H.
+      by apply: (@leq_trans n m).
+  Qed.
+  Check @lem_len 1 2 : forall x : nat, 1 <= 2 -> 2 <= x -> 1 <= x.
+  
+  (* n <= m の反対は m < n だが、m <= n で証明したい。 *)
+  Lemma le_m_n m n : (n <= m) = false -> m <= n.
+  Proof.
+    move/negbT => Hmn.
+    rewrite -ltnNge in Hmn.
+      by rewrite ltnW //.
+  Qed.
+
+End これだけは.
+
 (* END *)
