@@ -720,14 +720,23 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
 
 
 (**
-  Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
-        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
-    n != 0 -> v n = 2^n.-1.
+```math
+\forall v, (v(0) = 1 \wedge \forall n, v(n + 1) = \sum_{k=0}^{n} v(k))
+\longrightarrow
+(\forall n, n \neq 0 \rightarrow v(n) = 2^{n-1})
+```
+
+``∀n`` は全体に係っていますが、
+``∀n``は前提と結論のそれぞれにしか係っていないことに注意してください。
+
+須原補足：問題では、vの場合分けにラベルが付与されていて、ふたつめのn(ゴールのn)が、
+補題の引数になっているので、論理式が読み難くなっていますが、数学的には上記のとおりです。
+
+以下 @morita_hm さん
+
 この命題は以下の2項間漸化式:
     v 1 = 1, v n.+1 = v n + v n
 に言い換えられることに気付けば以下のような証明が可能になります
-
-@morita_hm さん
  *)
 
   (* v 1 = 1 を証明 *)
@@ -794,13 +803,29 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
   Qed.
   
   (* 出題の k > n.+1 の形式で証明する。 *)
-  Lemma exo37 (v : nat -> nat ) (v0 : v 0 = 1)
+  Lemma exo37 (v : nat -> nat) (v0 : v 0 = 1)
         (vn : forall n, v n.+1 = \sum_(k < n.+1) v k) (n : nat)  :
     n != 0 -> v n = 2^n.-1.
   Proof.
     move=> Hn.
     apply: exo37' => // n'.
       by rewrite big_mkord.
+  Qed.
+  
+(**
+須原補足：exo37 の式は練習問題のとおりですが、
+v0 と vn にラベルが付いていて、逆に式が読みにくいと思います。
+より、数学の教科書にある書き方に近づけて、次のように書く方がよいのではないかと思います。
+    
+v0 や vn のラベルは intro するときに指定すればよいので省略し、
+ふたつめのn(ゴールにだけ係るn)も、ゴールだけの∀としました。
+ *)
+  Lemma exo37_suhara (v : nat -> nat) :
+    v 0 = 1 /\ (forall n, v n.+1 = \sum_(k < n.+1) v k) ->
+    forall n, n != 0 -> v n = 2^n.-1.
+  Proof.
+    move=> [v0 vn] n Hn.                    (* 一旦introすれば、 *)
+      by apply: exo37.                      (* 同じである。 *)
   Qed.
   
 (**
@@ -821,7 +846,7 @@ nが、2以上の任意の2自然数に積であるとき（すなわち合成�
 
 Daniel J. Velleman, Amherst College, Massachusetts, "How To Prove it" 
 
-証明はこの本の Introduction (p.3) からとりました。以下から当該ページを含む前半が読めます。
+証明は、この本の Introduction (p.3) からとりました。以下から当該ページを含む前半が読めます。
 
 https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-sets/how-prove-it-structured-approach-3rd-edition?format=HB&isbn=9781108424189
 
@@ -834,13 +859,13 @@ https://www.cambridge.org/jp/academic/subjects/mathematics/logic-categories-and-
 (**
 最初に補題として、次の式を証明する。これは 1 <= a で成り立つ。
 
-$$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
+$$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1, ただし 1 \le a $$
 *)
-Section Notprime.
+Section Composite_Number.
 
   Lemma l_e2_ab_1 a b :
     1 <= a ->
-    (2 ^ b - 1) * (\sum_(0 <= i < a) 2 ^ (i * b)) = 2 ^ (a * b) - 1.
+    (2^b - 1) * (\sum_(0 <= i < a) 2^(i * b)) = 2^(a * b) - 1.
   Proof.
     move=> Ha.
     
@@ -854,15 +879,20 @@ Section Notprime.
     rewrite H.
     rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
     rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last //=.
+    (* \sum_(1 <= i < a) 2 ^ (i * b) + 2 ^ (a * b) *)
     
     (* 左辺、第2項 *)
     rewrite  mul1n.
     rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first //=.
     rewrite mul0n expn0.
     rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
+    (* - (\sum_(1 <= i < a) 2 ^ (i * b) + 1) = *)
     
     (* 左辺を整理する。 *)
     rewrite subnDl.
+    (* 2 ^ (a * b) - 1 *)
+    
+    (* 左辺と右辺が同じ。 *)
     done.
   Qed.
 
@@ -881,11 +911,11 @@ x*y が合成数であることも言わなければばらないが、
 *)  
   
   (* 何か所かで使う補題。 *)
-  Lemma le2_le1 a : 2 <= a -> 1 <= a.
+  Lemma le2_le1 a : 2 <= a -> 1 <= a.       (* 1 < a -> 0 < a *)
   Proof. move=> H. by ssromega. Qed.
   
   (* 2 <= x の証明に使用する。 *)
-  Lemma e2b_1_ge2 b : 2 <= b -> 2 <= 2 ^ b - 1.
+  Lemma e2b_1_ge2 b : 2 <= b -> 2 <= 2^b - 1. (* 1 < b -> 1 < 2^b - 1 *)
   Proof.
     move=> H.
     rewrite ltn_subRL addn1.
@@ -907,7 +937,7 @@ x*y が合成数であることも言わなければばらないが、
   Qed.
   
   (* 証明したいもの *)
-  Lemma e2_ab_1_notprime (a b : nat) :
+  Lemma e2_ab_1_composite (a b : nat) :
     2 <= a -> 2 <= b ->
     exists (x y : nat), 2 <= x /\ 2 <= y /\ (x * y = 2 ^ (a * b) - 1).
   Proof.
@@ -960,7 +990,7 @@ x*y が合成数であることも言わなければばらないが、
       by case/andP.
   Qed.
 
-  Lemma l_notprime (m n : nat) :
+  Lemma l_composite_hypo (m n : nat) :
     ((m < m * n) && (n < m * n)) = ((1 < m) && (1 < n)).
   Proof.
     apply/andP/andP; case=> Hm Hn; split.
@@ -969,6 +999,7 @@ x*y が合成数であることも言わなければばらないが、
     - by apply: l_1m1n_mmn.
     - by apply: l_1m1n_nmn.
   Qed.
-End Notprime.
+
+End Composite_Number.
 
 (* END *)
