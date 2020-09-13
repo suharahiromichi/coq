@@ -167,7 +167,13 @@ Print odd.
  *)
 Lemma modn2' m : m %% 2 = 0 <-> ~~ odd m.
 Proof.
+  (* modn2 という補題は奇妙である。左辺がnat、右辺がboolである。 *)
+  Check modn2 m : m %% 2 = odd m.
+  (* 当然、右辺が bool -> nat のコアーションになっている。 *)
+  Check modn2 m : m %% 2 = nat_of_bool (odd m).
+  
   rewrite modn2.
+  (* odd m = 0 <-> ~~ odd m *)
   split=> H.
   
   - (* -> *)
@@ -181,12 +187,21 @@ rewrite をすることはできない。
     Check eqb0 : forall b : bool, (nat_of_bool b == 0) = ~~ b.
     Check eqb0 (odd m) : (nat_of_bool (odd m) == 0) = ~~ (odd m).
 (**
-一旦、 nat_of_bool (odd m) == 0 にリフレクションすれば、
-eqb0 を使って、~~ odd m に書き換えることができる。
- *)
-    move/eqP in H.
-      by rewrite eqb0 in H.
+        nat_of_bool (odd m) = O
+を
+        nat_of_bool (odd m) == 0
 
+にリフレクションすれば、eqb0 を使って、
+
+        ~~ odd m
+
+に書き換えることができる。
+ *)
+    Check eqb0 : forall b : bool, (nat_of_bool b == 0) = ~~ b.
+    move/eqP in H.
+    rewrite eqb0 in H.
+    done.
+    
   - (* <- *)
 (**
 逆も同様に証明できる。
