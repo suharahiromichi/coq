@@ -279,7 +279,11 @@ Section GCDLCM.
   Check muln_lcml m n p : lcmn m n * p = lcmn (m * p) (n * p).
 
 (**
-ユーグリッドの互除法の1回分の等式、unfold するよりもこれを使う。
+ユーグリッドの互除法の1回分の等式である。
+後述のとおり gcdn の定義は ``Fixpoint ... {struct m}`` で定義するために
+判りにくいものになっている。また、gcdnEの証明自体、とても複雑であることに注意。
+
+いずれにせよ、gcdn を unfold せずに、この補題を使うこと。
 *)  
   Check gcdnE m n : gcdn m n = if m == 0 then n else gcdn (n %% m) m.
 
@@ -320,13 +324,25 @@ Section NU.
     - exact: lt_wf.
   Qed.
 (**
+定義がそのまま取り出せるので、gcdnE 相当の補題を用意する必要はありません。
+ *)
+  Check gcd_equation
+    : forall m n : nat, gcd m n = match m with
+                                  | 0 => n
+                                  | _.+1 => gcd (n %% m) m
+                                  end.
+
+(**
 ことろで、MathComp では、前述のとおり ``gcdn``
-を ``Fixpoint ... {struct m}`` で定義できています（Fixpoint の場合省略時解釈
-で ``{struct id}`` となり、idはCoqが探してくれるのでした。この場合 ``{struct m}``
-に違いありません。
+を ``Fixpoint ... {struct m}`` で定義できています。
+なぜ、それが可能なのでしょうか？
+
+Fixpoint の場合省略時解釈
+で ``{struct id}`` となり、idはCoqが探してくれるのでした。
+この場合 ``{struct m}`` に違いありません。
 
 ``{struct id}`` は、再帰呼び出し毎に「idが単調減少すること」を示すと説明されますが、
-実際は、
+ちょっと正しくありません。実際は、
 
 ```
 Fixpoint f id := match id with id'.+1 => f id' | ..... end.
