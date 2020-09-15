@@ -16,6 +16,7 @@ From mathcomp Require Import all_ssreflect.
 
 Require Import Recdef.
 Require Import Wf_nat.
+Require Import Program.Wf.
 
 Require Import ssromega.
 (**
@@ -84,21 +85,37 @@ Compute edivn 10 3.                         (* (3, 1) *)
 *)
 Section DIV'.
   Function edivn' (m d q : nat) {wf lt m} : nat * nat :=
-    if 0 < d then
+    if d is 0 then (0, m)
+    else
       let m' := m - d in
-      if m' is 0 then (q, m) else edivn' m' d q.+1
-    else (0, m).
+      if m' is 0 then (q, m) else edivn' m' d q.+1.
   Proof.
-    - move=> d m _ Hd n H.
+    - move=> m d _ n Hd n' H.
       apply/ltP.
         by ssromega.
     - by apply: lt_wf.
   Qed.
-  
 (**
 しかし、Compute では計算できません。
 *)
   Compute edivn' 10 3 0.
+
+(**
+Program コマンドを使います。
+*)
+  Program Fixpoint edivn'' (m d q : nat) {wf lt m} : nat * nat :=
+    if d is 0 then (0, m)
+    else
+      let m' := m - d in
+      if m' is 0 then (q, m) else edivn'' m' d q.+1.
+  Obligation 1.
+  Proof.
+      by ssromega.
+  Qed.
+(**
+こんどは、計算はできるようです。
+*)
+  Compute edivn'' 10 3 0.
 End DIV'.
 
 (**
