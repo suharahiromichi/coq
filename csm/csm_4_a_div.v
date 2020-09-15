@@ -13,6 +13,10 @@ Coq/SSReflect/MathComp による定理証明
  *)
 
 From mathcomp Require Import all_ssreflect.
+
+Require Import Recdef.
+Require Import Wf_nat.
+
 Require Import ssromega.
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
@@ -42,6 +46,17 @@ opamでインストールしている場合は、ソースは、たとえば以�
 
 ユーグリッド除法 edivn_rec (末尾再帰）で定義される。
 *)
+Locate "_ %/ _". (* := divn m d : nat_scope (default interpretation) *)
+Print divn.
+(*
+fun m d : nat => (edivn m d).1
+ *)
+Print edivn.
+(* 
+fun m d : nat => if 0 < d then edivn_rec d.-1 m 0 else (0, m)
+
+最初に、除数から1を引いておいて、すなわち、``10÷3`` なら ``d = 2`` としておいて、
+ *)
 Print edivn_rec.
 (* 
 fun d : nat =>
@@ -50,16 +65,41 @@ fix loop (m q : nat) {struct m} : nat * nat :=
   | 0 => (q, m)
   | m'.+1 => loop m' q.+1
   end
+
+``m - d = 10 - 2 = 7.+1`` と、非零のチェック（停止判定）を兼ねて、
+除数から被除数を引いたものから、さらに1を引いて、7 を得ている。
+だから、末尾再帰だけみると、本来の除数(3)を引くのと同じで、
+
+```
+(m, q) = (10, 0) = (7, 1) = (4, 2) = (1, 3) => (q, m) = (3, 1)
+```
+
+となる。
  *)
-Print edivn.
-(* 
-fun m d : nat => if 0 < d then edivn_rec d.-1 m 0 else (0, m)
- *)
-Print divn.
-(*
-fun m d : nat => (edivn m d).1
- *)
-Locate "_ %/ _". (* := divn m d : nat_scope (default interpretation) *)
+Compute edivn 10 3.                         (* (3, 1) *)
+
+(**
+補足説明：
+整礎帰納法をつかって、もうすこし自然な定義で書くことができます。
+*)
+Section DIV'.
+  Function edivn' (m d q : nat) {wf lt m} : nat * nat :=
+    if 0 < d then
+      let m' := m - d in
+      if m' is 0 then (q, m) else edivn' m' d q.+1
+    else (0, m).
+  Proof.
+    - move=> d m _ Hd n H.
+      apply/ltP.
+        by ssromega.
+    - by apply: lt_wf.
+  Qed.
+  
+(**
+しかし、Compute では計算できません。
+*)
+  Compute edivn' 10 3 0.
+End DIV'.
 
 (**
 ## 除法の仕様
@@ -324,9 +364,6 @@ Section NU.
   Fail Fixpoint gcd (m n : nat) {struct m} : nat :=
     if m is 0 then n else gcd (n %% m) m.
   
-  Require Import Recdef.
-  Require Import Wf_nat.
-  
   Function gcd (m n : nat) {wf lt m} : nat :=
     if m is 0 then n else gcd (n %% m) m.
   Proof.
@@ -346,6 +383,10 @@ Section NU.
                                   | 0 => n
                                   | _.+1 => gcd (n %% m) m
                                   end.
+(**
+しかし、Compute では計算できません。
+*)
+  Compute gcd 10 3.
 
 (**
 ことろで、MathComp では、前述のとおり ``gcdn``
