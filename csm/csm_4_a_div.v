@@ -87,7 +87,7 @@ Section DIV'.
   Function edivn' (m d q : nat) {wf lt m} : nat * nat :=
     if d is 0 then (0, m)
     else
-      let m' := m - d in
+      let: m' := m - d in
       if m' is 0 then (q, m) else edivn' m' d q.+1.
   Proof.
     - move=> m d _ n Hd n' H.
@@ -106,7 +106,7 @@ Program コマンドを使います。
   Program Fixpoint edivn'' (m d q : nat) {wf lt m} : nat * nat :=
     if d is 0 then (0, m)
     else
-      let m' := m - d in
+      let: m' := m - d in
       if m' is 0 then (q, m) else edivn'' m' d q.+1.
   Obligation 1.
   Proof.
@@ -183,16 +183,20 @@ Lemma dvd0n' n : 0 < n -> ~~(0 %| n).
 Proof. by rewrite dvd0n lt0n. Qed.
   
 (**
-### ``m = n %[mod 0]`` は ``m = n`` とおなじ。
+### ``m = n %[mod 0]`` は ``m = n`` と同値である。
  *)
-Lemma modn0' m n : m = n %[mod 0] -> m = n.
-Proof. by rewrite 2!modn0. Qed.
+Lemma modn0' m n : m = n %[mod 0] <-> m = n.
+Proof.
+  split.
+  - by rewrite 2!modn0.
+  - done.
+Qed.
 
 (**
 ## 剰余計算の補題（``0 < d`` を条件にするもの。すなわち0割を避けるもの）
 *)
 (**
-### ``d / d = 1``
+### ``0 < d -> d / d = 1``
 
 ``d = 0`` なら ``d / d = 0`` なので、その条件を除いている。
 *)
@@ -200,7 +204,7 @@ Lemma divnn' d : 0 < d -> d %/ d = 1.
 Proof. by rewrite divnn => ->. Qed.
 
 (**
-### ``m % d < d``
+### ``0 < d -> m % d < d``
 
 ``d = 0`` なら ``m %% 0 = m`` なので、その条件を除いている。
  *)
@@ -500,8 +504,8 @@ Locate "_ != _ %[mod _ ]".             (* 3項演算子であることに注意 
 (m %% d) = (n %% d) の構文糖衣であるので、
 ``%[mod _]`` すなわち ``%% _`` の部分が一致していれば、rewriteも可能である。
 *)
-Goal forall m n d, m = n %[mod d] -> n = m %[mod d].
-Proof. move=> m n d H. rewrite H. done. Qed.
+Goal forall m n p d, m = n %[mod d] -> n = p %[mod d] -> m = p %[mod d].
+Proof. move=> m n p d H1 H2. rewrite H1 H2. done.
 
 (**
 ### 等式の補題の適用
@@ -541,7 +545,7 @@ Qed.
 (**
 ### congr で、%[mod d] を外す
 
-ここで、外すとは``->``の右から左に変換することです。逆は成り立ちません。
+ここで「外す」とは、``->``の右から左に変換することです。逆は成り立ちません。
 *)
 Goal forall m n d, m = n -> m = n %[mod d].
 Proof.
