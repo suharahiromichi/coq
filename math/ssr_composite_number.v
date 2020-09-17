@@ -107,7 +107,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1, ただし 1 \le a $$
     rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first //=.
     rewrite mul0n expn0.
     rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
-    (* - (\sum_(1 <= i < a) 2 ^ (i * b) + 1) = *)
+    (* - (\sum_(1 <= i < a) 2 ^ (i * b) + 1) *)
     
     (* 左辺を整理する。 *)
     rewrite subnDl.
@@ -122,15 +122,13 @@ End BigOp.
 ## 証明の概要
 
 証明したい命題
-
 「nが、2以上の任意の2自然数に積であるとき
 （すなわち合成数であるとき）、$2^{n} - 1$ もふたつの自然数の積（合成数）である」
 
 これをもうすこし噛み砕くと、
-
 aとbが2以上の任意の自然数であるとき、適当な2以上の自然数xとyが存在して、
 
-$$ 2^{a * b} - 1 = x y $$
+$$ 2^{a b} - 1 = x y $$
 
 が成り立つ、ということになります。ここで、 $ n = a b $ としています。
 
@@ -138,8 +136,8 @@ $$ 2^{a * b} - 1 = x y $$
 
 ```math
 
-x = (2^{b} - 1) \\
-y - \sum_{i=0}^{a-1}2^{i b}
+x = 2^{b} - 1 \\
+y = \sum_{i=0}^{a-1}2^{i b}
 
 ```
 
@@ -151,7 +149,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
 (**
 ## 値の範囲
 
-普通は、これで証明終わり。とするのですが、
+普通は、これで「証明終わり。」とするのですが、
 2以上のaとbに対して、xとyもまた2以上であることを示すことも忘れてはいけません。
 それも、別の補題として証明しておきます。
 *)  
@@ -186,7 +184,7 @@ Section Composite_Number.
 (**
 ## 証明したいもの
  *)
-  Lemma e2_ab_1_composite (a b : nat) :
+  Lemma mersenne_composite (a b : nat) :
     2 <= a -> 2 <= b ->
     exists (x y : nat), 2 <= x /\ 2 <= y /\ (x * y = 2^(a * b) - 1).
   Proof.
@@ -200,7 +198,7 @@ Section Composite_Number.
   Qed.
 
 (**
-# おまけ 合成数の定義についての補題
+# おまけ - 合成数の定義についての補題
 
 「ある自然数が、より小さいふたつの自然数の積で表されるとき、
 そのふたつの自然数は1より大きい」ということを証明します。
@@ -239,6 +237,9 @@ Section Composite_Number.
       by case/andP.
   Qed.
 
+(**
+以上をまとめると、次のようになります。
+*)  
   Lemma l_composite_hypo (m n : nat) :
     ((m < m * n) && (n < m * n)) = ((1 < m) && (1 < n)).
   Proof.
@@ -249,6 +250,29 @@ Section Composite_Number.
     - by apply: l_1m1n_nmn.
   Qed.
 
+(**
+前提を書き直した命題で証明してみます。
+*)  
+  Lemma mersenne_composite' (a b : nat) :
+    a < a * b -> b < a * b ->
+    exists (x y : nat), x < x * y /\ y < x * y /\ (x * y = 2^(a * b) - 1).
+  Proof.
+    move/l_mmn_1n => Hb.
+    move/l_nmn_1m => Ha.
+    exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
+    split ; [| split].
+    - apply/l_1m1n_mmn.
+      + by apply: e2b_1_ge2.                (* 2 <= x を証明する。 *)
+      + by apply: sum0_2_e2ib.              (* 2 <= y を証明する。 *)
+
+    - apply/l_1m1n_nmn.
+      + by apply: e2b_1_ge2.                (* 2 <= x を証明する。 *)
+      + by apply: sum0_2_e2ib.              (* 2 <= y を証明する。 *)
+        
+    - move/le2_le1 in Ha.     (* 前提を 2 <= a から 1 <= a にする。 *)
+        by apply: l_e2_ab_1.  (* x * y = ... を証明する。 *)
+  Qed.
+  
 End Composite_Number.
 
 (* END *)
