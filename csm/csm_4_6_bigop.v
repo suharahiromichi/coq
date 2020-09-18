@@ -721,9 +721,9 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
 
 (**
 ```math
-\forall v, (v(0) = 1 \wedge \forall n, v(n + 1) = \sum_{k=0}^{n} v(k))
+\forall v, [v(0) = 1 \wedge \forall n, [v(n + 1) = \sum_{k=0}^{n} v(k)]
 \longrightarrow
-(\forall n, n \neq 0 \rightarrow v(n) = 2^{n-1})
+\forall n, [n \neq 0 \rightarrow v(n) = 2^{n-1}]]
 ```
 
 ``∀v`` は全体に係っていますが、
@@ -884,7 +884,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1, ただし 1 \le a $$
     rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first //=.
     rewrite mul0n expn0.
     rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
-    (* - (\sum_(1 <= i < a) 2 ^ (i * b) + 1) = *)
+    (* - (\sum_(1 <= i < a) 2 ^ (i * b) + 1) *)
     
     (* 左辺を整理する。 *)
     rewrite subnDl.
@@ -912,8 +912,8 @@ $$ 2^{a * b} - 1 = x y $$
 
 ```math
 
-x = (2^{b} - 1) \\
-y - \sum_{i=0}^{a-1}2^{i b}
+x = 2^{b} - 1 \\
+y = \sum_{i=0}^{a-1}2^{i b}
 
 ```
 
