@@ -721,9 +721,10 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
 
 (**
 ```math
-\forall v, [v(0) = 1 \wedge \forall n, [v(n + 1) = \sum_{k=0}^{n} v(k)]
+\forall v,
+[v_0 = 1 \wedge \forall n, [v_{n + 1} = \sum_{k=0}^{n} v_k]
 \longrightarrow
-\forall n, [n \neq 0 \rightarrow v(n) = 2^{n-1}]]
+\forall n, [n \neq 0 \rightarrow v_n = 2^{n-1}]]
 ```
 
 ``∀v`` は全体に係っていますが、
@@ -740,9 +741,17 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
 に言い換えられることに気付けば以下のような証明が可能になります
  *)
 
+(**
+```math
+\forall v,
+[v_0 = 1 \rightarrow \forall n, [v_{n+1} = \sum_{k=0}^{n} v_k]
+\longrightarrow
+v_1 = 1]
+```
+*)
   (* v 1 = 1 を証明 *)
   Lemma exo37_v_1 (v : nat -> nat ) (v0 : v 0 = 1)
-        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
+        (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) : (* (n : nat) *)
     v 1 = 1.
   Proof.
     rewrite (vn 0).
@@ -753,6 +762,14 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
     - by ssromega.
   Qed.
   
+(**
+```math
+\forall v,
+[v_0 = 1 \rightarrow \forall n, [v_{n+1} = \sum_{k=0}^{n} v_k]
+\longrightarrow
+\forall n, [n \neq 0 \rightarrow v_{n+1} = v_n + v_n]]
+```
+*)
   (* \sum を消去して隣接2項間漸化式をつくる *)
   Lemma exo37_rec_formula (v : nat -> nat ) (v0 : v 0 = 1)
         (vn : forall n, v n.+1 = \sum_(0 <= k < n.+1) v k) (n : nat)  :
