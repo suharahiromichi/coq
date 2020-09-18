@@ -51,9 +51,10 @@ $ 2^{n} -1 $ もふたつの自然数の積（合成数）であることを証�
 
 ## bigop の補題
 
-MathComp の ``bigop.v`` の補題のうちのいくつかを使いやすい命題にしておきます。
+MathComp の ``bigop.v`` の補題のうちのいくつかを
+総和（Σ）で使いやすい命題にしておきます（[b])。
 *)
-Section BigOp.
+Section SUM.
   Lemma eq_sum m n a b : a =1 b ->
                          \sum_(m <= i < n)(a i) = \sum_(m <= j < n)(b j).
   Proof.
@@ -86,7 +87,7 @@ Section BigOp.
     move=> Hmn.
       by rewrite big_nat_recr.
   Qed.
-End BigOp.
+End SUM.
 
 (**
 ## 補題
@@ -281,6 +282,9 @@ End Composite_Number.
 # 参考文献
 
 [a] https://ja.wikipedia.org/wiki/メルセンヌ数
+
+
+[b] https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_6_bigop.v
 *)
 
 (* END *)
