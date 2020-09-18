@@ -26,7 +26,7 @@ Wolfram Mathematica のような数式処理システム [5] のほうがずっ�
 (**
 # 定理の紹介
 
-最初に証明なしで、定理の証明をする。
+最初に証明なしで、定理の説明をする。
 
 ## 解の存在
 
@@ -120,24 +120,11 @@ x &=& n p a + m u b \\
 式(4.1)から式(1.1)が、
 式(4.2)から式(1.2)が、
 成り立つことがわかる。
-
-
+*)
+(**
 ## 解の一意性の証明
 
 x と y の両方が、連立合同式(1)の解であるとき、
-自然数mとnが互いに素なので、式(5.1)(5.2)が成り立つ。
-ここで、$ m \mid{x} $ は m を除数とし、「|」は四則演算より結合度が低いものとします。
-
-```math
-
-\begin{eqnarray}
-m \mid{x - y} \tag{5.1} \\
-n \mid{x - y} \tag{5.2}
-\end{eqnarray}
-
-```
-
-なぜなら、
 
 ```math
 
@@ -148,20 +135,47 @@ y &=& m t + a \\
 
 ```
 
-から、 
+から、 辺々を引いて、
 
 $$ x - y = m (s - t) $$
 
-すなわち、
-
 $$ x - y = 0 \pmod{m} $$
+
+$$ m \mid{x - y} $$
 
 が成り立ち、同様に、
 
+```math
+
+\begin{eqnarray}
+x &=& n p + b \\
+y &=& n q + b \\
+\end{eqnarray}
+
+```
+
+から、 
+
+$$ x - y = n (p - q) $$
+
 $$ x - y = 0 \pmod{n} $$
 
-が成り立つためである。
+$$ n \mid{x - y} $$
 
+が成り立つ。
+ここで、$ m \mid{x} $ は m を除数とし、「|」は四則演算より結合度が低いものとします。
+
+まとめると、
+
+
+```math
+
+\begin{eqnarray}
+m \mid{x - y} \tag{5.1} \\
+n \mid{x - y} \tag{5.2}
+\end{eqnarray}
+
+```
 
 そして、式(5.1)(5.2)から、式(6)が成り立つ。
 
@@ -358,12 +372,12 @@ Compute chinese 3 5 2 3 %% (3 * 5).         (* 8 *)
 式(21)の例では、
 *)
 Compute chinese 15 7 8 2.                   (* 758 *)
-Compute 758 %% (15 * 7).                    (* 23 *)
+Compute chinese 15 7 8 2 %% (15 * 7).       (* 23 *)
 
 (**
-ここで``%%`` は剰余計算 ($$ mod $$) である。
+ここで``%%`` は剰余計算 ($ mod $) である。
 
-chinese 関数の計算式は、式(4)とまったく同じである。
+chinese 関数の計算式は、式(4) $ x = n p a + m u b $ とまったく同じである。
  *)
 Print chinese.
 (**
@@ -485,9 +499,23 @@ Check chinese_mod : forall m n : nat,
     forall y : nat, y = chinese m n (y %% m) (y %% n) %[mod m * n].
 
 (**
-この補題の証明の途中で次の補題 chinese_remainder を使用している。
-「=」の両辺はbool述語なので、「=」は「<->」の意味である。
-すると、これは、[6][6']の式(4.42) と同じものである。
+証明の概要：
+
+chinese_modl と chinese_modr 補題を使用する。
+*)
+Lemma chinese_mod' (m n : nat) :
+    coprime m n ->
+    forall y : nat, y = chinese m n (y %% m) (y %% n) %[mod m * n].
+Proof.
+  move=> Hco y.
+  apply/eqP; rewrite chinese_remainder //.
+  rewrite chinese_modl //.
+  rewrite chinese_modr //.
+    by rewrite !modn_mod !eqxx.
+Qed.
+
+(**
+途中で次の補題 chinese_remainder を使用している。
 *)
 Check chinese_remainder : forall m n : nat,
     coprime m n ->
@@ -495,7 +523,10 @@ Check chinese_remainder : forall m n : nat,
       (x == y %[mod m * n]) = (x == y %[mod m]) && (x == y %[mod n]).
 
 (**
-この補題と式(1)と式(2)を見比べると、左辺のyは式(2)のy（式(1)を満たす任意のx）であり、
+「=」の両辺はbool述語なので、「=」は「<->」の意味である。
+とすると、これは、[6][6']の式(4.42) と同じものである。
+
+また、この補題と式(1)と式(2)を見比べると、左辺のyは式(2)のy（式(1)を満たす任意のx）であり、
 右辺のふたつのyは、aとbである。すなち、3つのyは異なっていても成立するわけである。
 よって、この補題は式(1)と式(2)の特別なかたち、
 すなわち、中国人の剰余定理の特別な場合になっている。
@@ -504,8 +535,11 @@ Check chinese_remainder : forall m n : nat,
 (**
 # 不定方程式の解
 
+順番が前後するが、不定方程式が解が拡張ユーグリッドの互除法で一意に求まることに説明をする。
+
 ## 説明
 
+ここでは証明なしで、定理の説明をする。
 自然数m と n が互いに素であるとき、Bézoutの補題 [3] から、不定方程式式(31)が解u、vを持つ。
 
 $$ m u - n v = 1 \tag{31} $$
@@ -548,13 +582,13 @@ m (n - 1)\ &mod\ n \\
 
 ここで、剰余が1のときの係数をuとすると、次を得る。
 
-$ m u\ mod\ n = 1 $$
+$$ m u\ mod\ n = 1 $$
 
 さらに、そのときの商をv とすると、次を得る。
 
 $$ m u - n v = 1 \tag{31} $$
 
-この証明は構成的でないのですが、おもしろいので載せておきます。
+以上の証明は構成的でないのですが、おもしろいので載せておきました。
 
 
 ## 机上での計算例（その1）
