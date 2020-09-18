@@ -444,7 +444,8 @@ Proof.
   - move=> ->.                              (* n = 0 で書き換える。 *)
     rewrite gcdn0.
     move=> ->.                              (* m = 1 で書き換える。 *)
-    rewrite !modn1.
+    Check modn1 : forall m : nat, m %% 1 = 0.
+    rewrite 2!modn1. (* 両辺を ``mod 1`` しているので、両辺に適用する。 *)
     done.
     
   (* 0 < n の場合 *)
@@ -462,6 +463,7 @@ Proof.
     Check def_m : p * n = q * m + 1.        (* は、不定方程式 式(3.2) である。 *)
     rewrite mulnAC -mulnA def_m mulnDr mulnA muln1.
     rewrite addnAC (mulnAC _ m) -mulnDl.
+    Check modnMDl : forall p m d : nat, p * d + m = m %[mod d].
     rewrite modnMDl.                 (* ゴールの左辺を mod m する。 *)
     done.
 Qed.  
@@ -508,10 +510,11 @@ Lemma chinese_mod' (m n : nat) :
     forall y : nat, y = chinese m n (y %% m) (y %% n) %[mod m * n].
 Proof.
   move=> Hco y.
-  apply/eqP; rewrite chinese_remainder //.
+  apply/eqP.
+  rewrite chinese_remainder //.
   rewrite chinese_modl //.
   rewrite chinese_modr //.
-    by rewrite !modn_mod !eqxx.
+    by rewrite 2!modn_mod 2!eqxx.
 Qed.
 
 (**

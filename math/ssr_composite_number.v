@@ -110,22 +110,22 @@ Section Composite_Number.
     
     (* 左辺、第1項 *)
     rewrite -sum_distrr //=.
-    have -> : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b)
+    have -> : \sum_(0 <= i < a) 2^b * 2^(i * b) = \sum_(0 <= i < a) 2^(i.+1 * b)
       by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
-    rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
-    rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last //=.
-    (* \sum_(1 <= i < a) 2 ^ (i * b) + 2 ^ (a * b) *)
+    rewrite -(sum_add1 a (fun x => 2^(x * b))).
+    rewrite [\sum_(1 <= i < a.+1) 2^(i * b)]sum_last //=.
+    (* \sum_(1 <= i < a) 2^(i * b) + 2^(a * b) *)
     
     (* 左辺、第2項 *)
-    rewrite  mul1n.
-    rewrite [\sum_(0 <= i < a) 2 ^ (i * b)]sum_first //=.
+    rewrite mul1n.
+    rewrite [\sum_(0 <= i < a) 2^(i * b)]sum_first //=.
     rewrite mul0n expn0.
-    rewrite [1 + \sum_(1 <= i < a) 2 ^ (i * b)]addnC.
-    (* - (\sum_(1 <= i < a) 2 ^ (i * b) + 1) *)
+    rewrite [1 + \sum_(1 <= i < a) 2^(i * b)]addnC.
+    (* - (\sum_(1 <= i < a) 2^(i * b) + 1) *)
     
     (* 左辺を整理する。 *)
     rewrite subnDl.
-    (* 2 ^ (a * b) - 1 *)
+    (* 2^(a * b) - 1 *)
     
     (* 左辺と右辺が同じ。 *)
     done.
@@ -181,14 +181,14 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
   
   (* 1 < y を証明する補題： *)  
   Lemma sum0_2_e2ib a b :
-    1 < a -> 1 < b -> 1 < \sum_(0 <= i < a) 2 ^ (i * b).
+    1 < a -> 1 < b -> 1 < \sum_(0 <= i < a) 2^(i * b).
   Proof.
     move=> Ha Hb.
     rewrite sum_first; last by apply: lt1_le1.
     rewrite sum_first; last done.
-    have H1 : 1 <= 2 ^ (0 * b) by rewrite mul0n expn0.
-    have H2 : 1 <= 2 ^ (1 * b) by rewrite mul1n expn_gt0 orb_idr.
-    have H3 : 0 <= \sum_(1 <= i < a) 2 ^ (i * b) by done. (* 0以上は自明。 *)
+    have H1 : 1 <= 2^(0 * b) by rewrite mul0n expn0.
+    have H2 : 1 <= 2^(1 * b) by rewrite mul1n expn_gt0 orb_idr.
+    have H3 : 0 <= \sum_(1 <= i < a) 2^(i * b) by done. (* 0以上は自明。 *)
       by ssromega.
   Qed.
   
@@ -200,7 +200,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     exists (x y : nat), 1 < x /\ 1 < y /\ (x * y = 2^(a * b) - 1).
   Proof.
     move=> Ha Hb.
-    exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
+    exists (2^b - 1), (\sum_(0 <= i < a) 2^(i * b)).
     split ; [| split].
     - by apply: e2b_1_ge2.    (* 1 < x を証明する。 *)
     - by apply: sum0_2_e2ib.  (* 1 < y を証明する。 *)
@@ -241,7 +241,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
   Qed.
 
 (**
-以上をまとめると、次のようになります。但し、不使用です。
+以上をまとめると、次のようになります。
 *)  
   Lemma l_composite_hypo (m n : nat) :
     ((m < m * n) && (n < m * n)) = ((1 < m) && (1 < n)).
@@ -260,9 +260,9 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     a < a * b -> b < a * b ->
     exists (x y : nat), x < x * y /\ y < x * y /\ (x * y = 2^(a * b) - 1).
   Proof.
-    move/l_mmn_1n => Hb.
-    move/l_nmn_1m => Ha.
-    exists (2 ^ b - 1), (\sum_(0 <= i < a) 2 ^ (i * b)).
+    move/l_mmn_1n => Hb.                    (* 1 < b にする。 *)
+    move/l_nmn_1m => Ha.                    (* 1 < a にする。 *)
+    exists (2^b - 1), (\sum_(0 <= i < a) 2^(i * b)).
     split ; [| split].
     - apply/l_1m1n_mmn.
       + by apply: e2b_1_ge2.                (* 1 < x を証明する。 *)
