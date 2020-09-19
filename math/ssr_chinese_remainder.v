@@ -6,6 +6,9 @@
 
 2020/08/05
 
+2020/09/19
+
+
 # はじめに
 
 中国人の剰余定理 (中国剰余定理、Chinese remainder theorem) [1][2] は、
@@ -93,7 +96,7 @@ x = n p a + m u b \tag{4}
 
 ```
 
-なぜなら、移項して、
+なぜなら、式(3.1)と式(3.2)移項して、
 
 ```math
 
@@ -436,6 +439,7 @@ chinese_modl の証明は、面倒に見えるが、``n``で場合分けして `
 Lemma chinese_modl' m n a b : coprime m n -> chinese m n a b = a %[mod m].
 Proof.
   rewrite /chinese.
+  rewrite /coprime.
   move/eqP.                                 (* gcdn m n = 1 *)
   
   (* n = 0 と 0 < n に場合分けする。 *)
@@ -547,18 +551,22 @@ Check chinese_remainder : forall m n : nat,
 
 $$ m u - n v = 1 \tag{31} $$
 
-また、任意の整数kに対して、
-u と（a を法として）合同な u' も同様に解となる。
-v と（b を法として）合同な v' も同様に解となる。
+また、任意の整数kに対して、次のu' と v' も解になる。
 
 ```math
 
 \begin{eqnarray}
-u' &=& u + k a \tag{33.1} \\
-v' &=& v + k b \tag{33.2} \\
+u' &=& u + k n \tag{32.1} \\
+v' &=& v + k m \tag{32.2} \\
 \end{eqnarray}
 
 ```
+
+なぜなら、式(31)に式(32)を代入すると、以下になるため。
+
+$$ m (u' - k n) - n (v' - k m) = 1 $$
+
+
 
 ## 不定方程式の解の存在の証明
 
@@ -671,7 +679,7 @@ $$ p = -1, q = -2 $$
 式(4)に代入するならこの値でも構わないのだが、
 MathCompにあわせて自然数にする場合は、
 p は 3 を法として合同、q は 5 を法として合同であればよいので、
-式(33)の $ k = 1 $ として、
+式(32)の $ k = 1 $ として、
 
 ```math
 
