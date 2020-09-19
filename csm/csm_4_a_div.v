@@ -84,8 +84,14 @@ Compute edivn 10 3.                         (* (3, 1) *)
 整礎帰納法をつかって、もうすこし自然な定義で書くことができます。
 *)
 Section DIV'.
+  Fail Fixpoint edivn' (m d q : nat) {struct m} : nat * nat :=
+    if d is 0 then (0, m)                   (* 0で割ると0 *)
+    else
+      let: m' := m - d in
+      if m' is 0 then (q, m) else edivn' m' d q.+1.
+  
   Function edivn' (m d q : nat) {wf lt m} : nat * nat :=
-    if d is 0 then (0, m)
+    if d is 0 then (0, m)                   (* 0で割ると0 *)
     else
       let: m' := m - d in
       if m' is 0 then (q, m) else edivn' m' d q.+1.
@@ -144,6 +150,10 @@ Check edivn_eq : forall d q r : nat, r < d -> edivn (q * d + r) d = (q, r).
 
 ユーグリッド除法とは別に定義する。
 *)
+Print modn.
+(*
+fun m d : nat => if 0 < d then modn_rec d.-1 m else m
+*)
 Print modn_rec.
 (*
 fun d : nat =>
@@ -151,10 +161,6 @@ fix loop (m : nat) : nat := match m - d with
                             | 0 => m
                             | m'.+1 => loop m'
                             end
-*)
-Print modn.
-(*
-fun m d : nat => if 0 < d then modn_rec d.-1 m else m
 *)
 Locate "_ %% _". (* := modn m d : nat_scope (default interpretation) *)
 
@@ -229,6 +235,7 @@ Print odd.
 Lemma modn2' m : m %% 2 = 0 <-> ~~ odd m.
 Proof.
   (* modn2 という補題は奇妙である。左辺がnat、右辺がboolである。 *)
+  
   Check modn2 m : m %% 2 = odd m.
   (* 当然、右辺が bool -> nat のコアーションになっている。 *)
   Check modn2 m : m %% 2 = nat_of_bool (odd m).
@@ -472,6 +479,16 @@ Print coprime.                              (* boolena述語 *)
 fun m n : nat => gcdn m n == 1
  *)
 
+Goal forall m n, gcdn m n = 1 <-> coprime m n.
+Proof.
+  move=> m n.
+  split=> H.
+  - apply/eqP.
+    done.
+  - apply/eqP.
+    done.
+Qed.
+
 (**
 ## 互いに素の補題
  *)
@@ -505,7 +522,7 @@ Locate "_ != _ %[mod _ ]".             (* 3項演算子であることに注意 
 ``%[mod _]`` すなわち ``%% _`` の部分が一致していれば、rewriteも可能である。
 *)
 Goal forall m n p d, m = n %[mod d] -> n = p %[mod d] -> m = p %[mod d].
-Proof. move=> m n p d H1 H2. rewrite H1 H2. done.
+Proof. move=> m n p d H1 H2. rewrite H1 H2. done. Qed.
 
 (**
 ### 等式の補題の適用
@@ -515,6 +532,8 @@ Proof. move=> m n p d H1 H2. rewrite H1 H2. done.
 Check @esym : forall (A : Type) (x y : A), x = y -> y = x.
 Goal forall m n d, m = n %[mod d] -> n = m %[mod d].
 Proof. move=> m n d H. by apply: esym. Qed.
+
+Goal 2 = 4 %[mod 2] -> 4 = 2 %[mod 2]. Proof. apply: esym. Qed.
 
 Check @nesym : forall (A : Type) (x y : A), x <> y -> y <> x.
 Goal forall m n d, m <> n %[mod d] -> n <> m %[mod d].
