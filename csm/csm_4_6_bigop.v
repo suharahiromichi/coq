@@ -722,7 +722,7 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
 (**
 ```math
 \forall v,
-[v_0 = 1 \wedge \forall n, [v_{n + 1} = \sum_{k=0}^{n} v_k]
+[[v_0 = 1 \wedge \forall n, [v_{n + 1} = \sum_{k=0}^{n} v_k]]
 \longrightarrow
 \forall n, [n \neq 0 \rightarrow v_n = 2^{n-1}]]
 ```
@@ -744,7 +744,7 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
 (**
 ```math
 \forall v,
-[v_0 = 1 \rightarrow \forall n, [v_{n+1} = \sum_{k=0}^{n} v_k]
+[[v_0 = 1 \rightarrow \forall n, [v_{n+1} = \sum_{k=0}^{n} v_k]]
 \longrightarrow
 v_1 = 1]
 ```
@@ -765,7 +765,7 @@ v_1 = 1]
 (**
 ```math
 \forall v,
-[v_0 = 1 \rightarrow \forall n, [v_{n+1} = \sum_{k=0}^{n} v_k]
+[[v_0 = 1 \rightarrow \forall n, [v_{n+1} = \sum_{k=0}^{n} v_k]]
 \longrightarrow
 \forall n, [n \neq 0 \rightarrow v_{n+1} = v_n + v_n]]
 ```
