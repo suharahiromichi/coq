@@ -109,17 +109,18 @@ Section Composite_Number.
     rewrite mulnBl.
     
     (* 左辺、第1項 *)
-    rewrite -sum_distrr //=.
+    rewrite -sum_distrr //=.                (* 係数をΣの中に入れる。 *)
+    (* Σの中身をまとめる。 *)
     have -> : \sum_(0 <= i < a) 2^b * 2^(i * b) = \sum_(0 <= i < a) 2^(i.+1 * b)
       by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
-    rewrite -(sum_add1 a (fun x => 2^(x * b))).
-    rewrite [\sum_(1 <= i < a.+1) 2^(i * b)]sum_last //=.
+    rewrite -(sum_add1 a (fun x => 2^(x * b))). (* インデックスを1始まりにする。 *)
+    rewrite [\sum_(1 <= i < a.+1) 2^(i * b)]sum_last //=. (* 最後の項をΣの外に出す。 *)
     (* \sum_(1 <= i < a) 2^(i * b) + 2^(a * b) *)
     
     (* 左辺、第2項 *)
     rewrite mul1n.
-    rewrite [\sum_(0 <= i < a) 2^(i * b)]sum_first //=.
-    rewrite mul0n expn0.
+    rewrite [\sum_(0 <= i < a) 2^(i * b)]sum_first //=. (* 最初の項をΣの外に出す。 *)
+    rewrite mul0n expn0.                                (* 2^(0*b) を 1 に書き換える。 *)
     rewrite [1 + \sum_(1 <= i < a) 2^(i * b)]addnC.
     (* - (\sum_(1 <= i < a) 2^(i * b) + 1) *)
     
@@ -150,13 +151,13 @@ $$ 2^{a b} - 1 = x y $$
 ```math
 
 x = 2^{b} - 1 \\
-y = \sum_{i=0}^{a-1}2^{i b}
+y = \sum_{i=0}^{a-1} 2^{i b}
 
 ```
 
 先に証明した補題の式が得られます。
 
-$$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
+$$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
 *)
 
 (**
@@ -201,7 +202,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
   Proof.
     move=> Ha Hb.
     exists (2^b - 1), (\sum_(0 <= i < a) 2^(i * b)).
-    split ; [| split].
+    split; [| split].
     - by apply: e2b_1_ge2.    (* 1 < x を証明する。 *)
     - by apply: sum0_2_e2ib.  (* 1 < y を証明する。 *)
     - move/lt1_le1 in Ha.     (* 前提を 1 < a から 1 <= a にする。 *)
@@ -264,13 +265,13 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     move/l_nmn_1m => Ha.                    (* 1 < a にする。 *)
     exists (2^b - 1), (\sum_(0 <= i < a) 2^(i * b)).
     split ; [| split].
-    - apply/l_1m1n_mmn.
-      + by apply: e2b_1_ge2.                (* 1 < x を証明する。 *)
-      + by apply: sum0_2_e2ib.              (* 1 < y を証明する。 *)
+    - apply/l_1m1n_mmn.          (* Goal を 1 < x と 1 < y にする。 *)
+      + by apply: e2b_1_ge2.     (* 1 < x を証明する。 *)
+      + by apply: sum0_2_e2ib.   (* 1 < y を証明する。 *)
 
-    - apply/l_1m1n_nmn.
-      + by apply: e2b_1_ge2.                (* 1 < x を証明する。 *)
-      + by apply: sum0_2_e2ib.              (* 1 < y を証明する。 *)
+    - apply/l_1m1n_nmn.          (* Goal を 1 < x と 1 < y にする。 *)
+      + by apply: e2b_1_ge2.     (* 1 < x を証明する。 *)
+      + by apply: sum0_2_e2ib.   (* 1 < y を証明する。 *)
         
     - move/lt1_le1 in Ha.      (* 前提を 1 < a から 1 <= a にする。 *)
         by apply: l_e2_ab_1.   (* x * y = ... を証明する。 *)
