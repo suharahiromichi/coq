@@ -143,7 +143,7 @@ Section Basic.
   Abort.
   
 (**
-# 2. ゴールの終了（基本）
+# 2. ゴールの終了
 *)
 
   Lemma test21 (P1 : Prop) : P1 -> True.
@@ -272,10 +272,10 @@ Section Basic.
   Qed.
 
 (**
-# 述語論理
+# 4. 述語論理
  *)
 (**
-## 全称記号（∀、すべて）
+## 全称記号（∀、すべて）の証明
  *)
   Lemma test40 : forall n : nat, 0 < n + 1.
   Proof.
@@ -295,7 +295,7 @@ Section Basic.
   Qed.
 
 (**
-## 存在記号（∃、ある）
+## 存在記号（∃、ある）の証明
 *)  
   Lemma test42 : exists (n : nat), n + 1 = 3.
 (**
@@ -317,7 +317,7 @@ Section Basic.
   Qed.
 
 (**
-# ゴールが等式の場合の証明
+# 5. 等式の証明
  *)
   Lemma test51 (n : nat) : n = n.
 (**
@@ -357,112 +357,93 @@ Section Basic.
   Qed.
 
 (**
-# 6. 不等式の証明
+# 6. 不等式（等しくない）の証明
+
+不等式 (≦ や ＜ など）は、自然数の補題を使って証明しますから、ここでは省略します。
+
+- ``m <> n`` は、``m = n -> False`` の構文糖衣なので、否定の証明の応用になります。
 *)  
+  Lemma test61 (m n : nat) : m <> n -> n <> m.
+    move=> H.
+    move=> Hc.
+    apply: H.
+    rewrite Hc.
+    done.
+  Qed.
+
+(**
+-  ``m <> m`` は、成り立ちませんから ``False`` と同じです。
+ *)
+  Lemma test62 (m : nat) : m <> m -> False.
+    move=> H.
+    done.
+  Qed.
   
 (**
 # 7. 場合分け
  *)
-  Lemma test72 n : 0 < n -> n - 1 + 1 = n.
+(**
+## 変数の型による場合分け
+*)
+  Lemma test72 n : 0 <> n -> n <> 0.
   Proof.
     case: n.
-    Admitted.
+    - move=> H.                             (* n = 0 の場合 *)
+      done.                                 (* 前提 H : 0 <> 0 で、矛盾 *)
+    - move=> n H.
+      move=> Hc.
+      apply: H.
+      rewrite Hc.
+      done.
+  Qed.
 
-  Lemma test71 n : 0 < n -> n - 1 + 1 = n.
+(**
+## 命題による場合分け
+*)
+  Lemma test73 n : 0 <> n -> n <> 0.
   Proof.
     move=> H.
     case: H.
   Admitted.
     
 (**
+## コンストラクタによる場合分け
+ *)
+  
+(**
 # 8. 数学的帰納法
  *)
+(**
+## 変数の型による帰納法
+*)
   Lemma test82 n : 0 < n -> n - 1 + 1 = n.
   Proof.
-    case: n.
+    elim: n.
     Admitted.
 
+(**
+## 命題による帰納法
+*)
   Lemma test81 n : 0 < n -> n - 1 + 1 = n.
   Proof.
     move=> H.
-    case: H.
+    elim: H.
   Admitted.
 
 (**
 # 9. 高度な証明
  *)
 (**
-- inversion
+- auto
 *)
-
 (**
 - omega と ring
 *)  
+(**
+- inversion
+*)
+
 
 End HowTo.
 
 (* END *)
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(**
-# ゴールとコンテキストの間に移動には ``move`` を使用する。
-
-- ゴールからコンテキストへの移動をintroduce、導入、イントロ、と呼ぶ。
-また、ゴールをスタックと見立てて pop とも呼ぶ。
-導入は、ゴールの最左の、前提または全量化変数が対象になる。
-
-- コンテキストからゴールへの移動をgeneralize、汎化、ジェネラ・ライズ、と呼ぶ。
-また、ゴールをスタックと見立てて push とも呼ぶ。
-汎化はコンテキストを指定しておこなう。
-  
-*)
-  Goal (forall m, odd m) -> forall n, odd n.
-  Proof.
-    (* 導入は、ゴールの最左の、前提または全量化変数が対象になる。
-       コンテキストで使われる名前の指定は自由である。 *)
-    move=> H'.
-    move=> n'.
-    (* 
-    move: n'.
-
-    apply: H'.                              (* あとで説明する。 *)
-  Qed.
-  
-Goal False.
-
-
-  Variables type : Type.
-  Variables x1 x2 x3 : type.
-  Variables p1 p2 p3 q1 q2 q3 g : type -> Prop.
-  Lemma test1 : P1 /\ P2 -> P2 /\ P1. Admitted.
-  Lemma test2 : x1 = x2 -> x2 = x1. Admitted.
