@@ -10,7 +10,7 @@
 
 ソースコードは以下にあります。
 
-
+https://github.com/suharahiromichi/coq/blob/master/math/ssr_positional_notation.v
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -73,19 +73,42 @@ End Sum.
 
 Section PositionalNotation.
 (**
-XXXXX
+補題
+
+商と剰余の関係式を変形したものを証明しておく。
 *)
-  Lemma modn_def' (a d : nat) : a %% d = a - a %/ d * d.
+  Check divn_eq : forall m d : nat, m = m %/ d * d + m %% d.
+  
+  Lemma divn_modn_eq (m d : nat) : m %/ d * d = m - m %% d.
   Proof.
-    rewrite {2}[a](divn_eq a d).
-    rewrite -[RHS]addnBAC //=.
+    rewrite {2}(divn_eq m d).
+    rewrite -addnBA //=.
+      by ssromega.
+(*
+    apply/eqP.
+    Check eqn_add2r (a %% d) (a %/ d * d) (a - a %% d). (* 両辺に a %% d を加える。 *)
+    rewrite -(eqn_add2r (a %% d) (a %/ d * d) (a - a %% d)).
+    apply/eqP.
+      by rewrite -[LHS]divn_eq subnK // leq_mod.
+*)
+  Qed.
+  
+  Lemma modn_divn_eq (m d : nat) : m %% d = m - m %/ d * d.
+  Proof.
+    rewrite {2}(divn_eq m d).
+    rewrite -addnBAC //=.
       by ssromega.
   Qed.
   
-  Lemma le__mod_le (x a b : nat) : a <= b -> x %% a <= x %% b.
+(**
+補題
+
+m を 10 で割った余りよりも、100 で割った余りの方が大きい。
+*)
+  Lemma le__mod_le (m d q : nat) : d <= q -> m %% d <= m %% q.
   Proof.
     move=> Hab.
-    rewrite 2!modn_def'.
+    rewrite 2!modn_divn_eq.
     apply: leq_sub2l.
     Search _ (_ * _ <= _ * _).
     apply: leq_mul.
@@ -93,45 +116,33 @@ XXXXX
     - apply: leq_div2l.
   Admitted.                                 (* 不使用 *)
 
-  Lemma mod_le_mod (x a b : nat) : 0 < a -> 1 < b -> x %% a <= x %% (a * b).
+  Lemma mod_le_mod (m d n : nat) : 0 < d -> 0 < n -> m %% d <= m %% (d * n).
   Proof.
-    move=> Ha Hb.
-    rewrite 2!modn_def'.
+    move=> Hd Hn.
+    rewrite 2!modn_divn_eq.
     apply: leq_sub2l.
-    rewrite {2}[a * b]mulnC.
+    rewrite {2}[d * n]mulnC.
     rewrite mulnA leq_pmul2r //.
-    rewrite [x %/ (a * b)]divnMA.
-      by apply: leq_trunc_div (x %/ a) b.
+    rewrite [m %/ (d * n)]divnMA.
+    Check leq_trunc_div (m %/ d) n : (m %/ d) %/ n * n <= m %/ d.
+      by apply: leq_trunc_div.
   Qed.
   
 (**
-補題
+m を d進数で表したときの i 桁め。
 *)
-  Lemma l_div_mul (a d : nat) : a %/ d * d = a - a %% d.
-  Proof.
-    apply/eqP.
-    Check eqn_add2r (a %% d) (a %/ d * d) (a - a %% d). (* 両辺に a %% d を加える。 *)
-    rewrite -(eqn_add2r (a %% d) (a %/ d * d) (a - a %% d)).
-    apply/eqP.
-    Check divn_eq : forall m d : nat, m = m %/ d * d + m %% d.
-      by rewrite -[LHS]divn_eq subnK // leq_mod.
-  Qed.
-  
-(**
-x を d進数で表したときの i 桁め。
-*)
-  Definition digit (x d i : nat) := x %% d^i.+1 %/ d^i.
+  Definition digit (m d i : nat) := m %% d^i.+1 %/ d^i.
 
 (**
-x を d進数で表して、もとに戻したもの。
+m を d進数で表して、もとに戻したもの。
 *)
-  Definition radix_disp (x d n : nat) := \sum_(0 <= i < n.+1) (digit x d i) * d^i.
+  Definition radim_disp (m d n : nat) := \sum_(0 <= i < n.+1) (digit m d i) * d^i.
   
 (**
 d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割った余りに等しい。
 じつは、単なる表記の違いだけであるので、使っていない。
 *)
-  Lemma mod_mod__mod (x n d : nat) : d %| n -> x %% n %% d = x %% d.
+  Lemma mod_mod__mod (m n d : nat) : d %| n -> m %% n %% d = m %% d.
   Proof.
     Check modn_dvdm : forall m n d : nat, d %| m -> n %% m = n %[mod d].
     move=> H.
@@ -141,14 +152,14 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
 (**
 Σの中身を書き換えるための補題。
 *)
-  Lemma l_mod_div__mod_mod (x d : nat) :
-    (fun (i : nat) => x %% d^i.+1 %/ d^i * d^i)
-    =1 (fun (i : nat) => x %% d^i.+1 - x %% d^i).
+  Lemma l_mod_div__mod_mod (m d : nat) :
+    (fun (i : nat) => m %% d^i.+1 %/ d^i * d^i)
+    =1 (fun (i : nat) => m %% d^i.+1 - m %% d^i).
   Proof.
     move=> i.
-    Check l_div_mul (x %% d^i.+1) (d^i).
-    rewrite (l_div_mul (x %% d^i.+1) (d^i)).
-    congr (x %% d^i.+1 - _).
+    Check divn_modn_eq (m %% d^i.+1) (d^i).
+    rewrite (divn_modn_eq (m %% d^i.+1) (d^i)).
+    congr (m %% d^i.+1 - _).
     rewrite modn_dvdm //.
       by apply: dvdn_exp2l.
   Qed.
@@ -156,12 +167,12 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
 (**
 証明したいもの。
 *)
-  Lemma positional_eq (x d n : nat) : 1 < d -> x %% d^n.+1 = radix_disp x d n.
+  Lemma positional_eq (m d n : nat) : 0 < d -> m %% d^n.+1 = radim_disp m d n.
   Proof.
     move=> Hd.
-    rewrite /radix_disp /digit.
-    Check eq_sum 0 n.+1 (l_mod_div__mod_mod x d).
-    rewrite (eq_sum 0 n.+1 (l_mod_div__mod_mod x d)).
+    rewrite /radim_disp /digit.
+    Check eq_sum 0 n.+1 (l_mod_div__mod_mod m d).
+    rewrite (eq_sum 0 n.+1 (l_mod_div__mod_mod m d)).
 
     elim: n => [| n IHn].
     - by rewrite sum_nat1 // expn0 modn1 subn0.
@@ -170,8 +181,7 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
       
       apply: mod_le_mod => //=.
       rewrite expn_gt0.
-      apply/orP/or_introl.
-        by ssromega.
+        by apply/orP/or_introl.
       (* by rewrite le__mod_le //= leq_exp2l *)
   Qed.
 End PositionalNotation.
