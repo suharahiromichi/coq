@@ -272,10 +272,10 @@ m を d進数で表して、もとに戻したもの。
 *)
   Lemma positional_step (m n : nat) :
     0 < n ->
-    position_note m n = d * (\sum_(0 <= i < n) (digit m i.+1) * d^i) + m %% d.
+    \sum_(0 <= i < n.+1) digit m i * d ^ i =
+    d * (\sum_(0 <= i < n) (digit m i.+1) * d^i) + m %% d.
   Proof.
     move=> Hn.
-    rewrite /position_note.
     rewrite [LHS]sum_first' //.
     rewrite {1}/digit expn1 expn0 divn1 muln1.
     have H : (fun i => digit m i.+1 * d^i.+1) =1 (fun i => digit m i.+1 * d^i * d)
@@ -283,7 +283,38 @@ m を d進数で表して、もとに戻したもの。
     rewrite (eq_sum 0 n H) sum_distrl //.
       by rewrite addnC mulnC.
   Qed.
+
+  Lemma positional_rec (m n : nat) :
+    0 < n ->
+    f_rec (m %% d^n.+1) =
+    alpha (digit m n) * c^n + \sum_(0 <= i < n)(beta (digit m i)) * c^i.
+  Proof.
+    rewrite positional_eq /position_note.
+    elim: n => // n IHn _.
+(**
+IHn : f_rec (\sum_(0 <= i < n.+1) digit m i * d^i) =
+        alpha (digit m n) * c^n + \sum_(0 <= i < n) beta (digit m i) * c^i
+
+Goal : f_rec (\sum_(0 <= i < n.+2) digit m i * d^i) =
+        alpha (digit m n.+1) * c^n.+1 + \sum_(0 <= i < n.+1) beta (digit m i) * c^i
+*)
+    rewrite positional_step //.
+    rewrite f_rec_eq_s.
+    - 
+(**
+IHn : 0 < n ->
+      f_rec (\sum_(0 <= i < n.+1) digit m i * d^i) =
+        alpha (digit m n) * c^n + \sum_(0 <= i < n) beta (digit m i) * c^i
   
+Goal :
+  c * f_rec (\sum_(0 <= i < n.+1) digit m i.+1 * d^i) + beta (m %% d) =
+        alpha (digit m n.+1) * c^n.+1 + \sum_(0 <= i < n.+1) beta (digit m i) * c^i
+
+*)
+      admit.
+    - by rewrite ltn_mod.
+  Admitted.
+    
 End PositionalNotation.
 
 (**
