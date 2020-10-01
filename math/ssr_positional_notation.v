@@ -34,6 +34,27 @@ Unset Printing Implicit Defensive.
 *)
 Section Sum.
 (**
+## 総和の結合と分配
+*)
+  Lemma sum_split m n a b :
+    m < n ->
+    \sum_(m <= i < n)(a i) + \sum_(m <= i < n)(b i) = \sum_(m <= i < n)(a i + b i).
+  Proof. by rewrite big_split. Qed.
+
+  Lemma sum_distrr m n c a :
+    m < n ->
+    \sum_(m <= i < n)(c * (a i)) = c * (\sum_(m <= i < n)(a i)).
+  Proof. by rewrite big_distrr. Qed.
+
+  Lemma sum_distrl m n a c :
+    m < n ->
+    \sum_(m <= i < n)((a i) * c) = (\sum_(m <= i < n)(a i)) * c.
+  Proof. by rewrite big_distrl. Qed.
+
+  Check sum_nat_const_nat : forall m n c,
+      \sum_(m <= i < n) c = (n - m) * c.
+
+(**
 # Σの中身の書き換え
 
 Σの中の i は、ローカルに束縛されている（ラムダ変数である）ので、
@@ -57,6 +78,32 @@ $$ \sum_{i=n}^{n}a_i = a_n $$
   Lemma sum_nat1 n a :
     \sum_(n <= i < n.+1)(a i) = a n.
   Proof. by rewrite big_nat1. Qed.
+(**
+## 最初の項をΣの外に出す。
+
+$$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i $$
+ *)
+  Lemma sum_first m n a :
+    m < n ->
+    \sum_(m <= i < n)(a i) = a m + \sum_(m.+1 <= i < n)(a i).
+  Proof.
+    move=> Hn.
+      by rewrite big_ltn.
+  Qed.
+
+(**
+総和の範囲の起点を変えずに、インデックスをずらす補題もあります。
+
+$$ \sum_{i=m}^{n}a_i = a_m + \sum_{i=m}^{n-1}a_{i + 1} $$
+*)
+  Lemma sum_first' m n a :
+    m <= n ->
+    \sum_(m <= i < n.+1)(a i) = a m + \sum_(m <= i < n)(a i.+1).
+  Proof.
+    move=> Hn.
+      by rewrite big_nat_recl.
+  Qed.
+
 (**
 ## 最後の項をΣの外に出す。
 
@@ -144,6 +191,7 @@ End Lemmas.
   
 Section PositionalNotation.
   Variables d : nat.                        (* 基数 *)
+  Hypothesis Hd : 0 < d.
 
 (**
 m を d進数で表したときの i 桁め。
@@ -173,9 +221,8 @@ m を d進数で表して、もとに戻したもの。
 (**
 証明したいもの。
 *)
-  Lemma positional_eq (m n : nat) : 0 < d -> m %% d^n.+1 = position_note m n.
+  Lemma positional_eq (m n : nat) : m %% d^n.+1 = position_note m n.
   Proof.
-    move=> Hd.
     rewrite /position_note /digit.
     Check eq_sum 0 n.+1 (l_mod_div__mod_mod m).
     rewrite (eq_sum 0 n.+1 (l_mod_div__mod_mod m)).
@@ -190,10 +237,12 @@ m を d進数で表して、もとに戻したもの。
         by apply/orP/or_introl.
       (* by rewrite le__mod_le //= leq_exp2l *)
   Qed.
-End PositionalNotation.
-
-Section Recurrence_Relation.
-  Variables d c : nat.                      (* 基数 *)
+  
+(**
+# 漸化式
+*)
+  Variables c : nat.                        (* 基数 *)
+  Hypothesis Hc : 0 < c.
   Variables alpha beta : nat -> nat.
   
   Function f_rec (m : nat) {wf lt m} :=
@@ -202,25 +251,41 @@ Section Recurrence_Relation.
     else
       f_rec (m %/ d) + beta (m %% d).
   Proof.
-    - move=> m Hd Hmd.
+    - move=> m Hd' Hmd.
       apply/ltP/ltn_Pdiv.
-      + move/negbT in Hd.
+      + move/negbT in Hd'.
           by ssromega.
       + by ssromega.
     - by apply: lt_wf.                      (* Wf_nat *)
   Defined.
   
-  Lemma f_rec_eq_t (j : nat) : 0 < d -> j < d -> f_rec j = alpha j.
+  Lemma f_rec_eq_t (j : nat) : j < d -> f_rec j = alpha j.
   Proof.
   Admitted.
-
-  Lemma f_rec_eq_s (m j : nat) :
-    0 < d -> j < d -> f_rec (d * m + j) = c * (f_rec m) + beta j.
+  
+  Lemma f_rec_eq_s (m j : nat) : j < d -> f_rec (d * m + j) = c * (f_rec m) + beta j.
   Proof.
   Admitted.  
   
-End Recurrence_Relation.
-    
+(**
+``m = d * n + j`` に分解する補題
+*)
+  Lemma positional_step (m n : nat) :
+    0 < n ->
+    position_note m n = d * (\sum_(0 <= i < n) (digit m i.+1) * d^i) + m %% d.
+  Proof.
+    move=> Hn.
+    rewrite /position_note.
+    rewrite [LHS]sum_first' //.
+    rewrite {1}/digit expn1 expn0 divn1 muln1.
+    have H : (fun i => digit m i.+1 * d^i.+1) =1 (fun i => digit m i.+1 * d^i * d)
+      by move=> i; rewrite -[RHS]mulnA -[in RHS]expnSr.
+    rewrite (eq_sum 0 n H) sum_distrl //.
+      by rewrite addnC mulnC.
+  Qed.
+  
+End PositionalNotation.
+
 (**
 # 参考文献
 
