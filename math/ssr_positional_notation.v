@@ -14,8 +14,10 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_positional_notation.
  *)
 
 From mathcomp Require Import all_ssreflect.
-
+Require Import Recdef.
+Require Import Wf_nat.                      (* well_founded lt *)
 Require Import ssromega.
+
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
 
@@ -71,7 +73,7 @@ $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
   Qed.
 End Sum.  
 
-Section PositionalNotation.
+Section Lemmas.
 (**
 補題
 
@@ -129,16 +131,6 @@ m を 10 で割った余りよりも、100 で割った余りの方が大きい�
   Qed.
   
 (**
-m を d進数で表したときの i 桁め。
-*)
-  Definition digit (m d i : nat) := m %% d^i.+1 %/ d^i.
-
-(**
-m を d進数で表して、もとに戻したもの。
-*)
-  Definition radim_disp (m d n : nat) := \sum_(0 <= i < n.+1) (digit m d i) * d^i.
-  
-(**
 d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割った余りに等しい。
 じつは、単なる表記の違いだけであるので、使っていない。
 *)
@@ -148,11 +140,25 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
     move=> H.
       by rewrite modn_dvdm.
   Qed.
+End Lemmas.
+  
+Section PositionalNotation.
+  Variables d : nat.                        (* 基数 *)
+
+(**
+m を d進数で表したときの i 桁め。
+*)
+  Definition digit (m i : nat) := m %% d^i.+1 %/ d^i.
+
+(**
+m を d進数で表して、もとに戻したもの。
+*)
+  Definition position_note (m n : nat) := \sum_(0 <= i < n.+1) (digit m i) * d^i.
   
 (**
 Σの中身を書き換えるための補題。
 *)
-  Lemma l_mod_div__mod_mod (m d : nat) :
+  Lemma l_mod_div__mod_mod (m : nat) :
     (fun (i : nat) => m %% d^i.+1 %/ d^i * d^i)
     =1 (fun (i : nat) => m %% d^i.+1 - m %% d^i).
   Proof.
@@ -167,12 +173,12 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
 (**
 証明したいもの。
 *)
-  Lemma positional_eq (m d n : nat) : 0 < d -> m %% d^n.+1 = radim_disp m d n.
+  Lemma positional_eq (m n : nat) : 0 < d -> m %% d^n.+1 = position_note m n.
   Proof.
     move=> Hd.
-    rewrite /radim_disp /digit.
-    Check eq_sum 0 n.+1 (l_mod_div__mod_mod m d).
-    rewrite (eq_sum 0 n.+1 (l_mod_div__mod_mod m d)).
+    rewrite /position_note /digit.
+    Check eq_sum 0 n.+1 (l_mod_div__mod_mod m).
+    rewrite (eq_sum 0 n.+1 (l_mod_div__mod_mod m)).
 
     elim: n => [| n IHn].
     - by rewrite sum_nat1 // expn0 modn1 subn0.
@@ -186,6 +192,35 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
   Qed.
 End PositionalNotation.
 
+Section Recurrence_Relation.
+  Variables d c : nat.                      (* 基数 *)
+  Variables alpha beta : nat -> nat.
+  
+  Function f_rec (m : nat) {wf lt m} :=
+    if d <= 1 then 0
+    else if m < d then alpha m
+    else
+      f_rec (m %/ d) + beta (m %% d).
+  Proof.
+    - move=> m Hd Hmd.
+      apply/ltP/ltn_Pdiv.
+      + move/negbT in Hd.
+          by ssromega.
+      + by ssromega.
+    - by apply: lt_wf.                      (* Wf_nat *)
+  Defined.
+  
+  Lemma f_rec_eq_t (j : nat) : 0 < d -> j < d -> f_rec j = alpha j.
+  Proof.
+  Admitted.
+
+  Lemma f_rec_eq_s (m j : nat) :
+    0 < d -> j < d -> f_rec (d * m + j) = c * (f_rec m) + beta j.
+  Proof.
+  Admitted.  
+  
+End Recurrence_Relation.
+    
 (**
 # 参考文献
 
