@@ -262,7 +262,6 @@ m を d進数で表して、もとに戻したもの。
     - by apply: lt_wf.                      (* Wf_nat *)
   Defined.
   
-(*
   Function f_rec' (m d' : nat) {wf lt m} :=
     match d' with
     | 0 | 1 => 0
@@ -286,7 +285,6 @@ m を d進数で表して、もとに戻したもの。
   Lemma f_rec_eq_s (m j : nat) : j < d -> f_rec (d * m + j) = c * (f_rec m) + beta j.
   Proof.
   Admitted.  
-*)
 
   Lemma f_rec_eq_0 :  f_rec 0 = 0.
   Proof.
@@ -315,36 +313,41 @@ m を d進数で表して、もとに戻したもの。
       by ssromega.
   Qed.
 
+  Lemma not_le1__ge2 d' : (d' <= 1) = false -> 2 <= d'.
+  Proof.
+    move=> H.
+      by ssromega.
+  Qed.
+  
   Lemma positional_rec (m n : nat) :
     0 < n ->
     f_rec (m %% d^n.+1) =
     alpha (digit m n) * c^n + \sum_(0 <= i < n)(beta (digit m i)) * c^i.
   Proof.
-    rewrite positional_eq /position_note /digit.
     move=> Hn.
-    functional induction (f_rec (m %% d^n)).
+    functional induction (f_rec (m %% d^n.+1)).
 
     (* d = 1 から両辺が0 であることを導く。 *)
-    - have -> : d = 1 by apply: l_d_is_1.
-      have H : (fun i : nat => (m %% 1^i.+1) %/ 1^i * 1 ^ i) =1 (fun _ : nat => 0).
-        by move=> i; rewrite exp1n modn1 div0n mul0n.
-      rewrite (eq_sum 0 n.+1 H) => {H}.
-      rewrite sum_nat_const_nat muln0 /=.
-      
+    - rewrite /digit.
+      have -> : d = 1 by apply: l_d_is_1.
+      rewrite exp1n modn1 div0n alpha0 mul0n add0n.
       have H : (fun i : nat => beta ((m %% 1 ^ i.+1) %/ 1 ^ i) * c ^ i)
                =1 (fun i : nat => beta 0 * c^i)
         by move=> i; rewrite exp1n modn1 div0n.
-      rewrite (eq_sum 0 n H) => {H}.
-      rewrite exp1n modn1 div0n.
-      rewrite (@sum_distrr 0 n) //.
-        by rewrite alpha0 beta0 !mul0n f_rec_eq_0.
-        
-    (* m < d の条件から、両辺が alpha _ = alpha _ を導く。 *)
-    (* functional induction の前提が、m0 < d になってしまい、証明ができない。 *)
-    - admit.
+      rewrite (eq_sum 0 n H) => {H}.      
+      rewrite (@sum_distrr 0 n) // beta0 mul0n.
+      done.
+    
+    (* m < d の条件から、両辺が alpha m = alpha m を導く。 *)
+    - case: ifP y.
+      + by move=> _.
+      + move=> Hd' _.
+        move/not_le1__ge2 in Hd'.
+        rewrite /digit.
+        admit.
       
     (* 通常の帰納 *)
-    - done.
+    - rewrite -IHn1.
   Admitted.
   
 End PositionalNotation.
