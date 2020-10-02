@@ -191,7 +191,7 @@ End Lemmas.
   
 Section PositionalNotation.
   Variables d : nat.                        (* 基数 *)
-  Hypothesis Hd : 0 < d.
+  Hypothesis Hd : 0 < d.                    (* 1 < d とする。 b のほうがよい。 *)
 
 (**
 m を d進数で表したときの i 桁め。
@@ -244,6 +244,9 @@ m を d進数で表して、もとに戻したもの。
   Variables c : nat.                        (* 基数 *)
   Hypothesis Hc : 0 < c.
   Variables alpha beta : nat -> nat.
+
+  Axiom alpha0 : alpha 0 = 0.
+  Axiom beta0 : beta 0 = 0.
   
   Function f_rec (m : nat) {wf lt m} :=
     if d <= 1 then 0
@@ -259,6 +262,23 @@ m を d進数で表して、もとに戻したもの。
     - by apply: lt_wf.                      (* Wf_nat *)
   Defined.
   
+(*
+  Function f_rec' (m d' : nat) {wf lt m} :=
+    match d' with
+    | 0 | 1 => 0
+    | _ => match m with
+           | 0 => 0
+           | _ => f_rec' (m %/ d') d' + beta (m %% d')
+           end
+    end.
+  Proof.
+    - move=> m d' n m0 Hn Hd' n1 Hmd.
+      apply/ltP/ltn_Pdiv.
+      + done.
+      + done.
+    - by apply: lt_wf.
+  Defined.
+
   Lemma f_rec_eq_t (j : nat) : j < d -> f_rec j = alpha j.
   Proof.
   Admitted.
@@ -266,6 +286,11 @@ m を d進数で表して、もとに戻したもの。
   Lemma f_rec_eq_s (m j : nat) : j < d -> f_rec (d * m + j) = c * (f_rec m) + beta j.
   Proof.
   Admitted.  
+*)
+
+  Lemma f_rec_eq_0 :  f_rec 0 = 0.
+  Proof.
+  Admitted.
   
 (**
 ``m = d * n + j`` に分解する補題
@@ -284,37 +309,44 @@ m を d進数で表して、もとに戻したもの。
       by rewrite addnC mulnC.
   Qed.
 
+  Lemma l_d_is_1 (d' : nat) : 0 < d' -> d' <= 1 -> d' = 1.
+  Proof.
+    move=> H0 H1.
+      by ssromega.
+  Qed.
+
   Lemma positional_rec (m n : nat) :
     0 < n ->
     f_rec (m %% d^n.+1) =
     alpha (digit m n) * c^n + \sum_(0 <= i < n)(beta (digit m i)) * c^i.
   Proof.
-    rewrite positional_eq /position_note.
-    elim: n => // n IHn _.
-(**
-IHn : f_rec (\sum_(0 <= i < n.+1) digit m i * d^i) =
-        alpha (digit m n) * c^n + \sum_(0 <= i < n) beta (digit m i) * c^i
+    rewrite positional_eq /position_note /digit.
+    move=> Hn.
+    functional induction (f_rec (m %% d^n)).
 
-Goal : f_rec (\sum_(0 <= i < n.+2) digit m i * d^i) =
-        alpha (digit m n.+1) * c^n.+1 + \sum_(0 <= i < n.+1) beta (digit m i) * c^i
-*)
-    rewrite positional_step //.
-    rewrite f_rec_eq_s.
-    - 
-(**
-IHn : 0 < n ->
-      f_rec (\sum_(0 <= i < n.+1) digit m i * d^i) =
-        alpha (digit m n) * c^n + \sum_(0 <= i < n) beta (digit m i) * c^i
-  
-Goal :
-  c * f_rec (\sum_(0 <= i < n.+1) digit m i.+1 * d^i) + beta (m %% d) =
-        alpha (digit m n.+1) * c^n.+1 + \sum_(0 <= i < n.+1) beta (digit m i) * c^i
-
-*)
-      admit.
-    - by rewrite ltn_mod.
+    (* d = 1 から両辺が0 であることを導く。 *)
+    - have -> : d = 1 by apply: l_d_is_1.
+      have H : (fun i : nat => (m %% 1^i.+1) %/ 1^i * 1 ^ i) =1 (fun _ : nat => 0).
+        by move=> i; rewrite exp1n modn1 div0n mul0n.
+      rewrite (eq_sum 0 n.+1 H) => {H}.
+      rewrite sum_nat_const_nat muln0 /=.
+      
+      have H : (fun i : nat => beta ((m %% 1 ^ i.+1) %/ 1 ^ i) * c ^ i)
+               =1 (fun i : nat => beta 0 * c^i)
+        by move=> i; rewrite exp1n modn1 div0n.
+      rewrite (eq_sum 0 n H) => {H}.
+      rewrite exp1n modn1 div0n.
+      rewrite (@sum_distrr 0 n) //.
+        by rewrite alpha0 beta0 !mul0n f_rec_eq_0.
+        
+    (* m < d の条件から、両辺が alpha _ = alpha _ を導く。 *)
+    (* functional induction の前提が、m0 < d になってしまい、証明ができない。 *)
+    - admit.
+      
+    (* 通常の帰納 *)
+    - done.
   Admitted.
-    
+  
 End PositionalNotation.
 
 (**
