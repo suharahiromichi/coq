@@ -1,5 +1,5 @@
 (**
-位取り記数法の変換の証明
+位取り記数法と漸化式の解法
 ==================
 
 2020_9_29 @suharahiromichi
@@ -133,13 +133,6 @@ Section Lemmas.
     rewrite {2}(divn_eq m d).
     rewrite -addnBA //=.
       by ssromega.
-(*
-    apply/eqP.
-    Check eqn_add2r (a %% d) (a %/ d * d) (a - a %% d). (* 両辺に a %% d を加える。 *)
-    rewrite -(eqn_add2r (a %% d) (a %/ d * d) (a - a %% d)).
-    apply/eqP.
-      by rewrite -[LHS]divn_eq subnK // leq_mod.
-*)
   Qed.
   
   Lemma modn_divn_eq (m d : nat) : m %% d = m - m %/ d * d.
@@ -189,39 +182,56 @@ d^n+1 で割った余りを d^n で割った余りは、単に、d^n で割っ�
   Qed.
 End Lemmas.
   
-Section PositionalNotation.
-  Variables d : nat.                        (* 基数 *)
-  Hypothesis Hd : 0 < d.                    (* 1 < d とする。 b のほうがよい。 *)
-
 (**
+# 位取り記数法
+*)
+Section PositionalNotation.
+  Variables b c : nat.                      (* 基数 *)
+  Hypothesis Hb : 2 <= b.                   (* 2以上 *)
+  Hypothesis Hc : 2 <= c.
+  
+  (**
 m を d進数で表したときの i 桁め。
 *)
-  Definition digit (m i : nat) := m %% d^i.+1 %/ d^i.
+  Definition digit (m i : nat) := m %% b^i.+1 %/ b^i.
 
 (**
 m を d進数で表して、もとに戻したもの。
 *)
-  Definition position_note (m n : nat) := \sum_(0 <= i < n.+1) (digit m i) * d^i.
+  Definition position_note (m n : nat) := \sum_(0 <= i < n.+1) (digit m i) * b^i.
   
 (**
 Σの中身を書き換えるための補題。
 *)
   Lemma l_mod_div__mod_mod (m : nat) :
-    (fun (i : nat) => m %% d^i.+1 %/ d^i * d^i)
-    =1 (fun (i : nat) => m %% d^i.+1 - m %% d^i).
+    (fun (i : nat) => m %% b^i.+1 %/ b^i * b^i)
+    =1 (fun (i : nat) => m %% b^i.+1 - m %% b^i).
   Proof.
     move=> i.
-    Check divn_modn_eq (m %% d^i.+1) (d^i).
-    rewrite (divn_modn_eq (m %% d^i.+1) (d^i)).
-    congr (m %% d^i.+1 - _).
+    Check divn_modn_eq (m %% b^i.+1) (b^i).
+    rewrite (divn_modn_eq (m %% b^i.+1) (b^i)).
+    congr (m %% b^i.+1 - _).
     rewrite modn_dvdm //.
       by apply: dvdn_exp2l.
   Qed.
   
+  (* 2より大きいなら、1より大きい。  *)
+  Lemma le1_le m x : m.+1 <= x -> m <= x.
+  Proof.
+    move=> H.
+      by rewrite ltnW.
+  Qed.
+
+  Lemma not_leb__geb m b' : (m < b') = false -> b' <= m.
+  Proof.
+    move=> H.
+      by ssromega.
+  Qed.
+
 (**
 証明したいもの。
 *)
-  Lemma positional_eq (m n : nat) : m %% d^n.+1 = position_note m n.
+  Lemma positional_eq (m n : nat) : m %% b^n.+1 = position_note m n.
   Proof.
     rewrite /position_note /digit.
     Check eq_sum 0 n.+1 (l_mod_div__mod_mod m).
@@ -230,131 +240,154 @@ m を d進数で表して、もとに戻したもの。
     elim: n => [| n IHn].
     - by rewrite sum_nat1 // expn0 modn1 subn0.
     - rewrite sum_last // -IHn subnKC //.
-      rewrite -[in d ^ n.+2]addn1 expnD.
+      rewrite -[in b ^ n.+2]addn1 expnD.
       
       apply: mod_le_mod => //=.
       rewrite expn_gt0.
-        by apply/orP/or_introl.
-      (* by rewrite le__mod_le //= leq_exp2l *)
+      + by apply/orP/or_introl/le1_le.
+      + by apply: le1_le.
   Qed.
   
 (**
-# 漸化式
+# 位取り記数法による漸化式の解法
 *)
-  Variables c : nat.                        (* 基数 *)
-  Hypothesis Hc : 0 < c.
   Variables alpha beta : nat -> nat.
 
-  Axiom alpha0 : alpha 0 = 0.
-  Axiom beta0 : beta 0 = 0.
+  Lemma ltn_leq_trans n m p : m < n -> n <= p -> m < p.
+  Proof. move=> Hmn; exact: leq_trans. Qed.
+  
+  Lemma geb_lt0 m : b <= m -> 0 < m.
+  Proof.
+    move=> H.
+    move/ltn_leq_trans in H.
+    move: Hb => /H Hb'.
+    (* 1 < m -> 0 < m は遷移則 ltn_trans を使う。 *)
+    move/(@ltn_trans 1 0 m) in Hb'.
+      by apply: Hb'.
+  Qed.
   
   Function f_rec (m : nat) {wf lt m} :=
-    if d <= 1 then 0
-    else if m < d then alpha m
+    if m < b then alpha m
     else
-      f_rec (m %/ d) + beta (m %% d).
+      c * f_rec (m %/ b) + beta (m %% b).
   Proof.
-    - move=> m Hd' Hmd.
-      apply/ltP/ltn_Pdiv.
-      + move/negbT in Hd'.
-          by ssromega.
-      + by ssromega.
-    - by apply: lt_wf.                      (* Wf_nat *)
-  Defined.
-  
-  Function f_rec' (m d' : nat) {wf lt m} :=
-    match d' with
-    | 0 | 1 => 0
-    | _ => match m with
-           | 0 => 0
-           | _ => f_rec' (m %/ d') d' + beta (m %% d')
-           end
-    end.
-  Proof.
-    - move=> m d' n m0 Hn Hd' n1 Hmd.
+    - move=> m Hmb.
       apply/ltP/ltn_Pdiv.
       + done.
-      + done.
+      + move/not_leb__geb in Hmb.
+          by apply: geb_lt0.
     - by apply: lt_wf.
-  Defined.
+  Qed.
+  
+  (* Coq の用意する帰納法の原理 *)
+  Check f_rec_ind.
+  
+  (* 自分で見直した帰納法の原理 *)
+  Lemma f_rec_ind'' (P : nat -> nat -> Prop) :
+    (forall m : nat, (m < b) = true -> P m (alpha m)) ->
+    (forall m : nat, (m < b) = false ->
+                     P (m %/ b) (f_rec (m %/ b)) ->
+                     P m (c * f_rec (m %/ b) + beta (m %% b))) ->
+       forall m : nat, P m (f_rec m).
+  Proof.
+  Admitted.
 
-  Lemma f_rec_eq_t (j : nat) : j < d -> f_rec j = alpha j.
+  (* 教科書的な帰納法の原理 *)
+  Lemma f_rec_ind' (P : nat -> nat -> Prop) :
+    (forall m    : nat, (m < b) = true  -> P m (alpha m)) ->
+    (forall m m' : nat, (m < b) = false -> P (m %/ b) m' ->
+                        P m (c * m' + beta (m %% b))) ->
+    forall m m' : nat, P m m'.
   Proof.
   Admitted.
   
-  Lemma f_rec_eq_s (m j : nat) : j < d -> f_rec (d * m + j) = c * (f_rec m) + beta j.
-  Proof.
-  Admitted.  
-
-  Lemma f_rec_eq_0 :  f_rec 0 = 0.
-  Proof.
-  Admitted.
+  (* 帰納的な関数の仕様 *)
+  Inductive f_ind : nat -> nat -> Prop :=
+  | F_ind_t m : m < b -> f_ind m (alpha m)
+  | F_ind_s m m' : b <= m -> f_ind (m %/ b) m' ->
+                   f_ind m (c * m' + beta (m %% b)).
   
 (**
 ``m = d * n + j`` に分解する補題
 *)
   Lemma positional_step (m n : nat) :
     0 < n ->
-    \sum_(0 <= i < n.+1) digit m i * d ^ i =
-    d * (\sum_(0 <= i < n) (digit m i.+1) * d^i) + m %% d.
+    \sum_(0 <= i < n.+1) digit m i * b ^ i =
+    b * (\sum_(0 <= i < n) (digit m i.+1) * b^i) + m %% b.
   Proof.
     move=> Hn.
     rewrite [LHS]sum_first' //.
     rewrite {1}/digit expn1 expn0 divn1 muln1.
-    have H : (fun i => digit m i.+1 * d^i.+1) =1 (fun i => digit m i.+1 * d^i * d)
+    have H : (fun i => digit m i.+1 * b^i.+1) =1 (fun i => digit m i.+1 * b^i * b)
       by move=> i; rewrite -[RHS]mulnA -[in RHS]expnSr.
     rewrite (eq_sum 0 n H) sum_distrl //.
       by rewrite addnC mulnC.
   Qed.
 
-  Lemma l_d_is_1 (d' : nat) : 0 < d' -> d' <= 1 -> d' = 1.
+  Lemma pos_rec (m n : nat) : 0 < n -> f_ind (m %% b^n.+1) (f_rec (m %% b^n.+1)).
+  Proof.
+    move=> Hn.
+    rewrite positional_eq /position_note.
+    rewrite positional_step => //.
+    rewrite f_rec_equation.
+    case: ifP => H.
+    (* m < b *)
+    - apply: F_ind_t.
+      done.
+    (* m ≧ b *)
+    - apply: F_ind_s.
+      + by ssromega.
+      + admit.
+  Admitted.
+  
+  Lemma positional_rec (m n : nat) :
+    0 < n ->
+    f_rec (m %% b^n.+1) =
+    alpha (digit m n) * c^n + \sum_(0 <= i < n)(beta (digit m i)) * c^i.
+  Proof.
+    move=> Hn.
+    rewrite positional_eq /position_note.
+    rewrite positional_step => //.
+    (* functional induction (f_rec (m %% b^n.+1)). *)
+  Admitted.
+  
+  Lemma pos_rec2 (m n : nat) :
+    0 < n -> f_ind (m %% b^n.+1)
+                   (alpha (digit m n) * c^n + \sum_(0 <= i < n)(beta (digit m i)) * c^i).
+  Proof.
+    move=> Hn.
+    rewrite positional_eq /position_note.
+    rewrite positional_step => //.
+  Admitted.
+  
+(**
+不使用
+*)  
+  Axiom alpha0 : alpha 0 = 0.
+  Axiom beta0 : beta 0 = 0.
+
+  Lemma l_d_is_1 (d : nat) : 0 < d -> d <= 1 -> d = 1.
   Proof.
     move=> H0 H1.
       by ssromega.
   Qed.
 
-  Lemma not_le1__ge2 d' : (d' <= 1) = false -> 2 <= d'.
+  Lemma f_rec_eq_0 :  f_rec 0 = 0.
+  Proof.
+  Admitted.
+
+  Lemma not_le1__ge2 d : (d <= 1) = false -> 2 <= d.
   Proof.
     move=> H.
       by ssromega.
   Qed.
-  
-  Lemma positional_rec (m n : nat) :
-    0 < n ->
-    f_rec (m %% d^n.+1) =
-    alpha (digit m n) * c^n + \sum_(0 <= i < n)(beta (digit m i)) * c^i.
-  Proof.
-    move=> Hn.
-    functional induction (f_rec (m %% d^n.+1)).
 
-    (* d = 1 から両辺が0 であることを導く。 *)
-    - rewrite /digit.
-      have -> : d = 1 by apply: l_d_is_1.
-      rewrite exp1n modn1 div0n alpha0 mul0n add0n.
-      have H : (fun i : nat => beta ((m %% 1 ^ i.+1) %/ 1 ^ i) * c ^ i)
-               =1 (fun i : nat => beta 0 * c^i)
-        by move=> i; rewrite exp1n modn1 div0n.
-      rewrite (eq_sum 0 n H) => {H}.      
-      rewrite (@sum_distrr 0 n) // beta0 mul0n.
-      done.
-    
-    (* m < d の条件から、両辺が alpha m = alpha m を導く。 *)
-    - case: ifP y.
-      + by move=> _.
-      + move=> Hd' _.
-        move/not_le1__ge2 in Hd'.
-        rewrite /digit.
-        admit.
-      
-    (* 通常の帰納 *)
-    - rewrite -IHn1.
-  Admitted.
-  
 End PositionalNotation.
 
 (**
 # 参考文献
 
+Knuth 他著、有沢他訳、「コンピュータの数学」 共立出版。第１章
 *)
 
 (* END *)
