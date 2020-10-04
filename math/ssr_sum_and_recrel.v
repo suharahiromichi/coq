@@ -10,6 +10,7 @@
 
 ソースコードは以下にあります。
 
+https://github.com/suharahiromichi/coq/blob/master/math/ssr_sum_and_recrel.v
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -20,6 +21,10 @@ Require Import ssrsumop.
 
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+
+と
+
+https://github.com/suharahiromichi/coq/blob/master/common/ssrsumop.v
 
 もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
 ssromega.vo ができていることを確認してください。
