@@ -31,7 +31,7 @@ Unset Printing Implicit Defensive.
 
 Section Recrel.
 
-  Variables alpha beta gamma : nat.
+  Variable alpha beta gamma : nat.
   
 (**
 漸化式 式(2.7)
@@ -184,6 +184,28 @@ Section Recrel.
   Qed.
   
 End Recrel.
+
+Section Example1.
+
+  Variable a b : nat.
+(**
+左辺が 0 始まりであることに注意。
+*)
+  Example ex1 (n : nat) :
+    \sum_(0 <= i < n.+1) (a + b * i) = n.+1 * a + (n^2 + n)./2 * b.
+  Proof.
+(**
+   alpha := a
+   beta := a
+   gamma := b
+*)
+    move: (r_sum_sol a a b).
+    rewrite /R_sum /R_sol => <-.
+    rewrite sum_first => //.
+      by ssromega.
+  Qed.
+  
+End Example1.
 
 (**
 # 参考文献
