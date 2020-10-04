@@ -1,5 +1,5 @@
 (**
-和と漸化式
+総和と漸化式
 ==================
 
 2020_10_3 @suharahiromichi
@@ -129,7 +129,7 @@ Section Recrel.
 (**
 漸化式の解が正しいことの証明
 *)
-  Lemma R_rel_sol n : R_rel n = R_sol n.
+  Lemma r_rel_sol n : R_rel n = R_sol n.
   Proof.
     elim: n => [| n IHn].
     - rewrite /R_rel /R_sol /=.
@@ -139,9 +139,9 @@ Section Recrel.
   Qed.
   
 (**
-漸化式と総和の式が等しいことの証明
+総和の式と漸化式の解が等しいことの証明
 *)
-  Lemma R_sum_sol (n : nat) : R_sum n = R_sol n.
+  Lemma r_sum_sol (n : nat) : R_sum n = R_sol n.
   Proof.
     elim: n => [| n IHn].
     - rewrite /R_sum /R_sol.
@@ -160,6 +160,29 @@ Section Recrel.
       rewrite addnA.
         by apply: alpha_beta_gamma.         (* 共通の数式の証明 *)
   Qed.
+  
+(**
+総和の式と漸化式が等しいことの証明
+*)
+  Lemma r_sum_rel (n : nat) : R_sum n = R_rel n.
+  Proof.
+    elim: n => [| n IHn].
+    - rewrite /R_sum /R_rel.
+      rewrite big_nil.
+      done.
+
+    - rewrite /R_sum R_rel_n.
+      rewrite /R_sum in IHn.
+      
+      (* 左辺 *)
+      rewrite sum_last //.
+      rewrite -addnA [beta + gamma * n.+1 + alpha]addnC addnA.
+      rewrite IHn.
+      rewrite addnA.
+      
+        by congr (_ + _).
+  Qed.
+  
 End Recrel.
 
 (**
