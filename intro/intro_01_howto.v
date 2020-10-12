@@ -90,9 +90,40 @@ case.
 なお、このことは、Sarndard Coq でも MathComp でも同様に発生します。
  *)
 
+(**
+# 目次
+
+1. 基本概念
+1.2 ゴールとコンテキストの間の移動
+1.2 （サブ）ゴールの終了
+2. いろいろな証明
+2.1 命題論理の証明
+- 含意の証明
+- 論理積の証明
+- 論理和の証明
+- 否定の証明
+2.2 述語論理の証明
+- 全称記号（∀、すべて）の証明
+- 存在記号（∃、ある）の証明
+2.3 等式の証明
+2.4 不等式（<>）の証明
+2.5 不等式（≦ や ＜）の証明
+3. 場合分け
+- 変数の型による場合分け
+- 命題による場合分け
+- コンストラクタによる場合分け
+4. 数学的帰納法
+- 変数の型による帰納法
+- 命題による帰納法
+4. 高度なタクティク
+4.1 auto
+4.2 omega (ssromega)
+4.3 inversion (inv)
+*)
+
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.                    (* ssromega タクティク *)
-Require Import ssrinv.                      (* inv コマンド *)
+Require Import ssrinv.                      (* inv タクティク *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -100,7 +131,9 @@ Unset Printing Implicit Defensive.
 
 Section Basic.
 (**
-# 1. 基本概念：ゴールとコンテキストの間の移動
+# 1. 基本概念
+
+## 1.2 ゴールとコンテキストの間の移動
 
 - ゴールからコンテキストへの移動（intro または pop）
 ゴールの先頭にある前提または全量化変数が対象になる
@@ -143,7 +176,7 @@ Section Basic.
   Abort.
   
 (**
-# 2. ゴールの終了
+## 1.2 （サブ）ゴールの終了
 *)
 
   Lemma test21 (P1 : Prop) : P1 -> True.
@@ -189,10 +222,12 @@ Section Basic.
   Qed.
   
 (**
-# 3. 命題論理の証明
+# 2. いろいろな証明
+
+## 2.1 命題論理の証明
 *)
 (**
-## 含意の証明
+### 含意の証明
  *)
   Lemma test31 (P Q : Prop) : P -> (P -> Q) -> Q.
     move=> HP.
@@ -205,7 +240,7 @@ Section Basic.
   Qed.
   
 (**
-## 論理積の証明
+### 論理積の証明
  *)
   Lemma test32 (P1 P2 : Prop) : P1 /\ P2 -> P2 /\ P1.
     move=> H.
@@ -224,7 +259,7 @@ Section Basic.
   Qed.
 
 (**
-## 論理和の証明
+### 論理和の証明
  *)
   Lemma test33 (P1 P2 : Prop) : P1 \/ P2 -> P2 \/ P1.
     move=> H.
@@ -251,7 +286,7 @@ Section Basic.
   Qed.
 
 (**
-## 否定の証明
+### 否定の証明
 
 ``~ P`` は ``P -> False`` の略記である。
  *)
@@ -272,10 +307,10 @@ Section Basic.
   Qed.
 
 (**
-# 4. 述語論理
+## 2.2 述語論理の証明
  *)
 (**
-## 全称記号（∀、すべて）の証明
+### 全称記号（∀、すべて）の証明
  *)
   Lemma test40 : forall n : nat, 0 < n + 1.
   Proof.
@@ -295,7 +330,7 @@ Section Basic.
   Qed.
 
 (**
-## 存在記号（∃、ある）の証明
+### 存在記号（∃、ある）の証明
 *)  
   Lemma test42 : exists (n : nat), n + 1 = 3.
 (**
@@ -317,7 +352,7 @@ Section Basic.
   Qed.
 
 (**
-# 5. 等式の証明
+## 2.3 等式の証明
  *)
   Lemma test51 (n : nat) : n = n.
 (**
@@ -357,9 +392,7 @@ Section Basic.
   Qed.
 
 (**
-# 6. 不等式（等しくない）の証明
-
-不等式 (≦ や ＜ など）は、自然数の補題を使って証明しますから、ここでは省略します。
+## 2.4 不等式（<>）の証明
 
 - ``m <> n`` は、``m = n -> False`` の構文糖衣なので、否定の証明の応用になります。
 *)  
@@ -378,13 +411,7 @@ Section Basic.
     move=> H.
     done.
   Qed.
-  
 (**
-# 7. 場合分け
- *)
-(**
-## 変数の型による場合分け
-*)
   Lemma test72 n : 0 <> n -> n <> 0.
   Proof.
     case: n.
@@ -396,20 +423,53 @@ Section Basic.
       rewrite Hc.
       done.
   Qed.
+*)
 
 (**
-## 命題による場合分け
+## 2.5 不等式（≦ や ＜）の証明
+
+自然数についての述語論理であり、自然数の補題を使って証明しますから、ここでは省略します。
 *)
-  Lemma test73 n : 0 <> n -> n <> 0.
+  
+(**
+# 3. 場合分け
+ *)
+(**
+## 変数の型による場合分け
+
+あるいは、コンストラクタによる場合分け
+*)
+(**
+自然数は、``O`` と ``S n`` の場合分けで定義されているので、
+変数 n が自然数のとき、``case: n`` で、``O`` と ``S n`` に場合分けできる。
+
+Inductive nat : Set :=
+| O
+| S (n : nat).
+ *)
+  Lemma test72 n : n + 1 = 1 + n.
   Proof.
-    move=> H.
-    case: H.
+    case: n.
+    - done.                                 (* n = 0 の場合 *)
+    - move=> n.                             (* n = n.+1 の場合 *)
+      (* n.+1 + 1 = 1 + n.+1 *)
+      rewrite addn1 add1n.
+      (* n.+2 = n.+2 *)
+      done.
+  Qed.
+  
+(**
+## if式の場合分け
+
+実は
+*)
+  Lemma test73 n : n != 0 -> n.-1 < n.
+  Proof.
+    case H : (n != 0).
+    - move=> _.
+      Search _ (_.-1).
   Admitted.
     
-(**
-## コンストラクタによる場合分け
- *)
-  
 (**
 # 8. 数学的帰納法
  *)
@@ -444,6 +504,6 @@ Section Basic.
 *)
 
 
-End HowTo.
+End Basic.
 
 (* END *)
