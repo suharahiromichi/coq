@@ -286,6 +286,23 @@ Section Basic.
   Qed.
 
 (**
+### 同値の証明
+ *)
+  Lemma test35 (m n : nat) : m = n <-> n = m.
+  Proof.
+(**
+- ゴールに <-> があるなら、ゴールを split で -> と <- に分解する。
+*)
+    split.
+    - move=> H.                             (* m = n -> n = m *)
+      rewrite H.
+      done.
+    - move=> H.                             (* n = m -> m = n *)
+      rewrite H.
+      done.
+  Qed.
+  
+(**
 ### 否定の証明
 
 ``~ P`` は ``P -> False`` の略記である。
@@ -411,19 +428,6 @@ Section Basic.
     move=> H.
     done.
   Qed.
-(**
-  Lemma test72 n : 0 <> n -> n <> 0.
-  Proof.
-    case: n.
-    - move=> H.                             (* n = 0 の場合 *)
-      done.                                 (* 前提 H : 0 <> 0 で、矛盾 *)
-    - move=> n H.
-      move=> Hc.
-      apply: H.
-      rewrite Hc.
-      done.
-  Qed.
-*)
 
 (**
 ## 2.5 不等式（≦ や ＜）の証明
@@ -435,10 +439,48 @@ Section Basic.
 # 3. 場合分け
  *)
 (**
-## 変数の型による場合分け
-
-あるいは、コンストラクタによる場合分け
+## 変数の型、あるいは、コンストラクタによる場合分け
 *)
+(**
+ *)
+  Inductive windrose :=
+  | N
+  | E
+  | S
+  | W.
+  
+  Definition w2n (d : option windrose) : nat :=
+    match d with
+    | Some N => 0
+    | Some E => 1
+    | Some S => 2
+    | Some W => 3
+    | None => 4
+    end.
+  
+  Definition n2w (n : nat) : option windrose :=
+    match n with
+    | 0 => Some N
+    | 1 => Some E
+    | 2 => Some S
+    | 3 => Some W
+    | _ => None
+    end.  
+  
+  Lemma test74 (d : option windrose) : n2w (w2n d) = d.
+  Proof.
+    (* option _ 型で、場合分けする。 *)
+    case: d.
+    - move=> a.                             (* Some のとき。 *)
+      (* windrose 型で、場合分けする。 *)
+      case: a.
+      + done.                               (* N のとき、 *)
+      + done.                               (* E のとき、 *)
+      + done.                               (* S のとき、 *)
+      + done.                               (* E のとき、 *)
+    - done.                                 (* None のとき。 *)
+  Qed.
+  
 (**
 自然数は、``O`` と ``S n`` の場合分けで定義されているので、
 変数 n が自然数のとき、``case: n`` で、``O`` と ``S n`` に場合分けできる。
@@ -460,49 +502,173 @@ Inductive nat : Set :=
   
 (**
 ## if式の場合分け
-
-実は
 *)
-  Lemma test73 n : n != 0 -> n.-1 < n.
+
+(**
+- if式の条件分けは、ifP と覚えてもよい。
+*)
+  Lemma test76 (n  : nat) : if n == 42 then true else true.
   Proof.
-    case H : (n != 0).
-    - move=> _.
-      Search _ (_.-1).
-  Admitted.
-    
+    case: ifP.
+    - done.                             (* n == 42 の場合 *)
+    - done.                             (* (n == 42) = false の場合 *)
+  Qed.
+
+(**
+- ifの条件式が、「==」または「!=」である場合に限り、eqP で場合分けできる。
+
+このとき、前提がProp述語になる。
+eqP は bool述語（==）とProp述語（=）のリフレクション述語である。
+*)  
+  Lemma test77 (n  : nat) : if n == 42 then true else true.
+  Proof.
+    case: eqP.
+    - done.                             (* n = 42 の場合 *)
+    - done.                             (* n <> 42 の場合 *)
+  Qed.
+  
+(**
+- 条件式のtrueとfalseで場合分けする。Hに条件を覚えておいてくれる。
+
+ifの条件式boolであるので、bool型の値trueとfalseで場合分けしている。
+だから、これもコンストラクタによる場合分けである。
+ *)
+  Lemma test73 (n  : nat) : if n == 42 then true else true.
+  Proof.
+    case H : (n == 42).                     (* 括弧を忘れない。 *)
+    - done.                             (* (n == 42) = true の場合 *)
+    - done.                             (* (n == 42) = false の場合 *)
+  Qed.
+
 (**
 # 8. 数学的帰納法
  *)
+  Inductive ev : nat -> Prop :=
+  | Ev0 : ev 0
+  | Ev2 (n : nat) : ev n -> ev n.+2.
+
+  Fixpoint evenb (n : nat) : bool :=
+    match n with
+    | 0 => true
+    | 1 => false
+    | n.+2 => evenb n
+    end.
+  
 (**
 ## 変数の型による帰納法
 *)
-  Lemma test82 n : 0 < n -> n - 1 + 1 = n.
+  Lemma test81  (n : nat) : evenb n = ~~ evenb n.+1.
   Proof.
     elim: n.
-    Admitted.
+    - rewrite /=.
+      done.
+    - move=> n IHn.
+      rewrite [RHS]/=.
+      rewrite IHn.
+      rewrite negbK.
+      done.
+  Qed.
 
 (**
 ## 命題による帰納法
 *)
-  Lemma test81 n : 0 < n -> n - 1 + 1 = n.
+  Lemma ev_even (n : nat) : ev n -> evenb n.  
   Proof.
     move=> H.
     elim: H.
-  Admitted.
+    - done.                                 (* Ev0 : ev 0 *)
+    - move=> n' H IHn.                      (* EvS : en' n -> evenb n' *)
+      rewrite /=.                           (* evenb n'.+2 *)
+      done.
+  Qed.
 
 (**
 # 9. 高度な証明
  *)
 (**
-- auto
-*)
-(**
-- omega と ring
-*)  
-(**
-- inversion
+## 9.1 done
+
 *)
 
+(**
+## 9.1 simpl (rewrite /=)
+
+csm_3_6_3_simpl.v
+*)  
+
+(**
+## 9.2 auto
+
+導出原理を使用した自動証明をおこなう。P, Q, R は述語論理の命題でもよい。
+*)
+  Lemma Sample_of_auto (P Q R : Prop) : P -> (P -> Q) -> (Q -> R) -> R.
+  Proof.
+    move=> HA HAB HBC.
+    auto.
+  Qed.
+  
+  Lemma Sample_of_auto' (P Q : Prop) : ((((P -> Q) -> P) -> P) -> Q) -> Q.
+  Proof.
+    move=> H.
+    auto.
+  Qed.
+  
+(**
+## 9.3 omega
+
+ブレスバーガー算術による数式の証明をおこなう。
+
+   ・割り算無し。
+   ・変数と変数の掛け算が入っていない。
+   ・変数と定数（2, 3などの具体的な整数）の掛け算はOK。
+   
+   みたいな感じの等式 or 不等式を証明します。
+*)
+  Lemma Sample_of_omega (x : nat) : x > 1 -> 3 * x > x + 2.
+  Proof.
+    move=> H.
+    ssromega.
+  Qed.
+  
+(**
+## 9.4 ring
+
+環に関する数式の自動証明をおこなう。
+*)
+  Require Import ZArith Ring.
+  Open Scope Z_scope.
+  Lemma Sample_of_ring : forall a b:Z, a + b = 7 -> a * b = 12 -> a^2 + b^2 = 25.
+  Proof.
+    move=> a b H1 H2.
+    have -> : a^2 + b^2 = (a + b)^2 - 2 * a * b by ring.
+    have -> : 2 * a * b = 2 * 12 by ring [H2].
+    rewrite H1.
+    done.
+  Qed.
+  Close Scope Z_scope.
+  
+(**
+## 9.5 inversion
+
+コンストラクタを分解する。
+*)
+  Lemma test95 : ~ (ev 3).
+  Proof.
+    move=> H3.                              (* H3 : ev 3 *)
+    inv: H3.
+    move=> H1.                              (* H1 : ev 1 *)
+    inv: H1.
+  Qed.
+
+  Lemma ev_even' (n : nat) : ev n -> evenb n.
+  Proof.
+    move=> H.
+    inv: H.
+    - done.
+    - move=> H0.
+      rewrite /=.
+  Admitted.
+    
 
 End Basic.
 
