@@ -238,6 +238,16 @@ Section Basic.
     apply: HPQ.
     done.
   Qed.
+
+  Lemma test31' (P Q R : Prop) : P -> R -> (P -> R -> Q) -> Q.
+    move=> HP HR H.
+(**
+- ``H : P -> (R -> Q)`` の命題をapplyすることも可能であり、その場合サブゴールが増える。
+*)
+    apply: H.
+    - done.                                 (* Goal : P *)
+    - done.                                 (* Goal : R *)
+  Qed.
   
 (**
 ### 論理積の証明
@@ -394,10 +404,22 @@ Section Basic.
 - 前提の右辺を左辺で書き換える。前提にマイナスをつける。
 *)
     rewrite -H.
-    
-    done.                                   (* 簡単な計算なら実施できる。 *)
+    (* Goal : 5 = 2 + 3 *)
+    done.                             (* 簡単な計算なら実施できる。 *)
   Qed.
 
+  Lemma test52' (n m : nat) : (m = 0 -> n = 2) -> m = 0 -> 5 = n + 3.
+    move=> H Hm.
+(**
+``H : P -> x = y`` の命題でrewriteすることも可能である、その場合がサブゴールが増える。
+*)
+    rewrite H.
+    (* Goal : 5 = 2 + 3 *)
+    - done.                           (* 簡単な計算なら実施できる。 *)
+    (* Goal : m = 0 *)
+    - done.
+  Qed.
+  
   Lemma test54 (f : nat -> nat) (m n : nat) : m = n -> f m = f n.
   Proof.
     move=> H.
@@ -586,13 +608,30 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 # 9. 高度な証明
  *)
 (**
-## 9.1 done
+## 9.1 done (by または //)
 
+以下を繰り替えして、サブゴールを終了する。
+
+- ゴールが等式で、左右同じなら終了(trivial)。
+- ゴールと同じ命題が、コンテキストまたはヒントにあるなら終了(trivial)。
+- ゴールをhead normal form になるまでβδιζ簡約して(hnf) true なら終了。
+- ゴールが等式なら、左辺と右辺を入れ替えてみる。
+- 前提の等式が、左辺と右辺が異なるなら終了(discriminate)。
+- 前提に P と ~ P があるなら終了(contradiction)。
+- 前提による場合分けをして繰り返す(case) 。
+
+Ltac done :=
+  trivial; hnf; intros; solve
+   [ do ![solve [trivial | apply: sym_equal; trivial]
+         | discriminate | contradiction | split]
+   | case not_locked_false_eq_true; assumption
+   | match goal with H : ~ _ |- _ => solve [case H; trivial] end ].
 *)
 
 (**
-## 9.1 simpl (rewrite /=)
+## 9.1 simpl (または /=)
 
+ゴールをβδιζ簡約して、fully normal form にする。
 csm_3_6_3_simpl.v
 *)  
 
@@ -616,13 +655,12 @@ csm_3_6_3_simpl.v
 (**
 ## 9.3 omega
 
-ブレスバーガー算術による数式の証明をおこなう。
+ブレスバーガー算術による数式（等式または不等式）の証明をおこなう。
+・割り算無し。
+・変数と変数の掛け算が入っていない。
+・変数と定数（2, 3などの具体的な整数）の掛け算はOK。
 
-   ・割り算無し。
-   ・変数と変数の掛け算が入っていない。
-   ・変数と定数（2, 3などの具体的な整数）の掛け算はOK。
-   
-   みたいな感じの等式 or 不等式を証明します。
+ssrnatだけにに適用した版なので、自然数にしか適用できない。
 *)
   Lemma Sample_of_omega (x : nat) : x > 1 -> 3 * x > x + 2.
   Proof.
@@ -633,7 +671,7 @@ csm_3_6_3_simpl.v
 (**
 ## 9.4 ring
 
-環に関する数式の自動証明をおこなう。
+環に関する数式の自動証明をおこなう。等式のみ。整数も可能である。
 *)
   Require Import ZArith Ring.
   Open Scope Z_scope.
@@ -660,14 +698,68 @@ csm_3_6_3_simpl.v
     inv: H1.
   Qed.
 
-  Lemma ev_even' (n : nat) : ev n -> evenb n.
-  Proof.
-    move=> H.
-    inv: H.
-    - done.
-    - move=> H0.
-      rewrite /=.
-  Admitted.
+(* inversionが役に立つ例というとsmall-stepの決定性の証明とかです。*)
+Inductive term : Set :=
+| TmTrue
+| TmFalse
+| TmIf (p t e : term).
+
+Inductive eval : term -> term -> Prop :=
+| EvIfTrue (t2 t3 : term) : eval (TmIf TmTrue t2 t3) t2 
+| EvIfFalse : forall t2 t3, eval (TmIf TmFalse t2 t3) t3
+| EvIf : forall t1 t1' t2 t3, eval t1 t1' ->
+  eval (TmIf t1 t2 t3) (TmIf t1' t2 t3).
+
+
+(* 上記の様にsmall-stepの規則を定義して、下記を証明します。*)
+
+
+Theorem eval_deterministic : forall t t' t'', (eval t t') -> (eval t t'') -> (t' = t'').
+Proof.
+  intros t t' t'' tEt' tEt''.
+  
+  (* まず tEt' について induction で場合分けをします。*)
+  induction tEt' as [t2 t3|t2 t3|t1 t1' t2 t3 t1Et1'] in t'', tEt'' |-*.
+  (*
+     最初の場合は、t' = TmIf TmTrue t2 t3 の場合です。
+     ここで tEt'' については induction ではなくinversion を使うと、
+     tEt'' が成立するような t'' の場合分けを自動で行ってくれます。
+     *)
+  inversion tEt'' as [t2_ t3_| t2_ t3_| t1_ t1'_ t2_ t3_ t1Et1'_].
+  reflexivity.
+  (*
+     ここでinversion t1Et1'_を行います。
+     TmTrueが何かにevalされる規則はevalに無いので、仮定が不成立となり、
+     goalの証明が終わります。
+     *)
+  inversion t1Et1'_.
+  
+  (* t' = TmIfFalse t2 t3 の場合は同様の証明をすればOKです。*)
+  inversion tEt'' as [t2_ t3_| t2_ t3_| t1_ t1'_ t2_ t3_ t1Et1'_].
+  reflexivity.
+  inversion t1Et1'_.
+  
+  (*
+     最後は、t' = TmIf t1 t2 t3 の場合についてです。
+     やはりtEt''についてinversionします。
+     *)
+  inversion tEt'' as [t2_ t3_| t2_ t3_| t1_ t1'_ t2_ t3_ t1Et1'_].
+  (*
+   ここでも、H0とt1Et1'から、eval TmTrue t1'を作って
+   inversionして仮定が成立しない事を使って証明します。
+   *)
+  rewrite <- H0 in t1Et1'.
+  inversion t1Et1'.
+
+
+  (* 同様にして、TmFalse の場合も証明出来ます。*)
+  rewrite <- H0 in t1Et1'.
+  inversion t1Et1'.
+  
+  (* 最後はIHt1Et1'のt''をt1'_にして、t1Et1'_と組み合わせてゴールを導きます。*)
+  rewrite (IHt1Et1' t1'_ t1Et1'_).
+  reflexivity.
+Qed.
     
 
 End Basic.
