@@ -4,7 +4,7 @@
 
 @suharahiromichi
 
-2020/09/21
+2020/10/24
  *)
 
 (**
@@ -115,10 +115,13 @@ case.
 4. 数学的帰納法
 - 変数の型による帰納法
 - 命題による帰納法
-4. 高度なタクティク
-4.1 auto
-4.2 omega (ssromega)
-4.3 inversion (inv)
+5. 高度なタクティク
+5.1 done (//)
+5.2 simpl (/=)
+5.3 auto
+5.4 ssromega
+5.5 ring
+5.6 inv
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -563,7 +566,7 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
   Qed.
 
 (**
-# 8. 数学的帰納法
+# 4. 数学的帰納法
  *)
   Inductive ev : nat -> Prop :=
   | Ev0 : ev 0
@@ -605,10 +608,10 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
   Qed.
 
 (**
-# 9. 高度な証明
+# 5. 高度な証明
  *)
 (**
-## 9.1 done (by または //)
+## 5.1 done (by または //)
 
 以下を繰り替えして、サブゴールを終了する。
 
@@ -620,6 +623,9 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 - 前提に P と ~ P があるなら終了(contradiction)。
 - 前提による場合分けをして繰り返す(case) 。
 
+注意：head normal form とは、最外側がラムダ抽象かコンストラクタである式のこと。
+（内側については、できる限り簡約するものとする）
+
 Ltac done :=
   trivial; hnf; intros; solve
    [ do ![solve [trivial | apply: sym_equal; trivial]
@@ -629,14 +635,14 @@ Ltac done :=
 *)
 
 (**
-## 9.1 simpl (または /=)
+## 5.2 simpl (または /=)
 
 ゴールをβδιζ簡約して、fully normal form にする。
 csm_3_6_3_simpl.v
 *)  
 
 (**
-## 9.2 auto
+## 5.3 auto
 
 導出原理を使用した自動証明をおこなう。P, Q, R は述語論理の命題でもよい。
 *)
@@ -653,7 +659,7 @@ csm_3_6_3_simpl.v
   Qed.
   
 (**
-## 9.3 omega
+## 5.4 omega
 
 ブレスバーガー算術による数式（等式または不等式）の証明をおこなう。
 ・割り算無し。
@@ -669,7 +675,7 @@ ssrnatだけにに適用した版なので、自然数にしか適用できな�
   Qed.
   
 (**
-## 9.4 ring
+## 5.5 ring
 
 環に関する数式の自動証明をおこなう。等式のみ。整数も可能である。
 *)
@@ -686,82 +692,46 @@ ssrnatだけにに適用した版なので、自然数にしか適用できな�
   Close Scope Z_scope.
   
 (**
-## 9.5 inversion
+## 5.6 inv
 
-コンストラクタを分解する。
+inversion の本来は、前提の命題に対してコンストラクタ逆に使って等式を生成する、
+生成できなければコンストラクタで作れない命題であるとして、矛盾で終了する。
+
+inv: は前提に生成された等式を使って前提やゴールを書き換えるまでおこなう。
 *)
   Lemma test95 : ~ (ev 3).
   Proof.
     move=> H3.                              (* H3 : ev 3 *)
-    inv: H3.
+    inv: H3.                                (* n = 1 が生成される。 *)
     move=> H1.                              (* H1 : ev 1 *)
-    inv: H1.
+    inv: H1.                                (* ev 1 は矛盾 *)
   Qed.
-
-(* inversionが役に立つ例というとsmall-stepの決定性の証明とかです。*)
-Inductive term : Set :=
-| TmTrue
-| TmFalse
-| TmIf (p t e : term).
-
-Inductive eval : term -> term -> Prop :=
-| EvIfTrue (t2 t3 : term) : eval (TmIf TmTrue t2 t3) t2 
-| EvIfFalse : forall t2 t3, eval (TmIf TmFalse t2 t3) t3
-| EvIf : forall t1 t1' t2 t3, eval t1 t1' ->
-  eval (TmIf t1 t2 t3) (TmIf t1' t2 t3).
-
-
-(* 上記の様にsmall-stepの規則を定義して、下記を証明します。*)
-
-
-Theorem eval_deterministic : forall t t' t'', (eval t t') -> (eval t t'') -> (t' = t'').
-Proof.
-  intros t t' t'' tEt' tEt''.
   
-  (* まず tEt' について induction で場合分けをします。*)
-  induction tEt' as [t2 t3|t2 t3|t1 t1' t2 t3 t1Et1'] in t'', tEt'' |-*.
-  (*
-     最初の場合は、t' = TmIf TmTrue t2 t3 の場合です。
-     ここで tEt'' については induction ではなくinversion を使うと、
-     tEt'' が成立するような t'' の場合分けを自動で行ってくれます。
-     *)
-  inversion tEt'' as [t2_ t3_| t2_ t3_| t1_ t1'_ t2_ t3_ t1Et1'_].
-  reflexivity.
-  (*
-     ここでinversion t1Et1'_を行います。
-     TmTrueが何かにevalされる規則はevalに無いので、仮定が不成立となり、
-     goalの証明が終わります。
-     *)
-  inversion t1Et1'_.
-  
-  (* t' = TmIfFalse t2 t3 の場合は同様の証明をすればOKです。*)
-  inversion tEt'' as [t2_ t3_| t2_ t3_| t1_ t1'_ t2_ t3_ t1Et1'_].
-  reflexivity.
-  inversion t1Et1'_.
-  
-  (*
-     最後は、t' = TmIf t1 t2 t3 の場合についてです。
-     やはりtEt''についてinversionします。
-     *)
-  inversion tEt'' as [t2_ t3_| t2_ t3_| t1_ t1'_ t2_ t3_ t1Et1'_].
-  (*
-   ここでも、H0とt1Et1'から、eval TmTrue t1'を作って
-   inversionして仮定が成立しない事を使って証明します。
-   *)
-  rewrite <- H0 in t1Et1'.
-  inversion t1Et1'.
-
-
-  (* 同様にして、TmFalse の場合も証明出来ます。*)
-  rewrite <- H0 in t1Et1'.
-  inversion t1Et1'.
-  
-  (* 最後はIHt1Et1'のt''をt1'_にして、t1Et1'_と組み合わせてゴールを導きます。*)
-  rewrite (IHt1Et1' t1'_ t1Et1'_).
-  reflexivity.
-Qed.
-    
-
 End Basic.
+
+(**
+# まとめ
+
+本資料で、MathComp の証明に慣れてください。
+また、証明に詰ったときにも本資料を参照してください。
+
+MathComp (CoqのSSReflect拡張) の文法に習熟してください。
+次いで、MathComp ライブラリを覚えて使いこなせるようになってください。
+*)
+
+(**
+# 参考文献
+
+[1.] "Mathematical Components"
+
+https://math-comp.github.io
+
+本家・一次配布元。日本語情報へのリンクもある。
+
+
+[2.] "Mathematical Components (the Book)"
+
+https://math-comp.github.io/mcb/book.pdf
+*)
 
 (* END *)
