@@ -94,7 +94,7 @@ case.
 # 目次
 
 1. 基本概念
-1.2 ゴールとコンテキストの間の移動
+1.1 ゴールとコンテキストの間の移動
 1.2 （サブ）ゴールの終了
 2. いろいろな証明
 2.1 命題論理の証明
@@ -136,7 +136,7 @@ Section Basic.
 (**
 # 1. 基本概念
 
-## 1.2 ゴールとコンテキストの間の移動
+## 1.1 ゴールとコンテキストの間の移動
 
 - ゴールからコンテキストへの移動（intro または pop）
 ゴールの先頭にある前提または全量化変数が対象になる
@@ -150,7 +150,7 @@ Section Basic.
 - ゴールが ``Q1 -> G`` のとき、``Q1`` をコンテキストに移動する（intro または pop）。
 また、コンテキスト``H1`` をゴールに移動する（generalize または push）。
 *)
-  Lemma test11 (Q1 G : Prop) : Q1 -> G.
+  Lemma sample11_1 (Q1 G : Prop) : Q1 -> G.
     move=> H1.                              (* intro *)
     move: H1.                               (* generalize *)
   Abort.
@@ -159,7 +159,7 @@ Section Basic.
 - ゴールが ``forall x, g x`` のとき、``x`` をコンテキストに移動する。
 また、コンテキスト``x`` をゴールに移動する。
 *)
-  Lemma test12 g : forall (n : nat), g n.
+  Lemma sample11_2 g : forall (n : nat), g n.
     move=> n.                               (* intro *)
     move: n.                                (* generalize *)
     
@@ -173,7 +173,7 @@ Section Basic.
 - 証明済の Lemma なども generalize できる。
 （参考：case で他の補題を指定できる。後述）
  *)
-  Lemma test13 (P1 : Prop) : True /\ P1 -> True.
+  Lemma sample11_3 (P1 : Prop) : True /\ P1 -> True.
     Check proj1 : forall A B : Prop, A /\ B -> A.
     move: proj1.
   Abort.
@@ -182,7 +182,7 @@ Section Basic.
 ## 1.2 （サブ）ゴールの終了
 *)
 
-  Lemma test21 (P1 : Prop) : P1 -> True.
+  Lemma sample12_1 (P1 : Prop) : P1 -> True.
     move=> H1.
 (**
 - ゴールの結論が ``True`` のとき。
@@ -190,7 +190,7 @@ Section Basic.
     done.
   Qed.
 
-  Lemma test23 (G : Prop) : G -> G.
+  Lemma sample12_2 (G : Prop) : G -> G.
     move=> H.
 (**
 - コンテキストとゴールに同じ命題がある場合。
@@ -198,7 +198,7 @@ Section Basic.
     done.
   Qed.
 
-  Lemma test22 (G : Prop) : False -> G.
+  Lemma sample12_3 (G : Prop) : False -> G.
     move=> Hc.
 (**
 - コンテキストに ``False`` があるとき、
@@ -207,7 +207,7 @@ Section Basic.
     done.
   Qed.
 
-  Lemma test24 (P1 G : Prop) : P1 -> ~ P1 -> G.
+  Lemma sample12_4 (P1 G : Prop) : P1 -> ~ P1 -> G.
     move=> H1 H2.
 (**
 - コンテキストに同じ命題の否定がある場合。
@@ -217,7 +217,7 @@ Section Basic.
     done.
   Qed.
 
-  Lemma test25 (n : nat) : n = n.
+  Lemma sample12_5 (n : nat) : n = n.
 (**
 - ゴールが等式で、右辺と左辺が同じ場合。
 *)
@@ -232,7 +232,7 @@ Section Basic.
 (**
 ### 含意の証明
  *)
-  Lemma test31 (P Q : Prop) : P -> (P -> Q) -> Q.
+  Lemma sample21_1 (P Q : Prop) : P -> (P -> Q) -> Q.
     move=> HP.
     move=> HPQ.
 (**
@@ -242,7 +242,7 @@ Section Basic.
     done.
   Qed.
 
-  Lemma test31' (P Q R : Prop) : P -> R -> (P -> R -> Q) -> Q.
+  Lemma sample21_2 (P Q R : Prop) : P -> R -> (P -> R -> Q) -> Q.
     move=> HP HR H.
 (**
 - ``H : P -> (R -> Q)`` の命題をapplyすることも可能であり、その場合サブゴールが増える。
@@ -255,7 +255,7 @@ Section Basic.
 (**
 ### 論理積の証明
  *)
-  Lemma test32 (P1 P2 : Prop) : P1 /\ P2 -> P2 /\ P1.
+  Lemma sample21_3 (P1 P2 : Prop) : P1 /\ P2 -> P2 /\ P1.
     move=> H.
 (**
 - 前提に論理積があるなら、その前提を case で分解する。
@@ -274,7 +274,7 @@ Section Basic.
 (**
 ### 論理和の証明
  *)
-  Lemma test33 (P1 P2 : Prop) : P1 \/ P2 -> P2 \/ P1.
+  Lemma sample21_4 (P1 P2 : Prop) : P1 \/ P2 -> P2 \/ P1.
     move=> H.
 (**
 - 前提に論理和があるなら、その前提を case で分解する。
@@ -301,7 +301,7 @@ Section Basic.
 (**
 ### 同値の証明
  *)
-  Lemma test35 (m n : nat) : m = n <-> n = m.
+  Lemma sample21_5 (m n : nat) : m = n <-> n = m.
   Proof.
 (**
 - ゴールに <-> があるなら、ゴールを split で -> と <- に分解する。
@@ -320,7 +320,7 @@ Section Basic.
 
 ``~ P`` は ``P -> False`` の略記である。
  *)
-  Lemma test34 (P1 P2 : Prop) : (P1 -> P2) -> ~ P2 -> ~ P1.
+  Lemma sample21_6 (P1 P2 : Prop) : (P1 -> P2) -> ~ P2 -> ~ P1.
     move=> H.
     move=> Hc.
 (**
@@ -342,7 +342,7 @@ Section Basic.
 (**
 ### 全称記号（∀、すべて）の証明
  *)
-  Lemma test40 : forall n : nat, 0 < n + 1.
+  Lemma sample22_1 : forall n : nat, 0 < n + 1.
   Proof.
 (**
 - ゴールに全称記号がある場合は、intro する。
@@ -350,7 +350,7 @@ Section Basic.
     move=> n.
   Abort.
   
-  Lemma test41 : (forall (n : nat), 1 + n = n + 1) -> 1 + 3 = 3 + 1.
+  Lemma sample22_2 : (forall (n : nat), 1 + n = n + 1) -> 1 + 3 = 3 + 1.
     move=> H.
 (**
 - 前提に全称記号がある場合は、その前提に適当な値を適用する。
@@ -362,7 +362,7 @@ Section Basic.
 (**
 ### 存在記号（∃、ある）の証明
 *)  
-  Lemma test42 : exists (n : nat), n + 1 = 3.
+  Lemma sample22_3 : exists (n : nat), n + 1 = 3.
 (**
 - ゴールに存在記号がある場合は、適当な値を与える。
 （参考：これを使うのは、できるだけ後にするとよい）
@@ -371,7 +371,7 @@ Section Basic.
     done.
   Qed.
 
-  Lemma test43 : (exists (n : nat), n + 1 > 0) -> True.
+  Lemma sample22_4 : (exists (n : nat), n + 1 > 0) -> True.
     move=> He.
 (**
 - 前提に存在記号がある場合は、その前提を case で場合分けする。
@@ -384,14 +384,14 @@ Section Basic.
 (**
 ## 2.3 等式の証明
  *)
-  Lemma test51 (n : nat) : n = n.
+  Lemma sample23_1 (n : nat) : n = n.
 (**
 - 右辺と左辺が同じ場合は、ゴールが終了する。
 *)
     done.
   Qed.
 
-  Lemma test52 (n : nat) : n = 2 -> 5 = n + 3.
+  Lemma sample23_2 (n : nat) : n = 2 -> 5 = n + 3.
     move=> H.
 (**
 - 前提の左辺を右辺で書き換える。
@@ -401,7 +401,7 @@ Section Basic.
     done.                                   (* 簡単な計算なら実施できる。 *)
   Qed.
 
-  Lemma test53 (n : nat) : 2 = n -> 5 = n + 3.
+  Lemma sample23_3 (n : nat) : 2 = n -> 5 = n + 3.
     move=> H.
 (**
 - 前提の右辺を左辺で書き換える。前提にマイナスをつける。
@@ -411,7 +411,7 @@ Section Basic.
     done.                             (* 簡単な計算なら実施できる。 *)
   Qed.
 
-  Lemma test52' (n m : nat) : (m = 0 -> n = 2) -> m = 0 -> 5 = n + 3.
+  Lemma sample23_4 (n m : nat) : (m = 0 -> n = 2) -> m = 0 -> 5 = n + 3.
     move=> H Hm.
 (**
 ``H : P -> x = y`` の命題でrewriteすることも可能である、その場合がサブゴールが増える。
@@ -423,7 +423,7 @@ Section Basic.
     - done.
   Qed.
   
-  Lemma test54 (f : nat -> nat) (m n : nat) : m = n -> f m = f n.
+  Lemma sample23_5 (f : nat -> nat) (m n : nat) : m = n -> f m = f n.
   Proof.
     move=> H.
 (**
@@ -438,7 +438,7 @@ Section Basic.
 
 - ``m <> n`` は、``m = n -> False`` の構文糖衣なので、否定の証明の応用になります。
 *)  
-  Lemma test61 (m n : nat) : m <> n -> n <> m.
+  Lemma sample24_1 (m n : nat) : m <> n -> n <> m.
     move=> H.
     move=> Hc.
     apply: H.
@@ -449,7 +449,7 @@ Section Basic.
 (**
 -  ``m <> m`` は、成り立ちませんから ``False`` と同じです。
  *)
-  Lemma test62 (m : nat) : m <> m -> False.
+  Lemma sample24_2 (m : nat) : m <> m -> False.
     move=> H.
     done.
   Qed.
@@ -492,7 +492,7 @@ Section Basic.
     | _ => None
     end.  
   
-  Lemma test74 (d : option windrose) : n2w (w2n d) = d.
+  Lemma sample31_1 (d : option windrose) : n2w (w2n d) = d.
   Proof.
     (* option _ 型で、場合分けする。 *)
     case: d.
@@ -514,7 +514,7 @@ Inductive nat : Set :=
 | O
 | S (n : nat).
  *)
-  Lemma test72 n : n + 1 = 1 + n.
+  Lemma sample31_2 n : n + 1 = 1 + n.
   Proof.
     case: n.
     - done.                                 (* n = 0 の場合 *)
@@ -532,7 +532,7 @@ Inductive nat : Set :=
 (**
 - if式の条件分けは、ifP と覚えてもよい。
 *)
-  Lemma test76 (n  : nat) : if n == 42 then true else true.
+  Lemma sample32_1 (n  : nat) : if n == 42 then true else true.
   Proof.
     case: ifP.
     - done.                             (* n == 42 の場合 *)
@@ -545,7 +545,7 @@ Inductive nat : Set :=
 このとき、前提がProp述語になる。
 eqP は bool述語（==）とProp述語（=）のリフレクション述語である。
 *)  
-  Lemma test77 (n  : nat) : if n == 42 then true else true.
+  Lemma sample32_2 (n  : nat) : if n == 42 then true else true.
   Proof.
     case: eqP.
     - done.                             (* n = 42 の場合 *)
@@ -558,7 +558,7 @@ eqP は bool述語（==）とProp述語（=）のリフレクション述語で�
 ifの条件式boolであるので、bool型の値trueとfalseで場合分けしている。
 だから、これもコンストラクタによる場合分けである。
  *)
-  Lemma test73 (n  : nat) : if n == 42 then true else true.
+  Lemma sample32_3 (n  : nat) : if n == 42 then true else true.
   Proof.
     case H : (n == 42).                     (* 括弧を忘れない。 *)
     - done.                             (* (n == 42) = true の場合 *)
@@ -582,7 +582,7 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 (**
 ## 変数の型による帰納法
 *)
-  Lemma test81  (n : nat) : evenb n = ~~ evenb n.+1.
+  Lemma sample41_1  (n : nat) : evenb n = ~~ evenb n.+1.
   Proof.
     elim: n.
     - rewrite /=.
@@ -597,7 +597,7 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 (**
 ## 命題による帰納法
 *)
-  Lemma ev_even (n : nat) : ev n -> evenb n.  
+  Lemma sample42_1 (n : nat) : ev n -> evenb n.  
   Proof.
     move=> H.
     elim: H.
@@ -646,13 +646,13 @@ csm_3_6_3_simpl.v
 
 導出原理を使用した自動証明をおこなう。P, Q, R は述語論理の命題でもよい。
 *)
-  Lemma Sample_of_auto (P Q R : Prop) : P -> (P -> Q) -> (Q -> R) -> R.
+  Lemma sample53_1 (P Q R : Prop) : P -> (P -> Q) -> (Q -> R) -> R.
   Proof.
     move=> HA HAB HBC.
     auto.
   Qed.
   
-  Lemma Sample_of_auto' (P Q : Prop) : ((((P -> Q) -> P) -> P) -> Q) -> Q.
+  Lemma sample53_2 (P Q : Prop) : ((((P -> Q) -> P) -> P) -> Q) -> Q.
   Proof.
     move=> H.
     auto.
@@ -668,7 +668,7 @@ csm_3_6_3_simpl.v
 
 ssrnatだけにに適用した版なので、自然数にしか適用できない。
 *)
-  Lemma Sample_of_omega (x : nat) : x > 1 -> 3 * x > x + 2.
+  Lemma sample54_1 (x : nat) : x > 1 -> 3 * x > x + 2.
   Proof.
     move=> H.
     ssromega.
@@ -681,7 +681,7 @@ ssrnatだけにに適用した版なので、自然数にしか適用できな�
 *)
   Require Import ZArith Ring.
   Open Scope Z_scope.
-  Lemma Sample_of_ring : forall a b:Z, a + b = 7 -> a * b = 12 -> a^2 + b^2 = 25.
+  Lemma sample55_1 : forall a b:Z, a + b = 7 -> a * b = 12 -> a^2 + b^2 = 25.
   Proof.
     move=> a b H1 H2.
     have -> : a^2 + b^2 = (a + b)^2 - 2 * a * b by ring.
@@ -699,7 +699,7 @@ inversion の本来は、前提の命題に対してコンストラクタ逆に�
 
 inv: は前提に生成された等式を使って前提やゴールを書き換えるまでおこなう。
 *)
-  Lemma test95 : ~ (ev 3).
+  Lemma sample56_1 : ~ (ev 3).
   Proof.
     move=> H3.                              (* H3 : ev 3 *)
     inv: H3.                                (* n = 1 が生成される。 *)
