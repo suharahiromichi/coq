@@ -918,6 +918,41 @@ $$ m = n \pmod{d1 d2} \Longleftrightarrow \\
   Qed.
   
 (**
+@morita_hm さんによる別の証明（なお、一部修正しました）。
+
+eqn_mod_dvd を使って、合同式を整除可能に書き換えたあと、
+Gauss_dvd を使って、整除可能の * と && の同値関係で証明をします。
+Gauss_dvd の証明には mulm_lcm_gcd を使っています(div.vにて)。
+
+なお、eqn_mod_dvd を使うために ``(m <= n)`` と ``(n <= m)`` の場合分けしています。
+これは、前提によらす使用することができますので、覚えておくと便利です。
+
+補足説明：bool式の真偽での場合分け ``case H : (m <= n)`` では、
+``(m <= n)`` と ``(n < m)`` となり、
+後者の条件を ``(n <= m)`` に書き換えるには ltnW が必要になります。
+*)
+  Check eqn_mod_dvd
+    : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
+  
+  Check Gauss_dvd
+    : forall d1 d2 p : nat, coprime d1 d2 -> (d1 * d2 %| p) = (d1 %| p) && (d2 %| p).
+  
+  Lemma chinese_remainder_lite : forall d1 d2 m n : nat,
+      coprime d1 d2 ->
+      (m == n %[mod d1 * d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).
+  Proof.
+    move=> d1 d2 m n co_mn.
+    case/orP: (leq_total m n).
+    - move=> geq_mn.                        (* (m <= n) の場合 *)
+      rewrite ![m == n %[mod _]]eq_sym.     (* 右辺と左辺を入れ替える。 *)
+      rewrite !eqn_mod_dvd //.
+        by rewrite Gauss_dvd.
+    - move=> geq_nm.                        (* (n <= m) の場合*)
+      rewrite !eqn_mod_dvd //.
+        by rewrite Gauss_dvd.
+  Qed.
+  
+(**
 中国人の剰余定理のより一般的な証明は、``div.v`` の ``chinese_mod`` を参照してください。
  *)
 End Modulo.
