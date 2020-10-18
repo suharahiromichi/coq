@@ -202,7 +202,7 @@ $$ m d_1 = n d_1 \pmod{d_2 d_1} \Longleftrightarrow m = n \pmod{d_2}, 但し 0 \
 $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
    m = n \pmod{d_1} \ かつ\ m = n \pmod{d_2} $$
 
-説明：まず、最大公約数とdivisibleの関係を使いやすい補題にしておきます。
+説明：まず、最大公約数とdivisibleの関係を使いやすい2つの補題にしておきます。
  *)
   Lemma lcmn_dvdn d1 d2 m : lcmn d1 d2 %| m -> d1 %| m.
   Proof.
@@ -219,7 +219,7 @@ $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
   Qed.
   
 (**
-式(4.41)の→の共通部分です。
+次いで、式(4.41)の→の共通部分です。
 *)
   Lemma m_divn_lcmn_1_1_1 m n d1 d2 :
     n <= m -> m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
@@ -329,10 +329,12 @@ $$ m = n \pmod{d_1 d_2} \Longleftrightarrow \\
 
 中国人の剰余定理の一般の場合は、これらの剰余が異なっていても成立するので、
 その特別な場合であるといえます。``div.v`` の補題 ``chinese_remainder`` と同内容です。
+*)
 
-
-最初に補題として、互いに素なら、LCMは積であることを証明します。
+(**
+説明：まず補題として、互いに素ならLCMは積であることを証明します。
 補題 ``muln_lcm_gcd m n : lcmn m n * gcdn m n = m * n`` を使います。
+m と n が互いに素であることから、``gcdn m n = 1`` を代入して gcdn を消します。
 *)  
   Lemma coprime_lcm d1 d2 : coprime d1 d2 -> lcmn d1 d2 = d1 * d2.
   Proof.
@@ -341,7 +343,7 @@ $$ m = n \pmod{d_1 d_2} \Longleftrightarrow \\
     Check muln_lcm_gcd : forall m n : nat, lcmn m n * gcdn m n = m * n.
       by rewrite -muln_lcm_gcd Hco muln1.
   Qed.
-
+  
 (**
 この補題と式(4.41)から、ただちに求められます。
 *)  
@@ -392,7 +394,7 @@ Gauss_dvd の証明には mulm_lcm_gcd を使っています(div.vにて)。
   Qed.
   
 (**
-中国人の剰余定理のより一般的な証明は、``div.v`` の ``chinese_mod`` を参照してください。
+中国人の剰余定理の一般的な場合の証明は、``div.v`` の ``chinese_mod`` を参照してください。
  *)
 End Modulo.
 
