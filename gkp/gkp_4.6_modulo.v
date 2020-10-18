@@ -1,5 +1,5 @@
 (**
-コンピュータの数学 4.6 合同関係 の公式の証明
+コンピュータの数学 4.6 合同関係 の公式の証明（自然数版）
 ======
 
 2020_10_24 @suharahiromichi
@@ -13,7 +13,18 @@ Unset Printing Implicit Defensive.
 
 Section Modulo.
 (**
-変数名 m n p q d d1 d2 の使い方は、MathComp の div.v [3] にあわせています。
+コンピュータの数学[1][2]の 4.6 合同関係 の公式の証明をしてみます。
+ただし、被除数と除数は自然数に限定します。
+また、式の番号は[2]にあわせ、「」の中は[2]からの引用です。
+
+このソースコードは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/gkp/gkp_4.6_modulo.v
+
+
+変数名 m n p q d d1 d2 の使い方は、MathComp の div.v [3] 
+にあわせて、被除数を``m``と``n``、除数を``d``としています。
+これは、[1][2]とは異なるので注意してください。
 *)
   
 (**
@@ -172,7 +183,7 @@ MathCompらしく、bool値の同値で証明しておきます。
 「合同関係で割り算をするもうひとつの方法は、法とする自身も他の数と同じように割ることである。
 これは、modの分配則だけに依存している。」
 
-$$ m d1 = n d1 \pmod{d2 d1} \Longleftrightarrow m = n \pmod{d2}, 但し 0 \lt d1 $$
+$$ m d_1 = n d_1 \pmod{d_2 d_1} \Longleftrightarrow m = n \pmod{d_2}, 但し 0 \lt d_1 $$
  *)  
   Lemma m_divn_dp m n d1 d2 :
     0 < d1 -> (m * d1 == n * d1 %[mod d2 * d1]) = (m == n %[mod d2]).
@@ -188,8 +199,8 @@ $$ m d1 = n d1 \pmod{d2 d1} \Longleftrightarrow m = n \pmod{d2}, 但し 0 \lt d1
 (**
 # 最大公約数を法とする合同式（式(4.41)）
 
-$$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
-   m = n \pmod{d1} \ かつ\ m = n \pmod{d2} $$
+$$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
+   m = n \pmod{d_1} \ かつ\ m = n \pmod{d_2} $$
 
 説明：まず、最大公約数とdivisibleの関係を使いやすい補題にしておきます。
  *)
@@ -310,8 +321,8 @@ $$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
 (**
 # 中国人の剰余定理の特別な場合（式(4.42)）
 
-$$ m = n \pmod{d1 d2} \Longleftrightarrow \\
-   m = n \pmod{d1}\ かつ\ m = n \pmod{d2}, 但し d1 \perp d2 $$
+$$ m = n \pmod{d_1 d_2} \Longleftrightarrow \\
+   m = n \pmod{d_1}\ かつ\ m = n \pmod{d_2}, 但し d_1 \perp d_2 $$
 
 説明： 互いに素なら、LCMは積であることを証明します。
 補題 ``muln_lcm_gcd m n : lcmn m n * gcdn m n = m * n`` を使います。
