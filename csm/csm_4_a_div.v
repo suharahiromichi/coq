@@ -527,6 +527,7 @@ Proof. move=> m n p d H1 H2. rewrite H1 H2. done. Qed.
 (**
 ### 等式の補題の適用
 
+等式の左辺と右辺を入れ替える。
 「=」「<>」「==」「!=」についての補題も適用可能である。
 *)
 Check @esym : forall (A : Type) (x y : A), x = y -> y = x.
@@ -686,11 +687,14 @@ $$ m p = n p \pmod{d} \Longleftrightarrow m = n \pmod{d}, 但し p \perp d $$
         
     (* 0 < p の場合 *)
     - move=> p_gt0 Hco.     (* 0 < p 条件と、coprime条件を intro する。 *)
+      
       Check @egcdnP p d p_gt0 : egcdn_spec p d (egcdn p d).
       case: (@egcdnP p d p_gt0). (* 拡張ユーグリッドの互除法の定義を前提に積む。 *)
       (* egcdn_spec は inductive に定義されているので、条件がひとつでも case が要る。 *)
-      rewrite Hco.
+      (* km * p = kn * d + gcdn p d と kn * gcdn p d < p *)
+      
       move=> p' d' Hdef _ H.
+      rewrite Hco in Hdef.
       (* ``Hdef : p' * p = d' * d + 1`` は不定方程式を展開した状態である。 *)
     
       (* H の 両辺に p' をかける。 p' が p の逆数のような働きをする。 *)
@@ -701,11 +705,12 @@ $$ m p = n p \pmod{d} \Longleftrightarrow m = n \pmod{d}, 但し p \perp d $$
       (* 不定方程式 ``Hdef`` を H に代入して整理する。 *)
       rewrite -2!mulnA -[p * p']mulnC in H.
       rewrite Hdef in H.
-        by rewrite 2!mulnDr 2!muln1 2!mulnA 2!modnMDl in H.
+      rewrite 2!mulnDr 2!muln1 2!mulnA 2!modnMDl in H.
+      done.
   Qed.
   
 (**
-説明：[1]の式(4.37) の←は、掛け算の合同の公式から明らかです。後の証明では不使用です。
+[1]の式(4.37) の←は、掛け算の合同の公式から明らかなので、<->が証明できます。
 *)
   Lemma m_divn_d' m n p d :
     coprime p d -> (m * p = n * p %[mod d] <-> m = n %[mod d]).
@@ -788,41 +793,27 @@ $$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
   Qed.
   
 (**
-自然数の減算 ``m - n`` を含む証明の場合、``n <= m`` と ``m < n`` で場合分けします。
-しかし ``m < n -> m <= n`` なので、後者の条件を ``m <= n`` に変形できれば、
-同じ補題が使えるわけです。その変形をする補題を証明しておきます。
-*)
-  Lemma le_m_n m n : (n <= m) = false -> m <= n.
-  Proof.
-    move/negbT => Hmn.
-    rewrite -ltnNge in Hmn.
-      by rewrite ltnW //.
-      
-    Restart.
-    move=> Hmn.
-      by ssromega.
-  Qed.
-  
-(**
-証明の中核となる部分です。場合分けしてそれぞれに共通部分を適用します。
+式(4.41)の→の補題で、証明の中核となる部分です。
+場合分けしてそれぞれに共通部分を適用します。
 *)
   Lemma m_divn_lcm_1_1 m n d1 d2 :
     m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
   Proof.
     move=> H.
-    case Hnm : (n <= m).
+    Check (leq_total m n) : (m <= n) || (n <= m).
+    case/orP: (leq_total n m) => Hnm.
+    
     (* n <= m である場合 *)
     - by apply: m_divn_lcmn_1_1_1 H.
       
-    (* m < n である場合 *)
-    - move/le_m_n in Hnm.       (* n > m を m <= n にする。 *)
-      apply/esym.               (* 合同式の左辺と右辺を入れ替える。 *)
+    (* m <= n である場合 *)
+    - apply/esym.               (* 合同式の左辺と右辺を入れ替える。 *)
       move/esym in H.           (* 合同式の左辺と右辺を入れ替える。 *)
         by apply: m_divn_lcmn_1_1_1 H.
   Qed.
   
 (**
-式(4.41)の→の証明です。（ここでは、使用していません）
+式(4.41)の→の証明です。
 *)  
   Lemma m_divn_lcm_1 m n d1 d2 :
     m = n %[mod lcmn d1 d2] -> m = n %[mod d1] /\ m = n %[mod d2].
@@ -835,7 +826,7 @@ $$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
   Qed.
 
 (**
-式(4.41)の→の共通部分です。
+式(4.41)の←の補題です。
 *)
   Lemma m_divn_lcm_2_1 m n d1 d2 :
     n <= m -> m = n %[mod d1] -> m = n %[mod d2] -> m = n %[mod lcmn d1 d2].
@@ -858,14 +849,12 @@ $$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
     m = n %[mod d1] -> m = n %[mod d2] -> m = n %[mod lcmn d1 d2].
   Proof.
     move=> H1 H2.
-    case Hnm : (n <= m).
+    case/orP: (leq_total n m) => Hnm.
     (* n <= m の場合 *)
     - by apply: m_divn_lcm_2_1.       (* 先の補題がそのまま使える。 *)
       
     (* m < n の場合 *)      
-    - move/le_m_n in Hnm.               (* n > m を m <= n にする。 *)
-      (* ゴールと条件の合同式の左辺と右辺を入れ替える。 *)
-      apply/esym.
+    - apply/esym. (* ゴールと条件の合同式の左辺と右辺を入れ替える。 *)
       move/esym in H1.
       move/esym in H2.
         by apply: m_divn_lcm_2_1.     (* 先の補題が使えるようになった。 *)
@@ -878,14 +867,13 @@ $$ m = n \pmod{lcm(d1,d2)} \Longleftrightarrow \\
     (m == n %[mod lcmn d1 d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).
   Proof.
     apply/idP/idP => [/eqP H | /andP [/eqP H1 /eqP H2]].
-    - apply/andP; split; apply/eqP.
-      + by apply: m_divn_lcm_1_1 H.
-      + rewrite lcmnC in H.
-          by apply: m_divn_lcm_1_1 H.
+    - move/m_divn_lcm_1 in H.
+      case: H => [H1 H2].
+        by apply/andP; split; apply/eqP.
     - apply/eqP.
         by apply: m_divn_lcm_2.
   Qed.
-
+  
 (**
 ### 中国人の剰余定理の特別な場合（式(4.42)）
 
@@ -929,7 +917,7 @@ Gauss_dvd の証明には mulm_lcm_gcd を使っています(div.vにて)。
 
 補足説明：bool式の真偽での場合分け ``case H : (m <= n)`` では、
 ``(m <= n)`` と ``(n < m)`` となり、
-後者の条件を ``(n <= m)`` に書き換えるには ltnW が必要になります。
+後者の条件を ``(n <= m)`` に書き換えるには ltnW が必要になります。不使用補題参照。
 *)
   Check eqn_mod_dvd
     : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
@@ -942,12 +930,14 @@ Gauss_dvd の証明には mulm_lcm_gcd を使っています(div.vにて)。
       (m == n %[mod d1 * d2]) = (m == n %[mod d1]) && (m == n %[mod d2]).
   Proof.
     move=> d1 d2 m n co_mn.
-    case/orP: (leq_total m n).
-    - move=> geq_mn.                        (* (m <= n) の場合 *)
+    case/orP: (leq_total m n) => geq_mn. (* || を && にリフレクトして場合分けする。 *)
+    
+    - (* (m <= n) の場合 *)
       rewrite ![m == n %[mod _]]eq_sym.     (* 右辺と左辺を入れ替える。 *)
       rewrite !eqn_mod_dvd //.
         by rewrite Gauss_dvd.
-    - move=> geq_nm.                        (* (n <= m) の場合*)
+        
+    - (* (n <= m) の場合*)
       rewrite !eqn_mod_dvd //.
         by rewrite Gauss_dvd.
   Qed.
@@ -974,5 +964,30 @@ https://github.com/math-comp/math-comp/blob/master/mathcomp/ssreflect/div.v
 https://qiita.com/suharahiromichi/items/1a135d9648a0f55f020a
 
  *)
+
+(**
+# 不使用補題
+*)
+
+(**
+自然数の減算 ``m - n`` を含む証明の場合、``n <= m`` と ``m < n`` で場合分けします。
+しかし ``m < n -> m <= n`` なので、後者の条件を ``m <= n`` に変形できれば、
+同じ補題が使えるわけです。その変形をする補題を証明しておきます。
+*)
+  Lemma le_m_n m n : (n <= m) = false -> m <= n. (* 不使用 *)
+  Proof.
+    move/negbT => Hmn.
+    rewrite -ltnNge in Hmn.
+      by rewrite ltnW //.
+      
+    Restart.
+    move=> Hmn.
+      by ssromega.
+  Qed.
+(**
+``case H : (n <= m)`` なら必要となるが、``case/orP: (leq_total n m)`` でなら
+``n <= m`` と ``m <= n`` に分けられるので使わなくてよい。
+*)
+  
 
 (* END *)
