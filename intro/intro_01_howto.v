@@ -1,5 +1,5 @@
 (**
-導入記事 01. Coq/SSReflect/MathComp で如何に証明を進めるか
+Coq/SSReflect/MathComp で如何に証明を進めるか（暫定版）
 ========================
 
 @suharahiromichi
@@ -16,6 +16,11 @@
 
 証明を完成するには、証明しようとする問題を深く理解することが大切ですが、
 それ以前のこととして、このような試行錯誤を経ることも必要だと思います。
+
+
+ファイルは以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/intro/intro_01_howto.v
  *)
 
 (**
@@ -125,8 +130,6 @@ case.
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.                    (* ssromega タクティク *)
-Require Import ssrinv.                      (* inv タクティク *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -626,12 +629,14 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 注意：head normal form とは、最外側がラムダ抽象かコンストラクタである式のこと。
 （内側については、できる限り簡約するものとする）
 
+```
 Ltac done :=
   trivial; hnf; intros; solve
    [ do ![solve [trivial | apply: sym_equal; trivial]
          | discriminate | contradiction | split]
    | case not_locked_false_eq_true; assumption
    | match goal with H : ~ _ |- _ => solve [case H; trivial] end ].
+```
 *)
 
 (**
@@ -668,6 +673,17 @@ csm_3_6_3_simpl.v
 
 ssrnatだけにに適用した版なので、自然数にしか適用できない。
 *)
+(**
+https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
+
+を ``coqc ssromega.v`` でコンパイルしてできあがった ``ssromega.vo`` を
+同じディレクトリかCoqのパスの通ったところに置きます。
+
+
+なお、ここでは文献[3]のうちの sssromega の定義の部分だけを取り出しています。
+*)
+  Require Import ssromega.                  (* ssromega タクティク *)
+
   Lemma sample54_1 (x : nat) : x > 1 -> 3 * x > x + 2.
   Proof.
     move=> H.
@@ -678,18 +694,24 @@ ssrnatだけにに適用した版なので、自然数にしか適用できな�
 ## 5.5 ring
 
 環に関する数式の自動証明をおこなう。等式のみ。整数も可能である。
+
+これは [5] の 第16日めを参考にしました。
 *)
-  Require Import ZArith Ring.
-  Open Scope Z_scope.
-  Lemma sample55_1 : forall a b:Z, a + b = 7 -> a * b = 12 -> a^2 + b^2 = 25.
-  Proof.
-    move=> a b H1 H2.
-    have -> : a^2 + b^2 = (a + b)^2 - 2 * a * b by ring.
-    have -> : 2 * a * b = 2 * 12 by ring [H2].
-    rewrite H1.
-    done.
-  Qed.
-  Close Scope Z_scope.
+  Section Ring.
+    Require Import ZArith Ring.
+    Open Scope Z_scope.
+    
+    Lemma sample55_1 : forall a b:Z, a + b = 7 -> a * b = 12 -> a^2 + b^2 = 25.
+    Proof.
+      move=> a b H1 H2.
+      have -> : a^2 + b^2 = (a + b)^2 - 2 * a * b by ring.
+      have -> : 2 * a * b = 2 * 12 by ring [H2].
+      rewrite H1.
+      done.
+    Qed.
+    
+    Close Scope Z_scope.
+  End Ring.
   
 (**
 ## 5.6 inv
@@ -699,6 +721,17 @@ inversion の本来は、前提の命題に対してコンストラクタ逆に�
 
 inv: は前提に生成された等式を使って前提やゴールを書き換えるまでおこなう。
 *)
+(**
+https://github.com/suharahiromichi/coq/blob/master/common/ssrinv.v
+
+を ``coqc ssrinv.v`` でコンパイルしてできあがった ``ssrinv.vo`` を
+同じディレクトリかCoqのパスの通ったところに置きます。
+
+
+これは [4] を参考にして定義しています。
+*)
+  Require Import ssrinv.                    (* inv タクティク *)
+  
   Lemma sample56_1 : ~ (ev 3).
   Proof.
     move=> H3.                              (* H3 : ev 3 *)
@@ -707,6 +740,13 @@ inv: は前提に生成された等式を使って前提やゴールを書き換
     inv: H1.                                (* ev 1 は矛盾 *)
   Qed.
   
+  Lemma sample56_2 n : ev n.+2 -> ev n.
+  Proof.
+    move=> H.
+    inv: H => H1.                           (* H1 : ev n *)
+    done.
+  Qed.
+
 End Basic.
 
 (**
@@ -722,16 +762,31 @@ MathComp (CoqのSSReflect拡張) の文法に習熟してください。
 (**
 # 参考文献
 
-[1.] "Mathematical Components"
+[1] "Mathematical Components"
 
 https://math-comp.github.io
 
 本家・一次配布元。日本語情報へのリンクもある。
 
 
-[2.] "Mathematical Components (the Book)"
+[2] "Mathematical Components (the Book)"
 
 https://math-comp.github.io/mcb/book.pdf
+
+
+[3] Affeldt Reynald, Library ssrnat_ext,
+
+https://staff.aist.go.jp/reynald.affeldt/coqdev/ssrnat_ext.html
+
+
+[4] Software Foundations, Volume 2
+
+https://softwarefoundations.cis.upenn.edu/plf-current/LibTactics.html
+
+
+[5] Coq Advent Calender
+
+http://study-func-prog.blogspot.com/2010/12/coq-coq-advent-calender-reflexivity-25.html
 *)
 
 (* END *)
