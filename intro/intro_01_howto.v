@@ -98,6 +98,7 @@ case.
 (**
 # 目次
 
+```
 1. 基本概念
 1.1 ゴールとコンテキストの間の移動
 1.2 （サブ）ゴールの終了
@@ -127,6 +128,7 @@ case.
 5.4 ssromega
 5.5 ring
 5.6 inv
+```
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -153,6 +155,9 @@ Section Basic.
 - ゴールが ``Q1 -> G`` のとき、``Q1`` をコンテキストに移動する（intro または pop）。
 また、コンテキスト``H1`` をゴールに移動する（generalize または push）。
 *)
+(**
+例：
+*)
   Lemma sample11_1 (Q1 G : Prop) : Q1 -> G.
     move=> H1.                              (* intro *)
     move: H1.                               (* generalize *)
@@ -161,6 +166,9 @@ Section Basic.
 (**
 - ゴールが ``forall x, g x`` のとき、``x`` をコンテキストに移動する。
 また、コンテキスト``x`` をゴールに移動する。
+*)
+(**
+例：
 *)
   Lemma sample11_2 g : forall (n : nat), g n.
     move=> n.                               (* intro *)
@@ -176,6 +184,9 @@ Section Basic.
 - 証明済の Lemma なども generalize できる。
 （参考：case で他の補題を指定できる。後述）
  *)
+(**
+例：
+*)
   Lemma sample11_3 (P1 : Prop) : True /\ P1 -> True.
     Check proj1 : forall A B : Prop, A /\ B -> A.
     move: proj1.
@@ -185,6 +196,9 @@ Section Basic.
 ## 1.2 （サブ）ゴールの終了
 *)
 
+(**
+例：
+*)
   Lemma sample12_1 (P1 : Prop) : P1 -> True.
     move=> H1.
 (**
@@ -193,6 +207,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample12_2 (G : Prop) : G -> G.
     move=> H.
 (**
@@ -201,6 +218,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample12_3 (G : Prop) : False -> G.
     move=> Hc.
 (**
@@ -210,6 +230,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample12_4 (P1 G : Prop) : P1 -> ~ P1 -> G.
     move=> H1 H2.
 (**
@@ -220,6 +243,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample12_5 (n : nat) : n = n.
 (**
 - ゴールが等式で、右辺と左辺が同じ場合。
@@ -235,6 +261,9 @@ Section Basic.
 (**
 ### 含意の証明
  *)
+(**
+例：
+*)
   Lemma sample21_1 (P Q : Prop) : P -> (P -> Q) -> Q.
     move=> HP.
     move=> HPQ.
@@ -245,6 +274,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample21_2 (P Q R : Prop) : P -> R -> (P -> R -> Q) -> Q.
     move=> HP HR H.
 (**
@@ -258,6 +290,9 @@ Section Basic.
 (**
 ### 論理積の証明
  *)
+(**
+例：
+*)
   Lemma sample21_3 (P1 P2 : Prop) : P1 /\ P2 -> P2 /\ P1.
     move=> H.
 (**
@@ -277,6 +312,9 @@ Section Basic.
 (**
 ### 論理和の証明
  *)
+(**
+例：
+*)
   Lemma sample21_4 (P1 P2 : Prop) : P1 \/ P2 -> P2 \/ P1.
     move=> H.
 (**
@@ -304,6 +342,9 @@ Section Basic.
 (**
 ### 同値の証明
  *)
+(**
+例：
+*)
   Lemma sample21_5 (m n : nat) : m = n <-> n = m.
   Proof.
 (**
@@ -323,6 +364,9 @@ Section Basic.
 
 ``~ P`` は ``P -> False`` の略記である。
  *)
+(**
+例：
+*)
   Lemma sample21_6 (P1 P2 : Prop) : (P1 -> P2) -> ~ P2 -> ~ P1.
     move=> H.
     move=> Hc.
@@ -345,6 +389,9 @@ Section Basic.
 (**
 ### 全称記号（∀、すべて）の証明
  *)
+(**
+例：
+*)
   Lemma sample22_1 : forall n : nat, 0 < n + 1.
   Proof.
 (**
@@ -352,7 +399,10 @@ Section Basic.
  *)
     move=> n.
   Abort.
-  
+
+(**
+例：
+*)
   Lemma sample22_2 : (forall (n : nat), 1 + n = n + 1) -> 1 + 3 = 3 + 1.
     move=> H.
 (**
@@ -365,6 +415,9 @@ Section Basic.
 (**
 ### 存在記号（∃、ある）の証明
 *)  
+(**
+例：
+*)
   Lemma sample22_3 : exists (n : nat), n + 1 = 3.
 (**
 - ゴールに存在記号がある場合は、適当な値を与える。
@@ -374,6 +427,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample22_4 : (exists (n : nat), n + 1 > 0) -> True.
     move=> He.
 (**
@@ -387,6 +443,9 @@ Section Basic.
 (**
 ## 2.3 等式の証明
  *)
+(**
+例：
+*)
   Lemma sample23_1 (n : nat) : n = n.
 (**
 - 右辺と左辺が同じ場合は、ゴールが終了する。
@@ -394,6 +453,9 @@ Section Basic.
     done.
   Qed.
 
+(**
+例：
+*)
   Lemma sample23_2 (n : nat) : n = 2 -> 5 = n + 3.
     move=> H.
 (**
@@ -404,6 +466,9 @@ Section Basic.
     done.                                   (* 簡単な計算なら実施できる。 *)
   Qed.
 
+(**
+例：
+*)
   Lemma sample23_3 (n : nat) : 2 = n -> 5 = n + 3.
     move=> H.
 (**
@@ -414,6 +479,9 @@ Section Basic.
     done.                             (* 簡単な計算なら実施できる。 *)
   Qed.
 
+(**
+例：
+*)
   Lemma sample23_4 (n m : nat) : (m = 0 -> n = 2) -> m = 0 -> 5 = n + 3.
     move=> H Hm.
 (**
@@ -426,6 +494,9 @@ Section Basic.
     - done.
   Qed.
   
+(**
+例：
+*)
   Lemma sample23_5 (f : nat -> nat) (m n : nat) : m = n -> f m = f n.
   Proof.
     move=> H.
@@ -441,6 +512,9 @@ Section Basic.
 
 - ``m <> n`` は、``m = n -> False`` の構文糖衣なので、否定の証明の応用になります。
 *)  
+(**
+例：
+*)
   Lemma sample24_1 (m n : nat) : m <> n -> n <> m.
     move=> H.
     move=> Hc.
@@ -452,6 +526,9 @@ Section Basic.
 (**
 -  ``m <> m`` は、成り立ちませんから ``False`` と同じです。
  *)
+(**
+例：
+*)
   Lemma sample24_2 (m : nat) : m <> m -> False.
     move=> H.
     done.
@@ -517,6 +594,9 @@ Inductive nat : Set :=
 | O
 | S (n : nat).
  *)
+(**
+例：
+*)
   Lemma sample31_2 n : n + 1 = 1 + n.
   Proof.
     case: n.
@@ -535,6 +615,9 @@ Inductive nat : Set :=
 (**
 - if式の条件分けは、ifP と覚えてもよい。
 *)
+(**
+例：
+*)
   Lemma sample32_1 (n  : nat) : if n == 42 then true else true.
   Proof.
     case: ifP.
@@ -548,6 +631,9 @@ Inductive nat : Set :=
 このとき、前提がProp述語になる。
 eqP は bool述語（==）とProp述語（=）のリフレクション述語である。
 *)  
+(**
+例：
+*)
   Lemma sample32_2 (n  : nat) : if n == 42 then true else true.
   Proof.
     case: eqP.
@@ -561,6 +647,9 @@ eqP は bool述語（==）とProp述語（=）のリフレクション述語で�
 ifの条件式boolであるので、bool型の値trueとfalseで場合分けしている。
 だから、これもコンストラクタによる場合分けである。
  *)
+(**
+例：
+*)
   Lemma sample32_3 (n  : nat) : if n == 42 then true else true.
   Proof.
     case H : (n == 42).                     (* 括弧を忘れない。 *)
@@ -585,6 +674,9 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 (**
 ## 変数の型による帰納法
 *)
+(**
+例：
+*)
   Lemma sample41_1  (n : nat) : evenb n = ~~ evenb n.+1.
   Proof.
     elim: n.
@@ -599,6 +691,9 @@ ifの条件式boolであるので、bool型の値trueとfalseで場合分けし�
 
 (**
 ## 命題による帰納法
+*)
+(**
+例：
 *)
   Lemma sample42_1 (n : nat) : ev n -> evenb n.  
   Proof.
@@ -651,12 +746,18 @@ csm_3_6_3_simpl.v
 
 導出原理を使用した自動証明をおこなう。P, Q, R は述語論理の命題でもよい。
 *)
+(**
+例：
+*)
   Lemma sample53_1 (P Q R : Prop) : P -> (P -> Q) -> (Q -> R) -> R.
   Proof.
     move=> HA HAB HBC.
     auto.
   Qed.
-  
+
+(**
+例：
+*)
   Lemma sample53_2 (P Q : Prop) : ((((P -> Q) -> P) -> P) -> Q) -> Q.
   Proof.
     move=> H.
@@ -731,7 +832,10 @@ https://github.com/suharahiromichi/coq/blob/master/common/ssrinv.v
 これは [4] を参考にして定義しています。
 *)
   Require Import ssrinv.                    (* inv タクティク *)
-  
+
+(**
+例：
+*)
   Lemma sample56_1 : ~ (ev 3).
   Proof.
     move=> H3.                              (* H3 : ev 3 *)
@@ -739,7 +843,10 @@ https://github.com/suharahiromichi/coq/blob/master/common/ssrinv.v
     move=> H1.                              (* H1 : ev 1 *)
     inv: H1.                                (* ev 1 は矛盾 *)
   Qed.
-  
+
+(**
+例：
+*)
   Lemma sample56_2 n : ev n.+2 -> ev n.
   Proof.
     move=> H.
