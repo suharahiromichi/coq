@@ -140,15 +140,18 @@ $$ m p = n p \pmod{d} \Longleftrightarrow m = n \pmod{d}, 但し p \perp d $$
       move=> p' d' Hdef _ H.
       rewrite Hco in Hdef.
       (* ``Hdef : p' * p = d' * d + 1`` は不定方程式を展開した状態である。 *)
+      (* ``H : m * p = n * p %[mod d]`` *)
     
-      (* H の 両辺に p' をかける。 p' が p の逆数のような働きをする。 *)
+      (* H の 両辺に p' をかける。 *)
       Check @m_muln' (m * p) (n * p) p' d
         : m * p = n * p %[mod d] -> m * p * p' = n * p * p' %[mod d].
       move/(@m_muln' (m * p) (n * p) p' d) in H.
+      (* ``H : m * p * p' = n * p * p' %[mod d]`` *)
       
       (* 不定方程式 ``Hdef`` を H に代入して整理する。 *)
       rewrite -2!mulnA -[p * p']mulnC in H.
       rewrite Hdef in H.
+      (* p' が p の逆数のような働きをする。 *)
       rewrite 2!mulnDr 2!muln1 2!mulnA 2!modnMDl in H.
       done.
   Qed.
@@ -189,20 +192,29 @@ $$ m d_1 = n d_1 \pmod{d_2 d_1} \Longleftrightarrow m = n \pmod{d_2}, 但し 0 \
     0 < d1 -> (m * d1 == n * d1 %[mod d2 * d1]) = (m == n %[mod d2]).
   Proof.
     move=> Hd1.
-    rewrite -[RHS](eqn_pmul2r Hd1). (* 右辺の両辺にd1を掛ける。d1≠0なので可能である。 *)
+
+    (* 両辺にd1を掛ける。 d1≠0なので可能である。 *)
+    Check @eqn_pmul2r d1 m n Hd1 : (m * d1 == n * d1) = (m == n).
+    rewrite -[RHS](eqn_pmul2r Hd1).
+
+    (* Goal : (m * d1 == n * d1 %[mod d2 * d1]) = (m %% d2 * d1 == n %% d2 * d1) *)
     
     (* d1による）剰余の分配則を適用する。これも d1≠0なので可能である。 *)
     Check @muln_modl d1 : forall m d : nat, 0 < d1 -> m %% d * d1 = (m * d1) %% (d * d1).
-      by rewrite 2!(muln_modl Hd1).
+    rewrite 2!(muln_modl Hd1).
+    
+    done.
   Qed.
   
 (**
-# 最大公約数を法とする合同式（式(4.41)）
+# 最小公倍数LCMを法とする合同式（式(4.41)）
 
 $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
    m = n \pmod{d_1} \ かつ\ m = n \pmod{d_2} $$
 
-説明：まず、最大公約数とdivisibleの関係を使いやすい2つの補題にしておきます。
+説明：最小公倍数LCMとdivisibleの関係、ふたつの自然数d1とd2の両方で割りきれることと、
+その最小公倍数でも割りきれることは同値です。このこをとを使いやすい補題にしておきます。
+
  *)
   Lemma lcmn_dvdn d1 d2 m : lcmn d1 d2 %| m -> d1 %| m.
   Proof.
@@ -219,17 +231,18 @@ $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
   Qed.
   
 (**
-次いで、式(4.41)の→の共通部分です。
+次いで、式(4.41)の→の共通部分です。d1とd2の最小公倍数を法として合同なら、
+d1を法として合同です。一般性を失わずに ``m ≦ n`` としています。
 *)
   Lemma m_divn_lcmn_1_1_1 m n d1 d2 :
     n <= m -> m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
   Proof.
-    Check eqn_mod_dvd
-      : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
+    Check eqn_mod_dvd : forall d m n : nat, n <= m -> (m == n %[mod d]) = (d %| m - n).
     
     move=> Hnm /eqP H.
     rewrite eqn_mod_dvd in H; last done.
     move/lcmn_dvdn in H.
+    (* ``H : d1 %| m - n`` *)
     
     apply/eqP.
     rewrite eqn_mod_dvd; last done.
@@ -270,16 +283,17 @@ $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
   Qed.
 
 (**
-式(4.41)の←の補題です。
+式(4.41)の←の補題です。d1とd2を法として合同なら、d1とd2の最小公倍数を法として合同です。
+一般性を失わずに ``n ≦ m`` としています。
 *)
   Lemma m_divn_lcm_2_1 m n d1 d2 :
     n <= m -> m = n %[mod d1] -> m = n %[mod d2] -> m = n %[mod lcmn d1 d2].
   Proof.
     move=> Hnm /eqP H1 /eqP H2.
+    apply/eqP.
+    
     rewrite eqn_mod_dvd in H1; last done.
     rewrite eqn_mod_dvd in H2; last done.
-    
-    apply/eqP.
     rewrite eqn_mod_dvd; last done.
     
     Check dvdn_lcmn : forall d1 d2 m : nat, d1 %| m -> d2 %| m -> lcmn d1 d2 %| m.
@@ -332,7 +346,7 @@ $$ m = n \pmod{d_1 d_2} \Longleftrightarrow \\
 *)
 
 (**
-説明：まず補題として、互いに素ならLCMは積であることを証明します。
+説明：まず補題として、互いに素なら最小公倍数LCMは積であることを証明します。
 補題 ``muln_lcm_gcd m n : lcmn m n * gcdn m n = m * n`` を使います。
 m と n が互いに素であることから、``gcdn m n = 1`` を代入して gcdn を消します。
 *)  
