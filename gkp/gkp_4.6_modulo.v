@@ -192,21 +192,21 @@ $$ m d_1 = n d_1 \pmod{d_2 d_1} \Longleftrightarrow m = n \pmod{d_2}, 但し 0 \
     0 < d1 -> (m * d1 == n * d1 %[mod d2 * d1]) = (m == n %[mod d2]).
   Proof.
     move=> Hd1.
-
-    (* 両辺にd1を掛ける。 d1≠0なので可能である。 *)
+    
+    (* 右側の両辺に、d1を掛ける。 d1≠0なので可能である。 *)
     Check @eqn_pmul2r d1 m n Hd1 : (m * d1 == n * d1) = (m == n).
     rewrite -[RHS](eqn_pmul2r Hd1).
 
-    (* Goal : (m * d1 == n * d1 %[mod d2 * d1]) = (m %% d2 * d1 == n %% d2 * d1) *)
+    (* 右側： (m %% d2 * d1 == n %% d2 * d1) *)
     
-    (* d1による）剰余の分配則を適用する。これも d1≠0なので可能である。 *)
+    (* 右側の両辺に、d1による剰余の分配則を適用する。これも d1≠0なので可能である。 *)
     Check @muln_modl d1 : forall m d : nat, 0 < d1 -> m %% d * d1 = (m * d1) %% (d * d1).
     rewrite 2!(muln_modl Hd1).
     
     done.
   Qed.
   
-(**
+  (**
 # 最小公倍数LCMを法とする合同式（式(4.41)）
 
 $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
@@ -359,7 +359,8 @@ m と n が互いに素であることから、``gcdn m n = 1`` を代入して 
   Qed.
   
 (**
-この補題と式(4.41)から、ただちに求められます。
+この補題 coprime_lcm で左側の法の積を lcm に書き換え、式(4.41) m_divn_lcm 
+を適用することで証明できます。
 *)  
   Lemma m_chinese_remainder m n d1 d2 :
     coprime d1 d2 ->
