@@ -1,5 +1,5 @@
 (**
-Coq/SSReflect/MathComp で如何に証明を進めるか（暫定版）
+Coq/SSReflect/MathComp の基本的なコマンドの使い方（暫定版）
 ========================
 
 @suharahiromichi
