@@ -115,9 +115,8 @@ case.
 2.4 不等式（<>）の証明
 2.5 不等式（≦ や ＜）の証明
 3. 場合分け
-- 変数の型による場合分け
-- 命題による場合分け
-- コンストラクタによる場合分け
+- 変数の型、あるいは、コンストラクタによる場合分け
+- if式による場合分け
 4. 数学的帰納法
 - 変数の型による帰納法
 - 命題による帰納法
@@ -588,11 +587,13 @@ Section Basic.
   
 (**
 自然数は、``O`` と ``S n`` の場合分けで定義されているので、
-変数 n が自然数のとき、``case: n`` で、``O`` と ``S n`` に場合分けできる。
+変数 n が自然数のとき、``case: n`` で、``O`` と ``S n`` （零と非零）に場合分けできる。
 
+```
 Inductive nat : Set :=
 | O
 | S (n : nat).
+```
  *)
 (**
 例：
@@ -609,7 +610,7 @@ Inductive nat : Set :=
   Qed.
   
 (**
-## if式の場合分け
+## if式による場合分け
 *)
 
 (**
@@ -775,9 +776,11 @@ csm_3_6_3_simpl.v
 ssrnatだけにに適用した版なので、自然数にしか適用できない。
 *)
 (**
+ssromega は MathComp の標準のコマンドではないので、
+
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
 
-を ``coqc ssromega.v`` でコンパイルしてできあがった ``ssromega.vo`` を
+を ``coqc ssromega.v`` でコンパイルし、できあがった ``ssromega.vo`` を
 同じディレクトリかCoqのパスの通ったところに置きます。
 
 
@@ -823,9 +826,11 @@ inversion の本来は、前提の命題に対してコンストラクタ逆に�
 inv: は前提に生成された等式を使って前提やゴールを書き換えるまでおこなう。
 *)
 (**
+inv は MathComp の標準のコマンドではないので、
+
 https://github.com/suharahiromichi/coq/blob/master/common/ssrinv.v
 
-を ``coqc ssrinv.v`` でコンパイルしてできあがった ``ssrinv.vo`` を
+を ``coqc ssrinv.v`` でコンパイルし、できあがった ``ssrinv.vo`` を
 同じディレクトリかCoqのパスの通ったところに置きます。
 
 
@@ -862,8 +867,22 @@ End Basic.
 本資料で、MathComp の証明に慣れてください。
 また、証明に詰ったときにも本資料を参照してください。
 
-MathComp (CoqのSSReflect拡張) の文法に習熟してください。
+基本的なコマンドに慣れたら MathComp (CoqのSSReflect拡張) の文法に習熟してください。
+次の資料が参考になります。
+
+SSReflectノート
+
+https://qiita.com/suharahiromichi/items/d16bebbe6f6c98f76d78
+
+
+
 次いで、MathComp ライブラリを覚えて使いこなせるようになってください。
+それには、ソースコード（詳細なコメントが含まれています）を読むのが最良です。
+
+https://github.com/math-comp/math-comp
+
+
+MathComp の一次資料は [2] です。ライブラリについての説明も詳細です。参考にしてください。
 *)
 
 (**
