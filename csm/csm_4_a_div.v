@@ -965,29 +965,4 @@ https://qiita.com/suharahiromichi/items/1a135d9648a0f55f020a
 
  *)
 
-(**
-# 不使用補題
-*)
-
-(**
-自然数の減算 ``m - n`` を含む証明の場合、``n <= m`` と ``m < n`` で場合分けします。
-しかし ``m < n -> m <= n`` なので、後者の条件を ``m <= n`` に変形できれば、
-同じ補題が使えるわけです。その変形をする補題を証明しておきます。
-*)
-  Lemma le_m_n m n : (n <= m) = false -> m <= n. (* 不使用 *)
-  Proof.
-    move/negbT => Hmn.
-    rewrite -ltnNge in Hmn.
-      by rewrite ltnW //.
-      
-    Restart.
-    move=> Hmn.
-      by ssromega.
-  Qed.
-(**
-``case H : (n <= m)`` なら必要となるが、``case/orP: (leq_total n m)`` でなら
-``n <= m`` と ``m <= n`` に分けられるので使わなくてよい。
-*)
-  
-
 (* END *)

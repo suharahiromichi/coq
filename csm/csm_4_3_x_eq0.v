@@ -184,7 +184,11 @@ Section これだけは.
   Qed.
   Check @lem_len 1 2 : forall x : nat, 1 <= 2 -> 2 <= x -> 1 <= x.
   
-  (* n <= m の反対は m < n だが、m <= n で証明したい。 *)
+(**
+自然数の減算 ``m - n`` を含む証明の場合、``n <= m`` と ``m < n`` で場合分けします。
+しかし ``m < n -> m <= n`` なので、後者の条件を ``m <= n`` に変形できれば、
+同じ補題が使えるわけです。その変形をする補題を証明しておきます。
+*)
   Lemma le_m_n m n : (n <= m) = false -> m <= n.
   Proof.
     move/negbT => Hmn.
@@ -192,6 +196,19 @@ Section これだけは.
       by rewrite ltnW //.
   Qed.
 
+(**
+``n <= m`` と ``m <= n`` に場合分けするだけなら leq_total を使うほうが簡単です。
+*)  
+  Goal forall (m n : nat), True.
+  Proof.
+    move=> m n.
+    case/orP : (leq_total n m).
+    (* n <= m -> True *)
+    - done.
+    (* m <= n -> True *)
+    - done.
+  Qed.
+  
 End これだけは.
-
+    
 (* END *)
