@@ -112,6 +112,9 @@ case.
 - 全称記号（∀、すべて）の証明
 - 存在記号（∃、ある）の証明
 2.3 等式の証明
+- rewriteによる書き換え
+- congrによる証明
+- boolの等式の場合
 2.4 不等式（<>）の証明
 2.5 不等式（≦ や ＜）の証明
 3. 場合分け
@@ -506,6 +509,18 @@ Section Basic.
     done.
   Qed.
 
+(**
+- bool値の等式は、bool命題の同値に変換できる。
+*)
+  Lemma sample23_6 (m n : nat) : (m == n) = (n == m).
+  Proof.
+    apply/idP/idP.
+    (* m == n -> n == m *)
+    - by move=> /eqP ->.
+    (* n == m -> m == n *)
+    - by move=> /eqP ->.
+  Qed.
+  
 (**
 ## 2.4 不等式（<>）の証明
 
