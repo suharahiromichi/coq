@@ -19,7 +19,7 @@ Section Modulo.
 
 このソースコードは、以下にあります。
 
-https://github.com/suharahiromichi/coq/blob/master/gkp/gkp_4.6_modulo.v
+https://github.com/suharahiromichi/coq/blob/master/gkp/gkp_4_6_modulo.v
 
 
 変数名 m n p q d d1 d2 の使い方は、MathComp の div.v [3] 
@@ -217,7 +217,7 @@ $$ m d_1 = n d_1 \pmod{d_2 d_1} \Longleftrightarrow m = n \pmod{d_2}, 但し 0 \
     Check @muln_modl d1 :
       forall m d : nat, 0 < d1 -> (m %% d) * d1 = (m * d1) %% (d * d1).
     
-    rewrite 2!(muln_modl Hd1).
+    rewrite 2!(muln_modl Hd1). (* MathCompの最新版で条件 0 < p 条件が削除されている。 *)
     done.
   Qed.
   
