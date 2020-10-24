@@ -44,7 +44,7 @@ $$ m = n \pmod{d} \Longrightarrow
     rewrite -[LHS]modnDm -[RHS]modnDm.
     (* m %% d + p %% d = n %% d + q %% d %[mod d] *)
     
-    congr (_ %% _).            (* %[mod d] を外す。 *)
+    congr (_ %% d).            (* %[mod d] を外す。 *)
     (* m %% d + p %% d = n %% d + q %% d *)
     
     congr (_ + _).
@@ -67,10 +67,10 @@ $$ m = n \pmod{d} \Longrightarrow
     m = n %[mod d] -> p = q %[mod d] -> m * p = n * q %[mod d].
   Proof.
     move=> Hmp Hnd.
-    Check modnMm : forall m n d : nat, m %% d * (n %% d) = m * n %[mod d].
+    Check modnMm : forall m n d : nat, (m %% d) * (n %% d) = m * n %[mod d].
     rewrite -[LHS]modnMm -[RHS]modnMm.
     
-    congr (_ %% _). (* %[mod d] を外す。 *)
+    congr (_ %% d).            (* %[mod d] を外す。 *)
       (* Goal : m %% d * (p %% d) = n %% d * (q %% d) *)
       by congr (_ * _).
   Qed.
@@ -99,9 +99,9 @@ $$ p = q \pmod{d} \Longrightarrow p^{m} = q^{m} \pmod{d} $$
     Check modnXm : forall m d p : nat, (p %% d) ^ m = p ^ m %[mod d].
     rewrite -[LHS]modnXm -[RHS]modnXm.
     
-    congr (_ %% _).
+    congr (_ %% d).           (* %[mod d] を外す。 *)
       (* Goal : (p %% d) ^ m = (q %% d) ^ m *)
-      by congr (_ ^ _).
+      by congr (_ ^ m).
   Qed.
   
 (**
@@ -110,45 +110,59 @@ $$ p = q \pmod{d} \Longrightarrow p^{m} = q^{m} \pmod{d} $$
 「(p と d が)互いに素の場合には、(dを法とする)合同関係のもとでも(pによる)割り算ができる。」
 
 $$ m p = n p \pmod{d} \Longleftrightarrow m = n \pmod{d}, 但し p \perp d $$
+*)
 
-説明：まず、[1]の式(4.37) の→を証明します。
-拡張したGCDを使用するので [3] の chinese_modl 補題の証明、および、
-その解説の [4] も参考にしてください。
- *)  
-  Lemma m_divn_d_1 m n p d :
-    coprime p d -> m * p = n * p %[mod d] -> m = n %[mod d].
+(**
+あらかじめ補題として、p と d が互いに素のときに、
+不定方程式 ``p * p' = d * d' + 1`` に解があることを補題として証明します。
+[4]も参照してください。
+*)
+  Lemma solve_indeterminate_equation (p d : nat) :
+    0 < p -> coprime p d ->
+    exists (p' d' : nat), p' * p = d' * d + 1.
   Proof.
-    rewrite /coprime => /eqP.               (* 前提を gcdn p d = 1 *)
+    rewrite /coprime.
+    move=> p_gt0 /eqP Hco.
     
-    (* p = 0 と 0 < p に場合分けする。 *)
-    case: (posnP p).
-    
-    (* p = 0 の場合 *)
-    - move=> ->.                            (* p = 0 で書き換える。 *)
-      rewrite gcd0n.                        (* 前提から d = 1 でもある。 *)
-      move=> ->.                            (* d = 1 で書き換える。 *)
-        by rewrite !modn1.
-        
-    (* 0 < p の場合 *)
-    - move=> p_gt0 Hco.     (* 0 < p 条件と、coprime条件を intro する。 *)
-      
-      Check @egcdnP p d p_gt0 : egcdn_spec p d (egcdn p d).
+    Check @egcdnP p d p_gt0 : egcdn_spec p d (egcdn p d).
       case: (@egcdnP p d p_gt0). (* 拡張ユーグリッドの互除法の定義を前提に積む。 *)
       (* egcdn_spec は inductive に定義されているので、条件がひとつでも case が要る。 *)
       (* km * p = kn * d + gcdn p d と kn * gcdn p d < p *)
       
-      move=> p' d' Hdef _ H.
+      move=> p' d' Hdef _.
+      exists p', d'.
       rewrite Hco in Hdef.
-      (* ``Hdef : p' * p = d' * d + 1`` は不定方程式を展開した状態である。 *)
-      (* ``H : m * p = n * p %[mod d]`` *)
+      done.
+  Qed.
+
+(**
+説明：[1]の式(4.37) の→を証明します。
+ *)  
+  Lemma m_divn_d_1 m n p d :
+    coprime p d -> m * p = n * p %[mod d] -> m = n %[mod d].
+  Proof.
+    (* p = 0 と 0 < p に場合分けする。 *)
+    case: (posnP p).
     
+    (* p = 0 の場合 *)
+    - move=> ->.                       (* p = 0 で書き換える。 *)
+      rewrite /coprime => /eqP.        (* 前提を gcdn p d = 1 *)
+      rewrite gcd0n.                   (* 前提から d = 1 でもある。 *)
+      move=> ->.                       (* d = 1 で書き換える。 *)
+        by rewrite !modn1.
+        
+    (* 0 < p の場合 *)
+    - move=> p_gt0 Hco H.
+      (* 補題を使って、不定方程式の解を p' と d' とします。 *)
+      move: (solve_indeterminate_equation p_gt0 Hco) => [p' [d' Hdef]].
+      
       (* H の 両辺に p' をかける。 *)
       Check @m_muln' (m * p) (n * p) p' d
         : m * p = n * p %[mod d] -> m * p * p' = n * p * p' %[mod d].
       move/(@m_muln' (m * p) (n * p) p' d) in H.
       (* ``H : m * p * p' = n * p * p' %[mod d]`` *)
       
-      (* 不定方程式 ``Hdef`` を H に代入して整理する。 *)
+      (* 不定方程式 Hdef を H に代入して整理する。 *)
       rewrite -2!mulnA -[p * p']mulnC in H.
       rewrite Hdef in H.
       (* p' が p の逆数のような働きをする。 *)
