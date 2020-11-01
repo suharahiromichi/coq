@@ -4,6 +4,7 @@ Coq/SSReflect/MathComp による定理証明
 5. 集合の形式化
 ======
 2018_05_03 @suharahiromichi
+2020_10_25 @morita_hm : 積集合関連の演算を追記
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -26,6 +27,7 @@ Definition myMotherSet {M : Type} : mySet M := fun _ => True.
 (* 5.2 包含関係と統合 *)
 
 Definition mySub {M : Type} := fun (A B : mySet M) => forall (x : M), x ∈ A -> x ∈ B.
+(* ブルバキ流の記法 *)
 Notation "A ⊂ B" := (mySub A B) (at level 11).
 
 Section 包含関係.
@@ -72,8 +74,15 @@ End 等号.
 Definition myComplement {M : Type} (A : mySet M) : mySet M := fun (x : M) => ~(A x).
 Notation "A ^c" := (myComplement A) (at level 11).
 
+(* Union : 和集合 *)
 Definition myCup {M : Type} (A B : mySet M) : mySet M := fun (x : M) => x ∈ A \/ x ∈ B.
 Notation "A ∪ B" := (myCup A B) (at level 11).
+
+(* Intersection 積集合 共通部分 *)
+(* @morita_hm 追記 *)
+Definition myCap {M : Type} (A B : mySet M) : mySet M := fun (x : M) => x ∈ A /\ x ∈ B.
+Notation "A ∩ B" := (myCap A B) (at level 11).
+
 
 Section 演算.
   Variable M : Type.
@@ -137,6 +146,24 @@ Section 演算.
       + by left; right.
       + by right.
   Qed.
+
+  (* 和集合(union) の交換法則 *)
+  (* @morita_hm 追記 *)
+  Lemma myCupC (A B : mySet M) : A ∪ B = B ∪ A.
+  Proof.
+    apply: axiom_ExteqmySet.
+    rewrite /eqmySet /mySub /myCup /belong.
+    apply: conj.
+    - move=> x H1.
+      case H1 => t.
+      + by apply or_intror.
+      + by apply or_introl.
+    - move=> x H2.
+      case H2 => t.
+      + by apply or_intror.
+      + by apply or_introl.
+  Qed.
+
   
   Lemma myUnionCompMother (A : mySet M) : A ∪ (A^c) = myMotherSet.
   Proof.
@@ -147,6 +174,76 @@ Section 演算.
     - case: (axiom_mySet A x) => H';
         by [left | right].
   Qed.
+
+  
+  (* @morita_hm : intersection の結合法則 *)
+  Lemma myCapA (A B C : mySet M) : (A ∩ B) ∩ C = A ∩ (B ∩ C).
+  Proof.
+    apply: axiom_ExteqmySet.
+    rewrite /eqmySet /mySub /myCap /belong.
+    apply: conj => x H.
+    - case H => Hab Hc.
+      + case Hab => Hax Hbx.
+        split.
+        * done.
+        * by split.
+    - case H => Ha Hbc.
+      + case Hbc => Hbx Hcx.
+        by split.
+  Qed.
+
+  (* @morita_hm : intersection の交換法則 *)
+  Lemma myCapC (A B : mySet M) : A ∩ B = B ∩ A.
+  Proof.
+    apply: axiom_ExteqmySet.
+    rewrite /eqmySet /mySub /myCap /belong.
+    apply: conj => x Hab.
+    - case Hab => Hax Hbx.
+      by split.
+    - case Hab => Hbx Hax.
+      by split.
+  Qed.  
+  
+  (* @morita_hm : 積集合は部分集合 *)
+  Lemma intersection_self (A B : mySet M) : A ∩ B ⊂ A.
+  Proof.
+    rewrite /mySub /myCap /belong => x Hab.
+    by case Hab => Hax Hbx.
+  Qed.
+
+  (* @morita_hm : 積集合が元の集合の部分集合 *)
+  Lemma intersection_sub (A B : mySet M) : A ∩ B ⊂ A /\ A ∩ B ⊂ B.
+  Proof.
+    split.
+    - by apply: intersection_self.
+    - rewrite myCapC.
+      by apply: intersection_self.
+  Qed.
+  
+  (* @morita_hm : de Morgan *)
+  Lemma deMorgan (A B : mySet M) :  (A^c) ∩ (B^c) = (A ∪ B)^c.
+  Proof.
+    apply: axiom_ExteqmySet.
+    rewrite /eqmySet /myComplement /myCap /myCup /belong.
+    apply: conj.
+    - move=> x.
+      rewrite /belong => H.
+      case H => Hna Hnb.
+      + move=> Hnab.
+        apply: Hna.
+        case: Hnab.
+        * done.
+        * move=> Hbx.
+          done.
+    - move=> x.
+      rewrite /belong => H.
+      split => Hn.
+      + apply: H.
+          by left.
+      + apply: H.
+          by right.
+  Qed.
+  
 End 演算.
 
 (* 5.4 集合間の写像 *)
