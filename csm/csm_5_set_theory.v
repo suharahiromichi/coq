@@ -5,6 +5,8 @@ Coq/SSReflect/MathComp による定理証明
 ======
 2018_05_03 @suharahiromichi
 2020_10_25 @morita_hm : 積集合関連の演算を追記
+2020_11_09 @morita_hm : GitLab から Subset の像を追加
+https://github.com/morita-hm/proofcafe_private/blob/main/csm_5_set_theory.v
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -27,7 +29,6 @@ Definition myMotherSet {M : Type} : mySet M := fun _ => True.
 (* 5.2 包含関係と統合 *)
 
 Definition mySub {M : Type} := fun (A B : mySet M) => forall (x : M), x ∈ A -> x ∈ B.
-(* ブルバキ流の記法 *)
 Notation "A ⊂ B" := (mySub A B) (at level 11).
 
 Section 包含関係.
@@ -74,15 +75,8 @@ End 等号.
 Definition myComplement {M : Type} (A : mySet M) : mySet M := fun (x : M) => ~(A x).
 Notation "A ^c" := (myComplement A) (at level 11).
 
-(* Union : 和集合 *)
 Definition myCup {M : Type} (A B : mySet M) : mySet M := fun (x : M) => x ∈ A \/ x ∈ B.
 Notation "A ∪ B" := (myCup A B) (at level 11).
-
-(* Intersection 積集合 共通部分 *)
-(* @morita_hm 追記 *)
-Definition myCap {M : Type} (A B : mySet M) : mySet M := fun (x : M) => x ∈ A /\ x ∈ B.
-Notation "A ∩ B" := (myCap A B) (at level 11).
-
 
 Section 演算.
   Variable M : Type.
@@ -146,24 +140,6 @@ Section 演算.
       + by left; right.
       + by right.
   Qed.
-
-  (* 和集合(union) の交換法則 *)
-  (* @morita_hm 追記 *)
-  Lemma myCupC (A B : mySet M) : A ∪ B = B ∪ A.
-  Proof.
-    apply: axiom_ExteqmySet.
-    rewrite /eqmySet /mySub /myCup /belong.
-    apply: conj.
-    - move=> x H1.
-      case H1 => t.
-      + by apply or_intror.
-      + by apply or_introl.
-    - move=> x H2.
-      case H2 => t.
-      + by apply or_intror.
-      + by apply or_introl.
-  Qed.
-
   
   Lemma myUnionCompMother (A : mySet M) : A ∪ (A^c) = myMotherSet.
   Proof.
@@ -174,76 +150,6 @@ Section 演算.
     - case: (axiom_mySet A x) => H';
         by [left | right].
   Qed.
-
-  
-  (* @morita_hm : intersection の結合法則 *)
-  Lemma myCapA (A B C : mySet M) : (A ∩ B) ∩ C = A ∩ (B ∩ C).
-  Proof.
-    apply: axiom_ExteqmySet.
-    rewrite /eqmySet /mySub /myCap /belong.
-    apply: conj => x H.
-    - case H => Hab Hc.
-      + case Hab => Hax Hbx.
-        split.
-        * done.
-        * by split.
-    - case H => Ha Hbc.
-      + case Hbc => Hbx Hcx.
-        by split.
-  Qed.
-
-  (* @morita_hm : intersection の交換法則 *)
-  Lemma myCapC (A B : mySet M) : A ∩ B = B ∩ A.
-  Proof.
-    apply: axiom_ExteqmySet.
-    rewrite /eqmySet /mySub /myCap /belong.
-    apply: conj => x Hab.
-    - case Hab => Hax Hbx.
-      by split.
-    - case Hab => Hbx Hax.
-      by split.
-  Qed.  
-  
-  (* @morita_hm : 積集合は部分集合 *)
-  Lemma intersection_self (A B : mySet M) : A ∩ B ⊂ A.
-  Proof.
-    rewrite /mySub /myCap /belong => x Hab.
-    by case Hab => Hax Hbx.
-  Qed.
-
-  (* @morita_hm : 積集合が元の集合の部分集合 *)
-  Lemma intersection_sub (A B : mySet M) : A ∩ B ⊂ A /\ A ∩ B ⊂ B.
-  Proof.
-    split.
-    - by apply: intersection_self.
-    - rewrite myCapC.
-      by apply: intersection_self.
-  Qed.
-  
-  (* @morita_hm : de Morgan *)
-  Lemma deMorgan (A B : mySet M) :  (A^c) ∩ (B^c) = (A ∪ B)^c.
-  Proof.
-    apply: axiom_ExteqmySet.
-    rewrite /eqmySet /myComplement /myCap /myCup /belong.
-    apply: conj.
-    - move=> x.
-      rewrite /belong => H.
-      case H => Hna Hnb.
-      + move=> Hnab.
-        apply: Hna.
-        case: Hnab.
-        * done.
-        * move=> Hbx.
-          done.
-    - move=> x.
-      rewrite /belong => H.
-      split => Hn.
-      + apply: H.
-          by left.
-      + apply: H.
-          by right.
-  Qed.
-  
 End 演算.
 
 (* 5.4 集合間の写像 *)
@@ -260,6 +166,16 @@ Notation "f ● g" := (MapCompo f g) (at level 11).
 Definition ImgOf {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
            (_ : f ∈Map A \to B) : mySet M2 :=
   fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A.
+
+(* 部分集合の像 @morita_hm *)
+Definition ImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
+           (_ : f ∈Map X \to Y) (A : mySet M1) : mySet M2 :=
+  fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A /\ A ⊂ X.
+
+(* 部分集合の逆像 @morita_hm *)
+Definition InvImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
+           (_ : f ∈Map X \to Y) (B : mySet M2) : mySet M1 :=
+  fun (x : M1) => exists (y : M2), y = f x /\ y ∈ B /\ B ⊂ Y.
 
 (* 単射 *)
 Definition mySetInj {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
@@ -334,7 +250,7 @@ Section fintypeを用いた有限集合.
   
   (* myMotherSet =
      p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))) *)
-  Check p2S M : mySet M.
+  Check p2S M.
   Check p2S (mem M).
   Check p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
   
@@ -364,16 +280,6 @@ Section fintypeを用いた有限集合.
     apply/(iffP idP) => H1.
     - by rewrite H1.
     - by case H : (x \in pA); last rewrite H in H1.
-  Qed.
-  
-  Lemma myFinBelongP'' (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
-  Proof.
-    rewrite /belong /p2S.
-    apply/(iffP idP) => H1.
-    - by rewrite H1.
-    - case: ifP (H1) => H2.
-      + done.
-      + by rewrite H2 in H1.
   Qed.
   
   Lemma myFinSubsetP (pA pB : pred M) :
@@ -437,64 +343,5 @@ Section ライブラリfinsetの利用.
     by rewrite -orb_andl.         (* || と && の ド・モルガンの定理 *)
   Qed.
 End ライブラリfinsetの利用.
-
-(* ************************************* *)
-(* ************************************* *)
-(* ************************************* *)
-
-Section 具体的なfinType.                    (* suhara *)
-  (* 具体的な finType として、'I_5 を与える。 *)
-  
-  (* 'I_5 の要素として、p0 を定義する。 *)
-  Definition p0 := @Ordinal 5 0 is_true_true.
-  Check p0 : 'I_5 : Type.
-  
-  Check Finite.sort (ordinal_finType 5) : Type.
-  Check              ordinal_finType 5  : finType.
-  Check              ordinal_finType 5  : Type.      (* コアーション *)
-  Check p0 : Finite.sort (ordinal_finType 5) : Type.
-  Check p0 :              ordinal_finType 5  : Type. (* コアーション *)
-  (** コアーションによって、(ordinal_finType 5) は型として見える。
-      つまり、(ordinal_finType 5) は finType型クラスから作られた、型インスタンスである。 *)
-  
-  (* 'I_5 を要素とする集合を定義する。 *)
-  Check @p2S : forall M : finType, pred M -> mySet M.
-  
-  (* see also. ssr/ssr_in_operator.v *)
-  (* 'I_5 は finType のインスタンスである。(あ) *)
-  Goal 'I_5 = ordinal_eqType 5. Proof. done. Qed.
-  
-  (* (pred_of_simpl (pred_of_argType 'I_5)) は、pred 'I_5 型である。(い) *)
-  Check pred_of_simpl (pred_of_argType 'I_5) : pred 'I_5.
-  
-  (* (あ)(い) より、(pred_of_simpl (pred_of_argType 'I_5)) は、
-     T : finType, P : pred T なる P である。 *)
-  Check pred_of_argType : forall T : predArgType, simpl_pred T.
-  Check pred_of_simpl   : forall T : Type, simpl_pred T -> pred T.
-  Check (fun T => pred_of_simpl (pred_of_argType T)) : forall T : predArgType, pred T.
-  
-  (* (pred_of_simpl (pred_of_argType 'I_5)) は、
-     mem の引数に書くことができ、また、mem も省略できる。 *)
-  Check p2S (mem (pred_of_simpl (pred_of_argType 'I_5))) : mySet 'I_5. (* (1) *)
-  Check p2S (mem                                 'I_5)   : mySet 'I_5. (* (2) *)
-  Check p2S      (pred_of_simpl (pred_of_argType 'I_5))  : mySet 'I_5.  
-  Check p2S                                      'I_5    : mySet 'I_5.
-  Check \{ x in 'I_5 \}                                  : mySet 'I_5.  
-  
-  (* *************** *)
-  (* ここからが本題。 *)
-  (* *************** *)
-  
-  (* p0 は素の集合の要素である。 *)
-  Goal p0 ∈ \{ x in 'I_5 \}.
-  Proof.
-      (*
-        rewrite /belong /p2S.
-        by case H : (p  1 \in 'I_5).
-       *)
-      by [].
-  Qed.
-  
-End 具体的なfinType.
 
 (* END *)
