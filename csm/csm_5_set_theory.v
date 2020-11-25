@@ -39,24 +39,52 @@ Section 包含関係.
   Check myMotherSet : mySet M.
 
   Lemma Sub_Mother (A : mySet M) : A ⊂ myMotherSet.
-  Proof. by []. Qed.
+  Proof.
+    rewrite /mySub /myMotherSet /belong => x1 H.
+    (* Goal : True *)
+    done.
+
+    Restart.
+      by [].
+  Qed.
 
   Lemma Sub_Empty (A : mySet M) : myEmptySet ⊂ A.
-  Proof. by []. Qed.
+  Proof.
+    rewrite /mySub /myEmptySet /belong => x1 H.
+    (* H : False *)
+    done.
+    
+    Restart.
+      by [].
+  Qed.
 
   Lemma rfl_Sub (A : mySet M) : A ⊂ A.
-  Proof. by []. Qed.
+  Proof.
+    rewrite /mySub /belong => x1 H.
+      (* A x1 -> A x1 *)
+    done.
+
+    Restart.
+      by [].
+  Qed.
 
   Lemma transitive_Sub (A B C : mySet M) : A ⊂ B -> B ⊂ C -> A ⊂ C.
   Proof.
     move=> HAB HBC t HtA.
+    (* HBC : B ⊂ C *)
+    rewrite /mySub in HBC.  (* 省略可能である。 *)
+    (* HBC : forall x : M, x ∈ B -> x ∈ C *)
+    (* Goal : t ∈ C *)
     apply: HBC.
+    (* Goal : t ∈ B *)
+    
     apply: HAB.
     apply: HtA.
   Qed.
 End 包含関係.
 
 Definition eqmySet {M : Type} := fun (A B : mySet M) => (A ⊂ B) /\ (B ⊂ A).
+(* 公理を追加する。 *)
 Axiom axiom_ExteqmySet : forall {M : Type} (A B : mySet M), eqmySet A B -> A = B.
 
 Section 等号.
@@ -66,8 +94,12 @@ Section 等号.
   Proof. by []. Qed.
 
   Lemma sym_eqS (A B : mySet Mother) : A = B -> B = A.
-  Proof. move=> HAB. by rewrite HAB. Qed.
-
+  Proof.
+    move=> HAB.
+      by rewrite HAB.
+  Qed.
+  
+  (* ここでは、まだ公理は使っていない。 *)
 End 等号.
 
 (* 5.3 集合上の演算 *)
@@ -81,10 +113,31 @@ Notation "A ∪ B" := (myCup A B) (at level 11).
 Section 演算.
   Variable M : Type.
 
+  (* 追加 *)
+  Lemma complement_test x (A : mySet M) : ~ (x ∈ A) <-> x ∈ (A ^c).
+  Proof.
+    rewrite /myComplement /belong.
+    done.
+  Qed.
+  (* 追加終わり。 *)
+
   Lemma cEmpty_Mother : (@myEmptySet M)^c = myMotherSet.
   Proof.
     apply: axiom_ExteqmySet.
-    by apply: conj; rewrite /myComplement => x HxM.
+    rewrite /eqmySet.                       (* 省略可能 *)
+    split=> x HxM.
+    (* Goal : x ∈ myMotherSet *)
+    - rewrite /belong.
+      done.
+
+    (* Goal : ~ (x ∈ myEmptySet) *)
+    - rewrite /myComplement.
+      apply/complement_test.                (* 省略可能 *)
+      done.
+      
+    Restart.
+    apply: axiom_ExteqmySet.
+      by apply: conj; rewrite /myComplement => x HxM.
   Qed.
   
   Lemma cc_cancel (A : mySet M) : (A^c)^c = A.
@@ -99,8 +152,8 @@ Section 演算.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.
     rewrite /myComplement.
-    apply: conj => x H.
-    (* rewrite /mySub 代わりに => x している。 *)
+    rewrite /mySub.
+    split=> x H.
     
     Check (axiom_mySet A x) : x ∈ A \/ ~(x ∈ A).
     
@@ -146,9 +199,19 @@ Section 演算.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.
     split => [| x H].
+    (* (A ∪ (A ^c)) ⊂ myMotherSet *)
     - done.
-    - case: (axiom_mySet A x) => H';
-        by [left | right].
+    (* (A ∪ (A ^c)) ⊃ myMothearSet*)
+    - case: (axiom_mySet A x) => H'.        (* ; by [left | right] *)
+      (* H' : x ∈ A  *)
+      + left.
+      (* Goal : x ∈ A *)
+        done.
+        
+      (* H' : ~ (x ∈ A) *)
+      + right.
+        (* Goal : x ∈ (A ^c) *)
+        done.
   Qed.
 End 演算.
 
@@ -167,7 +230,7 @@ Definition ImgOf {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
            (_ : f ∈Map A \to B) : mySet M2 :=
   fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A.
 
-(* 部分集合の像 @morita_hm *)
+(* 定義域の部分集合の像 @morita_hm *)
 Definition ImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
            (_ : f ∈Map X \to Y) (A : mySet M1) : mySet M2 :=
   fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A /\ A ⊂ X.
@@ -250,8 +313,11 @@ Section fintypeを用いた有限集合.
   
   (* myMotherSet =
      p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))) *)
+  Check @p2S M M.
   Check p2S M.
+  Check @p2S M (mem M).
   Check p2S (mem M).
+  Check @p2S M (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
   Check p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
   
   Lemma Mother_predT : myMotherSet = \{ x in M \}.
