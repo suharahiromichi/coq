@@ -15,8 +15,12 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
-(* 5.5 fintype を用いた有限集合の形式化 *)
+(**
+# 5.5 fintype を用いた有限集合の形式化
 
+これまでの ``M : Type`` を ``M : finTypr`` に変えることで、有限型の性質を使って、
+有限型を母集合とするものが集合としての性質を満たすことを示す。
+ *)
 Definition p2S {M : finType} (pA : pred M) : mySet M :=
   fun (x : M) => if x \in pA then True else False.
 Notation "\{ x 'in' pA \}" := (p2S pA).     (* x は飾り。 *)
@@ -24,7 +28,7 @@ Notation "\{ x 'in' pA \}" := (p2S pA).     (* x は飾り。 *)
 Section fintypeを用いた有限集合.
   (* Set Printing Coercions. *)
   
-  Variable M : finType.
+  Variable M : finType.             (* これまでは ``M : Type`` だった。 *)
   
   (* myMotherSet =
      p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))) *)
@@ -35,9 +39,20 @@ Section fintypeを用いた有限集合.
   Check @p2S M (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
   Check p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
   
+(**
+## myMotherSet の有限型版
+*)
+  Check @myMotherSet M = \{ x in M \}.
   Lemma Mother_predT : myMotherSet = \{ x in M \}.
   Proof. by []. Qed.
   
+  Locate "\in".             (* := in_mem x (mem A) *)
+  (* \in については、csm_4_5_fintype.v も参照のこと。 *)
+  
+(**
+## belong の有限型版
+*)
+  (* 左：集合の性質、右：有限型の性質 *)
   Lemma myFinBelongP (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
   Proof.
     rewrite /belong /p2S.
@@ -53,8 +68,7 @@ Section fintypeを用いた有限集合.
         rewrite (_ : (x \in pA) = false) in H1; first by [].
         by apply: negbTE.
   Qed.
-  
-  (* suhara *)
+  (* 上記の説明はもっと短くできる。 @suharahiromichi *)
   Lemma myFinBelongP' (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
   Proof.
     rewrite /belong /p2S.
@@ -63,6 +77,13 @@ Section fintypeを用いた有限集合.
     - by case H : (x \in pA); last rewrite H in H1.
   Qed.
   
+(**
+## mySubset の有限型版
+*)
+  Locate "\subset".                    (* := subset (mem A) (mem B) *)
+  (* \subset については、csm_4_5_fintype.v も参照のこと。 *)
+  
+  (* 左：集合の性質、右：有限型の性質 *)
   Lemma myFinSubsetP (pA pB : pred M) :
     reflect (\{ x in pA \} ⊂ \{ x in pB \}) (pA \subset pB).
   Proof.
@@ -79,10 +100,11 @@ Section fintypeを用いた有限集合.
       by apply H.
   Qed.
   
-  (* fintype の補題 *)
+  (* fintype.v の補題 ： 有限型としての部分集合 *)
   Check predT_subset : forall (T : finType) (A : pred T),
       T \subset A -> forall x : T, x \in A.
   
+  (* predT_subset の mySet版 *)
   Lemma Mother_Sub (pA : pred M) :
     myMotherSet ⊂ \{ x in pA \} -> forall x, x ∈ \{ x in pA \}.
   Proof.
@@ -91,10 +113,11 @@ Section fintypeを用いた有限集合.
     by apply: predT_subset.
   Qed.
 
-  (* fintype の補題 *)
+  (* fintype.v の補題 *)
   Check subset_trans : forall (T : finType) (A B C : pred T),
       A \subset B -> B \subset C -> A \subset C.
-
+  
+  (* subset_trans の mySet版 *)
   Lemma transitive_Sub' (pA pB pC : pred M) :
     \{ x in pA \} ⊂ \{ x in pB \} ->
     \{ x in pB \} ⊂ \{ x in pC \} ->
@@ -109,13 +132,22 @@ Section fintypeを用いた有限集合.
     \{ x in pB \} ⊂ \{ x in pC \} ->
     \{ x in pA \} ⊂ \{ x in pC \}.
   Proof.
-    by apply: transitive_Sub.
+    by apply: transitive_Sub.               (* see. 5.2 *)
   Qed.
 End fintypeを用いた有限集合.  
 
-Section 具体的なfinType.                    (* suhara *)
-  (* 具体的な finType として、'I_5 を与える。 *)
-  
+(**
+# 具体的なfinTypeを適用した例
+
+以下はテキストから離れた内容である。 @suharahiromichi
+ *)
+Section 具体的なfinType.
+
+(**
+## 準備  
+
+具体的な finType として、'I_5 を与える。
+ *)
   (* 'I_5 の要素として、p0 を定義する。 *)
   Definition p0 := @Ordinal 5 0 is_true_true.
   Check p0 : 'I_5 : Type.
@@ -153,11 +185,9 @@ Section 具体的なfinType.                    (* suhara *)
   Check p2S                                      'I_5    : mySet 'I_5.
   Check \{ x in 'I_5 \}                                  : mySet 'I_5.  
   
-  (* *************** *)
-  (* ここからが本題。 *)
-  (* *************** *)
-  
-  (* p0 は素の集合の要素である。 *)
+(**
+## ここからが本題
+*)
   Goal p0 ∈ \{ x in 'I_5 \}.
   Proof.
       (*
@@ -166,7 +196,6 @@ Section 具体的なfinType.                    (* suhara *)
        *)
       by [].
   Qed.
-  
 End 具体的なfinType.
 
 (* END *)

@@ -10,14 +10,34 @@ Set Print All.
 Section ライブラリfinsetの利用.
   Variable M : finType.
 
+  Check setP : forall (T : finType) (A B : {set T}), A =i B <-> A = B.
+  
+  Check in_setU : forall (T : finType) (x : T) (A B : {set T}),
+      (x \in A :|: B) = (x \in A) || (x \in B).
+  Check in_setI : forall (T : finType) (x : T) (A B : {set T}),
+      (x \in A :&: B) = (x \in A) && (x \in B).
+  (* inEだけ覚えておけばよい。 *)
+  Check inE.                                (* 略 *)
+  
   Lemma demorgan (A B C : {set M}) : (A :&: B) :|: C = (A :|: C) :&: (B :|: C).
   Proof.
+    (* = を =i に変換する。 *)
+    (* ``P =i Q`` は ``∀x, x \in P = x \in Q`` の構文糖衣である。 *)
     apply/setP => x.
-    rewrite !inE.                          (* || と && に変換する。 *)
-    Check orb_andl.
-    by rewrite -orb_andl.         (* || と && の ド・モルガンの定理 *)
+    (* Goal : A :&: B :|: C =i (A :|: C) :&: (B :|: C) *)
+    (* Goal : (x \in A :&: B :|: C) = (x \in (A :|: C) :&: (B :|: C)) *)
+    
+    (* :|: と :&: を || と && に変換する。 *)
+    (* Goal : (x \in A :&: B :|: C) = (x \in (A :|: C) :&: (B :|: C)) *)
+    rewrite !inE.
+    (* Goal : (x \in A) && (x \in B) || (x \in C) =
+       ((x \in A) || (x \in C)) && ((x \in B) || (x \in C)) *)
+    
+    (* || と && の ド・モルガンの定理 *)
+    Check orb_andl : forall x y z : bool, x && y || z = (x || z) && (y || z).
+      by rewrite -orb_andl.
   Qed.
-
+  
 End ライブラリfinsetの利用.
 
 (* END *)

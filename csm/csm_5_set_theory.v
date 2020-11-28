@@ -29,14 +29,13 @@ Unset Printing Implicit Defensive.
 Set Print All.
 
 (* 5.1 集合、部分集合 *)
-
 Definition mySet (M : Type) := M -> Prop.
 Definition belong {M : Type} (A : mySet M) (x : M) : Prop := A x.
 Notation "x ∈ A" := (belong A x) (at level 11).
 Axiom axiom_mySet : forall (M : Type) (A : mySet M), forall (x : M), x ∈ A \/ ~(x ∈ A).
 
-Definition myEmptySet {M : Type} : mySet M := fun _ => False.
-Definition myMotherSet {M : Type} : mySet M := fun _ => True.
+Definition myEmptySet {M : Type} : mySet M := fun (_ : M) => False.
+Definition myMotherSet {M : Type} : mySet M := fun (_ : M) => True.
 
 (* 5.2 包含関係と統合 *)
 
@@ -75,7 +74,7 @@ Section 包含関係.
     rewrite /mySub /belong => x1 H.
       (* A x1 -> A x1 *)
     done.
-
+    
     Restart.
       by [].
   Qed.
@@ -95,7 +94,7 @@ Section 包含関係.
   Qed.
 End 包含関係.
 
-Definition eqmySet {M : Type} := fun (A B : mySet M) => (A ⊂ B) /\ (B ⊂ A).
+Definition eqmySet {M : Type} (A B : mySet M) := (A ⊂ B) /\ (B ⊂ A).
 (* 公理を追加する。 *)
 Axiom axiom_ExteqmySet : forall {M : Type} (A B : mySet M), eqmySet A B -> A = B.
 
@@ -132,8 +131,7 @@ Section 演算.
     done.
   Qed.
   (* 追加終わり。 *)
-
-  Lemma cEmpty_Mother : (@myEmptySet M)^c = myMotherSet.
+  Lemma cEmpty_Mother : (@myEmptySet M)^c = (@myMotherSet M).
   Proof.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.                       (* 省略可能 *)
@@ -180,22 +178,27 @@ Section 演算.
     - case: (axiom_mySet A x) => HxA.
       (* HxA : x∈A の 場合 *)
       + move=> Hnot_xA.                     (* 二重否定を除去する。 *)
-        apply Hnot_xA.
-        apply HxA.
+        apply: Hnot_xA.
+          by apply: HxA.
       (* HxA : ~x∈A の 場合 *)
       + done.                               (* x∈A かつ ~x ∈ A  で矛盾 *)
   Qed.
-
+  
   Lemma cMotehr_Empty : (@myMotherSet M)^c = myEmptySet.
   Proof.
       by rewrite -cEmpty_Mother cc_cancel.
+      
+      Restart.
+    rewrite -cEmpty_Mother.
+    rewrite cc_cancel.
+    done.
   Qed.
-
+  
   Lemma myCupA (A B C : mySet M) : (A ∪ B) ∪ C = A ∪ (B ∪ C).
   Proof.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.
-    split => x [H | H].
+    split=> x [H | H].
     - case: H => H.
       + by left.
       + by right; left.
@@ -209,10 +212,11 @@ Section 演算.
   Lemma myUnionCompMother (A : mySet M) : A ∪ (A^c) = myMotherSet.
   Proof.
     apply: axiom_ExteqmySet.
-    rewrite /eqmySet.
-    split => [| x H].
+(*  rewrite /eqmySet /myComplement /myMotherSet /myCup. *)
+    split => [x | x H].
     (* (A ∪ (A ^c)) ⊂ myMotherSet *)
     - done.
+      
     (* (A ∪ (A ^c)) ⊃ myMothearSet*)
     - case: (axiom_mySet A x) => H'.        (* ; by [left | right] *)
       (* H' : x ∈ A  *)
@@ -237,17 +241,17 @@ Definition MapCompo {M1 M2 M3 : Type} (f : M2 -> M3) (g : M1 -> M2) : M1 -> M3 :
   fun (x : M1) => f (g x).
 Notation "f ● g" := (MapCompo f g) (at level 11).
 
-(* 像 *)
-Definition ImgOf {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
-           (_ : f ∈Map A \to B) : mySet M2 :=
-  fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A.
+(* 定義域Xの像Y *)
+Definition ImgOf {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
+           (_ : f ∈Map X \to Y) : mySet M2 :=
+  fun (y : M2) => exists (x : M1), y = f x /\ x ∈ X.
 
-(* 定義域の部分集合の像 @morita_hm *)
+(* 定義域Xの部分集合Aの像B @morita_hm - Bについては全射であること。 *)
 Definition ImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
            (_ : f ∈Map X \to Y) (A : mySet M1) : mySet M2 :=
   fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A /\ A ⊂ X.
 
-(* 部分集合の逆像 @morita_hm *)
+(* 値域Yの部分集合Bの逆像A @morita_hm - Bについては全射であること。 *)
 Definition InvImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
            (_ : f ∈Map X \to Y) (B : mySet M2) : mySet M1 :=
   fun (x : M1) => exists (y : M2), y = f x /\ y ∈ B /\ B ⊂ Y.
@@ -288,9 +292,9 @@ Section 写像.
     - done.
     - done.
       apply: Hinjf.
-      + by apply gAB.
-      + by apply gAB.
-      + by apply H.
+      + by apply: gAB.
+      + by apply: gAB.
+      + by apply: H.
   Qed.
   
   Lemma CompoTrans : (f ● g) ∈Map A \to C.
