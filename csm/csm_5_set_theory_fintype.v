@@ -15,6 +15,104 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
+(* 5.5 fintype を用いた有限集合の形式化 *)
+
+Definition p2S {M : finType} (pA : pred M) : mySet M :=
+  fun (x : M) => if x \in pA then True else False.
+Notation "\{ x 'in' pA \}" := (p2S pA).     (* x は飾り。 *)
+
+Section fintypeを用いた有限集合.
+  (* Set Printing Coercions. *)
+  
+  Variable M : finType.
+  
+  (* myMotherSet =
+     p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))) *)
+  Check @p2S M M.
+  Check p2S M.
+  Check @p2S M (mem M).
+  Check p2S (mem M).
+  Check @p2S M (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
+  Check p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
+  
+  Lemma Mother_predT : myMotherSet = \{ x in M \}.
+  Proof. by []. Qed.
+  
+  Lemma myFinBelongP (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
+  Proof.
+    rewrite /belong /p2S.
+    apply/(iffP idP) => H1.
+    - Check (_ : (x \in pA) = true).
+        by rewrite (_ : (x \in pA) = true).
+    - have testH : (x \in pA) || ~~(x \in pA).
+      + set t := x \in pA.
+          by case: t.
+      + move: testH.
+        case/orP => [| Harg]; first by [].
+        Check (_ : (x \in pA) = false).
+        rewrite (_ : (x \in pA) = false) in H1; first by [].
+        by apply: negbTE.
+  Qed.
+  
+  (* suhara *)
+  Lemma myFinBelongP' (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
+  Proof.
+    rewrite /belong /p2S.
+    apply/(iffP idP) => H1.
+    - by rewrite H1.
+    - by case H : (x \in pA); last rewrite H in H1.
+  Qed.
+  
+  Lemma myFinSubsetP (pA pB : pred M) :
+    reflect (\{ x in pA \} ⊂ \{ x in pB \}) (pA \subset pB).
+  Proof.
+    rewrite /mySub.
+    apply/(iffP idP) => H.
+    - move=> x /myFinBelongP => H2.
+      apply/myFinBelongP.
+      move: H => /subsetP.
+      rewrite /sub_mem.
+      by apply.
+    - apply/subsetP.
+      rewrite /sub_mem => x /myFinBelongP => HpA.
+      apply/myFinBelongP.
+      by apply H.
+  Qed.
+  
+  (* fintype の補題 *)
+  Check predT_subset : forall (T : finType) (A : pred T),
+      T \subset A -> forall x : T, x \in A.
+  
+  Lemma Mother_Sub (pA : pred M) :
+    myMotherSet ⊂ \{ x in pA \} -> forall x, x ∈ \{ x in pA \}.
+  Proof.
+    rewrite Mother_predT => /myFinSubsetP => H x.
+    apply/myFinBelongP.
+    by apply: predT_subset.
+  Qed.
+
+  (* fintype の補題 *)
+  Check subset_trans : forall (T : finType) (A B C : pred T),
+      A \subset B -> B \subset C -> A \subset C.
+
+  Lemma transitive_Sub' (pA pB pC : pred M) :
+    \{ x in pA \} ⊂ \{ x in pB \} ->
+    \{ x in pB \} ⊂ \{ x in pC \} ->
+    \{ x in pA \} ⊂ \{ x in pC \}.
+  Proof.
+    move/myFinSubsetP => HAB /myFinSubsetP HBC.
+      by apply/myFinSubsetP/(subset_trans HAB HBC).
+  Qed.
+
+  Lemma transitive_Sub'' (pA pB pC : pred M) :
+    \{ x in pA \} ⊂ \{ x in pB \} ->
+    \{ x in pB \} ⊂ \{ x in pC \} ->
+    \{ x in pA \} ⊂ \{ x in pC \}.
+  Proof.
+    by apply: transitive_Sub.
+  Qed.
+End fintypeを用いた有限集合.  
+
 Section 具体的なfinType.                    (* suhara *)
   (* 具体的な finType として、'I_5 を与える。 *)
   

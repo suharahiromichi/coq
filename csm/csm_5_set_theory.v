@@ -9,6 +9,18 @@ Coq/SSReflect/MathComp による定理証明
 https://github.com/morita-hm/proofcafe_private/blob/main/csm_5_set_theory.v
  *)
 
+(**
+- csm_5_set_theory.v    全体の内容、および、演習問題 5.1の逆像
+- csm_ex_5_1.v          演習問題 5.1 の積集合と差集合
+- csm_ex_5_2_a.v        演習問題 5.2
+- csm_ex_5_3_a.v        演習問題 5.3
+- csm_ex_5_4.v          演習問題 5.4
+- csm_ex_5_5.v          演習問題 5.5
+
+- csm_5_set_theory_fintype.v   5.5 finsetを用いた有限集合の形式化（具体的な集合）
+- csm_5_set_theory_finset.v    5.6 ライブラリfinset（5.5節までとは独立な内容)
+*)
+
 From mathcomp Require Import all_ssreflect.
 
 Set Implicit Arguments.
@@ -300,114 +312,5 @@ Section 写像.
   Qed.
 End 写像.
 
-(* 5.5 fintype を用いた有限集合の形式化 *)
-
-Definition p2S {M : finType} (pA : pred M) : mySet M :=
-  fun (x : M) => if x \in pA then True else False.
-Notation "\{ x 'in' pA \}" := (p2S pA).     (* x は飾り。 *)
-
-Section fintypeを用いた有限集合.
-  (* Set Printing Coercions. *)
-  
-  Variable M : finType.
-  
-  (* myMotherSet =
-     p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))) *)
-  Check @p2S M M.
-  Check p2S M.
-  Check @p2S M (mem M).
-  Check p2S (mem M).
-  Check @p2S M (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
-  Check p2S (pred_of_simpl (pred_of_argType (Equality.sort (Finite.eqType M)))).
-  
-  Lemma Mother_predT : myMotherSet = \{ x in M \}.
-  Proof. by []. Qed.
-  
-  Lemma myFinBelongP (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
-  Proof.
-    rewrite /belong /p2S.
-    apply/(iffP idP) => H1.
-    - Check (_ : (x \in pA) = true).
-        by rewrite (_ : (x \in pA) = true).
-    - have testH : (x \in pA) || ~~(x \in pA).
-      + set t := x \in pA.
-          by case: t.
-      + move: testH.
-        case/orP => [| Harg]; first by [].
-        Check (_ : (x \in pA) = false).
-        rewrite (_ : (x \in pA) = false) in H1; first by [].
-        by apply: negbTE.
-  Qed.
-  
-  (* suhara *)
-  Lemma myFinBelongP' (x : M) (pA : pred M) : reflect (x ∈ \{x in pA \}) (x \in pA).
-  Proof.
-    rewrite /belong /p2S.
-    apply/(iffP idP) => H1.
-    - by rewrite H1.
-    - by case H : (x \in pA); last rewrite H in H1.
-  Qed.
-  
-  Lemma myFinSubsetP (pA pB : pred M) :
-    reflect (\{ x in pA \} ⊂ \{ x in pB \}) (pA \subset pB).
-  Proof.
-    rewrite /mySub.
-    apply/(iffP idP) => H.
-    - move=> x /myFinBelongP => H2.
-      apply/myFinBelongP.
-      move: H => /subsetP.
-      rewrite /sub_mem.
-      by apply.
-    - apply/subsetP.
-      rewrite /sub_mem => x /myFinBelongP => HpA.
-      apply/myFinBelongP.
-      by apply H.
-  Qed.
-  
-  (* fintype の補題 *)
-  Check predT_subset : forall (T : finType) (A : pred T),
-      T \subset A -> forall x : T, x \in A.
-  
-  Lemma Mother_Sub (pA : pred M) :
-    myMotherSet ⊂ \{ x in pA \} -> forall x, x ∈ \{ x in pA \}.
-  Proof.
-    rewrite Mother_predT => /myFinSubsetP => H x.
-    apply/myFinBelongP.
-    by apply: predT_subset.
-  Qed.
-
-  (* fintype の補題 *)
-  Check subset_trans : forall (T : finType) (A B C : pred T),
-      A \subset B -> B \subset C -> A \subset C.
-
-  Lemma transitive_Sub' (pA pB pC : pred M) :
-    \{ x in pA \} ⊂ \{ x in pB \} ->
-    \{ x in pB \} ⊂ \{ x in pC \} ->
-    \{ x in pA \} ⊂ \{ x in pC \}.
-  Proof.
-    move/myFinSubsetP => HAB /myFinSubsetP HBC.
-      by apply/myFinSubsetP/(subset_trans HAB HBC).
-  Qed.
-
-  Lemma transitive_Sub'' (pA pB pC : pred M) :
-    \{ x in pA \} ⊂ \{ x in pB \} ->
-    \{ x in pB \} ⊂ \{ x in pC \} ->
-    \{ x in pA \} ⊂ \{ x in pC \}.
-  Proof.
-    by apply: transitive_Sub.
-  Qed.
-End fintypeを用いた有限集合.  
-
-Section ライブラリfinsetの利用.
-  Variable M : finType.
-
-  Lemma demorgan (A B C : {set M}) : (A :&: B) :|: C = (A :|: C) :&: (B :|: C).
-  Proof.
-    apply/setP => x.
-    rewrite !inE.                          (* || と && に変換する。 *)
-    Check orb_andl.
-    by rewrite -orb_andl.         (* || と && の ド・モルガンの定理 *)
-  Qed.
-End ライブラリfinsetの利用.
 
 (* END *)
