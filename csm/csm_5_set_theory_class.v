@@ -71,17 +71,19 @@ Section MySet.
     apply: HtA.
   Qed.
   
+(*
+  集合の「=」は「=1」を使う。
+
   Definition eqmySet {M : mySet} (A B : pred M) := (A ⊂ B) /\ (B ⊂ A).
-  (* まだ公理が残っている。 *)
   Axiom axiom_ExteqmySet : forall {M : mySet} (A B : pred M), eqmySet A B -> A = B.
-  
-  Lemma rfl_eqS {M : mySet} (A : pred M) : A = A.
+*)  
+  Lemma rfl_eqS {M : mySet} (A : pred M) : A =1 A.
   Proof. by []. Qed.
 
-  Lemma sym_eqS {M : mySet} (A B : pred M) : A = B -> B = A.
+  Lemma sym_eqS {M : mySet} (A B : pred M) : A =1 B -> B =1 A.
   Proof.
     move=> HAB.
-      by rewrite HAB.
+      by apply: fsym.
   Qed.
   
 (**
@@ -99,64 +101,72 @@ Section MySet.
   Proof. done. Qed.
   (* 追加終わり。 *)
   
-  Lemma cEmpty_Mother {M : mySet} : (@myEmptySet M)^c = (@myMotherSet M).
+  Lemma cEmpty_Mother {M : mySet} : (@myEmptySet M)^c =1 (@myMotherSet M).
   Proof.
-    apply: axiom_ExteqmySet.
-      by apply: conj; rewrite /myComplement => x HxM.
+(*  apply: axiom_ExteqmySet. *)
+    move=> x.
+    rewrite /myComplement /myEmptySet /myMotherSet /=.
+    done.
   Qed.
   
-  Lemma cc_cancel {M : mySet} (A : pred M) : (A^c)^c = A.
+  Lemma cc_cancel {M : mySet} (A : pred M) : (A^c)^c =1 A.
   Proof.
-    apply: axiom_ExteqmySet.
+(*  apply: axiom_ExteqmySet.
     rewrite /eqmySet.
-    apply: conj; rewrite /myComplement => x.
-    - by move/negPn.
-    - move=> H.
-        by apply/negPn.
+*)
+    move=> x.
+    rewrite /myComplement /=.
+    rewrite Bool.negb_involutive.
+    done.
   Qed.
   
-  Lemma cMotehr_Empty {M : mySet} : (@myMotherSet M)^c = myEmptySet.
+  Lemma cMotehr_Empty {M : mySet} : (@myMotherSet M)^c =1 myEmptySet.
   Proof.
-      by rewrite -cEmpty_Mother cc_cancel.
+    move=> x.
+      by rewrite /myComplement /myEmptySet /=.
   Qed.
   
-  Lemma myCupA {M : mySet} (A B C : pred M) : (A ∪ B) ∪ C = A ∪ (B ∪ C).
+  Lemma myCupA {M : mySet} (A B C : pred M) : (A ∪ B) ∪ C =1 A ∪ (B ∪ C).
   Proof.
-    apply: axiom_ExteqmySet.
-    rewrite /eqmySet.
-    split=> x /orP [H | H].
-    - move: H => /orP [H | H].
-      + apply/orP.
-          by left.
-      + apply/orP.
+(*  apply: axiom_ExteqmySet.
+    rewrite /eqmySet. *)
+    move=> x.
+    apply/idP/idP.
+    - case/orP.
+      + case/orP => [H | H].
+        * apply/orP.
+            by left.
+        * apply/orP.
+          right.
+          apply/orP.
+            by left.
+      + move=> H.
+        apply/orP.
         right.
         apply/orP.
-          by left.
-    - apply/orP.
-      right.
-      apply/orP.
-        by right.
-    - apply/orP.
-      left.
-      apply/orP.
-        by left.
-    - move: H => /orP [H | H].
-      + apply/orP.
+          by right.
+    - case/orP.
+      + move => H.
+        apply/orP.
         left.
         apply/orP.
-          by right.
-      + apply/orP.
+            by left.
+      + case/orP => [H | H].
+        * apply/orP.
+          left.
+          apply/orP.
+            by right.
+        * apply/orP.
           by right.
   Qed.
   
   Lemma myUnionCompMother {M : mySet} (A : pred M) (p : pred M) :
-    A ∪ (A^c) = myMotherSet.
+    A ∪ (A^c) =1 myMotherSet.
   Proof.
-    apply: axiom_ExteqmySet.
-    split => [x | x H].
-    - done.
-    - rewrite /belong /myCup /myComplement.
-        by rewrite Bool.orb_negb_r.         (* 排中律 *)
+(*  apply: axiom_ExteqmySet. *)
+    move=> x.
+    rewrite /myCup /myComplement.
+      by rewrite Bool.orb_negb_r.         (* 排中律 *)
   Qed.
 End MySet.
 
@@ -191,7 +201,11 @@ Section Nat.
   Check 1 ∈ (leq ^~ 3).
   Check a ∈ (leq ^~ 3).
 
-  Fail Goal (leq ^~ 5) ∪ (leq ^~ 6) = (leq ^~ 6).
+  Goal (leq ^~ 5) =1 (leq ^~ 6).
+  Proof.
+  Admitted.
+  
+  Fail Goal ((leq ^~ 2) ∪ (leq ^~ 2)) =1 (leq ^~ 2).
 
 End Nat.
 
