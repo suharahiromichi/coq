@@ -303,6 +303,17 @@ Proof.
   - by apply/classicP.
 Qed.
 
+(* 命題 P をリフレクトできる ブール式 b があれば、排中律は成り立つ。 *)
+Lemma exmid_p (P : Prop) (b : bool) : reflect P b -> P \/ ~ P.
+Proof.
+  move=> Href.
+  move: (Href).
+  case/(iffP idP) => H.
+  - by apply/Href.
+  - by left.
+  - by right.
+Qed.
+
 (**
 以下も参照してください：
 https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_axiom_free.v
