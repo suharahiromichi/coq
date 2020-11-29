@@ -20,8 +20,8 @@ Section MySet.
     MySet {
         M :> Type;
         A : M -> Prop;
-        axiom1 (A : M -> Prop) (x : M) : A x \/ ~(A x);
-        axiom2 (A : M -> Prop) (x : M) : ~ ~ A x -> A x
+        axiom (A : M -> Prop) (x : M) : reflect (A x) true
+(*      nnpp (A : M -> Prop) (x : M) : ~ ~ A x -> A x *)
     }.
 
   Check mySet : Type.
@@ -32,12 +32,9 @@ Section MySet.
     Variable x : M.
   End TEST1.
   
-(*Definition belong {M : Type} (A : mySet M) (x : M) : Prop := A x. *)
   Definition belong {M : mySet} (A : M -> Prop) (x : M) : Prop := A x.
   Notation "x ∈ A" := (belong A x) (at level 11).
 
-(*Definition myEmptySet {M : Type} : mySet M := fun (_ : M) => False. *)
-(*Definition myMotherSet {M : Type} : mySet M := fun (_ : M) => True. *)
   Definition myEmptySet {M : mySet} (_ : M) := False.
   Definition myMotherSet {M : mySet} (_ : M) := True.
 
@@ -51,31 +48,68 @@ Section MySet.
     Check @belong M myEmptySet x.
     Check belong myEmptySet x.
     Check x ∈ myEmptySet.
-
-    Check @axiom1 M A x : A x \/ ~ A x.
-    Check axiom1 A x : A x \/ ~ A x.
-    Check @axiom2 M A x : ~ ~ A x -> A x.    
-    
   End TEST2.
   
-(*
-  Lemma nnpp__dms : nnpp -> dms.
+  (* classically の成り立つ条件を一般化する。 *)
+  (* 命題 P をリフレクトできる ブール式 b があれば、classically P は成り立つ。 *)
+  Lemma classic_p (P : Prop) (b : bool) : reflect P b -> classically P -> P.
   Proof.
-    move=> nnpp P Q Hn_nPnQ.
-    apply: nnpp => Hn_PQ.
-    apply: Hn_nPnQ.
-    split=> H.
-    - apply Hn_PQ.
-        by left.
-    - apply Hn_PQ.
-        by right.
+    move=> Hr Hc.
+    apply/Hr.
+    apply: Hc.
+    move/Hr.
+    done.
   Qed.
-*)
+  
+(* 命題 P をリフレクトできる ブール式 b があれば、二重否定除去は成り立つ。 *)
+  Lemma nnpp_p (P : Prop) (b : bool) : reflect P b -> ~ ~ P -> P.
+  Proof.
+    move=> Hr Hnn.
+    apply: classic_p.
+    - by apply: Hr.
+    - by apply/classicP.
+  Qed.
 
+(* 命題 P をリフレクトできる ブール式 b があれば、排中律は成り立つ。 *)
+  Lemma exmid_p (P : Prop) (b : bool) : reflect P b -> P \/ ~ P.
+  Proof.
+    move=> Href.
+    move: (Href).                           (* 見直すこと。 *)
+    case/(iffP idP) => H.
+    - move/introT in Href.
+        by apply: Href.
+    - by left.
+    - by right.
+  Qed.
+  
+  Section TEST3.
+    Variable M : mySet.
+    Variable A : M -> Prop.
+    Variable x : M.
+
+    Check @axiom M A x : reflect (A x) true.
+    Check axiom A x : reflect (A x) true.
+    Check @nnpp_p (A x) true (axiom A x) : ~ ~ A x -> A x.
+    
+    Check nnpp_p (axiom A x) : ~ ~ A x -> A x.
+    Check exmid_p (axiom A x) : A x \/ ~ A x.
+  End TEST3.
+
+  Lemma nnpp {M : mySet} (A : M -> Prop) (x : M) : ~ ~ A x -> A x.
+  Proof.
+    apply: nnpp_p.
+      by apply: axiom.
+  Qed.
+
+  Lemma exmid {M : mySet} (A : M -> Prop) (x : M) : A x \/ ~ A x.
+  Proof.
+    apply: exmid_p.
+      by apply: axiom.
+  Qed.
+  
 (**
 ## 5.2 包含関係と統合
  *)
-(*Definition mySub {M : Type} := fun (A B : mySet M) => forall (x : M), x ∈ A -> x ∈ B. *)
   Definition mySub {M : mySet} (A B : M -> Prop) := forall (x : M), x ∈ A -> x ∈ B.
   Notation "A ⊂ B" := (mySub A B) (at level 11).
 
@@ -97,10 +131,9 @@ Section MySet.
   Qed.
 
   Definition eqmySet {M : mySet} (A B : M -> Prop) := (A ⊂ B) /\ (B ⊂ A).
+  (* まだ公理が残っている。 *)
   Axiom axiom_ExteqmySet : forall {M : mySet} (A B : M -> Prop), eqmySet A B -> A = B.
   
-(*Variable Mother : mySet. *)
-
   Lemma rfl_eqS {M : mySet} (A : M -> Prop) : A = A.
   Proof. by []. Qed.
 
@@ -109,8 +142,7 @@ Section MySet.
     move=> HAB.
       by rewrite HAB.
   Qed.
-  (* ここでは、まだ公理は使っていない。 *)
-
+  
 (**
 ## 5.3 集合上の演算
  *)
@@ -137,7 +169,7 @@ Section MySet.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.
     apply: conj; rewrite /myComplement => x.
-    - by move/(@axiom2 M A x).
+    - by move/(@nnpp M A x).
     - by move=> H.
   Qed.
   
@@ -166,11 +198,11 @@ Section MySet.
     apply: axiom_ExteqmySet.
     split => [x | x H].
     - done.
-    - case: (@axiom1 M A x) => H'.
+    - case: (@exmid M A x) => H'.
       + by left.
       + by right.
   Qed.
-  
+
 End MySet.
 
 (* END *)
