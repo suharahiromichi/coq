@@ -3,7 +3,7 @@ Coq/SSReflect/MathComp による定理証明
 
 5. 集合の形式化
 ======
-型クラスとしての実装例
+型クラスとしての実装例 - bool型を使う。
 *)
 From mathcomp Require Import all_ssreflect.
 
@@ -32,6 +32,8 @@ Section MySet.
   
   Definition belong {M : mySet} (A : pred M) (x : M) : bool := A x.
   Notation "x ∈ A" := (belong A x) (at level 11).
+
+(* bool であるので、排中律の公理は導入しなくてよい。 *)  
 
   Definition myEmptySet {M : mySet} (_ : M) := false.
   Definition myMotherSet {M : mySet} (_ : M) := true.
@@ -103,7 +105,6 @@ Section MySet.
   
   Lemma cEmpty_Mother {M : mySet} : (@myEmptySet M)^c =1 (@myMotherSet M).
   Proof.
-(*  apply: axiom_ExteqmySet. *)
     move=> x.
     rewrite /myComplement /myEmptySet /myMotherSet /=.
     done.
@@ -111,9 +112,6 @@ Section MySet.
   
   Lemma cc_cancel {M : mySet} (A : pred M) : (A^c)^c =1 A.
   Proof.
-(*  apply: axiom_ExteqmySet.
-    rewrite /eqmySet.
-*)
     move=> x.
     rewrite /myComplement /=.
     rewrite Bool.negb_involutive.
@@ -128,8 +126,6 @@ Section MySet.
   
   Lemma myCupA {M : mySet} (A B C : pred M) : (A ∪ B) ∪ C =1 A ∪ (B ∪ C).
   Proof.
-(*  apply: axiom_ExteqmySet.
-    rewrite /eqmySet. *)
     move=> x.
     apply/idP/idP.
     - case/orP.
@@ -163,7 +159,6 @@ Section MySet.
   Lemma myUnionCompMother {M : mySet} (A : pred M) (p : pred M) :
     A ∪ (A^c) =1 myMotherSet.
   Proof.
-(*  apply: axiom_ExteqmySet. *)
     move=> x.
     rewrite /myCup /myComplement.
       by rewrite Bool.orb_negb_r.         (* 排中律 *)
@@ -201,12 +196,24 @@ Section Nat.
   Check 1 ∈ (leq ^~ 3).
   Check a ∈ (leq ^~ 3).
 
-  Goal (leq ^~ 5) =1 (leq ^~ 6).
-  Proof.
-  Admitted.
-  
-  Fail Goal ((leq ^~ 2) ∪ (leq ^~ 2)) =1 (leq ^~ 2).
+  Check (leq ^~ 2) ∪ (leq ^~ 2) : pred (nat_MySet 5).
 
+  Goal (leq ^~ 5) =1 (leq ^~ 5).
+  Proof.
+      by move=> x.
+  Qed.
+  
+  Goal ((leq ^~ 2) ∪ (leq ^~ 3)) =1 (leq ^~ 3) :> pred (nat_MySet 5).
+  Proof.
+    move=> x.
+    rewrite /myCup /belong.
+    apply/idP/idP => [/orP [H | H] | H].
+    Check @leq_trans 2 x 3.
+    - by apply: (@leq_trans 2 x 3).
+    - done.
+    - apply/orP.
+        by right.
+  Qed.
 End Nat.
 
 Section FinType.
