@@ -19,9 +19,7 @@ Section MySet.
   Record mySet : Type :=                    (* 型クラス *)
     MySet {
         M :> Type;
-        A : M -> Prop;
-        axiom (A : M -> Prop) (x : M) : reflect (A x) true
-(*      nnpp (A : M -> Prop) (x : M) : ~ ~ A x -> A x *)
+        A : pred M
     }.
 
   Check mySet : Type.
@@ -32,112 +30,55 @@ Section MySet.
     Variable x : M.
   End TEST1.
   
-  Definition belong {M : mySet} (A : M -> Prop) (x : M) : Prop := A x.
+  Definition belong {M : mySet} (A : pred M) (x : M) : bool := A x.
   Notation "x ∈ A" := (belong A x) (at level 11).
 
-  Definition myEmptySet {M : mySet} (_ : M) := False.
-  Definition myMotherSet {M : mySet} (_ : M) := True.
+  Definition myEmptySet {M : mySet} (_ : M) := false.
+  Definition myMotherSet {M : mySet} (_ : M) := true.
 
   Section TEST2.
     Variable M : mySet.
-    Variable A : M -> Prop.
+    Variable A : pred M.
     Variable x : M.
     
-    Check @myEmptySet : forall M : mySet, M -> Prop.
+    Check @myEmptySet : forall M : mySet, pred M.
     Check myEmptySet x.
     Check @belong M myEmptySet x.
     Check belong myEmptySet x.
     Check x ∈ myEmptySet.
   End TEST2.
   
-  (* classically の成り立つ条件を一般化する。 *)
-  (* 命題 P をリフレクトできる ブール式 b があれば、classically P は成り立つ。 *)
-  Lemma classic_p (P : Prop) (b : bool) : reflect P b -> classically P -> P.
-  Proof.
-    move=> Hr Hc.
-    apply/Hr.
-    apply: Hc.
-    move/Hr.
-    done.
-  Qed.
-  
-(* 命題 P をリフレクトできる ブール式 b があれば、二重否定除去は成り立つ。 *)
-  Lemma nnpp_p (P : Prop) (b : bool) : reflect P b -> ~ ~ P -> P.
-  Proof.
-    move=> Hr Hnn.
-    apply: classic_p.
-    - by apply: Hr.
-    - by apply/classicP.
-  Qed.
-
-(* 命題 P をリフレクトできる ブール式 b があれば、排中律は成り立つ。 *)
-  Lemma exmid_p (P : Prop) (b : bool) : reflect P b -> P \/ ~ P.
-  Proof.
-    move=> Href.
-    move: (Href).                           (* 見直すこと。 *)
-    case/(iffP idP) => H.
-    - move/introT in Href.
-        by apply: Href.
-    - by left.
-    - by right.
-  Qed.
-  
-  Section TEST3.
-    Variable M : mySet.
-    Variable A : M -> Prop.
-    Variable x : M.
-
-    Check @axiom M A x : reflect (A x) true.
-    Check axiom A x : reflect (A x) true.
-    Check @nnpp_p (A x) true (axiom A x) : ~ ~ A x -> A x.
-    
-    Check nnpp_p (axiom A x) : ~ ~ A x -> A x.
-    Check exmid_p (axiom A x) : A x \/ ~ A x.
-  End TEST3.
-
-  Lemma nnpp {M : mySet} (A : M -> Prop) (x : M) : ~ ~ A x -> A x.
-  Proof.
-    apply: nnpp_p.
-      by apply: axiom.
-  Qed.
-
-  Lemma exmid {M : mySet} (A : M -> Prop) (x : M) : A x \/ ~ A x.
-  Proof.
-    apply: exmid_p.
-      by apply: axiom.
-  Qed.
-  
 (**
 ## 5.2 包含関係と統合
  *)
-  Definition mySub {M : mySet} (A B : M -> Prop) := forall (x : M), x ∈ A -> x ∈ B.
+  Definition mySub {M : mySet} (A B : pred M) := forall (x : M), x ∈ A -> x ∈ B.
   Notation "A ⊂ B" := (mySub A B) (at level 11).
 
-  Lemma Sub_Mother {M : mySet} (A : M -> Prop) : A ⊂ myMotherSet.
-  Proof. by []. Qed.
+  Lemma Sub_Mother {M : mySet} (A : pred M) : A ⊂ myMotherSet.
+  Proof. done. Qed.
   
-  Lemma Sub_Empty {M : mySet} (A : M -> Prop) : myEmptySet ⊂ A.
-  Proof. by []. Qed.
+  Lemma Sub_Empty {M : mySet} (A : pred M) : myEmptySet ⊂ A.
+  Proof. done. Qed.
+  
+  Lemma rfl_Sub {M : mySet} (A : pred M) : A ⊂ A.
+  Proof. done. Qed.
 
-  Lemma rfl_Sub {M : mySet} (A : M -> Prop) : A ⊂ A.
-  Proof. by []. Qed.
-
-  Lemma transitive_Sub {M : mySet} (A B C : M -> Prop) : A ⊂ B -> B ⊂ C -> A ⊂ C.
+  Lemma transitive_Sub {M : mySet} (A B C : pred M) : A ⊂ B -> B ⊂ C -> A ⊂ C.
   Proof.
     move=> HAB HBC t HtA.
     apply: HBC.
     apply: HAB.
     apply: HtA.
   Qed.
-
-  Definition eqmySet {M : mySet} (A B : M -> Prop) := (A ⊂ B) /\ (B ⊂ A).
-  (* まだ公理が残っている。 *)
-  Axiom axiom_ExteqmySet : forall {M : mySet} (A B : M -> Prop), eqmySet A B -> A = B.
   
-  Lemma rfl_eqS {M : mySet} (A : M -> Prop) : A = A.
+  Definition eqmySet {M : mySet} (A B : pred M) := (A ⊂ B) /\ (B ⊂ A).
+  (* まだ公理が残っている。 *)
+  Axiom axiom_ExteqmySet : forall {M : mySet} (A B : pred M), eqmySet A B -> A = B.
+  
+  Lemma rfl_eqS {M : mySet} (A : pred M) : A = A.
   Proof. by []. Qed.
 
-  Lemma sym_eqS {M : mySet} (A B : M -> Prop) : A = B -> B = A.
+  Lemma sym_eqS {M : mySet} (A B : pred M) : A = B -> B = A.
   Proof.
     move=> HAB.
       by rewrite HAB.
@@ -146,15 +87,15 @@ Section MySet.
 (**
 ## 5.3 集合上の演算
  *)
-  Definition myComplement {M : mySet} (A : M -> Prop) := fun (x : M) => ~(A x).
+  Definition myComplement {M : mySet} (A : pred M) := fun (x : M) => ~~ A x.
   Notation "A ^c" := (myComplement A) (at level 11).
 
-  Definition myCup {M : mySet} (A B : M -> Prop) := fun (x : M) => x ∈ A \/ x ∈ B.
+  Definition myCup {M : mySet} (A B : pred M) := fun (x : M) => x ∈ A || x ∈ B.
   Notation "A ∪ B" := (myCup A B) (at level 11).
 
   (* 追加 *)
-  Lemma complement_test {M : mySet} (A : M -> Prop) :
-    forall x, ~ (x ∈ A) <-> x ∈ (A ^c).
+  Lemma complement_test {M : mySet} (A : pred M) :
+    forall x, ~~ (x ∈ A) = x ∈ (A ^c).
   Proof. done. Qed.
   (* 追加終わり。 *)
   
@@ -164,13 +105,14 @@ Section MySet.
       by apply: conj; rewrite /myComplement => x HxM.
   Qed.
   
-  Lemma cc_cancel {M : mySet} (A : M -> Prop) : (A^c)^c = A.
+  Lemma cc_cancel {M : mySet} (A : pred M) : (A^c)^c = A.
   Proof.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.
     apply: conj; rewrite /myComplement => x.
-    - by move/(@nnpp M A x).
-    - by move=> H.
+    - by move/negPn.
+    - move=> H.
+        by apply/negPn.
   Qed.
   
   Lemma cMotehr_Empty {M : mySet} : (@myMotherSet M)^c = myEmptySet.
@@ -178,31 +120,87 @@ Section MySet.
       by rewrite -cEmpty_Mother cc_cancel.
   Qed.
   
-  Lemma myCupA {M : mySet} (A B C : M -> Prop) : (A ∪ B) ∪ C = A ∪ (B ∪ C).
+  Lemma myCupA {M : mySet} (A B C : pred M) : (A ∪ B) ∪ C = A ∪ (B ∪ C).
   Proof.
     apply: axiom_ExteqmySet.
     rewrite /eqmySet.
-    split=> x [H | H].
-    - case: H => H.
-      + by left.
-      + by right; left.
-    - by right; right.
-    - by left; left.
-    - case: H => H.
-      + by left; right.
-      + by right.
+    split=> x /orP [H | H].
+    - move: H => /orP [H | H].
+      + apply/orP.
+          by left.
+      + apply/orP.
+        right.
+        apply/orP.
+          by left.
+    - apply/orP.
+      right.
+      apply/orP.
+        by right.
+    - apply/orP.
+      left.
+      apply/orP.
+        by left.
+    - move: H => /orP [H | H].
+      + apply/orP.
+        left.
+        apply/orP.
+          by right.
+      + apply/orP.
+          by right.
   Qed.
   
-  Lemma myUnionCompMother {M : mySet} (A : M -> Prop) : A ∪ (A^c) = myMotherSet.
+  Lemma myUnionCompMother {M : mySet} (A : pred M) (p : pred M) :
+    A ∪ (A^c) = myMotherSet.
   Proof.
     apply: axiom_ExteqmySet.
     split => [x | x H].
     - done.
-    - case: (@exmid M A x) => H'.
-      + by left.
-      + by right.
+    - rewrite /belong /myCup /myComplement.
+        by rewrite Bool.orb_negb_r.         (* 排中律 *)
   Qed.
-
 End MySet.
+
+Notation "x ∈ A" := (belong A x) (at level 11).
+Notation "A ⊂ B" := (mySub A B) (at level 11).
+Notation "A ^c" := (myComplement A) (at level 11).
+Notation "A ∪ B" := (myCup A B) (at level 11).
+
+Section Nat.
+
+  Canonical nat_MySet (m : nat) := MySet (leq ^~ 5).
+
+  Check nat_MySet 5 : mySet.
+
+  Variable a : nat_MySet 5.
+  Variable b : nat_MySet 5.
+  Variable c : nat_MySet 5.
+
+  Check 1 : nat_MySet 5.
+  Check a : nat_MySet 5.
+  Check b : nat_MySet 5.
+  Check c : nat_MySet 5.
+
+  Check (leq ^~ 0) : pred (nat_MySet 5).
+  Check (leq ^~ 1) : pred (nat_MySet 5).
+  Check (leq ^~ 2) : pred (nat_MySet 5).
+  Check (leq ^~ 3) : pred (nat_MySet 5).
+  Check (leq ^~ 4) : pred (nat_MySet 5).
+  Check (leq ^~ 5) : pred (nat_MySet 5).
+  Check (leq ^~ 6) : pred (nat_MySet 5).
+
+  Check 1 ∈ (leq ^~ 3).
+  Check a ∈ (leq ^~ 3).
+
+  Fail Goal (leq ^~ 5) ∪ (leq ^~ 6) = (leq ^~ 6).
+
+End Nat.
+
+Section FinType.
+
+  Check @MySet finType.
+
+  (* Canonical finType_MySet (m : nat) := MySet  *)
+                                         
+End FinType.
 
 (* END *)
