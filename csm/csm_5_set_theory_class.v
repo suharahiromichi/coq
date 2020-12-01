@@ -172,7 +172,8 @@ Notation "A ∪ B" := (myCup A B) (at level 11).
 
 Section Nat.
 
-  Canonical nat_MySet (m : nat) := MySet (leq ^~ 5).
+  Check @MySet nat (leq ^~ 5).
+  Canonical nat_MySet (m : nat) := MySet (leq ^~ m).
 
   Check nat_MySet 5 : mySet.
 
@@ -217,11 +218,125 @@ Section Nat.
 End Nat.
 
 Section FinType.
+(**
+# 有限型
+*)
+  Section TEST5.
+    Variable M : finType.
+    Check in_mem M.
+    Check @MySet M (mem M).
+    Check MySet (mem M).
+  End TEST5.
 
-  Check @MySet finType.
+  Canonical in_MySet (M : finType) := MySet (mem M).
 
-  (* Canonical finType_MySet (m : nat) := MySet  *)
-                                         
+  Variable M : finType.
+  Variable a : M.
+
+  Check pred (in_MySet M).
+  
+  Check (mem M) : pred (in_MySet M).
+  Check (mem M) ∪ (mem M) : pred (in_MySet M).
+  Check a ∈ mem M.
+
+  Goal a ∈ mem M.
+  Proof.
+    rewrite /belong.
+    done.
+  Qed.
+
+(**
+## myMotherSet の有限型版
+*)
+  Lemma Mother_predT : myMotherSet = mem M.
+  Proof. done. Qed.
+    
+(**
+## belong の有限型版
+*)
+  Lemma myFinBelongP (x : M) (pA : pred (in_MySet M)) : reflect (x ∈ mem pA) (x \in pA).
+  Proof.
+    rewrite /belong.
+      by apply/(iffP idP).
+  Qed.
+    
+(**
+## mySubset の有限型版
+*)
+  Lemma myFinSubsetP (pA pB : pred (in_MySet M)) :
+    reflect ((mem pA) ⊂ (mem pB)) (pA \subset pB).
+  Proof.
+    rewrite /mySub.
+    apply/(iffP idP) => H.
+    - move=> x H1.
+      apply/myFinBelongP.
+      move: H => /subsetP.
+      rewrite /sub_mem.
+      by apply.
+    - apply/subsetP.
+      rewrite /sub_mem => x /myFinBelongP => HpA.
+      apply/myFinBelongP.
+      by apply H.
+  Qed.
+
+  (* fintype.v の補題 ： 有限型としての部分集合 *)
+  Check predT_subset : forall (T : finType) (A : pred T),
+      T \subset A -> forall x : T, x \in A.
+  
+  (* predT_subset の mySet版 *)
+  Lemma Mother_Sub (pA : pred (in_MySet M)) :
+    myMotherSet ⊂ mem pA -> forall x, x ∈ mem pA.
+  Proof.
+    move/myFinSubsetP.
+    rewrite /myFinSubsetP => H x.
+    apply: predT_subset.
+    done.
+  Qed.
+
+  (* fintype.v の補題 *)
+  Check subset_trans : forall (T : finType) (A B C : pred T),
+      A \subset B -> B \subset C -> A \subset C.
+  
+  (* subset_trans の mySet版 *)
+  Lemma transitive_Sub' (pA pB pC : pred (in_MySet M)) :
+    mem pA ⊂ mem pB ->
+    mem pB ⊂ mem pC ->
+    mem pA ⊂ mem pC.
+  Proof.
+    move/myFinSubsetP => HAB /myFinSubsetP HBC.
+      by apply/myFinSubsetP/(subset_trans HAB HBC).
+    Restart.
+      by apply: transitive_Sub.               (* see. 5.2 *)
+  Qed.
 End FinType.
+
+Section Ordinal.
+
+  Definition p0 := @Ordinal 5 0 is_true_true.
+  Check p0 : 'I_5 : Type.
+  Check p0 : ordinal_finType 5.
+  Compute val p0.                           (* = 0 *)
+  
+  Check                                 in_MySet (ordinal_finType 5).
+  Check mem 'I_5                : pred (in_MySet (ordinal_finType 5)).
+  Check mem (ordinal_finType 5) : pred (in_MySet (ordinal_finType 5)).
+  
+  Check p0 ∈ mem (ordinal_finType 5).
+  Goal p0 ∈ mem (ordinal_finType 5).
+  Proof. done. Qed.
+
+End Ordinal.
+
+Section Seq.
+
+  Canonical seq_MySet {T : eqType} (S : seq T) := MySet (mem S).
+
+  Check seq_MySet [:: 1; 2; 3].
+  Check mem [:: 1; 2; 3] : pred (seq_MySet [:: 1; 2; 3]).
+
+  Check 1 ∈ mem [:: 1; 2; 3].
+(* Goal 1 ∈ mem [:: 1; 2; 3] *)
+
+End Seq.
 
 (* END *)
