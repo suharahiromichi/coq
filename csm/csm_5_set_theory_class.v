@@ -223,7 +223,9 @@ Section FinType.
 *)
   Section TEST5.
     Variable M : finType.
-    Check in_mem M.
+
+    Check M : finType.
+    Check mem M.
     Check @MySet M (mem M).
     Check MySet (mem M).
   End TEST5.
@@ -308,27 +310,46 @@ Section FinType.
     Restart.
       by apply: transitive_Sub.               (* see. 5.2 *)
   Qed.
+
+(**
+# 有限型の実体としてのOridinal
+
+先の M : finType の M を ordinal_finType n に置き換える。
+*)
+  Section Ordinal.
+    
+    Definition ordinal_MySet (n : nat) := in_MySet (ordinal_finType n).
+    
+    (* これは、以下によって新しい集合を定義することと同じである。 *)
+    Check MySet (mem (ordinal_finType 5)).
+    (* Canonical ordinal_MySet n := MySet (mem (ordinal_finType 5)) *)
+    Goal forall n, MySet (mem (ordinal_finType n)) = ordinal_MySet n.
+    Proof. done. Qed.
+    
+    Definition p0 := @Ordinal 5 0 is_true_true.
+    Check p0 : 'I_5 : Type.
+    Check p0 : ordinal_finType 5 : finType.
+    Compute val p0.                           (* = 0 *)
+    
+    Check                                 ordinal_MySet 5.
+    Check mem 'I_5                : pred (ordinal_MySet 5).
+    Check mem (ordinal_finType 5) : pred (ordinal_MySet 5).
+
+    Check p0 ∈ mem (ordinal_finType 5).
+    Goal p0 ∈ mem (ordinal_finType 5).
+    Proof. done. Qed.
+    
+    Variable A B C : pred (ordinal_MySet 5).
+    Goal (A ∪ B) ∪ C =1 A ∪ (B ∪ C).
+    Proof. by apply: myCupA. Qed.
+
+  End Ordinal.
 End FinType.
 
-Section Ordinal.
-
-  Definition p0 := @Ordinal 5 0 is_true_true.
-  Check p0 : 'I_5 : Type.
-  Check p0 : ordinal_finType 5.
-  Compute val p0.                           (* = 0 *)
-  
-  Check                                 in_MySet (ordinal_finType 5).
-  Check mem 'I_5                : pred (in_MySet (ordinal_finType 5)).
-  Check mem (ordinal_finType 5) : pred (in_MySet (ordinal_finType 5)).
-  
-  Check p0 ∈ mem (ordinal_finType 5).
-  Goal p0 ∈ mem (ordinal_finType 5).
-  Proof. done. Qed.
-
-End Ordinal.
-
+(**
+# これは無理だろうか
+*)
 Section Seq.
-
   Canonical seq_MySet {T : eqType} (S : seq T) := MySet (mem S).
 
   Check seq_MySet [:: 1; 2; 3].
