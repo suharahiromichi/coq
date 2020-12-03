@@ -220,25 +220,28 @@ End Nat.
 Section FinType.
 (**
 # 有限型
+
+実は、以下において mem は、すべて省略可能である。
 *)
   Section TEST5.
     Variable M : finType.
 
     Check M : finType.
-    Check mem M.
+    Check mem M : pred M.
     Check @MySet M (mem M).
     Check MySet (mem M).
   End TEST5.
 
-  Canonical in_MySet (M : finType) := MySet (mem M).
-
+  Canonical finMySet (M : finType) := MySet (mem M).
+  
   Variable M : finType.
   Variable a : M.
+  Variable p : pred M.
 
-  Check pred (in_MySet M).
+  Check pred (finMySet M).
   
-  Check (mem M) : pred (in_MySet M).
-  Check (mem M) ∪ (mem M) : pred (in_MySet M).
+  Check (mem M) : pred (finMySet M).
+  Check (mem M) ∪ (mem M) : pred (finMySet M).
   Check a ∈ mem M.
 
   Goal a ∈ mem M.
@@ -256,7 +259,7 @@ Section FinType.
 (**
 ## belong の有限型版
 *)
-  Lemma myFinBelongP (x : M) (pA : pred (in_MySet M)) : reflect (x ∈ mem pA) (x \in pA).
+  Lemma myFinBelongP (x : M) (pA : pred (finMySet M)) : reflect (x ∈ mem pA) (x \in pA).
   Proof.
     rewrite /belong.
       by apply/(iffP idP).
@@ -265,7 +268,7 @@ Section FinType.
 (**
 ## mySubset の有限型版
 *)
-  Lemma myFinSubsetP (pA pB : pred (in_MySet M)) :
+  Lemma myFinSubsetP (pA pB : pred (finMySet M)) :
     reflect ((mem pA) ⊂ (mem pB)) (pA \subset pB).
   Proof.
     rewrite /mySub.
@@ -286,7 +289,7 @@ Section FinType.
       T \subset A -> forall x : T, x \in A.
   
   (* predT_subset の mySet版 *)
-  Lemma Mother_Sub (pA : pred (in_MySet M)) :
+  Lemma Mother_Sub (pA : pred (finMySet M)) :
     myMotherSet ⊂ mem pA -> forall x, x ∈ mem pA.
   Proof.
     move/myFinSubsetP.
@@ -300,7 +303,7 @@ Section FinType.
       A \subset B -> B \subset C -> A \subset C.
   
   (* subset_trans の mySet版 *)
-  Lemma transitive_Sub' (pA pB pC : pred (in_MySet M)) :
+  Lemma transitive_Sub' (pA pB pC : pred (finMySet M)) :
     mem pA ⊂ mem pB ->
     mem pB ⊂ mem pC ->
     mem pA ⊂ mem pC.
@@ -318,7 +321,18 @@ Section FinType.
 *)
   Section Ordinal.
     
-    Definition ordinal_MySet (n : nat) := in_MySet (ordinal_finType n).
+    (* 通常の ordinal の定義 *)
+    Definition p0 := @Ordinal 5 0 is_true_true.
+    Check p0 : 'I_5 : Type.
+    Check p0 : ordinal_finType 5 : finType.
+    Compute val p0.                           (* = 0 *)
+    
+    Definition p1 := @Ordinal 5 1 is_true_true.
+    Definition p2 := @Ordinal 5 2 is_true_true.
+    
+(*
+  (* MySetのインスタンスの定義 *)
+    Definition ordinal_MySet (n : nat) := finMySet (ordinal_finType n).
     
     (* これは、以下によって新しい集合を定義することと同じである。 *)
     Check MySet (mem (ordinal_finType 5)).
@@ -326,23 +340,49 @@ Section FinType.
     Goal forall n, MySet (mem (ordinal_finType n)) = ordinal_MySet n.
     Proof. done. Qed.
     
-    Definition p0 := @Ordinal 5 0 is_true_true.
-    Check p0 : 'I_5 : Type.
-    Check p0 : ordinal_finType 5 : finType.
-    Compute val p0.                           (* = 0 *)
+    Check ordinal_MySet 5.
     
-    Check                                 ordinal_MySet 5.
+    (* 以下における mem は省略可能である。 *)
+
+    Check      eq_op p0  : pred 'I_5.       (* == *)
+    Check mem (eq_op p0) : pred 'I_5.
+    Check      eq_op p0  : pred (ordinal_MySet 5).
+    Check mem (eq_op p0) : pred (ordinal_MySet 5).
+    Check mem (eq_op p0) : pred (ordinal_MySet 5).
+    Check mem (eq_op p1) : pred (ordinal_MySet 5).
+    Check mem (eq_op p2) : pred (ordinal_MySet 5).
+*)    
+    
+    Check      eq_op p0  : pred 'I_5.       (* == *)
+    Check mem (eq_op p0) : pred 'I_5.
+    Check      eq_op p0  : pred (ordinal_finType 5).
+    Check mem (eq_op p0) : pred (ordinal_finType 5).
+    
+    (* finMySet の定義だけで、以下は使用可能である。
+       mem も省略可能である。 *)
+    
+    Goal p0 ∈ ((mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)).
+    Proof. done. Qed.
+    Goal p1 ∈ ((mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)).
+    Proof. done. Qed.
+    Goal p2 ∈ ((mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)).
+    Proof. done. Qed.
+    
+    Goal (mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)
+       =1 mem (eq_op p0) ∪ (mem (eq_op p1) ∪ mem (eq_op p2)).
+    Proof. by apply: myCupA. Qed.
+    
+(*
+  memだけの例は解り難くするので、省いてもよい。
+  
+    Check mem 'I_5                : pred 'I_5.
     Check mem 'I_5                : pred (ordinal_MySet 5).
     Check mem (ordinal_finType 5) : pred (ordinal_MySet 5).
 
     Check p0 ∈ mem (ordinal_finType 5).
     Goal p0 ∈ mem (ordinal_finType 5).
     Proof. done. Qed.
-    
-    Variable A B C : pred (ordinal_MySet 5).
-    Goal (A ∪ B) ∪ C =1 A ∪ (B ∪ C).
-    Proof. by apply: myCupA. Qed.
-
+ *)
   End Ordinal.
 End FinType.
 
