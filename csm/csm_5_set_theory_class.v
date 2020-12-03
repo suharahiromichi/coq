@@ -235,21 +235,21 @@ Section FinType.
   Canonical finMySet (M : finType) := MySet (mem M).
   
   Variable M : finType.
-  Variable a : M.
-  Variable p : pred M.
+  Variable a : finMySet M.
+  Variable p : pred (finMySet M).
 
-  Check pred (finMySet M).
+  Check (mem p) : pred (finMySet M).        (* 任意のbool述語 *)
+  Check a ∈ mem p.
   
-  Check (mem M) : pred (finMySet M).
-  Check (mem M) ∪ (mem M) : pred (finMySet M).
-  Check a ∈ mem M.
-
+  Check (mem M) : pred (finMySet M).        (* でも、台（母集合に対応する型）*)
   Goal a ∈ mem M.
   Proof.
     rewrite /belong.
     done.
   Qed.
-
+  
+  Check (mem M) ∪ (mem p) : pred (finMySet M).
+  
 (**
 ## myMotherSet の有限型版
 *)
