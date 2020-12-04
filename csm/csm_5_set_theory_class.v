@@ -3,7 +3,8 @@ Coq/SSReflect/MathComp による定理証明
 
 5. 集合の形式化
 ======
-型クラスとしての実装例 - bool型を使う。
+
+bool述語をする例
 *)
 From mathcomp Require Import all_ssreflect.
 
@@ -16,56 +17,33 @@ Section MySet.
 (**
 ## 5.1 集合、部分集合
  *)
-  Record mySet : Type :=                    (* 型クラス *)
-    MySet {
-        M :> Type;
-        A : pred M
-    }.
-
-  Check mySet : Type.
-  Check MySet.                              (* 略 *)
+  Definition mySet := pred.
   
-  Section TEST1.
-    Variable M : mySet.
-    Variable x : M.
-  End TEST1.
-  
-  Definition belong {M : mySet} (A : pred M) (x : M) : bool := A x.
+  Definition belong {M : Type} (A : mySet M) (x : M) : bool := A x.
   Notation "x ∈ A" := (belong A x) (at level 11).
 
-(* bool であるので、排中律の公理は導入しなくてよい。 *)  
+(**
+bool であるので、排中律の公理は導入しなくてよい。
+ *)  
+  Definition myEmptySet {M : Type} : mySet M := fun (_ : M) => false.
+  Definition myMotherSet {M : Type} : mySet M := fun (_ : M) => true.
 
-  Definition myEmptySet {M : mySet} (_ : M) := false.
-  Definition myMotherSet {M : mySet} (_ : M) := true.
-
-  Section TEST2.
-    Variable M : mySet.
-    Variable A : pred M.
-    Variable x : M.
-    
-    Check @myEmptySet : forall M : mySet, pred M.
-    Check myEmptySet x.
-    Check @belong M myEmptySet x.
-    Check belong myEmptySet x.
-    Check x ∈ myEmptySet.
-  End TEST2.
-  
 (**
 ## 5.2 包含関係と統合
  *)
-  Definition mySub {M : mySet} (A B : pred M) := forall (x : M), x ∈ A -> x ∈ B.
+  Definition mySub {M : Type} (A B : mySet M) := forall (x : M), x ∈ A -> x ∈ B.
   Notation "A ⊂ B" := (mySub A B) (at level 11).
 
-  Lemma Sub_Mother {M : mySet} (A : pred M) : A ⊂ myMotherSet.
+  Lemma Sub_Mother {M : Type} (A : mySet M) : A ⊂ myMotherSet.
   Proof. done. Qed.
   
-  Lemma Sub_Empty {M : mySet} (A : pred M) : myEmptySet ⊂ A.
+  Lemma Sub_Empty {M : Type} (A : mySet M) : myEmptySet ⊂ A.
   Proof. done. Qed.
   
-  Lemma rfl_Sub {M : mySet} (A : pred M) : A ⊂ A.
+  Lemma rfl_Sub {M : Type} (A : mySet M) : A ⊂ A.
   Proof. done. Qed.
 
-  Lemma transitive_Sub {M : mySet} (A B C : pred M) : A ⊂ B -> B ⊂ C -> A ⊂ C.
+  Lemma transitive_Sub {M : Type} (A B C : mySet M) : A ⊂ B -> B ⊂ C -> A ⊂ C.
   Proof.
     move=> HAB HBC t HtA.
     apply: HBC.
@@ -73,16 +51,13 @@ Section MySet.
     apply: HtA.
   Qed.
   
-(*
-  集合の「=」は「=1」を使う。
-
-  Definition eqmySet {M : mySet} (A B : pred M) := (A ⊂ B) /\ (B ⊂ A).
-  Axiom axiom_ExteqmySet : forall {M : mySet} (A B : pred M), eqmySet A B -> A = B.
+(**
+集合の「=」は「=1」を使う。
 *)  
-  Lemma rfl_eqS {M : mySet} (A : pred M) : A =1 A.
+  Lemma rfl_eqS {M : Type} (A : mySet M) : A =1 A.
   Proof. by []. Qed.
 
-  Lemma sym_eqS {M : mySet} (A B : pred M) : A =1 B -> B =1 A.
+  Lemma sym_eqS {M : Type} (A B : mySet M) : A =1 B -> B =1 A.
   Proof.
     move=> HAB.
       by apply: fsym.
@@ -91,26 +66,26 @@ Section MySet.
 (**
 ## 5.3 集合上の演算
  *)
-  Definition myComplement {M : mySet} (A : pred M) := fun (x : M) => ~~ A x.
+  Definition myComplement {M : Type} (A : mySet M) := fun (x : M) => ~~ A x.
   Notation "A ^c" := (myComplement A) (at level 11).
 
-  Definition myCup {M : mySet} (A B : pred M) := fun (x : M) => x ∈ A || x ∈ B.
+  Definition myCup {M : Type} (A B : mySet M) := fun (x : M) => x ∈ A || x ∈ B.
   Notation "A ∪ B" := (myCup A B) (at level 11).
 
   (* 追加 *)
-  Lemma complement_test {M : mySet} (A : pred M) :
+  Lemma complement_test {M : Type} (A : mySet M) :
     forall x, ~~ (x ∈ A) = x ∈ (A ^c).
   Proof. done. Qed.
   (* 追加終わり。 *)
   
-  Lemma cEmpty_Mother {M : mySet} : (@myEmptySet M)^c =1 (@myMotherSet M).
+  Lemma cEmpty_Mother {M : Type} : (@myEmptySet M)^c =1 (@myMotherSet M).
   Proof.
     move=> x.
     rewrite /myComplement /myEmptySet /myMotherSet /=.
     done.
   Qed.
   
-  Lemma cc_cancel {M : mySet} (A : pred M) : (A^c)^c =1 A.
+  Lemma cc_cancel {M : Type} (A : mySet M) : (A^c)^c =1 A.
   Proof.
     move=> x.
     rewrite /myComplement /=.
@@ -118,13 +93,13 @@ Section MySet.
     done.
   Qed.
   
-  Lemma cMotehr_Empty {M : mySet} : (@myMotherSet M)^c =1 myEmptySet.
+  Lemma cMotehr_Empty {M : Type} : (@myMotherSet M)^c =1 myEmptySet.
   Proof.
     move=> x.
       by rewrite /myComplement /myEmptySet /=.
   Qed.
   
-  Lemma myCupA {M : mySet} (A B C : pred M) : (A ∪ B) ∪ C =1 A ∪ (B ∪ C).
+  Lemma myCupA {M : Type} (A B C : mySet M) : (A ∪ B) ∪ C =1 A ∪ (B ∪ C).
   Proof.
     move=> x.
     apply/idP/idP.
@@ -156,7 +131,7 @@ Section MySet.
           by right.
   Qed.
   
-  Lemma myUnionCompMother {M : mySet} (A : pred M) (p : pred M) :
+  Lemma myUnionCompMother {M : Type} (A : mySet M) (p : mySet M) :
     A ∪ (A^c) =1 myMotherSet.
   Proof.
     move=> x.
@@ -172,104 +147,70 @@ Notation "A ∪ B" := (myCup A B) (at level 11).
 
 Section Nat.
 
-  Check @MySet nat (leq ^~ 5).
-  Canonical nat_MySet (m : nat) := MySet (leq ^~ m).
-
-  Check nat_MySet 5 : mySet.
-
-  Variable a : nat_MySet 5.
-  Variable b : nat_MySet 5.
-  Variable c : nat_MySet 5.
-
-  Check 1 : nat_MySet 5.
-  Check a : nat_MySet 5.
-  Check b : nat_MySet 5.
-  Check c : nat_MySet 5.
-
-  Check (leq ^~ 0) : pred (nat_MySet 5).
-  Check (leq ^~ 1) : pred (nat_MySet 5).
-  Check (leq ^~ 2) : pred (nat_MySet 5).
-  Check (leq ^~ 3) : pred (nat_MySet 5).
-  Check (leq ^~ 4) : pred (nat_MySet 5).
-  Check (leq ^~ 5) : pred (nat_MySet 5).
-  Check (leq ^~ 6) : pred (nat_MySet 5).
-
-  Check 1 ∈ (leq ^~ 3).
-  Check a ∈ (leq ^~ 3).
-
-  Check (leq ^~ 2) ∪ (leq ^~ 2) : pred (nat_MySet 5).
-
-  Goal (leq ^~ 5) =1 (leq ^~ 5).
-  Proof.
-      by move=> x.
-  Qed.
+  Section NatTest.
+    Variable x : nat.
+    Variable p1 p2 : mySet nat.
+    
+    Check x ∈ p1 : bool.
+    Check p1 ∪ p2 : mySet nat.
+    Check p1 ⊂ p2 : Prop.
+  End NatTest.
   
-  Goal ((leq ^~ 2) ∪ (leq ^~ 3)) =1 (leq ^~ 3) :> pred (nat_MySet 5).
+  Check eq_op 0 : mySet nat.
+  Check eq_op 1 : mySet nat.
+  Check eq_op 2 : mySet nat.
+  Check eq_op 3 : mySet nat.
+  Check eq_op 4 : mySet nat.
+  Check eq_op 5 : mySet nat.
+  Check eq_op 6 : mySet nat.
+  Check leq ^~ 2 : mySet nat.
+
+  Check 1 ∈ eq_op 5.
+  Check 1 ∈ leq ^~ 2.
+
+  Goal 1 ∈ (eq_op 5 ∪ leq ^~ 2).
+  Proof. done. Qed.
+
+  Goal eq_op 0 ∪ eq_op 1 ∪ eq_op 2 =1 leq ^~ 2.
   Proof.
-    move=> x.
-    rewrite /myCup /belong.
-    apply/idP/idP => [/orP [H | H] | H].
-    Check @leq_trans 2 x 3.
-    - by apply: (@leq_trans 2 x 3).
-    - done.
-    - apply/orP.
-        by right.
+      by case; [| case; [| case]].
   Qed.
 End Nat.
 
 Section FinType.
 (**
 # 有限型
-
-実は、以下において mem は、すべて省略可能である。
 *)
-  Section TEST5.
-    Variable M : finType.
-
-    Check M : finType.
-    Check mem M : pred M.
-    Check @MySet M (mem M).
-    Check MySet (mem M).
-  End TEST5.
-
-  Canonical finMySet (M : finType) := MySet (mem M).
-  
   Variable M : finType.
-  Variable a : finMySet M.
-  Variable p : pred (finMySet M).
 
-  Check (mem p) : pred (finMySet M).        (* 任意のbool述語 *)
-  Check a ∈ mem p.
-  
-  Check (mem M) : pred (finMySet M).        (* でも、台（母集合に対応する型）*)
-  Goal a ∈ mem M.
-  Proof.
-    rewrite /belong.
-    done.
-  Qed.
-  
-  Check (mem M) ∪ (mem p) : pred (finMySet M).
+  Section FinMySetTest.
+    Variable x : M.
+    Variable p1 p2 : mySet M.
+    
+    Check x ∈ p1 : bool.
+    Check p1 ∪ p2 : mySet M.
+    Check p1 ⊂ p2 : Prop.
+  End FinMySetTest.
   
 (**
 ## myMotherSet の有限型版
 *)
-  Lemma Mother_predT : myMotherSet = mem M.
+  Lemma Mother_predT : myMotherSet = M.
   Proof. done. Qed.
-    
+  
 (**
 ## belong の有限型版
 *)
-  Lemma myFinBelongP (x : M) (pA : pred (finMySet M)) : reflect (x ∈ mem pA) (x \in pA).
+  Lemma myFinBelongP (x : M) (pA : mySet M) : reflect (x ∈ pA) (x \in pA).
   Proof.
     rewrite /belong.
       by apply/(iffP idP).
   Qed.
-    
+  
 (**
 ## mySubset の有限型版
 *)
-  Lemma myFinSubsetP (pA pB : pred (finMySet M)) :
-    reflect ((mem pA) ⊂ (mem pB)) (pA \subset pB).
+  Lemma myFinSubsetP (pA pB : mySet M) : reflect (pA ⊂ pB) (pA \subset pB).
   Proof.
     rewrite /mySub.
     apply/(iffP idP) => H.
@@ -283,27 +224,27 @@ Section FinType.
       apply/myFinBelongP.
       by apply H.
   Qed.
-
-  (* fintype.v の補題 ： 有限型としての部分集合 *)
-  Check predT_subset : forall (T : finType) (A : pred T),
-      T \subset A -> forall x : T, x \in A.
   
-  (* predT_subset の mySet版 *)
-  Lemma Mother_Sub (pA : pred (finMySet M)) :
-    myMotherSet ⊂ mem pA -> forall x, x ∈ mem pA.
+  (* fintype.v の補題 ： 有限型としての部分集合 *)
+  Check predT_subset : forall (M : finType) (A : mySet M),
+      M \subset A -> forall x : M, x \in A.
+  
+  (* predT_subset の Type版 *)
+  Lemma Mother_Sub (pA : mySet M) :
+    myMotherSet ⊂ pA -> forall x, x ∈ pA.
   Proof.
     move/myFinSubsetP.
     rewrite /myFinSubsetP => H x.
     apply: predT_subset.
     done.
   Qed.
-
+  
   (* fintype.v の補題 *)
-  Check subset_trans : forall (T : finType) (A B C : pred T),
+  Check subset_trans : forall (T : finType) (A B C : predPredType T),
       A \subset B -> B \subset C -> A \subset C.
   
-  (* subset_trans の mySet版 *)
-  Lemma transitive_Sub' (pA pB pC : pred (finMySet M)) :
+  (* subset_trans の Type版 *)
+  Lemma transitive_Sub' (pA pB pC : mySet M) :
     mem pA ⊂ mem pB ->
     mem pB ⊂ mem pC ->
     mem pA ⊂ mem pC.
@@ -316,10 +257,14 @@ Section FinType.
 
 (**
 # 有限型の実体としてのOridinal
-
-先の M : finType の M を ordinal_finType n に置き換える。
 *)
   Section Ordinal.
+    
+(**
+M : finType の M を ordinal_finType n に置き換える。
+ *)
+    Check M                 : finType.
+    Check ordinal_finType 5 : finType.
     
     (* 通常の ordinal の定義 *)
     Definition p0 := @Ordinal 5 0 is_true_true.
@@ -330,74 +275,20 @@ Section FinType.
     Definition p1 := @Ordinal 5 1 is_true_true.
     Definition p2 := @Ordinal 5 2 is_true_true.
     
-(*
-  (* MySetのインスタンスの定義 *)
-    Definition ordinal_MySet (n : nat) := finMySet (ordinal_finType n).
+    Check      eq_op p0  : mySet 'I_5.       (* == *)
+    Check      eq_op p0  : mySet (ordinal_finType 5).
     
-    (* これは、以下によって新しい集合を定義することと同じである。 *)
-    Check MySet (mem (ordinal_finType 5)).
-    (* Canonical ordinal_MySet n := MySet (mem (ordinal_finType 5)) *)
-    Goal forall n, MySet (mem (ordinal_finType n)) = ordinal_MySet n.
+    Goal p0 ∈ (eq_op p0 ∪ eq_op p1 ∪ eq_op p2).
+    Proof. done. Qed.
+    Goal p1 ∈ (eq_op p0 ∪ eq_op p1 ∪ eq_op p2).
+    Proof. done. Qed.
+    Goal p2 ∈ (eq_op p0 ∪ eq_op p1 ∪ eq_op p2).
     Proof. done. Qed.
     
-    Check ordinal_MySet 5.
-    
-    (* 以下における mem は省略可能である。 *)
-
-    Check      eq_op p0  : pred 'I_5.       (* == *)
-    Check mem (eq_op p0) : pred 'I_5.
-    Check      eq_op p0  : pred (ordinal_MySet 5).
-    Check mem (eq_op p0) : pred (ordinal_MySet 5).
-    Check mem (eq_op p0) : pred (ordinal_MySet 5).
-    Check mem (eq_op p1) : pred (ordinal_MySet 5).
-    Check mem (eq_op p2) : pred (ordinal_MySet 5).
-*)    
-    
-    Check      eq_op p0  : pred 'I_5.       (* == *)
-    Check mem (eq_op p0) : pred 'I_5.
-    Check      eq_op p0  : pred (ordinal_finType 5).
-    Check mem (eq_op p0) : pred (ordinal_finType 5).
-    
-    (* finMySet の定義だけで、以下は使用可能である。
-       mem も省略可能である。 *)
-    
-    Goal p0 ∈ ((mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)).
-    Proof. done. Qed.
-    Goal p1 ∈ ((mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)).
-    Proof. done. Qed.
-    Goal p2 ∈ ((mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)).
-    Proof. done. Qed.
-    
-    Goal (mem (eq_op p0) ∪ mem (eq_op p1)) ∪ mem (eq_op p2)
-       =1 mem (eq_op p0) ∪ (mem (eq_op p1) ∪ mem (eq_op p2)).
+    Goal (eq_op p0 ∪ eq_op p1) ∪ eq_op p2 =1 eq_op p0 ∪ (eq_op p1 ∪ eq_op p2).
     Proof. by apply: myCupA. Qed.
     
-(*
-  memだけの例は解り難くするので、省いてもよい。
-  
-    Check mem 'I_5                : pred 'I_5.
-    Check mem 'I_5                : pred (ordinal_MySet 5).
-    Check mem (ordinal_finType 5) : pred (ordinal_MySet 5).
-
-    Check p0 ∈ mem (ordinal_finType 5).
-    Goal p0 ∈ mem (ordinal_finType 5).
-    Proof. done. Qed.
- *)
   End Ordinal.
 End FinType.
-
-(**
-# これは無理だろうか
-*)
-Section Seq.
-  Canonical seq_MySet {T : eqType} (S : seq T) := MySet (mem S).
-
-  Check seq_MySet [:: 1; 2; 3].
-  Check mem [:: 1; 2; 3] : pred (seq_MySet [:: 1; 2; 3]).
-
-  Check 1 ∈ mem [:: 1; 2; 3].
-(* Goal 1 ∈ mem [:: 1; 2; 3] *)
-
-End Seq.
 
 (* END *)
