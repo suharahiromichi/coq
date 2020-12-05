@@ -6,6 +6,66 @@ Coq/SSReflect/MathComp による定理証明
 
 bool述語をする例
 *)
+
+(**
+# はじめに
+
+テキストでは、mySet を Coqの述語 (Prop型) で定義しています。
+
+```
+Definition mySet (M : Type) := M -> Prop.
+```
+
+
+ここでは、bool述語で定義してみます。
+
+```
+Definition mySet (M : Type) := prod M.
+```
+
+
+これによって、ふたつのメリットがあります。
+
+1. テキストで導入しているふたつの公理が不要になります。
+
+- belong（∈）の決定性の公理
+
+```
+Axiom axiom_mySet : forall (M : Type) (A : mySet M), forall (x : M), x ∈ A \/ ~(x ∈ A).
+```
+
+belongがbool述語となるので、公理なしで決定性が保証されます。
+
+
+- 集合の同値の定義のための公理
+
+```
+Definition eqmySet {M : Type} (A B : mySet M) := (A ⊂ B) /\ (B ⊂ A).
+
+Axiom axiom_ExteqmySet : forall {M : Type} (A B : mySet M), eqmySet A B -> A = B.
+```
+
+この公理の代わりに、``=1`` で表される一階の等式を使います。
+
+```
+Definition eqfun (f g : B -> A) : Prop := forall x, f x = g x.
+```
+
+集合の定義がbool述語であるため、bool値が等しいことで、集合の同値が判断できます。
+
+
+2. finType とのリフレクション
+
+テキストでは、bool述語を Prop に変換する補助関数 p2S を導入していますが、
+これが不要になります。
+
+```
+Definition p2S {M : finType} (pA : pred M) : mySet M :=
+  fun (x : M) => if x \in pA then True else False.
+Notation "\{ x 'in' pA \}" := (p2S pA).     (* x は飾り。 *)
+```
+*)
+
 From mathcomp Require Import all_ssreflect.
 
 Set Implicit Arguments.
