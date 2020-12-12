@@ -176,7 +176,7 @@ FunctionコマンドはStarndard Coqのコマンドなので、
 StandardCoqの不等式 (例：``(k.+2 < k.+3)%coq_nat``) を出力します。
 これは ``apply/ltP`` を使って、
 MathCompの不等式（例：``(k.+2 < k.+3)%N``）に変換できます。
-MathCompに変換したあとも``%N``が残るのは、先に説明したのと同じ理由です。
+Coqの自然数 ``%coq_nat`` が MathCompの自然数 ``%N`` に変わっています。
 
 そして、ssromega タクティク（文献 [7]）を使って証明します。
 なお、ここでは文献[7]のうちの sssromega の定義の部分だけを取り出して、
