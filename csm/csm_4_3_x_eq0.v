@@ -196,8 +196,17 @@ Section これだけは.
       by rewrite ltnW //.
   Qed.
 
+  Goal forall (m n : nat), True.
+  Proof.
+    move=> m n.
+    case H : (m <= n).
+    - done.                                 (* H : m <= n *)
+    - move/le_m_n in H.                     (* H : n <= m *)
+      done.
+  Qed.
+  
 (**
-上記の補題で使ったように、
+le_m_n の補題の証明で使ったように、
 
 - 不等号の結果に対する ``= false`` は、``negbT`` で、
 
