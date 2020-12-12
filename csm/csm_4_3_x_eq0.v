@@ -186,7 +186,7 @@ Section これだけは.
   
 (**
 自然数の減算 ``m - n`` を含む証明の場合、``n <= m`` と ``m < n`` で場合分けします。
-しかし ``m < n -> m <= n`` なので、後者の条件を ``m <= n`` に変形できれば、
+そうしたあと ``m < n -> m <= n`` なので、後者の条件を ``m <= n`` に変形できれば、
 同じ補題が使えるわけです。その変形をする補題を証明しておきます。
 *)
   Lemma le_m_n m n : (n <= m) = false -> m <= n.
@@ -196,6 +196,19 @@ Section これだけは.
       by rewrite ltnW //.
   Qed.
 
+(**
+上記の補題で使ったように、
+
+- 不等号の結果に対する ``= false`` は、``negbT`` で、
+
+- 不等号 ``<=`` の結果に対する否定 ``~~`` は、``ltnNge`` で、
+
+- 不等号 ``<`` の結果に対する否定 ``~~`` は、``leqNgt`` で、変換できます。
+*)  
+  Check negbT : forall b : bool, b = false -> ~~ b.
+  Check ltnNge : forall m n : nat, (m < n) = ~~ (n <= m).
+  Check leqNgt : forall m n : nat, (m <= n) = ~~ (n < m).
+  
 (**
 ``n <= m`` と ``m <= n`` に場合分けするだけなら leq_total を使うほうが簡単です。
 *)  
