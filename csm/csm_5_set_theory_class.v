@@ -351,4 +351,94 @@ M : finType の M を ordinal_finType n に置き換える。
   End Ordinal.
 End FinType.
 
+(**
+## 5.4 集合間の写像
+ *)
+Definition myMap {M1 M2 : Type} (A : mySet M1) (B : mySet M2) (f : M1 -> M2) :=
+  forall (x : M1), x ∈ A -> f x ∈ B.
+Notation "f ∈Map A \to B" := (myMap A B f) (at level 11).
+
+Definition MapCompo {M1 M2 M3 : Type} (f : M2 -> M3) (g : M1 -> M2) : M1 -> M3 :=
+  fun (x : M1) => f (g x).
+Notation "f ● g" := (MapCompo f g) (at level 11).
+
+(*
+(* 定義域Xの像Y *)
+Definition ImgOf {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
+           (_ : f ∈Map X \to Y) : mySet M2 :=
+  fun (y : M2) => exists (x : M1), y = f x /\ x ∈ X.
+
+(* 定義域Xの部分集合Aの像B @morita_hm - Bについては全射であること。 *)
+Definition ImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
+           (_ : f ∈Map X \to Y) (A : mySet M1) : mySet M2 :=
+  fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A /\ A ⊂ X.
+
+(* 値域Yの部分集合Bの逆像A @morita_hm - Bについては全射であること。 *)
+Definition InvImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
+           (_ : f ∈Map X \to Y) (B : mySet M2) : mySet M1 :=
+  fun (x : M1) => exists (y : M2), y = f x /\ y ∈ B /\ B ⊂ Y.
+*)
+
+(* 単射 *)
+Definition mySetInj {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
+           (_ : f ∈Map A \to B) : Prop :=
+  forall (x y : M1), x ∈ A -> y ∈ A -> f x = f y -> x = y.
+
+(* 全射 *)
+Definition mySetSur {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
+           (_ : f ∈Map A \to B) : Prop :=
+  forall (y : M2), y ∈ B -> exists (x : M1), x ∈ A -> f x = y.
+
+(* 全単射 *)
+Definition mySetBi {M1 M2 : Type} (f : M1 -> M2) {A : mySet M1} {B : mySet M2}
+           (fAB : f ∈Map A \to B) : Prop :=
+  mySetInj fAB /\ mySetSur fAB.
+
+
+Section 写像.
+  Variable M1 M2 M3 : Type.
+  Variable f : M2 -> M3.
+  Variable g : M1 -> M2.
+  Variable A : mySet M1.
+  Variable B : mySet M2.
+  Variable C : mySet M3.
+  Hypothesis gAB : g ∈Map A \to B.
+  Hypothesis fBC : f ∈Map B \to C.
+  
+  Lemma transitive_Inj (fgAC : (f ● g) ∈Map A \to C) :
+    mySetInj fBC -> mySetInj gAB -> mySetInj fgAC.
+  Proof.
+    rewrite /mySetInj => Hinjf Hinjg x y HxA HyA H.
+    Check Hinjg x y HxA HyA.
+    Check Hinjf (g x) (g y) (gAB HxA) (gAB HyA).
+    apply: Hinjg.
+    - done.
+    - done.
+      apply: Hinjf.
+      + by apply: gAB.
+      + by apply: gAB.
+      + by apply: H.
+  Qed.
+  
+  Lemma CompoTrans : (f ● g) ∈Map A \to C.
+  Proof.
+    move: gAB fBC.
+    rewrite /MapCompo /myMap => Hab Hbc t Ha.
+    apply: Hbc.
+    apply: Hab.
+    apply: Ha.
+  Qed.
+
+(*
+  Lemma ImSub : (ImgOf gAB) ⊂ B.
+  Proof.
+    rewrite /ImgOf => t.
+    case=> x.
+    case=> H1 H2.
+    rewrite H1.
+      by apply: gAB.
+  Qed.
+*)
+End 写像.
+
 (* END *)
