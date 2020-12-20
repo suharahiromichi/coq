@@ -12,8 +12,6 @@
 
 文献 [1.] （以下、テキストと呼びます）の第5章では集合形式化について説明されています。
 そこでは、ふたつの公理が導入されています。
-一方では、MathCompではできるだけ公理を導入しないようにする、という考え方もあります
-（文献 [2.] p.90）。
 
 5章の冒頭に記載されているとおり、形式化の方法は一通りではないため、
 別な公理や公理を導入しないで済ますことができないか、考えてたいと思います。
@@ -305,22 +303,30 @@ https://github.com/suharahiromichi/coq/blob/master/csm/csm_5_set_theory_class.v
 
 (**
 # 公理 2. について
+
+これは、外延性の公理です。
 *)
 
 Section Test3.
   Variable M : finType.                     (* 注意してください。 *)
 
+  Definition myMotherSet' : mySet M := fun (_ : M) => true.
+  
   Lemma cc_cancel'' (pA : pred M) : (pA^c)^c =1 pA.
   Proof.
     move=> x.
     rewrite /myComplement.
+    (* Goal : (~ ~ pA x) = pA x *)
   Admitted.
 
-  Lemma myUnionCompMother'' (pA : pred M) : pA ∪ (pA^c) =1 myMotherSet.
+  Lemma myUnionCompMother'' (pA : pred M) : (pA ∪ (pA^c)) =1 myMotherSet'.
   Proof.
     move=> x.
-    rewrite /myCup /myMotherSet.
+    case: (fin_mySet pA x).
+    move/myFinBelongP=> H.
+    rewrite /myCup /myComplement /myMotherSet'.
   Admitted.
+  
 End Test3.
 
 (**
