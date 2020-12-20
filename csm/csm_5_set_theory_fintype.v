@@ -18,7 +18,7 @@ Set Print All.
 (**
 # 5.5 fintype を用いた有限集合の形式化
 
-これまでの ``M : Type`` を ``M : finTypr`` に変えることで、有限型の性質を使って、
+これまでの ``M : Type`` を ``M : finType`` に変えることで、有限型の性質を使って、
 有限型を母集合とするものが集合としての性質を満たすことを示す。
  *)
 Definition p2S {M : finType} (pA : pred M) : mySet M :=
@@ -108,11 +108,16 @@ Section fintypeを用いた有限集合.
   Lemma Mother_Sub (pA : pred M) :
     myMotherSet ⊂ \{ x in pA \} -> forall x, x ∈ \{ x in pA \}.
   Proof.
-    rewrite Mother_predT => /myFinSubsetP => H x.
+    rewrite Mother_predT => /myFinSubsetP H x.
     apply/myFinBelongP.
     by apply: predT_subset.
+    Restart.
+    
+    move=> H x.
+    apply: (H x).
+    done.
   Qed.
-
+  
   (* fintype.v の補題 *)
   Check subset_trans : forall (T : finType) (A B C : pred T),
       A \subset B -> B \subset C -> A \subset C.
@@ -134,6 +139,16 @@ Section fintypeを用いた有限集合.
   Proof.
     by apply: transitive_Sub.               (* see. 5.2 *)
   Qed.
+
+  Lemma transitive_Sub''' (pA pB pC : pred M) :
+    \{ x in pA \} ⊂ \{ x in pB \} ->
+    \{ x in pB \} ⊂ \{ x in pC \} ->
+    \{ x in pA \} ⊂ \{ x in pC \}.
+  Proof.
+    move=> HAB HBC t HtA.
+      by auto.
+  Qed.
+  
 End fintypeを用いた有限集合.  
 
 (**
