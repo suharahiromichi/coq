@@ -91,6 +91,10 @@ Section 包含関係.
     
     apply: HAB.
     apply: HtA.
+
+    Restart.
+    move=> HAB HBC t HtA.
+      by auto.                              (* 導出原理 *)
   Qed.
 End 包含関係.
 
@@ -133,7 +137,7 @@ Section 演算.
   (* 追加終わり。 *)
   Lemma cEmpty_Mother : (@myEmptySet M)^c = (@myMotherSet M).
   Proof.
-    apply: axiom_ExteqmySet.
+    apply: axiom_ExteqmySet.                (* 公理を使用する。 *)
     rewrite /eqmySet.                       (* 省略可能 *)
     split=> x HxM.
     (* Goal : x ∈ myMotherSet *)
@@ -146,13 +150,13 @@ Section 演算.
       done.
       
     Restart.
-    apply: axiom_ExteqmySet.
+    apply: axiom_ExteqmySet.                (* 公理を使用する。 *)
       by apply: conj; rewrite /myComplement => x HxM.
   Qed.
   
   Lemma cc_cancel (A : mySet M) : (A^c)^c = A.
   Proof.
-    apply: axiom_ExteqmySet.
+    apply: axiom_ExteqmySet.                (* 公理を使用する。 *)
     rewrite /eqmySet.
     by apply: conj; rewrite /myComplement => x H;
        case: (axiom_mySet A x) => HxA.
@@ -315,6 +319,5 @@ Section 写像.
       by apply: gAB.
   Qed.
 End 写像.
-
-
+  
 (* END *)

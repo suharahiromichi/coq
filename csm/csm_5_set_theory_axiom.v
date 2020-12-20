@@ -262,7 +262,7 @@ https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_1_ssrbool.v
   Qed.  
 
 (**
-「元xが集合Aに含まれるか、含まれないかのどちらかである」ことを公理 1.を使わずに、
+「元xが集合Aに含まれるか、含まれないかのどちらかである」ことを(公理 1.)を使わずに、
 定理として導くことができます。
 *)
 
@@ -275,6 +275,17 @@ https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_1_ssrbool.v
 実際の集合の証明では、``M : Type, P : mySet M``
 を ``M : finType, pA : pred M`` に変更する必要があります。
 *)
+  Lemma subset_trans' (pA pB pC : pred M) :
+    pA ⊂ pB -> pB ⊂ pC -> pA ⊂ pC.
+  Proof.
+    move=> HAB HBC t HtA.
+      by auto.
+  Qed.
+
+(**
+axiom_mySet ではなく、fin_mySet を使って証明することができます。
+すなわち(公理 1.)を使用せずに証明できたことになります。
+*)  
   Lemma cc_cancel' (pA : pred M) : (pA^c)^c = pA.
   Proof.
     apply: axiom_ExteqmySet.
