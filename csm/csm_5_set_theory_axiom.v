@@ -249,9 +249,13 @@ https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_1_ssrbool.v
 ``pA : pred M`` が ``P : mySet M`` で形式化された集合の定で使えるように、
 変換する関数 p2S を定義します。
 なお、テキストで定義されている構文糖衣 ``\{ x 'in' pA \}`` は使わないことにしました。
+すなわち `` \{ x in M \}`` は ``p2S M`` のことで x に意味はありません。
 *)  
   Definition p2S (pA : pred M) : mySet M :=
     fun (x : M) => if x \in pA then True else False.
+
+  Lemma Mother_predT : myMotherSet = p2S M.
+  Proof. by []. Qed.
 
   Lemma myFinBelongP (x : M) (pA : pred M) : reflect (x ∈ p2S pA) (x \in pA).
   Proof.
@@ -275,7 +279,17 @@ https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_1_ssrbool.v
 実際の集合の証明では、``M : Type, P : mySet M``
 を ``M : finType, pA : pred M`` に変更する必要があります。
 *)
-  Lemma subset_trans' (pA pB pC : pred M) :
+  Lemma Mother_Sub (pA : pred M) :
+    myMotherSet ⊂ p2S pA -> forall x, x ∈ p2S pA.
+  Proof.
+    rewrite Mother_predT.
+    move=> H x.
+    Check H x : x ∈ p2S M -> x ∈ p2S pA.
+    apply: (H x).
+    done.
+  Qed.
+  
+  Lemma transitive_Sub (pA pB pC : pred M) :
     pA ⊂ pB -> pB ⊂ pC -> pA ⊂ pC.
   Proof.
     move=> HAB HBC t HtA.
@@ -300,6 +314,16 @@ axiom_mySet ではなく、fin_mySet を使って証明することができま�
     case: (fin_mySet pA x); by [left | right].
   Qed.
 End FinType.
+
+Section 具体的なfinType.
+  
+  Definition p0 := @Ordinal 5 0 is_true_true.
+  Check p2S 'I_5 : mySet 'I_5.  
+
+  Goal p0 ∈ p2S 'I_5.
+  Proof. by []. Qed.
+
+End 具体的なfinType.
 
 (**
 ## mySet を bool型であらわす場合
