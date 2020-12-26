@@ -118,15 +118,33 @@ Section Test1.
 End Test1.
 
 (**
-# 公理 1.について
+# (公理 1.)について
 
+## 排中律
+
+(公理 1.)は排中律を使えば証明できます。
+*)
+Section ExMid.
+  Variable M : Type.                        (* 注意してください。 *)
+  
+  Axiom ExMid : forall (P : Prop), P \/ ~ P. (* 排中律 *)
+  
+  Lemma axiom_mySet'' : forall (A : mySet M),
+      forall (x : M), x ∈ A \/ ~(x ∈ A).
+  Proof.
+    move=> A x.
+      by apply: ExMid.
+  Qed.
+End ExMid.
+
+(*
 ## morita_hmさんの公理 ``refl_mySet``
 
 ProofCafe において @morita_hm さんから別の公理が提案されました。より単純な、
 
 ``reflect (A x) true``
 
-から、公理 1.を導くものです。
+から、(公理 1.)を導くものです。
 *)
 
 Section Morita.
@@ -161,7 +179,7 @@ End Morita.
 ## 別の説明
 
 公理 ``refl_mySet`` は、かたちを変えた排中律であり、
-排中律を経由して公理 1.を証明していることになります。これを以下で説明します。
+排中律を経由して(公理 1.)を証明していることになります。これを以下で説明します。
 *)
 
 (**
@@ -208,6 +226,7 @@ End Test2.
 *) 
 
 Section Depend.
+  
   Lemma dec_exmid (P : Prop) : {P} + {~ P} -> P \/ ~ P.
   Proof.
     case=> Hd.
@@ -222,7 +241,7 @@ End Depend.
 
 テキストの 5.5節にあるように、
 母集合にあたる型 M を任意の型から、有限型 (finType) に制限することでも、
-公理 1.を不要にすることもできます。
+(公理 1.)を不要にすることもできます。
  *)
 
 Section FinType.
@@ -282,7 +301,7 @@ https://github.com/suharahiromichi/coq/blob/master/csm/csm_4_1_ssrbool.v
   Lemma Mother_Sub (pA : pred M) :
     myMotherSet ⊂ p2S pA -> forall x, x ∈ p2S pA.
   Proof.
-    rewrite Mother_predT.
+    rewrite Mother_predT.                   (* 省略可能 *)
     move=> H x.
     Check H x : x ∈ p2S M -> x ∈ p2S pA.
     apply: (H x).
@@ -328,7 +347,7 @@ End 具体的なfinType.
 (**
 ## mySet を bool型であらわす場合
 
-そもそも ``mySet M`` を bool型の ``pred M`` であらわすことで、公理 1.は不要になります。
+そもそも ``mySet M`` を bool型の ``pred M`` であらわすことで、(公理 1.)は不要になります。
 belongがbool述語となるので、公理なしで決定性が保証されるからです。以下を参照してください。
 
 https://github.com/suharahiromichi/coq/blob/master/csm/csm_5_set_theory_class.v
