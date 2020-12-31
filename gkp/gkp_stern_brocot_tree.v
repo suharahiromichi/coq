@@ -77,78 +77,98 @@ p & p'
 
 ## ルート
 
-ルートは以下で、
+ルートは単位行列で、
 
 ```math
 \begin{pmatrix}
-0 & 1 \\
-1 & 0
+1 & 0 \\
+0 & 1
 \end{pmatrix}
 ```
 
-その値は以下です。
+その値は以下になります。
 
 ```math
 f (
 \begin{pmatrix}
-0 & 1 \\
-1 & 0
+1 & 0 \\
+0 & 1
 \end{pmatrix}
 )
 =
-\frac{1}{1} = 1
+\frac{1}{1} = \frac{0 + 1}{1 + 0} = 1
 ```
 
 
 ## 左側のノード
 
-左側のノードは、行列 $ L^{a_n} $ を右から掛けることで得られます。
-$n$ は左に下がる回数です。
+左側のノードは、行列 $ L^a $ を右から掛けることで得られます。
+$a$ は左に下がる回数です。
 
 ```math
 \begin{pmatrix}
 q & q' \\
 p & p'
 \end{pmatrix}
+L^a
+=
 \begin{pmatrix}
-1 & a_n \\
+q & q' \\
+p & p'
+\end{pmatrix}
+\begin{pmatrix}
+1 & a \\
 0 & 1
 \end{pmatrix}
 =
 \begin{pmatrix}
-q & a_n\ (q + q') \\
-p & a_n\ (p + p')
+q & a\ q + q' \\
+p & a\ p + p'
 \end{pmatrix}
 ```
 
 
 ## 右側のノード
 
-右側のノードは、行列 $ R^{a_n} $ を右から掛けることで得られます。
-$n$ は右に下がる回数です。
+右側のノードは、行列 $ R^a $ を右から掛けることで得られます。
+$a$ は右に下がる回数です。
 
 ```math
 \begin{pmatrix}
 q & q' \\
 p & p'
 \end{pmatrix}
+R^a
+=
+\begin{pmatrix}
+q & q' \\
+p & p'
+\end{pmatrix}
 \begin{pmatrix}
 1 & 0 \\
-a_n & 1
+a & 1
 \end{pmatrix}
 =
 \begin{pmatrix}
-a_n\ (q + q') & q' \\
-a_n\ (p + p') & p'
+q + a\ q' & q' \\
+p + a\ p` & p'
 \end{pmatrix}
 ```
 
 
 # Stern-Brocot representation (SBR) の再帰関数による定義
 
-SBRのサイズは偶数として $n$ で示します。
-表現の一意性のために要素は0を許さないことにします（1以上）が、
-最初と最後だけは 0 を許すことにします（$a_{0} \ge 0$、$a_{n-1} \ge 0$）。
+SBRを $ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $ で示します。
+
+ただし、SBRのサイズは偶数として $n \ge 0$ で示します。
+表現の一意性のために、各要素の値は0を許さないことにします（\ge 1）が、
+最初と最後の要素だけは 0 を許すことにします。
+
+$a_{0} = 0$ のときは 1未満の数、
+$a_{n-1} = 0$ のときは最後のノードが親の右側にあることを示します。
+
+SBR を リスト(seq)の s としたときに、
+前章で定義したSBTのノードの表現に変換する関数を $SB(s)$ で定義します。
 
 ```math
 \begin{eqnarray}
@@ -165,11 +185,11 @@ SB([R^{a_0}; ... ; L^{a_{n-3}}])\
 
 \begin{pmatrix}
 1 & 0 \\
-a_n & 1
+a_{n-2} & 1
 \end{pmatrix}
 \
 \begin{pmatrix}
-1 & a_{n+1} \\
+1 & a_{n-1} \\
 0 & 1
 \end{pmatrix}
 \end{eqnarray}
@@ -206,3 +226,5 @@ https://en.wikipedia.org/wiki/Stern-Brocot_tree
  *)
 
 (* END *)
+
+
