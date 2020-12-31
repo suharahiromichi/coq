@@ -419,11 +419,20 @@ $$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
 ```
 [:: (a_0, a_1); ... (a_(n-2), a_(n-1))]
 ```
+
+SBR からノードへ変換する関数は、次のように定義されます。
+先に定義したdropを使用しているため、Function コマンドを使用して、
+引数のリストのサイズが減少することを明示的に示す必要があります。
+
+csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用しています。
 *)  
-  Function SB (s : seq (nat * nat)) {measure size s} : SBNode :=
+  Check size_belast'
+    : forall (T : eqType) (s : seq T), size (belast' s) = (size s).-1.
+  
+  Function SB' (s : seq (nat * nat)) {measure size s} : SBNode :=
     match s with
     | [::] => IDENT
-    | _ => SB (s⇓) * RIGHT (s⇑.1) * LEFT (s⇑.2)
+    | _ => SB' (s⇓) * RIGHT (s⇑.1) * LEFT (s⇑.2)
     end.
   Proof.
     move=> s a s' H.
@@ -432,48 +441,120 @@ $$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
     rewrite /drop_last size_belast'.
     done.
   Qed.
-  Check SB_equation.
+
+(**
+Functon コマンドによって、関数の定義を簡約する補題が生成されています。
+*)  
+  Check SB'_equation.
   
-  Lemma SBI : SB [::] = IDENT.
-  Proof. by rewrite SB_equation. Qed.
+  Lemma SB'I : SB' [::] = IDENT.
+  Proof. by rewrite SB'_equation. Qed.
 
 (**
 ## 計算例
 *)  
-  Goal SBf (SB [:: (0, 1)]) = (1, 2).
+  Goal SBf (SB' [:: (0, 1)]) = (1, 2).
+  Proof.
+    rewrite /SBf SB'_equation //=.
+    rewrite !SB'I /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+
+  Goal SBf (SB' [:: (0, 4)]) = (1, 5).
+  Proof.
+    rewrite /SBf SB'_equation //=.
+    rewrite !SB'I /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+  
+  Goal SBf (SB' [:: (1, 1); (1, 0)]) = (5, 3).
+  Proof.
+    rewrite /SBf 2!SB'_equation //=.
+    rewrite SB'I /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+
+  Goal SBf (SB' [:: (1, 1); (1, 1)]) = (8, 5).
+  Proof.
+    rewrite /SBf 2!SB'_equation //=.
+    rewrite SB'I /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+  
+(**
+## SBR から ノードへの変換関数
+
+SBR は、
+
+$$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
+
+の肩の数字のリストとして、つぎのように表記します。
+リストの寸法は偶数であることを暗黙の前提としています（見直すこと）。
+
+```
+[:: a_0; a_1; ... a_(n-2); a_(n-1)]
+```
+
+SBR からノードへ変換する関数は、次のように定義されます。
+先に定義したdropを使用しているため、Function コマンドを使用して、
+引数のリストのサイズが減少することを明示的に示す必要があります。
+
+csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用しています。
+*)
+  Function SB (s : seq nat) {measure size s} : SBNode :=
+    match s with
+    | [::] => IDENT
+    | _ => SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑)
+    end.
+  Proof.
+    move=> s a s' H.
+    apply/ltP.
+    (* see. csm_4_4_x_seq_head_last *)
+    rewrite /drop_last 2!size_belast' /=.
+      by ssromega.
+  Qed.
+  
+  Lemma SBI : SB [::] = IDENT.
+  Proof. by rewrite SB_equation. Qed.
+  
+(**
+## 計算例
+*)  
+  Goal SBf (SB [:: 0; 1]) = (1, 2).
   Proof.
     rewrite /SBf SB_equation //=.
     rewrite !SBI /IDENT /q_ /p_ /v_ /u_.
     done.
   Qed.
 
-  Goal SBf (SB [:: (0, 4)]) = (1, 5).
+  Goal SBf (SB [:: 0; 4]) = (1, 5).
   Proof.
     rewrite /SBf SB_equation //=.
     rewrite !SBI /IDENT /q_ /p_ /v_ /u_.
     done.
   Qed.
   
-  Goal SBf (SB [:: (1, 1); (1, 0)]) = (5, 3).
+  Goal SBf (SB [:: 1; 1; 1; 0]) = (5, 3).
   Proof.
     rewrite /SBf 2!SB_equation //=.
     rewrite SBI /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
     done.
   Qed.
 
-  Goal SBf (SB [:: (1, 1); (1, 1)]) = (8, 5).
+  Goal SBf (SB [:: 1; 1; 1; 1]) = (8, 5).
   Proof.
     rewrite /SBf 2!SB_equation //=.
     rewrite SBI /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
     done.
   Qed.
-  
+
 End SBR.
 
 (**
 # リストのdropによる帰納法
- *)
 
+（作成中）
+ *)
 
 
 (**
