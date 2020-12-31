@@ -70,15 +70,15 @@ Unset Printing Implicit Defensive.
  *)
 Section TakeDrop.
   
-  Definition take_head s := head 0 s.
+  Definition take_head s := head (0, 0) s.
   
-  Definition drop_head (s : seq nat) := behead s.
+  Definition drop_head (s : seq (nat * nat)) := behead s.
   
-  Definition take_last s := last 0 s.
+  Definition take_last s := last (0, 0) s.
   
-  (* csm_4_4_x_seq_head_last *)
+  (* see. csm_4_4_x_seq_head_last *)
   Print belast'.
-  Definition drop_last (s : seq nat) := belast' s.
+  Definition drop_last (s : seq (nat * nat)) := belast' s.
   
 End TakeDrop.
 
@@ -88,6 +88,7 @@ Notation "s ↑" := (take_last s) (at level 54, no associativity).
 Notation "s ↓" := (drop_last s) (at level 52, no associativity).
 
 Section TakeDrop1.
+(*
   Compute ↑[:: 1; 2; 3].                   (* 1 *)
   Compute [:: 1; 2; 3]↑ .                  (* 3 *)
   Compute ↓[:: 1; 2; 3].                   (* [:: 2; 3] *)
@@ -110,7 +111,7 @@ drop のほうを優先する。dropしてtake できるように。
 dropどうしならどちらでも一緒だが、head のほうを優先する。
  *)
   Compute (↓[:: 1; 2; 3])↓.               (* [:: 2] *)
-
+*)
 (**
 drop head と drop last の順番がどちらでもよいことを証明する。
  *)
@@ -126,10 +127,12 @@ drop head と drop last の順番がどちらでもよいことを証明する�
 (**
 寸法が十分なら、dropしたあとにtakeしてもおなじであることを証明する。
 *)
+(*
   Compute ↑[:: 1].                         (* 1 *)
   Compute ↑[:: 1]↓.                       (* 0 *)
   Compute ↑[:: 1; 2].                      (* 1 *)
   Compute ↑[:: 1; 2]↓.                    (* 1 *)
+*)
   Lemma take_head_drop_last s : 1 < size s -> ↑s↓ = ↑s.
   Proof.
     case: s => // a s.
@@ -141,10 +144,12 @@ drop head と drop last の順番がどちらでもよいことを証明する�
 (**
 寸法が十分なら、dropしたあとにtakeしてもおなじであることを証明する。
 *)
+(*
   Compute [:: 1]↑.                         (* 1 *)
   Compute ↓[:: 1]↑.                       (* 0 *)
   Compute [:: 1; 2]↑.                      (* 2 *)
   Compute ↓[:: 1; 2]↑.                    (* 2 *)
+*)
   Lemma take_last_drop_head s : 1 < size s -> ↓s↑ = s↑.
   Proof.
     case: s => // a s.
@@ -337,6 +342,23 @@ p & u
   Proof.
       by rewrite -!surjective_pairing.
   Qed.
+
+  Goal LEFT 0 = IDENT.
+  Proof.
+    by rewrite /LEFT /IDENT.
+  Qed.
+
+  Goal RIGHT 0 = IDENT.
+  Proof.
+    by rewrite /RIGHT /IDENT.
+  Qed.
+
+(**
+## ノードの値の計算
+*)
+
+  Definition SBFrac:= (nat * nat)%type.
+  Definition SBf (N : SBNode) : SBFrac := (p_ N + u_ N, q_ N + v_ N).
   
 (**
 ## 掛け算の定義
@@ -346,15 +368,16 @@ p & u
   Definition mul (N N' : SBNode) := 
     ((q_ N * q_ N' + v_ N * p_ N', q_ N * v_ N' + v_ N * u_ N'),
      (p_ N * q_ N' + u_ N * p_ N', p_ N * v_ N' + u_ N * u_ N')).
-
-  Lemma mulIr (N : SBNode) : mul N IDENT = N.
+  Notation "N * N'" := (mul N N').
+  
+  Lemma mulIr (N : SBNode) : N * IDENT = N.
   Proof.
     rewrite /mul /NODE /IDENT /q_ /p_ /v_ /u_ //=.
     rewrite !muln0 !muln1 !addn0 !add0n.
       by rewrite NODEeq.
   Qed.
 
-  Lemma mulIl (N : SBNode) : mul IDENT N = N.
+  Lemma mulIl (N : SBNode) : IDENT * N = N.
   Proof.
     rewrite /mul /NODE /IDENT /q_ /p_ /v_ /u_ //=.
     rewrite !mul0n !mul1n !addn0 !add0n.
@@ -362,29 +385,101 @@ p & u
   Qed.
 
   Lemma mulLa (N : SBNode) (a : nat) :
-    mul N (LEFT a) = ((q_ N, a * q_ N + v_ N),
-                      (p_ N, a * p_ N + u_ N)).
+    N * LEFT a = ((q_ N, a * q_ N + v_ N),
+                  (p_ N, a * p_ N + u_ N)).
   Proof.
     rewrite /mul /NODE /LEFT /q_ /p_ /v_ /u_ //=.
     rewrite !muln1 !muln0 !addn0.
-    rewrite ![_ * a]mulnC.
+    rewrite ![(_ * a)%N]mulnC.
     done.
   Qed.
 
   Lemma mulRa (N : SBNode) (a : nat) :
-    mul N (RIGHT a) = ((q_ N + a * v_ N, v_ N),
-                       (p_ N + a * u_ N, u_ N)).
+    N * RIGHT a = ((q_ N + a * v_ N, v_ N),
+                   (p_ N + a * u_ N, u_ N)).
   Proof.
     rewrite /mul /NODE /RIGHT /q_ /p_ /v_ /u_ //=.
     rewrite !muln1 !muln0 !add0n.
-    rewrite ![_ * a]mulnC.
+    rewrite ![(_ * a)%N]mulnC.
     done.
   Qed.
-  
-  
+
+(**
+## SBR の定義
+*)  
+(*
   Inductive SBPath :=
   | L
   | R.
+  
+  Inductive sb_pair :=
+  | SB_PAIR (p : SBPath) (a : nat).
+  Notation "d ^ a" := (SB_PAIR d a).
+  
+  Definition SBR := seq sb_pair.
+  
+  (* 例 *)
+  Check [:: R^1; L^2; R^3; L^0] : SBR.
+*)
+
+(**
+SBR は、
+
+$$ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $$
+
+の肩の数字の2個づつのリストとして、つぎのように表記します。
+
+```
+[:: (a_(n-1), a_(n-2)); ... ; (a_1, a_0)]
+```
+*)  
+  Function SB (s : seq (nat * nat)) {measure size s} :=
+    match s with
+    | [::] => IDENT
+    | _ => SB (s↓) * RIGHT (s↑.1) * LEFT (s↑.2)
+    end.
+  Proof.
+    move=> s a s' H.
+    apply/ltP.
+    (* see. csm_4_4_x_seq_head_last *)
+    rewrite /drop_last size_belast'.
+    done.
+  Qed.
+  Check SB_equation.
+  
+  Lemma SBI : SB [::] = IDENT.
+  Proof. by rewrite SB_equation. Qed.
+
+(**
+計算例
+*)  
+  Goal SBf (SB [:: (0, 1)]) = (1, 2).
+  Proof.
+    rewrite /SBf SB_equation //=.
+    rewrite !SBI /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+
+  Goal SBf (SB [:: (0, 4)]) = (1, 5).
+  Proof.
+    rewrite /SBf SB_equation //=.
+    rewrite !SBI /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+  
+  Goal SBf (SB [:: (1, 1); (1, 0)]) = (5, 3).
+  Proof.
+    rewrite /SBf 2!SB_equation //=.
+    rewrite SBI /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
+
+  Goal SBf (SB [:: (1, 1); (1, 1)]) = (8, 5).
+  Proof.
+    rewrite /SBf 2!SB_equation //=.
+    rewrite SBI /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
+    done.
+  Qed.
   
 End SBR.
 
