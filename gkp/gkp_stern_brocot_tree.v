@@ -16,7 +16,7 @@ Stern–Brocot tree (スターン・ブロコット木)
 
 SBTのノードをルートからの道順
 
-$$ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $$
+$$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
 
 で表現するならば、これは有理数のひとつの表現になっています。
 これを「スターン・ブロコット数表現 Stern-Brocot representation」と呼びます（以下、SBR）。
@@ -68,27 +68,32 @@ Unset Printing Implicit Defensive.
 (**
 # リストのtakeとdrop
  *)
-Section TakeDrop.
-  
-  Definition take_head s := head (0, 0) s.
-  
-  Definition drop_head (s : seq (nat * nat)) := behead s.
-  
-  Definition take_last s := last (0, 0) s.
-  
+
+Section TakeDropNat.
+  Definition take_head s := head 0 s.
+  Definition drop_head (s : seq nat) := behead s.
+  Definition take_last s := last 0 s.
   (* see. csm_4_4_x_seq_head_last *)
   Print belast'.
-  Definition drop_last (s : seq (nat * nat)) := belast' s.
-  
-End TakeDrop.
-
+  Definition drop_last (s : seq nat) := belast' s.
+End TakeDropNat.
 Notation "↑ s" := (take_head s) (at level 53, no associativity).
 Notation "↓ s" := (drop_head s) (at level 51, no associativity).
 Notation "s ↑" := (take_last s) (at level 54, no associativity).
 Notation "s ↓" := (drop_last s) (at level 52, no associativity).
 
+Section TakeDropNatPair.
+  Definition take_head_natpair s := head (0, 0) s.
+  Definition drop_head_natpair (s : seq (nat * nat)) := behead s.
+  Definition take_last_natpair s := last (0, 0) s.
+  Definition drop_last_natpair (s : seq (nat * nat)) := belast' s.
+End TakeDropNatPair.
+Notation "⇑ s" := (take_head_natpair s) (at level 53, no associativity).
+Notation "⇓ s" := (drop_head_natpair s) (at level 51, no associativity).
+Notation "s ⇑" := (take_last_natpair s) (at level 54, no associativity).
+Notation "s ⇓" := (drop_last_natpair s) (at level 52, no associativity).
+
 Section TakeDrop1.
-(*
   Compute ↑[:: 1; 2; 3].                   (* 1 *)
   Compute [:: 1; 2; 3]↑ .                  (* 3 *)
   Compute ↓[:: 1; 2; 3].                   (* [:: 2; 3] *)
@@ -111,7 +116,7 @@ drop のほうを優先する。dropしてtake できるように。
 dropどうしならどちらでも一緒だが、head のほうを優先する。
  *)
   Compute (↓[:: 1; 2; 3])↓.               (* [:: 2] *)
-*)
+
 (**
 drop head と drop last の順番がどちらでもよいことを証明する。
  *)
@@ -127,12 +132,11 @@ drop head と drop last の順番がどちらでもよいことを証明する�
 (**
 寸法が十分なら、dropしたあとにtakeしてもおなじであることを証明する。
 *)
-(*
   Compute ↑[:: 1].                         (* 1 *)
   Compute ↑[:: 1]↓.                       (* 0 *)
   Compute ↑[:: 1; 2].                      (* 1 *)
   Compute ↑[:: 1; 2]↓.                    (* 1 *)
-*)
+
   Lemma take_head_drop_last s : 1 < size s -> ↑s↓ = ↑s.
   Proof.
     case: s => // a s.
@@ -144,12 +148,11 @@ drop head と drop last の順番がどちらでもよいことを証明する�
 (**
 寸法が十分なら、dropしたあとにtakeしてもおなじであることを証明する。
 *)
-(*
   Compute [:: 1]↑.                         (* 1 *)
   Compute ↓[:: 1]↑.                       (* 0 *)
   Compute [:: 1; 2]↑.                      (* 2 *)
   Compute ↓[:: 1; 2]↑.                    (* 2 *)
-*)
+
   Lemma take_last_drop_head s : 1 < size s -> ↓s↑ = s↑.
   Proof.
     case: s => // a s.
@@ -270,7 +273,7 @@ p + a\ p & u
 
 # Stern-Brocot representation (SBR) の再帰関数による定義
 
-SBRを $ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $ で示します。
+SBRを $ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $ で示します。
 
 ただし、SBRのサイズは偶数として $n \ge 0$ で示します。
 表現の一意性のために、各要素の値は0を許さないことにします（\ge 1）が、
@@ -292,8 +295,8 @@ SB([]) &=&
 
 \\
 
-SB([R^{a_0}; ... ; L^{a_{n-3}}; R^{a_{n-2}}; L^{a_{n-1}}) &=&
-SB([R^{a_0}; ... ; L^{a_{n-3}}])\ 
+SB(R^{a_0}; ... ; L^{a_{n-3}}; R^{a_{n-2}}; L^{a_{n-1}}) &=&
+SB(R^{a_0}; ... ; L^{a_{n-3}})\ 
 
 \begin{pmatrix}
 1 & 0 \\
@@ -405,38 +408,22 @@ p & u
   Qed.
 
 (**
-## SBR の定義
-*)  
-(*
-  Inductive SBPath :=
-  | L
-  | R.
-  
-  Inductive sb_pair :=
-  | SB_PAIR (p : SBPath) (a : nat).
-  Notation "d ^ a" := (SB_PAIR d a).
-  
-  Definition SBR := seq sb_pair.
-  
-  (* 例 *)
-  Check [:: R^1; L^2; R^3; L^0] : SBR.
-*)
+## SBR から ノードへの変換関数
 
-(**
 SBR は、
 
-$$ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $$
+$$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
 
 の肩の数字の2個づつのリストとして、つぎのように表記します。
 
 ```
-[:: (a_(n-1), a_(n-2)); ... ; (a_1, a_0)]
+[:: (a_0, a_1); ... (a_(n-2), a_(n-1))]
 ```
 *)  
-  Function SB (s : seq (nat * nat)) {measure size s} :=
+  Function SB (s : seq (nat * nat)) {measure size s} : SBNode :=
     match s with
     | [::] => IDENT
-    | _ => SB (s↓) * RIGHT (s↑.1) * LEFT (s↑.2)
+    | _ => SB (s⇓) * RIGHT (s⇑.1) * LEFT (s⇑.2)
     end.
   Proof.
     move=> s a s' H.
@@ -451,7 +438,7 @@ $$ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $$
   Proof. by rewrite SB_equation. Qed.
 
 (**
-計算例
+## 計算例
 *)  
   Goal SBf (SB [:: (0, 1)]) = (1, 2).
   Proof.
@@ -482,6 +469,12 @@ $$ [R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}}] $$
   Qed.
   
 End SBR.
+
+(**
+# リストのdropによる帰納法
+ *)
+
+
 
 (**
 # 文献
