@@ -31,11 +31,11 @@ SBRと分数（連分数）との相互変換について考えてみます。
 
 # 目次
 
+- リストのtakeとdrop
+
 - SBTの行列による表現
 
 - SBRの再帰関数による定義
-
-- リストのtakeとdrop
 
 - リストのdropによる帰納法
 
@@ -49,6 +49,113 @@ SBRと分数（連分数）との相互変換について考えてみます。
 
 *)
 
+From mathcomp Require Import all_ssreflect.
+From mathcomp Require Import all_algebra.
+Require Import ssromega.
+Require Import Recdef.                      (* Function *)
+Require Import Wf_nat.                      (* wf *)
+Require Import Program.Wf.                  (* Program wf *)
+(* Import Program とすると、リストなど余計なものがついてくるので、Wfだけにする。 *)
+
+(* MathComp の belast の定義を避けて、自分で定義したものを補題込みで使う。 *)
+Require Import csm_4_4_x_seq_head_last.
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+(* Set Print All. *)
+
+(**
+# リストのtakeとdrop
+ *)
+Section TakeDrop.
+  
+  Definition take_head s := head 0 s.
+  
+  Definition drop_head (s : seq nat) := behead s.
+  
+  Definition take_last s := last 0 s.
+  
+  (* csm_4_4_x_seq_head_last *)
+  Print belast'.
+  Definition drop_last (s : seq nat) := belast' s.
+  
+End TakeDrop.
+
+Notation "↑ s" := (take_head s) (at level 53, no associativity).
+Notation "↓ s" := (drop_head s) (at level 51, no associativity).
+Notation "s ↑" := (take_last s) (at level 54, no associativity).
+Notation "s ↓" := (drop_last s) (at level 52, no associativity).
+
+Section TakeDrop1.
+  Compute ↑[:: 1; 2; 3].                   (* 1 *)
+  Compute [:: 1; 2; 3]↑ .                  (* 3 *)
+  Compute ↓[:: 1; 2; 3].                   (* [:: 2; 3] *)
+
+  Compute ↓[:: 1; 2; 3].                   (* [:: 2; 3] *)
+  Compute ↑↓[:: 1; 2; 3].                 (* 2 *)
+  Compute ↓↓[:: 1; 2; 3].                 (* [:: 3] *)
+
+  Compute [:: 1; 2; 3]↓.                   (* [:: 1; 2] *)
+  Compute [:: 1; 2; 3]↓↑.                 (* 2 *)
+  Compute [:: 1; 2; 3]↓↓.                 (* [:: 1] *)
+
+(**
+drop のほうを優先する。dropしてtake できるように。
+ *)
+  Compute ↓[:: 1; 2; 3]↑.                 (* 3 *)
+  Compute ↑[:: 1; 2; 3]↓.                 (* 1 *)
+  
+(**
+dropどうしならどちらでも一緒だが、head のほうを優先する。
+ *)
+  Compute (↓[:: 1; 2; 3])↓.               (* [:: 2] *)
+
+(**
+drop head と drop last の順番がどちらでもよいことを証明する。
+ *)
+  Lemma drop_head_last s : (↓s)↓ = ↓(s↓).
+  Proof.
+    case: s => // a s.
+    rewrite [LHS]/=.
+    elim/last_ind : s => // s a' _.         (* 場合分け。帰納法の前提は捨てる。 *)
+    rewrite /drop_last -rcons_cons !belast'_rcons.
+    done.
+  Qed.
+
+(**
+寸法が十分なら、dropしたあとにtakeしてもおなじであることを証明する。
+*)
+  Compute ↑[:: 1].                         (* 1 *)
+  Compute ↑[:: 1]↓.                       (* 0 *)
+  Compute ↑[:: 1; 2].                      (* 1 *)
+  Compute ↑[:: 1; 2]↓.                    (* 1 *)
+  Lemma take_head_drop_last s : 1 < size s -> ↑s↓ = ↑s.
+  Proof.
+    case: s => // a s.
+    elim/last_ind : s => // s a' _ H.       (* 寸法の前提がここで使う。 *)
+    rewrite /drop_last -rcons_cons !belast'_rcons.
+    done.
+  Qed.
+
+(**
+寸法が十分なら、dropしたあとにtakeしてもおなじであることを証明する。
+*)
+  Compute [:: 1]↑.                         (* 1 *)
+  Compute ↓[:: 1]↑.                       (* 0 *)
+  Compute [:: 1; 2]↑.                      (* 2 *)
+  Compute ↓[:: 1; 2]↑.                    (* 2 *)
+  Lemma take_last_drop_head s : 1 < size s -> ↓s↑ = s↑.
+  Proof.
+    case: s => // a s.
+    elim/last_ind : s => // s a' _ H.       (* 寸法の前提がここで使う。 *)
+    rewrite /=.
+    rewrite /take_last -rcons_cons !last_rcons.
+    done.
+  Qed.
+
+End TakeDrop1.  
+
 (**
 # Stern-Brocot tree (SBT) の行列による表現
 
@@ -56,8 +163,8 @@ SBRと分数（連分数）との相互変換について考えてみます。
 
 ```math
 \begin{pmatrix}
-q & p' \\
-p & q'
+q & v \\
+p & u
 \end{pmatrix}
 ```
 
@@ -67,12 +174,12 @@ p & q'
 ```math
 f (
 \begin{pmatrix}
-q & q' \\
-p & p'
+q & v \\
+p & u
 \end{pmatrix}
 )
 =
-\frac{p + p'}{q + q'}
+\frac{p + u}{q + v}
 ```
 
 ## ルート
@@ -107,14 +214,14 @@ $a$ は左に下がる回数です。
 
 ```math
 \begin{pmatrix}
-q & q' \\
-p & p'
+q & v \\
+p & u
 \end{pmatrix}
 L^a
 =
 \begin{pmatrix}
-q & q' \\
-p & p'
+q & v \\
+p & u
 \end{pmatrix}
 \begin{pmatrix}
 1 & a \\
@@ -122,8 +229,8 @@ p & p'
 \end{pmatrix}
 =
 \begin{pmatrix}
-q & a\ q + q' \\
-p & a\ p + p'
+q & a\ q + v \\
+p & a\ p + u
 \end{pmatrix}
 ```
 
@@ -135,14 +242,14 @@ $a$ は右に下がる回数です。
 
 ```math
 \begin{pmatrix}
-q & q' \\
-p & p'
+q & v \\
+p & u
 \end{pmatrix}
 R^a
 =
 \begin{pmatrix}
-q & q' \\
-p & p'
+q & v \\
+p & u
 \end{pmatrix}
 \begin{pmatrix}
 1 & 0 \\
@@ -150,8 +257,8 @@ a & 1
 \end{pmatrix}
 =
 \begin{pmatrix}
-q + a\ q' & q' \\
-p + a\ p` & p'
+q + a\ v & v \\
+p + a\ p & u
 \end{pmatrix}
 ```
 
@@ -194,23 +301,92 @@ a_{n-2} & 1
 \end{pmatrix}
 \end{eqnarray}
 ```
-
 *)
 
-From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
-Require Import Recdef.                      (* Function *)
-Require Import Wf_nat.                      (* wf *)
-Require Import Program.Wf.                  (* Program wf *)
-(* Import Program とすると、リストなど余計なものがついてくるので、Wfだけにする。 *)
+Section SBR.
+(**
+## ノードの定義
 
-Require Import Extraction.
+SBT のノードは直積の直積で表現し、常識的な順番とします。
 
+```math
+\begin{pmatrix}
+q & v \\
+p & u
+\end{pmatrix}
+=
+((q,\ v),\ (p,\ u))
+```
+*)
+  Definition SBNode := ((nat * nat) * (nat * nat))%type.
+  
+  Definition IDENT : SBNode := ((1, 0), (0, 1)).
+  Definition LEFT (a : nat) : SBNode := ((1, a),
+                                         (0, 1)).
+  Definition RIGHT (a : nat) : SBNode := ((1, 0),
+                                          (a, 1)).  
+  Definition NODE (q p v u : nat) : SBNode := ((q, v),
+                                               (p, u)).
+  Local Definition q_ (N : SBNode) := N.1.1.
+  Local Definition p_ (N : SBNode) := N.2.1.
+  Local Definition v_ (N : SBNode) := N.1.2.
+  Local Definition u_ (N : SBNode) := N.2.2.
+  
+  Lemma NODEeq (N : SBNode) : ((q_ N, v_ N),
+                               (p_ N, u_ N)) = N.
+  Proof.
+      by rewrite -!surjective_pairing.
+  Qed.
+  
+(**
+## 掛け算の定義
 
-Set Implicit Arguments.
-Unset Strict Implicit.
-Unset Printing Implicit Defensive.
-(* Set Print All. *)
+掛け算の定義と関連する補題を証明します。
+*)
+  Definition mul (N N' : SBNode) := 
+    ((q_ N * q_ N' + v_ N * p_ N', q_ N * v_ N' + v_ N * u_ N'),
+     (p_ N * q_ N' + u_ N * p_ N', p_ N * v_ N' + u_ N * u_ N')).
+
+  Lemma mulIr (N : SBNode) : mul N IDENT = N.
+  Proof.
+    rewrite /mul /NODE /IDENT /q_ /p_ /v_ /u_ //=.
+    rewrite !muln0 !muln1 !addn0 !add0n.
+      by rewrite NODEeq.
+  Qed.
+
+  Lemma mulIl (N : SBNode) : mul IDENT N = N.
+  Proof.
+    rewrite /mul /NODE /IDENT /q_ /p_ /v_ /u_ //=.
+    rewrite !mul0n !mul1n !addn0 !add0n.
+      by rewrite NODEeq.
+  Qed.
+
+  Lemma mulLa (N : SBNode) (a : nat) :
+    mul N (LEFT a) = ((q_ N, a * q_ N + v_ N),
+                      (p_ N, a * p_ N + u_ N)).
+  Proof.
+    rewrite /mul /NODE /LEFT /q_ /p_ /v_ /u_ //=.
+    rewrite !muln1 !muln0 !addn0.
+    rewrite ![_ * a]mulnC.
+    done.
+  Qed.
+
+  Lemma mulRa (N : SBNode) (a : nat) :
+    mul N (RIGHT a) = ((q_ N + a * v_ N, v_ N),
+                       (p_ N + a * u_ N, u_ N)).
+  Proof.
+    rewrite /mul /NODE /RIGHT /q_ /p_ /v_ /u_ //=.
+    rewrite !muln1 !muln0 !add0n.
+    rewrite ![_ * a]mulnC.
+    done.
+  Qed.
+  
+  
+  Inductive SBPath :=
+  | L
+  | R.
+  
+End SBR.
 
 (**
 # 文献
