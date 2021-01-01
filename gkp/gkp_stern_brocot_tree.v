@@ -50,11 +50,12 @@ SBRと分数（連分数）との相互変換について考えてみます。
 *)
 
 From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import all_algebra.
+(* From mathcomp Require Import all_algebra. *)
+Require Import ssrinv.
 Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
-Require Import Program.Wf.                  (* Program wf *)
+(* Require Import Program.Wf. *)            (* Program wf *)
 (* Import Program とすると、リストなど余計なものがついてくるので、Wfだけにする。 *)
 
 (* MathComp の belast の定義を避けて、自分で定義したものを補題込みで使う。 *)
@@ -162,6 +163,37 @@ drop head と drop last の順番がどちらでもよいことを証明する�
     done.
   Qed.
 
+(**
+ *)
+  Lemma take_dropE s : 2 <= size s -> ↑s :: ↑↓s :: ↓s = s.
+  Proof.
+  Admitted.
+  
+(**  
+rev に関する補題
+*)
+  Lemma rev_take_head s : ↑(rev s) = s↑.
+  Proof.
+  Admitted.
+  
+  Lemma rev_take_tail s : (rev s)↑ = ↑s.
+  Proof.
+  Admitted.
+
+  Lemma rev_drop_head s : ↓(rev s) = rev (s↓).
+  Proof.
+    elim/last_ind : s => // s a _.
+    rewrite /drop_last belast'_rcons.
+    rewrite rev_rcons.
+    done.
+  Qed.
+  
+  Lemma rev_drop_tail s : (rev s)↓ = rev (↓s).
+  Proof.
+    elim: s => // a s _ /=.
+    rewrite /drop_last rev_cons !belast'_rcons.
+    done.
+  Qed.
 End TakeDrop1.  
 
 (**
@@ -440,7 +472,7 @@ csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用してい�
     (* see. csm_4_4_x_seq_head_last *)
     rewrite /drop_last size_belast'.
     done.
-  Qed.
+  Defined.
 
 (**
 Functon コマンドによって、関数の定義を簡約する補題が生成されています。
@@ -448,38 +480,22 @@ Functon コマンドによって、関数の定義を簡約する補題が生成
   Check SB'_equation.
   
   Lemma SB'I : SB' [::] = IDENT.
-  Proof. by rewrite SB'_equation. Qed.
-
-(**
-## 計算例
-*)  
-  Goal SBf (SB' [:: (0, 1)]) = (1, 2).
   Proof.
-    rewrite /SBf SB'_equation //=.
-    rewrite !SB'I /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
-
-  Goal SBf (SB' [:: (0, 4)]) = (1, 5).
-  Proof.
-    rewrite /SBf SB'_equation //=.
-    rewrite !SB'I /IDENT /q_ /p_ /v_ /u_.
+    (* by rewrite SB'_equation. *)
     done.
   Qed.
   
-  Goal SBf (SB' [:: (1, 1); (1, 0)]) = (5, 3).
-  Proof.
-    rewrite /SBf 2!SB'_equation //=.
-    rewrite SB'I /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
-
-  Goal SBf (SB' [:: (1, 1); (1, 1)]) = (8, 5).
-  Proof.
-    rewrite /SBf 2!SB'_equation //=.
-    rewrite SB'I /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
+(**
+## 計算例
+*)  
+  (*                   (R  L)  (R  L) *)
+  Compute SBf (SB' [:: (0, 1)]).            (* 1/2 *)
+  Compute SBf (SB' [:: (0, 4)]).            (* 1/5 *)
+  Compute SBf (SB' [:: (1, 0)]).            (* 2/1 *)
+  Compute SBf (SB' [:: (1, 1)]).            (* 3/2 *)
+  Compute SBf (SB' [:: (1, 1); (1, 0)]).    (* 5/3 *)
+  Compute SBf (SB' [:: (1, 1); (1, 1)]).    (* 8/5 *)
+  Compute SBf (SB' [:: (2, 2)]).            (* 7/3 *)  
   
 (**
 ## SBR から ノードへの変換関数
@@ -512,49 +528,183 @@ csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用してい�
     (* see. csm_4_4_x_seq_head_last *)
     rewrite /drop_last 2!size_belast' /=.
       by ssromega.
-  Qed.
+  Defined.
   
+(**
+Functon コマンドによって、関数の定義を簡約する補題が生成されています。
+*)  
+  Check SB_equation.                        (* 略 *)
+
   Lemma SBI : SB [::] = IDENT.
   Proof. by rewrite SB_equation. Qed.
   
 (**
 ## 計算例
 *)  
-  Goal SBf (SB [:: 0; 1]) = (1, 2).
-  Proof.
-    rewrite /SBf SB_equation //=.
-    rewrite !SBI /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
-
-  Goal SBf (SB [:: 0; 4]) = (1, 5).
-  Proof.
-    rewrite /SBf SB_equation //=.
-    rewrite !SBI /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
-  
-  Goal SBf (SB [:: 1; 1; 1; 0]) = (5, 3).
-  Proof.
-    rewrite /SBf 2!SB_equation //=.
-    rewrite SBI /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
-
-  Goal SBf (SB [:: 1; 1; 1; 1]) = (8, 5).
-  Proof.
-    rewrite /SBf 2!SB_equation //=.
-    rewrite SBI /RIGHT /LEFT /IDENT /q_ /p_ /v_ /u_.
-    done.
-  Qed.
+  (*                  R  L  R  L *)
+  Compute SBf (SB [:: 0; 1]).             (* 1/2 *)
+  Compute SBf (SB [:: 0; 4]).             (* 1/5 *)
+  Compute SBf (SB [:: 1; 0]).             (* 2/1 *)
+  Compute SBf (SB [:: 1; 1]).             (* 3/2 *)
+  Compute SBf (SB [:: 1; 1; 1; 0]).       (* 5/3 *)
+  Compute SBf (SB [:: 1; 1; 1; 1]).       (* 8/5 *)
+  Compute SBf (SB [:: 2; 2]).             (* 7/3 *)
 
 End SBR.
+Notation "N * N'" := (mul N N').
 
 (**
 # リストのdropによる帰納法
 
-（作成中）
+SBの定義において、Functionコマンドが生成した帰納法は以下です。
  *)
+Check SB_ind
+  : forall P : seq nat -> SBNode -> Prop,
+    (forall s, s = [::] -> P [::] IDENT) ->
+    (forall s s',
+        s = s' ->
+        match s' with
+        | [::] => False
+        | _ :: _ => True
+        end ->
+        P (s↓↓) (SB (s↓↓)) ->
+        P s' (SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑))) ->
+    forall s, P s (SB s).
+
+(**
+使いやすい補題のかたちにしておきます。
+*)
+Lemma SB_ind' : forall P : seq nat -> SBNode -> Prop,
+       (forall s : seq nat, s = [::] -> P [::] IDENT) ->
+       (forall s : seq nat,
+           s <> [::] ->
+           P (s↓↓) (SB (s↓↓)) ->
+           P s (SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑))) ->
+       forall s : seq nat, P s (SB s).
+Proof.
+  move=> P H IH s.
+  apply: SB_ind => //=.
+  move=> s' s'' <- Hs' H1.
+  apply: IH => //=.
+  case Hs'nil : (s' == [::]).
+  - move/eqP in Hs'nil.
+      by rewrite Hs'nil in Hs'.
+  - move/eqP in Hs'nil.
+      by [].
+Qed.
+
+(**
+# continuant、連分多項式 (Euler の K)
+ *)
+Section EulerK.
+  
+  Function EulerK (s : seq nat) {measure size s} : nat :=
+    match s with
+    | [::] => 1
+    | [:: n] => n
+    | _ => s↑ * EulerK (s↓) + EulerK (s↓↓)
+    end.
+  - move=> s n s' n' s'' H1 H2.
+    apply/ltP.
+    rewrite 2!size_belast' /=.
+      by ssromega.    
+  - move=> s n s' n' s'' H1 H2.
+    apply/ltP.
+    rewrite size_belast' /=.
+    done.
+  Defined.
+  
+  Compute EulerK  [:: 3; 3; 1; 2].          (* 36 *)
+  Compute EulerK  [:: 3; 1; 2].             (* 11 *)
+
+(**
+EulerK の再帰の1回分を補題にする。
+*)
+  Lemma EulerK1 : EulerK [::] = 1.
+  Proof. done. Qed.
+
+  Lemma EulerKn a : EulerK [:: a] = a.
+  Proof. done. Qed.
+  
+  Lemma EulerKE (s : seq nat) :
+    2 <= size s -> EulerK s = s↑ * EulerK (s↓) + EulerK (s↓↓).
+  Proof.
+    rewrite EulerK_equation.
+    case: s.
+    - done.
+    - move=> a0 s.
+      case: s.
+      + by inv.
+      + move=> a1 s Hs.
+        done.
+  Qed.
+
+  Lemma EulerKEr (s : seq nat) :
+    2 <= size s -> EulerK s = (↑s) * EulerK (↓s) + EulerK (↓↓s).
+  Proof.
+  Admitted.
+
+  Lemma test (s : seq nat) :
+    (match s with [:: _, _ & _] => True | _ => False end) -> 2 <= size s.
+  Proof.
+  Admitted.
+  
+  Lemma EulerK_rev s : EulerK s = EulerK (rev s).
+  Proof.
+    functional induction (EulerK s) => //=.
+    rewrite -rev_drop_head in IHn.
+    rewrite -rev_drop_head in IHn0.
+    rewrite -rev_drop_head in IHn0.
+    rewrite IHn IHn0.
+    rewrite -rev_take_head.
+    rewrite -EulerKEr => //.
+    (* *** *)
+    case H : (s == ↑s :: ↑↓s :: ↓s).
+    - move/eqP in H.
+        by rewrite H size_rev.
+    - move/eqP in H.
+      rewrite take_dropE in H.
+      + done.                               (* 前提矛盾 *)
+      + by move/test in y.
+  Qed.
+  
+
+
+
+
+
+  Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
+    GaussH (rcons (rcons s n1) n0) = n0 * GaussH (rcons s n1) + GaussH s.
+  Proof.
+    functional induction (GaussH s).
+    - rewrite GaussHE /GaussH /=.
+      by rewrite mulnC.
+    - rewrite GaussHE /GaussH /=.
+    (* n * (n1 * n0 + 1) + n0 = n0 * (n * n1 + 1) + n *)
+      rewrite !mulnDr !mulnA !muln1.
+      rewrite ?addnA addnAC.                (* n を最後に。 *)
+      rewrite ?mulnA mulnAC.                (* n1 を最後に。 *)
+      rewrite -?mulnA mulnCA.               (* n0 を最初に。 *)
+      done.
+    - rewrite /=.
+      rewrite GaussHE IHn0 /=.
+      rewrite GaussHE IHn /=.
+      rewrite !mulnDr.
+      rewrite ?addnA.
+      rewrite [n2 * (n0 * GaussH (n3 :: rcons s' n1))]mulnCA.
+        by ssromega.
+  Qed.
+  
+  
+
+  
+
+    
+  
+
+  
+
+End EulerK.
 
 
 (**
