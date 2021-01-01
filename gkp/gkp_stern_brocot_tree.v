@@ -39,7 +39,7 @@ SBRと分数（連分数）との相互変換について考えてみます。
 
 - リストのdropによる帰納法
 
-- continuant、連分多項式 (Euler の K)
+- continuant、連分多項式 (Gauss の H と Euler の K)
 
 - K による表現と証明
 
@@ -186,7 +186,7 @@ rev に関する補題を証明する。
     done.
   Qed.
   
-  Lemma rev_take_tail s : (rev s)↑ = ↑s.
+  Lemma rev_take_tail s : (rev s)↑ = ↑s.  (* tail_rev *)
   Proof.
     elim: s => // a s _ /=.    
     rewrite /take_last rev_cons last_rcons.
@@ -201,7 +201,7 @@ rev に関する補題を証明する。
     done.
   Qed.
   
-  Lemma rev_drop_tail s : (rev s)↓ = rev (↓s).
+  Lemma rev_drop_tail s : (rev s)↓ = rev (↓s). (* body_rev *)
   Proof.
     elim: s => // a s _ /=.
     rewrite /drop_last rev_cons !belast'_rcons.
@@ -607,9 +607,83 @@ Proof.
 Qed.
 
 (**
-# continuant、連分多項式 (Euler の K)
+# continuant、連分多項式
+
+文献[1.]の Euler の K を導入します。
+その前に Gauss の H を導入して、両者がおなじであることを証明しておきます。
+H を使用すると K の証明が容易になる場合があるからです。
+
+## Gauss の H
  *)
-Section EulerK.
+Section GAUSSH.
+  
+  Function GaussH (s : seq nat) {measure size s} : nat :=
+    match s with
+    | [::] => 1
+    | [:: n] => n
+    | n0 :: n1 :: s' => n0 * GaussH (n1 :: s') + GaussH s'
+    end.
+  Proof.
+    - move=> s n0 l n1 s' H1 H2.
+      apply/ltP => /=.
+        by ssromega.
+    - move=> s n0 l n1 s' H1 H2.
+      apply/ltP => /=.
+        by ssromega.
+  Defined.
+  
+  Compute GaussH [:: 3; 3; 1; 2].           (* 36 *)
+  Compute GaussH [:: 3; 1; 2].              (* 11 *)
+  
+  Lemma GaussH1 : GaussH [::] = 1.
+  Proof. done. Qed.
+
+  Lemma GaussHn n : GaussH [:: n] = n.
+  Proof. done. Qed.
+  
+  Lemma GaussHE (n0 n1 : nat) (s : seq nat) :
+    GaussH (n0 :: n1 :: s) = n0 * GaussH (n1 :: s) + GaussH s.
+  Proof.
+    by rewrite GaussH_equation.
+  Qed.
+  
+  Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
+    GaussH (rcons (rcons s n1) n0) = n0 * GaussH (rcons s n1) + GaussH s.
+  Proof.
+    functional induction (GaussH s).
+    - rewrite GaussHE /GaussH /=.
+      by rewrite mulnC.
+    - rewrite GaussHE /GaussH /=.
+    (* n * (n1 * n0 + 1) + n0 = n0 * (n * n1 + 1) + n *)
+      rewrite !mulnDr !mulnA !muln1.
+      rewrite ?addnA addnAC.                (* n を最後に。 *)
+      rewrite ?mulnA mulnAC.                (* n1 を最後に。 *)
+      rewrite -?mulnA mulnCA.               (* n0 を最初に。 *)
+      done.
+    - rewrite /=.
+      rewrite GaussHE IHn0 /=.
+      rewrite GaussHE IHn /=.
+      rewrite !mulnDr.
+      rewrite ?addnA.
+      rewrite [(n2 * (n0 * GaussH (n3 :: rcons s' n1)))%nat]mulnCA.
+        by ssromega.
+  Qed.
+  
+  Lemma GaussH__GaussH_rev s : GaussH s = GaussH (rev s).
+  Proof.
+    functional induction (GaussH s) => //.
+    rewrite !rev_cons.
+    rewrite GaussHEr.
+    rewrite -rev_cons.
+    rewrite IHn IHn0.
+    done.
+  Qed.
+End GAUSSH.
+
+(**
+## Euler の K
+ *)
+Section EULERK.
   
   Function EulerK (s : seq nat) {measure size s} : nat :=
     match s with
@@ -652,81 +726,69 @@ EulerK の再帰の1回分を補題にする。
   Lemma EulerKn a : EulerK [:: a] = a.
   Proof. done. Qed.
   
-  Lemma EulerKE (s : seq nat) :
-    2 <= size s -> EulerK s = s↑ * EulerK (s↓) + EulerK (s↓↓).
+  Lemma EulerKE s :
+    2 <= size s ->
+    EulerK s = s↑ * EulerK (s↓) + EulerK (s↓↓).
   Proof.
-    rewrite EulerK_equation.
+    case: s => //= n0 s.
     case: s.
-    - done.
-    - move=> a0 s.
-      case: s.
-      + by inv.
-      + move=> a1 s Hs.
-        done.
+    + done.
+    + move=> n1 s Hs.
+        by rewrite EulerK_equation.
   Qed.
   
+(**
+### EulerK と GaussH が同じ
+*)  
+  Lemma EulerK_rev__GaussH s : EulerK (rev s) = GaussH s.
+  Proof.
+    functional induction (GaussH s) => [//= | //= |].
+    rewrite EulerKE.
+    - rewrite rev_take_tail 2!rev_drop_tail.
+      rewrite IHn -IHn0.
+      done.
+    - rewrite size_rev.
+      done.
+  Qed.
+  
+  Lemma EulerK__GaussH s : EulerK s = GaussH s.
+  Proof.
+    rewrite -(revK s).
+    rewrite EulerK_rev__GaussH GaussH__GaussH_rev.
+    rewrite revK.
+    done.
+  Qed.
+
   Lemma EulerKEr (s : seq nat) :
     2 <= size s -> EulerK s = (↑s) * EulerK (↓s) + EulerK (↓↓s).
   Proof.
-  Admitted.
-
-  Lemma EulerK_rev s : EulerK s = EulerK (rev s).
+    case: s => //= n0 s.
+    case: s.
+    + done.
+    + move=> n1 s Hs /=.
+      rewrite 3!EulerK__GaussH.
+        by apply: GaussHE.
+  Qed.
+  
+  Lemma EulerK__EulerK_rev s : EulerK s = EulerK (rev s).
   Proof.
+(*
     functional induction (EulerK s) => //=.
     rewrite -rev_drop_head in IHn.
-    rewrite -rev_drop_head in IHn0.
-    rewrite -rev_drop_head in IHn0.
+    rewrite -2!rev_drop_head in IHn0.
     rewrite IHn IHn0.
     rewrite -rev_take_head.
     rewrite -EulerKEr => //.
-    (* *** *)
-    case H : (s == ↑s :: ↑↓s :: ↓↓s).
-    - move/eqP in H.
-        by rewrite H size_rev.
-    - move/eqP in H.
-      rewrite cons_take_take_dropE in H.
-      + done.                               (* 前提矛盾 *)
-      + by move/EK_cond in y.
+    (* Goal : 1 < size (rev s) *)
+    move/EK_cond in y.
+    rewrite size_rev.
+    done.
+    Restart.
+*)
+    rewrite 2!EulerK__GaussH.
+      by rewrite -GaussH__GaussH_rev.
   Qed.
-  
-
-
-
-
-
-  Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
-    GaussH (rcons (rcons s n1) n0) = n0 * GaussH (rcons s n1) + GaussH s.
-  Proof.
-    functional induction (GaussH s).
-    - rewrite GaussHE /GaussH /=.
-      by rewrite mulnC.
-    - rewrite GaussHE /GaussH /=.
-    (* n * (n1 * n0 + 1) + n0 = n0 * (n * n1 + 1) + n *)
-      rewrite !mulnDr !mulnA !muln1.
-      rewrite ?addnA addnAC.                (* n を最後に。 *)
-      rewrite ?mulnA mulnAC.                (* n1 を最後に。 *)
-      rewrite -?mulnA mulnCA.               (* n0 を最初に。 *)
-      done.
-    - rewrite /=.
-      rewrite GaussHE IHn0 /=.
-      rewrite GaussHE IHn /=.
-      rewrite !mulnDr.
-      rewrite ?addnA.
-      rewrite [n2 * (n0 * GaussH (n3 :: rcons s' n1))]mulnCA.
-        by ssromega.
-  Qed.
-  
-  
-
-  
-
-    
-  
-
-  
-
-End EulerK.
-
+End EULERK.
 
 (**
 # 文献
