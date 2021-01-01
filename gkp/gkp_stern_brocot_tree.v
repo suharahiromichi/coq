@@ -164,22 +164,35 @@ drop head と drop last の順番がどちらでもよいことを証明する�
   Qed.
 
 (**
+take drop したものを cons して戻ることを証明する。
  *)
-  Lemma take_dropE s : 2 <= size s -> ↑s :: ↑↓s :: ↓s = s.
+  Lemma cons_take_dropE s : 1 <= size s -> ↑s :: ↓s = s.
+  Proof. by case: s. Qed.
+
+  Lemma cons_take_take_dropE s : 2 <= size s -> ↑s :: ↑↓s :: (↓↓s) = s.
   Proof.
-  Admitted.
+    case: s => //= a s Hs.
+      by rewrite cons_take_dropE.
+  Qed.
   
 (**  
-rev に関する補題
+rev に関する補題を証明する。
 *)
   Lemma rev_take_head s : ↑(rev s) = s↑.
   Proof.
-  Admitted.
+    elim/last_ind : s => // s a _.
+    rewrite /take_last last_rcons.
+    rewrite rev_rcons /=.
+    done.
+  Qed.
   
   Lemma rev_take_tail s : (rev s)↑ = ↑s.
   Proof.
-  Admitted.
-
+    elim: s => // a s _ /=.    
+    rewrite /take_last rev_cons last_rcons.
+    done.
+  Qed.
+  
   Lemma rev_drop_head s : ↓(rev s) = rev (s↓).
   Proof.
     elim/last_ind : s => // s a _.
@@ -613,10 +626,23 @@ Section EulerK.
     rewrite size_belast' /=.
     done.
   Defined.
-  
+
+(**
+実行例  
+ *)
   Compute EulerK  [:: 3; 3; 1; 2].          (* 36 *)
   Compute EulerK  [:: 3; 1; 2].             (* 11 *)
 
+(**
+EukerK の定義に出現する条件式に関する補題を証明しておきます。
+*)
+  Lemma EK_cond (s : seq nat) :
+    (match s with [:: _, _ & _] => True | _ => False end) -> 2 <= size s.
+  Proof.
+    case: s => // a s.
+    case: s => //.
+  Qed.
+  
 (**
 EulerK の再帰の1回分を補題にする。
 *)
@@ -638,17 +664,12 @@ EulerK の再帰の1回分を補題にする。
       + move=> a1 s Hs.
         done.
   Qed.
-
+  
   Lemma EulerKEr (s : seq nat) :
     2 <= size s -> EulerK s = (↑s) * EulerK (↓s) + EulerK (↓↓s).
   Proof.
   Admitted.
 
-  Lemma test (s : seq nat) :
-    (match s with [:: _, _ & _] => True | _ => False end) -> 2 <= size s.
-  Proof.
-  Admitted.
-  
   Lemma EulerK_rev s : EulerK s = EulerK (rev s).
   Proof.
     functional induction (EulerK s) => //=.
@@ -659,13 +680,13 @@ EulerK の再帰の1回分を補題にする。
     rewrite -rev_take_head.
     rewrite -EulerKEr => //.
     (* *** *)
-    case H : (s == ↑s :: ↑↓s :: ↓s).
+    case H : (s == ↑s :: ↑↓s :: ↓↓s).
     - move/eqP in H.
         by rewrite H size_rev.
     - move/eqP in H.
-      rewrite take_dropE in H.
+      rewrite cons_take_take_dropE in H.
       + done.                               (* 前提矛盾 *)
-      + by move/test in y.
+      + by move/EK_cond in y.
   Qed.
   
 
