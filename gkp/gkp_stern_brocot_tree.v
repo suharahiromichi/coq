@@ -568,13 +568,17 @@ Functon コマンドによって、関数の定義を簡約する補題が生成
 ## 計算例
 *)  
   (*                  R  L  R  L *)
-  Compute SBf (SB [:: 0; 1]).             (* 1/2 *)
-  Compute SBf (SB [:: 0; 4]).             (* 1/5 *)
-  Compute SBf (SB [:: 1; 0]).             (* 2/1 *)
-  Compute SBf (SB [:: 1; 1]).             (* 3/2 *)
-  Compute SBf (SB [:: 1; 1; 1; 0]).       (* 5/3 *)
-  Compute SBf (SB [:: 1; 1; 1; 1]).       (* 8/5 *)
-  Compute SBf (SB [:: 2; 2]).             (* 7/3 *)
+  Compute SBf (SB [:: 0; 1]).               (* 1/2 *)
+  Compute SBf (SB [:: 0; 4]).               (* 1/5 *)
+  Compute SBf (SB [:: 1; 0]).               (* 2/1 *)
+  Compute SBf (SB [:: 1; 1]).               (* 3/2 *)
+
+  (* SB の引数は 2以上の偶数に制限すること。XXXX *)
+  Compute SBf (SB [:: 1; 1; 1]).            (* 3/5 *)
+
+  Compute SBf (SB [:: 1; 1; 1; 0]).         (* 5/3 *)
+  Compute SBf (SB [:: 1; 1; 1; 1]).         (* 8/5 *)
+  Compute SBf (SB [:: 2; 2]).               (* 7/3 *)
 
 End SBR.
 Notation "N * N'" := (mul N N').
@@ -583,41 +587,31 @@ Notation "N * N'" := (mul N N').
 # リストのdropによる帰納法
 
 SBの定義において、Functionコマンドが生成した帰納法は以下です。
- *)
-Check SB_ind
-  : forall P : seq nat -> SBNode -> Prop,
-    (forall s, s = [::] -> P [::] IDENT) ->
-    (forall s s',
-        s = s' ->
-        match s' with
-        | [::] => False
-        | _ :: _ => True
-        end ->
-        P (s↓↓) (SB (s↓↓)) ->
-        P s' (SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑))) ->
-    forall s, P s (SB s).
+*)
+
+Check SB_ind.
 
 (**
 使いやすい補題のかたちにしておきます。
 *)
 Lemma SB_ind' : forall P : seq nat -> SBNode -> Prop,
-       (forall s : seq nat, s = [::] -> P [::] IDENT) ->
-       (forall s : seq nat,
-           s <> [::] ->
-           P (s↓↓) (SB (s↓↓)) ->
-           P s (SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑))) ->
-       forall s : seq nat, P s (SB s).
+    (forall a0 a1 : nat, P [:: a0; a1] ((1, a1), (a0, a0 * a1 + 1))) ->
+    (forall s : seq nat,
+        4 <= size s -> ~~odd (size s) ->    (* even は使うのか？ *)
+        P (s↓↓) (SB (s↓↓)) ->
+        P s (SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑))) ->
+    forall s : seq nat, P s (SB s).
 Proof.
-  move=> P H IH s.
-  apply: SB_ind => //=.
-  move=> s' s'' <- Hs' H1.
-  apply: IH => //=.
-  case Hs'nil : (s' == [::]).
-  - move/eqP in Hs'nil.
-      by rewrite Hs'nil in Hs'.
-  - move/eqP in Hs'nil.
-      by [].
-Qed.
+  move=> P H1 IH s.
+  apply: SB_ind.
+  - admit.
+  - admit.
+  - Admitted.                                   (* XXXX *)
+(**
+この帰納法が証明できないのは、SB関数自体に定義が悪いからで、
+SB関数のなかに、2以上の偶数という条件が含まれていないからだ。
+*)
+
 
 (**
 # continuant、連分多項式
@@ -752,11 +746,19 @@ EukerK の定義に出現する条件式に関する補題を証明しておき�
 (**
 EulerK の再帰の1回分を補題にする。
 *)
-  Lemma EulerK1 : EulerK [::] = 1.
+  Lemma EulerK0 : EulerK [::] = 1.
   Proof. done. Qed.
 
-  Lemma EulerKn a : EulerK [:: a] = a.
+  Lemma EulerK1 a : EulerK [:: a] = a.
   Proof. done. Qed.
+  
+  Lemma EulerK2 a0 a1 : EulerK [:: a0; a1] = a0 * a1 + 1.
+  Proof.
+    rewrite EulerK_equation.
+    rewrite /take_last /=.
+    rewrite EulerK1 EulerK0.
+      by rewrite mulnC.
+  Qed.
   
   Lemma EulerKE s :
     2 <= size s ->
@@ -879,7 +881,7 @@ Proof.
   - done.
 Qed.
 
-Theorem SB_EulerK s : 4 <= size s ->
+Theorem SB_EulerK' s : 4 <= size s ->
                       SB s = ((EulerK (↓s↓), EulerK (↓s)),
                               (EulerK (s↓), EulerK s)).
 Proof.
@@ -891,7 +893,25 @@ Proof.
     * by ssromega.
   - rewrite 2!size_drop_tail.
     rewrite -subn2.
+    (* 3 < size _x - 2 *)
+    (* SB 関数の定義が悪いので、見直すこと！ *)
 Admitted.                                   (* XXXXXX *)
+
+Theorem SB_EulerK s : 4 <= size s ->
+                      SB s = ((EulerK (↓s↓), EulerK (↓s)),
+                              (EulerK (s↓), EulerK s)).
+Proof.
+  move=> Hsize.
+  apply SB_ind'.
+  - move=> a0 a1 /=.
+      by rewrite /IDENT EulerK0 2!EulerK1 EulerK2.
+  - move=> s' Hsize' Heven IHs.             (* Heven 条件は使えていない。 *)
+    rewrite IHs.
+    rewrite SB_RIGHT_LEFT_SB.
+    + done.
+    + done.
+Qed.
+
 
 (**
 # 文献
