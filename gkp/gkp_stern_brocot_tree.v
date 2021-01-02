@@ -43,7 +43,7 @@ SBRと分数（連分数）との相互変換について考えてみます。
 
 - K による表現と証明
 
-- ノードの左（右）の子
+- （おまけ）ノードの左（右）の子
 
 - （おまけ）SBTのノードが既約になることの証明
 
@@ -646,6 +646,17 @@ Section GAUSSH.
   Proof.
     by rewrite GaussH_equation.
   Qed.
+
+  Lemma GaussHE' (s : seq nat) :
+    2 <= size s ->
+    GaussH s = (↑s) * GaussH (↓s) + GaussH (↓↓s).
+  Proof.
+    case: s => //= n0 s.
+    case: s.
+    + done.
+    + move=> n1 s Hs.
+        by rewrite GaussH_equation.
+  Qed.
   
   Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
     GaussH (rcons (rcons s n1) n0) = n0 * GaussH (rcons s n1) + GaussH s.
@@ -668,6 +679,12 @@ Section GAUSSH.
       rewrite [(n2 * (n0 * GaussH (n3 :: rcons s' n1)))%nat]mulnCA.
         by ssromega.
   Qed.
+  
+  Lemma GaussHEr' (s : seq nat) :
+    2 <= size s ->
+    GaussH s = (s↑) * GaussH (s↓) + GaussH (s↓↓).
+  Proof.
+  Admitted.                                 (* XXXX *)
   
   Lemma GaussH__GaussH_rev s : GaussH s = GaussH (rev s).
   Proof.
@@ -760,7 +777,8 @@ EulerK の再帰の1回分を補題にする。
   Qed.
 
   Lemma EulerKEr (s : seq nat) :
-    2 <= size s -> EulerK s = (↑s) * EulerK (↓s) + EulerK (↓↓s).
+    2 <= size s ->
+    EulerK s = (↑s) * EulerK (↓s) + EulerK (↓↓s).
   Proof.
     case: s => //= n0 s.
     case: s.
@@ -789,6 +807,68 @@ EulerK の再帰の1回分を補題にする。
       by rewrite -GaussH__GaussH_rev.
   Qed.
 End EULERK.
+
+(**
+# K による表現と証明
+ *)
+Lemma SB_RIGHT_SB s :
+  2 <= size s -> 
+  ((EulerK (↓(s↓↓)↓), EulerK (↓(s↓↓))),
+   (EulerK (s↓↓↓), EulerK (s↓↓))) * RIGHT (s↓↑)
+  = ((EulerK (↓s↓), EulerK (↓s↓↓)),
+     (EulerK (s↓), EulerK (s↓↓))).
+Proof.
+  move=> Hs.
+  rewrite mulRa.
+  rewrite /q_ /p_ /v_ /u_ //=.
+  f_equal; f_equal.
+  - rewrite addnC.
+    rewrite (@EulerKE (↓s↓)).
+    + rewrite !drop_head_last.
+      rewrite take_last_drop_head.
+      * done.
+      * admit.
+    + admit.
+  - rewrite !drop_head_last.
+    done.
+  - rewrite addnC.
+    rewrite (@EulerKE (s↓)).
+    + done.
+    + admit.
+Admitted.
+
+Lemma SB_RIGHT_LEFT_SB s :
+  2 <= size s -> 
+  ((EulerK (↓(s↓↓)↓), EulerK (↓(s↓↓))),
+   (EulerK (s↓↓↓), EulerK (s↓↓))) * RIGHT (s↓↑) * LEFT (s↑)
+  = ((EulerK (↓s↓), EulerK (↓s)),
+     (EulerK (s↓), EulerK s)).
+Proof.
+  move=> Hs.
+  rewrite SB_RIGHT_SB.
+  - rewrite mulLa.
+    rewrite /q_ /p_ /v_ /u_ //=.
+    f_equal.
+    + rewrite (@EulerKE (↓s)).
+      * by rewrite !drop_head_last take_last_drop_head.
+      * admit.
+    + rewrite (@EulerKE s).
+      * done.
+      * done.
+  - admit.
+Admitted.
+
+Theorem SB_EulerK s : 2 <= size s ->
+                      SB s = ((EulerK (↓s↓), EulerK (↓s)),
+                              (EulerK (s↓), EulerK s)).
+Proof.
+  functional induction (SB s) => //= Hs.
+  rewrite IHs0.
+  - (* Check SB_RIGHT_LEFT_SB Hs. *)
+      by rewrite SB_RIGHT_LEFT_SB.
+  - (* 1 < size ((s ↓) ↓) *)
+    admit.
+Admitted.
 
 (**
 # 文献
