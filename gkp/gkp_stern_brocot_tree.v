@@ -207,6 +207,19 @@ rev に関する補題を証明する。
     rewrite /drop_last rev_cons !belast'_rcons.
     done.
   Qed.
+
+(**
+寸法についての補題を証明しておきます。
+*)
+  Lemma size_drop_head s : size (↓s) = (size s).-1.
+  Proof.
+      by rewrite size_behead.
+  Qed.
+  
+  Lemma size_drop_tail s : size (s↓) = (size s).-1.
+  Proof.
+      by rewrite size_belast'.    
+  Qed.
 End TakeDrop1.  
 
 (**
@@ -680,11 +693,13 @@ Section GAUSSH.
         by ssromega.
   Qed.
   
+(*
   Lemma GaussHEr' (s : seq nat) :
     2 <= size s ->
     GaussH s = (s↑) * GaussH (s↓) + GaussH (s↓↓).
   Proof.
-  Admitted.                                 (* XXXX *)
+  Abort.
+*)
   
   Lemma GaussH__GaussH_rev s : GaussH s = GaussH (rev s).
   Proof.
@@ -812,7 +827,7 @@ End EULERK.
 # K による表現と証明
  *)
 Lemma SB_RIGHT_SB s :
-  2 <= size s -> 
+  4 <= size s -> 
   ((EulerK (↓(s↓↓)↓), EulerK (↓(s↓↓))),
    (EulerK (s↓↓↓), EulerK (s↓↓))) * RIGHT (s↓↑)
   = ((EulerK (↓s↓), EulerK (↓s↓↓)),
@@ -824,21 +839,24 @@ Proof.
   f_equal; f_equal.
   - rewrite addnC.
     rewrite (@EulerKE (↓s↓)).
-    + rewrite !drop_head_last.
+    + rewrite 4!drop_head_last.
       rewrite take_last_drop_head.
       * done.
-      * admit.
-    + admit.
-  - rewrite !drop_head_last.
+      * rewrite size_drop_tail.
+          by ssromega.
+    + rewrite size_drop_tail size_drop_head.
+        by ssromega.
+  - rewrite 2!drop_head_last.
     done.
   - rewrite addnC.
     rewrite (@EulerKE (s↓)).
     + done.
-    + admit.
-Admitted.
+    + rewrite size_drop_tail.
+        by ssromega.
+Qed.
 
 Lemma SB_RIGHT_LEFT_SB s :
-  2 <= size s -> 
+  4 <= size s -> 
   ((EulerK (↓(s↓↓)↓), EulerK (↓(s↓↓))),
    (EulerK (s↓↓↓), EulerK (s↓↓))) * RIGHT (s↓↑) * LEFT (s↑)
   = ((EulerK (↓s↓), EulerK (↓s)),
@@ -850,25 +868,30 @@ Proof.
     rewrite /q_ /p_ /v_ /u_ //=.
     f_equal.
     + rewrite (@EulerKE (↓s)).
-      * by rewrite !drop_head_last take_last_drop_head.
-      * admit.
+      * rewrite drop_head_last take_last_drop_head.
+        ** done.
+        ** by ssromega.
+      * rewrite size_drop_head.
+          by ssromega.
     + rewrite (@EulerKE s).
       * done.
-      * done.
-  - admit.
-Admitted.
+      * by ssromega.
+  - done.
+Qed.
 
-Theorem SB_EulerK s : 2 <= size s ->
+Theorem SB_EulerK s : 4 <= size s ->
                       SB s = ((EulerK (↓s↓), EulerK (↓s)),
                               (EulerK (s↓), EulerK s)).
 Proof.
-  functional induction (SB s) => //= Hs.
+  move=> Hs.
+  functional induction (SB s) => //=.
   rewrite IHs0.
-  - (* Check SB_RIGHT_LEFT_SB Hs. *)
-      by rewrite SB_RIGHT_LEFT_SB.
-  - (* 1 < size ((s ↓) ↓) *)
-    admit.
-Admitted.
+  - rewrite SB_RIGHT_LEFT_SB.
+    * done.
+    * by ssromega.
+  - rewrite 2!size_drop_tail.
+    rewrite -subn2.
+Admitted.                                   (* XXXXXX *)
 
 (**
 # 文献
@@ -884,5 +907,3 @@ https://en.wikipedia.org/wiki/Stern-Brocot_tree
  *)
 
 (* END *)
-
-
