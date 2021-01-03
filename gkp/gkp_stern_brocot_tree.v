@@ -83,17 +83,6 @@ Notation "↓ s" := (drop_head s) (at level 51, no associativity).
 Notation "s ↑" := (take_last s) (at level 54, no associativity).
 Notation "s ↓" := (drop_last s) (at level 52, no associativity).
 
-Section TakeDropNatPair.
-  Definition take_head_natpair s := head (0, 0) s.
-  Definition drop_head_natpair (s : seq (nat * nat)) := behead s.
-  Definition take_last_natpair s := last (0, 0) s.
-  Definition drop_last_natpair (s : seq (nat * nat)) := belast' s.
-End TakeDropNatPair.
-Notation "⇑ s" := (take_head_natpair s) (at level 53, no associativity).
-Notation "⇓ s" := (drop_head_natpair s) (at level 51, no associativity).
-Notation "s ⇑" := (take_last_natpair s) (at level 54, no associativity).
-Notation "s ⇓" := (drop_last_natpair s) (at level 52, no associativity).
-
 Section TakeDrop1.
   Compute ↑[:: 1; 2; 3].                   (* 1 *)
   Compute [:: 1; 2; 3]↑ .                  (* 3 *)
@@ -472,64 +461,6 @@ SBR は、
 
 $$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
 
-の肩の数字の2個づつのリストとして、つぎのように表記します。
-
-```
-[:: (a_0, a_1); ... (a_(n-2), a_(n-1))]
-```
-
-SBR からノードへ変換する関数は、次のように定義されます。
-先に定義したdropを使用しているため、Function コマンドを使用して、
-引数のリストのサイズが減少することを明示的に示す必要があります。
-
-csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用しています。
-*)  
-  Check size_belast'
-    : forall (T : eqType) (s : seq T), size (belast' s) = (size s).-1.
-  
-  Function SB' (s : seq (nat * nat)) {measure size s} : SBNode :=
-    match s with
-    | [::] => IDENT
-    | _ => SB' (s⇓) * RIGHT (s⇑.1) * LEFT (s⇑.2)
-    end.
-  Proof.
-    move=> s a s' H.
-    apply/ltP.
-    (* see. csm_4_4_x_seq_head_last *)
-    rewrite /drop_last size_belast'.
-    done.
-  Defined.
-
-(**
-Functon コマンドによって、関数の定義を簡約する補題が生成されています。
-*)  
-  Check SB'_equation.
-  
-  Lemma SB'I : SB' [::] = IDENT.
-  Proof.
-    (* by rewrite SB'_equation. *)
-    done.
-  Qed.
-  
-(**
-## 計算例
-*)  
-  (*                   (R  L)  (R  L) *)
-  Compute SBf (SB' [:: (0, 1)]).            (* 1/2 *)
-  Compute SBf (SB' [:: (0, 4)]).            (* 1/5 *)
-  Compute SBf (SB' [:: (1, 0)]).            (* 2/1 *)
-  Compute SBf (SB' [:: (1, 1)]).            (* 3/2 *)
-  Compute SBf (SB' [:: (1, 1); (1, 0)]).    (* 5/3 *)
-  Compute SBf (SB' [:: (1, 1); (1, 1)]).    (* 8/5 *)
-  Compute SBf (SB' [:: (2, 2)]).            (* 7/3 *)  
-  
-(**
-## SBR から ノードへの変換関数
-
-SBR は、
-
-$$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
-
 の肩の数字のリストとして、つぎのように表記します。
 リストの寸法は偶数であることを暗黙の前提としています（見直すこと）。
 
@@ -594,24 +525,31 @@ Check SB_ind.
 (**
 使いやすい補題のかたちにしておきます。
 *)
+Lemma SB_cond (s : seq nat) :
+  (match s with [::] => False | _ :: _ => True end) -> 1 <= size s.
+Proof.
+    by case: s.
+Qed.
+
 Lemma SB_ind' : forall P : seq nat -> SBNode -> Prop,
     (forall a0 a1 : nat, P [:: a0; a1] ((1, a1), (a0, a0 * a1 + 1))) ->
     (forall s : seq nat,
-        4 <= size s -> ~~odd (size s) ->    (* even は使うのか？ *)
+        4 <= size s ->
         P (s↓↓) (SB (s↓↓)) ->
         P s (SB (s↓↓) * RIGHT (s↓↑) * LEFT (s↑))) ->
     forall s : seq nat, P s (SB s).
 Proof.
   move=> P H1 IH s.
-  apply: SB_ind.
-  - admit.
-  - admit.
-  - Admitted.                                   (* XXXX *)
+  functional induction (SB s) => //=.
+  - admit.                                  (* P [::] IDENT *)
+  - apply: IH.
+    + move/SB_cond in y.                    (* 0 < size s *)
+      admit.                                (* 3 < size s *)
+    + done.
+Admitted.
 (**
-この帰納法が証明できないのは、SB関数自体に定義が悪いからで、
-SB関数のなかに、2以上の偶数という条件が含まれていないからだ。
+この帰納法が証明できないのは、SB関数自体に定義が悪いからである。
 *)
-
 
 (**
 # continuant、連分多項式
@@ -827,6 +765,8 @@ End EULERK.
 
 (**
 # K による表現と証明
+
+SB関数を EulerK で表現できることを証明する。
  *)
 Lemma SB_RIGHT_SB s :
   4 <= size s -> 
@@ -881,6 +821,27 @@ Proof.
   - done.
 Qed.
 
+(**
+証明したい定理
+ *)
+
+Theorem SB_EulerK s : 4 <= size s ->
+                      SB s = ((EulerK (↓s↓), EulerK (↓s)),
+                              (EulerK (s↓), EulerK s)).
+Proof.
+  move=> Hsize.
+  apply SB_ind'.
+  - move=> a0 a1 /=.
+      by rewrite /IDENT EulerK0 2!EulerK1 EulerK2.
+  - move=> s' Hsize' IHs.
+    rewrite IHs.
+    rewrite SB_RIGHT_LEFT_SB.
+    + done.
+    + done.
+Qed.
+(* ここで使った帰納法の証明はできていない。SB 関数の定義が悪いので、見直すこと！ *)
+
+(* functional induction を直接使用しても、同様にうまくいかない。 *)
 Theorem SB_EulerK' s : 4 <= size s ->
                       SB s = ((EulerK (↓s↓), EulerK (↓s)),
                               (EulerK (s↓), EulerK s)).
@@ -894,24 +855,7 @@ Proof.
   - rewrite 2!size_drop_tail.
     rewrite -subn2.
     (* 3 < size _x - 2 *)
-    (* SB 関数の定義が悪いので、見直すこと！ *)
 Admitted.                                   (* XXXXXX *)
-
-Theorem SB_EulerK s : 4 <= size s ->
-                      SB s = ((EulerK (↓s↓), EulerK (↓s)),
-                              (EulerK (s↓), EulerK s)).
-Proof.
-  move=> Hsize.
-  apply SB_ind'.
-  - move=> a0 a1 /=.
-      by rewrite /IDENT EulerK0 2!EulerK1 EulerK2.
-  - move=> s' Hsize' Heven IHs.             (* Heven 条件は使えていない。 *)
-    rewrite IHs.
-    rewrite SB_RIGHT_LEFT_SB.
-    + done.
-    + done.
-Qed.
-
 
 (**
 # 文献
@@ -926,4 +870,77 @@ Qed.
 https://en.wikipedia.org/wiki/Stern-Brocot_tree
  *)
 
+(**
+# リストのtakeとdrop の別の定義
+*)
+
+Section TakeDropNatPair.
+  Definition take_head_natpair s := head (0, 0) s.
+  Definition drop_head_natpair (s : seq (nat * nat)) := behead s.
+  Definition take_last_natpair s := last (0, 0) s.
+  Definition drop_last_natpair (s : seq (nat * nat)) := belast' s.
+End TakeDropNatPair.
+Notation "⇑ s" := (take_head_natpair s) (at level 53, no associativity).
+Notation "⇓ s" := (drop_head_natpair s) (at level 51, no associativity).
+Notation "s ⇑" := (take_last_natpair s) (at level 54, no associativity).
+Notation "s ⇓" := (drop_last_natpair s) (at level 52, no associativity).
+
+(**
+## SBR から ノードへの変換関数
+
+SBR は、
+
+$$ R^{a_0}; L^{a_1}; ...; R^{a_{n-2}}; L^{a_{n-1}} $$
+
+の肩の数字の2個づつのリストとして、つぎのように表記します。
+
+```
+[:: (a_0, a_1); ... (a_(n-2), a_(n-1))]
+```
+
+SBR からノードへ変換する関数は、次のように定義されます。
+先に定義したdropを使用しているため、Function コマンドを使用して、
+引数のリストのサイズが減少することを明示的に示す必要があります。
+
+csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用しています。
+*)  
+  Check size_belast'
+    : forall (T : eqType) (s : seq T), size (belast' s) = (size s).-1.
+  
+  Function SB' (s : seq (nat * nat)) {measure size s} : SBNode :=
+    match s with
+    | [::] => IDENT
+    | _ => SB' (s⇓) * RIGHT (s⇑.1) * LEFT (s⇑.2)
+    end.
+  Proof.
+    move=> s a s' H.
+    apply/ltP.
+    (* see. csm_4_4_x_seq_head_last *)
+    rewrite /drop_last size_belast'.
+    done.
+  Defined.
+
+(**
+Functon コマンドによって、関数の定義を簡約する補題が生成されています。
+*)  
+  Check SB'_equation.
+  
+  Lemma SB'I : SB' [::] = IDENT.
+  Proof.
+    (* by rewrite SB'_equation. *)
+    done.
+  Qed.
+  
+(**
+## 計算例
+*)  
+  (*                   (R  L)  (R  L) *)
+  Compute SBf (SB' [:: (0, 1)]).            (* 1/2 *)
+  Compute SBf (SB' [:: (0, 4)]).            (* 1/5 *)
+  Compute SBf (SB' [:: (1, 0)]).            (* 2/1 *)
+  Compute SBf (SB' [:: (1, 1)]).            (* 3/2 *)
+  Compute SBf (SB' [:: (1, 1); (1, 0)]).    (* 5/3 *)
+  Compute SBf (SB' [:: (1, 1); (1, 1)]).    (* 8/5 *)
+  Compute SBf (SB' [:: (2, 2)]).            (* 7/3 *)  
+  
 (* END *)
