@@ -825,10 +825,12 @@ Qed.
 証明したい定理
  *)
 
-Theorem SB_EulerK s : 4 <= size s ->
-                      SB s = ((EulerK (↓s↓), EulerK (↓s)),
-                              (EulerK (s↓), EulerK s)).
+Definition SBK (s : seq nat) := ((EulerK (↓s↓), EulerK (↓s)),
+                                 (EulerK (s↓), EulerK s)).
+
+Theorem SB_EulerK s : 4 <= size s -> SB s = SBK s.
 Proof.
+  rewrite /SBK.
   move=> Hsize.
   apply SB_ind'.
   - move=> a0 a1 /=.
@@ -842,10 +844,9 @@ Qed.
 (* ここで使った帰納法の証明はできていない。SB 関数の定義が悪いので、見直すこと！ *)
 
 (* functional induction を直接使用しても、同様にうまくいかない。 *)
-Theorem SB_EulerK' s : 4 <= size s ->
-                      SB s = ((EulerK (↓s↓), EulerK (↓s)),
-                              (EulerK (s↓), EulerK s)).
+Theorem SB_EulerK' s : 4 <= size s -> SB s = SBK s.
 Proof.
+  rewrite /SBK.
   move=> Hs.
   functional induction (SB s) => //=.
   rewrite IHs0.
@@ -856,6 +857,93 @@ Proof.
     rewrite -subn2.
     (* 3 < size _x - 2 *)
 Admitted.                                   (* XXXXXX *)
+
+(**
+# （おまけ）ノードの左（右）の子
+
+SBT のノードが連分数であることを示す [1.] (式 6.139) を証明する。
+ *)
+Section NUM_DEN.
+  
+  (* (式 6.139) *)
+  Lemma SBR_num_den s : 4 <= size s ->
+                        SBf (SB s) = (EulerK (rcons s 1),      (* 分子 *)
+                                      EulerK (rcons (↓s) 1)). (* 分母 *)
+  Proof.
+    move=> Hsize.
+    rewrite SB_EulerK /SBK /SBf /q_ /p_ /v_ /u_ //=.
+    f_equal.
+    - rewrite (@EulerKE (rcons s 1)).         (* 分子 *)
+      + rewrite /take_last last_rcons mul1n.
+        rewrite /drop_last belast'_rcons.
+          by rewrite addnC.
+      + rewrite size_rcons.
+          by ssromega.
+    - rewrite (@EulerKE (rcons (↓s) 1)).     (* 分子 *)
+      + rewrite /take_last last_rcons mul1n.
+        rewrite /drop_last belast'_rcons.
+          by rewrite addnC.
+      + rewrite size_rcons size_drop_head.
+          by ssromega.
+  Qed.
+  
+(**
+連分数を分数に変換する関数
+
+ssr_cont_fract.v を参照のこと。
+*)
+  Fixpoint cf2f (sa : seq nat)  : (nat * nat) :=
+    match sa with
+    | a :: sa' =>
+      (a * (cf2f sa').1 + (cf2f sa').2, (cf2f sa').1)
+    (* let (p1, p2) := cf2f sa' in (a * p1 + p2, p1) *)
+    | [::] => (1, 0)
+    end.
+
+  Compute cf2f [:: 3; 3; 1; 2].             (* (36, 11) *)
+  Compute cf2f [:: 0; 1; 1; 1; 1; 1; 1].
+  Compute cf2f [:: 1; 2; 2; 2; 2; 2; 2].  
+
+  Lemma num_GaussH s : (cf2f s).1 = GaussH s.
+  Admitted.                                 (* ssr_cont_fract.v *)
+    
+  Lemma num_EulerK s : (cf2f s).1 = EulerK s.
+  Proof.
+      by rewrite EulerK__GaussH num_GaussH.
+  Qed.
+  
+  Lemma den_GaussH n s : (cf2f (n :: s)).2 = GaussH s.
+  Admitted.                                 (* ssr_cont_fract.v *)
+  
+  Lemma den_EulerK s : 1 <= size s -> (cf2f s).2 = EulerK (↓s).
+  Proof.
+    move=> Hsize.
+    rewrite EulerK__GaussH.
+    rewrite -(cons_take_dropE Hsize).
+    rewrite den_GaussH.
+    done.
+  Qed.
+  
+  Lemma drop_head_rcons s a : 1 <= size s -> ↓(rcons s a) = rcons (↓s) a.
+  Proof. by case: s. Qed.
+  
+(**
+最終的に、SBTのノードは連分数である
+*)
+  Lemma cf_SBK_num_den s : 4 <= size s -> cf2f (rcons s 1) = SBf (SB s).
+  Proof.
+    move=> Hsize.
+    rewrite SBR_num_den //.
+    rewrite [cf2f (rcons s 1)]surjective_pairing.
+    f_equal.
+    - by rewrite num_EulerK.                (* 分子 *)
+    - rewrite den_EulerK.
+      + rewrite drop_head_rcons //.
+          by ssromega.                      (* 0 < size s *)
+      + rewrite size_rcons.
+          by ssromega.                      (* 0 < (size s).+1 *)
+  Qed.
+End NUM_DEN.
 
 (**
 # 文献
