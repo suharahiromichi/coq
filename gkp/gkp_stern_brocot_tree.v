@@ -946,6 +946,80 @@ ssr_cont_fract.v を参照のこと。
 End NUM_DEN.
 
 (**
+# （おまけ）SBTのノードが既約になることの証明
+
+SBTのノードに対して $ g $ を次のように定義する。
+
+```math
+g (
+\begin{pmatrix}
+q & v \\
+p & u
+\end{pmatrix}
+)
+=
+q\ u - p\ v
+```
+
+すると、任意のSRBで決まるノード $ N $ について $ g(N) = q\ v - p\ u = 1 $ が成り立つ。
+
+Bezout の補題（拡張ユーグリッドの互除法）から、q と p が互いに素、v と u が互いに素
+である。つまり、SBTをたどっていく限り、そのノードはすべて既約分数であるといえる。
+ *)
+Section COPRIME.
+  
+  Definition SBg (N : SBNode) : nat := q_ N * u_ N - p_ N * v_ N.
+
+  Lemma SBgI : SBg IDENT = 1.
+  Proof. done. Qed.
+
+  Lemma SB_RIGHT q p v u a : ((q, v),
+                              (p, u)) * RIGHT a =
+                             ((q + a * v, v),
+                              (p + a * u, u)).
+  Proof. by rewrite mulRa  /q_ /p_ /v_ /u_ /=. Qed.
+  
+  Lemma SBg_RIGHT N a : SBg (N * RIGHT a) = SBg N.
+  Proof.
+    case: N => [[q p][v u]].
+    rewrite SB_RIGHT /SBg /q_ /p_ /v_ /u_ /=.
+    rewrite 2!mulnDl [(a * u * p)%nat]mulnAC subnDr.
+    done.
+  Qed.
+  
+  Lemma SB_LEFT q p v u a : ((q, v),
+                             (p, u)) * LEFT a =
+                            ((q, a * q + v),
+                             (p, a * p + u)).
+  Proof. by rewrite mulLa  /q_ /p_ /v_ /u_ /=. Qed.
+  
+  Lemma SBg_LEFT N a : SBg (N * LEFT a) = SBg N.
+  Proof.
+    case: N => [[q p][v u]].
+    rewrite SB_LEFT /SBg /q_ /p_ /v_ /u_ /=.
+    rewrite 2!mulnDr.
+    rewrite [(a * q)%nat]mulnC.
+    rewrite [(v * (q * a))%nat]mulnCA.
+    rewrite [(v * a)%nat]mulnC.
+    rewrite subnDl.
+    done.
+  Qed.
+  
+  Lemma SBcoprime (s : seq nat) : 4 <= size s -> SBg (SB s) = 1.
+  Proof.
+    move=> HSize.
+    apply SB_ind'.
+    - move=> a0 a1.
+      rewrite /SBg /q_ /p_ /v_ /u_ /=.
+        by ssromega.
+    - move=> s' Hsize IHs.
+      rewrite SBg_LEFT SBg_RIGHT IHs.
+      done.
+  Qed.
+  
+End COPRIME.  
+
+(**
 # 文献
 
 [1] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
