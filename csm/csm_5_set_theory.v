@@ -246,18 +246,23 @@ Definition MapCompo {M1 M2 M3 : Type} (f : M2 -> M3) (g : M1 -> M2) : M1 -> M3 :
 Notation "f ● g" := (MapCompo f g) (at level 11).
 
 (* 定義域Xの像Y *)
+(* これだと、部分集合の像を扱うのが難しいので、問5.2を解くためには使わない。 *)
 Definition ImgOf {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
            (_ : f ∈Map X \to Y) : mySet M2 :=
   fun (y : M2) => exists (x : M1), y = f x /\ x ∈ X.
 
 (* 定義域Xの部分集合Aの像B @morita_hm - Bについては全射であること。 *)
+(* 問5.2のために、部分集合の像を定義するために、定義した。 *)
 Definition ImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
            (_ : f ∈Map X \to Y) (A : mySet M1) : mySet M2 :=
+  (*                             ~~~~~~~~~~~~~~   ~~~~~~~ *)
   fun (y : M2) => exists (x : M1), y = f x /\ x ∈ A /\ A ⊂ X.
 
 (* 値域Yの部分集合Bの逆像A @morita_hm - Bについては全射であること。 *)
+(* 問5.3のために、部分集合の逆像を定義するために、定義した。 *)
 Definition InvImgOfSub {M1 M2 : Type} (f : M1 -> M2) {X : mySet M1} {Y : mySet M2}
            (_ : f ∈Map X \to Y) (B : mySet M2) : mySet M1 :=
+  (*                             ~~~~~~~~~~~~~~   ~~~~~~~ *)
   fun (x : M1) => exists (y : M2), y = f x /\ y ∈ B /\ B ⊂ Y.
 
 (* 単射 *)
