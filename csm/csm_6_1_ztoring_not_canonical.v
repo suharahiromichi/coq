@@ -33,6 +33,7 @@ Section ZtoRing.
   Definition Z_eqType := Eval hnf in EqType Z Z_eqMixin.
   (* Canonical Z_eqType. *)
   (* 右辺で、カノニカル [Z <- Equality.sort Z_eqType] になる。 *)
+  Compute Equality.sort Z_eqType.           (* Z *)
   
   Definition Z_pickle (z : Z) : nat :=
     if (0 <=? z)%Z then
@@ -59,17 +60,29 @@ Section ZtoRing.
         by move/Znot_le_gt /Z.gt_lt /Z.lt_le_incl.
   Qed.
   
-  Definition Z_countMixin := Countable.Mixin Z_pickleK.
-  Definition Z_choiceMixin := CountChoiceMixin Z_countMixin.
-  
-  Definition Z_choiceType := Eval hnf in ChoiceType (Equality.sort Z_eqType) Z_choiceMixin.
+  Definition Z_choiceMixin := PcanChoiceMixin Z_pickleK.
+  (* 右辺で、カノニカル [Z <- Equality.sort Z_eqType] を使う。 *)
+
+  Definition Z_choiceType := ChoiceType (Equality.sort Z_eqType) Z_choiceMixin.
   (* Canonical Z_choiceType. *)
-  (* 左辺で、カノニカル [Z <- Choice.sort Z_choiceType] になる。 *)  
+  Compute Choice.sort Z_choiceType.         (* Z *)
+  (* 左辺で、カノニカル [Z <- Choice.sort Z_choiceType] になる。 *)
+  
+  Definition Z_countMixin := PcanCountMixin Z_pickleK.
+  (* 右辺で、カノニカル [Z <- Choice.sort Z_choiceType] を使う。 *)  
+
+  Definition Z_countType := CountType (Choice.sort Z_choiceType) Z_countMixin.  
+  (* Canonical Z_modType. *)
+  Compute Countable.sort Z_countType.       (* Z *)
+  (* 左辺で、カノニカル [Z <- Count.sort Z_countType] になる。 *)
   
   Definition Z_modMixin :=
     ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
+  (* 右辺で、カノニカル [Z <- Choice.sort Z_choiceType] を使う。 *)    
+
   Definition Z_modType := Eval hnf in ZmodType (Choice.sort Z_choiceType) Z_modMixin.
   (* Canonical Z_modType. *)
+  Compute GRing.Zmodule.sort Z_modType.     (* Z *)
   (* 左辺で、カノニカル [Z <- GRing.Zmodule.sort Z_modType] になる。 *)
   
 End ZtoRing.

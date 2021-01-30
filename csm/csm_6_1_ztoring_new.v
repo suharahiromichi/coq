@@ -61,9 +61,6 @@ Section ZtoRing.
 *)
   Definition Z_eqMixin := EqMixin Zeq_boolP.
   Canonical Z_eqType := EqType Z Z_eqMixin.
-  (* 右辺で、カノニカル [Z <- Equality.sort Z_eqType] になる。 *)
-  
-  Compute Equality.sort Z_eqType.           (* Z *)
   
 (**
 ## 整数が自然数と1対1対応することを証明する。
@@ -79,6 +76,9 @@ Section ZtoRing.
       (- (Z.of_nat n.-1./2))%Z
     else
       Z.of_nat n./2.
+
+  Compute Z_pickle 1%Z.                     (* 2 *)
+  Compute Z_unpickle 2.                     (* 1%Z *)
   
   Lemma Z_pickleK : cancel Z_pickle Z_unpickle.
   Proof.
@@ -97,24 +97,14 @@ Section ZtoRing.
 ## Z_choiceType   有限選択公理のある整数型
 *)
   Definition Z_choiceMixin := CanChoiceMixin Z_pickleK.
-  (* 右辺で、カノニカル [Z <- Equality.sort Z_eqType] を使う。 *)
-  Canonical Z_choiceType :=  ChoiceType Z Z_choiceMixin.
-  (* 左辺で、カノニカル [Z <- Choice.sort Z_choiceType] になる。 *)
-
-  Compute Equality.sort Z_eqType.           (* Z *)
-  Compute Choice.sort Z_choiceType.         (* Z *)
+  Canonical Z_choiceType := ChoiceType Z Z_choiceMixin.
   
 (**
 ## Z_countType    数え上げ可能な整数型
 *)
   Definition Z_countMixin := CanCountMixin Z_pickleK.
-  (* 右辺で、カノニカル [Z <- Choice.sort Z_choiceType] を使う。 *)
   Canonical Z_countType := CountType Z Z_countMixin.
-  (* 左辺で、カノニカル [Z <- Count.sort Z_countType] になる。 *)
   
-  Compute Choice.sort Z_choiceType.         (* Z *)  
-  Compute Countable.sort Z_countType.       (* Z *)
-
 (**
 ## Z_zmodType     可換群である整数型
 *)
@@ -128,13 +118,8 @@ Section ZtoRing.
   
   Definition Z_modMixin :=
     ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
-  (* 右辺で、カノニカル [Z <- Choice.sort Z_choiceType] を使う。 *)  
   Canonical Z_modType := ZmodType Z Z_modMixin.
-  (* 左辺で、カノニカル [Z <- GRing.Zmodule.sort Z_modType] になる。 *)  
   
-  Compute Choice.sort Z_choiceType.         (* Z *)
-  Compute GRing.Zmodule.sort Z_modType.     (* Z *)
-
   (* 個別に公理を証明しない、別な方法もある。 *)
   (* Definition Z_modType := ZmodType Z_choiceType Z_modMixin. *)
 
