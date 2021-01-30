@@ -32,15 +32,16 @@ Z_countType              countType    数え上げ可能な（整数）型
 Z_modType                zmodType     可換群である（整数）型
 Z_ringType               ringType     環である（整数）型（演習問題 6.1）
 
-この階層の順番に定義していくのが自然です。
-テキストではこの順番になっていないのですが、CanChoiceMixin と CanCountMixin を使います。
-（PcanChoiceMixin と PcanCountMixin を使うことも可能です。）
+この階層の順番に定義していくのが自然です。テキストではこの順番になっていないのですが、
+CanChoiceMixin と CanCountMixin を使うことで、この順番で証明します。
+
+参考： Mathematical Components (MCB) 7.5 Linking a custom data type to the library
 
 また、テキストでは自然数から整数の対応を部分関数にしていますが、これは関数になるはずです。
 そのため、pcancel ではなく cancel が成立するはずなので、そのようにしています。
-（部分関数 で pcancel のままであっても、不都合なく証明できます）
+部分関数 で pcancel のままであっても、
+PcanChoiceMixin と PcanCountMixin を使うことで証明できます。
 *)
-Check CountChoiceMixin.
 
 Section ZtoRing.
 (**
