@@ -7,12 +7,46 @@
 *)
 From mathcomp Require Import all_ssreflect.
 Require Import ssrsumop ssromega.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Set Print All.
 
+(**
+# 補題
+ *)
+
+  Check ffactn0 : forall n : nat, n ^_ 0 = 1.
+  Check ffact0n : forall m : nat, 0 ^_ m = (m == 0).
+  Check ffactn1 : forall n : nat, n ^_ 1 = n.
+  
+  Lemma ffact0n' m : 1 <= m -> 0^_m = 0.
+  Proof.
+      by apply: ffact_small.
+  Qed.
+  
+  Lemma id_muln1 x : id x = muln^~ 1 x.     (* notu *)
+  Proof. by rewrite /= muln1. Qed.
+  
+  Lemma subn_eq0' n : n - n = 0.            (* notu *)
+  Proof.
+    have Heq x : x - x = 0 by apply/eqP; rewrite subn_eq0.
+      by rewrite Heq.
+  Qed.
+
+(**
+## x^_m が x に対して単調に増加することの証明
+*)
+  Lemma ffact_monotone x m : x ^_ m.+1 <= x.+1 ^_ m.+1.
+  Proof.
+    rewrite ffactSS ffactnSr.
+    rewrite mulnC leq_mul2r.
+    apply/orP/or_intror.
+      by ssromega.
+  Qed.
+  
 (**
 # 下降階乗冪の差分
 *)
@@ -57,19 +91,6 @@ Section Difference.
     rewrite diff_ffactE' //.
       by ssromega.
   Qed.
-
-
-  Lemma ffact0 x : x^_0 = 1.
-  Proof. done. Qed.
-  
-  Lemma ffact1 x : x^_1 = x.                (* notu *)
-  Proof.
-    rewrite /falling_factorial /ffact_rec.
-      by rewrite muln1.
-  Qed.
-  
-  Lemma id_muln1 x : id x = muln^~ 1 x.     (* notu *)
-  Proof. by rewrite /= muln1. Qed.
   
 (**
 ## 特殊なかたち；
@@ -81,7 +102,7 @@ Section Difference.
 
   Lemma diff_idE (x : nat) : diff id x = 1.
   Proof.
-    rewrite -[RHS](ffact0 x) -[RHS]mul1n.
+    rewrite -[RHS](ffactn0 x) -[RHS]mul1n.
     rewrite -(@diff_ffactE' 0 x); last done.
     rewrite /falling_factorial /ffact_rec.
     rewrite /diff.
@@ -125,22 +146,46 @@ Section Summation.
 (**
 ### 一般に成立するはずの関係
 *) 
-  Lemma subn_eq0' n : n - n = 0.            (* notu *)
-  Proof.
-    have Heq x : x - x = 0 by apply/eqP; rewrite subn_eq0.
-      by rewrite Heq.
-  Qed.
-  
   Lemma summ_diff f a b : a <= b -> summ (diff f) a b = f b - f a.
   Proof.
     rewrite /summ /diff.
-  Admitted.
+  Admitted.                                 (* 途中！ *)
 
 (**
 ## 下降階乗冪の和分
 *)
-
+  Lemma summ_ffactE' (m : nat) (b : nat) :
+    1 <= m -> summ (fun k => m.+1 * k^_m) 0 b = b^_m.+1.
+  Proof.
+    move=> Hm.                              (* 0^_1 = 1 を回避するため。 *)
+    rewrite -[RHS](@summ_diff' (fun k => k^_m.+1)) //.
+    - congr (summ _ 0 b).
+      apply: functional_extensionality => x.      
+      rewrite diff_ffactE' //.
+    (* m <= x *)
+      admit.
+      
+    - move=> x.
+        by apply: ffact_monotone.
+  Admitted.
+  
+  Lemma summ_ffactE (m : nat) (a b : nat) :
+    a <= b -> m < a -> summ (fun k => k * k^_m) a b = b^_m.+1.
+  Proof.
+  Admitted.                                 (* 途中！ *)
 
 End Summation.
 
 (* END *)
+
+
+
+  Goal forall (s1 s2 : pred T), predI s1 s2 = predI s2 s1.
+  Proof.
+    move=> s1 s2.
+    rewrite /predI.
+    rewrite /SimplPred.
+    f_equal.
+
+
+
