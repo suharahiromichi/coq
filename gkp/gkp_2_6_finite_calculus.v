@@ -14,11 +14,14 @@ Unset Printing Implicit Defensive.
 Set Print All.
 
 (**
-# 下降階乗冪 の差分
+# 下降階乗冪の差分
 *)
 
 Section Difference.
 
+(**
+## 差分 difference の定義
+*)  
   Definition diff f := fun x => f x.+1 - f x.
 
 (**
@@ -86,5 +89,58 @@ Section Difference.
   Qed.
   
 End Difference.
+
+(**
+# 下降階乗冪の和分
+ *)
+Section Summation.
+
+(**
+## 和分の定義
+
+```Σa,b g(k)δk = Σ(a <= k < b)g(k)```
+ *)
+  Definition summ g a b := \sum_(a <= k < b)(g k).
+  
+(**
+## 差分と和分の関係
+
+### 特別なかたち （下降階乗冪で成立する）
+*) 
+  Lemma summ_diff' f b : f 0 = 0 ->
+                         (forall n, f n <= f n.+1) ->
+                         summ (diff f) 0 b = f b.
+  Proof.
+    move=> Hf0 Hfn.
+    rewrite /summ /diff.
+    elim: b.
+    - rewrite sum_nil'.
+        by rewrite Hf0.
+    - move=> n IHn.
+      rewrite sum_last; last done.
+      rewrite IHn.
+        by rewrite subnKC.
+  Qed.
+  
+(**
+### 一般に成立するはずの関係
+*) 
+  Lemma subn_eq0' n : n - n = 0.            (* notu *)
+  Proof.
+    have Heq x : x - x = 0 by apply/eqP; rewrite subn_eq0.
+      by rewrite Heq.
+  Qed.
+  
+  Lemma summ_diff f a b : a <= b -> summ (diff f) a b = f b - f a.
+  Proof.
+    rewrite /summ /diff.
+  Admitted.
+
+(**
+## 下降階乗冪の和分
+*)
+
+
+End Summation.
 
 (* END *)
