@@ -27,6 +27,18 @@ Set Print All.
       by apply: ffact_small.
   Qed.
   
+  Lemma ffactn2 a : a^_2 = a * a.-1.
+  Proof.
+    rewrite /falling_factorial /ffact_rec.
+      by rewrite muln1.
+  Qed.
+  
+  Lemma ffactn3 a : a^_3 = a * a.-1 * a.-2.
+  Proof.
+    rewrite /falling_factorial /ffact_rec.
+      by rewrite muln1 mulnA.
+  Qed.
+  
   Lemma id_muln1 x : id x = muln^~ 1 x.     (* notu *)
   Proof. by rewrite /= muln1. Qed.
   
@@ -50,7 +62,6 @@ Set Print All.
 (**
 # 下降階乗冪の差分
 *)
-
 Section Difference.
 
 (**
@@ -155,19 +166,88 @@ Section Summation.
 ## 下降階乗冪の和分（0から）
 *)
 (**
-関数の部分だけを取り出して、関数拡張してもだめである。
+関数の部分だけを取り出して関数拡張する場合、Standard Coq の
+functional_extensionality を使うのではだめで、引数xが m≦x である条件を追加する必要がある。
 *)
-  Goal forall m b,
-      summ (fun k : nat => m.+1 * k ^_ m) 0 b =
-      summ (diff (falling_factorial^~ m.+1)) 0 b.
+(*  
+  Axiom functional_extensionality_ge_m : 
+    forall (m : nat) (f g : nat -> nat),
+      (forall x : nat, m <= x -> f x = g x) -> f = g.
+*)
+(**
+## そこそこ一般化した関数拡張の式
+*)
+  Axiom functional_extensionality' : 
+    forall (A B : Type) (P : A -> Prop) (f g : A -> B),
+      (forall (x : A), P x -> f x = g x) -> f = g.
+  Check fun (m : nat) => @functional_extensionality' nat nat (leq m).
+
+  Lemma summ_ffactE' (m : nat) (b : nat) :
+    1 <= m -> m <= b -> summ (fun k => m.+1 * k^_m) 0 b = b^_m.+1.
   Proof.
-    move=> m b.
-    congr (summ _ 0 b).
-    apply: functional_extensionality => k.
-    rewrite diff_ffactE' //.
-    (* 関数拡張では、m と k  の間の条件が解消できないので、だめである。 *)
-  Admitted.                                 (* OK！ *)
+    move=> Hm.                         (* 0^_1 = 1 を回避するため。 *)
+    move=> Hmb.
+    rewrite -[RHS](@summ_diff' (fun k => k^_m.+1)) //.
+    - congr (summ _ 0 b).
+      apply: (@functional_extensionality' _ _ (leq m)) => k Hmk.
+        by rewrite diff_ffactE'.
+    - move=> x.
+        by apply: ffact_monotone.
+  Qed.
   
+(**
+## 下降階乗冪の和分（任意のaから）
+*)  
+  Lemma summ_ffactE (m : nat) (a b : nat) :
+    a <= b -> m < a -> summ (fun k => k * k^_m) a b = b^_m.+1.
+  Proof.
+  Admitted.                                 (* 途中！ *)
+
+End Summation.
+
+(**
+# 応用：a = √n (a^2 = n)、ただし a と n は自然数のとき、
+a未満の自然数の平方根の整数部の和を求める。
+*)
+Section SumOfRoot.
+
+  Lemma l_sor_1 a : 1 < a ->
+                    (2 %/ 3) * (summ (fun k => 3 * k^_2) 0 a) +
+                    (3 %/ 2) * (summ (fun k => 2 * k^_1) 0 a) =
+                    (1 %/ 6) * (4 * a + 1) * a * (a - 1).
+  Proof.
+    move=> Ha.
+    (* summ を消す。 *)
+    rewrite summ_ffactE' //.
+    rewrite summ_ffactE' //; last by ssromega.
+    (* ^_ を消す。 *)
+    rewrite ffactn3 ffactn2 -subn2 -subn1.
+    
+    (* 右辺を整理する。 *)
+    rewrite [in RHS]mulnDr 2![in RHS]mulnDl.
+    rewrite {1}[in RHS]mulnBr {1}[in RHS]mulnBr. (* ??? *)
+    rewrite addnBA //.
+    rewrite addnBAC //.
+    rewrite {2}[1 %/ 6 * (4 * a) * a * 1]muln1.
+    rewrite -{3}[1 %/ 6 * (4 * a) * a]mulnA.
+    rewrite [1 %/ 6 * (4 * a * a)]mulnA.
+    rewrite {2}[1 %/ 6 * (4 * a)]mulnA.
+    rewrite -{3}[1 %/ 6 * 4 * a * a]mulnA.
+    rewrite -{2}[1 %/ 6 * 1 * a * a]mulnA.
+    
+    rewrite ![in LHS]mulnBr ![in LHS]mulnBl ![in LHS]mulnBr.
+    rewrite !muln1.
+    
+    
+    Admitted.
+End SumOfRoot.
+
+(**
+# 使わなかった補題
+ *)
+(**
+関数拡張を使わずに、帰納法でなんとかしようとした場合。うまくいかない。
+*)
   Lemma l_summ_ffactE m b : m <= b ->
                             summ (fun k : nat => m.+1 * k ^_ m) 0 b =
                             summ (diff (falling_factorial^~ m.+1)) 0 b.
@@ -183,38 +263,5 @@ Section Summation.
       + rewrite diff_ffactE' //.
         admit.                              (* m <= b *)
   Admitted.
-  
-  Lemma summ_ffactE' (m : nat) (b : nat) :
-    1 <= m -> m <= b -> summ (fun k => m.+1 * k^_m) 0 b = b^_m.+1.
-  Proof.
-    move=> Hm.                              (* 0^_1 = 1 を回避するため。 *)
-    move=> Hmb.
-    rewrite -[RHS](@summ_diff' (fun k => k^_m.+1)) //.
-    - by apply: l_summ_ffactE.
-    - move=> x.
-        by apply: ffact_monotone.
-  Qed.
-  
-(**
-## 下降階乗冪の和分（任意のaから）
-*)  
-  Lemma summ_ffactE (m : nat) (a b : nat) :
-    a <= b -> m < a -> summ (fun k => k * k^_m) a b = b^_m.+1.
-  Proof.
-  Admitted.                                 (* 途中！ *)
-
-End Summation.
 
 (* END *)
-
-
-
-  Goal forall (s1 s2 : pred T), predI s1 s2 = predI s2 s1.
-  Proof.
-    move=> s1 s2.
-    rewrite /predI.
-    rewrite /SimplPred.
-    f_equal.
-
-
-
