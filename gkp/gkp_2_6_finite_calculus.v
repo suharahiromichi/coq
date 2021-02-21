@@ -83,7 +83,7 @@ Section Difference.
 ```Δx^_m / Δx = m * x^_(m - 1)```
 *)  
   Lemma diff_ffactE (m : nat) (x : nat) :
-    0 < m ->  m < x -> diff (fun x => x^_m) x = m * x^_m.-1.
+    0 < m -> m <= x -> diff (fun x => x^_m) x = m * x^_m.-1.
   Proof.
     move=> H0m Hmx.
     have H : m.-1.+1 = m by rewrite prednK.
@@ -152,23 +152,52 @@ Section Summation.
   Admitted.                                 (* 途中！ *)
 
 (**
-## 下降階乗冪の和分
+## 下降階乗冪の和分（0から）
 *)
-  Lemma summ_ffactE' (m : nat) (b : nat) :
-    1 <= m -> summ (fun k => m.+1 * k^_m) 0 b = b^_m.+1.
+(**
+関数の部分だけを取り出して、関数拡張してもだめである。
+*)
+  Goal forall m b,
+      summ (fun k : nat => m.+1 * k ^_ m) 0 b =
+      summ (diff (falling_factorial^~ m.+1)) 0 b.
   Proof.
-    move=> Hm.                              (* 0^_1 = 1 を回避するため。 *)
-    rewrite -[RHS](@summ_diff' (fun k => k^_m.+1)) //.
-    - congr (summ _ 0 b).
-      apply: functional_extensionality => x.      
-      rewrite diff_ffactE' //.
-    (* m <= x *)
-      admit.
-      
-    - move=> x.
-        by apply: ffact_monotone.
+    move=> m b.
+    congr (summ _ 0 b).
+    apply: functional_extensionality => k.
+    rewrite diff_ffactE' //.
+    (* 関数拡張では、m と k  の間の条件が解消できないので、だめである。 *)
+  Admitted.                                 (* OK！ *)
+  
+  Lemma l_summ_ffactE m b : m <= b ->
+                            summ (fun k : nat => m.+1 * k ^_ m) 0 b =
+                            summ (diff (falling_factorial^~ m.+1)) 0 b.
+  Proof.
+    rewrite /summ.
+    elim: b => [| b IHb Hmb].
+    - by rewrite 2!sum_nil'.
+    - rewrite sum_last; last done.
+      rewrite sum_last; last done.
+      congr (_ + _).
+      + apply: IHb.
+        admit.                              (* m <= b *)
+      + rewrite diff_ffactE' //.
+        admit.                              (* m <= b *)
   Admitted.
   
+  Lemma summ_ffactE' (m : nat) (b : nat) :
+    1 <= m -> m <= b -> summ (fun k => m.+1 * k^_m) 0 b = b^_m.+1.
+  Proof.
+    move=> Hm.                              (* 0^_1 = 1 を回避するため。 *)
+    move=> Hmb.
+    rewrite -[RHS](@summ_diff' (fun k => k^_m.+1)) //.
+    - by apply: l_summ_ffactE.
+    - move=> x.
+        by apply: ffact_monotone.
+  Qed.
+  
+(**
+## 下降階乗冪の和分（任意のaから）
+*)  
   Lemma summ_ffactE (m : nat) (a b : nat) :
     a <= b -> m < a -> summ (fun k => k * k^_m) a b = b^_m.+1.
   Proof.
