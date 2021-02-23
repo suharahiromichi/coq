@@ -163,7 +163,7 @@ Section Summation.
   Admitted.                                 (* 途中！ *)
 
 (**
-## 下降階乗冪の和分（0から）
+## 下降階乗冪の和分
 *)
 (**
 関数の部分だけを取り出して関数拡張する場合、Standard Coq の
@@ -175,13 +175,18 @@ functional_extensionality を使うのではだめで、引数xが m≦x であ�
       (forall x : nat, m <= x -> f x = g x) -> f = g.
 *)
 (**
-## そこそこ一般化した関数拡張の式
+### そこそこ一般化した関数拡張の公理
 *)
   Axiom functional_extensionality' : 
     forall (A B : Type) (P : A -> Prop) (f g : A -> B),
       (forall (x : A), P x -> f x = g x) -> f = g.
   Check fun (m : nat) => @functional_extensionality' nat nat (leq m).
 
+(**
+### 下降階乗冪の和分（0から）
+
+bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
+*)
   Lemma summ_ffactE' (m : nat) (b : nat) :
     1 <= m -> m <= b -> summ (fun k => m.+1 * k^_m) 0 b = b^_m.+1.
   Proof.
@@ -196,7 +201,7 @@ functional_extensionality を使うのではだめで、引数xが m≦x であ�
   Qed.
   
 (**
-## 下降階乗冪の和分（任意のaから）
+### 下降階乗冪の和分（任意のaから）
 *)  
   Lemma summ_ffactE (m : nat) (a b : nat) :
     a <= b -> m < a -> summ (fun k => k * k^_m) a b = b^_m.+1.
@@ -206,11 +211,23 @@ functional_extensionality を使うのではだめで、引数xが m≦x であ�
 End Summation.
 
 (**
-# 応用：a = √n (a^2 = n)、ただし a と n は自然数のとき、
+# 応用 (3.5 から平方根の整数部の和)
+
+a = √n (a^2 = n)、ただし a と n は自然数のとき、
 a未満の自然数の平方根の整数部の和を求める。
 *)
 Section SumOfRoot.
 
+(**
+## 面倒な計算
+*)
+  Lemma l_sor_0 a : 2 %/ 3 * (a * (a - 1) * (a - 2)) + 3 %/ 2 * (a * (a - 1)) =
+                    1 %/ 6 * (4 * a + 1) * a * (a - 1).
+  Proof. Admitted.
+  
+(**
+## ``(2/3) * Σ0,a 3*k^_2δk + (3/2) * Σ0,a 2*k^_1δk`` の計算
+*)
   Lemma l_sor_1 a : 1 < a ->
                     (2 %/ 3) * (summ (fun k => 3 * k^_2) 0 a) +
                     (3 %/ 2) * (summ (fun k => 2 * k^_1) 0 a) =
@@ -222,29 +239,17 @@ Section SumOfRoot.
     rewrite summ_ffactE' //; last by ssromega.
     (* ^_ を消す。 *)
     rewrite ffactn3 ffactn2 -subn2 -subn1.
-    
-    (* 右辺を整理する。 *)
-    rewrite [in RHS]mulnDr 2![in RHS]mulnDl.
-    rewrite {1}[in RHS]mulnBr {1}[in RHS]mulnBr. (* ??? *)
-    rewrite addnBA //.
-    rewrite addnBAC //.
-    rewrite {2}[1 %/ 6 * (4 * a) * a * 1]muln1.
-    rewrite -{3}[1 %/ 6 * (4 * a) * a]mulnA.
-    rewrite [1 %/ 6 * (4 * a * a)]mulnA.
-    rewrite {2}[1 %/ 6 * (4 * a)]mulnA.
-    rewrite -{3}[1 %/ 6 * 4 * a * a]mulnA.
-    rewrite -{2}[1 %/ 6 * 1 * a * a]mulnA.
-    
-    rewrite ![in LHS]mulnBr ![in LHS]mulnBl ![in LHS]mulnBr.
-    rewrite !muln1.
-    
-    
-    Admitted.
+      by apply: l_sor_0.
+  Qed.
+  
+  
 End SumOfRoot.
 
 (**
 # 使わなかった補題
  *)
+Section Optional.
+
 (**
 関数拡張を使わずに、帰納法でなんとかしようとした場合。うまくいかない。
 *)
@@ -263,5 +268,53 @@ End SumOfRoot.
       + rewrite diff_ffactE' //.
         admit.                              (* m <= b *)
   Admitted.
+
+  Lemma l_sor_0' a : 2 %/ 3 * (a * (a - 1) * (a - 2)) + 3 %/ 2 * (a * (a - 1)) =
+                    1 %/ 6 * (4 * a + 1) * a * (a - 1).
+  Proof.
+    (* 右辺を整理する。 *)
+    rewrite [in RHS]mulnDr 2![in RHS]mulnDl.
+    rewrite {1}[in RHS]mulnBr {1}[in RHS]mulnBr. (* ??? *)
+    rewrite addnBA //.
+    rewrite addnBAC //.
+    rewrite {2}[1 %/ 6 * (4 * a) * a * 1]muln1.
+    rewrite -{3}[1 %/ 6 * (4 * a) * a]mulnA.
+    rewrite [1 %/ 6 * (4 * a * a)]mulnA.
+    rewrite {2}[1 %/ 6 * (4 * a)]mulnA.
+    rewrite -{3}[1 %/ 6 * 4 * a * a]mulnA.
+    rewrite -{2}[1 %/ 6 * 1 * a * a]mulnA.
+    rewrite 3!{1}muln1.
+    rewrite [1 %/ 6 * (4 * a)]mulnA.
+    have {1}-> : (1 %/ 6 * 4) * a * a * a = (1 %/ 6 * 4) * (a * a * a) by rewrite -!mulnA.
+    (*
+      1 %/ 6 * 4 * (a * a * a)
+      + 1 %/ 6 * (a * a) - 1 %/ 6 * 4 * (a * a)
+      - 1 %/ 6 * a
+     *)
+
+    (* 左辺を整理する。 *)
+    rewrite ![in LHS]mulnBr ![in LHS]mulnBl ![in LHS]mulnBr.
+    rewrite [a * 1]muln1.
+    have -> : 2 %/ 3 * (a * a * 2) = 2 %/ 3 * 2 * (a * a) by rewrite mulnA.
+    have -> : 2 %/ 3 * (a * 2) = 2 %/ 3 * 2 * a by ring.
+    rewrite [in LHS]subnBA //.
+
+    rewrite -[in LHS]addnBAC //.
+    rewrite -[_ + 2 %/ 3 * 2 * a + _]addnAC.
+    rewrite -[_ + (3 %/ 2 * (a * a) - 3 %/ 2 * a) + 2 %/ 3 * 2 * a]addnA.
+    have -> : 3 %/ 2 * (a * a) - 3 %/ 2 * a + 2 %/ 3 * 2 * a =
+             3 %/ 2 * (a * a) - (3 %/ 2 * a - 2 %/ 3 * 2 * a).
+    rewrite [RHS]subnBA //.
+    rewrite addnBAC //; last admit.
+    Search (_ + (_ - _)).
+    rewrite [in LHS]addnBA; try ring.
+    (*
+      2 %/ 3 * (a * a * a)
+      - 2 %/ 3 * (a * a) - 2 %/ 3 * 2 * (a * a) + 3 %/ 2 * (a * a)
+      - (3 %/ 2 * a - 2 %/ 3 * 2 * a)
+     *)
+  Admitted.
+
+End Optional.
 
 (* END *)
