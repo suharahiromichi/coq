@@ -51,9 +51,13 @@ Set Print All.
 (**
 ## x^_m が x に対して単調に増加することの証明
 *)
-  Lemma ffact_monotone x m : x ^_ m.+1 <= x.+1 ^_ m.+1.
+  Definition monotone f := forall (x : nat), f x <= f x.+1.
+
+  Lemma ffact_monotone m : monotone (fun x => x ^_ m).
   Proof.
-    rewrite ffactSS ffactnSr.
+    move=> x.
+    case: m => // m.                        (* m = 0 の場合を片付ける。 *)
+    rewrite ffactSS ffactnSr.               (* m ≧ 1 の場合 *)
     rewrite mulnC leq_mul2r.
     apply/orP/or_intror.
       by ssromega.
@@ -69,6 +73,28 @@ Section Difference.
 *)  
   Definition diff f := fun x => f x.+1 - f x.
 
+(**
+## 差分の公式
+ *)
+  Lemma diff_split f g (x : nat) :
+    monotone f -> monotone g ->
+    diff f x + diff g x = diff (fun x => f x + g x) x.
+  Proof.
+    move=> Hf Hg.
+    rewrite /diff.
+    rewrite addnBA; last done.
+    rewrite subnDA.
+    rewrite addnBAC; last done.
+    done.
+  Qed.
+
+  Lemma diff_distr c f (x : nat) :
+    c * diff f x = diff (fun x => c * f x) x.
+  Proof.
+    rewrite /diff.
+      by rewrite mulnBr.
+  Qed.
+  
 (**
 ## 証明しやすいかたち：
 
@@ -172,7 +198,8 @@ Section Summation.
   Qed.
   
   Lemma summ_split f g a b :
-    a <= b -> summ f a b + summ g a b = summ (fun k => f k + g k) a b.
+    a <= b ->
+    summ f a b + summ g a b = summ (fun k => f k + g k) a b.
   Proof.
     rewrite leq_eqVlt => /orP [Heq | Hlt].
     - move/eqP in Heq.                      (* a = b の場合 *)
