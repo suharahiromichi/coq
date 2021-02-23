@@ -163,6 +163,36 @@ Section Summation.
   Admitted.                                 (* 途中！ *)
 
 (**
+## 和分の公式
+ *)
+  Lemma summ_nil f a :  summ f a a = 0.
+  Proof.
+    rewrite /summ.
+      by rewrite sum_nil.
+  Qed.
+  
+  Lemma summ_split f g a b :
+    a <= b -> summ f a b + summ g a b = summ (fun k => f k + g k) a b.
+  Proof.
+    rewrite leq_eqVlt => /orP [Heq | Hlt].
+    - move/eqP in Heq.                      (* a = b の場合 *)
+      rewrite -Heq.
+        by rewrite 3!summ_nil.
+    - rewrite /summ.                        (* a < b の場合 *)
+        by apply: sum_split.
+  Qed.
+
+  Lemma summ_distr c f a b :
+    a <= b -> c * summ f a b = summ (fun k => c * f k) a b.
+  Proof.
+    rewrite leq_eqVlt => /orP [Heq | Hlt].
+    - move/eqP in Heq.                      (* a = b の場合 *)
+      rewrite -Heq.
+        by rewrite 2!summ_nil muln0.
+    - by rewrite /summ sum_distrr.
+  Qed.
+
+(**
 ## 下降階乗冪の和分
 *)
 (**
@@ -223,11 +253,12 @@ Section SumOfRoot.
 *)
   Lemma l_sor_0 a : 2 %/ 3 * (a * (a - 1) * (a - 2)) + 3 %/ 2 * (a * (a - 1)) =
                     1 %/ 6 * (4 * a + 1) * a * (a - 1).
-  Proof. Admitted.
+  Proof.
+  Admitted.
   
 (**
-## ``(2/3) * Σ0,a 3*k^_2δk + (3/2) * Σ0,a 2*k^_1δk`` の計算
-*)
+## ``(2/3)*(Σ0,a 3*k^_2δk) + (3/2)*(Σ0,a 2*k^_1δk)`` の計算
+ *)
   Lemma l_sor_1 a : 1 < a ->
                     (2 %/ 3) * (summ (fun k => 3 * k^_2) 0 a) +
                     (3 %/ 2) * (summ (fun k => 2 * k^_1) 0 a) =
@@ -241,11 +272,91 @@ Section SumOfRoot.
     rewrite ffactn3 ffactn2 -subn2 -subn1.
       by apply: l_sor_0.
   Qed.
+
+(**
+## ``Σ0,a (2*k^2 + 3*k^1)δk`` を和分できる項に分解する。
+ *)
+  Lemma l_sor_2 a : 0 < a ->
+                    summ (fun k => (2 %/ 3) * 3 * k^_2 + (3 %/ 2) * 2 * k^_1) 0 a =
+                    (2 %/ 3) * (summ (fun k => 3 * k^_2) 0 a) +
+                    (3 %/ 2) * (summ (fun k => 2 * k^_1) 0 a).
+  Proof.
+    move=> Ha.
+    rewrite -[LHS]summ_split //.
+    rewrite -[in LHS]summ_distr //.
+    rewrite -[in LHS]summ_distr //.
+    rewrite -[in RHS]summ_distr // mulnA.
+    rewrite -[in RHS]summ_distr // mulnA.
+    done.
+  Qed.
+
+(**
+## 総和を和分に変換する。
+ *)
+  Lemma l_sor_3 a :
+    \sum_(0 <= j < a) (2 %/ 3 * 3 * j ^_ 2 + 3 %/ 2 * 2 * j ^_ 1) =
+    summ (fun k => (2 %/ 3) * 3 * k^_2 + (3 %/ 2) * 2 * k^_1) 0 a.
+  Proof.
+      by rewrite /summ.
+  Qed.
   
+(**
+## 2*m*(m - 1) + 3*m を下降階乗冪の式に変換する。
+ *)
+  Lemma l_sor_4 m :
+    2 * m * (m - 1) + 3 * m = (2 %/ 3) * 3 * m^_2 + (3 %/ 2) * 2 * m^_1.
+  Proof.
+    rewrite /falling_factorial /ffact_rec.
+  Admitted.
+
+(**
+## m * ((m + 1)^2 - m^2) を計算する。
+*)  
+  Lemma l_sor_5 m : m * (m.+1^2 - m^2) = 2 * m * (m - 1) + 3 * m.
+  Proof.
+    rewrite -addn1.
+    rewrite mulnBr.
+    rewrite sqrnD.
+    rewrite !mulnDr.
+  Admitted.
+
+(**
+## 総和を消す。
+ *)
+  Lemma l_sor_6 m : \sum_(m^2 <= k < m.+1^2) m = m * (m.+1^2 - m^2).
+  Proof.
+  Admitted.
+
+(**
+## 証明したい定理
+ *)
+  Lemma sor a : 1 < a ->
+                \sum_(0 <= m < a) \sum_(m^2 <= k < m.+1^2) m =
+                (1 %/ 6) * (4 * a + 1) * a * (a - 1).
+  Proof.
+    move=> Ha.
+    rewrite (@eq_sum 0 a (fun m => \sum_(m^2 <= k < m.+1^2) m)
+                     (fun m => m * (m.+1^2 - m^2)));
+      last by move=> m; rewrite l_sor_6.
+    rewrite (@eq_sum 0 a (fun m => m * (m.+1^2 - m^2))
+                     (fun m => 2 * m * (m - 1) + 3 * m));
+      last by move=> m; rewrite l_sor_5.
+    rewrite (@eq_sum 0 a (fun m => 2 * m * (m - 1) + 3 * m)
+                     (fun m => (2 %/ 3) * 3 * m^_2 + (3 %/ 2) * 2 * m^_1));
+      last by move=> m; rewrite l_sor_4.
+    rewrite l_sor_3.
+    rewrite l_sor_2; last ssromega.
+    rewrite l_sor_1; last done.
+    done.
+  Qed.
   
 End SumOfRoot.
 
 (**
+################################################
+################################################
+################################################
+
 # 使わなかった補題
  *)
 Section Optional.
