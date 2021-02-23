@@ -1,9 +1,10 @@
 (**
-和分差分
+コンピュータの数学 2.6 離散系および連続系の微積分学（和分差分学）
 ======
 
-2021_02_20 @suharahiromichi
+概ね前半部分の自然数での下降階乗冪の和分差分の計算
 
+2021_02_20 @suharahiromichi
 *)
 From mathcomp Require Import all_ssreflect.
 Require Import ssrsumop ssromega.
@@ -64,12 +65,12 @@ Set Print All.
   Qed.
   
 (**
-# 下降階乗冪の差分
+# 差分 difference 
 *)
 Section Difference.
 
 (**
-## 差分 difference の定義
+## 差分の定義
 *)  
   Definition diff f := fun x => f x.+1 - f x.
 
@@ -95,6 +96,9 @@ Section Difference.
       by rewrite mulnBr.
   Qed.
   
+(**
+# 下降階乗冪の差分
+*)
 (**
 ## 証明しやすいかたち：
 
@@ -149,7 +153,7 @@ Section Difference.
 End Difference.
 
 (**
-# 下降階乗冪の和分
+# 和分 summation
  *)
 Section Summation.
 
@@ -220,8 +224,8 @@ Section Summation.
   Qed.
 
 (**
-## 下降階乗冪の和分
-*)
+# 下降階乗冪の和分
+ *)
 (**
 関数の部分だけを取り出して関数拡張する場合、Standard Coq の
 functional_extensionality を使うのではだめで、引数xが m≦x である条件を追加する必要がある。
@@ -232,7 +236,7 @@ functional_extensionality を使うのではだめで、引数xが m≦x であ�
       (forall x : nat, m <= x -> f x = g x) -> f = g.
 *)
 (**
-### そこそこ一般化した関数拡張の公理
+## 一般化した関数拡張の公理
 *)
   Axiom functional_extensionality' : 
     forall (A B : Type) (P : A -> Prop) (f g : A -> B),
@@ -240,7 +244,7 @@ functional_extensionality を使うのではだめで、引数xが m≦x であ�
   Check fun (m : nat) => @functional_extensionality' nat nat (leq m).
 
 (**
-### 下降階乗冪の和分（0から）
+## 下降階乗冪の和分（0から）
 
 bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
 *)
@@ -258,7 +262,7 @@ bigopの関数部分をcongrで取り出し、一般化した関数拡張の公�
   Qed.
   
 (**
-### 下降階乗冪の和分（任意のaから）
+## 下降階乗冪の和分（任意のaから）
 *)  
   Lemma summ_ffactE (m : nat) (a b : nat) :
     a <= b -> m < a -> summ (fun k => k * k^_m) a b = b^_m.+1.
@@ -269,6 +273,8 @@ End Summation.
 
 (**
 # 応用 (3.5 から平方根の整数部の和)
+
+コンピュータの数学 3.5 切下げ関数と切上げ関数の和（平方根の整数部の和)
 
 a = √n (a^2 = n)、ただし a と n は自然数のとき、
 a未満の自然数の平方根の整数部の和を求める。
