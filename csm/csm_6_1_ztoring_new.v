@@ -21,6 +21,7 @@ Set Print All.
 
 説明： MathComp の型クラスのインスタンスとしての整数型を定義します。
 整数型の定義は、Standard Coq の ZArith を使用します。
+
 補足：
 zmodMixion と zmodType の定義のある ssralg はimportしますが、
 MathComp の整数型である ssrint は import しません。
@@ -37,10 +38,13 @@ CanChoiceMixin と CanCountMixin を使うことで、この順番で証明し�
 
 参考： Mathematical Components (MCB) 7.5 Linking a custom data type to the library
 
-また、テキストでは自然数から整数の対応を部分関数にしていますが、これは関数になるはずです。
+補足： テキストでは自然数から整数の対応を部分関数にしていますが、これは関数になるはずです。
 そのため、pcancel ではなく cancel が成立するはずなので、そのようにしています。
 部分関数 で pcancel のままであっても、
 PcanChoiceMixin と PcanCountMixin を使うことで証明できます。
+
+補足： Z-Module Z加群というのは整数環(環Z)上の加法についての群のことです。
+可換群とかアーベル群といったほうが、判りやすいかもしれません。
 *)
 
 Section ZtoRing.
@@ -117,13 +121,9 @@ Section ZtoRing.
   Check Z.add_0_l : forall n : Z, (0 + n)%Z = n.
   Check Z.add_opp_diag_l : forall n : Z, (- n + n)%Z = 0%Z.
   
-  Definition Z_modMixin :=
-    ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
+  Definition Z_modMixin := ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
   Canonical Z_modType := ZmodType Z Z_modMixin.
   
-  (* 個別に公理を証明しない、別な方法もある。 *)
-  (* Definition Z_modType := ZmodType Z_choiceType Z_modMixin. *)
-
   (* 確認 *)
   Check Z_eqType : eqType.
   Check Z_choiceType : choiceType.
@@ -131,6 +131,12 @@ Section ZtoRing.
   Check Z_modType : zmodType.
 
 End ZtoRing.
+
+(**
+Z_ringType の定義は演習 6.1 を参照してください；
+
+https://gitlab.com/proofcafe/csm/-/blob/master/csm_ex_6_1.v
+*)
 
 (**
 # Ringの演算子 「*+」 を使えるようにする。
