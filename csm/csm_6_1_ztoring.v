@@ -217,7 +217,7 @@ Section TEST.
 End TEST.
 
 (**
-# [x *+ 2 = 2 * z] の証明
+# [x *+ 2 = 2 * x] の証明
 *)
 
 Goal forall x : Z, x *+ 2 = (2 * x)%Z.

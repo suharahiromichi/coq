@@ -138,20 +138,31 @@ End ZtoRing.
 
 Open Scope ring_scope.
 
-(**
-# Canonical Z_modType の必要性の説明
-*)
 Section TEST.
-  
+(**
+## 演算子の定義
+*)
+(**
+### 演算子 「==」 の定義。bool値の同値関係
+*)
   Locate "_ == _".                          (* eq_op *)
   Check nat_eqType : eqType.
   (* Check @eq_op : forall T : eqType, sort T -> sort T -> bool. *)
   Check @eq_op : forall T : eqType, T -> T -> bool.
   Check @eq_op nat_eqType : nat -> nat -> bool.
   
+(**
+### 演算子 「*+」 の定義。整数と自然数の掛け算
+*)
   Locate "_ *+ _".               (* GRing.natmul x n   : ring_scope *)
   Check Z_modType : zmodType.
   Compute GRing.Zmodule.sort Z_modType.     (* Z *)
+  
+(**
+整数を自然数回足し算する。整数×自然数 の演算子である。
+*)
+  Compute 3%Z *+ 2%N.                       (* 6%Z *)
+  Compute (- 3)%Z *+ 2%N.                   (* (- 6)%Z *)
   
   Check @GRing.natmul : forall V : zmodType, (* sort のコアーションを明示しない。 *)
       V -> nat -> V.
@@ -165,9 +176,16 @@ Section TEST.
   Check @GRing.natmul Z_modType :           (* sort Z_modType = Z を反映する。 *)
     Z -> nat -> Z.
   
+(**
+## Canonical Z_modType の必要性の説明
+*)
+
   (* ○ : Canonical Z_modType でなくてもよい。 *)
   (* × : Canonical Z_modType でないとエラーになる。 *)
   
+(**
+### x を Z 型で定義する。
+ *)
   Variable x : Z.
   
   Check @GRing.natmul Z_modType x 2 : Z_modType. (* ○ *)
@@ -186,24 +204,30 @@ Section TEST.
   Check GRing.mulr2n x : x *+ 2 = x + x.            (* × *)
   Check @GRing.mulr2n Z_modType x : x *+ 2 = x + x. (* × *)
   
+(**
+### x を Z_modType 型で定義する。
+ *)
   Variable x' : Z_modType.
   Check x' *+ 2.                                        (* ○ *)
   Check GRing.mulr2n x' : x' *+ 2 = x' + x'.            (* ○ *)
   Check @GRing.mulr2n Z_modType x' : x' *+ 2 = x' + x'. (* ○ *)
   
-  (** GRing.Zmodule.sort Z_modType を計算すると Z になるが、
-      カノニカル宣言がなくてもよい。 *)
+(**
+### x を (GRing.Zmodule.sort Z_modType) 型で定義する。
+ *)
   Variable x'' : GRing.Zmodule.sort Z_modType.
   Compute GRing.Zmodule.sort Z_modType.        (* Z *)
+(**
+GRing.Zmodule.sort Z_modType を計算すると Z になるが、カノニカル宣言がなくてもよい。
+ *)
   Check x'' *+ 2.                                           (* ○ *)
   Check GRing.mulr2n x'' : x'' *+ 2 = x'' + x''.            (* ○ *)
   Check @GRing.mulr2n Z_modType x'' : x'' *+ 2 = x'' + x''. (* ○ *)
 End TEST.
 
 (**
-# [x *+ 2 = 2 * z] の証明
+# [x *+ 2 = 2 * x] の証明
 *)
-
 Goal forall x : Z, x *+ 2 = (2 * x)%Z.
 Proof.
   case=> // x; rewrite GRing.mulr2n Z.mul_comm.
