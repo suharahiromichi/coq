@@ -58,7 +58,15 @@ Z_choiceType があればよく、Z_countType は必要ではありません。
 部分関数 で pcancel のままであっても、
 PcanChoiceMixin と PcanCountMixin を使うことで証明できます。
 
+おまけ（テキスト 6.1.7節に対応) として、
+MathComp で zmodType の上で定義された演算子 「*+」 が、
+Standard Coq の整数型に対して適用できることを確認します。
 *)
+
+(* まだ、それらの演算子は使えない。 *)
+Fail Compute 1%Z == 1%Z.
+Open Scope ring_scope.
+Fail Compute 3%Z *+ 2%N.
 
 Section ZtoRing.
 (**
@@ -202,10 +210,8 @@ https://gitlab.com/proofcafe/csm/-/blob/master/csm_ex_6_1.v
 *)
 
 (**
-# Ringの演算子 「*+」 を使えるようにする。
+# MathComp で定義された演算子が、Starndard Coq の整数型に使える
 *)
-
-Open Scope ring_scope.
 
 Section TEST.
 (**
@@ -213,23 +219,31 @@ Section TEST.
 *)
 (**
 ### 演算子 「==」 の定義。bool値の同値関係
+
+これは、MathComp で eqType の上で定義された演算子である。
 *)
   Locate "_ == _".                          (* eq_op *)
   Check nat_eqType : eqType.
-  (* Check @eq_op : forall T : eqType, sort T -> sort T -> bool. *)
   Check @eq_op : forall T : eqType, T -> T -> bool.
   Check @eq_op nat_eqType : nat -> nat -> bool.
   
 (**
-### 演算子 「*+」 の定義。整数と自然数の掛け算 (テキスト 6.1.7節)
+### 演算子 「*+」 の定義。整数と自然数の掛け算
+
+これは、MathComp で zmodType の上で定義された演算子である。
 *)
   Locate "_ *+ _".               (* GRing.natmul x n   : ring_scope *)
   Check Z_zmodType : zmodType.
+  Check GRing.natmul : forall V : zmodType, V -> nat -> V.
   Compute GRing.Zmodule.sort Z_zmodType.     (* Z *)
+  
+  Compute 1%Z == 1%Z.                       (* true *)
+  Compute 1%Z == - 1%Z.                     (* false *)
   
 (**
 整数を自然数回足し算する。整数×自然数 の演算子である。
 *)
+  Open Scope ring_scope.
   Compute 3%Z *+ 2%N.                       (* 6%Z *)
   Compute (- 3)%Z *+ 2%N.                   (* (- 6)%Z *)
   
@@ -295,7 +309,7 @@ GRing.Zmodule.sort Z_zmodType を計算すると Z になるが、カノニカ�
 End TEST.
 
 (**
-# [x *+ 2 = 2 * x] の証明
+# [x *+ 2 = 2 * x] の証明 (テキスト 6.1.7節)
 *)
 Goal forall x : Z, x *+ 2 = (2 * x)%Z.
 Proof.
