@@ -21,6 +21,7 @@ Set Print All.
 
 説明： MathComp の型クラスのインスタンスとしての整数型を定義します。
 整数型の定義は、Standard Coq の ZArith を使用します。
+MathCompの整数型は、ssrintで定義されていますが、これとは別に定義をするわけです。
 
 補足：
 zmodMixion と zmodType の定義のある ssralg はimportしますが、
@@ -37,6 +38,9 @@ Z_ringType               ringType     環である（整数）型（演習問題
 CanChoiceMixin と CanCountMixin を使うことで、この順番で証明します。
 
 参考： Mathematical Components (MCB) 7.5 Linking a custom data type to the library
+
+補足： テキスト 176ページの図6.1にあるように、Z_modType を作るためには、
+Z_choiceType があればよく、Z_countType は必要ではありません。
 
 補足： テキストでは自然数から整数の対応を部分関数にしていますが、これは関数になるはずです。
 そのため、pcancel ではなく cancel が成立するはずなので、そのようにしています。
@@ -97,6 +101,55 @@ Section ZtoRing.
     + move/Z.leb_nle : z0.
         by move/Znot_le_gt /Z.gt_lt /Z.lt_le_incl.
   Qed.
+
+  (* ハンズオン用の証明 *)
+  (* Standard Coq の ZArith の下にある定理を使用して証明することの注意してください。 *)
+  Lemma Z_pickleK' : cancel Z_pickle Z_unpickle.
+  Proof.
+    move=> z; rewrite /Z_pickle.
+    case: ifP => Hz.
+    - rewrite /Z_unpickle /=.
+      (* if の true は成り立たないので捨てる。 *)
+      rewrite odd_double /=.
+      rewrite doubleK.
+      
+      Locate "_ <=? _".                     (* Z.leb x y : Z_scope *)
+      Check Z.of_nat : nat -> Z.
+      Check Z.abs_nat : Z -> nat.
+      
+      (* Hz : (0 <=? z)%Z *)
+      (* Z.of_nat (Z.abs_nat z) = z *)
+      
+      (* z が0以上の場合、
+         整数zの絶対値を自然数で得たものを整数に変換したものは、
+         もとの自然数zに等しい。 *)
+      rewrite Zabs2Nat.id_abs.
+      rewrite Z.abs_eq.
+      + done.
+      + by apply: Zle_bool_imp_le.
+        
+    - rewrite /Z_unpickle /=.
+      (* if の false は成り立たないので捨てる。 *)
+      rewrite odd_double /=.
+      rewrite doubleK.
+      
+      (* Hz : (0 <=? z)%Z = false *)
+      (* (- Z.of_nat (Z.abs_nat (- z)))%Z = z *)
+      
+      (* z が0以上ではない場合、
+         整数(- z)の絶対値を自然数で得たものを整数に変換したものの(-)は、
+         もとの自然数zに等しい。 *)
+      rewrite Zabs2Nat.id_abs Z.abs_eq.
+      + rewrite Z.opp_involutive.
+        done.
+      + rewrite Z.opp_nonneg_nonpos.
+        move: Hz.
+        move/Z.leb_nle.
+        move/Znot_le_gt.
+        move/Z.gt_lt.
+        move/Z.lt_le_incl.
+        done.
+  Qed.
   
 (**
 ## Z_choiceType   有限選択公理のある整数型
@@ -123,6 +176,7 @@ Section ZtoRing.
   
   Definition Z_modMixin := ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
   Canonical Z_modType := ZmodType Z Z_modMixin.
+  (* Z_choiceType が必要である。Z_countType は必要ない。 *)
   
   (* 確認 *)
   Check Z_eqType : eqType.
