@@ -6,7 +6,6 @@ Coq/SSReflect/MathComp による定理証明
 2018_04_21 @suharahiromichi
 2021_01_30 @suharahiromichi
  *)
-
 From mathcomp Require Import all_ssreflect. (* eqType 他 *)
 From mathcomp Require Import ssralg.        (* zmodType の定義 *)
 Require Import ZArith.                      (* Standard Coq の整数型 *)
@@ -76,6 +75,13 @@ Section ZtoRing.
   Compute Zeq_bool 0%Z 1%Z.                 (* false *)
   Compute Zeq_bool 1%Z 1%Z.                 (* true *)
   
+  Compute 1%Z = 1%Z.                        (* Prop *)
+  Check reflect (1%Z = 1%Z) (Zeq_bool 1%Z 1%Z).
+  Print Equality.axiom.
+  (* 
+Equality.axiom = 
+fun (T : Type) (e : rel T) => forall x y : T, reflect (x = y) (e x y)
+   *)
   Lemma Zeq_boolP : Equality.axiom Zeq_bool.
   Proof.
     move=> x y.
@@ -87,7 +93,7 @@ Section ZtoRing.
 *)
   Definition Z_eqMixin := EqMixin Zeq_boolP.
   Canonical Z_eqType := EqType Z Z_eqMixin.
-  
+
 (**
 ## 整数が自然数と1対1対応することを証明する。
 *)
@@ -115,8 +121,8 @@ Section ZtoRing.
             Zabs2Nat.id_abs Z.abs_eq ?Z.opp_nonneg_nonpos
             ?Z.opp_involutive //.
     + by apply: Zle_bool_imp_le.
-    + move/Z.leb_nle : z0.
-        by move/Znot_le_gt /Z.gt_lt /Z.lt_le_incl.
+    + move: z0.                             (* z0 に適用していく。 *)
+        by move /Z.leb_nle /Znot_le_gt /Z.gt_lt /Z.lt_le_incl.
   Qed.
 
   (* ハンズオン用の証明 *)
@@ -131,6 +137,7 @@ Section ZtoRing.
       rewrite doubleK.
       
       Locate "_ <=? _".                     (* Z.leb x y : Z_scope *)
+      Locate "_ <= _".                      (* Z.le x y : Z_scope *)
       Check Z.of_nat : nat -> Z.
       Check Z.abs_nat : Z -> nat.
       
@@ -141,6 +148,7 @@ Section ZtoRing.
          整数zの絶対値を自然数で得たものを整数に変換したものは、
          もとの自然数zに等しい。 *)
       rewrite Zabs2Nat.id_abs.
+      Search _ (Z.abs _ = _).
       rewrite Z.abs_eq.
       + done.
       + by apply: Zle_bool_imp_le.
@@ -156,16 +164,16 @@ Section ZtoRing.
       (* z が0以上ではない場合、
          整数(- z)の絶対値を自然数で得たものを整数に変換したものの(-)は、
          もとの自然数zに等しい。 *)
-      rewrite Zabs2Nat.id_abs Z.abs_eq.
+      Search _ (Z.abs_nat _).
+      Search _ (Z.abs _).
+      rewrite Nat2Z.inj_abs_nat.
+      rewrite Z.abs_eq.
       + rewrite Z.opp_involutive.
+        Check Z.opp_involutive.
         done.
       + rewrite Z.opp_nonneg_nonpos.
-        move: Hz.
-        move/Z.leb_nle.
-        move/Znot_le_gt.
-        move/Z.gt_lt.
-        move/Z.lt_le_incl.
-        done.
+        move/Z.leb_gt : Hz.
+          by apply: Z.lt_le_incl.
   Qed.
   
 (**
@@ -191,7 +199,8 @@ Section ZtoRing.
   Check Z.add_0_l : forall n : Z, (0 + n)%Z = n.
   Check Z.add_opp_diag_l : forall n : Z, (- n + n)%Z = 0%Z.
   
-  Definition Z_zmodMixin := ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
+  Definition Z_zmodMixin := ZmodMixin
+                              Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
   Canonical Z_zmodType := ZmodType Z Z_zmodMixin.
   (* Z_choiceType が必要である。Z_countType は必要ない。 *)
   
@@ -227,6 +236,9 @@ Section TEST.
   Check @eq_op : forall T : eqType, T -> T -> bool.
   Check @eq_op nat_eqType : nat -> nat -> bool.
   
+  Compute 1%Z == 1%Z.                       (* true *)
+  Compute 1%Z == - 1%Z.                     (* false *)
+  
 (**
 ### 演算子 「*+」 の定義。整数と自然数の掛け算
 
@@ -236,9 +248,6 @@ Section TEST.
   Check Z_zmodType : zmodType.
   Check GRing.natmul : forall V : zmodType, V -> nat -> V.
   Compute GRing.Zmodule.sort Z_zmodType.     (* Z *)
-  
-  Compute 1%Z == 1%Z.                       (* true *)
-  Compute 1%Z == - 1%Z.                     (* false *)
   
 (**
 整数を自然数回足し算する。整数×自然数 の演算子である。
@@ -311,7 +320,7 @@ End TEST.
 (**
 # [x *+ 2 = 2 * x] の証明 (テキスト 6.1.7節)
 *)
-Goal forall x : Z, x *+ 2 = (2 * x)%Z.
+Goal forall x : Z, x *+ 2 = (2%Z * x)%Z.
 Proof.
   case=> // x; rewrite GRing.mulr2n Z.mul_comm.
     by rewrite -(Zred_factor1 (Z.pos x)).
