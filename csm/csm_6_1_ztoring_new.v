@@ -27,19 +27,30 @@ MathCompの整数型は、ssrintで定義されていますが、これとは別
 zmodMixion と zmodType の定義のある ssralg はimportしますが、
 MathComp の整数型である ssrint は import しません。
 
+補足： テキストでいう「可換群」は、Z-Module や Z加群 ともいい、
+整数環(環Z)上の加法についての群のことです。アーベル群といったほうが判りやすいかもしれません。
+MathComp では zmodType 型クラスとして定義されています。
+
+「整数がその加法で可換群になること」というテーマは、
+Standard Coqで定義された整数が、その加法についてアーベル群になることを証明する。
+具体的にいうと、zmodType型クラスのインスタンスとして、z_zmodType型が定義できることを示します。
+
+----------------------------------------------------------------------------------
 型インスタンス           型クラス      説明
 Z_eqType                 eqType       決定可能な同値関係を持つ（整数）型
 Z_choiceType             choiceType   有限選択公理のある（整数）型
 Z_countType              countType    数え上げ可能な（整数）型
-Z_modType                zmodType     可換群である（整数）型
+Z_zmodType               zmodType     可換群である（整数）型
 Z_ringType               ringType     環である（整数）型（演習問題 6.1）
+----------------------------------------------------------------------------------
 
 この階層の順番に定義していくのが自然です。テキストではこの順番になっていないのですが、
 CanChoiceMixin と CanCountMixin を使うことで、この順番で証明します。
+このような定義の方法は、MCB の 7.5節でも用いられています。
 
 参考： Mathematical Components (MCB) 7.5 Linking a custom data type to the library
 
-補足： テキスト 176ページの図6.1にあるように、Z_modType を作るためには、
+補足： テキスト 176ページの図6.1にあるように、Z_zmodType を作るためには、
 Z_choiceType があればよく、Z_countType は必要ではありません。
 
 補足： テキストでは自然数から整数の対応を部分関数にしていますが、これは関数になるはずです。
@@ -47,8 +58,6 @@ Z_choiceType があればよく、Z_countType は必要ではありません。
 部分関数 で pcancel のままであっても、
 PcanChoiceMixin と PcanCountMixin を使うことで証明できます。
 
-補足： Z-Module Z加群というのは整数環(環Z)上の加法についての群のことです。
-可換群とかアーベル群といったほうが、判りやすいかもしれません。
 *)
 
 Section ZtoRing.
@@ -174,15 +183,15 @@ Section ZtoRing.
   Check Z.add_0_l : forall n : Z, (0 + n)%Z = n.
   Check Z.add_opp_diag_l : forall n : Z, (- n + n)%Z = 0%Z.
   
-  Definition Z_modMixin := ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
-  Canonical Z_modType := ZmodType Z Z_modMixin.
+  Definition Z_zmodMixin := ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
+  Canonical Z_zmodType := ZmodType Z Z_zmodMixin.
   (* Z_choiceType が必要である。Z_countType は必要ない。 *)
   
   (* 確認 *)
   Check Z_eqType : eqType.
   Check Z_choiceType : choiceType.
   Check Z_countType : countType.
-  Check Z_modType : zmodType.
+  Check Z_zmodType : zmodType.
 
 End ZtoRing.
 
@@ -212,11 +221,11 @@ Section TEST.
   Check @eq_op nat_eqType : nat -> nat -> bool.
   
 (**
-### 演算子 「*+」 の定義。整数と自然数の掛け算
+### 演算子 「*+」 の定義。整数と自然数の掛け算 (テキスト 6.1.7節)
 *)
   Locate "_ *+ _".               (* GRing.natmul x n   : ring_scope *)
-  Check Z_modType : zmodType.
-  Compute GRing.Zmodule.sort Z_modType.     (* Z *)
+  Check Z_zmodType : zmodType.
+  Compute GRing.Zmodule.sort Z_zmodType.     (* Z *)
   
 (**
 整数を自然数回足し算する。整数×自然数 の演算子である。
@@ -226,63 +235,63 @@ Section TEST.
   
   Check @GRing.natmul : forall V : zmodType, (* sort のコアーションを明示しない。 *)
       V -> nat -> V.
-  Check @GRing.natmul Z_modType :           (* 型の引数を与える。 *)
-    Z_modType -> nat -> Z_modType.
+  Check @GRing.natmul Z_zmodType :           (* 型の引数を与える。 *)
+    Z_zmodType -> nat -> Z_zmodType.
   
   Check @GRing.natmul : forall V : zmodType, (* sort のコアーションを明示する。 *)
       GRing.Zmodule.sort V -> nat -> GRing.Zmodule.sort V.
-  Check @GRing.natmul Z_modType :           (* 型の引数を与える。 *)
-    GRing.Zmodule.sort Z_modType -> nat -> GRing.Zmodule.sort Z_modType.
-  Check @GRing.natmul Z_modType :           (* sort Z_modType = Z を反映する。 *)
+  Check @GRing.natmul Z_zmodType :          (* 型の引数を与える。 *)
+    GRing.Zmodule.sort Z_zmodType -> nat -> GRing.Zmodule.sort Z_zmodType.
+  Check @GRing.natmul Z_zmodType :          (* sort Z_zmodType = Z を反映する。 *)
     Z -> nat -> Z.
   
 (**
-## Canonical Z_modType の必要性の説明
+## Canonical Z_zmodType の必要性の説明
 *)
 
-  (* ○ : Canonical Z_modType でなくてもよい。 *)
-  (* × : Canonical Z_modType でないとエラーになる。 *)
+  (* ○ : Canonical Z_zmodType でなくてもよい。 *)
+  (* × : Canonical Z_zmodType でないとエラーになる。 *)
   
 (**
 ### x を Z 型で定義する。
  *)
   Variable x : Z.
   
-  Check @GRing.natmul Z_modType x 2 : Z_modType. (* ○ *)
-  Check GRing.natmul x 2.                        (* × *)
-  Check x *+ 2.                                  (* × *)
+  Check @GRing.natmul Z_zmodType x 2 : Z_zmodType. (* ○ *)
+  Check GRing.natmul x 2.                          (* × *)
+  Check x *+ 2.                                    (* × *)
   
-  (** Z_modType から、コアーションで sort Z_modType を計算して Z を求めることはできる。 *)
+  (** Z_zmodType から、コアーションで sort Z_zmodType を計算して Z を求めることはできる。 *)
   Print Graph.                              (* コアーションの表示 *)
   (** [GRing.Zmodule.sort : GRing.Zmodule.type >-> Sortclass] *)
-  (** しかし、x の型 Z から、Z_modType を見つけて補うことはできない。なので、*)
+  (** しかし、x の型 Z から、Z_zmodType を見つけて補うことはできない。なので、*)
   Print Canonical Projections.              (* カノニカルの表示 *)
-  (** [Z <- GRing.Zmodule.sort ( Z_modType )] *)
-  (** Z_modType が、 Z のカノニカルであるこを宣言しておく。 *)
+  (** [Z <- GRing.Zmodule.sort ( Z_zmodType )] *)
+  (** Z_zmodType が、 Z のカノニカルであるこを宣言しておく。 *)
   
-  (* カノニカル [Z <- GRing.Zmodule.sort Z_modType] を使う。 *)
-  Check GRing.mulr2n x : x *+ 2 = x + x.            (* × *)
-  Check @GRing.mulr2n Z_modType x : x *+ 2 = x + x. (* × *)
-  
-(**
-### x を Z_modType 型で定義する。
- *)
-  Variable x' : Z_modType.
-  Check x' *+ 2.                                        (* ○ *)
-  Check GRing.mulr2n x' : x' *+ 2 = x' + x'.            (* ○ *)
-  Check @GRing.mulr2n Z_modType x' : x' *+ 2 = x' + x'. (* ○ *)
+  (* カノニカル [Z <- GRing.Zmodule.sort Z_zmodType] を使う。 *)
+  Check GRing.mulr2n x : x *+ 2 = x + x.             (* × *)
+  Check @GRing.mulr2n Z_zmodType x : x *+ 2 = x + x. (* × *)
   
 (**
-### x を (GRing.Zmodule.sort Z_modType) 型で定義する。
+### x を Z_zmodType 型で定義する。
  *)
-  Variable x'' : GRing.Zmodule.sort Z_modType.
-  Compute GRing.Zmodule.sort Z_modType.        (* Z *)
+  Variable x' : Z_zmodType.
+  Check x' *+ 2.                                         (* ○ *)
+  Check GRing.mulr2n x' : x' *+ 2 = x' + x'.             (* ○ *)
+  Check @GRing.mulr2n Z_zmodType x' : x' *+ 2 = x' + x'. (* ○ *)
+  
 (**
-GRing.Zmodule.sort Z_modType を計算すると Z になるが、カノニカル宣言がなくてもよい。
+### x を (GRing.Zmodule.sort Z_zmodType) 型で定義する。
  *)
-  Check x'' *+ 2.                                           (* ○ *)
-  Check GRing.mulr2n x'' : x'' *+ 2 = x'' + x''.            (* ○ *)
-  Check @GRing.mulr2n Z_modType x'' : x'' *+ 2 = x'' + x''. (* ○ *)
+  Variable x'' : GRing.Zmodule.sort Z_zmodType.
+  Compute GRing.Zmodule.sort Z_zmodType.        (* Z *)
+(**
+GRing.Zmodule.sort Z_zmodType を計算すると Z になるが、カノニカル宣言がなくてもよい。
+ *)
+  Check x'' *+ 2.                                            (* ○ *)
+  Check GRing.mulr2n x'' : x'' *+ 2 = x'' + x''.             (* ○ *)
+  Check @GRing.mulr2n Z_zmodType x'' : x'' *+ 2 = x'' + x''. (* ○ *)
 End TEST.
 
 (**
