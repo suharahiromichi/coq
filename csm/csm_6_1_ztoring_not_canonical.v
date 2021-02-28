@@ -72,18 +72,18 @@ Section ZtoRing.
   (* 右辺で、カノニカル [Z <- Choice.sort Z_choiceType] を使う。 *)  
 
   Definition Z_countType := CountType (Choice.sort Z_choiceType) Z_countMixin.  
-  (* Canonical Z_modType. *)
+  (* Canonical Z_zmodType. *)
   Compute Countable.sort Z_countType.       (* Z *)
   (* 左辺で、カノニカル [Z <- Count.sort Z_countType] になる。 *)
   
-  Definition Z_modMixin :=
+  Definition Z_zmodMixin :=
     ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
   (* 右辺で、カノニカル [Z <- Choice.sort Z_choiceType] を使う。 *)    
 
-  Definition Z_modType := Eval hnf in ZmodType (Choice.sort Z_choiceType) Z_modMixin.
-  (* Canonical Z_modType. *)
-  Compute GRing.Zmodule.sort Z_modType.     (* Z *)
-  (* 左辺で、カノニカル [Z <- GRing.Zmodule.sort Z_modType] になる。 *)
+  Definition Z_zmodType := Eval hnf in ZmodType (Choice.sort Z_choiceType) Z_zmodMixin.
+  (* Canonical Z_zmodType. *)
+  Compute GRing.Zmodule.sort Z_zmodType.     (* Z *)
+  (* 左辺で、カノニカル [Z <- GRing.Zmodule.sort Z_zmodType] になる。 *)
   
 End ZtoRing.
 
@@ -94,27 +94,27 @@ End ZtoRing.
 Open Scope ring_scope.
 
 (**
-# Canonical Z_modType の必要性の説明
+# Canonical Z_zmodType の必要性の説明
 *)
 Section TEST.
   
   Locate "_ *+ _".               (* GRing.natmul x n   : ring_scope *)
-  Check Z_modType : zmodType.
-  Compute GRing.Zmodule.sort Z_modType.     (* Z *)
+  Check Z_zmodType : zmodType.
+  Compute GRing.Zmodule.sort Z_zmodType.     (* Z *)
   
-  Variable x : GRing.Zmodule.sort Z_modType.
+  Variable x : GRing.Zmodule.sort Z_zmodType.
   
   Check x *+ 2.
   Check GRing.mulr2n x : x *+ 2 = x + x.
   Check @GRing.natmul : forall V : zmodType, (* sort のコアーションを明示する。 *)
       GRing.Zmodule.sort V -> nat -> GRing.Zmodule.sort V.
-  Check @GRing.mulr2n Z_modType x : x *+ 2 = x + x.
+  Check @GRing.mulr2n Z_zmodType x : x *+ 2 = x + x.
   
   Check @GRing.natmul : forall V : zmodType, (* sort のコアーションを明示する。 *)
       GRing.Zmodule.sort V -> nat -> GRing.Zmodule.sort V.
-  Check @GRing.natmul Z_modType :           (* 型の引数を与える。 *)
-    GRing.Zmodule.sort Z_modType -> nat -> GRing.Zmodule.sort Z_modType.
-  Check @GRing.natmul Z_modType :           (* sort Z_modType = Z を反映する。 *)
+  Check @GRing.natmul Z_zmodType :           (* 型の引数を与える。 *)
+    GRing.Zmodule.sort Z_zmodType -> nat -> GRing.Zmodule.sort Z_zmodType.
+  Check @GRing.natmul Z_zmodType :           (* sort Z_zmodType = Z を反映する。 *)
     Z -> nat -> Z.
   
 End TEST.
@@ -123,7 +123,7 @@ End TEST.
 # [x *+ 2 = 2 * z] の証明
 *)
 
-Goal forall x : GRing.Zmodule.sort Z_modType, x *+ 2 = (2 * x)%Z.
+Goal forall x : GRing.Zmodule.sort Z_zmodType, x *+ 2 = (2 * x)%Z.
 Proof.
   case=> // x; rewrite GRing.mulr2n Z.mul_comm.
     by rewrite -(Zred_factor1 (Z.pos x)).
