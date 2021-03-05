@@ -4,6 +4,8 @@ Coq/SSReflect/MathComp による定理証明
 6.2 テーマ2 有限群とラグランジュの定理
 ======
 2018_05_02 @suharahiromichi
+
+2021_03_06 @suharahiromichi
  *)
 
 From mathcomp Require Import all_ssreflect.
@@ -42,18 +44,96 @@ finType型クラスのインスタンス型 T を台とする。
   Goal H^-1^-1 = H. by rewrite invgK. Qed.
   Goal (G * H)^-1 = H^-1 * G^-1. by rewrite invMg. Qed.
   
-  (**
+(**
+## coset と cosets
+
+$G$ を群、$H$ をその部分群として、
+後で定義する同値関係 $\sim$ について：
+
+- coset 剰余類（$\sim$ による同値類） $H\ x$、 ``H :* x``
+
+- cosets 剰余類の集合（$\sim$ による商） $H \backslash G$
+*)
+
+(**
+## 定理：任意の剰余類の濃度は、もとの集合の濃度に等しい
+
+テキストの順番とは異なるが、これは fingroup で証明されている補題を使って証明できるため、
+先に証明します。
+ *)
+(**
+使用するのは、次のふたつの補題です：
+*)
+  Section Test.
+    Variable A : {set gT}.
+    Check rcosetsP
+      : reflect (exists2 x, x \in G & A = H :* x) (A \in rcosets H G).
+(**
+任意の集合Aが、
+適当なxについて$H x$と等しいこと（適当なxの剰余類であること）と、
+Aが$H \backslash G$の要素であることは、必要十分条件である。
+
+$$(\exists x, x \in G \land A = H x) \iff A \in H \backslash G$$
+*)
+  End Test.
+  
+  Check card_rcoset
+    : forall (gT : finGroupType) (A : {set gT}) (x : gT), #|A :* x| = #|A|.
+(**
+任意のxの剰余類の濃度は、もとの集合の濃度に等しい。
+
+$$\forall x, |A x| = |A|$$
+*)
+
+(**
+証明したいのは、以下の命題です：
+
+剰余類の集合の任意の要素の濃度は、もとの集合の濃度に等しい。
+
+Goal: $$ A \in H \backslash G \to |A| = |H| $$
+
+補題：``card_rcoset``は、任意のxに対して剰余類を決めているのに対して、
+ここでは、任意の$H \backslash G$の要素で剰余類を選んでいます。
+多分、そこに違いがあるのだろうと思います。
+*)
+  Lemma myCard_rcoset (A : {set gT}) : A \in rcosets H G -> #|A| = #|H|.
+  Proof.
+    move/rcosetsP.
+(**
+Goal: $$ (\exists x, x \in G \land A = H x) \to |A| = |H| $$ 
+*)
+    case.
+(**
+Goal: $$ \forall x, x \in G \to A = H x \to |A| = |H| $$ 
+*)
+    move=> a asinG ->.
+    rewrite card_rcoset.
+(**
+Goal: $$ |H| = |H| $$ 
+*)
+    done.
+
+    Restart.
+    case/rcosetsP => a ainG ->.
+      by apply: card_rcoset.
+  Qed.
+
+(**
 # 6.2.2 部分群の性質
 *)
 (**
 ## 部分群
+
+$G$ を群、$H$ をその部分群とします。$ H \in G $
 *)
   Hypothesis HG : H \subset G.
 
 (**
 ## 同値関係
 
-bool型の二項関係を定義します。
+bool型の二項関係（$\sim$）を定義します。
+
+$$ x \sim y \equiv x y^{-1} \in H $$ 
 *)  
   Definition R := [rel x y | x * y^-1 \in H].
   Check R : gT -> gT -> bool.               (* simpl_rel gT. *)
@@ -64,7 +144,7 @@ bool型の二項関係を定義します。
        x \in G -> x^-1 \in G.
   
 (**
-同値関係であることを証明する。
+$\sim$が、同値関係であることを証明します。
 
 equivalence_rel は ssrbool で定義されている。
 *)
@@ -83,16 +163,25 @@ equivalence_rel は ssrbool で定義されている。
   Lemma equiv_rel_R : equivalence_rel R.
   Proof.
     rewrite /equivalence_rel => x y z.
-    (* R z z * (R x y -> R x z = R y z) *)
 (**
 左辺の * は直積(prod)の意味であるので、pair を適用することで、
-* の左と右のふたつのゴールに分けられる。
-and は Prod型のふたつの直積に対して、prod は Type型のふたつの直積である。ここではおなじこと。
+* の左と右のふたつのゴールに分けられます。
+and は Prod型のふたつの直積に対して、prod は Type型のふたつの直積です。
+ここではおなじことです。
+
+最後に、「=」はboolの「=」で必要十分条件を示します。
  *)
+(**
+Goal: $ z \sim z \land (x \sim y\ \to (x\ \sim z \iff y \sim z)) $
+*)
     apply: pair => /=.
-    (* z * z^-1 \in H *)
+(**
+Goal: $ z z^{-1} \in H $
+*)
     - by rewrite mulgV group1.
-    (* x * y^-1 \in H -> (x * z^-1 \in H) = (y * z^-1 \in H) *)
+(**
+Goal: $ x y^{-1} \in H -> (x z^{-1} \in H \iff y z^{-1} \in H) $
+*)
     - move=> xRinvy.
       apply/idP/idP.
       + move/groupVr in xRinvy.
@@ -110,22 +199,9 @@ and は Prod型のふたつの直積に対して、prod は Type型のふたつ�
 # 6.2.3 剰余類の性質の形式化
 *)
 (**
-## 定理：どの剰余類(A)の濃度も、Hの濃度に等しい
+## 定理：
 
-rcosets は fingroup で定義されている。
-
-右剰余類全体からなる集合族の任意の要素(A)、すなわち、どの剰余類(A)の濃度も、
-Hの濃度に等しい
- *)
-  Lemma myCard_rcoset (A : {set gT}) : A \in rcosets H G -> #|A| = #|H|.
-  Proof.
-    Check rcosetsP.
-    case/rcosetsP => a ainG ->.
-      by apply: card_rcoset.
-  Qed.
-  
-(**
-## 定理： H x = {y ∈ G | xRy}
+$$H x = \\{y \in G\ |\ x \sim y \\}$$
 *)
   Lemma coset_equiv_class (x : gT) (xinG : x \in G) : H :* x = [set y in G | R x y].
   Proof.
@@ -156,9 +232,9 @@ Hの濃度に等しい
   Qed.
   
 (**
-## 補題：右剰余類全体からなる集合族は、同値関係で分割して得られた集合族に等しい。
+## 補題：
 
-equivalence_partition は finset で定義されている。
+$H \backslash G$ は、G の$\sim$についての商と等しい。
 *)
   Lemma rcosets_equiv_part : rcosets H G = equivalence_partition R G.
   Proof.
@@ -187,9 +263,12 @@ equivalence_partition は finset で定義されている。
   Qed.
   
 (**
-## 補題：右剰余類全体からなる集合族は、もとの集合の分割になっている。
+## 補題：
 
-partition は finset で定義されている。
+$H \backslash G$ は、G の$sim$についての分割である。
+
+商であるということと、分割になっているということは区別されます。
+前者と違って、後者では$\sim$が明示的に現れないことがポイントです。
 *)
   Lemma partition_rcosets : partition (rcosets H G) G.
   Proof.
@@ -201,26 +280,75 @@ partition は finset で定義されている。
 (**
 # 6.2.4 ラグランジュの定理
 *)
-  Section TEST.
-    Variable f : nat -> nat.
-    Print iter.
-    Compute iter 10 f 0. (* = f (f (f (f (f (f (f (f (f (f 0))))))))) *)
-  End TEST.
+(**
+## 総和についての補題
+
+総和についての補題を紹介します。
+テキストでは、補題``big_const``を使って``iter``の式に変換していますが、
+そのものずばりの補題があるので、それを使います。
+これは、定数の総和をもとめる $\sum_{0 <= i < n} c = c\ n$ の集合版です。
+
+$\sum_{i \in A} c = |A|\ c$
+ *)
+  Check sum_nat_const
+    : forall (fT : finType) (A : pred fT) (c : nat), \sum_(i in A) c = (#|A| * c)%N.
   
-  (* |G| = |H| (G : H) *)
+(**
+## 使用する補題（その１）
+
+finset.v で証明されている補題です。P（集合の集合）が D（集合）の分割になっているならば、
+Pの全ての要素の濃度の総和は、Dの濃度に等しい。
+
+$$ |D| = \sum_{A \in P}\ |A|$$
+*)  
+  Check card_partition
+    : forall (T : finType) (P : {set {set T}}) (D : {set T}),
+      partition P D -> #|D| = \sum_(A in P) #|A|.
+
+(**
+直前に証明した補題です。
+*)
+  Check partition_rcosets : partition (rcosets H G) G.
+(**
+組み合わせると、剰余類の集合の要素の濃度の総和は、群$G$の濃度に等しい、となります。
+これは、剰余類の集合の集合は、群$G$の分割であるためですね。
+
+$|G| = \sum_(A \in H \backslash G)\ |A|$
+*)
+  Check (card_partition partition_rcosets)
+    : #|G| = \sum_(A in rcosets H G) #|A|.
+
+(**
+## 使用する補題（その２）
+
+myCard_rcoset の $|A| = |H|$ を Σの中に適用して書き換える補題です。
+
+$\sum_{i \in H \backslash G}\ |A| = \sum_{i \in H \backslash G}\ |H|$
+*)  
+  Check ((eq_bigr (fun _ => #|H|)) myCard_rcoset)
+    : \sum_(i in rcosets H G) #|i| = \sum_(i in rcosets H G) #|H|.
+  
+(**
+## 定理の証明
+*)  
   Theorem myLagrange : #|G| = (#|H| * #|G : H|)%nat.
   Proof.
-    Check card_partition partition_rcosets.
-    rewrite (card_partition partition_rcosets). (* 右剰余類による分割を与える。 *)
-    Check  ((eq_bigr (fun _ => #|H|)) myCard_rcoset).
-    rewrite ((eq_bigr (fun _ => #|H|)) myCard_rcoset). (* 剰余類の濃度が#|H|に一致する。 *)
-    Check big_const 0 addn.
-    rewrite big_const.                      (* iter に展開する。 *)
-    (* 0 に対して、f = addn #|H| を n = #|rcosets H G| 回繰り返し適用する。 *)
-    Check iter_addn_0.
-    (* 0 に対して addn m を n 回繰り返すのは、m * n である。 *)
-    rewrite iter_addn_0.
-    done.
+(**
+Goal: $|G| = |H|\ (G : H)$
+*)
+    rewrite (card_partition partition_rcosets).
+(**
+Goal: $\sum_{A \in H \backslash G} |A| = |H|\ (G : H)$
+*)
+    rewrite ((eq_bigr (fun _ => #|H|)) myCard_rcoset).
+(**
+Goal: $\sum_{A \in H \backslash G} |H| = |H|\ (G : H)$
+*)
+    rewrite sum_nat_const.
+(**
+Goal: $|H  \backslash G|\ |H| = |H|\ |G : H|$
+*)
+      by rewrite mulnC.
   Qed.
   
   (* (G : H) は、HによるGの右剰余類の個数であり、mathcomp の表記だと #|G : H| である。 *)
