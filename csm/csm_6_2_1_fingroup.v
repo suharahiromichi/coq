@@ -31,7 +31,18 @@ MathComp の型クラスとして定義されているのは、``finGroupType``
 
 ``fingroup.v``のコメントでは、``finGroupType`` は、
 "the structure for finite types with a group law" と記載されています。
-すなわち、``finType`` を継承して、公理として乗法の結合則や単位元の存在を仮定します。
+
+``finType``型クラスを継承して、公理として乗法の結合則や単位元の存在を仮定します。
+すなわち、``finType``型クラスのインスタンス型``T``を台として、
+
+-二項演算 mul T -> T -> T が存在する。
+-元 one : T が存在する。
+-関数 inv : T -> T が存在する。
+-mul は結合律を満たす。
+-one は左単位元である。
+-inv は対合である（2回適用するともとにもどる）。inv (inv x) = x
+-inv と mul はモルフィズムを満たす。inv (mul x y) = mul (inv y) (inv x)
+
  *)
 
 (**
@@ -133,16 +144,22 @@ Definition group_set_baseGroupMixin : FinGroup.mixin_of (set_type gT) :=
 
 (**
 ### ひとつめの定義
+
+関数``rcoset``の定義は、
+有限集合としての有限群Aのすべての要素に、右からxを掛けたものです。
+(A の ``mulg x`` による像の集合といえます。)
 *)
-    Check rcoset A x.
+    Check rcoset A x : {set gT}.
     Check (fun a => mulg a x) @: A.     (* ``@:`` は、finset で定義 *)
-    Check imset (fun a => mulg a x) (mem A). (* A の ``mulg x`` による像の集合 *)
+    Check imset (fun a => mulg a x) (mem A).
   
 (**
 ### ふたつめの定義
+
+演算子``:*``の定義は、有限集合としての有限群Aと、``{x}``を掛けたものです。
 *)
-    Check A :* x.
-    Check A * [set x].                 (* ``*`` は、fingroup で定義 *)
+    Check A :* x : {set gT}.
+    Check A * [set x].
     Check mulg A [set x].
 
 (**
@@ -158,16 +175,28 @@ Definition group_set_baseGroupMixin : FinGroup.mixin_of (set_type gT) :=
 *)
 (**
 ### ひとつめの定義
+
+関数``rcosets``の定義は、
+有限集合としての有限群Aのすべての要素に、
+有限集合としての有限群Bのすべての要素を右から掛けたものです。
 *)
-    Check rcosets A B.
-    Check [set rcoset A x | x in B].
+    Check rcosets A B : {set {set gT}}.
+    Check [set (rcoset A x) | x in B].
     
 (**
 ### ふたつめの定義
-*)
-    Check (rcoset A) @: B.
-    Check imset (fun a => rcoset A a) (mem A).
 
+この定義は、
+有限集合としての有限群Aのすべての要素に、
+有限集合としての有限群Bのすべての要素それぞれの単集合を右から掛けたものです。
+*)
+    Check (rcoset A) @: B : {set {set gT}}.
+    Check imset (fun a => rcoset A a) (mem A).
+(**
+これは、次の示すものではありません。
+*)    
+    Check A * B  : {set gT}.
+    
 (**
 ### ふたつの定義がおなじであることの証明
 *)
