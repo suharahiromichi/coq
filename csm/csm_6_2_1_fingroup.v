@@ -100,48 +100,52 @@ Section Sect_1.
   Check x : gT.
 
 (**
-しかし、型と集合はCoqの対象としては別なものなので、
-有限集合としての有限型は、次のように定義します：
+しかし、型と集合はCoqの対象としては別なものです。
+
+まず、``finGroupType``型クラスのインスタンス型（例：gT）の値を要素とする有限集合は、
+``{set gT}``を使います。
+これの実体は、
+``gT``の要素の値が集合に含まれるか否かを決定する``gT -> bool``型の関数です。
+(``finset`` の ``set_type``の定義を参照のこと)。
+
+次のように使って定義します：
+*)
+  Variable A B C : {set gT}.
+(**
+有限集合どうしの掛け算ができます。
+*)  
+  Check A * B : {set gT}.
+  
+(**
+有限群は、``{group gT}``を使います。
+これの実体は、``{set gT}``を台として、要素``1``を含むなどの条件を追加したものです。
+(``fingroup`` の ``group_type``の定義を参照のこと)。
+
+次のように使って定義します：
 *)
   Variable G H : {group gT}.
-
+  
+(**
+有限群の公理や定理のうち、集合としての有限群がでてくるものが使えます。
+*)
   Goal 1 \in G. Proof. by rewrite group1. Qed.
   Goal x \in G -> x^-1 \in G. Proof. by move/groupVr. Qed.
   Goal x \in G -> y \in G -> x * y \in G. Proof. apply: groupM. Qed.
   
 (**
-``{group gT}``の定義にはファントムタイプを使っています。
-Math-Comp Book の 5.10.1 も参照してください。
-*)  
+``{set T}`` と ``{group T}``の定義にはファントムタイプを使っていますが、
+これは、``T``の部分に、
+finType にカノニカルプロジェクションできる型だけを書けるように制限するためです。
 
-(*
-Notation "{ 'set' T }" := (set_of (Phant T))
-Definition set_of of phant T := set_type.
-Inductive set_type : predArgType := FinSet of {ffun pred T}.
+Math-Comp Book の 5.10.1 や次の文書も参照してください。
 
-Notation "{ 'group' gT }" := (group_of (Phant gT))
-Definition group_of of phant gT : predArgType := group_type.
-Structure group_type : Type := Group {
-  gval :> GroupSet.sort gT;
-  _ : group_set gval
-}.
-Definition group_set_baseGroupMixin : FinGroup.mixin_of (set_type gT) :=
-  FinGroup.BaseMixin set_mulgA set_mul1g set_invgK set_invgM.
+[https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-phantom_types.v]
+
 *)
-  
-(**
-有限集合としての有限群どうしの乗算も``*`` (``mulg``) で行えます。
-ただし、結果は``{group gT}``ではありません。
-*)
-  Check G * H : {set gT}.
-  Fail Check G * H : {group gT}.
 
 (**
 ## 剰余類 (coset) の定義
  *)
-  Section Sect_1_3.
-    Variable A B C : {set gT}.
-
 (**
 ### ひとつめの定義
 
@@ -149,27 +153,27 @@ Definition group_set_baseGroupMixin : FinGroup.mixin_of (set_type gT) :=
 有限集合としての有限群Aのすべての要素に、右からxを掛けたものです。
 (A の ``mulg x`` による像の集合といえます。)
 *)
-    Check rcoset A x : {set gT}.
-    Check (fun a => mulg a x) @: A.     (* ``@:`` は、finset で定義 *)
-    Check imset (fun a => mulg a x) (mem A).
+  Check rcoset A x : {set gT}.
+  Check (fun a => mulg a x) @: A.     (* ``@:`` は、finset で定義 *)
+  Check imset (fun a => mulg a x) (mem A).
   
 (**
 ### ふたつめの定義
 
 演算子``:*``の定義は、有限集合としての有限群Aと、``{x}``を掛けたものです。
 *)
-    Check A :* x : {set gT}.
-    Check A * [set x].
-    Check mulg A [set x].
+  Check A :* x : {set gT}.
+  Check A * [set x].
+  Check mulg A [set x].
 
 (**
 ### ふたつの定義がおなじであることの証明
 *)
-    Check rcosetE
-      : forall (gT : finGroupType) (A : {set gT}) (x : gT), rcoset A x = A :* x.
-    Check rcosetP
-      : reflect (exists2 a, a \in G & y = a * x) (y \in G :* x).
-
+  Check rcosetE
+    : forall (gT : finGroupType) (A : {set gT}) (x : gT), rcoset A x = A :* x.
+  Check rcosetP
+    : reflect (exists2 a, a \in G & y = a * x) (y \in G :* x).
+  
 (**
 ## 剰余群 (cosets) の定義
 *)
@@ -180,8 +184,8 @@ Definition group_set_baseGroupMixin : FinGroup.mixin_of (set_type gT) :=
 有限集合としての有限群Aのすべての要素に、
 有限集合としての有限群Bのすべての要素を右から掛けたものです。
 *)
-    Check rcosets A B : {set {set gT}}.
-    Check [set (rcoset A x) | x in B].
+  Check rcosets A B : {set {set gT}}.
+  Check [set (rcoset A x) | x in B].
     
 (**
 ### ふたつめの定義
@@ -190,21 +194,19 @@ Definition group_set_baseGroupMixin : FinGroup.mixin_of (set_type gT) :=
 有限集合としての有限群Aのすべての要素に、
 有限集合としての有限群Bのすべての要素それぞれの単集合を右から掛けたものです。
 *)
-    Check (rcoset A) @: B : {set {set gT}}.
-    Check imset (fun a => rcoset A a) (mem A).
+  Check (rcoset A) @: B : {set {set gT}}.
+  Check imset (fun a => rcoset A a) (mem A).
 (**
 これは、次の示すものではありません。
 *)    
-    Check A * B  : {set gT}.
+  Check A * B  : {set gT}.
     
 (**
 ### ふたつの定義がおなじであることの証明
 *)
-    Check rcosetsP
-      : reflect (exists2 x, (x \in B) & (C = A :* x)) (C \in rcosets A B).
+  Check rcosetsP
+    : reflect (exists2 x, (x \in B) & (C = A :* x)) (C \in rcosets A B).
     
-  End Sect_1_3.
-
 End Sect_1.
 
 (* END *)
