@@ -14,20 +14,21 @@ From mathcomp Require Import fingroup.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-Set Print All.
 
 Section Lagrange.
 (**
 # 6.2.1 有限群の定義 (see. fingroup.v)
 
 finType型クラスのインスタンス型 T を台とする。
-・二項演算 mul T -> T -> T が存在する。
-・元 one : T が存在する。
-・関数 inv : T -> T が存在する。
-・mul は結合律を満たす。
-・one は左単位元である。
-・inv は対合である（2回適用するともとにもどる）。inv (inv x) = x
-・inv と mul はモルフィズムを満たす。inv (mul x y) = mul (inv y) (inv x)
+
+-二項演算 mul T -> T -> T が存在する。
+-元 one : T が存在する。
+-関数 inv : T -> T が存在する。
+-mul は結合律を満たす。
+-one は左単位元である。
+-inv は対合である（2回適用するともとにもどる）。inv (inv x) = x
+-inv と mul はモルフィズムを満たす。inv (mul x y) = mul (inv y) (inv x)
+
  *)
 
   Open Scope group_scope.
@@ -66,12 +67,12 @@ finType型クラスのインスタンス型 T を台とする。
 
 - rcoset 右剰余類（$\sim$ による同値類） $H\ x$、 ``H :* x``
 
-- rcosets 右剰余類の集合（$\sim$ による商） $H \backslash G$
+- rcosets 右剰余群（$\sim$ による商） $H \backslash G$
 
 
 
-後で定義する同値関係$\sim$の定義から判るように、
-本節では、特に断りのない限り、右剰余類だけを考えます。
+後で定義する同値関係$\sim$は右合同であるので、
+本資料は、特に断りのない限り、右剰余類だけを考えます。
 *)
 
 (**
