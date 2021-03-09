@@ -17,18 +17,9 @@ Unset Printing Implicit Defensive.
 
 Section Lagrange.
 (**
-# 6.2.1 有限群の定義 (see. fingroup.v)
+# 6.2.1 有限群の定義
 
-finType型クラスのインスタンス型 T を台とする。
-
--二項演算 mul T -> T -> T が存在する。
--元 one : T が存在する。
--関数 inv : T -> T が存在する。
--mul は結合律を満たす。
--one は左単位元である。
--inv は対合である（2回適用するともとにもどる）。inv (inv x) = x
--inv と mul はモルフィズムを満たす。inv (mul x y) = mul (inv y) (inv x)
-
+see. csm_6_2_1_fingroup.v
  *)
 
   Open Scope group_scope.
@@ -36,45 +27,6 @@ finType型クラスのインスタンス型 T を台とする。
   (* gT は finGroupType（有限群）型クラスの型インスタンスである。 *)
   Variable gT : finGroupType.
   
-  Section Test.
-    Variable x y z : gT.
-    Variable G : {group gT}.
-    
-    (* 群の公理 *)
-    Goal 1 \in G. Proof. by rewrite group1. Qed.
-    Goal 1 * x = x. Proof. by rewrite mul1g. Qed.
-    Goal x * y * z = x * (y * z). Proof. by rewrite mulgA. Qed.
-    Goal x^-1^-1 = x. Proof. by rewrite invgK. Qed.
-    Goal (x * y)^-1 = y^-1 * x^-1. Proof. by rewrite invMg. Qed.
-    
-    (* 群の定理 *)
-    Goal x * 1 = x. Proof. by rewrite mulg1. Qed.
-    Goal x * x^-1 = 1. Proof. by rewrite mulgV. Qed.
-    Goal x^-1 * x = 1. Proof. by rewrite mulVg. Qed.
-    Goal x \in G -> x^-1 \in G. Proof. by move/groupVr. Qed.
-    Goal x \in G -> y \in G -> x * y \in G. Proof. apply: groupM. Qed.
-    
-    Check mulgV : forall T : finGroupType, forall x, x * x^-1 = 1.
-    Check groupM : forall (gT : finGroupType) (G : {group gT}) (x y : gT),
-        x \in G -> y \in G -> x * y \in G.
-    Check groupVr : forall (gT : finGroupType) (G : {group gT}) (x : gT),
-        x \in G -> x^-1 \in G.
-  End Test.
-  
-(**
-## coset と cosets
-
-
-- rcoset 右剰余類（$\sim$ による同値類） $H\ x$、 ``H :* x``
-
-- rcosets 右剰余群（$\sim$ による商） $H \backslash G$
-
-
-
-後で定義する同値関係$\sim$は右合同であるので、
-本資料は、特に断りのない限り、右剰余類だけを考えます。
-*)
-
 (**
 ## 定理：任意の剰余類の濃度は、もとの集合の濃度に等しい
 
