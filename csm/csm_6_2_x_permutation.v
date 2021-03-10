@@ -146,6 +146,9 @@ Definition SN := [set p021; p012; 1].
 Definition G : {group 'S_3} := [group of << SG >>].
 Definition N : {group 'S_3} := [group of << SN >>].
 
+(**
+## N は G の部分集合である。 
+*)
 Goal SN \subset SG.
 Proof.
   apply/subsetP => /= p.
@@ -160,6 +163,37 @@ Proof.
     by rewrite !inE.
 Qed.
 
+(**
+## 剰余類 (01)N は G の部分集合である。
+*)
+Goal N :* p01 = rcoset N p01.
+Proof.
+  by rewrite rcosetE.
+Qed.
+
+Goal (SG :* p01) \subset SG.
+  apply/subsetP => /= p.
+    by rewrite !inE.
+Qed.  
+
+Goal (N :* 1) \in rcosets N G.
+Proof.
+  (* rewrite -rcoset1. *)
+  rewrite mem_rcosets.
+  rewrite /N /SN /G /SG.
+  rewrite /mulg /= /set_mulg /=.
+Admitted.
+
+Goal (N :* p01) \in rcosets N G.
+Proof.
+  rewrite mem_rcosets.
+  rewrite /N /SN /G /SG.
+  rewrite /mulg /= /set_mulg /=.
+  Admitted.
+
+(**
+## SN は 1 をもち 掛け算で閉じている
+*)
 Lemma group_set_N : group_set SN.
 Proof.
   apply/group_setP.
@@ -197,6 +231,12 @@ Proof.
            by rewrite Hr Hs mul1g !inE eqxx orbT.
 Qed.
 
+(**
+# サイズを求める
+ *)
+(**
+## |G|
+*)
 Lemma G__6 : #|G| = 6.
 Proof.
   rewrite /=.
@@ -219,6 +259,9 @@ Proof.
     + by rewrite card_perm cardsE card_ord.
 Qed.
 
+(**
+# |N|
+*)
 Lemma N__3 : #|N| = 3.
 Proof.
   rewrite /=.
@@ -251,6 +294,8 @@ Proof.
 Qed.
 
 (**
+## |G : N|
+
 G の N による指数を求めます。
 *)
 Goal #|G : N| = 2.
