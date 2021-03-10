@@ -23,14 +23,14 @@ Open Scope group_scope.
 3次対象群にラグランジュの定理が成り立つことを計算してみます。
 
 3次対象群 G は、正三角形の6個の対称移動のことで、
-そのうち点対称の3個 N が正規部分群であるので、
-ラグランジュの定理から、
+そのうち点対称の3個 N が正規部分群になります。
 
-```(G : N) = | G | / | N | = 6 / 3 = 2```
+すなわち
 
-が成り立つはずです。これを実際に計算してみましょう。
+```|G / N| = (G : N) = |G| / |N| = 6 / 3 = 2```
+
+になるはずです。
 *)
-
 
 (**
 # 文献
@@ -55,32 +55,33 @@ Open Scope group_scope.
 (**
 # 3次対象群を作る
 *)
-Definition ord1 : 'I_3 := @Ordinal 3 1 erefl. (* 1 *)
-Definition ord2 : 'I_3 := @Ordinal 3 2 erefl. (* 2 *)
+Definition o0 :'I_3 := ord0.                (* 0 *)
+Definition o1 : 'I_3 := @Ordinal 3 1 erefl. (* 1 *)
+Definition o2 : 'I_3 := @Ordinal 3 2 erefl. (* 2 *)
 
-Definition p01 : 'S_3 := tperm ord0 ord1.   (* (01) *)
-Definition p02 : 'S_3 := tperm ord0 ord2.   (* (02) *)
-Definition p12 : 'S_3 := tperm ord1 ord2.   (* (12) *)
+Definition p01 : 'S_3 := tperm o0 o1.       (* (01) *)
+Definition p02 : 'S_3 := tperm o0 o2.       (* (02) *)
+Definition p12 : 'S_3 := tperm o1 o2.       (* (12) *)
 Definition p021 := p01 * p02.               (* (021) *)
 Definition p012 := p02 * p01.               (* (012) *)
 
 (**
 実際に置換してみる。
 *)
-Goal p021 ord0 = ord1.                      (* 0 -> 1 *)
-Proof. rewrite /ord2 !permE /= /p02 /p01 !permE //. Qed.
+Goal p021 o0 = o1.                          (* 0 -> 1 *)
+Proof. rewrite /o2 !permE /= /p02 /p01 !permE //. Qed.
 
-Goal p021 ord1 = ord2.                      (* 1 -> 2 *)
+Goal p021 o1 = o2.                          (* 1 -> 2 *)
 Proof. rewrite !permE /= /p02 /p01 !permE //. Qed.
 
-Goal p021 ord2 = ord0.                      (* 2 -> 0 *)
+Goal p021 o2 = o0.                          (* 2 -> 0 *)
 Proof. rewrite !permE /= /p02 /p01 !permE //. Qed.
 
 Ltac same_perm :=
   let x := fresh in
   apply/permP => /= x;
   let x0 := fresh in
-  case: (boolP (x == ord0)) => [/eqP -> | x0];
+  case: (boolP (x == o0)) => [/eqP -> | x0];
     [by do ! rewrite !permE /= |
      let x1 := fresh in
      case: (boolP (x == @Ordinal 3 1 erefl)) => [/eqP -> | x1];
@@ -109,21 +110,21 @@ Qed.
 Lemma p021_1 : p021 <> 1.
 Proof.
   move=> abs.
-  have : p021 ord0 = (1 : 'S_3) ord0 by rewrite abs !permE.
+  have : p021 o0 = (1 : 'S_3) o0 by rewrite abs !permE.
     by rewrite !permE /= /p02 /p01 !permE.
 Qed.
 
 Lemma p012_1 : p012 <> 1.
 Proof.
   move=> abs.
-  have : p012 ord0 = (1 : 'S_3) ord0 by rewrite abs !permE.
+  have : p012 o0 = (1 : 'S_3) o0 by rewrite abs !permE.
     by rewrite !permE /= /p02 /p01 !permE.
 Qed.
 
 Lemma p021_neq_p012 : p021 <> p012.
 Proof.
   move=> abs.
-  have : p021 ord0 = p012 ord0 by rewrite abs.
+  have : p021 o0 = p012 o0 by rewrite abs.
   rewrite !permE /=.
   rewrite /p01 /p02.
     by rewrite !permE.
@@ -132,16 +133,24 @@ Qed.
 Lemma p02_neq_p12 : p02 <> p12.
 Proof.
   move=> abs.
-  have : p02 ord0 = p12 ord0 by rewrite abs !permE.
+  have : p02 o0 = p12 o0 by rewrite abs !permE.
     by rewrite !permE /=.
 Qed.
 
 (**
 # 有限集合としての3次対象群
 *)
-Definition G : {group 'S_3} := [group of << [set x in 'S_3] >>].
+Definition SG := [set x in 'S_3].
+Definition SN := [set p021; p012; 1].
 
-Definition N : {group 'S_3} := [group of << [set p021; p012; 1] >>].
+Definition G : {group 'S_3} := [group of << SG >>].
+Definition N : {group 'S_3} := [group of << SN >>].
+
+Goal SN \subset SG.
+Proof.
+  apply/subsetP => /= p.
+    by rewrite !inE.
+Qed.
 
 Lemma N_subset_G : N \subset G.
 Proof.
@@ -151,7 +160,7 @@ Proof.
     by rewrite !inE.
 Qed.
 
-Lemma group_set_N : group_set [set p021; p012; 1].
+Lemma group_set_N : group_set SN.
 Proof.
   apply/group_setP.
   split.
@@ -172,23 +181,23 @@ Proof.
                by rewrite Hr Hs mulg1 !inE eqxx.
       ++ case/orP : Hs.
          +++ case/orP.
-             move/eqP=> Hs /eqP Hr.
-               by rewrite Hr Hs -{1}p021_inv mulVg !inE eqxx orbT.
+             ++++ move/eqP=> Hs /eqP Hr.
+                    by rewrite Hr Hs -{1}p021_inv mulVg !inE eqxx orbT.
+             ++++ move/eqP=> Hs /eqP Hr.
+                    by rewrite Hr Hs p012_p012 !inE eqxx.
+         +++ move/eqP => Hs /eqP Hr.
+               by rewrite Hr Hs mulg1 !inE eqxx orbT.
+    + case/orP : Hs.
+      ++ case/orP.
          +++ move/eqP=> Hs /eqP Hr.
-               by rewrite Hr Hs p012_p012 !inE eqxx.
-    + move/eqP => Hs /eqP Hr.
-        by rewrite Hr Hs mulg1 !inE eqxx orbT.
-  - case/orP : Hs.
-    + case/orP.
-      move/eqP=> Hs /eqP Hr.
-        by rewrite Hr Hs mul1g !inE eqxx.
-    + move/eqP=> Hs /eqP Hr.
-        by rewrite Hr Hs mul1g !inE eqxx orbT.
-  - move/eqP=> Hs /eqP Hr.
-      by rewrite Hr Hs mul1g !inE eqxx orbT.
+               by rewrite Hr Hs mul1g !inE eqxx.
+         +++ move/eqP=> Hs /eqP Hr.
+               by rewrite Hr Hs mul1g !inE eqxx orbT.
+      ++ move/eqP=> Hs /eqP Hr.
+           by rewrite Hr Hs mul1g !inE eqxx orbT.
 Qed.
 
-Lemma G__6 : #| G | = 6.
+Lemma G__6 : #|G| = 6.
 Proof.
   rewrite /=.
   transitivity (#|[set x in 'S_3]|).
@@ -210,7 +219,7 @@ Proof.
     + by rewrite card_perm cardsE card_ord.
 Qed.
 
-Lemma N__3 : #| N | = 3.
+Lemma N__3 : #|N| = 3.
 Proof.
   rewrite /=.
   transitivity (#|[set p021; p012; 1]|).
@@ -241,9 +250,12 @@ Proof.
         by apply p021_neq_p012.
 Qed.
 
-Goal #| G : N | = 2.
+(**
+G の N による指数を求めます。
+*)
+Goal #|G : N| = 2.
 Proof.
-  rewrite -divgS.
+  rewrite -divgS.                           (* fingroup.v *)
   - by rewrite G__6 N__3.
   - by apply: N_subset_G.
 Qed.
@@ -251,7 +263,7 @@ Qed.
 (**
 # N は正規部分群である
 *)
-Lemma N__G : N <| G.
+Lemma N__G : N <|G.
 Proof.
   apply index2_normal.
   - by apply: N_subset_G.
@@ -269,6 +281,17 @@ Proof.
       apply sub_gen.
       apply/subsetP => p Hp /=.
         by rewrite inE.
+Qed.
+
+(**
+正規部分群なら、``|G| = |G / N| * |N|'' が成り立つので、
+``|G / N|`` の要素の数は 2 になります。
+*)
+Goal #|G / N| = 2.
+Proof.
+  rewrite -divg_normal.                     (* quotient.v *)
+  - by rewrite G__6 N__3.
+  - by apply: N__G.
 Qed.
 
 (* END *)
