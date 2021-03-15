@@ -30,10 +30,11 @@ MathComp の型クラスとして定義されているのは、``finGroupType``
 であることに注意してください。
 
 ``fingroup.v``のコメントでは、``finGroupType`` は、
-"the structure for finite types with a group law" と記載されています。
+"the structure for finite types with a group law"
+と記載されています。
 
 ``finType``型クラスを継承して、公理として乗法の結合則や単位元の存在を仮定します。
-すなわち、``finType``型クラスのインスタンス型``T``を台として、
+すなわち、``finType``型クラスのインスタンス型``T``を台として、以下が成り立ちます。
 
 -二項演算 mul T -> T -> T が存在する。
 -元 one : T が存在する。
@@ -48,8 +49,9 @@ MathComp の型クラスとして定義されているのは、``finGroupType``
 (**
 ## 型インスタンスとしての群の定義
 
-よって、注意するべきなのは、
-型クラス``finGroupType``のインスタンスが有限群になるということです。
+前節から言えるのは、
+型クラス``finGroupType``のインスタンス型の値は、
+有限群の公理を満たすということです。
 *)
 Section Sect_1.
 
@@ -104,11 +106,12 @@ Section Sect_1.
 
 まず、``finGroupType``型クラスのインスタンス型（例：gT）の値を要素とする有限集合は、
 ``{set gT}``を使います。
+
 これの実体は、
 ``gT``の要素の値が集合に含まれるか否かを決定する``gT -> bool``型の関数です。
 (``finset`` の ``set_type``の定義を参照のこと)。
 
-次のように使って定義します：
+``{set gT}``のインスタンスは、次のように使って定義します：
 *)
   Variable A B C : {set gT}.
 (**
@@ -117,11 +120,11 @@ Section Sect_1.
   Check A * B : {set gT}.
   
 (**
-有限群は、``{group gT}``を使います。
+ついで、有限群は``{group gT}``を使います。
 これの実体は、``{set gT}``を台として、要素``1``を含むなどの条件を追加したものです。
 (``fingroup`` の ``group_type``の定義を参照のこと)。
 
-次のように使って定義します：
+``{group gT}``のインスタンスは、次のように使って定義します：
 *)
   Variable G H : {group gT}.
   
@@ -160,7 +163,7 @@ Math-Comp Book の 5.10.1 や次の文書も参照してください。
 (**
 ### ふたつめの定義
 
-演算子``:*``の定義は、有限集合としての有限群Aと、``{x}``を掛けたものです。
+演算子``A :* x``の定義は、有限集合としての有限群Aと``{x}``を掛けたものです。
 *)
   Check A :* x : {set gT}.
   Check A * [set x].
@@ -197,7 +200,7 @@ Math-Comp Book の 5.10.1 や次の文書も参照してください。
   Check (rcoset A) @: B : {set {set gT}}.
   Check imset (fun a => rcoset A a) (mem A).
 (**
-これは、次の示すものではありません。
+これは、次に示すものではありません。
 *)    
   Check A * B  : {set gT}.
     
