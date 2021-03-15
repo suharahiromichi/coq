@@ -55,7 +55,7 @@ Open Scope group_scope.
 (**
 # 3次対象群を作る
 *)
-Definition o0 :'I_3 := ord0.                (* 0 *)
+Definition o0 : 'I_3 := ord0.               (* 0 *)
 Definition o1 : 'I_3 := @Ordinal 3 1 erefl. (* 1 *)
 Definition o2 : 'I_3 := @Ordinal 3 2 erefl. (* 2 *)
 
@@ -143,8 +143,8 @@ Qed.
 Definition SG := [set x in 'S_3].
 Definition SN := [set p021; p012; 1].
 
-Definition G : {group 'S_3} := [group of << SG >>].
-Definition N : {group 'S_3} := [group of << SN >>].
+Definition G : {group 'S_3} := [group of <<SG>>].
+Definition N : {group 'S_3} := [group of <<SN>>].
 
 (**
 ## N は G の部分集合である。 
@@ -158,7 +158,7 @@ Qed.
 Lemma N_subset_G : N \subset G.
 Proof.
   rewrite /=.
-  apply genS.
+  apply: genS.
   apply/subsetP => /= p.
     by rewrite !inE.
 Qed.
@@ -182,6 +182,7 @@ Proof.
   rewrite mem_rcosets.
   rewrite /N /SN /G /SG.
   rewrite /mulg /= /set_mulg /=.
+  (* 1 \in [set x * y | x in <<[set p021; p012; 1]>>, y in <<[set x in 'S_3]>>] *)
 Admitted.
 
 Goal (N :* p01) \in rcosets N G.
@@ -189,7 +190,8 @@ Proof.
   rewrite mem_rcosets.
   rewrite /N /SN /G /SG.
   rewrite /mulg /= /set_mulg /=.
-  Admitted.
+  (* p01 \in [set x * y | x in <<[set p021; p012; 1]>>, y in <<[set x in 'S_3]>>] *)
+Admitted.
 
 (**
 ## SN は 1 をもち 掛け算で閉じている
@@ -245,10 +247,10 @@ Proof.
       by move/(gen_set_id) => ->.
   - rewrite cardsE.
     transitivity (#|perm_on [set x in 'I_3]|).
-    + apply eq_card => /= p.
+    + apply: eq_card => /= p.
       rewrite inE.
       apply/esym.
-      destruct p.
+      case: p => pval i.
       rewrite /perm_on.
       rewrite /mem.
       rewrite /=.
@@ -282,15 +284,15 @@ Proof.
       * case/andP.
         move/eqP => ->.
         move/eqP.
-          by apply p021_1.
+          by apply: p021_1.
       * case/andP => /eqP ->.
         move/eqP.
-          by apply p012_1.
+          by apply: p012_1.
     + rewrite cards0.
       suff -> : p021 != p012.
       * done.
       * apply/eqP.
-        by apply p021_neq_p012.
+        by apply: p021_neq_p012.
 Qed.
 
 (**
@@ -310,7 +312,7 @@ Qed.
 *)
 Lemma N__G : N <|G.
 Proof.
-  apply index2_normal.
+  apply: index2_normal.
   - by apply: N_subset_G.
   - move: (LagrangeI G N).
     rewrite G__6.
@@ -323,7 +325,7 @@ Proof.
       suff : tmp = N by move=> ->; exact N__3.
       rewrite {}/tmp.
       apply/setIidPr.
-      apply sub_gen.
+      apply: sub_gen.
       apply/subsetP => p Hp /=.
         by rewrite inE.
 Qed.
