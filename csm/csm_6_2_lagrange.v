@@ -18,8 +18,6 @@ Unset Printing Implicit Defensive.
 Section Lagrange.
 (**
 # 6.2.1 有限群の定義
-
-see. csm_6_2_1_fingroup.v
  *)
 
   Open Scope group_scope.
@@ -30,14 +28,16 @@ see. csm_6_2_1_fingroup.v
 (**
 ## 定理：任意の剰余類の濃度は、もとの集合の濃度に等しい
 
-テキストの順番とは異なるが、これは fingroup で証明されている補題を使って証明できるため、
-先に証明します。
- *)
-(**
-使用するのは、次のふたつの補題です：
+テキストの順番とは異なりますが、
+これは fingroup で証明されている補題を使って証明できるため先に証明します。
+``csm_6_2_1_fingroup.v`` も参照してください。
+
+使用するのは、次のふたつの補題です。
 *)
 (**
 ### 使用する補題 ``rcosetsP``
+
+この補題の意味は以下です。
 
 任意の集合Aが、
 適当なxについて$H x$と等しいこと（適当なxの剰余類であること）と、
@@ -55,6 +55,8 @@ $$(\exists x, x \in G \land A = H x) \iff A \in H \backslash G$$
 (**
 ### 使用する補題 ``card_rcoset``
 
+この補題の意味は以下です。
+
 任意のxの剰余類の濃度は、もとの集合の濃度に等しい：
 
 $$\forall x, |A x| = |A|$$
@@ -65,15 +67,15 @@ $$\forall x, |A x| = |A|$$
 (**
 ### 証明したい補題 ``myCard_rcoset``
 
-証明したいのは、以下の命題です：
+証明したいのは、以下の命題です。
 
-剰余類の集合の任意の要素の濃度は、もとの集合の濃度に等しい。
+剰余群に含まれる任意の剰余類の濃度は、もとの集合の濃度に等しい：
 
 Goal: $$ A \in H \backslash G \to |A| = |H| $$
 
 補題：``card_rcoset``は、任意のxに対して剰余類を決めているのに対して、
-ここでは、任意の$H \backslash G$の要素で剰余類を選んでいます。
-多分、そこに違いがあるのだろうと思います。
+証明したい命題は、任意の$H \backslash G$の要素で剰余類を選んでいます。
+そこに違いがあります。
 *)
   Lemma myCard_rcoset (G H : {group gT}) (A : {set gT}) :
     A \in rcosets H G -> #|A| = #|H|.
@@ -119,7 +121,7 @@ $$ x \sim y \equiv x y^{-1} \in H $$
   Definition R := [rel x y | x * y^-1 \in H].
   Check R : gT -> gT -> bool.               (* simpl_rel gT. *)
 (**
-テキストにはありませんが、演算子``~``を定義しておきます。
+テキストと異なりますが、Coq側でも演算子``~``を定義して使うことにします。
 *)
   Notation "x ~ y" := (R x y) (at level 40, left associativity).
   
@@ -127,11 +129,13 @@ $$ x \sim y \equiv x y^{-1} \in H $$
 ## 同値関係の証明
 
 $\sim$が、同値関係であることを証明します。
-equivalence_rel は ssrbool で定義されています。
+同値関係の定義 ``equivalence_rel`` は、 ``ssrbool.v``
+で定義されていますので、これを証明します。
 *)
-(**
-   fun (T : Type) (R : rel T) => forall x y z : T, R z z * (R x y -> R x z = R y z)
-*)
+  Print equivalence_rel.
+  (*
+    fun (T : Type) (R : rel T) => forall x y z : T, R z z * (R x y -> R x z = R y z).
+   *)
   Set Printing All.
   Print equivalence_rel.
   (*
@@ -141,6 +145,28 @@ equivalence_rel は ssrbool で定義されています。
    *)
   Unset Printing All.
   
+(**
+``*`` は、prod の意味で、Type型のふたつの直積です。
+
+これに対して、お馴染みの ``/\`` は、andの意味で、Prop型のふたつの直積を示します。
+
+ここでは、両者は同じとといってよいと思います。
+それぞれコンストラクタを適用することでゴールをふたつに分解できます。
+
+- prod のコンストラクタは pair
+- and のコンストラクタは conj
+
+なお、conj を適用するときに、タクティクsplitを使うこともできます。
+ *)
+
+(**  
+また、``=`` の両辺がboolであるなら、boolの値がおなじことを示すので、
+これは、論理式としての必要十分条件（``<->``) を示します。
+
+``apply/idP/idP`` を実行することで、
+ゴールを必要条件と十分条件のふたつに分解できます。
+*)
+  
   Lemma equiv_rel_R : equivalence_rel R.
   Proof.
     rewrite /equivalence_rel => x y z.
@@ -148,20 +174,11 @@ equivalence_rel は ssrbool で定義されています。
 ゴールは、MathComp の表記で次のようになります：
 
 ```z ~ z * (x ~ y -> x ~ z = y ~ z)```
-
-``*`` は、prod の意味で、Type型のふたつの直積です。
-（これに対して、お馴染みの ``/\`` は、andの意味で、Prod型のふたつの直積を示します。）
-ここではおなじことといってよいと思います。
-
-また、``=``は、boolの値がおなじことを示す``=``で、論理式としての必要十分条件を示します。
-以上を論理式として書くと、次の様になります：
  *)
 (**
 Goal: $$ z \sim z \land (x \sim y\ \to (x\ \sim z \iff y \sim z)) $$
-*)
-(**
-``*`` は直積(prod)の意味であるので、pair を適用することで、
-``*`` の左と右のふたつのゴールに分けられます。（``/\`` における split とおなじです。）
+
+前述のとおり、pairを適用してでゴールを分けます：
 *)
     apply: pair => /=.
 (**
@@ -170,54 +187,79 @@ Goal: $$ z z^{-1} \in H $$
     - by rewrite mulgV group1.
 (**
 Goal: $$ x y^{-1} \in H -> (x z^{-1} \in H \iff y z^{-1} \in H) $$
-*)
-    - move=> xRinvy.
-      apply/idP/idP.
-      + move/groupVr in xRinvy.
-        (* [x in H -> y in H -> x * y in H] の [x in H] を指定する必要がある。 *)
-        (* 直前の行とまとめて [move/(groupM (groupVr xRinvy))] とできる。 *)
 
+``=`` は ``<->`` の意味なので、前述のとおり ``apply/idP/idP`` を実行します。
+*)
+    - move=> xRinvy.                        (* xRinvy : x * y^-1 \in H *)
+      apply/idP/idP.
+      (* -> *)
+      + move/groupVr in xRinvy.             (* xRinvy : (x * y^-1)^-1 \in H *)
+
+(**
+補題（積は閉じている）： groupM : ``x in H -> y in H -> x * y in H`` を使って、
+ゴールの前提部の ``x * z^-1 \in H`` を ``(x * y^-1)^-1 * (x * z^-1) \in H``
+に書き換えます。
+ *)
+        Check groupM : forall (gT : finGroupType) (G : {group gT}) x y,
+            x \in G -> y \in G -> x * y \in G.
         Check groupM xRinvy : x * z^-1 \in H -> (x * y^-1)^-1 * (x * z^-1) \in H.
         move/(groupM xRinvy).
+        Undo 2.
+(**
+ひとつ前で、xRinvy に groupVr を適用していますから、この2行をまとめて、
+テキストのように書くこともできます。
+ *)
+        move/(groupM (groupVr xRinvy)).
           by rewrite invMg invgK mulgA -(mulgA y) mulVg mulg1.
+          
+      (* <- *)
+(**
+問題(1) 逆の証明にトライしてみてください！
 
+ヒント： -> より簡単です。
+*)
       + Check (groupM xRinvy) : y * z^-1 \in H -> x * y^-1 * (y * z^-1) \in H.
-        move/(groupM xRinvy).
-          by rewrite mulgA -(mulgA x) mulVg mulg1.
-  Qed.
+        admit.                              (* 問題(1) *)
+  Admitted.
   
 (**
 # 6.2.3 剰余類の性質の形式化
+
+``myCard_rcoset`` はすでに最初の節で証明していますので、次の定理の証明をします。
 *)
 (**
 ## 定理：
 
 $$H x = \\{y \in G\ |\ x \sim y \\}$$
 *)
-  Lemma coset_equiv_class (x : gT) (xinG : x \in G) : H :* x = [set y in G | x ~ y].
+  Lemma coset_equiv_class (x : gT) (xinG : x \in G) :
+    H :* x = [set y in G | x ~ y].
   Proof.
-    apply/setP => /= y.
-    rewrite inE.
+    apply/setP => /= y. (* 任意の要素が同じなら、集合が等しいことつかう。 *)
+    rewrite inE.        (* \in に関する簡約を行います。 *)
     apply/idP/idP.
     - case/rcosetP => z zinH -> {y}.
       apply/andP.
       apply: conj.
-      + Check groupM.
-        rewrite groupM //.
-        move/subsetP : HG => HG'.
-        Check (HG' z zinH).
+      + rewrite groupM //. (* groupM : z \in G -> x \in G -> z * x \in G *)
+        move/subsetP : HG => HG'.          (* HG' : {subset H <= G} *)
+        Check (HG' z zinH) : z \in G.
           by move: (HG' z zinH).
       + by rewrite invMg mulgA mulgV mul1g groupV.
     - case/andP => yinG xinvyinH.
       apply/rcosetP.
-      (* プレースホルダーを埋めると次になる。 *)
+(**
+ex_intro2 を適用して exists2 を消します。
+テキストにあるプレースホルダーを埋めると次のようになります。
+*)
       Check (ex_intro2 (fun g => g \in H)
                        (fun a => y = a * x)
                        (y * x^-1)) :
-        y * x^-1 \in H -> y = y * x^-1 * x ->
-                     ex2 (fun g : gT => g \in H) (fun a : gT => y = a * x).
-      (* ゴールは、 exists2 a : gT, a \in H & y = a * x のデシュガ *)
+        y * x^-1 \in H ->
+        y = y * x^-1 * x ->
+        exists2 a : gT, a \in H & y = a * x.
       apply: (ex_intro2 _ _ (y * x^-1)).
+      
       + by rewrite -groupV invMg invgK.
       + by rewrite -mulgA mulVg mulg1.
   Qed.
@@ -260,6 +302,8 @@ $H \backslash G$ は、$G$の$\sim$についての分割である。
 
 商であるということと、分割になっているということは区別されます。
 ひとつまえの補題と違って、後者では$\sim$が明示的に現れないことがポイントです。
+
+ラグランジュの定理の証明で実際に使用するのは、この補題です。
 *)
   Lemma partition_rcosets : partition (rcosets H G) G.
   Proof.
@@ -280,7 +324,8 @@ $H \backslash G$ は、$G$の$\sim$についての分割である。
 
 $$(G : H) = |H \backslash G|$$
 
-MathComp では、``#|_ : _|``というNotationです。
+MathComp では、``#|_ : _|``という2項のNotationです。
+これが定義であることを確認します。
 *)
   Goal #|G : H| = #|rcosets H G|.
   Proof.
@@ -314,10 +359,7 @@ $$ |D| = \sum_{A \in P}\ |A|$$
 
 (**
 これに直前に証明した補題を組み合わせます。
-*)
-  Check partition_rcosets : partition (rcosets H G) G.
 
-(**
 組み合わせると、剰余類の集合の要素の濃度の総和は、群$G$の濃度に等しい、となります。
 これは、剰余類の集合の集合は、群$G$の分割であるためですね。
 
@@ -330,6 +372,10 @@ $|G| = \sum_(A \in H \backslash G)\ |A|$
 ## 使用する補題 ``eq_bigr``
 
 myCard_rcoset の $|A| = |H|$ を Σの中に適用して書き換える補題です。
+
+``\sum_`` (Σ) などの ``\bigop[/]_`` の中はλ変数で束縛されていますから、
+rewriteでは書き換えできないので、``bigop.v`` で証明された補題を使います。
+``eq_bigr`` は、bigopに一般に証明されていますが、``\sum_`` (Σ) ならば次のようになります。
 
 $\sum_{i \in H \backslash G}\ |A| = \sum_{i \in H \backslash G}\ |H|$
 *)  
@@ -382,5 +428,15 @@ Goal: $$|H \backslash G|\ |H| = |H|\ |G : H|$$
   Qed.
 
 End Lagrange.
+
+(**
+# 問題(1)の答え
+
+```
+        move/(groupM xRinvy).
+          by rewrite mulgA -(mulgA x) mulVg mulg1.
+  Qed.
+```
+ *)
 
 (* END *)
