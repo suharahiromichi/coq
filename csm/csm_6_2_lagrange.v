@@ -363,7 +363,7 @@ $$ |D| = \sum_{A \in P}\ |A|$$
 組み合わせると、剰余類の集合の要素の濃度の総和は、群$G$の濃度に等しい、となります。
 これは、剰余類の集合の集合は、群$G$の分割であるためですね。
 
-$|G| = \sum_(A \in H \backslash G)\ |A|$
+$$ |G| = \sum_{A \in H \backslash G}\ |A| $$
 *)
   Check (card_partition partition_rcosets)
     : #|G| = \sum_(A in rcosets H G) #|A|.
@@ -377,7 +377,7 @@ myCard_rcoset の $|A| = |H|$ を Σの中に適用して書き換える補題�
 rewriteでは書き換えできないので、``bigop.v`` で証明された補題を使います。
 ``eq_bigr`` は、bigopに一般に証明されていますが、``\sum_`` (Σ) ならば次のようになります。
 
-$\sum_{i \in H \backslash G}\ |A| = \sum_{i \in H \backslash G}\ |H|$
+$$ \sum_{i \in H \backslash G}\ |A| = \sum_{i \in H \backslash G}\ |H| $$
 *)  
   Check ((eq_bigr (fun _ => #|H|)) (@myCard_rcoset G H))
     : \sum_(i in rcosets H G) #|i| = \sum_(i in rcosets H G) #|H|.
