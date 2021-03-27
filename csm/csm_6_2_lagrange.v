@@ -258,8 +258,10 @@ ex_intro2 を適用して exists2 を消します。
         y * x^-1 \in H ->
         y = y * x^-1 * x ->
         exists2 a : gT, a \in H & y = a * x.
-      apply: (ex_intro2 _ _ (y * x^-1)).
       
+      apply: (ex_intro2 (fun g => g \in H)   (* _ *)
+                        (fun a => y = a * x) (* _ *)
+                        (y * x^-1)).
       + by rewrite -groupV invMg invgK.
       + by rewrite -mulgA mulVg mulg1.
   Qed.
@@ -273,15 +275,18 @@ $H \backslash G$ は、$G$の$\sim$についての商と等しい。
   Proof.
     apply/setP => /= X.
     rewrite /rcosets /equivalence_partition.
+(**
+```(X \in [set rcoset H x | x in G]) = (X \in [set [set y in G | x ~ y] | x in G])```
+ *)
     apply/idP/idP.
     - case/rcosetsP => x0 x0inG X_Hx.
       apply/imsetP.
       apply: (ex_intro2 _ _ x0).
       + done.
-      + Check @coset_equiv_class x0.
-          by rewrite -coset_equiv_class.
+      + by rewrite -coset_equiv_class.
     - case/imsetP => x1 xinG Hypo.
       apply/imsetP.
+      
       (* プレースホルダーを埋めると次になる。 *)
       Check (ex_intro2 (fun g => g \in G)
                        (fun x => X = rcoset H x)
@@ -289,7 +294,10 @@ $H \backslash G$ は、$G$の$\sim$についての商と等しい。
         x1 \in G ->
                X = rcoset H x1 ->
                exists2 x : gT, x \in G & X = rcoset H x.
-      apply: (ex_intro2 _ _ x1).
+      
+      apply: (ex_intro2 (fun g => g \in G)
+                        (fun x => X = rcoset H x)
+                        x1).
       + done.
       + rewrite rcosetE.
         by rewrite coset_equiv_class.
@@ -358,10 +366,10 @@ $$ |D| = \sum_{A \in P}\ |A|$$
       partition P D -> #|D| = \sum_(A in P) #|A|.
 
 (**
-これに直前に証明した補題を組み合わせます。
-
-組み合わせると、剰余類の集合の要素の濃度の総和は、群$G$の濃度に等しい、となります。
-これは、剰余類の集合の集合は、群$G$の分割であるためですね。
+これに直前に証明した補題(partition_rcosets)を組み合わせます。
+すると、剰余群のすべての要素（すべての剰余類）の濃度の総和は、
+群$G$の濃度に等しい、となります。
+これは、剰余群は、群$G$の分割であるためですね。
 
 $$ |G| = \sum_{A \in H \backslash G}\ |A| $$
 *)
@@ -403,8 +411,6 @@ $G$を群、$H$をその部分群とするとき、
 $G$の濃度は、$H$の濃度と（$H$による$G$の）指数の積に等しい：
 
 $$|G| = |H|\ (G : H)$$
-
-指数の意味は冒頭を参照してください。
 *)  
   Theorem myLagrange : #|G| = (#|H| * #|G : H|)%nat.
   Proof.
