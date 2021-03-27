@@ -194,6 +194,7 @@ Section Sect_1.
   (**
 有限群の公理や定理のうち、集合としての有限群がでてくるものが使えます。
 *)
+
   Goal 1 \in G. Proof. by rewrite group1. Qed.
   Goal x \in G -> x^-1 \in G. Proof. by move/groupVr. Qed.
   Goal x \in G -> y \in G -> x * y \in G. Proof. apply: groupM. Qed.
@@ -218,13 +219,60 @@ Math-Comp Book の 5.10.1 や次の文書も参照してください。
 
 MathComp には、関数``rcoset`` と 演算子``A :* x`` のふたつの定義があります。
 このふたつは別のものです。
-有限集合としての有限群Aのすべての要素に、
-有限集合としての有限群Bのすべての要素を右から掛けたものです。
+ *)
+(**
+### ひとつめの定義
+
+関数``rcoset``の定義は、有限群Aのすべての要素に、右からxを掛けたものです。
+(A の ``mulg x = λy.(x * y)`` による像の集合といえます。)
 *)
+  Check rcoset : {set gT} -> gT -> {set gT}.
+  
+  Check rcoset A x.
+  Check (fun a => mulg a x) @: A.           (* rcoset を展開する。 *)
+  Check mulg^~x @: A.                       (* ``^~`` は MathComp 風の表記 *)
+  Check [set a * x | a in A].               (* ``@:`` を展開する。 *)
+  (* ``@:`` は、finset で定義 *)
+  
+(**
+### ふたつめの定義
+
+演算子``A :* x``の定義は、有限集合としての有限群Aと``{x}``を掛けたものです。
+*)
+  Check A :* x.
+  Check A * [set x].                    (* ``:*`` を展開する。 *)
+  Check mulg A [set x].                 (* ``*`` を展開する。 *)
+  
+(**
+### ふたつの定義がおなじであることの証明
+*)
+  Check rcosetE
+    : forall (gT : finGroupType) (A : {set gT}) (x : gT), rcoset A x = A :* x.
+  Check rcosetP
+    : reflect (exists2 a, a \in G & y = a * x) (y \in G :* x).
+  
+(**
+## 剰余群 (cosets) の定義
+
+MathComp には、関数``rcosets`` があります。
+``rcosets A B`` は、有限集合としての有限群Bのすべての要素に、
+有限集合としての有限群Aのすべての要素を右から掛けたものです。
+
+関数``rcosets``の定義は、
+有限集合としての有限群Bのすべての要素に、
+有限集合としての剰余類Aを右から掛けたものです。
+ *)
   Check rcosets : {set gT} -> {set gT} -> {set {set gT}}.
   
   Check rcosets A B.
   Check (rcoset A) @: B.                    (* rcosets を展開する。 *)
+  
+(**
+### ひとつめの定義
+
+rcoset の定義を rcoset のひとつめの定義（``[set a * x | a in A] ``）で展開すると、
+つぎのようになります。
+*)
   Check [set (rcoset A x) | x in B].        (* ``@:`` を展開する。 *)
   Check [set [set a * x | a in A] | x in B]. (* rcoset を展開する。 *)
 (**
@@ -235,12 +283,15 @@ MathComp には、関数``rcoset`` と 演算子``A :* x`` のふたつの定義
 (**
 ### ふたつめの定義
 
-上記の展開で、内側の rcoset の展開を ``A :* x`` にすると、次のようになります。
+rcoset の定義を rcoset のふたつめ定義（``A :* x``）で展開すると、
+つぎのようになります。
 *)
   Check [set (A :* x) | x in B].
     
 (**
 ### ふたつの定義がおなじであることの証明
+
+ここで、 exists2 の2は、2つの命題を&で結ぶという意味。
 *)
   Check rcosetsP
     : reflect (exists2 x, (x \in B) & (C = A :* x)) (C \in rcosets A B).
@@ -259,10 +310,9 @@ Section Appendix.
 (**
 左が rcosetsP の書き方、右が「ふたつめの定義」の書き方です。
 *)
-  Goal forall (B C : {set gT}) f,
+  Lemma test (B C : {set gT}) f :
     reflect (exists2 x, (x \in B) & (C = f x)) (C \in [set f x | x in B]).
   Proof.
-    move=> B C f.
       by apply: imsetP.
   Qed.
   
