@@ -67,6 +67,12 @@ bool の and と nat の sub の関係
   Compute (1.-1 <= 0) - (1 <= 0).           (* 1 *)
   Compute (2.-1 <= 0) - (2 <= 0).           (* 0 *)
   
+
+  Lemma f_n_1 (f : nat -> nat) (n : nat) : f n.-1 = f (n - 1).
+  Proof.
+      by rewrite subn1.
+  Qed.
+  
 End BOOL_NAT.
   
 Open Scope ring_scope.                   (* %R を省略時解釈とする。 *)
@@ -115,14 +121,26 @@ Section Basic_Maneuvers.
   Axiom ztr_distl : forall a f, \Z_(n)(a * f n)%N = a%:R * \Z_(n)(f n).
   Axiom ztr_distr : forall f a, \Z_(n)(f n * a)%N = \Z_(n)(f n) * a%:R.
 
-(*
+(**
 n < 0 の場合, f n = f0 とする。
 n が負の部分が \Z に沸いて出るので、その分を加算しないといけない。
 
 fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) では成立しない。
 *)  
-  Axiom ztr_shft1 : forall f, \Z_(n)(f n.-1)%N = z * \Z_(n)(f n) + (f 0%N)%:R.
-  Axiom ztr_shft2 : forall f, \Z_(n)(f n.-2)%N = z^2 * \Z_(n)(f n) + (2 * f 0%N)%:R.
+  Axiom ztr_shift :
+    forall f m, \Z_(n)(f (n - m))%N = z^m * \Z_(n)(f n) + (m * f 0%N)%:R.
+
+(**
+よく使う m = 1 のときを証明しておく。
+
+m についての帰納法を使えば、逆が証明できそうである。
+*)
+  Lemma ztr_shift1 f : \Z_(n)(f n.-1)%N = z * \Z_(n)(f n) + (f 0%N)%:R.
+  Proof.
+    rewrite (ztr_equal (f_n_1 f)).
+    rewrite ztr_shift mul1n.
+    done.
+  Qed.
   
   Variable fib : nat -> nat.
   
@@ -132,8 +150,8 @@ fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) 
   
   Lemma ztr_z : \Z_(n) (n.-1 <= 0)%N = z + 1.
   Proof.
-    Check @ztr_shft1 (fun (n : nat) => n <= 0)%N.
-    rewrite (@ztr_shft1 (fun (n : nat) => n <= 0)%N).
+    Check @ztr_shift1 (fun (n : nat) => n <= 0)%N.
+    rewrite (@ztr_shift1 (fun (n : nat) => n <= 0)%N).
     rewrite ztr_unit.
       by rewrite mulr1.
   Qed.
@@ -161,7 +179,7 @@ fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) 
   Proof.
   Admitted.
   
-  Lemma fibE (n : nat) : fib n = (fib n.-1 + fib n.-2 + (n == 1))%N.
+  Lemma fibE (n : nat) : fib n = (fib (n - 1) + fib (n - 2) + (n == 1))%N.
   Proof.
   Admitted.
   
@@ -170,16 +188,20 @@ fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) 
 *)
   Definition G := \Z_(n) (fib n).
 
-  Lemma fib_gen : G = z * G + z^2 * G + z.
+  Lemma fib_gen' : G = z * G + z^2 * G + z.
   Proof.
     rewrite /G.
     rewrite [LHS](ztr_equal fibE).
     rewrite 2!ztr_sum.
-    rewrite ztr_shft1 fib0 addr0.
-    rewrite ztr_shft2 fib0 addr0.
+    rewrite !ztr_shift !fib0 !muln0.
+    rewrite expr1z !addr0.
     rewrite ztr_z'.
     done.
   Qed.
+
+  Lemma fib_gen : G = 1 / (1 - z - z^2).
+  Proof.
+  Admitted.
   
 End Basic_Maneuvers.
 
