@@ -114,15 +114,16 @@ Section Basic_Maneuvers.
   Axiom ztr_dif : forall f g, \Z_(n)(f n - g n)%N = \Z_(n)(f n) - \Z_(n)(g n).
   Axiom ztr_distl : forall a f, \Z_(n)(a * f n)%N = a%:R * \Z_(n)(f n).
   Axiom ztr_distr : forall f a, \Z_(n)(f n * a)%N = \Z_(n)(f n) * a%:R.
-  
-  (* f 0 = 0 の場合 *)
-  Axiom ztr_shft1 : forall f, \Z_(n)(f n.-1)%N = z * \Z_(n)(f n).
-  Axiom ztr_shft2 : forall f, \Z_(n)(f n.-2)%N = z^2 * \Z_(n)(f n).
-  Axiom ztr_shft : forall f m, \Z_(n)(f (n - m))%N = z^m * \Z_(n)(f n).  
-  
-  (* f 0 <> 0 の場合？ *)
-  Axiom ztr_shft1' : forall f, \Z_(n)(f n.-1)%N = (z + 1) * \Z_(n)(f n).
 
+(*
+n < 0 の場合, f n = f0 とする。
+n が負の部分が \Z に沸いて出るので、その分を加算しないといけない。
+
+fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) では成立しない。
+*)  
+  Axiom ztr_shft1 : forall f, \Z_(n)(f n.-1)%N = z * \Z_(n)(f n) + (f 0%N)%:R.
+  Axiom ztr_shft2 : forall f, \Z_(n)(f n.-2)%N = z^2 * \Z_(n)(f n) + (2 * f 0%N)%:R.
+  
   Variable fib : nat -> nat.
   
   Compute (0.-1 <= 0)%N.                    (* true *)
@@ -131,9 +132,8 @@ Section Basic_Maneuvers.
   
   Lemma ztr_z : \Z_(n) (n.-1 <= 0)%N = z + 1.
   Proof.
-    (* 公理を適当に増やすのは、お手盛りである。 *)
-    Check @ztr_shft1' (fun (n : nat) => n <= 0)%N.     (* XXX *)
-    rewrite (@ztr_shft1' (fun (n : nat) => n <= 0)%N). (* XXX *)
+    Check @ztr_shft1 (fun (n : nat) => n <= 0)%N.
+    rewrite (@ztr_shft1 (fun (n : nat) => n <= 0)%N).
     rewrite ztr_unit.
       by rewrite mulr1.
   Qed.
@@ -154,10 +154,20 @@ Section Basic_Maneuvers.
       done.
   Qed.
   
+(**
+フィボナッチ数列の一般項
+*)
+  Lemma fib0 : fib 0 = 0%N.
+  Proof.
+  Admitted.
+  
   Lemma fibE (n : nat) : fib n = (fib n.-1 + fib n.-2 + (n == 1))%N.
   Proof.
   Admitted.
   
+(**
+フィボナッチ数列の母関数
+*)
   Definition G := \Z_(n) (fib n).
 
   Lemma fib_gen : G = z * G + z^2 * G + z.
@@ -165,7 +175,8 @@ Section Basic_Maneuvers.
     rewrite /G.
     rewrite [LHS](ztr_equal fibE).
     rewrite 2!ztr_sum.
-    rewrite ztr_shft1 ztr_shft2.
+    rewrite ztr_shft1 fib0 addr0.
+    rewrite ztr_shft2 fib0 addr0.
     rewrite ztr_z'.
     done.
   Qed.
