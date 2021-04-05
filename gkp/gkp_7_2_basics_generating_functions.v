@@ -67,12 +67,6 @@ bool の and と nat の sub の関係
   Compute (1.-1 <= 0) - (1 <= 0).           (* 1 *)
   Compute (2.-1 <= 0) - (2 <= 0).           (* 0 *)
   
-
-  Lemma f_n_1 (f : nat -> nat) (n : nat) : f n.-1 = f (n - 1).
-  Proof.
-      by rewrite subn1.
-  Qed.
-  
 End BOOL_NAT.
   
 Open Scope ring_scope.                   (* %R を省略時解釈とする。 *)
@@ -132,16 +126,46 @@ fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) 
 
 (**
 よく使う m = 1 のときを証明しておく。
-
-m についての帰納法を使えば、逆が証明できそうである。
 *)
   Lemma ztr_shift1 f : \Z_(n)(f n.-1)%N = z * \Z_(n)(f n) + (f 0%N)%:R.
   Proof.
-    rewrite (ztr_equal (f_n_1 f)).
+    have f_n_1 : forall (n : nat), (f n.-1 = f (n - 1))%N. move=> n; by rewrite subn1.
+    rewrite (ztr_equal f_n_1).
     rewrite ztr_shift mul1n.
     done.
   Qed.
+
+  Lemma ztr_shift2 f : \Z_(n)(f n.-2)%N = z^2 * \Z_(n)(f n) + (f 0%N).*2%:R.
+  Proof.
+    have f_n_2 : forall (n : nat), (f n.-2 = f (n - 2))%N. move=> n; by rewrite subn2.
+    rewrite (ztr_equal f_n_2).
+    rewrite -mul2n.
+    rewrite ztr_shift.
+    done.
+  Qed.
   
+  Lemma ztr_shift' f m : \Z_(n)(f (n - m))%N = z^m * \Z_(n)(f n) + (m * f 0%N)%:R.
+  Proof.
+(*
+    elim: m {-2}m (leqnn m) => [m | n' IHn m] H.
+    - have -> : (m = 0)%N by ssromega.
+      rewrite expr0z mul1r mul0n addr0.
+      have Hf0 : forall (n : nat), f n = f (n - 0)%N by move=> n; rewrite subn0.
+        by rewrite -(ztr_equal Hf0).
+    - Check IHn m.-1
+      : (m.-1 <= n')%N ->
+        \Z_ (n) f (n - m.-1)%N = z ^ m.-1 * \Z_ (n) f n + (m.-1 * f 0%N)%:R.
+      Check ztr_shift1 f.
+*)
+    elim: m => [| m IHm].
+    - admit.
+    -
+ (*   IHm : \Z_ (n) f (n - m)%N = z ^ m * \Z_ (n) f n + (m * f 0)%:R
+  ============================
+  \Z_ (n) f (n - m.+1)%N = z ^ m.+1 * \Z_ (n) f n + (m.+1 * f 0)%:R
+ *)
+  Admitted.
+
   Variable fib : nat -> nat.
   
   Compute (0.-1 <= 0)%N.                    (* true *)
@@ -179,7 +203,11 @@ m についての帰納法を使えば、逆が証明できそうである。
   Proof.
   Admitted.
   
-  Lemma fibE (n : nat) : fib n = (fib (n - 1) + fib (n - 2) + (n == 1))%N.
+  Lemma fibE' (n : nat) : fib n = (fib (n - 1) + fib (n - 2) + (n == 1))%N.
+  Proof.
+  Admitted.
+  
+  Lemma fibE (n : nat) : fib n = (fib n.-1 + fib n.-2 + (n == 1))%N.  
   Proof.
   Admitted.
   
@@ -191,7 +219,7 @@ m についての帰納法を使えば、逆が証明できそうである。
   Lemma fib_gen' : G = z * G + z^2 * G + z.
   Proof.
     rewrite /G.
-    rewrite [LHS](ztr_equal fibE).
+    rewrite [LHS](ztr_equal fibE').
     rewrite 2!ztr_sum.
     rewrite !ztr_shift !fib0 !muln0.
     rewrite expr1z !addr0.
@@ -199,6 +227,17 @@ m についての帰納法を使えば、逆が証明できそうである。
     done.
   Qed.
 
+  Lemma fib_gen'' : G = z * G + z^2 * G + z.
+  Proof.
+    rewrite /G.
+    rewrite [LHS](ztr_equal fibE).
+    rewrite 2!ztr_sum.
+    rewrite ztr_shift1 fib0 addr0.
+    rewrite ztr_shift2 fib0 -mul2n addr0.
+    rewrite ztr_z'.
+    done.
+  Qed.
+  
   Lemma fib_gen : G = 1 / (1 - z - z^2).
   Proof.
   Admitted.
