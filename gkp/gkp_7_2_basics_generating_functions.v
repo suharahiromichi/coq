@@ -106,17 +106,17 @@ Section Basic_Maneuvers.
   Axiom ztr_equal : forall f g, f =1 g -> \Z_(n)(f n) = \Z_(n)(g n).
   Axiom ztr_unit : \Z_(n)(n <= 0)%N = 1.
 (**
-``n == 0`` としてもよいが、``-1 == 0`` も成り立つので、誤解ないように上記の定義とする。
+``[n == 0]`` としてもよいが、``[-1 == 0]`` も成り立つので、誤解ないように上記の定義とする。
 *)
   Axiom ztr_sum : forall f g, \Z_(n)(f n + g n)%N = \Z_(n)(f n) + \Z_(n)(g n).
   Axiom ztr_dif : forall f g, \Z_(n)(f n - g n)%N = \Z_(n)(f n) - \Z_(n)(g n).
   Axiom ztr_distl : forall a f, \Z_(n)(a * f n)%N = a%:R * \Z_(n)(f n).
   Axiom ztr_distr : forall f a, \Z_(n)(f n * a)%N = \Z_(n)(f n) * a%:R.
 (**
-n < 0 の場合, f n = f0 とする。
+``n < 0`` の場合, ``f n = f0`` とする。
 n が負の部分が \Z に沸いて出るので、その分を加算しないといけない。
 
-fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) では成立しない。
+``fib -1 = fib 0 = 0`` なので問題ないのだが、ユニット関数 ``[n == 0]`` では成立しない。
 *)  
   Axiom ztr_shift1 : forall f, \Z_(n)(f n.-1)%N = z * \Z_(n)(f n) + (f 0%N)%:R.
   
@@ -204,9 +204,32 @@ fib -1 = fib 0 = 0 なので問題ないのだが、ユニット関数 (n == 0) 
     done.
   Qed.
   
-  Lemma fib_gen : G = 1 / (1 - z - z^2).
+  Lemma l_a_a_0 (a : fT) : -a + a = 0.
   Proof.
-  Admitted.
+    rewrite addrC.
+    rewrite -[LHS]add0r addrA.
+    rewrite addrK.
+    done.
+  Qed.
+  
+  (* z を含む式は 0 ではない。 *)
+  Axiom l_z_z2_n_0 : 1 - z - z ^ 2 != 0.
+  
+  Lemma fib_gen : G = z / (1 - z - z^2).
+  Proof.
+    rewrite -[LHS]mulr1.
+    rewrite -[in LHS](mulfV l_z_z2_n_0).
+    rewrite [LHS]mulrA.                     (* 「/」 にも使える。 *)
+    congr (_ / _).
+    rewrite mulrC.
+    rewrite 2!mulrBl mul1r.
+    rewrite {1}fib_gen'.
+    rewrite [_ - z * G]addrC ?addrA.    (* - z * G を先頭にする。 *)
+    rewrite l_a_a_0 add0r.              (* 相殺する。 *)
+    rewrite [_ - z^2 * G]addrC ?addrA.  (* - z^2 * G を先頭にする。 *)
+    rewrite l_a_a_0 add0r.              (* 相殺する。 *)
+    done.
+  Qed.
   
 End Basic_Maneuvers.
 
