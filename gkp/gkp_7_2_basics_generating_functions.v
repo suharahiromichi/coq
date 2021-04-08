@@ -230,7 +230,100 @@ n が負の部分が \Z に沸いて出るので、その分を加算しない�
     rewrite l_a_a_0 add0r.              (* 相殺する。 *)
     done.
   Qed.
-  
+
 End Basic_Maneuvers.
+
+(**
+## 任意回数のシフト
+*)
+Section Shift.
+
+(*
+  Definition zs (m : nat) :=
+    foldr (@GRing.add fT) 1 (map (exprz z \o Posz) (iota 1 m)).
+ *)
+
+  Fixpoint zs (m : nat) : fT :=
+    match m with
+    | 0 => 1
+    | m.+1 => 1 + z * (zs m)
+    end.
+  Notation "z^^ m" := (zs m) (at level 30, right associativity).
+  
+  Goal z^^0 = 1.
+  Proof.
+    rewrite /zs.
+    done.
+  Qed.
+  
+  Goal z^^1 = 1 + z.
+  Proof.
+    rewrite /zs.
+    rewrite mulr1.
+    done.
+  Qed.
+
+  Goal z^^2 = 1 + z + z^2.
+  Proof.
+    rewrite /zs.
+    rewrite mulr1 mulrDr mulr1 addrA.
+    rewrite exprSz expr1z.
+    done.
+  Qed.
+  
+  Goal 1 + z * z^^3 = z^^4.
+  Proof.
+    rewrite /zs.
+    done.
+  Qed.
+  
+  Lemma ez_shift (m : nat) : 1 + z * z^^m = z^^m.+1.
+  Proof.
+    done.
+  Qed.
+  
+  Lemma ztr_shift f m :
+    \Z_(n)(f (n - m.+1)%N) = z^m.+1 * \Z_(n)(f n) + z^^m * (f 0%N)%:R.
+  Proof.
+    elim: m.
+    - rewrite /= mul1r expr1z.
+      have H : forall n, f (n - 1)%N = f n.-1.
+      + move=> n.
+          by rewrite subn1.
+      + rewrite (ztr_equal H).
+        rewrite -ztr_shift1.
+        done.
+    - move=> /= m IHm.
+      rewrite exprSz mulrDl mul1r addrCA -2!mulrA -mulrDr addrC.
+      rewrite -IHm.
+      have H1 : forall n, f (n - m.+2)%N = f ((n - m.+1).-1)%N.
+      + move=> n.
+        f_equal.
+          by ssromega.
+      have H2 : forall n, f (n.-1 - m.+1)%N = f (n - m.+1).-1%N.
+      + move=> n.
+        f_equal.
+          by ssromega.
+      + rewrite (ztr_equal H1).
+        rewrite -(ztr_equal H2).
+        rewrite -(ztr_shift1 (fun (n : nat) => f (n - m.+1)%N)).
+        done.
+  Qed.
+  
+  Lemma ztr_shift' f m :
+    (1 <= m)%N ->
+    \Z_(n)(f (n - m)%N) = z^m * \Z_(n)(f n) + z^^m.-1 * (f 0%N)%:R.
+  Proof.
+    move=> Hm.
+    have H : forall n, f (n - m)%N = f (n - m.-1.+1)%N.
+    - move=> n.
+      f_equal.
+        by ssromega.
+    - rewrite (ztr_equal H).
+      rewrite (ztr_shift f m.-1%N).
+        by rewrite prednK.
+  Qed.
+
+End Shift.
 
 (* END *)
