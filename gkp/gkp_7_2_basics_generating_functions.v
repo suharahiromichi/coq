@@ -176,18 +176,38 @@ n が負の部分が \Z に沸いて出るので、その分を加算しない�
 (**
 ## フィボナッチ数列の一般項
 *)
+  Fixpoint fib (n : nat) : nat :=
+    match n with
+    | 0 => 0
+    | 1 => 1
+    | (ppn.+1 as pn).+1 => fib ppn + fib pn (* fib n.-2 + fib n.-1 *)
+    end.
+(*
   Variable fib : nat -> nat.
+ *)
   
   Lemma fib0 : fib 0 = 0%N.
   Proof.
-  Admitted.
+    done.
+  Qed.
+  
+  Lemma fib_n n : fib n.+2 = (fib n + fib n.+1)%N.
+  Proof.
+    done.
+  Qed.
   
   Lemma fibE (n : nat) : fib n = (fib n.-1 + fib n.-2 + (n == 1))%N.  
   Proof.
-  Admitted.
+    case: n => [| n] //.                    (* fib 0 *)
+    case: n => [| n] //.                    (* fib 1 *)
+    have -> : n.+2.-1 = n.+1 by done.
+    have -> : n.+1.-1 = n by done.
+    have -> : (n.+2 == 1%N) = false by done.
+    rewrite fib_n addn0 addnC.              (* fib 2 *)
+    done.
+  Qed.
   
-
-(**
+  (**
 ## フィボナッチ数列の母関数
 *)
   Definition G := \Z_(n) (fib n).
