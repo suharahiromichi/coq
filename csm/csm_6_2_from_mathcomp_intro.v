@@ -70,6 +70,12 @@ Section coset_bijection.
   
   (** Sect. 7: Injection into the set of left-cosets *)
   
+(**
+repr は、 代表元 representative を求める関数である。
+
+reprs は、代表元を求める関数の剰余群 ``H \ G`` の像である。
+つまり、剰余類からぞれぞれひとつの元を取り出して集めたものになる。
+*)
   Definition reprs := repr @: lcosets H G.  (* p.70 右 l.24 *)
   
   Lemma mem_repr_coset x : x \in G -> repr (x *: H) \in G.
@@ -136,14 +142,20 @@ Section index.
     (* p.72 左 l.19 *)
     pose phi := fun gh : gT * gT => let: (g, h) := gh in (g * h) *: K.
     have phi_injective : {in setX calG calH & , injective phi}.
-    - case => g h.
+    - case=> g h.
       rewrite inE /=.
-      case => g' h' /andP[gG hH].
-      rewrite /phi inE /= => /andP[g'G h'H] ghK.
+      case=> g' h' /andP [gG hH].
+      rewrite /phi inE /= => /andP [g'G h'H] ghK.
 
       (* p.72 左 l.30 *)
       have step1 : (g'^-1 * g * h) *: K = h' *: K.
       + move: ghK.
+        (* よく使われるシノニム、congr に関数 f を渡す。 *)
+        Check congr1                        (* f は、1変数関数 *)
+          : forall (A B : Type) (f : A -> B) (x y : A), x = y -> f x = f y.
+        Check congr2                        (* f は、2変数関数 *)
+          : forall (A1 A2 B : Type) (f : A1 -> A2 -> B) (x1 y1 : A1) (x2 y2 : A2),
+            x1 = y1 -> x2 = y2 -> f x1 x2 = f y1 y2.
         move/(congr1 (fun X => g'^-1 *: X)).
           by rewrite -2!lcosetM !mulgA mulVg mul1g.
           
