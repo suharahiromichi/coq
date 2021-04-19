@@ -106,7 +106,7 @@ Goal: $$ |H| = |H| $$
 (**
 ## 部分群
 
-以下では、$G$を群、$H$をその部分群とします。すなわち、$ H \in G $
+以下では、$G$を群、$H$をその部分群とします。すなわち、$ H \subset G $
 *)
   Variable G H : {group gT}.              (* G, H は有限群型の変数 *)
   Hypothesis HG : H \subset G.
@@ -173,7 +173,7 @@ $\sim$が、同値関係であることを証明します。
 (**
 ゴールは、MathComp の表記で次のようになります：
 
-```z ~ z * (x ~ y -> x ~ z = y ~ z)```
+```z ~ z * (x ~ y -> (x ~ z = y ~ z))```
  *)
 (**
 Goal: $$ z \sim z \land (x \sim y\ \to (x\ \sim z \iff y \sim z)) $$
@@ -204,23 +204,22 @@ Goal: $$ x y^{-1} \in H -> (x z^{-1} \in H \iff y z^{-1} \in H) $$
             x \in G -> y \in G -> x * y \in G.
         Check groupM xRinvy : x * z^-1 \in H -> (x * y^-1)^-1 * (x * z^-1) \in H.
         move/(groupM xRinvy).
-        Undo 2.
-(**
-ひとつ前で、xRinvy に groupVr を適用していますから、この2行をまとめて、
-テキストのように書くこともできます。
- *)
-        move/(groupM (groupVr xRinvy)).
+(*
+        rewrite invMg.
+        rewrite invgK.
+        rewrite mulgA.
+        rewrite -(mulgA y).
+        rewrite mulVg.
+        rewrite mulg1.
+        done.
+*)
           by rewrite invMg invgK mulgA -(mulgA y) mulVg mulg1.
           
       (* <- *)
-(**
-問題(1) 逆の証明にトライしてみてください！
-
-ヒント： -> より簡単です。
-*)
       + Check (groupM xRinvy) : y * z^-1 \in H -> x * y^-1 * (y * z^-1) \in H.
-        admit.                              (* 問題(1) *)
-  Admitted.
+        move/(groupM xRinvy).
+          by rewrite mulgA -(mulgA x) mulVg mulg1.
+  Qed.
   
 (**
 # 6.2.3 剰余類の性質の形式化
@@ -434,15 +433,5 @@ Goal: $$|H \backslash G|\ |H| = |H|\ |G : H|$$
   Qed.
 
 End Lagrange.
-
-(**
-# 問題(1)の答え
-
-```
-        move/(groupM xRinvy).
-          by rewrite mulgA -(mulgA x) mulVg mulg1.
-  Qed.
-```
- *)
 
 (* END *)
