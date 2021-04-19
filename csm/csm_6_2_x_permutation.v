@@ -1,7 +1,7 @@
 (**
 Coq/SSReflect/MathComp による定理証明
 
-3次対象群
+（6.2 節補足）3次対象群
 ======
 
 2021_03_08 @suharahiromichi
@@ -25,48 +25,56 @@ Open Scope group_scope.
 3次対象群 G は、正三角形の6個の対称移動のことで、
 そのうち点対称の3個 N が正規部分群になります。
 
-すなわち
+すなわち、NによるGの指数は、
 
 ```|G / N| = (G : N) = |G| / |N| = 6 / 3 = 2```
 
-になるはずです。
+になるはずです。これは G の位数でもあります。
 *)
 
 (**
 # 文献
 
-- 学習院大学 中野伸先生の講義ノート
+[1] 学習院大学 中野伸先生の講義ノート
 
 [https://pc1.math.gakushuin.ac.jp/~shin/html-files/Alg1/2017/g07.pdf]
 
 
-- Affeldt先生のチュートリアル (p.147)
+[2] Affeldt先生のチュートリアル (p.147)
 
 [https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf]
 
 
-- Affeldt先生のチュートリアル（サンプルコード）
+[3] Affeldt先生のチュートリアル（サンプルコード）
 
 [https://staff.aist.go.jp/reynald.affeldt/ssrcoq/permutation_example.v]
 *)
 
-
-
 (**
 # 3次対象群を作る
+
+最初に、サイズ3の順序数、0、1、2を を定義します。
 *)
 Definition o0 : 'I_3 := ord0.               (* 0 *)
 Definition o1 : 'I_3 := @Ordinal 3 1 erefl. (* 1 *)
 Definition o2 : 'I_3 := @Ordinal 3 2 erefl. (* 2 *)
 
+(**
+線対称にあたる3個の置換：
+*)
 Definition p01 : 'S_3 := tperm o0 o1.       (* (01) *)
 Definition p02 : 'S_3 := tperm o0 o2.       (* (02) *)
 Definition p12 : 'S_3 := tperm o1 o2.       (* (12) *)
-Definition p021 := p01 * p02.               (* (021) *)
-Definition p012 := p02 * p01.               (* (012) *)
 
 (**
-実際に置換してみる。
+点対象にあたる2個の置換、および、恒等置換：
+*)
+Definition p021 : 'S_3 := p01 * p02.        (* (021) *)
+Definition p012 : 'S_3 := p02 * p01.        (* (012) *)
+Check 1 : 'S_3.
+
+(**
+実際に置換してみます。
 *)
 Goal p021 o0 = o1.                          (* 0 -> 1 *)
 Proof. rewrite /o2 !permE /= /p02 /p01 !permE //. Qed.
@@ -77,6 +85,9 @@ Proof. rewrite !permE /= /p02 /p01 !permE //. Qed.
 Goal p021 o2 = o0.                          (* 2 -> 0 *)
 Proof. rewrite !permE /= /p02 /p01 !permE //. Qed.
 
+(**
+文献[3]にあるタクティクで、置換についての簡約をおこないます。
+*)
 Ltac same_perm :=
   let x := fresh in
   apply/permP => /= x;
@@ -91,7 +102,6 @@ Ltac same_perm :=
           [by do ! rewrite !permE /= |
            (suff : False by done) ;
            case: x x0 x1 x2; case=> //; case=> //; by case]]].
-
 
 Lemma p021_p021 : p021 * p021 = p012.
 Proof. same_perm. Qed.
@@ -149,13 +159,13 @@ Definition G : {group 'S_3} := [group of <<SG>>].
 *)
 Definition N : {group 'S_3} := [group of <<SN>>].
 (**
-``G = {1, (021), (012)}``
+``N = {1, (021), (012)}``
 *)
 
 (**
 ## N は G の部分集合である。 
 *)
-Goal SN \subset SG.
+Lemma SN_subset_SG : SN \subset SG.
 Proof.
   apply/subsetP => /= p.
     by rewrite !inE.
@@ -165,39 +175,8 @@ Lemma N_subset_G : N \subset G.
 Proof.
   rewrite /=.
   apply: genS.
-  apply/subsetP => /= p.
-    by rewrite !inE.
+    by apply: SN_subset_SG.
 Qed.
-
-(**
-## 剰余類 N(01) は G の部分集合である。
-*)
-Goal N :* p01 = rcoset N p01.
-Proof.
-  by rewrite rcosetE.
-Qed.
-
-Goal (SG :* p01) \subset SG.
-  apply/subsetP => /= p.
-    by rewrite !inE.
-Qed.  
-
-Goal (N :* 1) \in rcosets N G.
-Proof.
-  (* rewrite -rcoset1. *)
-  rewrite mem_rcosets.
-  rewrite /N /SN /G /SG.
-  rewrite /mulg /= /set_mulg /=.
-  (* 1 \in [set x * y | x in <<[set p021; p012; 1]>>, y in <<[set x in 'S_3]>>] *)
-Admitted.
-
-Goal (N :* p01) \in rcosets N G.
-Proof.
-  rewrite mem_rcosets.
-  rewrite /N /SN /G /SG.
-  rewrite /mulg /= /set_mulg /=.
-  (* p01 \in [set x * y | x in <<[set p021; p012; 1]>>, y in <<[set x in 'S_3]>>] *)
-Admitted.
 
 (**
 ## SN は 1 をもち 掛け算で閉じている
@@ -337,7 +316,7 @@ Proof.
 Qed.
 
 (**
-剰余類を求める：
+剰余群を求める。位数2の巡回群になる。
 *)
 Lemma p012_p01__p02 : p012 * p01 = p02.     (* (012)(01) = (02) *)
 Proof. same_perm. Qed.
@@ -351,6 +330,12 @@ Proof. same_perm. Qed.
 ```= {{1, (021), (012)}, {1, (021), (012)}(01)}```
 
 ```= {{1, (012), (021)}, {(01), (02), (12)}}```
+
+```
+NN = N              N^0*N^0  = N^0
+NN(01) = N(01)      N*N^1    = N^1
+N(01)N(01) = N      N^1*N*^1 = N^2 = N^0
+```
 *)
 
 (**
