@@ -66,6 +66,8 @@ Section Sect_1.
 群 gT の要素 x, y, z の間で群の公理や定理が成り立ちます。
 *)
   Variable gT : finGroupType.               (* 有限群 = 型インスタンス *)
+  Check gT : finGroupType.
+  
   Variable x y z : gT.                      (* 有限群の要素 *)
 
   Check mulg x y : gT.                      (* 乗算 *)
@@ -148,7 +150,7 @@ Section Sect_1.
  *)
   Check x : gT.                             (* x は gT 型 *)
   Check x \in A : bool.                     (* true または false *)
-
+  
 (**
 ``mem A`` は、gT 型の変数が集合Aに含まれるか否かを決定する``gT -> bool``型の関数になります。
 (``finset`` の ``set_type``の定義を参照のこと)。
@@ -176,6 +178,8 @@ Section Sect_1.
 *)  
   Check @mulg : forall T : baseFinGroupType, T -> T -> T.
   Check @mulg (group_set_of_baseGroupType gT) A B : group_set_of_baseGroupType gT.
+  Check A * B : {set gT}.
+  Check mulg A B : {set gT}.
   
 (**
 ## 集合としての群の型（その２）
@@ -191,7 +195,7 @@ Section Sect_1.
 *)
   Check {group gT} : predArgType.
   Variable G H : {group gT}.
-  (**
+(**
 有限群の公理や定理のうち、集合としての有限群がでてくるものが使えます。
 *)
 
@@ -213,7 +217,7 @@ Math-Comp Book の 5.10.1 や次の文書も参照してください。
 [https://github.com/suharahiromichi/coq/blob/master/math-comp-book/suhara.ch7-phantom_types.v]
 
 *)
-
+  
 (**
 ## 剰余類 (coset) の定義
 
@@ -260,7 +264,7 @@ MathComp には、関数``rcosets`` があります。
 
 関数``rcosets``の定義は、
 有限集合としての有限群Bのすべての要素に、
-有限集合としての剰余類Aを右から掛けたものです。
+有限集合としての剰余類Aを右から掛けたものです。XXXXX
  *)
   Check rcosets : {set gT} -> {set gT} -> {set {set gT}}.
   
@@ -273,6 +277,7 @@ MathComp には、関数``rcosets`` があります。
 rcoset の定義を rcoset のひとつめの定義（``[set a * x | a in A] ``）で展開すると、
 つぎのようになります。
 *)
+  Print rcosets.
   Check [set (rcoset A x) | x in B].        (* ``@:`` を展開する。 *)
   Check [set [set a * x | a in A] | x in B]. (* rcoset を展開する。 *)
 (**
@@ -287,7 +292,7 @@ rcoset の定義を rcoset のふたつめ定義（``A :* x``）で展開する�
 つぎのようになります。
 *)
   Check [set (A :* x) | x in B].
-    
+  
 (**
 ### ふたつの定義がおなじであることの証明
 
@@ -295,7 +300,7 @@ rcoset の定義を rcoset のふたつめ定義（``A :* x``）で展開する�
 *)
   Check rcosetsP
     : reflect (exists2 x, (x \in B) & (C = A :* x)) (C \in rcosets A B).
-
+  
 End Sect_1.
 
 (**
@@ -310,6 +315,10 @@ Section Appendix.
 (**
 左が rcosetsP の書き方、右が「ふたつめの定義」の書き方です。
 *)
+  Check @imsetP
+    : forall (aT rT : finType) (f : aT -> rT) (B : mem_pred aT) (C : rT),
+      reflect (exists2 x : aT, (in_mem x B) & (C = f x)) (C \in imset f B).
+  
   Lemma test (B C : {set gT}) f :
     reflect (exists2 x, (x \in B) & (C = f x)) (C \in [set f x | x in B]).
   Proof.
