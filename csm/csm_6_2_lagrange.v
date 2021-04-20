@@ -396,7 +396,17 @@ $H \backslash G$ は、$G$の$\sim$についての分割である。
   Lemma partition_rcosets : partition (rcosets H G) G.
   Proof.
     rewrite rcosets_equiv_part.
+(**
+goal: ``partition (equivalence_partition R G) G``
+*)
+
+    Check equivalence_partitionP
+      : forall (T : finType) (R : rel T) (D : {set T}),
+        {in D & &, equivalence_rel R} -> partition (equivalence_partition R D) D.
     apply/equivalence_partitionP => x y z xinG yinG zinG.
+(**
+goal: ```z ~ z * (x ~ y -> x ~ z = y ~ z)```
+*)
       by apply : equiv_rel_R.
   Qed.
 
