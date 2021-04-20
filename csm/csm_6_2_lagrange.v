@@ -229,22 +229,60 @@ Goal: $$ x y^{-1} \in H -> (x z^{-1} \in H \iff y z^{-1} \in H) $$
 (**
 ## 定理：
 
-$$H x = \\{y \in G\ |\ x \sim y \\}$$
+$$x \in G -> H x = \\{y \in G\ |\ x \sim y \\}$$
 *)
-  Lemma coset_equiv_class (x : gT) (xinG : x \in G) :
-    H :* x = [set y in G | x ~ y].
+  Lemma coset_equiv_class (x : gT) :
+    x \in G -> H :* x = [set y in G | x ~ y].
   Proof.
-    apply/setP => /= y. (* 任意の要素が同じなら、集合が等しいことつかう。 *)
-    rewrite inE.        (* \in に関する簡約を行います。 *)
+    move=> xinG.
+(**
+任意の要素が同じなら、集合が等しいこを使う。
+
+Goal: ``H :* x = [set y in G | x ~ y]``
+ *)
+    apply/setP => /= y.
+(**
+Goal: ``(y \in H :* x) = (y \in [set y0 in G | x ~ y0])```
+
+\in に関する簡約を行います。
+ *)
+    rewrite inE.
+(**
+Goal: ``(y \in H :* x) = (y \in G) && (x ~ y)``
+*)
     apply/idP/idP.
+    (* -> *)
     - case/rcosetP => z zinH -> {y}.
       apply/andP.
-      apply: conj.
-      + rewrite groupM //. (* groupM : z \in G -> x \in G -> z * x \in G *)
-        move/subsetP : HG => HG'.          (* HG' : {subset H <= G} *)
-        Check (HG' z zinH) : z \in G.
-          by move: (HG' z zinH).
+      apply: conj.         (* split *)
+
+      Check groupM : forall (gT : finGroupType) (G : {group gT}) (x y : gT),
+          x \in G -> y \in G -> x * y \in G.
+
+      + rewrite groupM //.                 (* apply: groupM => // *)
+(**
+のこりは、``HG : H ⊂ G`` かつ ``z ∈ H`` なので ``z ∈ G`` は明らかである。
+
+テキストの以下よりも、
+```
+        move/subsetP : HG => HG'.
+          by move: (HG' _ zinH).
+```
+generaralize を使ったほうが、解りやすいのではないか。一行でも書けるし。
+*)
+        move: HG z zinH.
+        move/subsetP.
+(**
+Goal: {subset H <= G} -> forall z : gT, z \in H -> z \in G
+*)
+        done.       (* 3行を1行にまとめると、by move/subsetP : HG z zinH *)
+          
+(**
+Goal: ``x * (z * x)^-1 \in H``
+ *)
       + by rewrite invMg mulgA mulgV mul1g groupV.
+
+    (* <- *)
     - case/andP => yinG xinvyinH.
       apply/rcosetP.
 (**
@@ -261,6 +299,7 @@ ex_intro2 を適用して exists2 を消します。
       apply: (ex_intro2 (fun g => g \in H)   (* _ *)
                         (fun a => y = a * x) (* _ *)
                         (y * x^-1)).
+      
       + by rewrite -groupV invMg invgK.
       + by rewrite -mulgA mulVg mulg1.
   Qed.
@@ -268,21 +307,64 @@ ex_intro2 を適用して exists2 を消します。
 (**
 ## 補題：
 
-$H \backslash G$ は、$G$の$\sim$についての商と等しい。
+$H \backslash G = G\ /\ \sim$
+
+右辺は、``G`` の ``〜`` についての商である。
 *)
   Lemma rcosets_equiv_part : rcosets H G = equivalence_partition R G.
   Proof.
     apply/setP => /= X.
     rewrite /rcosets /equivalence_partition.
 (**
+Goal:
+
 ```(X \in [set rcoset H x | x in G]) = (X \in [set [set y in G | x ~ y] | x in G])```
+
+set の内側を取り出すと、
+
+左辺： ``rcoset H x``
+
+右辺： ``[set y in G | x ~ y]``
+
+となり、``H :* x = rcoset H x``
+であることから、定理 coset_equiv_class と同じであることが判ります。
+
+まず、必要条件と十分条件に分けます。
  *)
     apply/idP/idP.
+    (* -> *)
+(**
+``H :* x = rcoset H x`` の置き換えには、rcosetP か rcosetsP が使えます。
+``csm_6_2_1_fingroup.v`` も参照してください。
+*)
     - case/rcosetsP => x0 x0inG X_Hx.
-      apply/imsetP.
-      apply: (ex_intro2 _ _ x0).
-      + done.
-      + by rewrite -coset_equiv_class.
+(**
+Goal: ``X \in [set [set y in G | x ~ y] | x in G]``
+*)
+      (* apply/imsetP *)
+      Check @imsetP _ _ (fun x => [set y in G | x ~ y]) (mem G) X
+        : reflect (exists2 x : gT, x \in G & X = [set y in G | x ~ y])
+                  (X \in [set [set y in G | x ~ y] | x in G]).
+      apply/(@imsetP _ _ (fun x => [set y in G | x ~ y]) (mem G) X).
+(**
+Goal: ``exists2 x : gT, x \in G & X = [set y in G | x ~ y]``
+*)      
+      (* プレースホルダーを埋めると次になる。 *)
+      Check (ex_intro2 (fun g => g \in G)
+                       (fun x => (X = [set y in G | x ~ y]))
+                       x0) :
+        x0 \in G ->
+               X = [set y in G | x0 ~ y] ->
+               exists2 g : gT, g \in G & X = [set y in G | g ~ y].
+      apply: (ex_intro2 (fun g => g \in G)
+                        (fun x => (X = [set y in G | x ~ y]))
+                        x0) => //.
+(**
+Goal: ``X = [set y in G | x0 ~ y]``
+*)
+        by rewrite -coset_equiv_class.      (* 直前の補題 *)
+        
+    (* <- *)
     - case/imsetP => x1 xinG Hypo.
       apply/imsetP.
       
@@ -293,7 +375,6 @@ $H \backslash G$ は、$G$の$\sim$についての商と等しい。
         x1 \in G ->
                X = rcoset H x1 ->
                exists2 x : gT, x \in G & X = rcoset H x.
-      
       apply: (ex_intro2 (fun g => g \in G)
                         (fun x => X = rcoset H x)
                         x1).
