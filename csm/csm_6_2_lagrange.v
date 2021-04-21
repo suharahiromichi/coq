@@ -229,46 +229,61 @@ Goal: $$ x y^{-1} \in H -> (x z^{-1} \in H \iff y z^{-1} \in H) $$
 (**
 ## 定理：
 
-$$x \in G -> H x = \\{y \in G\ |\ x \sim y \\}$$
+$$x \in G \to H x = \\{y \in G\ |\ x \sim y \\}$$
 *)
   Lemma coset_equiv_class (x : gT) :
     x \in G -> H :* x = [set y in G | x ~ y].
   Proof.
     move=> xinG.
 (**
-任意の要素が同じなら、集合が等しいこを使う。
-
 Goal: ``H :* x = [set y in G | x ~ y]``
+
+集合が等しいことを証明するには、
+集合の任意の要素が同じなら、集合が等しいことを使います。
  *)
     apply/setP => /= y.
 (**
 Goal: ``(y \in H :* x) = (y \in [set y0 in G | x ~ y0])```
 
-\in に関する簡約を行います。
+右辺の \in に関する簡約を行います。
  *)
     rewrite inE.
 (**
 Goal: ``(y \in H :* x) = (y \in G) && (x ~ y)``
+
+ゴールを必要条件と十分条件に分けます。
 *)
     apply/idP/idP.
     (* -> *)
+(**
+Goal: ``y \in H :* x -> (y \in G) && (x * y^-1 \in H)``
+
+前提を rcoset (mulgの像) の定義に変換します。∃が現れますから、前提の∃にはcaseを使います。
+*)
     - case/rcosetP => z zinH -> {y}.
       apply/andP.
       apply: conj.         (* split *)
 
+(**
+Goal: ``z * x \in G``
+
+掛算を ``z \in G`` と ``x \in G`` に分けます。前者は前提にあるので後者が残ります。
+*)
       Check groupM : forall (gT : finGroupType) (G : {group gT}) (x y : gT),
           x \in G -> y \in G -> x * y \in G.
 
       + rewrite groupM //.                 (* apply: groupM => // *)
 (**
-のこりは、``HG : H ⊂ G`` かつ ``z ∈ H`` なので ``z ∈ G`` は明らかである。
+Goal: ``z \in G``
 
-テキストの以下よりも、
+から ``HG : H ⊂ G`` かつ ``z ∈ H`` なので、``z ∈ G`` は明らかです。
+
+テキストは以下のようになっていますが、
 ```
         move/subsetP : HG => HG'.
           by move: (HG' _ zinH).
 ```
-generaralize を使ったほうが、解りやすいのではないか。一行でも書けるし。
+generaralize を使ったほうが、解りやすいと思います。一行でも書ける。
 *)
         move: HG z zinH.
         move/subsetP.
@@ -386,7 +401,7 @@ Goal: ``X = [set y in G | x0 ~ y]``
 (**
 ## 補題：
 
-$H \backslash G$ は、$G$の$\sim$についての分割である。
+$H \backslash G$ は、$G$の分割である。
 
 商であるということと、分割になっているということは区別されます。
 ひとつまえの補題と違って、後者では$\sim$が明示的に現れないことがポイントです。
@@ -395,13 +410,21 @@ $H \backslash G$ は、$G$の$\sim$についての分割である。
 *)
   Lemma partition_rcosets : partition (rcosets H G) G.
   Proof.
+(**
+分割の定義は、次のようになります。
+*)
+    (* rewrite /partition /trivIset /cover. *)
+(**
+   \bigcup_(B in rcosets H G) B == G &&
+   \sum_(B in rcosets H G) #|B| == #|\bigcup_(B in rcosets H G) B| &&
+   set0 \notin rcosets H G
+*)
     rewrite rcosets_equiv_part.
 (**
 goal: ``partition (equivalence_partition R G) G``
 *)
 
-    Check equivalence_partitionP
-      : forall (T : finType) (R : rel T) (D : {set T}),
+    Check equivalence_partitionP : forall (T : finType) (R : rel T) (D : {set T}),
         {in D & &, equivalence_rel R} -> partition (equivalence_partition R D) D.
     apply/equivalence_partitionP => x y z xinG yinG zinG.
 (**
@@ -420,9 +443,12 @@ goal: ```z ~ z * (x ~ y -> x ~ z = y ~ z)```
 一般的な数学の記法では、$(G : H)$ は（$H$による$G$の）右剰余類の個数を表します。
 これを（$H$による$G$の）指数ともいいます。
 
+ラグランジュの定理は、$G$の濃度は、その部分群$H$の濃度で割り切ることができ、
+その商は、$H$による$G$の指数である、というものです。すなわち、
+
 $$(G : H) = |H \backslash G|$$
 
-MathComp では、``#|_ : _|``という2項のNotationです。
+なお、MathComp では、指数は、``#|_ : _|``という2項のNotationです。
 これが定義であることを確認します。
 *)
   Goal #|G : H| = #|rcosets H G|.
