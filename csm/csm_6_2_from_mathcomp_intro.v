@@ -171,8 +171,7 @@ Section index.
     (* p.72 左 l.19 *)
     pose phi :=                   (* calG × calH から K についての剰余類への関数φ *)
       fun gh : gT * gT => let: (g, h) := gh in (g * h) *: K.
-    have phi_injective :                    (* 関数φが単射である。 *)
-      {in setX calG calH & , injective phi}.
+    have phi_injective : {in setX calG calH & , injective phi}. (* 関数φが単射である。 *)
     - case=> g h.
       rewrite inE /=.
       case=> g' h' /andP [gG hH].
@@ -189,6 +188,7 @@ Section index.
             x1 = y1 -> x2 = y2 -> f x1 x2 = f y1 y2.
         move/(congr1 (fun X => g'^-1 *: X)).
           by rewrite -2!lcosetM !mulgA mulVg mul1g.
+      + admit.
   Admitted.
 
 End index.
@@ -230,6 +230,11 @@ Section lagrange.
   (* 部分群の指数の推移関係の系である。 *)
   Theorem Lagrange : #| G | = (#| H | * #| G : H |)%N.
   Proof.
+    (* {1} ⊂ H かどうかで場合分けする。  *)
+(**
+    case H1 : (1%G \proper H).
+    でもよいが、boolP も覚えておくとよい。
+*)
     case/boolP : (1%G \proper H) => H1.
     
     (* ``{1} ⊂ H`` の場合 *)
