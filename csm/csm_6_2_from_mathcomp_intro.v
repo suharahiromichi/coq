@@ -29,11 +29,14 @@ End sect5.
 Section coset_bijection.
 
   Variable gT : finGroupType.
-  Variables G H : {group gT}.
+  Variables G H : {group gT}.               (* これが reprs の引数 *)
   Hypothesis HG : H \subset G.
   
   (** Sect. 6: Left-cosets are disjoint *)
   
+(**
+剰余群の任意のふたつの元は、まったく同じか、重ならない別のものである。
+*)
   Lemma coset_disjoint L0 L1 :
     L0 \in lcosets H G ->
            L1 \in lcosets H G ->
@@ -70,14 +73,6 @@ Section coset_bijection.
   
   (** Sect. 7: Injection into the set of left-cosets *)
   
-(**
-repr は、 代表元 representative を求める関数である。
-
-reprs は、代表元を求める関数の剰余群 ``H \ G`` の像である。
-つまり、剰余類からぞれぞれひとつの元を取り出して集めたものになる。
-*)
-  Definition reprs := repr @: lcosets H G.  (* p.70 右 l.24 *)
-  
   Lemma mem_repr_coset x : x \in G -> repr (x *: H) \in G.
   Proof.
     move=> xG.
@@ -91,14 +86,40 @@ reprs は、代表元を求める関数の剰余群 ``H \ G`` の像である。
       move/(_ x).
         by rewrite lcoset_refl.
   Qed.
+
+End coset_bijection.
+
+Section coset_bijection2.
   
+  Variable gT : finGroupType.
+
+(**
+repr は、 代表元 representative を求める関数である。
+剰余群の元（剰余類）には重なりがないので、代表元から剰余類の関数は、単射である。
+
+``reprs G H`` は、代表元を求める関数の剰余群 ``H \ G`` の像である。
+つまり、剰余類からぞれぞれ代表元を取り出して集めたものになる。
+
+「（剰余群の）元の代表元の集合」と呼ぶ。
+*)
+  Definition reprs (G H : {group gT}) := repr @: lcosets H G.  (* p.70 右 l.24 *)
+
   (* p.71 左 l.5 *)
-  Lemma injective_coset :
-    {in reprs &, injective (fun g => g *: H)}.
+  Lemma injective_coset (G H : {group gT}) :
+    {in reprs G H &, injective (fun g => g *: H)}.
   Proof.
     move=> /= g g'.
     (* goal : *)
-    Check g \in reprs -> g' \in reprs -> g *: H = g' *: H -> g = g'.
+(**
+g と g' が ``H \ G`` の元（剰余類）の代表元であるなら、剰余類を求める関数
+
+``g |-> g *: H``
+
+は単射である。
+*)
+    Check g \in reprs G H ->
+                g' \in reprs G H ->
+                       g *: H = g' *: H -> g = g'.
     
     move=> /(@imsetP (set_of_finType gT) gT repr (mem (lcosets H G)) g).
     Check (@imsetP (set_of_finType gT) gT repr (mem (lcosets H G)) g).
@@ -106,16 +127,15 @@ reprs は、代表元を求める関数の剰余群 ``H \ G`` の像である。
     
     (* goal : *)
     Check forall x : {set gT},
-        x \in lcosets H G -> g = repr x -> g' \in reprs -> g *: H = g' *: H -> g = g'.
+        x \in lcosets H G -> g = repr x ->
+              g' \in reprs G H ->
+                     g *: H = g' *: H -> g = g'.
     move=> L LHG gL.
-(*
-    move=> /imsetP [] /= L LHG gL.
-*)
     move=> /imsetP [] /= K KHG g'K.
     move=> abs.
   Admitted.
   
-End coset_bijection.
+End coset_bijection2.
 
 (** Sect. 8: Transitivity of the group index *)
 
@@ -127,21 +147,32 @@ Section index.
   Variables G H K : {group gT}.
   Hypotheses (HG : H \subset G) (KG : K \subset G) (HK : K \proper H).
   
+  Check reprs G H.                      (* G / H の元の代表元の集合 *)
+  Check reprs H K.                      (* H / K の元の代表元の集合 *)
+
   (* p.71 右 l.24 *)
   Lemma index_trans : #| G : K | = (#| G : H | * #| H : K |)%N.
   Proof.
     rewrite /=.
-    set calG := reprs G H.
-    have calG_H_inj : {in calG &, injective (fun x => x *: H)}
-      by apply: injective_coset HG.
-    set calH := reprs H K.
-    have calH_K_inj : {in calH &, injective (fun x=> x *: K)}
-      by apply: injective_coset;
-      move/proper_sub : HK.
+    
+    set calG := reprs G H.         (* G / H の元の代表元の集合 *)
+    pose alpha := fun x => x *: H. (* から Hについての剰余類への関数α *)
+    have calG_H_inj : {in calG &, injective alpha}. (* 関数αが単射である。 *)
+      by apply: injective_coset.
+      
+    set calH := reprs H K.        (* H / K の元の代表元の集合 *)
+    pose beta := fun x => x *: K. (* から Kについての剰余類への関数β *)
+    have calH_K_inj : {in calH &, injective (fun x=> x *: K)} (* 関数βが単射である。 *)
+      by apply: injective_coset.
+
+    Check @proper_sub _ H K : H \proper K -> H \subset K.
+    move/proper_sub : HK.                   (* K ⊆ H *)
 
     (* p.72 左 l.19 *)
-    pose phi := fun gh : gT * gT => let: (g, h) := gh in (g * h) *: K.
-    have phi_injective : {in setX calG calH & , injective phi}.
+    pose phi :=                   (* calG × calH から K についての剰余類への関数φ *)
+      fun gh : gT * gT => let: (g, h) := gh in (g * h) *: K.
+    have phi_injective :                    (* 関数φが単射である。 *)
+      {in setX calG calH & , injective phi}.
     - case=> g h.
       rewrite inE /=.
       case=> g' h' /andP [gG hH].
@@ -158,8 +189,8 @@ Section index.
             x1 = y1 -> x2 = y2 -> f x1 x2 = f y1 y2.
         move/(congr1 (fun X => g'^-1 *: X)).
           by rewrite -2!lcosetM !mulgA mulVg mul1g.
-          
   Admitted.
+
 End index.
 
 (* Sect. 9: Lagrange Theorem *)
