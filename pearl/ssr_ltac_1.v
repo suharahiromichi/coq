@@ -145,9 +145,9 @@ repeat で繰り返し適用すると、``a != b`` と ``~ (a == b)`` の間を
 
 | (a != b) == true   | rewrite eqb_id   | a != b         |
 
-| (a == b) == false  | rewrite eqbF_n   | a != b         |
+| (a == b) == false  | rewrite eqbF_neg | a != b         |
 
-| (a != b) == false  | rewrite eqbF_n   | ~~ (a != b)    |
+| (a != b) == false  | rewrite eqbF_neg | ~~ (a != b)    |
 
 | ~~ ~~ (a == b)     | rewrite negbK    | a == b         |
 
@@ -186,9 +186,9 @@ repeat で繰り返し適用すると、``a != b`` と ``~ (a == b)`` の間を
 
 | (a != b) == true   | rewrite eqb_id   | a != b         |
 
-| (a == b) == false  | rewrite eqbF_n   | a != b         |
+| (a == b) == false  | rewrite eqbF_neg | a != b         |
 
-| (a != b) == false  | rewrite eqbF_n   | ~~ (a != b)    |
+| (a != b) == false  | rewrite eqbF_neg | ~~ (a != b)    |
 
 | ~~ ~~ (a == b)     | rewrite negbK    | a == b         |
 
