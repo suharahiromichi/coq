@@ -54,6 +54,15 @@ Ltac I3_neq := rewrite (_ : _ == _ = false); last by
 (**
 確率変数 i が、0, 1, 2 を分布する。
 *)
+
+(**
+mapP は、``i ∈ map f l`` を ``∃x.x∈l /\ i = f x`` にする命題です。
+
+また、map の構文糖衣も思い出してください。
+ *)
+  Check @mapP : forall (T1 T2 : eqType) (f : T1 -> T2) (s : seq T1) (y : T2),
+       reflect (exists2 x : T1, x \in s & y = f x) (y \in [seq f i | i <- s]).
+
 Lemma I3P (i : 'I_3) : I3_spec i
                                (i == inord 0) (i == inord 1) (i == inord 2).
 Proof.
@@ -62,13 +71,6 @@ Proof.
 have の次に変数がないので、証明ができた時点で、ゴールのスタックにつまれます。
 *)
   have : i \in map inord (iota 0 3). (* i \in [seq inord i | i <- iota 0 3] *)
-(**
-mapP は、``i ∈ map f l`` を ``∃x.x∈l /\ i = f x`` にする命題です。
-
-また、map の構文糖衣も思い出してください。
- *)
-  Check @mapP : forall (T1 T2 : eqType) (f : T1 -> T2) (s : seq T1) (y : T2),
-       reflect (exists2 x : T1, x \in s & y = f x) (y \in [seq f i | i <- s]).
   - apply/mapP.
     exists (nat_of_ord i).
     + by rewrite mem_iota leq0n add0n ltn_ord. (* i ∈ [:: 0; 1; 2] の証明 *)
@@ -104,6 +106,24 @@ Qed.
 
 演算子 ``<b=`` は infotheo.lib.ssrR.leRb で定義されている。
  *)
+
+(**
+ffunE は、finfun に対して ``(λx.g(x))(x) = g(x)`` の書き換えをおこなう。
+ *)
+  Check ffunE
+    : forall (aT : finType) (rT : aT -> Type) (g : forall x : aT, rT x) (x : aT),
+      [ ffun x : _ => g x] x = g x.
+(**
+ifT は、if-then-else の then 節を取り出す。
+ *)
+  Check ifT : forall (A : Type) (b : bool) (vT vF : A),
+      b -> (if b then vT else vF) = vT.
+(**
+ifF は、if-then-else の else 節を取り出す。
+*)
+  Check ifF : forall (A : Type) (b : bool) (vT vF : A),
+      b = false -> (if b then vT else vF) = vF.
+  
 Lemma f_nonneg : [forall a : 'I_3, 0 <b= f a].
 Proof.
   apply/forallP_leRP.
