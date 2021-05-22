@@ -77,8 +77,7 @@ have の次に変数がないので、証明ができた時点で、ゴールの
   - apply/mapP.
     exists (nat_of_ord i).
     + by rewrite mem_iota leq0n add0n ltn_ord. (* i ∈ [:: 0; 1; 2] の証明 *)
-    + by rewrite inord_val.                    (* i = inord i の証明 *)
-      
+    + by rewrite inord_val.      (* i = inord (nat_of_ord i) の証明 *)
   - rewrite inE => /orP [/eqP -> |].
 (**
 I3_spec (inord 0) (inord 0 == inord 0) (inord 0 == inord 1) (inord 0 == inord 2)
@@ -133,7 +132,10 @@ ifF は、if-then-else の else 節を取り出す。
   
 Lemma f_nonneg : [forall a : 'I_3, 0 <b= f a].
 Proof.
-  apply/forallP_leRP.
+  Check forallP_leRP
+  : forall (A : finType) (f : A -> R),
+    reflect (forall a : A, 0 <= f a) [forall a, 0 <b= f a].
+  apply/forallP_leRP.                       (* Prep に変換する。 *)
   case/I3P.
   - rewrite /f ffunE /= eqxx.
     lra.                                    (* 0 <= 1 / 2 *)
@@ -159,7 +161,7 @@ Ltac I3_eq := rewrite (_ : _ == _ = true); last by
 (**
 # (3) 像の和は1.0である。
 
-``_ == _ :> R`` は ring での比較 を意味する。
+``_ == _ :> R`` は R型 (real ?) での比較 を意味する。
  *)
 Lemma pmf1 : \sum_(i in 'I_3) pmf i == 1 :> R.
 Proof.
@@ -197,7 +199,7 @@ E(X) = 1・(1/2) + 2・(1/3) + 3・(1/6) = 10/6 = 5/3
 *)
 Lemma expected : `E X = 5/3.
 Proof.
-  rewrite /Ex.
+  rewrite /Ex /p_of.
   do 3 rewrite big_ord_recl.
   rewrite big_ord0 addR0.
   rewrite /p_of /= /X mul1R.
@@ -225,7 +227,7 @@ E(X^2) = 1^2・(1/2) + 2^2・(1/3) + 3^2・(1/6) = 10/3
 *)
 Lemma variance : `V X = 5/9.
 Proof.
-  rewrite VarE.
+  rewrite VarE.                             (*  /Ex /p_of. *)
   rewrite expected.
   rewrite /Ex /X.
   do 3 rewrite big_ord_recl.
