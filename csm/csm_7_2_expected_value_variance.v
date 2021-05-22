@@ -15,11 +15,11 @@ From infotheo Require Import ssrR Reals_ext Rbigop proba.
 (**
 分布は、
 
-1. 有限集合上の関数である。
+(1). 有限集合上の関数である。
 
-2. 関数の像は非負実数である。
+(2). 関数の像は非負実数である。
 
-3. 像の和は1.0である。
+(3). 像の和は1.0である。
 
 コードのコメントに (1) (2) (3) で記載した。
 *)
@@ -29,10 +29,13 @@ Unset Strict Implicit.
 Import Prenex Implicits.
 
 Local Open Scope reals_ext_scope.
-Local Open Scope R_scope.
+Local Open Scope R_scope.                   (* ring scope *)
 
 (**
 # (1) 分布は、有限集合上の関数である。
+
+内側の ``[fun x => e0 with a1 |-> e1, ...]`` は eqTypeで定義されている。
+e0 は others の意味である。
  *)
 Definition f : {ffun 'I_3 -> R} :=          (* {0, 1, 2} 上の確率分布 *)
   [ffun i =>
@@ -60,8 +63,8 @@ mapP は、``i ∈ map f l`` を ``∃x.x∈l /\ i = f x`` にする命題です
 
 また、map の構文糖衣も思い出してください。
  *)
-  Check @mapP : forall (T1 T2 : eqType) (f : T1 -> T2) (s : seq T1) (y : T2),
-       reflect (exists2 x : T1, x \in s & y = f x) (y \in [seq f i | i <- s]).
+Check @mapP : forall (T1 T2 : eqType) (f : T1 -> T2) (s : seq T1) (y : T2),
+    reflect (exists2 x : T1, x \in s & y = f x) (y \in [seq f i | i <- s]).
 
 Lemma I3P (i : 'I_3) : I3_spec i
                                (i == inord 0) (i == inord 1) (i == inord 2).
@@ -80,9 +83,10 @@ have の次に変数がないので、証明ができた時点で、ゴールの
 (**
 I3_spec (inord 0) (inord 0 == inord 0) (inord 0 == inord 1) (inord 0 == inord 2)
 *)
-    + rewrite eqxx.
-      do 2 I3_neq.
-      exact: I2_0.
+    + rewrite eqxx.      (* ``inord 0 == inord 0`` を true にする。 *)
+      do 2 I3_neq.       (* ``inord 0 == inord 1`` を false にする。 *)
+      exact: I2_0.       (* I3_spec のコンストラクタ *)
+      
     + rewrite inE => /orP[/eqP ->|].
 (**
 I3_spec (inord 1) (inord 1 == inord 0) (inord 1 == inord 1) (inord 1 == inord 2)
@@ -104,8 +108,9 @@ Qed.
 (**
 # (2) 関数の像は非負実数である。
 
-演算子 ``<b=`` は infotheo.lib.ssrR.leRb で定義されている。
+演算子 ``<b=`` は infotheo.lib.ssrR.leRb で定義されている。不等号である。
  *)
+Check infotheo.lib.ssrR.leRb : R -> R -> bool.
 
 (**
 ffunE は、finfun に対して ``(λx.g(x))(x) = g(x)`` の書き換えをおこなう。
@@ -159,14 +164,17 @@ Proof.
   apply/eqP.
   do 3 rewrite big_ord_recl.
   rewrite big_ord0 addR0 /=.
-  rewrite /f !ffunE /= ifT; last by I3_eq.
-  rewrite ifF; last by I3_neq.
-  rewrite ifT; last by I3_eq.
-  rewrite ifF; last by I3_neq.
-  rewrite ifF; last by I3_neq.
-  rewrite ifT; last by I3_eq.
-    by field.                        (* 1 / 2 + (1 / 3 + 1 / 6) = 1 *)
+  rewrite /f !ffunE /= ifT; last by I3_eq. (* ord0 == inord 0 を true に簡約する。 *)
+  rewrite ifF; last by I3_neq. (* lift ord0 ord0 == inord 0 を false に簡約する。 *)
+  rewrite ifT; last by I3_eq.  (* lift ord0 ord0 == inord 1 を true に簡約する。 *)
+  rewrite ifF; last by I3_neq. (* lift ord0 (lift ord0 ord0) == inord 0 を false *)
+  rewrite ifF; last by I3_neq. (* lift ord0 (lift ord0 ord0) == inord 1 を false *)
+  rewrite ifT; last by I3_eq.  (* lift ord0 (lift ord0 ord0) == inord 2 を treu *)
+    (* goal : 1 / 2 + (1 / 3 + 1 / 6) = 1 *)
+    by field.
 Qed.
+Check ifT.            (* if true then vT else vF を vT に簡約する。 *)
+Check ifF.            (* if false then vT else vF を vF に簡約する。 *)
 
 Local Open Scope proba_scope.
 
@@ -197,11 +205,12 @@ Proof.
   rewrite ifT; last by I3_eq.
   rewrite (_ : INR _ = 3); last first.
   - rewrite S_INR (_ : INR _ = 2) //.
-      by field.                             (* 2 + 1 = 3 *)
+      (* goal : 2 + 1 = 3 *)
+      by field.
   - rewrite /f /= ifF; last by I3_neq.
     rewrite ifF; last by I3_neq.
     rewrite ifT; last by I3_eq.
-      (* 1 / 2 + (2 * (1 / 3) + 3 * (1 / 6)) = 5 / 3 *)
+      (* goal : 1 / 2 + (2 * (1 / 3) + 3 * (1 / 6)) = 5 / 3 *)
       by field.
 Qed.
 
@@ -229,7 +238,8 @@ Proof.
   rewrite ifT; last by I3_eq.
   rewrite (_ : INR _ = 3); last first.
   - rewrite S_INR (_ : INR _ = 2) //.
-      by field.                             (* 2 + 1 = 3 *)
+      (* goal : 2 + 1 = 3 *)
+      by field.
   - rewrite ifF; last by I3_neq.
     rewrite ifF; last by I3_neq.
     rewrite ifT; last by I3_eq.
