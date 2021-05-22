@@ -29,7 +29,7 @@ Unset Strict Implicit.
 Import Prenex Implicits.
 
 Local Open Scope reals_ext_scope.
-Local Open Scope R_scope.                   (* ring scope *)
+Local Open Scope R_scope.          (* 実数スコープ。coq/Reals で定義。 *)
 
 (**
 # (1) 分布は、有限集合上の関数である。
@@ -83,6 +83,8 @@ have の次に変数がないので、証明ができた時点で、ゴールの
 (**
 I3_spec (inord 0) (inord 0 == inord 0) (inord 0 == inord 1) (inord 0 == inord 2)
 *)
+    Check eqxx : forall (T : eqType) (x : T), (x == x). (* = true はコアーション *)
+    Check eqxx : forall (T : eqType) (x : T), (x == x) = true.
     + rewrite eqxx.      (* ``inord 0 == inord 0`` を true にする。 *)
       do 2 I3_neq.       (* ``inord 0 == inord 1`` を false にする。 *)
       exact: I2_0.       (* I3_spec のコンストラクタ *)
