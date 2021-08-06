@@ -46,7 +46,7 @@ Compute (vn 1 == vn 2).
 (**
 object
 *)
-Definition sexp := @star value.
+Definition sexp := star value.
 
 (**
 bottom は、None とする。
@@ -129,8 +129,8 @@ test
 Definition test := Some (S_CONS (S_ATOM (vn 0))
                                 (S_CONS (S_ATOM (vn 1))
                                         (S_CONS
-                                           (S_CONS (S_ATOM (vn 2)) S_NIL)
-                                           S_NIL))).
+                                           (S_CONS (S_ATOM (vn 2)) S_Nil)
+                                           S_Nil))).
 Compute sel 1 test.
 Compute sel 2 test.
 Compute sel 3 test.
@@ -138,11 +138,11 @@ Compute sel 4 test.
 
 Definition test2 := Some (S_CONS (S_ATOM (vn 5))
                                  (S_CONS (S_ATOM (vn 2))
-                                         S_NIL)).
+                                         S_Nil)).
 
 Definition test5 := Some (S_CONS (S_ATOM (vn 5))
                                  (S_CONS (S_ATOM (vn 5))
-                                         S_NIL)).
+                                         S_Nil)).
 
 Compute add test2.                       (* = Some (S_ATOM (vn 7)) *)
 Compute sub test2.                       (* = Some (S_ATOM (vn 3)) *)
