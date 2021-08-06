@@ -28,41 +28,13 @@ Definition eqValue (x y : value) : bool :=
 Lemma value_eqP (x y : value) : reflect (x = y) (eqValue x y).
 Proof.
   apply: (iffP idP).
-  - case: x.
-    + case: y.
-      * move=> b1 b2.
-          by rewrite /eqValue => /eqP ->.
-      * by rewrite /eqValue.
-      * by rewrite /eqValue.
-      * by rewrite /eqValue.
-    + case: y.
-      * by rewrite /eqValue.
-      * move=> n1 n2.
-          by rewrite /eqValue => /eqP ->.
-      * by rewrite /eqValue.
-      * by rewrite /eqValue.
-    + case: y.
-      * by rewrite /eqValue.
-      * by rewrite /eqValue.
-      * move=> c1 c2.
-          by rewrite /eqValue => /eqP ->.
-      * by rewrite /eqValue.
-    + case: y.
-      * by rewrite /eqValue.
-      * by rewrite /eqValue.
-      * by rewrite /eqValue.
-      * move=> s1 s2.
-          by rewrite /eqValue => /eqP ->.
+  - case: x;
+      case: y;
+      rewrite /eqValue //=;
+        by move=> b1 b2 /eqP ->.
   - move=> <-.
-    case: x.
-    + move=> b.
-        by rewrite /eqValue.
-    + move=> n.
-        by rewrite /eqValue.
-    + move=> c.
-        by rewrite /eqValue.
-    + move=> s.
-        by rewrite /eqValue.
+    case: x;
+      by rewrite /eqValue.
 Qed.
 
 Definition value_eqMixin := EqMixin value_eqP.
@@ -76,7 +48,10 @@ object
 *)
 Definition sexp := star value.
 
-(* bottom := None *)
+(**
+bottom は、None とする。
+bottom は、リストの深いところに出現するわけでないことに、気づいてください。
+ *)
 Definition object := option sexp.
 
 (**
@@ -90,7 +65,7 @@ Fixpoint _sel n l : object :=
   | (_, _) => None
   end.
 
-Definition sel n l :=
+Definition sel n (l : object) :=
   match l with
   | Some l => _sel n l
   | None => None
