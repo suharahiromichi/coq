@@ -4,29 +4,28 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Inductive star T : Type :=
+Inductive star {T : Type} : Type :=
 | S_NIL
 | S_ATOM of T
-| S_CONS of star T & star T.
+| S_CONS of star & star.
 
-Fixpoint eqStar {T : eqType} (x y : star T) : bool :=
+Fixpoint eqStar {T : eqType} (x y : star) : bool :=
   match (x, y) with
   | (S_NIL, S_NIL) => true
-  | (S_ATOM a, S_ATOM b) => a == b          (* eqType *)
+  | (S_ATOM a, S_ATOM b) => (a == b :> T)   (* eqType *)
   | (S_CONS x1 y1, S_CONS x2 y2) => eqStar x1 x2 && eqStar y1 y2
   | _ => false
   end.
 
-Lemma eqCons {T : eqType} (x y x' y' : star T) :
+Lemma eqCons {T : eqType} (x y x' y' : star) :
   (x = x' /\ y = y') -> @S_CONS T x y = @S_CONS T x' y'.
 Proof.
   case=> Hx Hy.
     by rewrite Hx Hy.
 Qed.
 
-Lemma star_eqP : forall (T : eqType) (x y : star T), reflect (x = y) (eqStar x y).
+Lemma star_eqP (T : eqType) (x y : star) : reflect (x = y) (@eqStar T x y).
 Proof.
-  move=> T x y.
   apply: (iffP idP).
   - elim: x y.
     + by elim.
@@ -35,8 +34,7 @@ Proof.
         by move/eqP => <-.
     + move=> x Hx y Hy.
       elim=> //=.
-      move=> x' IHx y' IHy.
-      move/andP.
+      move=> x' IHx y' IHy /andP.
       case=> Hxx' Hyy'.
       apply: eqCons.
       split.
@@ -49,6 +47,6 @@ Proof.
 Qed.
 
 Definition star_eqMixin (T : eqType) := EqMixin (@star_eqP T).
-Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
+Canonical star_eqType (T : eqType) := EqType (star) (star_eqMixin T).
 
 (* END *)
