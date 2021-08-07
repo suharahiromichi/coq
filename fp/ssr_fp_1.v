@@ -139,8 +139,8 @@ Section Test.
 Definition test := Some (S_CONS (S_ATOM (Basic.v_n 0))
                                 (S_CONS (S_ATOM (Basic.v_n 1))
                                         (S_CONS
-                                           (S_CONS (S_ATOM (Basic.v_n 2)) S_Nil)
-                                           S_Nil))).
+                                           (S_CONS (S_ATOM (Basic.v_n 2)) S_NIL)
+                                           S_NIL))).
 Compute Basic.sel 1 test.
 Compute Basic.sel 2 test.
 Compute Basic.sel 3 test.
@@ -148,11 +148,11 @@ Compute Basic.sel 4 test.
 
 Definition test2 := Some (S_CONS (S_ATOM (Basic.v_n 5))
                                  (S_CONS (S_ATOM (Basic.v_n 2))
-                                         S_Nil)).
+                                         S_NIL)).
 
 Definition test5 := Some (S_CONS (S_ATOM (Basic.v_n 5))
                                  (S_CONS (S_ATOM (Basic.v_n 5))
-                                         S_Nil)).
+                                         S_NIL)).
 
 Compute Basic.add test2.                (* = Some (S_ATOM (v_n 7)) *)
 Compute Basic.sub test2.                (* = Some (S_ATOM (v_n 3)) *)
@@ -172,7 +172,7 @@ Section FROM_TO_SEQ.
 
 Fixpoint _from_list_bool (l : seq bool) : Basic.sexp :=
   match l with
-  | [::] => S_Nil
+  | [::] => S_NIL
   | a :: l => (S_CONS (S_ATOM (Basic.v_b a)) (_from_list_bool l))
   end.
 Definition from_list_bool (l : seq bool) : Basic.object :=
@@ -182,7 +182,7 @@ Definition from_bool (x : bool) : Basic.object :=
 
 Fixpoint _from_list_nat (l : seq nat) : Basic.sexp :=
   match l with
-  | [::] => S_Nil
+  | [::] => S_NIL
   | a :: l => (S_CONS (S_ATOM (Basic.v_n a)) (_from_list_nat l))
   end.
 Definition from_list_nat (l : seq nat) : Basic.object :=
@@ -192,7 +192,7 @@ Definition from_nat (x : nat) : Basic.object :=
 
 Fixpoint _from_list_ascii (l : seq ascii) : Basic.sexp :=
   match l with
-  | [::] => S_Nil
+  | [::] => S_NIL
   | a :: l => (S_CONS (S_ATOM (Basic.v_c a)) (_from_list_ascii l))
   end.
 Definition from_list_ascii (l : seq ascii) : Basic.object :=
@@ -202,7 +202,7 @@ Definition from_asicc (x : ascii) : Basic.object :=
 
 Fixpoint _from_list_string (l : seq string) : Basic.sexp :=
   match l with
-  | [::] => S_Nil
+  | [::] => S_NIL
   | a :: l => (S_CONS (S_ATOM (Basic.v_s a)) (_from_list_string l))
   end.
 Definition from_list_string (l : seq string) : Basic.object :=
@@ -212,7 +212,7 @@ Definition from_string (x : string) : Basic.object :=
 
 Fixpoint _from_list_list_nat (l : seq (seq nat)) : Basic.sexp :=
   match l with
-  | [::] => S_Nil
+  | [::] => S_NIL
   | a :: l => (S_CONS (_from_list_nat a) (_from_list_list_nat l))
   end.
 Definition from_list_list_nat (l : seq (seq nat)) : Basic.object :=
@@ -290,10 +290,10 @@ Inductive program :=
         
 Fixpoint ApplyInsert (p : intrinsics) (x : Basic.sexp) : Basic.object :=
   match x with
-  | S_CONS x S_Nil => Some x
+  | S_CONS x S_NIL => Some x
   | S_CONS x1 x2 =>
     match (ApplyInsert p x2) with
-    | Some y2 => ApplyIntrin p (Some (S_CONS x1 (S_CONS y2 S_Nil)))
+    | Some y2 => ApplyIntrin p (Some (S_CONS x1 (S_CONS y2 S_NIL)))
     | _ => None
     end
   | _ => None
@@ -301,7 +301,7 @@ Fixpoint ApplyInsert (p : intrinsics) (x : Basic.sexp) : Basic.object :=
 
 Fixpoint ApplyAll (p : intrinsics) (x : Basic.sexp) : Basic.object :=
   match x with
-  | S_Nil => Some S_Nil
+  | S_NIL => Some S_NIL
   | S_CONS x1 x2 =>
     match (ApplyIntrin p (Some x1)) with
     | Some y1 =>
@@ -340,7 +340,7 @@ Fixpoint Apply (p : program) (x : Basic.object) : Basic.object :=
       end
     | _ => None
     end
-  | none => Some S_Nil                      (* constr の基底 *)
+  | none => Some S_NIL                      (* constr の基底 *)
   | condit p1 p2 p3 =>
     match (Apply p1 x) with
     | Some (S_ATOM (Basic.v_b a)) =>
@@ -396,7 +396,7 @@ Definition test4 :=
             (S_CONS (S_ATOM (Basic.v_n 2))
                (S_CONS (S_ATOM (Basic.v_n 3))
                   (S_CONS (S_ATOM (Basic.v_n 4))
-                     (S_CONS (S_ATOM (Basic.v_n 5)) (S_NIL Basic.value)))))).
+                     (S_CONS (S_ATOM (Basic.v_n 5)) S_NIL))))).
 
 
 Goal Apply (insert (intrin add)) test4 = Some (S_ATOM (Basic.v_n 15)).

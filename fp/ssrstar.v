@@ -49,6 +49,6 @@ Qed.
 Definition star_eqMixin (T : eqType) := EqMixin (@star_eqP T).
 Canonical star_eqType (T : eqType) := EqType (star T) (star_eqMixin T).
 
-Notation S_Nil := (@S_NIL _) (only parsing).
+Arguments S_NIL [T].
 
 (* END *)
