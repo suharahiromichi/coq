@@ -240,7 +240,7 @@ Qed.
  *)
 Coercion is_object_true (x : Basic.object) : bool :=
   match x with
-  | Some (S_CONS (S_ATOM (Basic.v_b a)) S_NIL) => a
+  | Some (S_ATOM (Basic.v_b a)) => a
   | _ => false
   end.
 
@@ -265,13 +265,45 @@ Inductive intrinsics :=
 | equals
 .
 
+Fixpoint ApplyIntrin p x :=
+  match p with
+  | add => Basic.add x
+  | sub => Basic.sub x
+  | mul => Basic.mul x
+  | div => Basic.div x
+  | atom => Basic.atom x
+  | equals => Basic.equals x
+  end.
+
 Inductive program :=
 | intrin of intrinsics
 | compos of program & program
 | constr of program & program
 | none                                      (* constr の基底 *)
+| condit of program & program & program
+| const  of Basic.object
+| insert of program
 .
         
+Fixpoint ApplyInsert (p : intrinsics) (x : Basic.sexp) : Basic.object :=
+  match x with
+  | S_CONS x S_Nil => Some x
+  | S_CONS x1 x2 =>
+    match (ApplyInsert p x2) with
+    | Some y2 => ApplyIntrin p (Some (S_CONS x1 (S_CONS y2 S_Nil)))
+    | _ => None
+    end
+(*
+  | S_CONS (S_ATOM (Basic.v_n x1)) x2 =>
+      match (ApplyInsert p x2) with
+      | Some (S_ATOM (Basic.v_n y2)) =>
+        Some (S_ATOM (Basic.v_n (x1 + y2)))
+      | _ => None
+      end
+*)
+  | _ => None
+  end.
+
 Fixpoint Apply (p : program) (x : Basic.object) : Basic.object :=
   match p with
   | intrin add => Basic.add x
@@ -280,7 +312,11 @@ Fixpoint Apply (p : program) (x : Basic.object) : Basic.object :=
   | intrin div => Basic.div x
   | intrin atom => Basic.atom x
   | intrin equals => Basic.equals x
-  | compos p1 p2 => Apply p1 (Apply p2 x)
+  | compos p1 p2 =>
+    match (Apply p2 x) with
+    | Some y => Apply p1 (Some y)
+    | _ => None
+    end
   | constr p1 p2 =>
     match x with
     | Some (S_CONS x1 x2) =>
@@ -295,6 +331,19 @@ Fixpoint Apply (p : program) (x : Basic.object) : Basic.object :=
     | _ => None
     end
   | none => Some S_Nil                      (* constr の基底 *)
+  | condit p1 p2 p3 =>
+    match (Apply p1 x) with
+    | Some (S_ATOM (Basic.v_b a)) =>
+      if a then Apply p2 x else Apply p3 x
+    | _ => None
+    end
+  | const x => x                            (* None なら None *)
+  | insert (intrin p) =>                    (* intrinsics に限定する！！！ *)
+    match x with
+    | Some x => ApplyInsert p x
+    | _ => None
+    end
+  | _ => None
   end.
 
 Definition test3 := from_list_list_nat [:: [:: 1; 2]; [:: 1; 2]].
@@ -303,11 +352,45 @@ Compute Apply (constr (intrin add)
                       (constr (intrin add)
                               none))
         test3.
+Compute Apply (constr (intrin sub)
+                      (constr (intrin sub)
+                              none))
+        test3.
 Compute Apply (compos (intrin equals)
                       (constr (intrin add)
                               (constr (intrin add)
                                       none)))
         test3.
+Compute Apply (condit (compos (intrin equals)
+                              (constr (intrin add)
+                                      (constr (intrin add)
+                                              none)))
+                      (constr (intrin sub)
+                              (constr (intrin sub)
+                                      none))
+                      (constr (intrin mul)
+                              (constr (intrin mul)
+                                      none)))
+        test3.
+
+(* Definition test4 := from_list_nat [:: 1; 2; 3; 4; 5].*)
+Compute from_list_nat [:: 1; 2; 3; 4; 5].
+Definition test4 :=
+  Some
+         (S_CONS (S_ATOM (Basic.v_n 1))
+            (S_CONS (S_ATOM (Basic.v_n 2))
+               (S_CONS (S_ATOM (Basic.v_n 3))
+                  (S_CONS (S_ATOM (Basic.v_n 4))
+                     (S_CONS (S_ATOM (Basic.v_n 5)) (S_NIL Basic.value)))))).
+
+
+Goal Apply (insert (intrin add)) test4 = Some (S_ATOM (Basic.v_n 15)).
+Proof.
+  rewrite /Apply /test4.
+  rewrite /ApplyInsert.
+  rewrite /ApplyIntrin.
+  rewrite [(1 + (2 + (3 + (4 + 5))))]//.  
+Qed.
 
 End Program.
 
