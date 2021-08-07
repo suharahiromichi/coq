@@ -12,8 +12,8 @@ Unset Printing Implicit Defensive.
 
 (**
 # FPの定義
-*)
-Section DEF_FP.
+ *)
+Module Basic.
 
 (**
 ## value
@@ -63,8 +63,8 @@ bottom は、リストの深いところに出現するわけでないことに�
 Definition object := option sexp.
 
 (**
-## Intrinsic
-*)
+# Intrinsic
+ *)
 Fixpoint _sel n l : object :=
   match (n, l) with
   | (1, S_CONS t l) => Some t
@@ -128,91 +128,92 @@ Definition equals (l : object) :=
   | _ => None
   end.
 
-End DEF_FP.
+End Basic.
 
 (**
 # test
 *)
 
-Definition test := Some (S_CONS (S_ATOM (v_n 0))
-                                (S_CONS (S_ATOM (v_n 1))
+Section Test.
+
+Definition test := Some (S_CONS (S_ATOM (Basic.v_n 0))
+                                (S_CONS (S_ATOM (Basic.v_n 1))
                                         (S_CONS
-                                           (S_CONS (S_ATOM (v_n 2)) S_Nil)
+                                           (S_CONS (S_ATOM (Basic.v_n 2)) S_Nil)
                                            S_Nil))).
-Compute sel 1 test.
-Compute sel 2 test.
-Compute sel 3 test.
-Compute sel 4 test.
+Compute Basic.sel 1 test.
+Compute Basic.sel 2 test.
+Compute Basic.sel 3 test.
+Compute Basic.sel 4 test.
 
-Definition test2 := Some (S_CONS (S_ATOM (v_n 5))
-                                 (S_CONS (S_ATOM (v_n 2))
+Definition test2 := Some (S_CONS (S_ATOM (Basic.v_n 5))
+                                 (S_CONS (S_ATOM (Basic.v_n 2))
                                          S_Nil)).
 
-Definition test5 := Some (S_CONS (S_ATOM (v_n 5))
-                                 (S_CONS (S_ATOM (v_n 5))
+Definition test5 := Some (S_CONS (S_ATOM (Basic.v_n 5))
+                                 (S_CONS (S_ATOM (Basic.v_n 5))
                                          S_Nil)).
 
-Compute add test2.                       (* = Some (S_ATOM (v_n 7)) *)
-Compute sub test2.                       (* = Some (S_ATOM (v_n 3)) *)
-Compute mul test2.                       (* = Some (S_ATOM (v_n 10)) *)
-Compute div test2.                       (* = Some (S_ATOM (v_n 2)) *)
+Compute Basic.add test2.                (* = Some (S_ATOM (v_n 7)) *)
+Compute Basic.sub test2.                (* = Some (S_ATOM (v_n 3)) *)
+Compute Basic.mul test2.                (* = Some (S_ATOM (v_n 10)) *)
+Compute Basic.div test2.                (* = Some (S_ATOM (v_n 2)) *)
 
-Compute atom test2.                   (* = Some (S_ATOM (v_b false)) *)
-Compute equals test2.                 (* = Some (S_ATOM (v_b false)) *)
-
-Compute equals test5.                 (* = Some (S_ATOM (v_b true)) *)
+Compute Basic.atom test2.            (* = Some (S_ATOM (v_b false)) *)
+Compute Basic.equals test2.          (* = Some (S_ATOM (v_b false)) *)
+Compute Basic.equals test5.           (* = Some (S_ATOM (v_b true)) *)
 
 (**
 # seq to object
 *)
 Section FROM_TO_SEQ.
 
-Fixpoint _from_list_bool (l : seq bool) : sexp :=
+Fixpoint _from_list_bool (l : seq bool) : Basic.sexp :=
   match l with
   | [::] => S_Nil
-  | a :: l => (S_CONS (S_ATOM (v_b a)) (_from_list_bool l))
+  | a :: l => (S_CONS (S_ATOM (Basic.v_b a)) (_from_list_bool l))
   end.
-Definition from_list_bool (l : seq bool) : object :=
+Definition from_list_bool (l : seq bool) : Basic.object :=
   Some (_from_list_bool l).
-Definition from_bool (x : bool) : object :=
-  Some (S_ATOM (v_b x)).
+Definition from_bool (x : bool) : Basic.object :=
+  Some (S_ATOM (Basic.v_b x)).
 
-Fixpoint _from_list_nat (l : seq nat) : sexp :=
+Fixpoint _from_list_nat (l : seq nat) : Basic.sexp :=
   match l with
   | [::] => S_Nil
-  | a :: l => (S_CONS (S_ATOM (v_n a)) (_from_list_nat l))
+  | a :: l => (S_CONS (S_ATOM (Basic.v_n a)) (_from_list_nat l))
   end.
-Definition from_list_nat (l : seq nat) : object :=
+Definition from_list_nat (l : seq nat) : Basic.object :=
   Some (_from_list_nat l).
-Definition from_nat (x : nat) : object :=
-  Some (S_ATOM (v_n x)).
+Definition from_nat (x : nat) : Basic.object :=
+  Some (S_ATOM (Basic.v_n x)).
 
-Fixpoint _from_list_ascii (l : seq ascii) : sexp :=
+Fixpoint _from_list_ascii (l : seq ascii) : Basic.sexp :=
   match l with
   | [::] => S_Nil
-  | a :: l => (S_CONS (S_ATOM (v_c a)) (_from_list_ascii l))
+  | a :: l => (S_CONS (S_ATOM (Basic.v_c a)) (_from_list_ascii l))
   end.
-Definition from_list_ascii (l : seq ascii) : object :=
+Definition from_list_ascii (l : seq ascii) : Basic.object :=
   Some (_from_list_ascii l).
-Definition from_asicc (x : ascii) : object :=
-  Some (S_ATOM (v_c x)).
+Definition from_asicc (x : ascii) : Basic.object :=
+  Some (S_ATOM (Basic.v_c x)).
 
-Fixpoint _from_list_string (l : seq string) : sexp :=
+Fixpoint _from_list_string (l : seq string) : Basic.sexp :=
   match l with
   | [::] => S_Nil
-  | a :: l => (S_CONS (S_ATOM (v_s a)) (_from_list_string l))
+  | a :: l => (S_CONS (S_ATOM (Basic.v_s a)) (_from_list_string l))
   end.
-Definition from_list_string (l : seq string) : object :=
+Definition from_list_string (l : seq string) : Basic.object :=
   Some (_from_list_string l).
-Definition from_string (x : string) : object :=
-  Some (S_ATOM (v_s x)).
+Definition from_string (x : string) : Basic.object :=
+  Some (S_ATOM (Basic.v_s x)).
 
-Fixpoint _from_list_list_nat (l : seq (seq nat)) : sexp :=
+Fixpoint _from_list_list_nat (l : seq (seq nat)) : Basic.sexp :=
   match l with
   | [::] => S_Nil
   | a :: l => (S_CONS (_from_list_nat a) (_from_list_list_nat l))
   end.
-Definition from_list_list_nat (l : seq (seq nat)) : object :=
+Definition from_list_list_nat (l : seq (seq nat)) : Basic.object :=
   Some (_from_list_list_nat l).
 
 Compute from_list_nat [:: 1; 2].
@@ -225,11 +226,11 @@ End FROM_TO_SEQ.
 *)
 Section LEMMAS.
 
-Compute add (from_list_nat [:: 3; 5]).
-Compute add (sel 1 (from_list_list_nat [:: [:: 1; 2]; [:: 1; 2]])).
-Compute add (sel 2 (from_list_list_nat [:: [:: 1; 2]; [:: 1; 2]])).
+Compute Basic.add (from_list_nat [:: 3; 5]).
+Compute Basic.add (Basic.sel 1 (from_list_list_nat [:: [:: 1; 2]; [:: 1; 2]])).
+Compute Basic.add (Basic.sel 2 (from_list_list_nat [:: [:: 1; 2]; [:: 1; 2]])).
 
-Lemma add_ok x y : add (from_list_nat [:: x; y]) = from_nat (x + y).
+Lemma add_ok x y : Basic.add (from_list_nat [:: x; y]) = from_nat (x + y).
 Proof.
   done.
 Qed.  
@@ -237,17 +238,77 @@ Qed.
 (**
 ## object の T は、bool の true とみなす。
  *)
-Coercion is_object_true (x : object) : bool :=
+Coercion is_object_true (x : Basic.object) : bool :=
   match x with
-  | Some (S_CONS (S_ATOM (v_b a)) S_NIL) => a
+  | Some (S_CONS (S_ATOM (Basic.v_b a)) S_NIL) => a
   | _ => false
   end.
 
-Lemma equals_ok x : equals (from_list_nat [:: x; x]).
+Lemma equals_ok x : Basic.equals (from_list_nat [:: x; x]).
 Proof.
   done.
 Qed.
 
 End LEMMAS.
+
+(**
+# FPの定義 3
+ *)
+Section Program.
+
+Inductive intrinsics :=
+| add
+| sub
+| mul
+| div
+| atom
+| equals
+.
+
+Inductive program :=
+| intrin of intrinsics
+| compos of program & program
+| constr of program & program
+| none                                      (* constr の基底 *)
+.
+        
+Fixpoint Apply (p : program) (x : Basic.object) : Basic.object :=
+  match p with
+  | intrin add => Basic.add x
+  | intrin sub => Basic.sub x
+  | intrin mul => Basic.mul x
+  | intrin div => Basic.div x
+  | intrin atom => Basic.atom x
+  | intrin equals => Basic.equals x
+  | compos p1 p2 => Apply p1 (Apply p2 x)
+  | constr p1 p2 =>
+    match x with
+    | Some (S_CONS x1 x2) =>
+      match Apply p1 (Some x1) with
+      | Some y1 =>
+        match Apply p2 (Some x2) with
+        | Some y2 => Some (S_CONS y1 y2)
+        | None => None
+        end
+      | _ => None
+      end
+    | _ => None
+    end
+  | none => Some S_Nil                      (* constr の基底 *)
+  end.
+
+Definition test3 := from_list_list_nat [:: [:: 1; 2]; [:: 1; 2]].
+
+Compute Apply (constr (intrin add)
+                      (constr (intrin add)
+                              none))
+        test3.
+Compute Apply (compos (intrin equals)
+                      (constr (intrin add)
+                              (constr (intrin add)
+                                      none)))
+        test3.
+
+End Program.
 
 (* END *)
