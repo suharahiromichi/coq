@@ -163,6 +163,8 @@ Compute Basic.atom test2.            (* = Some (S_ATOM (v_b false)) *)
 Compute Basic.equals test2.          (* = Some (S_ATOM (v_b false)) *)
 Compute Basic.equals test5.           (* = Some (S_ATOM (v_b true)) *)
 
+End Test.
+
 (**
 # seq to object
 *)
@@ -283,6 +285,7 @@ Inductive program :=
 | condit of program & program & program
 | const  of Basic.object
 | insert of program
+| alpha of program                          (* apply all *)
 .
         
 Fixpoint ApplyInsert (p : intrinsics) (x : Basic.sexp) : Basic.object :=
@@ -293,14 +296,21 @@ Fixpoint ApplyInsert (p : intrinsics) (x : Basic.sexp) : Basic.object :=
     | Some y2 => ApplyIntrin p (Some (S_CONS x1 (S_CONS y2 S_Nil)))
     | _ => None
     end
-(*
-  | S_CONS (S_ATOM (Basic.v_n x1)) x2 =>
-      match (ApplyInsert p x2) with
-      | Some (S_ATOM (Basic.v_n y2)) =>
-        Some (S_ATOM (Basic.v_n (x1 + y2)))
+  | _ => None
+  end.
+
+Fixpoint ApplyAll (p : intrinsics) (x : Basic.sexp) : Basic.object :=
+  match x with
+  | S_Nil => Some S_Nil
+  | S_CONS x1 x2 =>
+    match (ApplyIntrin p (Some x1)) with
+    | Some y1 =>
+      match (ApplyAll p x2) with
+      | Some y2 => Some (S_CONS y1 y2)
       | _ => None
       end
-*)
+    | _ => None
+    end
   | _ => None
   end.
 
@@ -341,6 +351,11 @@ Fixpoint Apply (p : program) (x : Basic.object) : Basic.object :=
   | insert (intrin p) =>                    (* intrinsics に限定する！！！ *)
     match x with
     | Some x => ApplyInsert p x
+    | _ => None
+    end
+  | alpha (intrin p) =>
+    match x with
+    | Some x => ApplyAll p x
     | _ => None
     end
   | _ => None
@@ -390,6 +405,12 @@ Proof.
   rewrite /ApplyInsert.
   rewrite /ApplyIntrin.
   rewrite [(1 + (2 + (3 + (4 + 5))))]//.  
+Qed.
+
+Goal Apply (alpha (intrin atom)) test4 = from_list_bool [:: true; true; true; true; true].
+Proof.
+  rewrite /Apply /test4.
+  done.
 Qed.
 
 End Program.
