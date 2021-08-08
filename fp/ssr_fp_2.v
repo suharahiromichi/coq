@@ -75,8 +75,8 @@ Section Compile.
     | intrin (sel n) => [:: iSel n]
     | compos p1 p2 => compile p2 ++ [:: iDDrp; iStoD] ++ compile p1
     | constr l =>
-      flatten (map (fun q => [:: iDDup] ++ compile q ++ [:: iDDrp]) l)
-              ++ [:: iList (size l)]
+      flatten (map (fun q => [:: iDDup] ++ compile q (* ++ [:: iDDrp] *)) l)
+              ++ [:: iList (size l)]                 (* ↑これを消すとサンプルはOK *)
     | _ => [::]
     end.
   
@@ -107,7 +107,7 @@ Section Test.
            iDDrp;
 
            iStoD; iAdd; iDDrp;
-
+(* --------------------- ここで d が空になる。 ---------------- *)
            iDDup;
                iDDup; iSel 2; iDDrp;
                iDDup; iSel 1; iDDrp;
@@ -122,5 +122,34 @@ Section Test.
            iStoD; iAdd].
 
 End Test.
+
+Section Emulator.
+  Fixpoint scd (c : code) (d s : seq data) {struct c} :=
+    match (c, d, s) with
+    | (iAdd :: c,   v_l [:: v_n n2; v_n n1] :: d, s) => scd c d   (v_n (n1 + n2) :: s)
+    | (iSel n :: c, (v_l e) :: d,                 s) =>
+      scd c ((v_l e) :: d) (nth (v_n 0) e n.-1 :: s)
+(*
+    | (iSel 1 :: c, (v_l (v :: e)) :: d,              s) => scd c d               (v :: s)
+    | (iSel 2 :: c, (v_l (v1 :: v2 :: e)) :: d,       s) => scd c d              (v2 :: s)
+*)
+    | (iDDup :: c,        e :: d,                     s) => scd c (e :: e :: d)         s
+    | (iDDrp :: c,        e :: d,                     s) => scd c d                     s
+    | (iStoD :: c,             d,                e :: s) => scd c (e :: d)              s
+    | (iList 2 :: c,           d,         v2 :: v1 :: s) => scd c d (v_l [:: v1; v2] :: s)
+    | (iList 1 :: c,           d,               v1 :: s) => scd c d     (v_l [:: v1] :: s)
+    | ([::],                   _,                v :: s) => ([::], [::], v :: s)
+    | (c, e, s) => (c, e, s)
+    end.
+
+(*
+  Compute scd [:: iDDup; iSel 2; iDDrp; iDDup; iSel 1; iDDrp; iList 2; iDDrp; iStoD; iAdd]
+    [:: v_l [:: v_n 1; v_n 2]] [::].
+ *)
+
+  Compute scd (compile p1) [:: v_l [:: v_n 1; v_n 2]] [::].
+  Compute scd (compile p2) [:: v_l [:: v_n 1; v_n 2]] [::].  
+
+End Emulator.
 
 (* END *)
