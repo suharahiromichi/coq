@@ -37,7 +37,7 @@ Section Data.
 
 End Data.
 
-Section Compile.
+Section Program.
 
   Inductive instr :=
   | iAdd
@@ -61,10 +61,64 @@ Section Compile.
   | compos of program & program
   | constr of seq program
   | condit of program & program & program
-  | insert of program
-  | alpha of program                        (* apply all *)
+  | insert of program                       (* foldr *)
+  | alpha of program                        (* map / apply all *)
   .    
 
+End Program.
+
+Definition VN99 := v_n 99.
+
+Section Evaluator.
+
+  Require Import Recdef.
+  Function fold f (l : seq data) {measure size l} :=
+    match l with
+    | [::] => VN99
+    | [:: x] => x
+    | x :: y :: l => f x (fold f (y :: l))
+    end.
+  Proof.
+      by move=> _ l1 x l2 y l3 IHl1 IHl2.
+  Qed.
+  
+(**
+map と fold を使うと、相互再帰にしなくても済む。
+*)
+  Fixpoint Apply (p : program) (x : data) : data :=
+    match p with
+    | intrin add =>
+      match x with
+      | v_l [:: v_n x; v_n y] => v_n (x + y)
+      | _ => VN99
+      end
+    | intrin (sel n) =>
+      match x with
+      | v_l l => nth VN99 l n.-1
+      | _ => VN99
+      end
+    | constr ps => v_l (map (fun p => Apply p x) ps)
+    | condit p1 p2 p3 =>
+      match (Apply p1 x) with
+      | v_n 1  => Apply p2 x
+      | _ => Apply p3 x
+      end
+    | insert p =>
+      match x with
+      | v_l l => fold (fun x y => Apply p (v_l [:: x; y])) l
+      | _ => VN99
+      end
+    | alpha p =>
+      match x with
+      | v_l l => v_l (map (fun x => Apply p x) l)
+      | _ => VN99
+      end
+    | _ => VN99
+    end.
+  
+End Evaluator.
+
+Section Compile.
 (**
 プログラムの引数は D に、結果は S に置かれる。
 *)
@@ -80,6 +134,10 @@ Section Compile.
     | _ => [::]
     end.
   
+(**
+mapall (alpha) や foldr (insert) は、
+Dのデータのサイズで動作を変えるインストラクションを追加する必要がある
+*)
 End Compile.
 
 Section Test.
@@ -121,8 +179,6 @@ Section Test.
            iStoD; iAdd].
 
 End Test.
-
-Definition VN99 := v_n 99.
 
 Section Emulator.
   Fixpoint scd (c : code) (d s : seq data) {struct c} :=
