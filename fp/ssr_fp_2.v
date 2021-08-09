@@ -1,6 +1,6 @@
 From mathcomp Require Import all_ssreflect.
 Require Import ssrstring.                   (* Ascii String *)
-Require Import ssrstar.                     (* S-EXP *)
+Require Import Recdef.                      (* Function *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -21,21 +21,32 @@ Section Map2.
 
 End Map2.
 
-Section Data.
+Section Sexp.
 
-  Inductive data :=
+  Inductive sexp :=
   | v_n of nat
-  | v_l of seq data.
+  | v_b of bool
+  | v_l of seq sexp.
 
-  Fail Fixpoint eqData (x y : data) : bool :=
+  Function ssize (l : sexp) : nat :=
+    match l with
+    | v_n _ => 1
+    | v_b _ => 1
+    | v_l l => (foldr (fun x y => addn (ssize x) y) 0 l).+1
+    end.
+
+  Compute ssize (v_n 0).                    (* 1 *)
+  Compute ssize (v_l [:: v_n  0]).          (* 2 *)
+  
+  Fail Function eqSexp (x y : sexp) {measure ssize x} : bool :=
     match (x, y) with
     | (v_n x, v_n y) => x == y
     | (v_l x, v_l y) => foldr andb true
-                              (map2 (fun x1 y1 => eqData x1 y1) x y)
+                              (map2 (fun x1 y1 => eqSexp x1 y1) x y)
     | (_, _) => false
     end.
-
-End Data.
+  
+End Sexp.
 
 Section Program.
 
@@ -59,7 +70,9 @@ Section Program.
   Inductive program :=
   | intrin of intrinsics
   | compos of program & program
-  | constr of seq program
+  | none                                    (* constr' の基底 *)
+  | constr' of program & program            (* XXX evaluator XXX *)
+  | constr of seq program                   (* XXX compiler XXX *)
   | condit of program & program & program
   | insert of program                       (* foldr *)
   | alpha of program                        (* map / apply all *)
@@ -71,49 +84,100 @@ Definition VN99 := v_n 99.
 
 Section Evaluator.
 
-  Require Import Recdef.
-  Function fold f (l : seq data) {measure size l} :=
+  (* notu *)
+  Function ApplyMapC f (ps : seq program) {measure size ps} : option sexp :=
+    match ps with
+    | [::] => Some (v_l [::])
+    | p1 :: p2 =>
+      match f p1 with
+      | Some y1 =>
+        match ApplyMapC f p2 with
+        | Some (v_l y2) => Some (v_l (y1 :: y2))
+        | _ => None
+        end
+      | _ => None
+      end
+    end.
+  Proof.
+      by move=> f l1 x1 x2 IH1 y1 IH2.
+  Qed.
+  
+  Function ApplyFold f (l : seq sexp) {measure size l} : option sexp :=
     match l with
-    | [::] => VN99
-    | [:: x] => x
-    | x :: y :: l => f x (fold f (y :: l))
+    | [::] => None
+    | [:: x] => Some x
+    | x :: y :: l =>
+      match ApplyFold f (y :: l) with
+      | Some v => f x v
+      | _ => None
+      end
     end.
   Proof.
       by move=> _ l1 x l2 y l3 IHl1 IHl2.
   Qed.
   
+  Function ApplyMapA f (l : seq sexp) {measure size l} : option sexp :=
+    match l with
+    | [::] => Some (v_l [::])
+    | x1 :: x2 =>
+      match f x1 with
+      | Some y1 =>
+        match ApplyMapA f x2 with
+        | Some (v_l y2) => Some (v_l (y1 :: y2))
+        | _ => None
+        end
+      | _ => None
+      end
+    end.
+  Proof.
+      by move=> f l1 x1 x2 IH1 y1 IH2.
+  Qed.
+  
 (**
 map と fold を使うと、相互再帰にしなくても済む。
 *)
-  Fixpoint Apply (p : program) (x : data) : data :=
+  Fixpoint Apply (p : program) (x : sexp) {struct p} : option sexp :=
     match p with
     | intrin add =>
       match x with
-      | v_l [:: v_n x; v_n y] => v_n (x + y)
-      | _ => VN99
+      | v_l [:: v_n x; v_n y] => Some (v_n (x + y))
+      | _ => None
       end
     | intrin (sel n) =>
       match x with
-      | v_l l => nth VN99 l n.-1
-      | _ => VN99
+      | v_l l => Some (nth VN99 l n.-1)
+      | _ => None
       end
-    | constr ps => v_l (map (fun p => Apply p x) ps)
+    | none => Some (v_l [::])               (* constr' の基底 *)
+    | constr' p1 p2 =>
+      match Apply p1 x with
+      | Some y1 =>
+        match Apply p2 x with
+        | Some (v_l y2) => Some (v_l (y1 :: y2))
+        | _ => None
+        end
+      | _ => None
+      end
+(*
+    | constr ps => ApplyMapC (fun p => Apply p x) ps
+*)      
     | condit p1 p2 p3 =>
       match (Apply p1 x) with
-      | v_n 1  => Apply p2 x
-      | _ => Apply p3 x
+      | Some (v_b true) => Apply p2 x
+      | Some (v_b false) => Apply p3 x
+      | _ => None
       end
     | insert p =>
       match x with
-      | v_l l => fold (fun x y => Apply p (v_l [:: x; y])) l
-      | _ => VN99
+      | v_l l => ApplyFold (fun x y => Apply p (v_l [:: x; y])) l
+      | _ => None
       end
     | alpha p =>
       match x with
-      | v_l l => v_l (map (fun x => Apply p x) l)
-      | _ => VN99
+      | v_l l => ApplyMapA (fun x => Apply p x) l
+      | _ => None
       end
-    | _ => VN99
+    | _ => None
     end.
   
 End Evaluator.
@@ -181,7 +245,7 @@ Section Test.
 End Test.
 
 Section Emulator.
-  Fixpoint scd (c : code) (d s : seq data) {struct c} :=
+  Fixpoint scd (c : code) (d s : seq sexp) {struct c} :=
     match (c, d, s) with
     | (iAdd :: c', v_l [:: v_n n2; v_n n1] :: d', s') => scd c' d  (v_n  (n1 + n2) :: s')
     | (iSel n :: c',               (v_l e) :: d', s') => scd c' d    (nth VN99 e n :: s')
