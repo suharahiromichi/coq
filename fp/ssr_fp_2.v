@@ -38,7 +38,7 @@ Section Sexp.
   Compute ssize (v_n 0).                    (* 1 *)
   Compute ssize (v_l [:: v_n  0]).          (* 2 *)
   
-  Fail Function eqSexp (x y : sexp) {measure ssize x} : bool :=
+  Fail Fixpoint eqSexp (x y : sexp) {struct x} : bool :=
     match (x, y) with
     | (v_n x, v_n y) => x == y
     | (v_l x, v_l y) => foldr andb true
@@ -285,62 +285,5 @@ Section Emulator.
 
 End Emulator.
 
-Section Step.
-
-  Inductive ns : option sexp -> program -> option sexp -> Prop :=
-  | ns_add_ok x y :
-      ns (Some (v_l [:: v_n x; v_n y]))
-         (intrin add)
-         (Some (v_n (x + y)))
-  | ns_sel_ok l n :
-      ns (Some (v_l l))
-         (intrin (sel n))
-         (Some (nth VN99 l n.-1))
-  | ns_constr x ps y :
-      ns_mapc (Some x) ps (Some y) ->
-      ns (Some x)
-         (constr ps)
-         (Some (v_l y))
-  | ns_condit_true x p1 p2 p3 y :
-      ns (Some x) p1 (Some (v_b true)) ->
-      ns (Some x) p2 (Some y) ->
-      ns (Some x) (condit p1 p2 p3) (Some y)
-  | ns_condit_false x p1 p2 p3 y :
-      ns (Some x) p1 (Some (v_b false)) ->
-      ns (Some x) p3 (Some y) ->
-      ns (Some x) (condit p1 p2 p3) (Some y)
-  | ns_insert x p y :
-      ns_fold (Some x) p (Some y) ->
-      ns (Some (v_l x))
-         p
-         (Some y)
-  | ns_alpha x p y :
-      ns_mapa (Some x) p (Some y) ->
-      ns (Some (v_l x))
-         (alpha p)
-         (Some (v_l y))
-  with ns_mapc : option sexp -> seq program -> option (seq sexp) -> Prop :=
-       | ns_constr_nil x :
-           ns_mapc (Some x) [::] (Some [::])
-       | ns_constr_cons x p1 p2 y1 y2 :
-           ns (Some x) p1 (Some y1) ->
-           ns_mapc (Some x) p2 (Some y2) ->
-           ns_mapc (Some x) (p1 :: p2) (Some (y1 :: y2))
-  with ns_fold : option (seq sexp) -> program -> option sexp -> Prop :=
-       | ns_fold_nil a p :
-           ns_fold (Some [:: a]) p (Some a)
-       | ns_fold_cons x1 x2 p y1 y2 :
-           ns_fold (Some x2) p (Some y2) ->
-           ns (Some (v_l [:: x1; y2])) p y1 ->
-           ns_fold (Some (x1 :: x2)) p y1
-  with ns_mapa : option (seq sexp) -> program -> option (seq sexp) -> Prop :=
-       | ns_mapa_nil p :
-           ns_mapa (Some [::]) p (Some [::])
-       | ns_mapa_cons x1 x2 p y1 y2 :
-           ns (Some x1) p (Some y1) ->
-           ns_mapa (Some x2) p (Some y2) ->
-           ns_mapa (Some (x1 :: x2)) p (Some (y1 :: y2))
-  .
-End Step.
   
 (* END *)
