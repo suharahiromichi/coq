@@ -305,6 +305,23 @@ Hint Constructors ns_mapc.
 Hint Constructors ns_foldr.
 Hint Constructors ns_mapa.
 
+(**
+次の2行で、ns_compose の y を implicit から外し、指定するようにする。
+```
+apply: (@ns_compose _ _ _ (ol [:: on 2; on 0])).
+```
+ではなく、
+```
+apply: (ns_compose (ol [:: on 2; on 0])).
+```
+指定したくない場合は、``_`` を指定する。
+ *)
+Arguments ns_compose : clear implicits.
+Arguments ns_compose [f] [g] [x] y [z].
+
+(**
+TEST
+*)
 Goal ns (Some (ol [:: on 1; on 2])) add (Some (on 3)).
 Proof.
   apply: ns_add => //.
@@ -335,18 +352,19 @@ Proof.
   apply: ns_call => //.                     (* fact *)
   apply: ns_cond_false => //.
   - apply: ns_call => //.                   (* eq0 *)
-    apply: (@ns_compose _ _ _ (ol [:: on 2; on 0])).
+    apply: (ns_compose (ol [:: on 2; on 0])).
+    (* apply: (@ns_compose _ _ _ (ol [:: on 2; on 0])). *)
     + apply: ns_cons => //.
       apply: ns_mapc_cons => //.
         by apply: ns_mapc_cons => //.
     + by apply: ns_eq_false => //.
-  - apply: (@ns_compose _ _ _ (ol [:: on 2; on 1])).
+  - apply: (ns_compose (ol [:: on 2; on 1])).
     + apply: ns_cons => //.
       apply: ns_mapc_cons => //.
       apply: ns_mapc_cons => //.
-      apply: (@ns_compose _ _ _ (on 1)).
+      apply: (ns_compose (on 1)).
       * apply: ns_call => //.               (* sub1 *)
-        apply: (@ns_compose _ _ _ (ol [:: on 2; on 1])).
+        apply: (ns_compose (ol [:: on 2; on 1])).
         -- apply: ns_cons => //.
            apply: ns_mapc_cons => //.
              by apply: ns_mapc_cons => //.
@@ -354,18 +372,18 @@ Proof.
       * apply: ns_call => //.               (* fact *)
         apply: ns_cond_false.
         -- apply: ns_call => //.            (* eq0 *)
-           apply: (@ns_compose _ _ _ (ol [:: on 1; on 0])).
+           apply: (ns_compose (ol [:: on 1; on 0])).
            ++ apply: ns_cons => //.
               apply: ns_mapc_cons => //.
                 by apply: ns_mapc_cons => //.
            ++ by apply: ns_eq_false.
-        -- apply: (@ns_compose _ _ _ (ol [:: on 1; on 1])).
+        -- apply: (ns_compose (ol [:: on 1; on 1])).
            ++ apply: ns_cons => //.
               apply: ns_mapc_cons => //.
               apply: ns_mapc_cons => //.
-              apply: (@ns_compose _ _ _ (on 0)).
+              apply: (ns_compose (on 0)).
               ** apply: ns_call => //.      (* sub1 *)
-                 apply: (@ns_compose _ _ _ (ol [:: on 1; on 1])).
+                 apply: (ns_compose (ol [:: on 1; on 1])).
                  --- apply: ns_cons => //.
                      apply: ns_mapc_cons => //.
                        by apply: ns_mapc_cons => //.
@@ -373,7 +391,7 @@ Proof.
               ** apply: ns_call => //.      (* fact *)
                  apply: ns_cond_true => //.
                  apply: ns_call => //.
-                 apply: (@ns_compose _ _ _ (ol [:: on 0; on 0])).
+                 apply: (ns_compose (ol [:: on 0; on 0])).
                  --- apply: ns_cons => //.
                      apply: ns_mapc_cons => //.
                        by apply: ns_mapc_cons => //.
@@ -389,7 +407,7 @@ Lemma l_eq0_true :
   ns (Some (on 0)) (call "eq0") (Some (ob true)).
 Proof.
   apply: ns_call => //.                     (* eq0 *)
-  apply: (@ns_compose _ _ _ (ol [:: on 0; on 0])).
+  apply: (ns_compose (ol [:: on 0; on 0])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
       by apply: ns_mapc_cons => //.
@@ -401,7 +419,7 @@ Lemma l_eq0_false n :
 Proof.
   move=> H0.
   apply: ns_call => //.                     (* eq0 *)
-  apply: (@ns_compose _ _ _ (ol [:: on n; on 0])).
+  apply: (ns_compose (ol [:: on n; on 0])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
       by apply: ns_mapc_cons => //.
@@ -413,7 +431,7 @@ Lemma l_sub1 n :
   ns (Some (on n.+1)) (call "sub1") (Some (on n)).
 Proof.
   apply: ns_call => //.                     (* sub1 *)
-  apply: (@ns_compose _ _ _ (ol [:: on n.+1; on 1])).
+  apply: (ns_compose (ol [:: on n.+1; on 1])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
     + by apply: ns_mapc_cons => //.
@@ -426,7 +444,7 @@ Proof.
   apply: ns_call => //.                     (* fact *)
   apply: ns_cond_true => //.
   apply: ns_call => //.
-  apply: (@ns_compose _ _ _ (ol [:: on 0; on 0])).
+  apply: (ns_compose (ol [:: on 0; on 0])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
       by apply: ns_mapc_cons => //.
@@ -438,28 +456,27 @@ Proof.
   apply: ns_call => //.                     (* fact *)
   apply: ns_cond_false => //.
   - by apply: l_eq0_false.
-  - apply: (@ns_compose _ _ _ (ol [:: on 2; on 1])).
+  - apply: (ns_compose (ol [:: on 2; on 1])).
     + apply: ns_cons => //.
       apply: ns_mapc_cons => //.
       apply: ns_mapc_cons => //.
-      apply: (@ns_compose _ _ _ (on 1)).
+      apply: (ns_compose (on 1)).
       * by apply: l_sub1.
       * apply: ns_call => //.               (* fact *)
         apply: ns_cond_false => //.
         -- by apply: l_eq0_false.        
-        -- apply: (@ns_compose _ _ _ (ol [:: on 1; on 1])).
+        -- apply: (ns_compose (ol [:: on 1; on 1])).
            ++ apply: ns_cons => //.
               apply: ns_mapc_cons => //.
               apply: ns_mapc_cons => //.
-              apply: (@ns_compose _ _ _ (on 0)).
+              apply: (ns_compose (on 0)).
               ** by apply: l_sub1.
               ** by apply: l_fact_0.
            ++ by apply: ns_mul => //.
     + by apply: ns_mul => //.
 Qed.
 
-Lemma fact_n n :
-  ns (Some (on n)) (call "fact") (Some (on n `!)).
+Lemma fact_n n : ns (Some (on n)) (call "fact") (Some (on n `!)).
 Proof.
   elim: n => [| n IHn].
   - by apply: l_fact_0.                     (* n = 0 *)
@@ -467,11 +484,11 @@ Proof.
     apply: ns_call => //.                   (* fact *)
     apply: ns_cond_false => //.
     + by apply: l_eq0_false.
-    + apply: (@ns_compose _ _ _ (ol [:: on n.+1; on n`!])).
+    + apply: (ns_compose (ol [:: on n.+1; on n`!])).
       * apply: ns_cons => //.
         apply: ns_mapc_cons => //.
         apply: ns_mapc_cons => //.
-        apply: (@ns_compose _ _ _ (on n)).
+        apply: (ns_compose (on n)).
         -- by apply: l_sub1.
         -- apply: IHn.
       * by apply: ns_mul.
