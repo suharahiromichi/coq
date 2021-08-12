@@ -97,6 +97,9 @@ Section Environment.
   
   Definition environment :=
     [::
+       ("last", cond (compose null tl)
+                     (sel 1)
+                     (compose (call "last") tl));
        ("eq0", compose eq (cons [:: id; const (Some (on 0))]));
        ("sub1", compose sub (cons [:: id; const (Some (on 1))]));
        ("fact", cond (call "eq0")
@@ -115,9 +118,6 @@ End Environment.
 Section BigStep.
   
   Inductive ns : object -> program -> object -> Prop :=
-  | ns_none f :
-      ns None                            f                 None
-  (* *** *)
   | ns_sel xs n :
       ns (Some (ol xs))                  (sel n)           (option_nth1 xs n)
   | ns_tl x xs :
@@ -249,7 +249,9 @@ Section BigStep.
   | ns_call_none f x :
       lookup environment f = None ->
       ns (Some x)                        (call f)          None
-
+  (* *** *)
+  | ns_none x f :
+      ns x                                f                None
   with ns_mapc : option sexp -> seq program -> option (seq sexp) -> Prop :=
        | ns_mapc_nil x :
            ns_mapc (Some x) [::] (Some [::])
@@ -344,7 +346,48 @@ Proof.
   apply: ns_mapc_cons => //.
 Qed.
 
+
 (**
+# Last
+ *)
+Compute last 0 [:: 1; 2; 3].                (* 3 *)
+
+Lemma l_last_nil : ns (Some (ol [::])) (call "last") None.
+Proof.
+    by apply: ns_call.
+Qed.
+
+Lemma l_last_one x : ns (Some (ol [:: x])) (call "last") (Some x).
+Proof.
+  apply: ns_call => //.
+  apply: ns_cond_true => //.
+  - apply: (ns_compose (ol [::])).
+    + by apply: ns_tl.
+    + by apply: ns_null_true.
+  - by apply: ns_sel.
+Qed.
+
+Lemma l_last_cons x xs : ns (Some (ol (x :: xs))) (call "last") (Some (last x xs)).
+Proof.
+  elim: xs x => //= [| x' xs IHl] x.
+  (* xs = [::] のとき。 last x [::] = x であることに注意。
+     MathComp の last 関数はこれを見越して設計されているのだ。 *)
+  - by apply: l_last_one.
+  (* xs = x' :: xs のとき。 *)
+  - apply: ns_call => //.
+    apply: ns_cond_false => //.
+    + apply: (ns_compose (ol (x' :: xs))).
+      * by apply: ns_tl.
+      * by apply: ns_null_false.
+    + apply: (ns_compose (ol (x' :: xs))).
+      * by apply: ns_tl.
+      * by apply: IHl.
+Qed.
+
+(**
+# Factorial
+*)
+ (**
 fact 2 = 2 の証明
  *)
 Goal ns (Some (on 2)) (call "fact") (Some (on 2)).
@@ -356,8 +399,8 @@ Proof.
     (* apply: (@ns_compose _ _ _ (ol [:: on 2; on 0])). *)
     + apply: ns_cons => //.
       apply: ns_mapc_cons => //.
-        by apply: ns_mapc_cons => //.
-    + by apply: ns_eq_false => //.
+        by apply: ns_mapc_cons.
+    + by apply: ns_eq_false.
   - apply: (ns_compose (ol [:: on 2; on 1])).
     + apply: ns_cons => //.
       apply: ns_mapc_cons => //.
@@ -367,7 +410,7 @@ Proof.
         apply: (ns_compose (ol [:: on 2; on 1])).
         -- apply: ns_cons => //.
            apply: ns_mapc_cons => //.
-             by apply: ns_mapc_cons => //.
+             by apply: ns_mapc_cons.
         -- by apply: ns_sub.
       * apply: ns_call => //.               (* fact *)
         apply: ns_cond_false.
@@ -375,7 +418,7 @@ Proof.
            apply: (ns_compose (ol [:: on 1; on 0])).
            ++ apply: ns_cons => //.
               apply: ns_mapc_cons => //.
-                by apply: ns_mapc_cons => //.
+                by apply: ns_mapc_cons.
            ++ by apply: ns_eq_false.
         -- apply: (ns_compose (ol [:: on 1; on 1])).
            ++ apply: ns_cons => //.
@@ -386,7 +429,7 @@ Proof.
                  apply: (ns_compose (ol [:: on 1; on 1])).
                  --- apply: ns_cons => //.
                      apply: ns_mapc_cons => //.
-                       by apply: ns_mapc_cons => //.
+                       by apply: ns_mapc_cons.
                  --- by apply: ns_sub.
               ** apply: ns_call => //.      (* fact *)
                  apply: ns_cond_true => //.
@@ -394,10 +437,10 @@ Proof.
                  apply: (ns_compose (ol [:: on 0; on 0])).
                  --- apply: ns_cons => //.
                      apply: ns_mapc_cons => //.
-                       by apply: ns_mapc_cons => //.
-                 --- by apply: ns_eq_true => //.
-           ++ by apply: ns_mul => //.
-    + by apply: ns_mul => //.
+                       by apply: ns_mapc_cons.
+                 --- by apply: ns_eq_true.
+           ++ by apply: ns_mul.
+    + by apply: ns_mul.
 Qed.
 
 (**
@@ -410,8 +453,8 @@ Proof.
   apply: (ns_compose (ol [:: on 0; on 0])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
-      by apply: ns_mapc_cons => //.
-  - by apply: ns_eq_true => //.
+      by apply: ns_mapc_cons.
+  - by apply: ns_eq_true.
 Qed.
 
 Lemma l_eq0_false n :
@@ -422,9 +465,9 @@ Proof.
   apply: (ns_compose (ol [:: on n; on 0])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
-      by apply: ns_mapc_cons => //.
+      by apply: ns_mapc_cons.
   - case: n H0 => //= n H0.
-      by apply: ns_eq_false => //.
+      by apply: ns_eq_false.
 Qed.
 
 Lemma l_sub1 n :
@@ -434,7 +477,7 @@ Proof.
   apply: (ns_compose (ol [:: on n.+1; on 1])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
-    + by apply: ns_mapc_cons => //.
+    + by apply: ns_mapc_cons.
     + have {2}-> : n = n.+1 - 1 by rewrite subn1 -pred_Sn.
       by apply: ns_sub.
 Qed.
@@ -447,8 +490,8 @@ Proof.
   apply: (ns_compose (ol [:: on 0; on 0])).
   - apply: ns_cons => //.
     apply: ns_mapc_cons => //.
-      by apply: ns_mapc_cons => //.
-  - by apply: ns_eq_true => //.
+      by apply: ns_mapc_cons.
+  - by apply: ns_eq_true.
 Qed.
 
 Lemma fact_2 : ns (Some (on 2)) (call "fact") (Some (on 2)).
@@ -463,8 +506,8 @@ Proof.
       apply: (ns_compose (on 1)).
       * by apply: l_sub1.
       * apply: ns_call => //.               (* fact *)
-        apply: ns_cond_false => //.
-        -- by apply: l_eq0_false.        
+        apply: ns_cond_false.
+        -- by apply: l_eq0_false.
         -- apply: (ns_compose (ol [:: on 1; on 1])).
            ++ apply: ns_cons => //.
               apply: ns_mapc_cons => //.
@@ -472,8 +515,8 @@ Proof.
               apply: (ns_compose (on 0)).
               ** by apply: l_sub1.
               ** by apply: l_fact_0.
-           ++ by apply: ns_mul => //.
-    + by apply: ns_mul => //.
+           ++ by apply: ns_mul.
+    + by apply: ns_mul.
 Qed.
 
 Lemma fact_n n : ns (Some (on n)) (call "fact") (Some (on n `!)).
