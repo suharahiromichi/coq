@@ -164,16 +164,16 @@ Section BigStep.
       ns (Some x)                        (cons fs)         None
   (* condition *)
   | ns_cond_true x p f g y :
-      ns (Some x)                        p                (Some (ob true)) ->
-      ns (Some x)                        f                y ->
-      ns (Some x)                        (cond p f g)     y
+      ns (Some x)                        p                 (Some (ob true)) ->
+      ns (Some x)                        f                 y ->
+      ns (Some x)                        (cond p f g)      y
   | ns_cond_false x p f g y :
-      ns (Some x)                        p                (Some (ob false)) ->
-      ns (Some x)                        g                y ->
-      ns (Some x)                        (cond p f g)     y
+      ns (Some x)                        p                 (Some (ob false)) ->
+      ns (Some x)                        g                 y ->
+      ns (Some x)                        (cond p f g)      y
   | ns_cond_none x p f g :
-      ns (Some x)                        p                None ->
-      ns (Some x)                        (cond p f g)     None
+      ns (Some x)                        p                 None ->
+      ns (Some x)                        (cond p f g)      None
   (* constant *)
   (* 与えられた定数 y によらず、スタック上の引数がNoneならNoneにする。
      一方、定数としてNoneを与えることも可能とする。 *)
@@ -194,7 +194,10 @@ Section BigStep.
   | ns_bu f x y z :
       ns (Some (ol [:: x; y]))           f                 (Some z) ->
       ns (Some y)                        (bu f (Some x))   (Some y)
-  | ns_bu_none f y :
+  | ns_bu_none_1 f x y :
+      ns (Some (ol [:: x; y]))           f                 None ->
+      ns (Some y)                        (bu f (Some x))   None
+  | ns_bu_none_2 f y :
       ns (Some y)                        (bu f None)       None
   (* while *)
   | ns_while_true p f x y z :
@@ -202,6 +205,10 @@ Section BigStep.
       ns (Some x)                        f                 (Some y) ->
       ns (Some y)                        (while p f)       z ->
       ns (Some x)                        (while p f)       z
+  | ns_while_true_none p f x :
+      ns (Some x)                        p                 (Some (ob true)) ->
+      ns (Some x)                        f                 None ->
+      ns (Some x)                        (while p f)       None
   | ns_while_false p f x :
       ns (Some x)                        p                 (Some (ob false)) ->
       ns (Some x)                        (while p f)       (Some x)
@@ -209,12 +216,18 @@ Section BigStep.
       ns (Some x)                        p                 None ->
       ns (Some x)                        (while p f)       None
   with ns_mapc : option sexp -> seq program -> option (seq sexp) -> Prop :=
-       | ns_constr_nil x :
+       | ns_mapc_nil x :
            ns_mapc (Some x) [::] (Some [::])
-       | ns_constr_cons x f1 f2 y1 y2 :
-           ns (Some x) f1 (Some y1) ->
-           ns_mapc (Some x) f2 (Some y2) ->
-           ns_mapc (Some x) (f1 :: f2) (Some (y1 :: y2))
+       | ns_mapc_cons x f1 f2 y ys :
+           ns (Some x) f1 (Some y) ->
+           ns_mapc (Some x) f2 (Some ys) ->
+           ns_mapc (Some x) (f1 :: f2) (Some (y :: ys))
+       | ns_mapc_none_1 x f1 f2 :
+           ns (Some x) f1 None ->
+           ns_mapc (Some x) (f1 :: f2) None
+       | ns_mapc_none_2 x f1 f2 :
+           ns_mapc (Some x) f2 None ->
+           ns_mapc (Some x) (f1 :: f2) None
   with ns_foldr : option (seq sexp) -> program -> option sexp -> Prop :=
        (* [::] に対する fold は intrinsics に限定する。 *)
        | ns_foldr_nil_equals : ns_foldr (Some [::]) add (Some (ob true))
@@ -223,28 +236,40 @@ Section BigStep.
        | ns_foldr_nil_mul : ns_foldr (Some [::]) mul (Some (on 1))
        | ns_foldr_nil_div : ns_foldr (Some [::]) div (Some (on 1))
        | ns_foldr_nil_and : ns_foldr (Some [::]) and (Some (ob true))
-       | ns_foldr_nil_or : ns_foldr (Some [::]) and (Some (ob false))
+       | ns_foldr_nil_or  : ns_foldr (Some [::]) and (Some (ob false))
        | ns_foldr_nil_apndl : ns_foldr (Some [::]) apndl (Some (ol [::]))
        (* *** *)
        | ns_foldr_one a f :
            ns_foldr (Some [:: a]) f (Some a)
-       | ns_foldr_cons x1 x2 f y1 y2 :
-           ns_foldr (Some x2) f (Some y2) ->
-           ns (Some (ol [:: x1; y2])) f y1 ->
-           ns_foldr (Some (x1 :: x2)) f y1
+       | ns_foldr_cons x1 x2 f y ys :
+           ns_foldr (Some x2) f (Some ys) ->
+           ns (Some (ol [:: x1; ys])) f y ->
+           ns_foldr (Some (x1 :: x2)) f y
+       | ns_foldr_none x1 x2 f :
+           ns_foldr (Some x2) f None ->
+           ns_foldr (Some (x1 :: x2)) f None
   with ns_mapa : option (seq sexp) -> program -> option (seq sexp) -> Prop :=
        | ns_mapa_nil f :
            ns_mapa (Some [::]) f (Some [::])
-       | ns_mapa_cons x1 x2 f y1 y2 :
-           ns (Some x1) f (Some y1) ->
-           ns_mapa (Some x2) f (Some y2) ->
-           ns_mapa (Some (x1 :: x2)) f (Some (y1 :: y2))
+       | ns_mapa_cons x xs f y ys :
+           ns (Some x) f (Some y) ->
+           ns_mapa (Some xs) f (Some ys) ->
+           ns_mapa (Some (x :: xs)) f (Some (y :: ys))
+       | ns_mapa_none_1 x xs f :
+           ns (Some x) f None ->
+           ns_mapa (Some (x :: xs)) f None
+       | ns_mapa_none_2 x xs f :
+           ns_mapa (Some xs) f None ->
+           ns_mapa (Some (x :: xs)) f None
   .
 
 End BigStep.
 
+(* 機能するようにすること。 *)
 Hint Constructors ns. 
+Hint Constructors ns_mapc.
 Hint Constructors ns_foldr.
+Hint Constructors ns_mapa.
 
 Lemma test1 : ns (Some (ol [:: on 1; on 2])) add (Some (on 3)).
 Proof.
