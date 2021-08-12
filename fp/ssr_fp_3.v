@@ -1,6 +1,7 @@
 From mathcomp Require Import all_ssreflect.
 Require Import ssrstring.                   (* Ascii String *)
-Require Import Recdef.                      (* Function *)
+(* Require Import Recdef. *)                (* Function *)
+Require Import ssrinv.                      (* inv: *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -27,7 +28,7 @@ Section Options.
     | x :: s' => match n with
                  | 0 => None
                  | 1 => Some x
-                 | n'.+1 => option_nth s' n'
+                 | n'.+1 => option_nth1 s' n'
                  end
     end.
 
@@ -118,7 +119,7 @@ End Environment.
 Section BigStep.
   
   Inductive ns : object -> program -> object -> Prop :=
-  | ns_sel xs n :
+  | ns_sel n xs :
       ns (Some (ol xs))                  (sel n)           (option_nth1 xs n)
   | ns_tl x xs :
       ns (Some (ol (x :: xs)))           tl                (Some (ol xs))
@@ -554,6 +555,110 @@ End Factorial.
 *)
 Section Algebra.
 
+  Lemma law1_1 f g h x y z1 z2 :
+    ns (Some y) f (Some z1) ->
+    ns (Some y) g (Some z2) ->
+    ns (Some x) h (Some y) ->
+    (ns (Some x) (compose (cons [:: f; g]) h) (Some (ol [:: z1; z2])) <->
+     ns (Some x) (cons [:: compose f h; compose g h]) (Some (ol [:: z1; z2]))).
+  Proof.
+    move=> Hf Hg Hh.
+    split=> H.
+    - move: H Hf Hg Hh.
+      inv=> y' Hh'.
+      inv.
+      inv=> Hf'.
+      inv=> Hg'.
+      inv.
+      clear y' Hh' Hf' Hg'.
+      move=> Hf Hg Hh.
+      apply: ns_cons => //.
+      apply: ns_mapc_cons => //.
+      + by apply: (ns_compose y).
+      + apply: ns_mapc_cons => //.
+          by apply: (ns_compose y).
+    - move: H Hf Hg Hh.
+      inv.
+      inv.
+      inv=> y' Hh' Hf'.
+      inv.
+      inv=> y'' Hh'' Hg''.
+      inv=> Hh Hf Hg.
+      clear y' Hh' Hf'.
+      clear y'' Hh'' Hg''.
+      apply: (ns_compose y) => //.
+      apply: ns_cons.
+      apply: ns_mapc_cons => //.
+        by apply: ns_mapc_cons.
+  Qed.
+  
+  Lemma law1_2 f g h x y1 y2 z1 z2 :
+    ns (Some y1) f (Some z1) ->
+    ns (Some y2) f (Some z2) ->
+    ns (Some x) g (Some y1) ->
+    ns (Some x) h (Some y2) ->
+    (ns (Some x) (compose (alpha f) (cons [:: g; h])) (Some (ol [:: z1; z2])) <->
+     ns (Some x) (cons [:: compose f g; compose f h]) (Some (ol [:: z1; z2]))).
+  Proof.
+    move=> Hf1 Hf2 Hg Hh.
+    split.
+    - inv=> y'.
+      inv.
+      inv=> Hg'.
+      inv=> Hh'.
+      inv.
+      inv.
+      inv=> Hf1'.
+      inv=> Hf2'.
+      inv.
+      clear Hf1' Hf2' Hg' Hh' y0 y.
+      apply: ns_cons.
+      apply: ns_mapc_cons.
+      apply: (ns_compose y1) => //.
+      apply: ns_mapc_cons => //.
+        by apply: (ns_compose y2).
+    - inv.
+      inv.
+      inv=> y' Hg' Hf1'.
+      inv.
+      inv=> y'' Hh' Hf2'.
+      inv.
+      clear y' y'' Hf1' Hf2' Hg' Hh'.
+      apply: (ns_compose (ol [:: y1; y2])).
+      + apply: ns_cons => //.
+        apply: ns_mapc_cons => //.
+          by apply: ns_mapc_cons.
+      + apply: ns_alpha.
+        apply: ns_mapa_cons => //.
+          by apply: ns_mapa_cons.
+  Qed.
+  
+  Lemma law1_5_1 f g x y1 y2 :
+    ns (Some x) f (Some y1) ->
+    ns (Some x) g (Some y2) ->
+    ns (Some x) (compose (sel 1) (cons [:: f; g])) (Some y1).
+  Proof.
+    move=> Hf Hg.
+    apply: (ns_compose (ol [:: y1; y2])).
+    - apply: ns_cons.
+      apply: ns_mapc_cons => //.
+        by apply: ns_mapc_cons.
+    - by apply: ns_sel.
+  Qed.
+  
+  Lemma law1_5_2 f g x y1 y2 :
+    ns (Some x) f (Some y1) ->
+    ns (Some x) g (Some y2) ->
+    ns (Some x) (compose (sel 2) (cons [:: f; g])) (Some y2).
+  Proof.
+    move=> Hf Hg.
+    apply: (ns_compose (ol [:: y1; y2])).
+    - apply: ns_cons.
+      apply: ns_mapc_cons => //.
+        by apply: ns_mapc_cons.
+    - by apply: ns_sel.
+  Qed.
+  
 End Algebra.
 
 (* END *)
