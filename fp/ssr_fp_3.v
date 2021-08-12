@@ -552,6 +552,8 @@ End Factorial.
 
 (**
 # Algebra of Programs
+
+inversion で分解することができないので、必要十分条件の証明ができない。
 *)
 Section Algebra.
 
@@ -559,37 +561,20 @@ Section Algebra.
     ns (Some y) f (Some z1) ->
     ns (Some y) g (Some z2) ->
     ns (Some x) h (Some y) ->
-    (ns (Some x) (compose (cons [:: f; g]) h) (Some (ol [:: z1; z2])) <->
+    (ns (Some x) (compose (cons [:: f; g]) h) (Some (ol [:: z1; z2])) /\
      ns (Some x) (cons [:: compose f h; compose g h]) (Some (ol [:: z1; z2]))).
   Proof.
     move=> Hf Hg Hh.
-    split=> H.
-    - move: H Hf Hg Hh.
-      inv=> y' Hh'.
-      inv.
-      inv=> Hf'.
-      inv=> Hg'.
-      inv.
-      clear y' Hh' Hf' Hg'.
-      move=> Hf Hg Hh.
+    split.
+    - apply: (ns_compose y) => //.
       apply: ns_cons => //.
       apply: ns_mapc_cons => //.
-      + by apply: (ns_compose y).
-      + apply: ns_mapc_cons => //.
-          by apply: (ns_compose y).
-    - move: H Hf Hg Hh.
-      inv.
-      inv.
-      inv=> y' Hh' Hf'.
-      inv.
-      inv=> y'' Hh'' Hg''.
-      inv=> Hh Hf Hg.
-      clear y' Hh' Hf'.
-      clear y'' Hh'' Hg''.
-      apply: (ns_compose y) => //.
-      apply: ns_cons.
-      apply: ns_mapc_cons => //.
         by apply: ns_mapc_cons.
+    - apply: ns_cons => //.
+      apply: ns_mapc_cons => //.
+      + apply: (ns_compose y) => //.
+        apply: ns_mapc_cons => //.
+          by apply: (ns_compose y).
   Qed.
   
   Lemma law1_2 f g h x y1 y2 z1 z2 :
@@ -597,40 +582,57 @@ Section Algebra.
     ns (Some y2) f (Some z2) ->
     ns (Some x) g (Some y1) ->
     ns (Some x) h (Some y2) ->
-    (ns (Some x) (compose (alpha f) (cons [:: g; h])) (Some (ol [:: z1; z2])) <->
+    (ns (Some x) (compose (alpha f) (cons [:: g; h])) (Some (ol [:: z1; z2])) /\
      ns (Some x) (cons [:: compose f g; compose f h]) (Some (ol [:: z1; z2]))).
   Proof.
     move=> Hf1 Hf2 Hg Hh.
     split.
-    - inv=> y'.
-      inv.
-      inv=> Hg'.
-      inv=> Hh'.
-      inv.
-      inv.
-      inv=> Hf1'.
-      inv=> Hf2'.
-      inv.
-      clear Hf1' Hf2' Hg' Hh' y0 y.
-      apply: ns_cons.
-      apply: ns_mapc_cons.
-      apply: (ns_compose y1) => //.
+    - apply: (ns_compose (ol [:: y1; y2])) => //.
+      apply: ns_cons => //.
       apply: ns_mapc_cons => //.
+      apply: ns_mapc_cons => //.
+      apply: ns_alpha => //.
+      apply: ns_mapa_cons => //.
+        by apply: ns_mapa_cons.
+    - apply: ns_cons => //.
+      apply: ns_mapc_cons => //.
+      + by apply: (ns_compose y1).
+      + apply: ns_mapc_cons => //.
         by apply: (ns_compose y2).
-    - inv.
-      inv.
-      inv=> y' Hg' Hf1'.
-      inv.
-      inv=> y'' Hh' Hf2'.
-      inv.
-      clear y' y'' Hf1' Hf2' Hg' Hh'.
-      apply: (ns_compose (ol [:: y1; y2])).
+  Qed.
+  
+  Lemma law1_3_1 f g1 g2 g3 x y1 y2 y3 z1 z2 :
+    ns (Some (ol [:: y1; z2])) f (Some z1) ->
+    ns (Some (ol [:: y2; y3])) f (Some z2) ->
+    ns (Some x) g1 (Some y1) ->
+    ns (Some x) g2 (Some y2) ->
+    ns (Some x) g3 (Some y3) ->
+    (ns (Some x) (compose (insert f) (cons [:: g1; g2; g3])) (Some z1) /\
+     ns (Some x) (compose f (cons [:: g1; compose f (cons [:: g2; g3])])) (Some z1)).
+  Proof.
+    move=> Hf1 Hf2 Hg1 Hg2 Hg3.
+    split.
+    - apply: (ns_compose (ol [:: y1; y2; y3])).
       + apply: ns_cons => //.
         apply: ns_mapc_cons => //.
+        apply: ns_mapc_cons => //.
           by apply: ns_mapc_cons.
-      + apply: ns_alpha.
-        apply: ns_mapa_cons => //.
-          by apply: ns_mapa_cons.
+      + apply: ns_insert => //.
+        apply: ns_foldr_cons.
+        * apply: ns_foldr_cons.
+          -- by apply: ns_foldr_one.
+          -- by apply: Hf2.
+        * apply: Hf1.
+    - apply: (ns_compose (ol [:: y1; z2])).
+      + apply: ns_cons => //.
+        apply: ns_mapc_cons => //.
+        apply: ns_mapc_cons => //.
+        apply: (ns_compose (ol [:: y2; y3])).
+        * apply: ns_cons => //.
+          apply: ns_mapc_cons => //.
+            by apply: ns_mapc_cons.
+        * by apply: Hf2.
+      + by apply: Hf1.
   Qed.
   
   Lemma law1_5_1 f g x y1 y2 :
