@@ -6,6 +6,8 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Open Scope string_scope.
+
 Section Options.
   
   Variable T : Type.
@@ -41,6 +43,7 @@ Section Data.
   | ol of seq sexp.
 
   Definition object := option sexp.
+
 End Data.
 
 Section Program.
@@ -50,7 +53,7 @@ Section Program.
   | tl
   | id
   | atom
-  | equals
+  | eq
   | null
   | reverse
   | distl
@@ -77,15 +80,38 @@ Section Program.
   | alpha of program                        (* map / apply all *)
   | bu of program & object                  (* binary to unary *)
   | while of program & program
+  | call of string                          (* 定義済関数の呼び出し *)
   .    
-  (* 再帰呼び出し。 *)
   
 End Program.
+
+Section Environment.
+  
+  Definition env := seq (string * program)%type.
+
+  Fixpoint lookup (e : env) (f : string) : option program :=
+    match e with
+    | [::] => None
+    | (f', p) :: e' => if (f == f') then Some p else lookup e' f
+    end.
+  
+  Definition environment :=
+    [::
+       ("eq0", compose eq (cons [:: id; const (Some (on 0))]));
+       ("sub1", compose sub (cons [:: id; const (Some (on 1))]));
+       ("fact", cond (call "eq0")
+                     (const (Some (on 1)))
+                     (compose mul (cons [:: id;
+                                           (compose (call "fact")
+                                                    (call "sub1"))])))
+    ].
+  
+
+End Environment.
 
 (**
 # Big Step (Natural semantics)
 *)
-Check map  (fun x => [:: 1; x]) [::1; 2; 3].
 Section BigStep.
   
   Inductive ns : object -> program -> object -> Prop :=
@@ -108,11 +134,11 @@ Section BigStep.
       ns (Some (os x))                   atom              (Some (ob false))
   | ns_atom_list x :
       ns (Some (ol x))                   atom              (Some (ob true))
-  | ns_equals_true y :
-      ns (Some (ol [:: y; y]))           equals            (Some (ob true))
-  | ns_equals_false y z :
+  | ns_eq_true y :
+      ns (Some (ol [:: y; y]))           eq                (Some (ob true))
+  | ns_eq_false y z :
       y <> z ->
-      ns (Some (ol [:: y; z]))           equals            (Some (ob false))
+      ns (Some (ol [:: y; z]))           eq                (Some (ob false))
   | ns_null_true :
       ns (Some (ol [::]))                null              (Some (ob true))
   | ns_null_false x l :
@@ -156,22 +182,22 @@ Section BigStep.
       ns (Some x)                        g                 None ->
       ns (Some x)                        (compose f g)     None
   (* construction *)
-  | ns_cons x fs y :
+  | ns_cons fs x y :
       ns_mapc (Some x)                   fs                (Some y) ->
       ns (Some x)                        (cons fs)         (Some (ol y))
-  | ns_cons_none x fs :
+  | ns_cons_none fs x :
       ns_mapc (Some x)                   fs                None ->
       ns (Some x)                        (cons fs)         None
   (* condition *)
-  | ns_cond_true x p f g y :
+  | ns_cond_true p f g x y :
       ns (Some x)                        p                 (Some (ob true)) ->
       ns (Some x)                        f                 y ->
       ns (Some x)                        (cond p f g)      y
-  | ns_cond_false x p f g y :
+  | ns_cond_false p f g x y :
       ns (Some x)                        p                 (Some (ob false)) ->
       ns (Some x)                        g                 y ->
       ns (Some x)                        (cond p f g)      y
-  | ns_cond_none x p f g :
+  | ns_cond_none p f g x :
       ns (Some x)                        p                 None ->
       ns (Some x)                        (cond p f g)      None
   (* constant *)
@@ -180,14 +206,14 @@ Section BigStep.
   | ns_const x y :
       ns (Some x)                        (const y)         y
   (* insert, foldr *)
-  | ns_insert x f y :
+  | ns_insert f x y :
       ns_foldr (Some x)                  f                 y ->
       ns (Some (ol x))                   (insert f)        y
   (* alpha, apply-all *)
-  | ns_alpha x f y :
+  | ns_alpha f x y :
       ns_mapa (Some x)                   f                 (Some y) ->
       ns (Some (ol x))                   (alpha f)         (Some (ol y))
-  | ns_alpha_none x f :
+  | ns_alpha_none f x :
       ns_mapa (Some x)                   f                 None ->
       ns (Some (ol x))                   (alpha f)         None
   (* bu *)
@@ -215,6 +241,15 @@ Section BigStep.
   | ns_while_none p f x :
       ns (Some x)                        p                 None ->
       ns (Some x)                        (while p f)       None
+  (* *** *)
+  | ns_call f p x y :
+      lookup environment f = Some p ->
+      ns (Some x)                        p                 y ->
+      ns (Some x)                        (call f)          y
+  | ns_call_none f x :
+      lookup environment f = None ->
+      ns (Some x)                        (call f)          None
+
   with ns_mapc : option sexp -> seq program -> option (seq sexp) -> Prop :=
        | ns_mapc_nil x :
            ns_mapc (Some x) [::] (Some [::])
@@ -230,7 +265,7 @@ Section BigStep.
            ns_mapc (Some x) (f1 :: f2) None
   with ns_foldr : option (seq sexp) -> program -> option sexp -> Prop :=
        (* [::] に対する fold は intrinsics に限定する。 *)
-       | ns_foldr_nil_equals : ns_foldr (Some [::]) add (Some (ob true))
+       | ns_foldr_nil_eq  : ns_foldr (Some [::]) add (Some (ob true))
        | ns_foldr_nil_add : ns_foldr (Some [::]) add (Some (on 0))
        | ns_foldr_nil_sub : ns_foldr (Some [::]) sub (Some (on 0))
        | ns_foldr_nil_mul : ns_foldr (Some [::]) mul (Some (on 1))
@@ -265,25 +300,87 @@ Section BigStep.
 
 End BigStep.
 
-(* 機能するようにすること。 *)
 Hint Constructors ns. 
 Hint Constructors ns_mapc.
 Hint Constructors ns_foldr.
 Hint Constructors ns_mapa.
 
-Lemma test1 : ns (Some (ol [:: on 1; on 2])) add (Some (on 3)).
+Goal ns (Some (ol [:: on 1; on 2])) add (Some (on 3)).
 Proof.
-  by apply: ns_add.
+  apply: ns_add => //.
 Qed.  
 
-Lemma test2 : ns (Some (ol [:: on 1; on 2; on 3])) (insert add) (Some (on 6)).
+Goal ns (Some (ol [:: on 1; on 2; on 3])) (insert add) (Some (on 6)).
 Proof.
-  apply: ns_insert.
-  apply: ns_foldr_cons.
-  - apply: ns_foldr_cons.
-    + apply: ns_foldr_one.
-    + apply: ns_add.
-  - apply: ns_add.
+  apply: ns_insert => //.
+  apply: ns_foldr_cons => //.
+  apply: ns_foldr_cons => //.
+  apply: ns_add => //.
+Qed.
+
+Goal ns (Some (on 0)) (call "eq0") (Some (ob true)).
+Proof.
+  apply: ns_call => //.
+  apply: ns_compose => //.
+  apply: ns_cons => //.
+  apply: ns_mapc_cons => //.
+  apply: ns_mapc_cons => //.
+Qed.
+
+(**
+fact 2 = 2 の証明
+ *)
+Goal ns (Some (on 2)) (call "fact") (Some (on 2)).
+Proof.
+  apply: ns_call => //.                     (* fact *)
+  apply: ns_cond_false => //.
+  - apply: ns_call => //.                   (* eq0 *)
+    apply: (@ns_compose _ _ _ (ol [:: on 2; on 0])).
+    + apply: ns_cons => //.
+      apply: ns_mapc_cons => //.
+        by apply: ns_mapc_cons => //.
+    + by apply: ns_eq_false => //.
+
+  - apply: (@ns_compose _ _ _ (ol [:: on 2; on 1])).
+    + apply: ns_cons => //.
+      apply: ns_mapc_cons => //.
+      apply: ns_mapc_cons => //.
+      apply: (@ns_compose _ _ _ (on 1)).
+      * apply: ns_call => //.               (* sub1 *)
+        apply: (@ns_compose _ _ _ (ol [:: on 2; on 1])).
+        -- apply: ns_cons => //.
+           apply: ns_mapc_cons => //.
+             by apply: ns_mapc_cons => //.
+        -- by apply: ns_sub.
+      * apply: ns_call => //.               (* fact *)
+        apply: ns_cond_false.
+        -- apply: ns_call => //.            (* eq0 *)
+           apply: (@ns_compose _ _ _ (ol [:: on 1; on 0])).
+           ++ apply: ns_cons => //.
+              apply: ns_mapc_cons => //.
+                by apply: ns_mapc_cons => //.
+           ++ by apply: ns_eq_false.
+        -- apply: (@ns_compose _ _ _ (ol [:: on 1; on 1])).
+           ++ apply: ns_cons => //.
+              apply: ns_mapc_cons => //.
+              apply: ns_mapc_cons => //.
+              apply: (@ns_compose _ _ _ (on 0)).
+              ** apply: ns_call => //.      (* sub1 *)
+                 apply: (@ns_compose _ _ _ (ol [:: on 1; on 1])).
+                 --- apply: ns_cons => //.
+                     apply: ns_mapc_cons => //.
+                       by apply: ns_mapc_cons => //.
+                 --- by apply: ns_sub.
+              ** apply: ns_call => //.
+                 apply: ns_cond_true => //.
+                 --- apply: ns_call => //.
+                     apply: (@ns_compose _ _ _ (ol [:: on 0; on 0])).
+                     +++ apply: ns_cons => //.
+                         apply: ns_mapc_cons => //.
+                           by apply: ns_mapc_cons => //.
+                     +++ by apply: ns_eq_true => //.
+                 --- by apply: ns_mul => //.
+    + by apply: ns_mul => //.
 Qed.
 
 (* END *)
