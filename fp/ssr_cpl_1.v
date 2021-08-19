@@ -43,7 +43,7 @@ ev . pair (pr (curry(π2),
   Definition add :=
     ev \o pair (pr (cur pi2,
                     cur (S \o ev)) \o pi1,
-                I).
+                pi2).
   Definition one := S \o O.
   Definition two := S \o S \o O.
   
@@ -76,7 +76,7 @@ curry(s.ev) . curry(π2)                                -- pr の展開
 ev . pair (curry(s.ev) . curry(π2), π2. pair (s.0, s.0))
 s. ev .  pair (curry(π2), π2. pair (s.0, s.0))        -- evaluate
 s. π2 . pair (I,          π2. pair (s.0, s.0))        -- evaluate
-s. π2 .                        pair (s.0, s.0)
+s.                         π2. pair (s.0, s.0)
 s. s.0
 *)
 
@@ -156,14 +156,16 @@ s. s.0
   Proof.
   Admitted.
   
-  Lemma eval a b c : ev \o pair (cur(a) \o b, c) = a \o pair (b, c).
+  Lemma eval a b c : ev \o pair (cur a \o b, c) = a \o pair (b, c).
   Proof.
   Admitted.
 
-  Lemma eval1 a b : ev \o pair (cur(a), b) = a \o b.
+  Lemma eval1 a b : ev \o pair (cur a, b) = a \o pair (I, b).
   Proof.
-  Admitted.
-
+    rewrite -[cur a]idL.
+      by apply: eval.
+  Qed.
+  
   Goal add \o pair (one, one) = two.
   Proof.
     rewrite /add /one.
@@ -177,7 +179,6 @@ s. s.0
     rewrite eval.
     rewrite -!dotA.                         (* 右結合 *)
     rewrite eval1.
-    rewrite idR.
     rewrite !pairR.
     rewrite /two.
     rewrite -!dotA.                         (* 右結合 *)
