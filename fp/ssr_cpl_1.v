@@ -40,29 +40,6 @@ ev . pair (pr (curry(π2),
                     cur (S \o ev)) \o pi1,
                 pi2).
 *)  
-  Definition add :=
-    ev \o pair (pr (cur pi2,
-                    cur (S \o ev)) \o pi1,
-                pi2).
-  Definition one := S \o O.
-  Definition two := S \o S \o O.
-  
-(*
-  Inductive simp : object -> object -> Prop :=
-  | s_l    a b c : simp a b -> simp (a \o c) (b \o c)
-  | s_r    a b c : simp b c -> simp (a \o b) (a \o c)
-  | dot_al a b c : simp ((a \o b) \o c) (a \o (b \o c))
-  | dot_ar a b c : simp (a \o (b \o c)) ((a \o b) \o c)
-  | pair_c a b c : simp (pair (a, b) \o c)
-                        (pair (a \o c, b \o c))
-  | pair_l a b   : simp (pi1 \o pair (a, b)) a
-  | pair_r a b   : simp (pi2 \o pair (a, b)) b
-  | pr_l   a b c : simp (     pr (a, b) \o (S \o c))
-                        (b \o pr (a, b) \o c)
-  | pr_r   a b :   simp (     pr (a, b) \o O) a
-  | ev_a   a b :   simp (ev \o pair (cur(a), b)) (a \o b)
-  .
-*)
 (*
 add . pair (s.0, s.0)
 ev . pair (pr (curry(π2), curry(s.ev)).π1, π2) . pair (s.0, s.0)
@@ -124,9 +101,36 @@ s. s.0
         by apply: same.
  *)
   
+  Definition add :=
+    ev \o pair (pr (cur pi2,
+                    cur (S \o ev)) \o pi1,
+                pi2).
+  Definition one := S \o O.
+  Definition two := S \o S \o O.
+  
+  Inductive simp : object -> object -> Prop :=
+  | id_l   a     : simp (a \o I) a
+  | id_r   a     : simp a (a \o I)
+  | s_l    a b c : simp a b -> simp (a \o c) (b \o c)
+  | s_r    a b c : simp b c -> simp (a \o b) (a \o c)
+  | dot_al a b c : simp ((a \o b) \o c) (a \o (b \o c))
+  | dot_ar a b c : simp (a \o (b \o c)) ((a \o b) \o c)
+  | pair_c a b c : simp (pair (a, b) \o c)
+                        (pair (a \o c, b \o c))
+  | pair_l a b   : simp (pi1 \o pair (a, b)) a
+  | pair_r a b   : simp (pi2 \o pair (a, b)) b
+  | pr_l   a b c : simp (     pr (a, b) \o (S \o c))
+                        (b \o pr (a, b) \o c)
+  | pr_r   a b :   simp (     pr (a, b) \o O) a
+  | ev_a   a b :   simp (ev \o pair (cur(a), b)) (a \o b)
+  .
+
+  Axiom AX : forall a b, simp a b -> a = b.
+  
   Lemma idL a : a \o I = a.
   Proof.
-  Admitted.
+      by apply: (@AX _ _  (id_l _)).
+  Qed.
   
   Lemma idR a : I \o a = a.
   Proof.
