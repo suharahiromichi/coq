@@ -7,7 +7,7 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Section CPL.
+Section CPL_DEF.
   
   Inductive object :=
   | I
@@ -24,11 +24,16 @@ Section CPL.
   | ev
   .
 
-  Notation "a \; b" := (dot a b).           (* 左結合 *)
-  Notation "a \o b" := (dot a b).           (* 右結合 *)
-  Check pi1 \; (pi1 \; pi1).
-  Check (pi1 \o pi1) \o pi1.
-  
+End CPL_DEF.
+
+Notation "a \; b" := (dot a b).             (* 左結合 *)
+Notation "a \o b" := (dot a b).             (* 右結合 *)
+
+Check pi1 \; (pi1 \; pi1).
+Check (pi1 \o pi1) \o pi1.
+
+Section CPL_SEMANTICS.
+
   Inductive step : object -> object -> Prop :=
   | id_l   {a}     : step (I \o a) a
   | id_r   {a}     : step (a \o I) a
@@ -110,10 +115,13 @@ Section CPL.
     rewrite -[cur a]ida1.
       by apply: eval.
   Qed.
-  
+
+End CPL_SEMANTICS.
+
 (**
 sample
 *)  
+Section Sample.
   
   Definition one := S \o O.
   Definition two := S \o S \o O.
@@ -189,7 +197,6 @@ mult
   Definition mult := ev \o prod (pr (cur (O \o I),
                                      cur (add \o pair (ev, pi2))),
                                  I).
-
 (**
 fact
 *)
@@ -198,13 +205,33 @@ fact
                                                     pi1),
                                       S \o pi2)).
 
-End CPL.
+End Sample.
 
 
-id)
-mult = ev.prod(pr(curry(zero.!),
-curry(add.pair(ev, pi2))), id)
-fact = pi1.pr(pair(s.zero, zero),
-pair(mult.pair(s.pi2, pi1), s.pi2))
+Section NotUsed.
+
+  Fixpoint simp a :=
+    match a with
+    | I \o a => simp a
+    | a \o I => simp a
+    | prod (a, b) => pair (simp a \o pi1, simp b \o pi2)
+    | pair (a, b) \o c => pair (simp a \o simp c, simp b \o simp c)
+    | pi1 \o pair (a, b) => simp a
+    | pi2 \o pair (a, b) => simp b
+    | pr (a, b) \o S => simp b \o pr (simp a, simp b)
+    | pr (a, b) \o O => simp a
+    | ev \o prod (cur a, I) => simp a
+    | ev \o pair (cur a \o c, b) => simp a \o pair (simp c, simp b)
+    | ev \o pair (cur a, b) => simp a \o pair (I, simp b)
+    | exp (a, b) => cur (simp b) \o ev \o prod (I, simp a)
+    | _ => a
+    end.
+
+  Lemma test a b : simp a = b -> a = b.
+  Proof.
+  Admitted.
+
+End NotUsed.
+
 
 (* END *)
