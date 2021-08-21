@@ -41,21 +41,49 @@ Section CPL_SEMANTICS.
   | s_r    {a b c} : step b c -> step (a \o b) (a \o c) *)
   | dot_al {a b c} : step ((a \o b) \o c) (a \o (b \o c))
   | dot_ar {a b c} : step (a \o (b \o c)) ((a \o b) \o c)
+
+  (* prod : 右関手 *)
   | prod_c {a b}   : step (prod (a, b))
                           (pair (a \o pi1, b \o pi2))
+  (* pair : 右仲介射 *)
   | pair_c {a b c} : step (pair (a, b) \o c)
                           (pair (a \o c, b \o c))
+  (* pi1 : 右自然変換 *)
+  (* pi2 : 右自然変換 *)
   | pair_l {a b}   : step (pi1 \o pair (a, b)) a
   | pair_r {a b}   : step (pi2 \o pair (a, b)) b
+
+  (* pr : 左仲介射 *)
   | pr_l   {a b}   : step (     pr (a, b) \o S)
                           (b \o pr (a, b))
   | pr_r   {a b}   : step (     pr (a, b) \o O) a
+
+  (* ev : 右自然変換 *)
   | ev_d   {a}     : step (ev \o prod (cur a, I)) a
   | ev_a   {a b c} : step (ev \o pair (cur a \o c, b))
                           (a  \o pair (c, b))
+  (* exp : 右関手 *)
   | exp_e  {a b}   : step (exp (a, b))
                           (cur b \o ev \o prod (I, a))
   .
+
+(**
+```
+--------|---------|--------|-------------|------
+        | 関手    | 仲介射  | 自然変換    | 型
+--------|---------|--------|-------------|------
+右      | 1       | !      | -           | -
+左      | 0       | !!     | -           | -
+右      | prod    | pair   | pi1, pi2    | A, B
+左      | coprod  | case   | in1, in2    | A, B
+右      | exp     | cur    | ev          | A, B
+左      | bool    | if     | true, false | 1
+左      | nat     | pr     | O, S        | 1
+左      | list    | fold   | nil, cons   | A
+右      | inflist | unfold | get, next   | A
+--------|---------|--------|-------------|------
+```
+*)
   
   Axiom AX : forall {a b}, step a b -> a = b.
   
@@ -197,6 +225,24 @@ mult
   Definition mult := ev \o prod (pr (cur (O \o I),
                                      cur (add \o pair (ev, pi2))),
                                  I).
+
+  Goal mult \o pair (O, O) = O.
+  Proof.
+    rewrite /mult.
+    rewrite prodC.
+    rewrite !dotA.
+    rewrite pairC.
+    rewrite !id1a.
+    rewrite !ida1.
+    rewrite !dotA.
+    rewrite !pairR.
+    rewrite !pairL.
+    rewrite -!dotA.
+    rewrite prR.
+    rewrite eval1.
+    (* O \o pair (I, O) = O *)
+  Admitted.
+
 (**
 fact
 *)
