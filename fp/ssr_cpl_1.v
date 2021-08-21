@@ -10,8 +10,9 @@ Unset Printing Implicit Defensive.
 Section CPL_DEF.
   
   Inductive object :=
-  | I
-  | dot of object & object
+  | I                                       (* 恒等射 *)
+  | dot of object & object                  (* 合成 *)
+  (* *** *)
   | prod of (object * object)
   | pair of (object * object)
   | pi1
@@ -26,8 +27,8 @@ Section CPL_DEF.
 
 End CPL_DEF.
 
-Notation "a \; b" := (dot a b).             (* 左結合 *)
-Notation "a \o b" := (dot a b).             (* 右結合 *)
+Notation "f \; g" := (dot f g).             (* 左結合 *)
+Notation "f \o g" := (dot f g).             (* 右結合 *)
 
 Check pi1 \; (pi1 \; pi1).
 Check (pi1 \o pi1) \o pi1.
@@ -35,42 +36,42 @@ Check (pi1 \o pi1) \o pi1.
 Section CPL_SEMANTICS.
 
   Inductive step : object -> object -> Prop :=
-  | id_l   {a}     : step (I \o a) a
-  | id_r   {a}     : step (a \o I) a
-(*| s_l    {a b c} : step a b -> step (a \o c) (b \o c)
-  | s_r    {a b c} : step b c -> step (a \o b) (a \o c) *)
-  | dot_al {a b c} : step ((a \o b) \o c) (a \o (b \o c))
-  | dot_ar {a b c} : step (a \o (b \o c)) ((a \o b) \o c)
+  | id_l   {f}     : step (I \o f) f
+  | id_r   {f}     : step (f \o I) f
+(*| s_l    {f g h} : step f g -> step (f \o h) (b \o h)
+  | s_r    {f g h} : step g h -> step (f \o g) (f \o h) *)
+  | dot_al {f g h} : step ((f \o g) \o h) (f \o (g \o h))
+  | dot_ar {f g h} : step (f \o (g \o h)) ((f \o g) \o h)
 
   (* prod : 右関手 *)
-  | prod_c {a b}   : step (prod (a, b))
-                          (pair (a \o pi1, b \o pi2))
+  | prod_c {f g}   : step (prod (f, g))
+                          (pair (f \o pi1, g \o pi2))
   (* pair : 右仲介射 *)
-  | pair_c {a b c} : step (pair (a, b) \o c)
-                          (pair (a \o c, b \o c))
+  | pair_c {f g h} : step (pair (f, g) \o h)
+                          (pair (f \o h, g \o h))
   (* pi1 : 右自然変換 *)
   (* pi2 : 右自然変換 *)
-  | pair_l {a b}   : step (pi1 \o pair (a, b)) a
-  | pair_r {a b}   : step (pi2 \o pair (a, b)) b
+  | pair_l {f g}   : step (pi1 \o pair (f, g)) f
+  | pair_r {f g}   : step (pi2 \o pair (f, g)) g
 
   (* pr : 左仲介射 *)
-  | pr_l   {a b}   : step (     pr (a, b) \o S)
-                          (b \o pr (a, b))
-  | pr_r   {a b}   : step (     pr (a, b) \o O) a
+  | pr_l   {f g}   : step (     pr (f, g) \o S)
+                          (g \o pr (f, g))
+  | pr_r   {f g}   : step (     pr (f, g) \o O) f
 
   (* ev : 右自然変換 *)
-  | ev_d   {a}     : step (ev \o prod (cur a, I)) a
-  | ev_a   {a b c} : step (ev \o pair (cur a \o c, b))
-                          (a  \o pair (c, b))
+  | ev_d   {f}     : step (ev \o prod (cur f, I)) f
+  | ev_a   {f g h} : step (ev \o pair (cur f \o h, g))
+                          (f  \o pair (h, g))
   (* exp : 右関手 *)
-  | exp_e  {a b}   : step (exp (a, b))
-                          (cur b \o ev \o prod (I, a))
+  | exp_e  {f g}   : step (exp (f, g))
+                          (cur g \o ev \o prod (I, f))
   .
 
 (**
 ```
 --------|---------|--------|-------------|------
-        | 関手    | 仲介射  | 自然変換    | 型
+        | 関手 F  | 仲介射ψ | 自然変換α | 型 E
 --------|---------|--------|-------------|------
 右      | 1       | !      | -           | -
 左      | 0       | !!     | -           | -
@@ -85,62 +86,62 @@ Section CPL_SEMANTICS.
 ```
 *)
   
-  Axiom AX : forall {a b}, step a b -> a = b.
+  Axiom AX : forall {f g}, step f g -> f = g.
   
-  Lemma ida1 a : a \o I = a.
+  Lemma ida1 f : f \o I = f.
   Proof.
       by apply: (AX id_r).
   Qed.
   
-  Lemma id1a a : I \o a = a.
+  Lemma id1a f : I \o f = f.
   Proof.
       by apply: (AX id_l).
   Qed.
   
-  Lemma dotA a b c : a \o b \o c = a \o (b \o c). (* 左結合 = 右結合 *)
+  Lemma dotA f b c : f \o b \o c = f \o (b \o c). (* 左結合 = 右結合 *)
   Proof.
       by apply: (AX dot_al).
   Qed.
   
-  Lemma prodC a b : prod (a, b) = pair (a \o pi1, b \o pi2).
+  Lemma prodC f g : prod (f, g) = pair (f \o pi1, g \o pi2).
   Proof.
       by apply: (AX prod_c).
   Qed.
 
-  Lemma pairC a b c : pair (a, b) \o c = pair (a \o c, b \o c).
+  Lemma pairC f g h : pair (f, g) \o h = pair (f \o h, g \o h).
   Proof.
       by apply: (AX pair_c).
   Qed.
   
-  Lemma pairL a b : pi1 \o pair (a, b) = a.
+  Lemma pairL f g : pi1 \o pair (f, g) = f.
   Proof.
       by apply: (AX pair_l).
   Qed.
   
-  Lemma pairR a b : pi2 \o pair (a, b) = b.
+  Lemma pairR f g : pi2 \o pair (f, g) = g.
   Proof.
       by apply: (AX pair_r).
   Qed.
   
-  Lemma prL a b : pr (a, b) \o S = b \o pr (a, b).
+  Lemma prL f g : pr (f, g) \o S = g \o pr (f, g).
   Proof.
       by apply: (AX pr_l).
   Qed.
   
-  Lemma prR a b : pr (a, b) \o O = a.
+  Lemma prR f g : pr (f, g) \o O = f.
   Proof.
       by apply: (AX pr_r).
   Qed.
   
-  Lemma eval a b c : ev \o pair (cur a \o b, c) = a \o pair (b, c).
+  Lemma eval f g h : ev \o pair (cur f \o g, h) = f \o pair (g, h).
   Proof.
     by apply: (AX ev_a).
   Qed.
   
   (* eval の終了時の特別な形 *)
-  Lemma eval1 a b : ev \o pair (cur a, b) = a \o pair (I, b).
+  Lemma eval1 f g : ev \o pair (cur f, g) = f \o pair (I, g).
   Proof.
-    rewrite -[cur a]ida1.
+    rewrite -[cur f]ida1.
       by apply: eval.
   Qed.
 
@@ -256,27 +257,27 @@ End Sample.
 
 Section NotUsed.
 
-  Fixpoint simp a :=
-    match a with
-    | I \o a => simp a
-    | a \o I => simp a
-    | prod (a, b) => pair (simp a \o pi1, simp b \o pi2)
-    | pair (a, b) \o c => pair (simp a \o simp c, simp b \o simp c)
-    | pi1 \o pair (a, b) => simp a
-    | pi2 \o pair (a, b) => simp b
-    | pr (a, b) \o S => simp b \o pr (simp a, simp b)
-    | pr (a, b) \o O => simp a
-    | ev \o prod (cur a, I) => simp a
-    | ev \o pair (cur a \o c, b) => simp a \o pair (simp c, simp b)
-    | ev \o pair (cur a, b) => simp a \o pair (I, simp b)
-    | exp (a, b) => cur (simp b) \o ev \o prod (I, simp a)
-    | _ => a
+  Fixpoint simp f :=
+    match f with
+    | I \o f => simp f
+    | f \o I => simp f
+    | prod (f, g) => pair (simp f \o pi1, simp g \o pi2)
+    | pair (f, g) \o c => pair (simp f \o simp c, simp g \o simp c)
+    | pi1 \o pair (f, g) => simp f
+    | pi2 \o pair (f, g) => simp g
+    | pr (f, g) \o S => simp g \o pr (simp f, simp g)
+    | pr (f, g) \o O => simp f
+    | ev \o prod (cur f, I) => simp f
+    | ev \o pair (cur f \o c, b) => simp f \o pair (simp c, simp b)
+    | ev \o pair (cur f, g) => simp f \o pair (I, simp g)
+    | exp (f, g) => cur (simp g) \o ev \o prod (I, simp f)
+    | _ => f
     end.
 
-  Lemma test a b : simp a = b -> a = b.
+  Lemma test f g : simp f = g -> f = g.
   Proof.
   Admitted.
-
+  
 End NotUsed.
 
 
