@@ -1,5 +1,29 @@
 Categorical Programming Language (CPL, 圏論プログラミング言語) の情報
 
+# オリジナルの情報
+
+## 論文
+
+- Hagino, A Categorical Programming Language
+http://web.sfc.keio.ac.jp/~hagino/thesis.pdf ○
+
+- カテゴリー理論的関数型プログラミング言語
+https://ci.nii.ac.jp/naid/110003743564 ○
+
+- 不動点をめぐって：3. 情報工学に見られる不動点論の散策 3.3 プログラム理論と不動点 -表示的意味論における不動点の役割-
+https://ci.nii.ac.jp/naid/110002762687 ○
+
+- 随伴関手を用いた圏論的結合子の導出
+https://ci.nii.ac.jp/naid/110002721963 ○
+
+
+## 萩野先生の講義
+
+- 慶應義塾大学 2020年度 秋学期 情報数学
+https://web.sfc.keio.ac.jp/~hagino/mi20/
+第11回にて言及
+
+
 # 最近の情報
 
 ## Wikipedia
@@ -40,25 +64,6 @@ https://kimiyuki.net/blog/2015/06/12/ackermann-function-in-cpl/
 
 - 素数列をcplで - うさぎ小屋
 https://kimiyuki.net/blog/2015/06/12/sequence-of-primes-in-cpl/
-
-
-
-# オリジナルの情報
-
-## 論文
-
-- Hagino, A Categorical Programming Language
-http://web.sfc.keio.ac.jp/~hagino/thesis.pdf ○
-
-- カテゴリー理論的関数型プログラミング言語
-https://ci.nii.ac.jp/naid/110003743564 ○
-
-- 不動点をめぐって：3. 情報工学に見られる不動点論の散策 3.3 プログラム理論と不動点 -表示的意味論における不動点の役割-
-https://ci.nii.ac.jp/naid/110002762687 ○
-
-- 随伴関手を用いた圏論的結合子の導出
-https://ci.nii.ac.jp/naid/110002721963 ○
-
 
 
 # simh で動かす
