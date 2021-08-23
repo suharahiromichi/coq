@@ -3,6 +3,12 @@
 高階原始帰納的関数（primitive recursiveな汎関数）として定義できる。
 *)
 
+(**
+課題；
+CCC (CPL) による実装はある。
+チャーチ・エンコーディングの元で実装できるか。System Fでは。
+*)
+
 From mathcomp Require Import all_ssreflect.
 (*
 Require Import ssromega.
@@ -68,9 +74,9 @@ Section Pr.
     | n'.+1 => g \o (pr n' f g)
     end.
 (**
-  (pr 0 f g) x = f x
-  (pr 1 f g) x = g (f x)
-  (pr 2 f g) x = g (g (f x)).
+   (pr 0 f g) x = f x
+   (pr 1 f g) x = g (f x)
+   (pr 2 f g) x = g (g (f x)).
 *)
 
   Fixpoint pr2 (n : nat) (x : T) (g : T -> T) : T :=
@@ -79,9 +85,9 @@ Section Pr.
     | n'.+1 => g (pr2 n' x g)
     end.
 (**
-  (pr2 0 x g) x = x
-  (pr2 1 x g) x = g x
-  (pr2 2 x g) x = g (g x).
+   pr2 0 x g = x
+   pr2 1 x g = g x
+   pr2 2 x g = g (g x).
 *)
 End Pr.
 
