@@ -106,6 +106,7 @@ ack' は pr でも pr2 でも定義できるが。
 *)
   Definition ack' (f : nat -> nat) (m : nat) : nat := (pr m f f) 1.
   Definition ack'' (f : nat -> nat) (m : nat) : nat := pr2 m (f 1) f.
+  Check ack'' : (nat -> nat) -> nat -> nat.
   
   Compute ack' S 10.                        (* 12 *)
   Compute ack'' S 10.                       (* 12 *)
@@ -114,13 +115,47 @@ ack' は pr でも pr2 でも定義できるが。
 (**
 ack は pr2 でないと難しい。
 *)
-  Definition ack n m := (pr2 n (fun m => m.+1) ack'') m.
+  Definition ack n m := (pr2 n S ack'') m.
+  Check ack : nat -> nat -> nat.
 
   Compute ack 1 2.                          (* 4 *)
   Compute ack 2 3.                          (* 9 *)
   Compute ack 3 4.                          (* 125 *)
   
 End Ack2.
+
+(**
+System F の Church Encodeing
+*)
+Module ChurchNat.
+  
+  Definition CNat := forall (X : Set), (X -> X) ->  X -> X.
+
+  Definition czero : CNat := fun X f x => x.
+  Definition csucc (N : CNat) : CNat := fun X f x => f (N X f x).  
+  
+  Definition cplus' (M N : CNat) : CNat := M CNat csucc N. (* 1 を M回足す *)
+  Definition cmult' (M N : CNat) : CNat := M CNat (cplus' N) czero. (* N を M回足す *)
+
+  Definition ack' (f : CNat -> CNat) (M : CNat) : CNat := M CNat f (f (csucc czero)).
+  Check ack' : (CNat -> CNat) -> CNat -> CNat.
+
+  (* 引数にとれるのは、CNat -> CNat の関数だけ。 *)
+  Fail Definition ack (M : CNat) := M CNat ack' csucc.
+
+  (* Mを高階にすればしのげるが。。。 *)
+  Definition CNatNat := forall (X : Set), ((X -> X) -> (X -> X)) -> (X -> X) -> (X -> X).
+  Check ack' (ack' csucc) : CNat -> CNat.
+
+  Definition ack (M : CNatNat) := M CNat ack' csucc.
+  Check ack : CNatNat -> CNat -> CNat.
+
+  (* 引数にわたせない。  *)
+  
+  Fail Compute ack (csucc czero) (csucc (csucc czero)).
+
+End ChurchNat.
+
 
 Section Th.
 
