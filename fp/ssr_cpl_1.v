@@ -8,8 +8,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 Section CPL_DEF.
-  
+
   Inductive object :=
+  | i                                       (* ! *)
   | I                                       (* 恒等射 *)
   | dot of object & object                  (* 合成 *)
   (* *** *)
@@ -184,18 +185,21 @@ add
     rewrite !dotA.                          (* 右結合 *)
     rewrite pairL.
     rewrite -!dotA.                         (* 左結合 *)
+    
+    rewrite pairR.
+
     rewrite prL.
     rewrite !dotA.                          (* 右結合 *)
     rewrite prR.
     rewrite eval.
     rewrite !dotA.                          (* 右結合 *)
     rewrite eval1.
-    rewrite !pairR.
+    rewrite pairR.
     rewrite /two.
     rewrite !dotA.                          (* 右結合 *)
     done.
   Qed.
-
+  
   Definition add_alt := ev \o prod (pr (cur pi2, cur (S \o ev)), I).
   
   Goal add_alt \o pair (one, one) = two.
@@ -209,11 +213,14 @@ add
     rewrite -!dotA.                         (* 左結合 *)
     rewrite prL.
     rewrite !dotA.                          (* 右結合 *)
+    
+    rewrite pairR.
+    
     rewrite prR.
     rewrite eval.
     rewrite !dotA.                          (* 右結合 *)
     rewrite eval1.
-    rewrite !pairR.
+    rewrite pairR.
     rewrite /two.
     rewrite !dotA.                          (* 右結合 *)
     rewrite id1a.
@@ -223,7 +230,8 @@ add
 (**
 mult
 *)  
-  Definition mult := ev \o prod (pr (cur (O \o I),
+  (* O \o ! である。 *)
+  Definition mult := ev \o prod (pr (cur (O \o i),
                                      cur (add \o pair (ev, pi2))),
                                  I).
 
@@ -234,7 +242,7 @@ mult
     rewrite !dotA.
     rewrite pairC.
     rewrite !id1a.
-    rewrite !ida1.
+(*    rewrite !ida1. *)
     rewrite !dotA.
     rewrite !pairR.
     rewrite !pairL.
@@ -242,6 +250,7 @@ mult
     rewrite prR.
     rewrite eval1.
     (* O \o pair (I, O) = O *)
+    (* (O \o !) \o pair (I, O) = O *)
   Admitted.
 
 (**
