@@ -7,7 +7,8 @@ https://maoe.hatenadiary.jp/entry/20090820/1250782646
 https://en.wikipedia.org/wiki/Anamorphism
  *)
 From mathcomp Require Import all_ssreflect.
-(* Require Import Recdef.                   (* Function *) *)
+Require Import ssromega.
+Require Import Recdef.                   (* Function *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -90,7 +91,7 @@ Section Function.
     | _ => false
     end.
 
-  Definition anaZip : seq A * seq B -> seq (A * B) := ana 10 unsp fin.
+  Definition anaZip h : seq A * seq B -> seq (A * B) := ana h unsp fin.
   
   Definition anaIterate (f : A -> A) : A -> seq A :=
     ana 10 (fun a => (a, f a)) xpred0.      (* (fun _ => false) *)
@@ -150,6 +151,8 @@ End Examples.
 Section TH.
 
   Variable A B : Type.
+  Variable _a : A.
+  Variable _b : B.
   
   Lemma length_ok (s : seq A) : cataLength s = length s.
   Proof.
@@ -162,7 +165,55 @@ Section TH.
     rewrite /cataFilter.
       by elim: s => //= a s ->.
   Qed.
+
+  Function myZip (s : seq A) (t : seq B) : seq (A * B):=
+    match s with
+    | [::] => [::]
+    | x :: s' => match t with
+                 | [::] => [::]
+                 | y :: t' => (x, y) :: myZip s' t'
+                 end
+    end.
   
+  Lemma l_zip_nil_l (h : nat) (t : seq B) :
+    0 < h  ->
+    ana h (unsp _a _b) (fin (B:=B)) ([::], t) = [::].
+  Proof.
+      by elim: h => //.
+  Qed.
+  
+  Lemma l_zip_nil_r (h : nat) (s : seq A) :
+    0 < h  ->
+    ana h (unsp _a _b) (fin (B:=B)) (s, [::]) = [::].
+  Proof.
+    elim: h => // h IHh Hh.
+  Admitted.
+  
+  Lemma l_zip (h : nat) (a : A) (b : B) (s : seq A) (t : seq B) :
+    0 < h ->
+    ana h.+1 (unsp _a _b) (fin (B:=B)) (a :: s, b :: t) =
+    (a, b) :: ana h (unsp _a _b) (fin (B:=B)) (s, t).
+  Proof.
+      by elim: h => //.
+  Qed.
+  
+  Lemma zip_ok (h : nat) (s : seq A) (t : seq B) :
+    2 < h -> anaZip _a _b h (s, t) = myZip s t.
+  Proof.
+    move: h.
+    rewrite /anaZip.
+    functional induction (myZip s t) => h Hh1.
+    - by rewrite l_zip_nil_l; last ssromega.
+    - by rewrite l_zip_nil_r; last ssromega.
+    - rewrite -(IHl h.-1) => //.
+      + rewrite -l_zip. 
+        * rewrite prednK.
+          ** done.
+          ** ssromega.
+        * ssromega.
+      + admit.
+  Admitted.
+
 End TH.
 
 (* END *)
