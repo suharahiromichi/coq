@@ -165,7 +165,21 @@ Section TH.
     rewrite /cataFilter.
       by elim: s => //= a s ->.
   Qed.
+  
+  Lemma fact_ok (n : nat) : paraFact n = n`!.
+  Proof.
+    rewrite /paraFact.
+      by elim: n => //= n ->.
+  Qed.
+  
+End TH.
 
+Section NG.
+
+  Variable A B : Type.
+  Variable _a : A.
+  Variable _b : B.
+  
   Function myZip (s : seq A) (t : seq B) : seq (A * B):=
     match s with
     | [::] => [::]
@@ -214,6 +228,7 @@ Section TH.
       + admit.
   Admitted.
 
-End TH.
+
+End NG.
 
 (* END *)
