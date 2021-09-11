@@ -16,6 +16,7 @@ Unset Printing Implicit Defensive.
 Section Homomorphism.
 
   Variable A B : Type.
+  Variable _a : A.                          (* ダミー値 *)
   
 (**
 Catamorphism
@@ -32,15 +33,26 @@ Anamorphism
   Fixpoint ana (h : nat) (g : B -> A * B) (p : B -> bool) (b : B) : seq A :=
     match h with
     | 0 => [::]
-    | h.+1 => let (a, b') := g b in
-              if (p b) then [::] else a :: (ana h g p b')
+    | h.+1 => if (p b) then [::] else
+                let (a, b') := g b in a :: (ana h g p b')
+    end.
+
+(**
+Hylomorphism
+*)
+  Fixpoint hylo (h : nat) (c : A) f (g : A -> B * A) (p : A -> bool) (a : A) :=
+    match h with
+    | 0 => _a
+    | h.+1 =>
+      if (p a) then c else
+        let (b, a') := g a in f b (hylo h c f g p a')
     end.
 
 End Homomorphism.
 
 Section Function.
 
-  Variable A B T : Type.
+  Variable A B : Type.
   Variable _a : A.                          (* ダミー値 *)
   Variable _b : B.                          (* ダミー値 *)
   
@@ -83,6 +95,14 @@ Section Function.
                   | _ => false
                   end).
   
+  Definition hyloFact : nat -> nat :=
+    hylo 0 10 1 muln       (* ダミー変数 h=10 が尽きると 0 を返す。 *)
+         (fun n => match n with
+                   | n'.+1 => (n, n')
+                   | _ => (0, 0)
+                   end)
+         (eq_op 0).
+  
 End Function.
 
 Section Examples.
@@ -96,6 +116,8 @@ Section Examples.
   Compute anaIterate succn 0.  (* [:: 0; 1; 2; 3; 4; 5; 6; 7; 8; 9] *)
   
   Compute cataMap succn [:: 0; 1; 2; 3; 4]. (* [:: 1; 2; 3; 4; 5] *)
+
+  Compute hyloFact 5.                       (* 120 *)
   
 End Examples.
 
