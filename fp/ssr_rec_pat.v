@@ -30,7 +30,7 @@ Catamorphism
 (**
 Anamorphism
  *)
-  Fixpoint ana (h : nat) (g : B -> A * B) (p : B -> bool) (b : B) : seq A :=
+  Fixpoint ana (h : nat) (g : B -> A * B) (p : pred B) (b : B) : seq A :=
     match h with
     | 0 => [::]
     | h.+1 => if (p b) then [::] else
@@ -41,7 +41,7 @@ Anamorphism
 Hylomorphism
 *)
   Fixpoint hylo (h : nat) (c : A) (f : B -> A -> A)
-           (g : A -> B * A) (p : A -> bool) (a : A) : A :=
+           (g : A -> B * A) (p : pred A) (a : A) : A :=
     match h with
     | 0 => _a
     | h.+1 =>
@@ -74,7 +74,7 @@ Section Function.
   Definition cataLength : seq A -> nat :=
     cata 0 (fun (_ : A) (n : nat) => n.+1).
   
-  Definition cataFilter (p : A -> bool) : seq A -> seq A :=
+  Definition cataFilter (p : pred A) : seq A -> seq A :=
     cata [::] (fun (a : A) (a' : seq A) => if (p a) then (a :: a') else a').
   
   Definition unsp (s : (seq A * seq B)) : (A * B) * (seq A * seq B) :=
@@ -146,5 +146,23 @@ Section Examples.
   Compute paraTails [:: 1; 2; 3].
 
 End Examples.
+
+Section TH.
+
+  Variable A B : Type.
+  
+  Lemma length_ok (s : seq A) : cataLength s = length s.
+  Proof.
+    rewrite /cataLength.
+      by elim: s => //= a s ->.
+  Qed.
+
+  Lemma filter_ok (b : pred A) (s : seq A) : cataFilter b s = filter b s.
+  Proof.
+    rewrite /cataFilter.
+      by elim: s => //= a s ->.
+  Qed.
+  
+End TH.
 
 (* END *)
