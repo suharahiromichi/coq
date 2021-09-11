@@ -40,12 +40,27 @@ Anamorphism
 (**
 Hylomorphism
 *)
-  Fixpoint hylo (h : nat) (c : A) f (g : A -> B * A) (p : A -> bool) (a : A) :=
+  Fixpoint hylo (h : nat) (c : A) (f : B -> A -> A)
+           (g : A -> B * A) (p : A -> bool) (a : A) : A :=
     match h with
     | 0 => _a
     | h.+1 =>
       if (p a) then c else
         let (b, a') := g a in f b (hylo h c f g p a')
+    end.
+(**
+Paramorphism
+*)
+  Fixpoint numPara (b : B) (f : nat -> B -> B) (n : nat) : B := (* 数 *)
+    match n with
+    | 0 => b
+    | n'.+1 => f n' (numPara b f n')
+    end.
+
+  Fixpoint listPara (b : B) (f : A -> (seq A) * B -> B) (s : seq A) : B := (* リスト *)
+    match s with
+    | [::] => b
+    | a :: a' => f a (a', listPara b f a')
     end.
 
 End Homomorphism.
@@ -96,12 +111,19 @@ Section Function.
                   end).
   
   Definition hyloFact : nat -> nat :=
-    hylo 0 10 1 muln       (* ダミー変数 h=10 が尽きると 0 を返す。 *)
+    hylo 0 10 1 muln (* 再帰のダミー変数 h=10 が尽きると 0 を返す。 *)
          (fun n => match n with
                    | n'.+1 => (n, n')
                    | _ => (0, 0)
                    end)
          (eq_op 0).
+  
+  Definition paraFact : nat -> nat := numPara 1 (fun n m => n.+1 * m).
+
+  Definition paraTails : seq A -> seq (seq A) :=
+    listPara ([:: [::]; [::]])
+             (fun (a : A) (s : (seq A * seq (seq A))) =>
+                let (s', tls) := s in (a :: s') :: tls).
   
 End Function.
 
@@ -119,6 +141,10 @@ Section Examples.
 
   Compute hyloFact 5.                       (* 120 *)
   
+  Compute paraFact 5.                       (* 120 *)
+
+  Compute paraTails [:: 1; 2; 3].
+
 End Examples.
 
 (* END *)
