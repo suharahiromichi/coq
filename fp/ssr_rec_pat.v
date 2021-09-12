@@ -2,6 +2,10 @@
 (**
 # 再帰のパターン
 
+maoe のブログ
+
+- 再帰のパターン
+
 https://maoe.hatenadiary.jp/entry/20090820/1250782646
 
 https://en.wikipedia.org/wiki/Anamorphism
@@ -49,6 +53,7 @@ Hylomorphism - ダミー変数を使って定義する。
       if (p a) then c else
         let (b, a') := g a in f b (hylo h c f g p a')
     end.
+  
 (**
 Paramorphism
 *)
@@ -177,7 +182,13 @@ End TH.
 (**
 # 余帰納法による Anamorphism
 
+Ryusei’s Notes (a.k.a. M59のブログ)
+
+- 無限リストと証明じゃないCoqの話
+
 https://mandel59.hateblo.jp/entry/2013/02/07/213230
+
+- Coq 帰納法と余帰納法
 
 https://mandel59.hateblo.jp/entry/2013/02/09/151347  
  *)
@@ -296,6 +307,9 @@ simplを使う前に補題 unfold_Stream を使って書き換えておく必要
 
 End MyStreams.  
 
+(**
+zip を unfold で定義する。suhara
+*)
 Section Function2.
 
   Compute unsp 0 0  ([:: 1; 3; 5], [:: 2; 4; 6]). (* 0 はダミー値 _a, _b *)
@@ -323,6 +337,51 @@ Section Function2.
     Admitted.
 
 End Function2.
+
+(**
+Hylomorphism - coFix で定義する。suhara
+*)
+Section MyStreams2.
+
+  Variable A B : Type.
+  
+  Fixpoint fold (h : nat) (b : B) (f : A -> B -> B) (s : Stream A) : B :=
+    match h with
+    | 0 => b
+    | h'.+1 => f (hd s) (fold h' b f (tl s))
+    end.
+  
+  Definition foldunfold h (b1 b2 : B) g f := fold h b1 g (unfold f b2).
+  
+End MyStreams2.
+
+Section Function3.
+
+  Definition gen := unfold  (fun n => match n with
+                                      | n'.+1 => (n, n')
+                                      | _ => (0, 0)
+                                      end).
+  Compute takeStream 10 (gen 3). (* = [:: 3; 2; 1; 0; 0; 0; 0; 0; 0; 0] *)
+
+  Definition load := fold 10 0 addn.
+  Compute load (gen 3).                     (* 6 *)
+
+  Definition sumi :=load \o gen.
+  Compute sumi 3.                           (* 6 *)
+  Compute sumi 4.                           (* 10 *)
+  Compute sumi 10.                          (* 55 *)
+
+End Function3.
+
+(**
+# Catamorphism ふたたび
+
+- Simon Robillard, "Catamorphism Generation and Fusion Using Coq"
+*)
+
+
+
+
 
 (* **************************************************** *)
 (* **************************************************** *)
