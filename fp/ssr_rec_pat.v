@@ -1,6 +1,6 @@
 (* -*- coding: utf-8 -*- *)
 (**
-再帰のパターン
+# 再帰のパターン
 
 https://maoe.hatenadiary.jp/entry/20090820/1250782646
 
@@ -175,6 +175,8 @@ Section TH.
 End TH.
 
 (**
+# 余帰納法による Anamorphism
+
 https://mandel59.hateblo.jp/entry/2013/02/07/213230
 
 https://mandel59.hateblo.jp/entry/2013/02/09/151347  
@@ -294,6 +296,34 @@ simplを使う前に補題 unfold_Stream を使って書き換えておく必要
 
 End MyStreams.  
 
+Section Function2.
+
+  Compute unsp 0 0  ([:: 1; 3; 5], [:: 2; 4; 6]). (* 0 はダミー値 _a, _b *)
+  
+  Definition zipStream s t := takeStream (length s) (unfold (unsp 0 0) (s, t)).
+  Check zipStream [:: 1; 3; 5] [:: 2; 4; 6].
+  Compute zipStream [:: 1; 3; 5] [:: 2; 4; 6]. (* = [:: (1, 2); (3, 4); (5, 6)] *)
+  
+  Function myZip (s t : seq nat) : seq (nat * nat):=
+    match s with
+    | [::] => [::]
+    | x :: s' => match t with
+                 | [::] => [::]
+                 | y :: t' => (x, y) :: myZip s' t'
+                 end
+    end.
+    Compute myZip [:: 1; 3; 5] [:: 2; 4; 6].  (* = [:: (1, 2); (3, 4); (5, 6)] *)
+    
+    Lemma zip_ok (s t : seq nat) : zipStream s t = myZip s t.
+    Proof.
+      functional induction (myZip s t).
+      - admit.
+      - admit.
+      - rewrite /zipStream.
+    Admitted.
+
+End Function2.
+
 (* **************************************************** *)
 (* **************************************************** *)
 (*
@@ -305,6 +335,7 @@ Section NG.
   Variable _a : A.
   Variable _b : B.
   
+(*
   Function myZip (s : seq A) (t : seq B) : seq (A * B):=
     match s with
     | [::] => [::]
@@ -313,7 +344,7 @@ Section NG.
                  | y :: t' => (x, y) :: myZip s' t'
                  end
     end.
-  
+*)  
   Lemma l_zip_nil_l (h : nat) (t : seq B) :
     0 < h  ->
     ana h (unsp _a _b) (fin (B:=B)) ([::], t) = [::].
