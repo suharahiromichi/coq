@@ -382,6 +382,56 @@ Section Summation.
 End Summation.
 
 (**
+NG。stream でなく tree に直さないと書けないのだろう。
+*)
+Section Fibonacci.
+
+  Inductive Fib :=
+  | FZero
+  | FOne
+  | FNode of nat & nat.
+  
+  Definition psi n :=
+    match n with
+    | 0 => (FZero, 1)
+    | 1 => (FOne, 2)
+    | n => (FNode n.-2 n.-1, n.+1)
+    end.
+  Definition fibgen := unfold psi.
+  Compute takeStream 10 (fibgen 0).
+  
+  Definition phi x y :=
+    match x with
+    | FZero => match y with
+               | FZero => FZero
+               | FOne => FOne
+               | FNode a b => FNode a b
+               end
+    | FOne => match y with
+              | FZero => FOne
+              | FOne => FNode 1 1
+              | FNode a b => FNode a.+1 b
+              end
+    | FNode a' b' => match y with
+                     | FZero => FNode a' b'
+                     | FOne => FNode a'.+1 b'
+                     | FNode a b => FNode (a + b) (a' + b')
+                     end
+    end.
+
+  Definition fibload h := fold h FZero phi.
+  Definition fib m n := fibload n (fibgen m).
+  
+  Compute fib 1 1.                          (* FOne *)
+  Compute fib 1 2.                          (* FNode 1 1 *)
+  Compute fib 1 3.                          (* FNode 4 1 *)
+  Compute fib 1 4.                          (* FNode 9 1 *)
+  Compute fib 1 5.                          (* FNode 16 1 *)
+
+End Fibonacci.
+
+
+(**
 # Catamorphism ふたたび
 
 - Simon Robillard, "Catamorphism Generation and Fusion Using Coq"
