@@ -239,7 +239,15 @@ Anamorphism - coFix で定義した。
  *)
   CoFixpoint unfold (f : B -> A * B) (b : B) : Stream A :=
     let (a, b') := f b in Cons a (unfold f b').
-
+  
+  CoFixpoint unfold' (f : A * B -> A * B) (b : A * B) : Stream A :=
+    let (a, b') := f b in Cons a (unfold' f (a, b')).
+  
+  (* npca2012年部誌KOF号_データ構造の畳み込みと展開 *)
+  (* unfold' と同じだが、自由度が少し高い版 *)
+  CoFixpoint unfold'' (f : B -> A) (g : B -> B) (b : B) : Stream A :=
+    Cons (f b) (unfold'' f g (g b)).
+  
 (**
 Streamの先頭にlistを連結するapp。
 *)
@@ -382,54 +390,52 @@ Section Summation.
 End Summation.
 
 (**
-NG。stream でなく tree に直さないと書けないのだろう。
 *)
 Section Fibonacci.
 
-  Inductive Fib :=
-  | FZero
-  | FOne
-  | FNode of nat & nat.
-  
-  Definition psi n :=
-    match n with
-    | 0 => (FZero, 1)
-    | 1 => (FOne, 2)
-    | n => (FNode n.-2 n.-1, n.+1)
-    end.
-  Definition fibgen := unfold psi.
-  Compute takeStream 10 (fibgen 0).
-  
-  Definition phi x y :=
-    match x with
-    | FZero => match y with
-               | FZero => FZero
-               | FOne => FOne
-               | FNode a b => FNode a b
-               end
-    | FOne => match y with
-              | FZero => FOne
-              | FOne => FNode 1 1
-              | FNode a b => FNode a.+1 b
-              end
-    | FNode a' b' => match y with
-                     | FZero => FNode a' b'
-                     | FOne => FNode a'.+1 b'
-                     | FNode a b => FNode (a + b) (a' + b')
-                     end
-    end.
+(*
+  CoFixpoint unfold' (f : nat * nat -> nat * nat) (b : nat * nat) : Stream nat :=
+    let (a, b') := f b in Cons a (unfold' f (a, b')).
+*)
+  Definition psi (a : nat * nat) := let (x, y) := a in (y, x + y).
 
-  Definition fibload h := fold h FZero phi.
-  Definition fib m n := fibload n (fibgen m).
-  
-  Compute fib 1 1.                          (* FOne *)
-  Compute fib 1 2.                          (* FNode 1 1 *)
-  Compute fib 1 3.                          (* FNode 4 1 *)
-  Compute fib 1 4.                          (* FNode 9 1 *)
-  Compute fib 1 5.                          (* FNode 16 1 *)
+  Definition fibgen := unfold' psi (0, 1).
+  Compute takeStream 10 fibgen. (* = [:: 1; 1; 2; 3; 5; 8; 13; 21; 34; 55] *)
 
+  Definition fibgen' := unfold'' fst psi (0, 1).
+  Compute takeStream 10 fibgen'. (* = [:: 0; 1; 1; 2; 3; 5; 8; 13; 21; 34] *)
+  
 End Fibonacci.
 
+Section Collatz.
+
+  Definition collatz :=
+    unfold'' id (fun x => if odd x then (x * 3).+1 else x %/2).
+  Compute takeStream 20 (collatz 11).
+  (* = [:: 11; 34; 17; 52; 26; 13; 40; 20; 10; 5; 16; 8; 4; 2; 1; 4; 2; 1; 4; 2] *)
+
+  Definition collatz' :=
+    unfold'' id (fun x => match x with
+                          | None => None
+                          | Some 1 => None
+                          | Some x' => Some (if odd x' then (x' * 3).+1 else x' %/2)
+                          end).
+  Compute takeStream 20 (collatz' (Some 11)).
+  (* = [:: Some 11; Some 34; Some 17; Some 52; Some 26; Some 13; 
+     Some 40; Some 20; Some 10; Some 5; Some 16; Some 8; 
+     Some 4; Some 2; Some 1; None; None; None; None; None]
+   *)
+  
+End Collatz.
+
+Section Sort.
+  (*
+    ssort :: Ord a => [a] -> [a]
+    ssort = unfoldr' (==[]) minimum (\xs->delete (minimum xs) xs)
+    *Main> ssort [1,8,3,5,2]
+    [1,2,3,5,8]
+   *)
+End Sort.
 
 (**
 # Catamorphism ふたたび
@@ -437,9 +443,9 @@ End Fibonacci.
 - Simon Robillard, "Catamorphism Generation and Fusion Using Coq"
 *)
 
-
-
-
+(* 
+T.B.D.
+ *)
 
 (* **************************************************** *)
 (* **************************************************** *)
