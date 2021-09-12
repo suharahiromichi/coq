@@ -355,23 +355,31 @@ Section MyStreams2.
   
 End MyStreams2.
 
-Section Function3.
+Section Summation.
 
-  Definition gen := unfold  (fun n => match n with
-                                      | n'.+1 => (n, n')
-                                      | _ => (0, 0)
-                                      end).
-  Compute takeStream 10 (gen 3). (* = [:: 3; 2; 1; 0; 0; 0; 0; 0; 0; 0] *)
+  Definition gen := unfold (fun n => (n, n.+1)).
+  Compute takeStream 10 (gen 1). (* = [:: 1; 2; 3; 4; 5; 6; 7; 8; 9; 10] *)
 
-  Definition load := fold 10 0 addn.
-  Compute load (gen 3).                     (* 6 *)
-
-  Definition sumi :=load \o gen.
-  Compute sumi 3.                           (* 6 *)
-  Compute sumi 4.                           (* 10 *)
-  Compute sumi 10.                          (* 55 *)
-
-End Function3.
+(**
+## Summuation
+*)
+  Definition sum h := fold h 0 addn.
+  Definition sumi m n := sum n (gen m).
+  Compute sumi 1 3.                         (* 6 *)
+  Compute sumi 1 4.                         (* 10 *)
+  Compute sumi 1 5.                         (* 15 *)
+  Compute sumi 1 10.                        (* 55 *)
+  
+(**
+## Factorial
+*)
+  Definition mul h := fold h 1 muln.
+  Definition fact m n := mul n (gen m).
+  Compute fact 1 3.                         (* 6 *)
+  Compute fact 1 4.                         (* 24 *)
+  Compute fact 1 5.                         (* 120 *)
+  
+End Summation.
 
 (**
 # Catamorphism ふたたび
