@@ -29,8 +29,8 @@ Catamorphism
     end.
   
 (**
-Anamorphism
- *)
+Anamorphism - ダミー変数を使って定義する。
+*)
   Fixpoint ana (h : nat) (g : B -> A * B) (p : pred B) (b : B) : seq A :=
     match h with
     | 0 => [::]
@@ -39,7 +39,7 @@ Anamorphism
     end.
 
 (**
-Hylomorphism
+Hylomorphism - ダミー変数を使って定義する。
 *)
   Fixpoint hylo (h : nat) (c : A) (f : B -> A -> A)
            (g : A -> B * A) (p : pred A) (a : A) : A :=
@@ -174,6 +174,131 @@ Section TH.
   
 End TH.
 
+(**
+https://mandel59.hateblo.jp/entry/2013/02/07/213230
+
+https://mandel59.hateblo.jp/entry/2013/02/09/151347  
+ *)
+Require Import Coq.Lists.Streams.
+(*
+Section Streams.
+
+  Variable A : Type.
+
+  CoInductive Stream : Type := Cons : A -> Stream -> Stream.
+
+  Definition hd (x : Stream) :=
+    match x with
+    | Cons a _ => a
+    end.
+
+  Definition tl (x : Stream) :=
+    match x with
+    | Cons _ xs =>xs
+    end.
+  
+(**
+Streamどうしが等しいことを余帰納的に定義する述語
+*)
+  CoInductive EqSt (s1 s2 : Stream) : Prop :=
+  | eqst : hd s1 = hd s2 -> EqSt (tl s1) (tl s2) -> EqSt s1 s2.
+  
+  CoFixpoint EqSt_reflex (s : Stream) : EqSt s s :=
+    eqst (erefl (hd s)) (EqSt_reflex (tl s)).
+
+End Streams.
+*)
+Section MyStreams.
+  
+  Variable A B : Type.
+
+  CoFixpoint iterate (f : A -> A) (x : A) : Stream A :=
+    Cons x (iterate f (f x)).
+
+  Fixpoint takeStream (n : nat) (s : Stream A) : list A :=
+    match n with
+    | O => nil
+    | S n1 => (hd s) :: takeStream n1 (tl s)
+    end.
+  
+(**
+Anamorphism - coFix で定義した。
+ *)
+  CoFixpoint unfold (f : B -> A * B) (b : B) : Stream A :=
+    let (a, b') := f b in Cons a (unfold f b').
+
+(**
+Streamの先頭にlistを連結するapp。
+*)
+  Fixpoint appStream (l : list A) (s : Stream A) : Stream A :=
+    match l with
+    | [::] => s
+    | a :: l1 => Cons a (appStream l1 s)
+    end.
+
+(**
+Streamの先頭n要素を捨てるdrop。
+*)
+  Fixpoint dropStream (n : nat) (s : Stream A) : Stream A :=
+    match n with
+      | O => s
+      | S n1 =>
+        match s with
+        | Cons _ s1 => dropStream n1 s1
+        end
+    end.
+
+(**  
+Streamからtakeしてから、dropした残りのStreamにappすると元のストリームに戻ることの証明。
+*)
+  Theorem app_take : forall (n : nat) (s : Stream A),
+      EqSt (appStream (takeStream n s) (dropStream n s)) s.
+  Proof.
+    move=> n.
+    induction n as [|n' IH].
+    - by apply EqSt_reflex.
+    - case=> a s' /=.
+        by apply: eqst => /=.
+  Qed.
+
+(**  
+listをStreamにappしてからtakeすると元のlistが得られることの証明。
+*)
+  Theorem take_app : forall (l : list A) (s : Stream A),
+      (takeStream (length l) (appStream l s)) = l.
+  Proof.
+    induction l as [|a l' IH].
+    - done.
+    - case=> a0 s0 /=.
+        by apply f_equal.
+  Qed.
+
+(**  
+iterate id a が const a に等しいことの証明。
+
+これは余帰納法を使わないといけない。
+Stream A型を返す関数で、余再帰的に定義されているconstやiterateを簡約するには、
+simplを使う前に補題 unfold_Stream を使って書き換えておく必要があった。
+*)
+  Theorem iterate_id (a : A) :
+    EqSt (iterate id a) (const a).
+  Proof.
+    cofix iterate_id.
+    rewrite (unfold_Stream (iterate id a)).
+    rewrite (unfold_Stream (const a)).
+    simpl.
+    apply eqst.
+    - done.
+    - by apply iterate_id.
+  Qed.
+
+End MyStreams.  
+
+(* **************************************************** *)
+(* **************************************************** *)
+(*
+ダミー変数のためにうまくいかないzipの証明
+*)
 Section NG.
 
   Variable A B : Type.
