@@ -141,13 +141,36 @@ Section Fibonacci.
   
 End Fibonacci.
 
+(**
+# ソート
+
+- npca2012年部誌KOF号_データ構造の畳み込みと展開
+*)
 Section Sort.
-  (*
-    ssort :: Ord a => [a] -> [a]
-    ssort = unfoldr' (==[]) minimum (\xs->delete (minimum xs) xs)
-    *Main> ssort [1,8,3,5,2]
-    [1,2,3,5,8]
-   *)
+(**
+リスト s の最小の要素を返す。
+*)
+  Fixpoint minimum s :=                   (* 仮に最初の要素を返す。 *)
+    match s with
+    | a :: a' => a
+    | _ => 0
+    end.
+
+(**
+リスト s から m を削除する。
+*)
+  Fixpoint delete (m : nat) (s : seq nat) :=
+    match s with
+    | a :: a' => if (a == m) then a' else delete m a'
+    | _ => [::]
+    end.
+
+  Definition ssort := unfold fst (fun s =>
+                                    let (_, s') := s in
+                                    let m' := minimum s' in
+                                    (m', delete m' s')).
+  Compute takeStream 7 (ssort (0, [:: 1; 2; 3; 4])).
+  
 End Sort.
 
 (**
