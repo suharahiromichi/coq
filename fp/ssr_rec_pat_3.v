@@ -89,9 +89,17 @@ Section ExampleCatamorphism.
 ## コンストラクタ S の消費
 
 ### fibAsHist
-
-TBD
 *)
+  Fixpoint fibAsHist' s n :=                (* 汎関数でない。XXXX *)
+    match n with
+    | 0 => s
+    | n'.+1 => match s with
+               | m :: n :: _ => fibAsHist' (m + n :: s) n'
+               | _ => s
+               end
+    end.
+  Definition fibAsHist m := head 0 (fibAsHist' [:: 1; 0] m.-1).
+  Compute fibAsHist 10.
 
 (**
 # unfold - anamorphism
@@ -126,7 +134,7 @@ Section ExampleAnamorphism.
 (**
 ### fact.
 
-TBD ?????
+TBD これは具体例なし。XXXXX
 *)          
 
 (**
@@ -142,7 +150,7 @@ TBD ?????
 ### fibAsHylo の前半
  *)
   Definition psi n := (n.-2, n.-1).
-  Fixpoint fibAsHylo1 h x :=
+  Fixpoint fibAsHylo1 h x :=                (* 汎関数でない。XXXX *)
     match h with
     | 0 => FLeaf x
     | h'.+1 =>
