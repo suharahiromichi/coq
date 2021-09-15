@@ -7,7 +7,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
-https://scrapbox.io/haskell-shoen/Recursion_Schemes
+Dynamorphism 概論 - https://45deg.github.io/rogyAdC2015/
+
+Recursion Schemes - https://scrapbox.io/haskell-shoen/Recursion_Schemes
 *)
 (**
 # fold - catamorphism
