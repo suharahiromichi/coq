@@ -77,25 +77,48 @@ End P1.
  *)
 Section P2.
 
-  Definition knapsackpsi (x : nat*nat) (s : seq (option nat)) :=
+(* option 型を使用する例。気持ちがいいが、実際はNoneは不要である。 *)
+
+  Definition knapsackpsi' (x : nat * nat) (s : seq (option nat)) :=
     let (m, n) := x in
     map2 (option_map2' maxn) s (ncons m (Some 0) (map (option_map (addn n)) s)).
 
-  Definition knapsack (t : seq (nat*nat)) :=
-    (refold knapsackpsi t [:: Some 0]).
-  
+  Definition knapsack' (t : seq (nat * nat)) :=
+    (refold knapsackpsi' t [:: Some 0]).
 
   (* 2kg, 8円 *)
-  Compute knapsackpsi (2, 8) [:: Some 0; None; Some 4; Some 7; None; Some 11].
+  Compute knapsackpsi' (2, 8) [:: Some 0; None; Some 4; Some 7; None; Some 11].
   (*  [:: Some 0; Some 0; Some 8; Some 7; Some 12; Some 15; None; Some 19] *)
+
+  Compute knapsack' [:: (2,3);(1,2);(3,6);(2,1);(1,3);(5,85)]. (* (w,v) *)
+(*
+    = [:: Some 0; Some 3; Some 5; Some 6; Some 9; Some 85; 
+          Some 88; Some 90; Some 91; Some 94; Some 96; Some 97; 
+          Some 99; Some 98; Some 100]
+*)  
+  Compute knapsack' [:: (3,2);(4,3);(1,2);(2,3);(3,6)].
+(*
+    = [:: Some 0; Some 2; Some 3; Some 6; Some 8; Some 9; 
+          Some 11; Some 11; Some 11; Some 13; Some 14; Some 14; 
+          Some 14; Some 16]
+*)
+
+(* 0 にする例 *)
   
+  Definition knapsackpsi (x : nat * nat) (s : seq nat) :=
+    let (m, n) := x in map2 maxn s (ncons m 0 (map (addn n) s)).
+
+  Definition knapsack (t : seq (nat * nat)) := refold knapsackpsi t [:: 0].
+  
+  (* 2kg, 8円 *)
+  Compute knapsackpsi (2, 8) [:: 0; 0; 4; 7; 0; 11].
+  (* = [:: 0; 0; 8; 8; 12; 15; 8; 19] *)
+
   Compute knapsack [:: (2,3);(1,2);(3,6);(2,1);(1,3);(5,85)]. (* (w,v) *)
-  (**
-     = [::
-     Some 0; Some 3; Some 5; Some 6; Some 9; Some 85; 
-     Some 88; Some 90; Some 91; Some 94; Some 96; Some 97; 
-     Some 99; Some 98; Some 100]
-   *)
+  (* = [:: 0; 3; 5; 6; 9; 85; 88; 90; 91; 94; 96; 97; 99; 98; 100] *)
+
+  Compute knapsack [:: (3,2);(4,3);(1,2);(2,3);(3,6)].
+  (* = [:: 0; 2; 3; 6; 8; 9; 11; 11; 11; 13; 14; 14; 14; 16] *)
   
 End P2.
 
