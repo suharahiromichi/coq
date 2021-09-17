@@ -102,7 +102,8 @@ Catamorphism Generation and Fusion Using Coq
 ### リストの長さ
 Catamorphism Generation and Fusion Using Coq
  *)
-  Definition suc {A : Type} (x : nat) (y : A) := succn x.
+  Definition suc {A : Type} (x : nat) (y : A) := succn x. (* yは捨てる。 *)
+  (* succn \o outr と書きたい。 *)
   Definition len {A : Type} := cataList 0 suc.
   Compute len [:: 1; 2; 3].                 (* 3 *)
 
