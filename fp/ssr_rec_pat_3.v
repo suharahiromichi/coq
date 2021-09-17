@@ -10,6 +10,8 @@ Unset Printing Implicit Defensive.
 Dynamorphism 概論 - https://45deg.github.io/rogyAdC2015/
 
 Recursion Schemes - https://scrapbox.io/haskell-shoen/Recursion_Schemes
+
+Catamorphism Generation and Fusion Using Coq
 *)
 (**
 # fold - catamorphism
@@ -40,6 +42,19 @@ Section Catamorphism.
     | FNode m n => f (cataTree f m) (cataTree f n)
     | FLeaf x => x
     end.
+
+  Fixpoint paraNat (b : B) (f : nat -> B -> B) (n : nat) : B := (* 数 *)
+    match n with
+    | 0 => b
+    | n'.+1 => f n' (paraNat b f n')
+    end.
+
+  Fixpoint paraList (b : B) (f : A -> (seq A) * B -> B) (s : seq A) : B := (* リスト *)
+    match s with
+    | [::] => b
+    | a :: a' => f a (a', paraList b f a')
+    end.
+
 End Catamorphism.
 
 (**
@@ -63,9 +78,35 @@ Section ExampleCatamorphism.
   Definition mul n := cataNat 0 (add n).
   Compute mul 2 3.                          (* 6 *)
 
+
+(**
+### 階乗 (cataNat)
+ *)
+  Definition factAsCata := snd \o
+                               (cataNat (0, 1)
+                                        (fun (x : nat * nat) =>
+                                           let (n, m) := x in (n.+1, (n.+1 * m)))).
+  Compute factAsCata 5.                     (* 120 *)
+
+(**
+### 階乗 (paraNat)
+
+Catamorphism Generation and Fusion Using Coq
+ *)
+  Definition factAsPara := paraNat 1 (fun n m => n.+1 * m).
+  Compute factAsPara 5.                     (* 120 *)
+
 (**
 ## コンストラクタ cons の消費
 
+### リストの長さ
+Catamorphism Generation and Fusion Using Coq
+ *)
+  Definition suc {A : Type} (x : nat) (y : A) := succn x.
+  Definition len {A : Type} := cataList 0 suc.
+  Compute len [:: 1; 2; 3].                 (* 3 *)
+
+(**
 ### リストの和
  *)
   Definition sgma := cataList 0 addn.
@@ -132,12 +173,6 @@ Section ExampleAnamorphism.
  *)
   Definition iota h := anaList h succn 1.
   Compute iota 10.          (* = [:: 1; 2; 3; 4; 5; 6; 7; 8; 9; 10] *)
-
-(**
-### fact.
-
-TBD これは具体例なし。XXXXX
-*)          
 
 (**
 ### fib (有限版)
