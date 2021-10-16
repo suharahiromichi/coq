@@ -20,6 +20,16 @@ Coq/SSReflectでたった1行のコマンドで完全帰納法を適用する方
 https://qiita.com/nekonibox/items/514da8edfc6107b57254
 
 MathComp のイデオム 「elim: m {-2}m (leqnn m)」 の説明です。
+
+
+補足説明：
+
+Coq/SSReflectで{}を使わずに完全帰納法を適用する
+
+https://qiita.com/nekonibox/items/8147291e9fd483e3d579
+
+complete_ind は、最新の ssrnat.v では ltn_ind として用意されている。
+MathCompのイデオムよりも、ltn_ind を使うべきである。
  *)
 
 (* -2 を繰り返すことで、2で割る関数。 *)
