@@ -135,6 +135,12 @@ Qed.
 結論：任意のnに対して、P(n)が成り立つ
 *)
 
+(**
+補足説明
+
+complete_ind は、最新の ssrnat.v では ltn_ind として用意されている。
+MathCompのイデオムよりも、ltn_ind を使うべきである。
+*)
 Lemma complete_ind (P:nat -> Prop) :
   (forall n0, (forall m0, m0 < n0 -> P m0) -> (* 帰納法の仮定 *)
               P n0)                           (* 証明するべき *)
@@ -142,8 +148,8 @@ Lemma complete_ind (P:nat -> Prop) :
   (forall n, P n).                          (* 導ける結論 *)
 Proof.
   move => H n.
-    by elim : n {-2}n (leqnn n) =>[[_|//]|n IHn m Hm];
-       apply : H => l Hl //; exact : IHn (leq_trans Hl Hm).
+    by elim: n {-2}n (leqnn n) => [[_ | //] | n IHn m Hm];
+       apply: H => l Hl //; exact: IHn (leq_trans Hl Hm).
 Qed.
 
 Goal forall m, div2 m <= m.
