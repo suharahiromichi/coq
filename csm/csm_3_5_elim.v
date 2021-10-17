@@ -61,24 +61,46 @@ Section Even.
    *)
   
   (** 自然数についての、もうひとつの帰納法 *)
-  (** 帰納法を指定して使用する。（sf. Logic.v 参照、最新版では削除されている。）*)
+  (** 帰納法を指定して使用する。*)
   (** 使い方 *)
   (** バニラCoq ... induction ... using ... *)
   (** Mathcomp .... elim/.... これは、第3 番めの「/」の使い方。 *)
   
+  (** nat_ind2 は、Inductive などから自動生成されないので、自分で定義する。 *)
+  (** SF/LF/IndPrinciples.v (Induction Principles) では、Definition で与えられている。 *)
+  (** 補題として証明してもよい。*)
+(*
   Definition nat_ind2 :
     forall (P : nat -> Prop),
     P 0 ->
     P 1 ->
     (forall n : nat, P n -> P n.+2) ->
-    forall n : nat , P n :=
+    forall n : nat, P n :=
        fun P => fun P0 => fun P1 => fun PSS =>
           fix f (n : nat) := match n return P n with
                              0 => P0
                            | 1 => P1
                            | n'.+2 => PSS n' (f n')
                            end.
-  
+
+*)
+  Lemma nat_ind2 :
+    forall P : nat -> Prop,
+      P 0 ->
+      P 1 ->
+      (forall n : nat, P n -> P (S (S n))) ->
+      forall n : nat, P n.
+  Proof.
+    move=> P HP0 HP1 IH n.
+    have H : (P n /\ P (S n)).
+    - elim: n.
+      + by split.
+      + move=> n [] HPn HPsn.
+        split=> //=.
+          by apply: IH.
+    - by case: H.
+  Qed.
+
   Check nat_ind2 : forall P : nat -> Prop,
       P 0 -> P 1 -> (forall n : nat, P n -> P n.+2) -> forall n : nat, P n.
   
@@ -273,13 +295,14 @@ Section Test.
   Lemma odd__not_evenb (n : nat) : odd n = ~~ evenb n.
   Proof.
     elim: n => [| n IHn] //.
-    rewrite [odd n.+1]/= IHn Bool.negb_involutive.
+    rewrite [odd n.+1]/= IHn negbK.
       by rewrite evenb__not_evenb.
   Qed.
 
   (** bool値のおいて、二重否定を除去する補題。ついでに覚えておきましょう。 *)
+  Check negbK : forall b : bool, ~~ ~~ b = b.
   Check Bool.negb_involutive : forall b : bool, ~~ ~~ b = b.
-  
+
 End Test.
 
 (* END *)
