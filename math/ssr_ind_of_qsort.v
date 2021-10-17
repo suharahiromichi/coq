@@ -29,30 +29,29 @@ Section qsort.
     then qsort [seq y <- s' | R y x] ++ x :: qsort [seq y <- s' | ~~ R y x]
     else [::].
   Proof.
-    - move => _ x s _/=. apply /ltP. by rewrite ltnS size_filter count_size.
-    - move => _ x s _/=. apply /ltP. by rewrite ltnS size_filter count_size.
+    - move => _ x s _ /=. apply /ltP.
+        by rewrite ltnS size_filter count_size.
+    - move => _ x s _ /=. apply /ltP.
+        by rewrite ltnS size_filter count_size.
   Defined.
 
   Lemma ubnP m : {n | m < n}.               (* ssrnat.v *)
   Proof. by exists m.+1. Qed.
-
-(*
-  Lemma filter_leq_size (B: eqType) (fs: seq B) P: length (filter P fs) <= length fs. 
+  
+  Lemma filter_size (x : T) (s : seq T) : size [seq y <- s | R y x] <= size s.
   Proof.
-    elim: fs => [//= | f fs IHf] //=.
-    case: (P f) => //=; by apply ltnW.
+    elim: s => //= y s IHs.
+    case H : (R y x) => //=.
+      by ssromega.
   Qed.
   
-  Lemma filter_size (B : eqType) (fs : seq B) P :
-    length (filter P fs) = length fs - (length (filter (fun f => ~~ P f) fs)). 
+  Lemma filter_size' (x : T) (s : seq T) : size [seq y <- s | ~~ R y x] <= size s.
   Proof.
-      elim: fs P => [//= | f  fs IHf] P //=.
-    case: (P f) => //=.
-    rewrite subSn; first rewrite IHf //=; last by apply filter_leq_size.
-      by rewrite subSS IHf.
+    elim: s => //= y s IHs.
+    case H : (R y x) => //=.
+      by ssromega.
   Qed.
-*)
-
+  
 (**
 ## Function コマンドのつくる qsort_ind は複雑なので、自作する。
 *)
@@ -65,18 +64,12 @@ Section qsort.
     move => Hnil Hcons s.
     have [n] := ubnP (size s).
     elim: n s =>[| n IHn] [| xs s] //= Hsize.
-  (*      by apply: Hcons; exact: IHn (leq_ltn_trans (filter_size _ _) Hsize).
+    apply: Hcons.
+    Check leq_ltn_trans (filter_size xs s).
+    - exact: IHn (leq_ltn_trans (filter_size _ _) Hsize).
+    - exact: IHn (leq_ltn_trans (filter_size' _ _) Hsize).
   Qed.
- *)
-  Admitted.
-(*
-  Proof.
-  move => Hnil Hcons s.
-  elim: (size s) {-2}s (leqnn (size s)) =>[|n IHn][]//= xl l Hsize.
-    by apply: Hcons; exact: IHn (leq_trans (filter_size _ _) Hsize).
-Qed.
- *)
-
+  
 (**
 ## 補題
 *)
