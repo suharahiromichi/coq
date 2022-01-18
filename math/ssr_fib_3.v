@@ -43,93 +43,23 @@ Section Fib3.
           end -> P (n %% m) m (gcd (n %% m) m) -> P _x n (gcd (n %% m) m)) ->
       forall m n : nat, P m n (gcd m n).
   
-  (* GCDの補題 *)
-  Lemma gcdnE m n : gcd m n = gcd (n %% m) m.
+
+  Lemma lemma5 m n :
+    gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
   Proof.
-    Check gcdn_modl m n : gcdn (m %% n) n = gcdn m n.
   Admitted.
   
-  Lemma gcdnC m n : gcd m n = gcd n m.
-    Check gcdnC m n : gcdn m n = gcdn n m.
-  Admitted.
-
-  Lemma gcdnn m : gcd m m = m.
-    Check gcdnn m : gcdn m m = m.
-  Admitted.
-
-  Lemma gcdn0 m : gcd m 0 = m.
-    Check gcdn0 m : gcdn m 0 = m.
-  Admitted.
-  
-  (* 補題 *)
-  Lemma lemma912 m n :
-    1 <= m ->
-    1 <= n ->
-    m <= n ->
-    gcd (fib m) (fib n) = gcd (fib (n %% m)) (fib m).
-    (* see. ssr_fib_2.v *)
-  Admitted.
-
-  (* 消すな *)
-  Lemma leq_mod n x : 0 < x -> n %% x <= x.
+  Lemma lemma912'' n q r :
+    gcd (fib (q * n + r)) (fib n) = gcd (fib n) (fib r).
   Proof.
-    move=> Hx.
-    rewrite leq_eqVlt.
-    apply/orP/or_intror.
-      by rewrite ltn_mod.
-  Qed.
-  
-(*
-m <= n としても一般性を失わない。
-m = n は自明だが、lemma912 で必要なので残しておく。
-*)
-  Compute gcdn 0 0.                         (* 0 *)
-  Compute fib 0.                            (* 0 *)
-
-  Lemma lemma9 (m n : nat) :
-    1 <= m ->
-    1 <= n ->
-    m <= n ->    
-    (gcd (fib m) (fib n) = fib (gcd m n)).
-  Proof.
-    move=> Hm Hn Hmn.
-    rewrite lemma912.
-    - rewrite [gcd m n]gcdnE.
-      functional induction (gcd m n).
-      + done.                               (* Hm の矛盾 *)
-      + rewrite lemma912.
-        * rewrite [gcd (n %% _x) _x]gcdnE.
-          apply: IHn0.
-        
-          ** (* 0 < n %% _x *)
-            (* ゴールの 1 <= m のが反映される。 *)
-            admit.                          (* 754 *)
-          
-          ** (* 0 < _x *)
-            done.
-          ** (* n %% _x < x *)
-            by rewrite leq_mod.
-
-        * (* 0 < n %% _x *)
-          admit.                 (* 733 *)
-        (* lemma912 の 1 <= m に由来する。 *)
-      
-        * (* 0 < _x *)
-          ssromega.
-        * (* n %% _x <= _x *)
-            by rewrite leq_mod.
-
-    - (* 0 < m *)
-      ssromega.
-    - (* 0 < n *)
-      ssromega.
-    - (* m < n *)
+    elim: q => [| q IHq].
+    - rewrite mul0n add0n.
+      admit.                                (* gcdC *)
+    - Search _ (_.+1 * _).
+      rewrite mulSn -addnA.
+      rewrite [LHS]lemma5.
       done.
   Admitted.
-
-(* ******************** *)
-(* 条件をはずしてみる。 *)
-(* ******************** *)
   
   Lemma lemma912' m n :
     gcd (fib m) (fib n) = gcd (fib (n %% m)) (fib m).
@@ -139,26 +69,10 @@ m = n は自明だが、lemma912 で必要なので残しておく。
   Lemma lemma9' (m n : nat) :
     (gcd (fib m) (fib n) = fib (gcd m n)).
   Proof.
-    rewrite lemma912'.
-    - rewrite [gcd m n]gcdnE.
-      functional induction (gcd m n).
-      + rewrite modn0 /=.
-        by rewrite 2!gcdn0.
-        
-      + rewrite lemma912.
-        * rewrite [gcd (n %% _) _]gcdnE.
-            by apply: IHn0.
-          
-        * (* 0 < n %% m *)
-          admit.
-          
-        * (* 0 < m *)
-          admit.
-
-        * (* n %% m <= m *)
-          (* 0 %% 0 = 0 なので、どちらかは 1以上であること。 *)
-          admit.
-  Admitted.
+    functional induction (gcd m n).
+    - by rewrite gcd_equation.
+    - by rewrite lemma912'.
+  Qed.
 
 End Fib3.
 
