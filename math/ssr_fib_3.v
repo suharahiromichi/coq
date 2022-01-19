@@ -43,7 +43,12 @@ Section Fib3.
           end -> P (n %% m) m (gcd (n %% m) m) -> P _x n (gcd (n %% m) m)) ->
       forall m n : nat, P m n (gcd m n).
   
+  Lemma gcdC m n : gcd m n = gcd n m.
+  Proof.
+  Admitted.
 
+  (* これは 1 <= m でないと証明できない。 *)
+  (* ssr_fib_2.v fib_addition *)
   Lemma lemma5 m n :
     gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
   Proof.
@@ -54,26 +59,47 @@ Section Fib3.
   Proof.
     elim: q => [| q IHq].
     - rewrite mul0n add0n.
-      admit.                                (* gcdC *)
+      rewrite gcdC.
+      done.
     - Search _ (_.+1 * _).
       rewrite mulSn -addnA.
       rewrite [LHS]lemma5.
       done.
-  Admitted.
+  Qed.
   
   Lemma lemma912' m n :
-    gcd (fib m) (fib n) = gcd (fib (n %% m)) (fib m).
-    (* see. ssr_fib_2.v *)
-  Admitted.
+    gcd (fib m) (fib n) = gcd (fib n) (fib (m %% n)).
+  Proof.
+    move: (lemma912'' n (m %/ n) (m %% n)).
+    rewrite -divn_eq.
+    done.
+  Qed.
   
   Lemma lemma9' (m n : nat) :
     (gcd (fib m) (fib n) = fib (gcd m n)).
   Proof.
+    rewrite gcdC.
     functional induction (gcd m n).
-    - by rewrite gcd_equation.
-    - by rewrite lemma912'.
+    - rewrite gcdC.
+        by rewrite gcd_equation.
+    - rewrite lemma912'.
+      done.
   Qed.
-
+  
+  Compute gcdn 0 0.                         (* 0 *)
+  Compute gcdn 1 0.                         (* 1 *)
+  Compute gcdn 0 1.                         (* 1 *)
+  Compute gcdn 1 1.                         (* 1 *)
+  
+  Goal gcd (fib 1) (fib 0) = fib (gcd 1 0).
+  Proof.
+    rewrite gcd_equation.
+    simpl.
+    rewrite gcd_equation.
+    simpl.
+    done.
+  Qed.
+  
 End Fib3.
 
 (* END *)
