@@ -43,16 +43,59 @@ Section Fib3.
           end -> P (n %% m) m (gcd (n %% m) m) -> P _x n (gcd (n %% m) m)) ->
       forall m n : nat, P m n (gcd m n).
   
+  Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
+  Proof.
+    done.
+  Qed.
+
+  Lemma lemma3 (n : nat) : coprime (fib n) (fib n.+1).
+  Proof.
+    rewrite /coprime.
+    elim: n => [//= | n IHn].
+    rewrite fib_n.
+      by rewrite gcdnDr gcdnC.
+  Qed.
+  
   Lemma gcdC m n : gcd m n = gcd n m.
   Proof.
   Admitted.
 
-  (* これは 1 <= m でないと証明できない。 *)
-  (* ssr_fib_2.v fib_addition *)
+  Lemma lemma5'' n : gcd n n = gcd 0 n.
+  Proof.
+  Admitted.
+  
+  Lemma fib_addition n m :
+    1 <= m -> fib (n + m) = fib m * fib n.+1 + fib m.-1 * fib n.
+  Proof.
+    (* ssr_fib_2.v *)
+  Admitted.                                 (* OK *)
+
+  Lemma lemma5' m n :
+    1 <= m -> gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
+  Proof.
+    move=> H.
+    rewrite fib_addition //.
+    (* 
+  gcd (fib m * fib n.+1 + fib m.-1 * fib n) (fib n) = gcd (fib m) (fib n)
+     *)
+    Check gcdn_modl.                        (* fib n の項が消える。 *)
+    (* 
+       gcd (fib m * fib n.+1) (fib n) = gcd (fib m) (fib n)
+     *)
+    Check Gauss_gcdl.         (* fib n.+1 と fib n は互いに素なので。 *)
+  (* 
+     gcd (fib m) (fib n) = gcd (fib m) (fib n)
+   *)
+  Admitted.
+  
   Lemma lemma5 m n :
     gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
   Proof.
-  Admitted.
+    case: m => [| m].
+    - rewrite addn0 /=.
+        by apply: lemma5''.
+    - rewrite lemma5' //=.
+  Qed.
   
   Lemma lemma912'' n q r :
     gcd (fib (q * n + r)) (fib n) = gcd (fib n) (fib r).
@@ -81,7 +124,13 @@ Section Fib3.
     rewrite gcdC.
     functional induction (gcd m n).
     - rewrite gcdC.
-        by rewrite gcd_equation.
+      rewrite gcd_equation.
+      done.
+    (* 
+  IHn0 : gcd (fib m) (fib (n %% m)) = fib (gcd (n %% m) m)
+  ============================
+  gcd (fib n) (fib m) = fib (gcd (n %% m) m)
+     *)
     - rewrite lemma912'.
       done.
   Qed.
