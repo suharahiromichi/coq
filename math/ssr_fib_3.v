@@ -56,11 +56,37 @@ Section Fib3.
       by rewrite gcdnDr gcdnC.
   Qed.
   
+  Check gcdnC : forall m n, gcdn m n = gcdn n m.
   Lemma gcdC m n : gcd m n = gcd n m.
   Proof.
   Admitted.
 
+  Lemma gcd0m m : gcd 0 m = m.
+  Proof.
+      by rewrite gcd_equation.
+  Qed.
+  
+  Lemma gcdmm m : gcd m m = m.
+  Proof.
+    case: m => [| m].
+    - by rewrite gcd_equation.
+    - rewrite gcd_equation.
+      have -> : m.+1 %% m.+1 = 0 by rewrite modnn.
+        by rewrite gcd0m.
+  Qed.
+  
   Lemma lemma5'' n : gcd n n = gcd 0 n.
+  Proof.
+      by rewrite gcdmm gcd0m.
+  Qed.
+  
+  Check gcdnMDl : forall k m n : nat, gcdn m (k * m + n) = gcdn m n.
+  Lemma gcdMDl (k m n : nat) : gcd m (k * m + n) = gcd m n.
+  Proof.
+  Admitted.
+
+  Check Gauss_gcdl : forall p m n : nat, coprime p n -> gcdn p (m * n) = gcdn p m.
+  Lemma Gauss_gcdl' p m n : coprime p n -> gcd p (m * n) = gcd p m.
   Proof.
   Admitted.
   
@@ -75,18 +101,11 @@ Section Fib3.
   Proof.
     move=> H.
     rewrite fib_addition //.
-    (* 
-  gcd (fib m * fib n.+1 + fib m.-1 * fib n) (fib n) = gcd (fib m) (fib n)
-     *)
-    Check gcdn_modl.                        (* fib n の項が消える。 *)
-    (* 
-       gcd (fib m * fib n.+1) (fib n) = gcd (fib m) (fib n)
-     *)
-    Check Gauss_gcdl.         (* fib n.+1 と fib n は互いに素なので。 *)
-  (* 
-     gcd (fib m) (fib n) = gcd (fib m) (fib n)
-   *)
-  Admitted.
+    rewrite gcdC addnC gcdMDl.
+    rewrite Gauss_gcdl'.
+    - by rewrite gcdC.
+    - by apply: lemma3.
+  Qed.
   
   Lemma lemma5 m n :
     gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
