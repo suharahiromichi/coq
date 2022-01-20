@@ -56,11 +56,20 @@ Section Fib3.
       by rewrite gcdnDr gcdnC.
   Qed.
   
+  Lemma gcdE m n : gcdn m n = gcd m n.
+  Proof.
+    functional induction (gcd m n).
+    - by rewrite gcd0n.
+    - rewrite -IHn0.
+        by rewrite gcdnC gcdn_modl.
+  Qed.
+  
   Check gcdnC : forall m n, gcdn m n = gcdn n m.
   Lemma gcdC m n : gcd m n = gcd n m.
   Proof.
-  Admitted.
-
+      by rewrite -2!gcdE gcdnC.
+  Qed.
+  
   Lemma gcd0m m : gcd 0 m = m.
   Proof.
       by rewrite gcd_equation.
@@ -83,17 +92,23 @@ Section Fib3.
   Check gcdnMDl : forall k m n : nat, gcdn m (k * m + n) = gcdn m n.
   Lemma gcdMDl (k m n : nat) : gcd m (k * m + n) = gcd m n.
   Proof.
-  Admitted.
-
+      by rewrite -2!gcdE gcdnMDl.
+  Qed.
+  
   Check Gauss_gcdl : forall p m n : nat, coprime p n -> gcdn p (m * n) = gcdn p m.
   Lemma Gauss_gcdl' p m n : coprime p n -> gcd p (m * n) = gcd p m.
   Proof.
-  Admitted.
+    rewrite -2!gcdE.
+      by apply: Gauss_gcdl.
+  Qed.
   
+(**
+フィボナッチ数列の加法定理
+*)
   Lemma fib_addition n m :
     1 <= m -> fib (n + m) = fib m * fib n.+1 + fib m.-1 * fib n.
   Proof.
-    (* ssr_fib_2.v *)
+    (* see. ssr_fib_2.v *)
   Admitted.                                 (* OK *)
 
   Lemma lemma5' m n :
