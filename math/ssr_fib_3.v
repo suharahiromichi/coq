@@ -72,12 +72,18 @@ Section Fib3.
     | (m.+1 as pn).+1 => fib m + fib pn (* fib n.-2 + fib n.-1 *)
     end.
   
+(**
+1個分フィボナッチ数の計算
+ *)
   Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
   Proof.
     done.
   Qed.
 
-  Lemma lemma3 (n : nat) : coprime (fib n) (fib n.+1).
+(**
+隣り合ったフィボナッチ数は互いに素である。
+*)
+  Lemma fib_coprime (n : nat) : coprime (fib n) (fib n.+1).
   Proof.
     rewrite /coprime.
     elim: n => [//= | n IHn].
@@ -123,27 +129,31 @@ MathComp の gcdn を同じであることを証明する。
         by rewrite gcdnC gcdn_modl.
   Qed.
   
+(**
+GCDの可換性
+*)
   Check gcdnC : forall m n, gcdn m n = gcdn n m.
   Lemma gcdC m n : gcd m n = gcd n m.
   Proof.
       by rewrite -2!gcdE gcdnC.
   Qed.
-  
+
+(**
+GCDの簡単な性質
+*)  
   Lemma gcd0m m : gcd 0 m = m.
   Proof.
-      by rewrite gcd_equation.
+      by rewrite gcd_equation.            (* gcd の定義で展開する。 *)
   Qed.
   
   Lemma gcdmm m : gcd m m = m.
   Proof.
     case: m => [| m].
     - by rewrite gcd_equation.
-    - rewrite gcd_equation.
-      have -> : m.+1 %% m.+1 = 0 by rewrite modnn.
-        by rewrite gcd0m.
+    - by rewrite gcd_equation modnn gcd0m.
   Qed.
   
-  Lemma lemma5'' n : gcd n n = gcd 0 n.
+  Lemma gcdnn_gcd0n n : gcd n n = gcd 0 n.
   Proof.
       by rewrite gcdmm gcd0m.
   Qed.
@@ -164,12 +174,12 @@ MathComp の gcdn を同じであることを証明する。
 (**
 # フィボナッチ数のGCD
 *)
+
 (**
-GKPの解答にある、
-``m > n`` ならば ``gcd (fib m) (fib n) = gcd (fib (m - n)) (fib n)``
-と同じもの。
+GKPの解答にある、``m > n`` ならば ``gcd (fib m) (fib n) = gcd (fib (m - n)) (fib n)``
+と同じものを証明するが、そのために ``m`` を ``0`` と非0で振り分ける。
  *)
-  Lemma lemma5' m n :
+  Lemma fib_lemma_gkp' m n :
     1 <= m -> gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
   Proof.
     move=> H.
@@ -177,19 +187,23 @@ GKPの解答にある、
     rewrite gcdC addnC gcdMDl.
     rewrite Gauss_gcdl'.
     - by rewrite gcdC.
-    - by apply: lemma3.
+    - by apply: fib_coprime.
   Qed.
   
-  Lemma lemma5 m n :
+  Lemma fib_lemma_gkp m n :
     gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
   Proof.
     case: m => [| m].
     - rewrite addn0 /=.
-        by apply: lemma5''.
-    - rewrite lemma5' //=.
+        by apply: gcdnn_gcd0n.
+    - rewrite fib_lemma_gkp' //=.
   Qed.
   
-  Lemma lemma912'' n q r :
+(**
+gcdnMDl のフィボナッチ数版
+*)
+  Check gcdnMDl : forall k m n : nat, gcdn m (k * m + n) = gcdn m n.
+  Lemma fib_gcdMDl n q r :
     gcd (fib (q * n + r)) (fib n) = gcd (fib n) (fib r).
   Proof.
     elim: q => [| q IHq].
@@ -198,20 +212,26 @@ GKPの解答にある、
       done.
     - Search _ (_.+1 * _).
       rewrite mulSn -addnA.
-      rewrite [LHS]lemma5.
+      rewrite [LHS]fib_lemma_gkp.
       done.
   Qed.
   
-  Lemma lemma912' m n :
+(**
+gcdn_modr のフィボナッチ数版
+*)
+  Check gcdn_modr : forall m n : nat, gcdn m (n %% m) = gcdn m n.
+  Lemma fin_gcd_modr m n :
     gcd (fib m) (fib n) = gcd (fib n) (fib (m %% n)).
   Proof.
-    move: (lemma912'' n (m %/ n) (m %% n)).
+    move: (fib_gcdMDl n (m %/ n) (m %% n)).
     rewrite -divn_eq.
     done.
   Qed.
 
 (**
 # 証明したいもの
+
+$ F_0 = 0 $ や $ F_1 = 1 $ でも成り立つことを確認しておく。
 *)
   Compute gcdn 0 0.                         (* 0 *)
   Compute gcdn 1 0.                         (* 1 *)
@@ -220,15 +240,11 @@ GKPの解答にある、
   
   Goal gcd (fib 1) (fib 0) = fib (gcd 1 0).
   Proof.
-    rewrite gcd_equation.
-    simpl.
-    rewrite gcd_equation.
-    simpl.
-    done.
+    rewrite gcd_equation //=.
+      by rewrite gcd_equation.
   Qed.
   
-  Lemma lemma9' (m n : nat) :
-    (gcd (fib m) (fib n) = fib (gcd m n)).
+  Lemma lemma9 (m n : nat) : (gcd (fib m) (fib n) = fib (gcd m n)).
   Proof.
     rewrite gcdC.
     functional induction (gcd m n).
@@ -240,7 +256,7 @@ GKPの解答にある、
   ============================
   gcd (fib n) (fib m) = fib (gcd (n %% m) m)
      *)
-    - rewrite lemma912'.
+    - rewrite fin_gcd_modr.
       done.
   Qed.
   
