@@ -1,8 +1,54 @@
 (**
-フィボナッチ数の最大公約数
+フィボナッチ数の最大公約数 GCD of Fibonacci Numbers
+============================
 
-GCD of Fibonacci Numbers
+@suharahiromichi
+
+2022/01/21
 *)
+(**
+# はじめに
+
+m番めとn番めフィボナッチ数の最大公約数は、mとnの最大公約数番めのフィボナッチ数に等しい、
+という定理があります。
+
+```math
+gcd(F_m, F_n) = F_{gcd(m, n)}
+
+```
+
+これは エドゥアール・リュカ (ルーカス）が最初に報告したのを
+クヌース先生が紹介して広まったのだそうです。
+TAOCP[2]に掲載されているようですが、私が読んだのは [1]と[1'] のほうで、
+証明は演習問題(6.27)になっています。
+
+そこでで、早速答えをみると(w)、
+フィボナッチ数の加法定理に相当する式から、「$ m > n $ 
+ならば、$ gcd(F_m, F_n) = gcd(F_{m - n}, F_n) $
+であることに注意して、帰納法使って証明せよ」、とだけ書いてあります。
+
+証明を集めたサイト[3]を見ても書いてあることは同じで、[4]
+はもう少し詳しいですが、帰納法のところは証明というより説明になっています。
+
+では、この定理の証明をCoqでやってみましょう、とりあえず、以下の方針でおこないます。
+
+1. gcdに関する帰納法が肝なので、そこは Coq の Functional Induction [5] に任せる。
+
+2. 1.のためには、Function コマンドで自分でフィボナッチ数を定義する必要がある。
+それも [5] を参考にした。
+
+3. MathComp の GCDに関する豊富な補題を使うために、2.の定義と
+MathCompのGCDの定義が同じであることを証明しておく。
+
+
+
+MathCompで証明をするならば、MathCompで定義されている
+自然数の最大公約数の関数 gcdn について、なんらかのかたちで帰納法の原理を用意するのが
+正しいアプローチですが、それはまだできていません。
+
+また、フィボナッチ数の加法定理については、[6] で証明しているため、証明は省略します。
+*)
+
 From mathcomp Require Import all_ssreflect.
 Require Import ssromega.
 Require Import FunInd.                      (* Functional Scheme *)
@@ -51,11 +97,8 @@ Section Fib3.
 (**
 # GCDの定義と定理
 *)  
-  Fail Functional Scheme gcdn_ind := Induction for gcdn Sort Prop.
-  (* Error: A fixpoint needs at least one parameter. *)
-  
 (**
-仕方ないので Function を使って自分で定義する。
+Function を使って自分で定義する。
 *)
   Function gcd (m n : nat) {wf lt m} : nat :=
     match m with
@@ -121,6 +164,11 @@ MathComp の gcdn を同じであることを証明する。
 (**
 # フィボナッチ数のGCD
 *)
+(**
+GKPの解答にある、
+``m > n`` ならば ``gcd (fib m) (fib n) = gcd (fib (m - n)) (fib n)``
+と同じもの。
+ *)
   Lemma lemma5' m n :
     1 <= m -> gcd (fib (n + m)) (fib n) = gcd (fib m) (fib n).
   Proof.
@@ -199,7 +247,9 @@ MathComp の gcdn を同じであることを証明する。
 End Fib3.
 
 (**
-GCDの帰納法の証明
+# GCDの帰納法の証明
+
+おまけ。まだうまくいかない。
 *)
 Section Fib31.
 
@@ -229,7 +279,35 @@ Section Fib31.
         move=> Hc.
         apply: H2 => //.
   Admitted.
+
+  Fail Functional Scheme gcdn_ind := Induction for gcdn Sort Prop.
+  (* Error: A fixpoint needs at least one parameter. *)
   
 End Fib31.
+
+(**
+# 文献
+
+[1] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
+
+
+[1'] 有澤、安村、萩野、石畑訳、「コンピュータの数学」共立出版
+
+
+[2] D.E.Knuth, "The Art of Computer Programming: Vol.1: Fundamental Algorithms (3rd ed.) "
+
+
+[3] "GCD of Fibonacci Numbers"、https://proofwiki.org/wiki/GCD_of_Fibonacci_Numbers
+
+
+[4] ぱるち、「フィボナッチ数列で互除法っぽいこと」、https://mathlog.info/articles/278
+
+
+[5] Jacques Garrigue, "Mathcomp, 自己反映と数論の証明"、
+https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2021_AW/ssrcoq5.pdf
+
+
+[6] https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_2.v
+*)
 
 (* END *)
