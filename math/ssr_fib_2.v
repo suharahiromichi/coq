@@ -252,7 +252,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     done.
   Qed.
 
-  Lemma lemma8 (m n : nat) :
+  Lemma lemma8'' (m n : nat) :
     1 <= n -> gcdn (fib m) (fib (m + n)) = gcdn (fib m) (fib n).
   Proof.
     move=> H.
@@ -262,6 +262,17 @@ n = qm ならば，ＦnはＦmで割り切れる。
     done.
   Qed.
 
+  Lemma lemma8 (m n : nat) :
+    gcdn (fib m) (fib (m + n)) = gcdn (fib m) (fib n).
+  Proof.
+    case: n => [| n].
+    - by rewrite addn0 gcdnn gcdn0.
+    - by apply: lemma8''.
+  Qed.
+  
+(**
+以下、未整理です。
+*)
 (**
 ## 補題9_1（m を n で割ったときのあまりを r とすると，
 ＦmとＦnの最大公約数 ＝ ＦnとＦrの最大公約数）
@@ -275,8 +286,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
       done.
     - rewrite gcdnC mulSn addnC -?addnA addnCA.
       rewrite lemma8.
-      + by rewrite gcdnC addnC.
-      + by rewrite addnC addnS ltn0Sn.
+        by rewrite gcdnC addnC.
   Qed.
   
   Lemma lemma91'' (n q r : nat) :
@@ -286,8 +296,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     - by rewrite mul1n gcdnC lemma8'.
     - rewrite gcdnC mulSn addnC -?addnA addnCA.
       rewrite lemma8.
-      + by rewrite gcdnC addnC.
-      + by rewrite addnC addnS ltn0Sn.
+        by rewrite gcdnC addnC.
   Qed.
   
   Lemma lemma91''' (n q r : nat) :
@@ -297,8 +306,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     - by rewrite gcdnC mul0n add0n.
     - rewrite gcdnC mulSn addnC -?addnA addnCA.
       rewrite lemma8.
-      + by rewrite gcdnC addnC.
-      + by rewrite addnC addnS ltn0Sn.
+        by rewrite gcdnC addnC.
   Qed.
 
   Lemma lemma91_r1 (n q r : nat) :
@@ -310,16 +318,6 @@ n = qm ならば，ＦnはＦmで割り切れる。
       by rewrite prednK in H'.
   Qed.
 
-  Lemma gcdn0 (n : nat) : gcdn n 0 = n.
-  Proof.
-    by elim: n.
-  Qed.
-  
-  Lemma gcd0n (n : nat) : gcdn 0 n = n.
-  Proof.
-    by elim: n.
-  Qed.
-  
   (* r = 0 の特別な場合は、性質7である。 *)
   Lemma lemma91_r0 (n q : nat) :
     1 <= n ->
@@ -365,11 +363,9 @@ n = qm ならば，ＦnはＦmで割り切れる。
 
 ```gcd (F m) (F n) = F (gcd m n)```
 
-https://proofwiki.org/wiki/GCD_of_Fibonacci_Numbers
+(see. ssr_fib_3.v)
 *)
  Lemma lemma9 (m n : nat) :
-   3 <= m ->
-   3 <= n ->
    (gcdn (fib m) (fib n) = fib (gcdn m n)).
  Proof.
  Admitted.
