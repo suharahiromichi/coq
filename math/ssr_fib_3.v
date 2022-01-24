@@ -1,11 +1,18 @@
 (**
-フィボナッチ数の最大公約数 GCD of Fibonacci Numbers
+フィボナッチ数の最大公約数 (GCD of Fibonacci Numbers)
 ============================
 
 @suharahiromichi
 
 2022/01/21
 *)
+
+(**
+このソースは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_3.v
+*)
+
 (**
 # はじめに
 
@@ -244,7 +251,10 @@ $ F_0 = 0 $ や $ F_1 = 1 $ でも成り立つことを確認しておく。
       by rewrite gcd_equation.
   Qed.
   
-  Lemma lemma9 (m n : nat) : (gcd (fib m) (fib n) = fib (gcd m n)).
+(**
+functional induction を使って証明します。
+*)
+  Theorem gcd_fib__fib_gcd (m n : nat) : (gcd (fib m) (fib n) = fib (gcd m n)).
   Proof.
     rewrite gcdC.
     functional induction (gcd m n).
@@ -319,7 +329,7 @@ End Fib31.
 [4] ぱるち、「フィボナッチ数列で互除法っぽいこと」、https://mathlog.info/articles/278
 
 
-[5] Jacques Garrigue, "Mathcomp, 自己反映と数論の証明"、
+[5] 名古屋大学 2021年度秋・数理解析・計算機数学 IV (同 概論IV) "Mathcomp, 自己反映と数論の証明"、
 https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2021_AW/ssrcoq5.pdf
 
 
