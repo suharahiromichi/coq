@@ -29,7 +29,7 @@ gcd(F_m, F_n) = F_{gcd(m, n)}
 TAOCP[2]に掲載されているようですが、私が読んだのは [1]と[1'] のほうで、
 証明は演習問題(6.27)になっています。
 
-そこでで、早速答えをみると(w)、
+そこで、早速答えをみると、
 フィボナッチ数の加法定理に相当する式から、「$ m > n $ 
 ならば、$ gcd(F_m, F_n) = gcd(F_{m - n}, F_n) $
 であることに注意して、帰納法使って証明せよ」、とだけ書いてあります。
@@ -80,7 +80,7 @@ Section Fib3.
     end.
   
 (**
-1個分フィボナッチ数の計算
+1個分のフィボナッチ数の計算
  *)
   Lemma fib_n n : fib n.+2 = fib n + fib n.+1.
   Proof.
@@ -111,7 +111,7 @@ Section Fib3.
 # GCDの定義と定理
 *)  
 (**
-Function を使って自分で定義する。
+Function を使って定義します。
 *)
   Function gcd (m n : nat) {wf lt m} : nat :=
     match m with
