@@ -254,7 +254,7 @@ $ F_0 = 0 $ や $ F_1 = 1 $ でも成り立つことを確認しておく。
 (**
 functional induction を使って証明します。
 *)
-  Theorem gcd_fib__fib_gcd (m n : nat) : (gcd (fib m) (fib n) = fib (gcd m n)).
+  Theorem gcd_fib__fib_gcd (m n : nat) : gcd (fib m) (fib n) = fib (gcd m n).
   Proof.
     rewrite gcdC.
     functional induction (gcd m n).
@@ -279,36 +279,45 @@ End Fib3.
 *)
 Section Fib31.
 
-  Lemma gcdn_ind : forall P : nat -> nat -> nat -> Prop,
-    (forall m n : nat, m = 0 -> P 0 n n) ->
-    (forall m n : nat,
-          match m with
-          | 0 => False
-          | _.+1 => True
-          end -> P (n %% m) m (gcdn (n %% m) m) -> P m n (gcdn (n %% m) m)) ->
-    forall m n : nat, P m n (gcdn m n).
-  Proof.
-    move=> P H1 H2 m n.
-    rewrite gcdnE /=.
-    elim: n.
-    - case: m => //=.
-      + by apply: H1.
-      + move=> n.
-        rewrite mod0n gcd0n.
-        admit.
-    - case: m.
-      + move=> n //= H.
-          by apply: H1.
-      + move=> n n'.
-        case H : n.+1 => //=.
-        rewrite -H.
-        move=> Hc.
-        apply: H2 => //.
-  Admitted.
-
   Fail Functional Scheme gcdn_ind := Induction for gcdn Sort Prop.
   (* Error: A fixpoint needs at least one parameter. *)
+
+(**
+Coq Tokyo 終了後に教えてもらった GCD の帰納法
+*)
+  Lemma my_gcdn_ind (P : nat -> nat -> nat -> Prop) :
+    (forall n, P 0 n n) ->
+    (forall m n, P (n %% m) m (gcdn (n %% m) m) -> P m n (gcdn m n)) ->
+    forall m n, P m n (gcdn m n).
+  Proof.
+    move => H0 Hmod.
+    elim /ltn_ind => [[| m ]] // H n.
+    apply : Hmod. exact : H (ltn_mod _ _) _.
+  Qed.
   
+  Lemma fin_gcdn_modr m n :
+    gcdn (fib m) (fib n) = gcdn (fib n) (fib (m %% n)).
+  Proof.
+  Admitted.
+  
+  Theorem gcdn_fib__fib_gcdn (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
+  Proof.
+    Check @my_gcdn_ind (fun m0 n0 n1 => (gcdn (fib m0) (fib n0) = fib n1)).
+    elim: (@my_gcdn_ind (fun m0 n0 n1 => (gcdn (fib m0) (fib n0) = fib n1))).
+    - done.
+    - move=> n'.
+        by rewrite /= gcd0n.
+    - move=> m' n' /= IHm.
+      Check fin_gcdn_modr.
+      rewrite gcdnC in IHm.
+      rewrite -fin_gcdn_modr in IHm.
+      rewrite gcdn_modl in IHm.
+      rewrite gcdnC in IHm.
+      rewrite IHm.
+      rewrite gcdnC.
+      done.
+  Qed.
+
 End Fib31.
 
 (**
