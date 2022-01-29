@@ -276,6 +276,8 @@ End Fib3.
 
 Section Fib3_2.
 (**
+# おまけ
+
 Coq Tokyo 終了後に教えてもらった GCD の帰納法
 *)
   Lemma my_gcdn_ind (P : nat -> nat -> nat -> Prop) :
