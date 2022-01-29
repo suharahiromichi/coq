@@ -5,6 +5,8 @@
 @suharahiromichi
 
 2022/01/21
+
+2022/01/29 GCDの帰納法について修正した。
 *)
 
 (**
@@ -272,16 +274,7 @@ functional induction を使って証明します。
   
 End Fib3.
 
-(**
-# GCDの帰納法の証明
-
-おまけ。まだうまくいかない。
-*)
-Section Fib31.
-
-  Fail Functional Scheme gcdn_ind := Induction for gcdn Sort Prop.
-  (* Error: A fixpoint needs at least one parameter. *)
-
+Section Fib3_2.
 (**
 Coq Tokyo 終了後に教えてもらった GCD の帰納法
 *)
@@ -294,31 +287,13 @@ Coq Tokyo 終了後に教えてもらった GCD の帰納法
     elim /ltn_ind => [[| m ]] // H n.
     apply : Hmod. exact : H (ltn_mod _ _) _.
   Qed.
-  
-  Lemma fin_gcdn_modr m n :
-    gcdn (fib m) (fib n) = gcdn (fib n) (fib (m %% n)).
-  Proof.
-  Admitted.
-  
-  Theorem gcdn_fib__fib_gcdn (m n : nat) : gcdn (fib m) (fib n) = fib (gcdn m n).
-  Proof.
-    Check @my_gcdn_ind (fun m0 n0 n1 => (gcdn (fib m0) (fib n0) = fib n1)).
-    elim: (@my_gcdn_ind (fun m0 n0 n1 => (gcdn (fib m0) (fib n0) = fib n1))).
-    - done.
-    - move=> n'.
-        by rewrite /= gcd0n.
-    - move=> m' n' /= IHm.
-      Check fin_gcdn_modr.
-      rewrite gcdnC in IHm.
-      rewrite -fin_gcdn_modr in IHm.
-      rewrite gcdn_modl in IHm.
-      rewrite gcdnC in IHm.
-      rewrite IHm.
-      rewrite gcdnC.
-      done.
-  Qed.
 
-End Fib31.
+(**
+これを使うと functional induction を使わずに証明できます。
+
+[7] を参照してください。
+*)  
+End Fib3_2.
 
 (**
 # 文献
@@ -343,6 +318,9 @@ https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2021_AW/ssrcoq5.pdf
 
 
 [6] https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_2.v
+
+
+[7] https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_3_2.v
 *)
 
 (* END *)
