@@ -127,13 +127,14 @@ Coq Tokyo 終了後に教えてもらった GCD の帰納法です。
     (forall n, P 0 n n) ->
     (forall m n, P (n %% m) m (gcdn (n %% m) m) -> P m n (gcdn m n)) ->
     forall m n, P m n (gcdn m n).
-(*  Proof.
+  Proof.
     move => H0 Hmod.
     elim /ltn_ind => [[| m ]] // H n.
-    apply : Hmod. exact : H (ltn_mod _ _) _.
+    - by rewrite gcd0n.
+    - apply: Hmod.
+      apply: H.
+        by rewrite ltn_mod.
   Qed.
-*)
-  Admitted.
   
 (**
 functional induction を使わずに証明します。
@@ -150,4 +151,6 @@ functional induction を使わずに証明します。
       done.
   Qed.
 
-End Fib31.
+End Fib3_2.
+
+(* END *)
