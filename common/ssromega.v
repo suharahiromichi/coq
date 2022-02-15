@@ -1,17 +1,28 @@
 From mathcomp Require Import all_ssreflect.
-Require Import Omega.
+Require Import Psatz.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Printing All. *)
 
+(**
+ssromega を使えるようにする手順；
+(1) ~/.coqrc に以下の行を追加する。
+Add LoadPath "~/WORK/coq/common" as common.
+(2) ~/WORK/coq/common/ の下で以下を実行する。
+coq_makefile -R . common ssromega.v > Makefile
+(3) make -f Makefile
+ssromega.vo ができている。
+(4) From common Require Import ssromega. で読み込む。
+*)
+
 (* https://github.com/affeldt-aist/seplog/blob/master/lib/ssrnat_ext.v *)
 
 Ltac ssromega :=
   (repeat ssrnat2coqnat_hypo ;
    ssrnat2coqnat_goal ;
-   omega)
+   lia)
 with ssrnat2coqnat_hypo :=
   match goal with
     | H : context [?L < ?R] |- _ => move/ltP: H => H
@@ -45,7 +56,7 @@ with ssrnat2coqnat_goal :=
 Goal forall x y : nat, x + 4 - 2 > y + 4 -> (x + 2) + 2 >= y + 6.
 Proof.
   move=> x y H.
-    by ssromega.
+  by ssromega.
 Qed.
 
 (* END *)
