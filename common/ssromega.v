@@ -8,11 +8,16 @@ Unset Printing Implicit Defensive.
 
 (**
 ssromega を使えるようにする手順；
+1. カレントディでクトリに置く場合：
+(1) coqc ssromega.v
+(2) Require Import ssromega. で読み込む。
+
+2. パスを通す場合：
 (1) ~/.coqrc に以下の行を追加する。
 Add LoadPath "~/WORK/coq/common" as common.
 (2) ~/WORK/coq/common/ の下で以下を実行する。
 coq_makefile -R . common ssromega.v > Makefile
-(3) make -f Makefile
+(3) make clean; make
 ssromega.vo ができている。
 (4) From common Require Import ssromega. で読み込む。
 *)
