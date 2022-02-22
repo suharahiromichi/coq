@@ -59,7 +59,6 @@ MathCompで証明をするならば、MathCompで定義されている
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
 Require Import FunInd.                      (* Functional Scheme *)
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
@@ -286,8 +285,11 @@ Coq Tokyo 終了後に教えてもらった GCD の帰納法
     forall m n, P m n (gcdn m n).
   Proof.
     move => H0 Hmod.
-    elim /ltn_ind => [[| m ]] // H n.
-    apply : Hmod. exact : H (ltn_mod _ _) _.
+    elim/ltn_ind => [[| m ]] // H n.
+    - have -> : gcdn 0 n = n by elim: n.
+      done.
+    - apply : Hmod.
+      exact : H (ltn_mod _ _) _.
   Qed.
 
 (**
