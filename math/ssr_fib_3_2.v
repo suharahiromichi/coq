@@ -8,6 +8,21 @@
 *)
 
 (**
+# はじめに
+
+フィボナッチ数の最大公約数は、その最大公約数番目のフィボナッチ数に等しい、
+
+```math
+
+gcd(F_m, F_n) = F_{gcd(m, n)}
+```
+
+という定理があります。エドゥアール・リュカ（François Édouard Anatole Lucas) が発見して、
+クヌーツ先生の本 [1] (式 6.111) で有名になったのだそうです。
+
+フィボナッチ数の加法定理 [2] をつかうと簡単に証明できるので、トライしてみましょう。
+
+
 このソースは、以下にあります。
 
 https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_3_2.v
@@ -57,7 +72,7 @@ Section Fib3_2.
   Lemma fibn_addition n m :
     1 <= m -> fibn (n + m) = fibn m * fibn n.+1 + fibn m.-1 * fibn n.
   Proof.
-    (* see. ssr_fibn_2.v
+    (* see. ssr_fib_2.v [2]
        これも functional induction を使わずに証明したい。 *)
   Admitted.                                 (* OK *)
 
@@ -129,22 +144,22 @@ Coq Tokyo 終了後に教えてもらった GCD の帰納法です。
     forall m n, P m n (gcdn m n).
   Proof.
     move => H0 Hmod.
-    elim /ltn_ind => [[| m ]] // H n.
-    - by rewrite gcd0n.
-    - apply: Hmod.
-      apply: H.
-        by rewrite ltn_mod.
+    elim/ltn_ind => [[| m ]] // H n.
+    - have -> : gcdn 0 n = n by elim: n.
+      done.
+    - apply : Hmod.
+      exact : H (ltn_mod _ _) _.
   Qed.
   
 (**
-functional induction を使わずに証明します。
+my_gcdn_ind を使って、functional induction を使わずに証明します。
 *)
   Theorem gcdn_fibn__fibn_gcdn (m n : nat) : gcdn (fibn m) (fibn n) = fibn (gcdn m n).
   Proof.
     Check @my_gcdn_ind (fun m0 n0 n1 => (gcdn (fibn m0) (fibn n0) = fibn n1)).
     apply: (@my_gcdn_ind (fun m0 n0 n1 => (gcdn (fibn m0) (fibn n0) = fibn n1))).
     - move=> n'.
-        by rewrite /= gcd0n.
+      by rewrite /= gcd0n.
     - move=> m' n' /= IHm.
       rewrite gcdnC -fibn_gcdn_modr gcdn_modl gcdnC in IHm.
       rewrite IHm gcdnC.
@@ -152,5 +167,14 @@ functional induction を使わずに証明します。
   Qed.
 
 End Fib3_2.
+
+(**
+# 文献
+
+[1] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
+
+
+[2] https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_2.v
+ *)
 
 (* END *)
