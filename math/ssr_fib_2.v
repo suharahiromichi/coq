@@ -6,7 +6,7 @@ http://www.suguru.jp/Fibonacci/
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import FunInd.                      (* Functional Scheme *)
 Require Import Recdef.                      (* Function *)
 
@@ -40,7 +40,7 @@ Section Fib_2.
     elim: n => // n IHn.
     rewrite fib_n.
     rewrite addn_gt0.
-      by apply/orP/or_intror.
+    by apply/orP/or_intror.
   Qed.
 
 (**
@@ -59,7 +59,7 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
     \sum_(m <= i < n.+1)(f i) = \sum_(m <= i < n)(f i) + f n.
   Proof.
     move=> Hmn.
-      by rewrite big_nat_recr.
+    by rewrite big_nat_recr.
   Qed.
 
 (**
@@ -74,12 +74,12 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
   Proof.  
     elim: n => [| n IHn].
     - rewrite big_cons big_nil /=.
-        by ssromega.
+      by ssromega.
     - rewrite l_last; last done.
       rewrite IHn.
       rewrite addnBAC; last by rewrite fib_1_le_fib2.
       congr (_ - _).
-        by rewrite addnC.
+      by rewrite addnC.
   Qed.
 
 (**
@@ -97,7 +97,7 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
       rewrite IHn.
       rewrite -mulnDl.
       rewrite mulnC.
-        by congr (_ * _).
+      by congr (_ * _).
   Qed.
 
 (**
@@ -113,11 +113,11 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
     - move=> n IHn.
       have -> : n.+1.*2 = n.*2.+2.
       + rewrite -addn1 -!muln2.
-          by ssromega.
+        by ssromega.
       + rewrite fib_n.                      (* 右辺 *)
         rewrite l_last; last done.          (* 左辺 *)
         rewrite IHn.
-          by congr (_ + _).
+        by congr (_ + _).
   Qed.
 
 (**
@@ -155,7 +155,7 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
     rewrite /coprime.
     elim: n => [//= | n IHn].
     rewrite fib_n.
-      by rewrite gcdnDr gcdnC.
+    by rewrite gcdnDr gcdnC.
   Qed.
 
 (**
@@ -196,11 +196,10 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
       rewrite ?addnA [_ + fib m.+2 * fib n.+1]addnC ?addnA. (* この項を先頭に。 *)
       rewrite -IHn1.
       
-      have -> : n + m.+3 = (m + n).+3 by ssromega.
-      have -> : n + m.+2 = (m + n).+2 by ssromega.
-      have -> : n + m.+1 = (m + n).+1 by ssromega.
-      rewrite fib_n.
-      rewrite [fib (m + n).+2 + fib (m + n).+1]addnC.
+      rewrite -addn3 addnA addn3.
+      rewrite -[m.+2]addn2 addnA addn2.
+      rewrite -[m.+1]addn1 addnA addn1.
+      rewrite fib_n addnC.
       done.
   Qed.
   
@@ -209,7 +208,7 @@ https://staff.aist.go.jp/reynald.affeldt/ssrcoq/ssrcoq.pdf
   Proof.
     move=> H.
     have H' := fib_addition' n m.-1.
-      by rewrite prednK in H'.
+    by rewrite prednK in H'.
   Qed.
 
 (**
@@ -286,7 +285,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
       done.
     - rewrite gcdnC mulSn addnC -?addnA addnCA.
       rewrite lemma8.
-        by rewrite gcdnC addnC.
+      by rewrite gcdnC addnC.
   Qed.
   
   Lemma lemma91'' (n q r : nat) :
@@ -296,7 +295,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     - by rewrite mul1n gcdnC lemma8'.
     - rewrite gcdnC mulSn addnC -?addnA addnCA.
       rewrite lemma8.
-        by rewrite gcdnC addnC.
+      by rewrite gcdnC addnC.
   Qed.
   
   Lemma lemma91''' (n q r : nat) :
@@ -306,7 +305,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     - by rewrite gcdnC mul0n add0n.
     - rewrite gcdnC mulSn addnC -?addnA addnCA.
       rewrite lemma8.
-        by rewrite gcdnC addnC.
+      by rewrite gcdnC addnC.
   Qed.
 
   Lemma lemma91_r1 (n q r : nat) :
@@ -315,7 +314,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
   Proof.
     move=> H.
     have H' := lemma91''' n q r.-1.
-      by rewrite prednK in H'.
+    by rewrite prednK in H'.
   Qed.
 
   (* r = 0 の特別な場合は、性質7である。 *)
@@ -327,7 +326,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     move=> Hn Hq.
     rewrite [fib 0]/= gcdn0.
     apply/gcdn_idPr.
-      by apply/lemma7.
+    by apply/lemma7.
   Qed.
 
   Lemma lemma91 (n q r : nat) :
@@ -339,7 +338,7 @@ n = qm ならば，ＦnはＦmで割り切れる。
     case Hr : (r == 0).
     - move/eqP in Hr.
       rewrite Hr addn0.
-        by apply: lemma91_r0.
+      by apply: lemma91_r0.
     - move/eqP in Hr.
       move/PeanoNat.Nat.neq_0_lt_0 in Hr.
       move/ltP in Hr.
@@ -355,26 +354,38 @@ n = qm ならば，ＦnはＦmで割り切れる。
    move=> Hm Hn Hnm.
    have Hq : 1 <= m %/ n by rewrite divn_gt0.
    have H := @lemma91 n (m %/ n) (m %%n) Hn Hq.
-     by rewrite -divn_eq in H.
+   by rewrite -divn_eq in H.
  Qed.
  
 (**
 ## 性質9（ＦmとＦnの最大公約数 ＝ Ｆ(mとnの最大公約数)）
 
 ```gcd (F m) (F n) = F (gcd m n)```
-
-(see. ssr_fib_3.v)
 *)
  Lemma lemma9 (m n : nat) :
-   (gcdn (fib m) (fib n) = fib (gcdn m n)).
+   gcdn (fib m) (fib n) = fib (gcdn m n).
  Proof.
- Admitted.
+   (* see. ssr_fib_3.v または ssr_fib_3_2.v *)
+ Admitted.                                  (* OK *)
 
 (**
 ## 性質10（Ｆn が Ｆm で割り切れるならば，nはmで割り切れる。）
 
 性質7の逆
 *)
+ (* F_n が単射なのは、2からである。 *)
+ Lemma fib_inj : injective fib.
+ Proof.
+ Admitted.
+
+ Lemma lemma10 (m n : nat) : fib n %| fib m -> n %| m.
+ Proof.
+   move/gcdn_idPl.
+   rewrite lemma9.
+   move/fib_inj => H.
+   apply/gcdn_idPl.
+   done.
+ Qed.
  
 End Fib_2.
 

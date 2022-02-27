@@ -32,7 +32,7 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_3_2.v
 *)
 
 From mathcomp Require Import all_ssreflect.
-From common Require Import ssromega.
+(* From common Require Import ssromega. *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -116,9 +116,7 @@ fibn_ind を使って、functional induction を使わずに証明します。
   Lemma fibn_addition' m n :
     fibn (m + n.+1) = fibn n.+1 * fibn m.+1 + fibn n * fibn m.
   Proof.
-    move: (@fibn_ind Pfibn).
-    rewrite /Pfibn.
-    apply.
+    apply: (@fibn_ind Pfibn); rewrite /Pfibn.
     - clear m n => n.
       rewrite addn1.
       rewrite [fibn 1]/= mul1n mul0n addn0.
@@ -142,12 +140,11 @@ fibn_ind を使って、functional induction を使わずに証明します。
       rewrite ?addnA [_ + fibn m.+1 * fibn n]addnC. (* この項を先頭に。 *)
       rewrite ?addnA [_ + fibn m.+2 * fibn n.+1]addnC ?addnA. (* この項を先頭に。 *)
       rewrite -IHn1.
-      
-      have -> : n + m.+3 = (m + n).+3 by ssromega.
-      have -> : n + m.+2 = (m + n).+2 by ssromega.
-      have -> : n + m.+1 = (m + n).+1 by ssromega.
-      rewrite fibn_n.
-      rewrite [fibn (m + n).+2 + fibn (m + n).+1]addnC.
+
+      rewrite -addn3 addnA addn3.
+      rewrite -[m.+2]addn2 addnA addn2.
+      rewrite -[m.+1]addn1 addnA addn1.
+      rewrite fibn_n addnC.
       done.
   Qed.
   
@@ -248,9 +245,7 @@ gcdn_ind を使って、functional induction を使わずに証明します。
 *)
   Theorem gcdn_fibn__fibn_gcdn (m n : nat) : gcdn (fibn m) (fibn n) = fibn (gcdn m n).
   Proof.
-    move: (@gcdn_ind Pgcdn).
-    rewrite /Pgcdn.
-    apply.
+    apply: (@gcdn_ind Pgcdn); rewrite /Pgcdn.
     - move=> n'.
       by rewrite /= gcd0n.
     - move=> m' n' /= IHm.

@@ -7,7 +7,7 @@ F(k * n) は F(k) の倍数である、など。
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 
 Set Implicit Arguments.
