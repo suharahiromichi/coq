@@ -1,7 +1,3 @@
-(* 
-ssr_fib_3_2.v を置き換えてもよい。
- *)
-
 (**
 フィボナッチ数の最大公約数 (GCD of Fibonacci Numbers)
 ============================
@@ -10,7 +6,8 @@ ssr_fib_3_2.v を置き換えてもよい。
 
 2022/01/29
 
-2022/02/26
+2022/02/27 fibn_ind と gcdn_ind を証明して、
+functional inducntion　を使わずに証明した。
 *)
 
 (**
@@ -80,7 +77,8 @@ Section Fib3_2.
 (**
 ## フィボナッチ数列の帰納法
 *)
-  Definition Pfibn m0 n0 := forall n, fibn (n + m0.+1) = fibn m0.+1 * fibn n.+1 + n0 * fibn n.
+  Definition Pfibn m0 n0 :=
+    forall n, fibn (n + m0.+1) = fibn m0.+1 * fibn n.+1 + n0 * fibn n.
 
   Lemma fibn_ind (P : nat -> nat -> Prop) :
     P 0 0 ->
@@ -92,20 +90,13 @@ Section Fib3_2.
       forall m : nat, P m (fibn m).
   Proof.
     move=> H1 H2 IH.
-    elim/ltn_ind.
-    case.
-    - move=> _.
-      by rewrite /fibn.
-    - case.
-      + move=> _.
-        by rewrite /fibn.
-      + move=> n.
-        move: (IH n) => {IH} IH.
-        rewrite -fibn_n in IH.
-        move=> H.
-        apply: IH.
-        * by apply: H.
-        * by apply: H.
+    (* m について2回場合分して、m.+2 を取り出す。 *)
+    elim/ltn_ind => [[_ | [_ | m]]].
+    - by rewrite /fibn.
+    - by rewrite /fibn.
+    - move: (IH m).
+      rewrite -fibn_n => {IH} IH H.
+      by apply: IH; apply: H.
   Qed.
   
   Check @fibn_ind Pfibn
@@ -117,39 +108,29 @@ Section Fib3_2.
       ->
         forall m : nat, Pfibn m (fibn m).
   
-(*  
-  Lemma fibn_ind' m n :
-    (fibn (n + 1) = fibn 1 * fibn n.+1 + 0 * fibn n) ->
-    (fibn (n + 2) = fibn 2 * fibn n.+1 + 1 * fibn n) ->
-    ((fibn (n + m.+1) = fibn m.+1 * fibn n.+1 + fibn m * fibn n) ->
-     (fibn (n + m.+2) = fibn m.+2 * fibn n.+1 + fibn m.+1 * fibn n) ->
-     (fibn (n + m.+3) = fibn m.+3 * fibn n.+1 + (fibn m + fibn m.+1) * fibn n)) ->
-    fibn (n + m.+1) = fibn m.+1 * fibn n.+1 + fibn m * fibn n.
-  Proof.
-  Admitted.
-*)
-  
 (**
 ## フィボナッチ数列の加法定理
+
+fibn_ind を使って、functional induction を使わずに証明します。
 *)
-  Lemma fibn_addition' n m :
-    fibn (n + m.+1) = fibn m.+1 * fibn n.+1 + fibn m * fibn n.
+  Lemma fibn_addition' m n :
+    fibn (m + n.+1) = fibn n.+1 * fibn m.+1 + fibn n * fibn m.
   Proof.
     move: (@fibn_ind Pfibn).
     rewrite /Pfibn.
     apply.
-    - clear n m => m.
+    - clear m n => n.
       rewrite addn1.
       rewrite [fibn 1]/= mul1n mul0n addn0.
       done.
       
-    - clear n m => m.
+    - clear m n => n.
       rewrite addn2.
       rewrite [fibn 2]/= add0n 2!mul1n.
       rewrite addnC -fibn_n.
       done.
       
-    - clear n m => m IHn0 IHn1 n.
+    - clear m n => m IHn0 IHn1 n.
       rewrite fibn_n 2!mulnDl.
       
       (* F(n + m.+1) の項をまとめて置き換える *)
@@ -170,11 +151,11 @@ Section Fib3_2.
       done.
   Qed.
   
-  Lemma fibn_addition n m :
-    1 <= m -> fibn (n + m) = fibn m * fibn n.+1 + fibn m.-1 * fibn n.
+  Lemma fibn_addition m n :
+    1 <= n -> fibn (m + n) = fibn n * fibn m.+1 + fibn n.-1 * fibn m.
   Proof.
     move=> H.
-    have H' := fibn_addition' n m.-1.
+    have H' := fibn_addition' m n.-1.
     by rewrite prednK in H'.
   Qed.
 
@@ -183,10 +164,9 @@ Section Fib3_2.
 
 Coq Tokyo 終了後に教えてもらった GCD の帰納法です。
 *)
-  Definition Pgcdn m0 n0 :=
-    fun n1 => (gcdn (fibn m0) (fibn n0) = fibn n1).
+  Definition Pgcdn m0 n0 n1 := gcdn (fibn m0) (fibn n0) = fibn n1.
   
-  Lemma my_gcdn_ind (P : nat -> nat -> nat -> Prop) :
+  Lemma gcdn_ind (P : nat -> nat -> nat -> Prop) :
     (forall n, P 0 n n) ->
     (forall m n, P (n %% m) m (gcdn (n %% m) m) ->
                  P m n (gcdn m n))
@@ -194,14 +174,14 @@ Coq Tokyo 終了後に教えてもらった GCD の帰納法です。
       forall m n, P m n (gcdn m n).
   Proof.
     move => H0 Hmod.
-    elim/ltn_ind => [[| m ]] // H n.
+    elim/ltn_ind => [[| m]] // H n.
     - have -> : gcdn 0 n = n by elim: n.
       done.
     - apply : Hmod.
       exact : H (ltn_mod _ _) _.
   Qed.
 
-  Check @my_gcdn_ind Pgcdn
+  Check @gcdn_ind Pgcdn
     : (forall n : nat, Pgcdn 0 n n) ->
       (forall m n : nat, Pgcdn (n %% m) m (gcdn (n %% m) m) -> Pgcdn m n (gcdn m n)) ->
       forall m n : nat, Pgcdn m n (gcdn m n).
@@ -264,11 +244,11 @@ gcdn_modr のフィボナッチ数版
   Qed.
 
 (**
-my_gcdn_ind を使って、functional induction を使わずに証明します。
+gcdn_ind を使って、functional induction を使わずに証明します。
 *)
   Theorem gcdn_fibn__fibn_gcdn (m n : nat) : gcdn (fibn m) (fibn n) = fibn (gcdn m n).
   Proof.
-    move: (@my_gcdn_ind Pgcdn).
+    move: (@gcdn_ind Pgcdn).
     rewrite /Pgcdn.
     apply.
     - move=> n'.
