@@ -373,18 +373,35 @@ n = qm ならば，ＦnはＦmで割り切れる。
 
 性質7の逆
 *)
- (* F_n が単射なのは、2からである。 *)
- Lemma fib_inj : injective fib.
+ Lemma fib_0 n : fib n = 0 -> n = 0.
+ Proof.
+ Admitted.
+ 
+ Lemma fib_ge_2 n m : 1 < gcdn n.+2 m.
  Proof.
  Admitted.
 
+ (* F_n が単射なのは、2からである。 *)
+ Lemma fib_inj n1 n2 : 1 < n1 -> fib n1 = fib n2 -> n1 = n2. (* injective fib. *)
+ Proof.
+ Admitted.
+ 
  Lemma lemma10 (m n : nat) : fib n %| fib m -> n %| m.
  Proof.
-   move/gcdn_idPl.
-   rewrite lemma9.
-   move/fib_inj => H.
-   apply/gcdn_idPl.
-   done.
+   case: n.
+   - rewrite [fib 0]/fib.
+     rewrite 2!dvd0n.
+     move/eqP => H.
+     apply/eqP.
+     by apply: fib_0.
+   - case=> n.
+     + by apply: dvd1n.
+     + move/gcdn_idPl.
+       rewrite lemma9.
+       move/fib_inj => H.
+       apply/gcdn_idPl.
+       rewrite H //.
+       by apply: fib_ge_2.
  Qed.
  
 End Fib_2.
