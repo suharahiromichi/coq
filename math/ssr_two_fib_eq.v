@@ -7,7 +7,7 @@ Chapter 23 依存型を使った定理証明入門
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import FunInd.                      (* Functional Scheme *)
 Require Import Recdef.                      (* Function *)
 
@@ -126,3 +126,13 @@ twoFibEq (S (S k)) =
 End Two_Fib_Eq.
 
 (* END *)
+
+Check expnD
+     : forall m n1 n2 : nat, m ^ (n1 + n2) = m ^ n1 * m ^ n2.
+
+Lemma expn_twice: forall (k : nat), 2^k + 2^k = 2^(k+1).
+Proof.
+  move=> k.
+  rewrite expnD expn1 muln2 -addnn.
+  done.
+Qed.
