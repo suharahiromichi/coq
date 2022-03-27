@@ -1,13 +1,12 @@
 (**
-フィボナッチ数の最大公約数 (GCD of Fibonacci Numbers)
+フィボナッチ数の最大公約数 (GCD of Fibonacci Numbers) その2
 ============================
 
 @suharahiromichi
 
 2022/01/29
 
-2022/02/27 fibn_ind と gcdn_ind を証明して、
-functional inducntion　を使わずに証明した。
+2022/02/27 fibn_ind と gcdn_ind を証明して、functional inducntion を使わずに証明する。
 *)
 
 (**
@@ -21,9 +20,20 @@ gcd(F_m, F_n) = F_{gcd(m, n)}
 ```
 
 という定理があります。エドゥアール・リュカ（François Édouard Anatole Lucas) が発見して、
-クヌーツ先生の本 [1] (式 6.111) で有名になったのだそうです。
+クヌーツ先生の本 ([1] (式 6.111) など) で有名になったのだそうです。
 
-フィボナッチ数の加法定理 [2] をつかうと簡単に証明できるので、トライしてみましょう。
+フィボナッチ数の加法定理をつかうと簡単に証明できるので、トライしてみましょう。
+
+
+この記事は [2] の続編です。
+
+先の記事では、Coqのfunctional inducntionを使用しましたが、
+この記事ではそれを使わないで証明してみます。
+具体的には、フィボナッチ数とユーグリッドの互除法についての帰納原理
+（fibn_ind と gcdn_ind）を自分で証明して、使用します。
+こちらのほうが、よりMathComp風の証明だといえるでしょう。
+
+なお、gcdn_ind の証明は、Coq Tokyo [3]でおしえてもらいました。
 
 
 このソースは、以下にあります。
@@ -32,7 +42,6 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_3_2.v
 *)
 
 From mathcomp Require Import all_ssreflect.
-(* From common Require Import ssromega. *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -157,12 +166,8 @@ fibn_ind を使って、functional induction を使わずに証明します。
   Qed.
 
 (**
-# GCDの帰納法の証明
-
-Coq Tokyo 終了後に教えてもらった GCD の帰納法です。
+# ユーグリッドの互除法の帰納法の証明
 *)
-  Definition Pgcdn m0 n0 n1 := gcdn (fibn m0) (fibn n0) = fibn n1.
-  
   Lemma gcdn_ind (P : nat -> nat -> nat -> Prop) :
     (forall n, P 0 n n) ->
     (forall m n, P (n %% m) m (gcdn (n %% m) m) ->
@@ -174,10 +179,12 @@ Coq Tokyo 終了後に教えてもらった GCD の帰納法です。
     elim/ltn_ind => [[| m]] // H n.
     - have -> : gcdn 0 n = n by elim: n.
       done.
-    - apply : Hmod.
-      exact : H (ltn_mod _ _) _.
+    - apply: Hmod.
+      exact: H (ltn_mod _ _) _.
   Qed.
 
+  Definition Pgcdn m0 n0 n1 := gcdn (fibn m0) (fibn n0) = fibn n1.
+  
   Check @gcdn_ind Pgcdn
     : (forall n : nat, Pgcdn 0 n n) ->
       (forall m n : nat, Pgcdn (n %% m) m (gcdn (n %% m) m) -> Pgcdn m n (gcdn m n)) ->
@@ -261,7 +268,12 @@ End Fib3_2.
 [1] Graham, Knuth, Patashnik "Concrete Mathematics", Second Edition
 
 
-[2] https://github.com/suharahiromichi/coq/blob/master/math/ssr_fib_2.v
+[2] 「フィボナッチ数の最大公約数」
+[https://qiita.com/suharahiromichi/items/d0861c1ef82d67d823c0]
+
+
+[3] Coq Tokyo [https://readcoqart.connpass.com/]
  *)
+
 
 (* END *)
