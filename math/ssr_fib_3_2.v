@@ -86,9 +86,6 @@ Section Fib3_2.
 (**
 ## フィボナッチ数列の帰納法
 *)
-  Definition Pfibn m0 n0 :=
-    forall n, fibn (n + m0.+1) = fibn m0.+1 * fibn n.+1 + n0 * fibn n.
-
   Lemma fibn_ind (P : nat -> nat -> Prop) :
     P 0 0 ->
     P 1 1 ->
@@ -108,6 +105,9 @@ Section Fib3_2.
       by apply: IH; apply: H.
   Qed.
   
+  Definition Pfibn m0 n0 :=
+    forall n, fibn (n + m0.+1) = fibn m0.+1 * fibn n.+1 + n0 * fibn n.
+
   Check @fibn_ind Pfibn
     : Pfibn 0 0 ->
       Pfibn 1 1 ->
