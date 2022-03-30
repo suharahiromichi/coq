@@ -15,7 +15,7 @@ Coq/SSReflect/MathComp による定理証明
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import bigop matrix.
 
-Require Import ssromega.
+From common Require Import ssromega.
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
 もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
@@ -256,8 +256,11 @@ Check @BigOp.bigop nat 'I_5 O (index_enum (ordinal_finType 5))
       (fun i : 'I_5 => @BigBody nat 'I_5 i addn (odd (nat_of_ord i)) (nat_of_ord i)).
 Check BigOp.bigop O (index_enum (ordinal_finType 5))
       (fun i : 'I_5 => BigBody i addn (odd i) i).
-(* i の型が 'I_5,
-   インデックスのリストが index_enum (ordinal_finType 5) *)
+(**
+i の型が 'I_5 のとき
+index_enum は Ordinal 型を要素とするリストを返す。
+ *)
+Check index_enum (ordinal_finType 5) : seq (ordinal_finType 5).
 
 (* 注： @BigBody の第5引数が、odd (nat_of_ord i) から、
    andb (i \in 'I_5) (odd (nat_of_ord i)) になる。 *)
@@ -575,12 +578,12 @@ End Summation1.
 
 このかたちでは、ほとんどヒットしない：
  *)
-Search _ "\sum_ ( _ <= _ < _ ) _".
+Search _ (\sum_ ( _ <= _ < _ ) _).
 
 (**
 一般的な表記を使うこと（スペースの位置にも注意）。
 *)
-Search _ "\big [ _ / _ ]_ ( _ <- _ | _ ) _".
+Search _ (\big [ _ / _ ]_ ( _ <- _ | _ ) _).
 
 (**
 ## 補題の定義
