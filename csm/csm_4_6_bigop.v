@@ -532,7 +532,7 @@ $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
 (**
 ## 数列の分割と結合
 
-$$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
+$$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n-1}a_i + \sum_{i=n}^{p}a_i $$
  *)
   Lemma sum_cat' m n1 n2 a :
     \sum_(m <= i < m + n1 + n2) a i =
