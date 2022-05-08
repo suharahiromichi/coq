@@ -55,6 +55,16 @@ $$ m = n \pmod{d} \Longrightarrow
   Qed.
   
 (**
+``p = q`` である特別な場合について証明しておきます。後で使います。
+ *)
+  Lemma m_addn' m n p d  :
+    m = n %[mod d] -> m + p = n + p %[mod d].
+  Proof.
+    move=> H.
+    by apply: m_addn.
+  Qed.
+  
+(**
 # 合同式の乗算
 
 「掛け算もうまくいく。」
@@ -71,8 +81,8 @@ $$ m = n \pmod{d} \Longrightarrow
     rewrite -[LHS]modnMm -[RHS]modnMm.
     
     congr (_ %% d).            (* %[mod d] を外す。 *)
-      (* Goal : m %% d * (p %% d) = n %% d * (q %% d) *)
-      by congr (_ * _).
+    (* Goal : m %% d * (p %% d) = n %% d * (q %% d) *)
+    by congr (_ * _).
   Qed.
   
 (**
@@ -82,7 +92,19 @@ $$ m = n \pmod{d} \Longrightarrow
     m = n %[mod d] -> m * p = n * p %[mod d].
   Proof.
     move=> H.
-      by apply: m_muln.
+    by apply: m_muln.
+  Qed.
+
+(**
+まとめて、線形性が成り立ちます。
+*)
+  Lemma m_linear m1 n1 m2 n2 p q d  :
+    m1 = n1 %[mod d] ->
+    m2 = n2 %[mod d] -> 
+    m1 * p + m2 * q = n1 * p + n2 * q %[mod d].
+  Proof.
+    move=> H1 H2.
+    by apply: m_addn; apply: m_muln'.
   Qed.
   
 (**
@@ -100,8 +122,8 @@ $$ p = q \pmod{d} \Longrightarrow p^{m} = q^{m} \pmod{d} $$
     rewrite -[LHS]modnXm -[RHS]modnXm.
     
     congr (_ %% d).           (* %[mod d] を外す。 *)
-      (* Goal : (p %% d) ^ m = (q %% d) ^ m *)
-      by congr (_ ^ m).
+    (* Goal : (p %% d) ^ m = (q %% d) ^ m *)
+    by congr (_ ^ m).
   Qed.
   
 (**
@@ -149,7 +171,7 @@ $$ m p = n p \pmod{d} \Longleftrightarrow m = n \pmod{d}, 但し p \perp d $$
       rewrite /coprime => /eqP.        (* 前提を gcdn p d = 1 *)
       rewrite gcd0n.                   (* 前提から d = 1 でもある。 *)
       move=> ->.                       (* d = 1 で書き換える。 *)
-        by rewrite !modn1.
+      by rewrite !modn1.
         
     (* 0 < p の場合 *)
     - move=> p_gt0 Hco H.
@@ -234,14 +256,14 @@ $$ m = n \pmod{lcm(d_1,d_2)} \Longleftrightarrow \\
   Proof.
     Check dvdn_lcm d1 d2 m : (lcmn d1 d2 %| m) = (d1 %| m) && (d2 %| m).
     rewrite dvdn_lcm => /andP.
-      by case.
+    by case.
   Qed.
   
   Lemma dvdn_lcmn d1 d2 m : d1 %| m -> d2 %| m -> lcmn d1 d2 %| m.
   Proof.
     rewrite dvdn_lcm => H1 H2.
     apply/andP.
-      by split.
+    by split.
   Qed.
   
 (**
@@ -280,7 +302,7 @@ d1を法として合同です。一般性を失わずに ``m ≦ n`` として�
     (* m <= n である場合 *)
     - apply/esym.               (* 合同式の左辺と右辺を入れ替える。 *)
       move/esym in H.           (* 合同式の左辺と右辺を入れ替える。 *)
-        by apply: m_divn_lcmn_1_1_1 H.
+      by apply: m_divn_lcmn_1_1_1 H.
   Qed.
   
 (**
@@ -293,7 +315,7 @@ d1を法として合同です。一般性を失わずに ``m ≦ n`` として�
     Check @m_divn_lcm_1_1 m n d1 d2 : m = n %[mod lcmn d1 d2] -> m = n %[mod d1].
     - by apply: m_divn_lcm_1_1 H.
     - rewrite lcmnC in H.
-        by apply: m_divn_lcm_1_1 H.
+      by apply: m_divn_lcm_1_1 H.
   Qed.
 
 (**
@@ -311,7 +333,7 @@ d1を法として合同です。一般性を失わずに ``m ≦ n`` として�
     rewrite eqn_mod_dvd; last done.
     
     Check dvdn_lcmn : forall d1 d2 m : nat, d1 %| m -> d2 %| m -> lcmn d1 d2 %| m.
-      by apply: dvdn_lcmn.
+    by apply: dvdn_lcmn.
   Qed.
   
 (**
@@ -329,7 +351,7 @@ d1を法として合同です。一般性を失わずに ``m ≦ n`` として�
     - apply/esym. (* ゴールと条件の合同式の左辺と右辺を入れ替える。 *)
       move/esym in H1.
       move/esym in H2.
-        by apply: m_divn_lcm_2_1.     (* 先の補題が使えるようになった。 *)
+      by apply: m_divn_lcm_2_1.   (* 先の補題が使えるようになった。 *)
   Qed.
   
 (**
@@ -341,9 +363,9 @@ d1を法として合同です。一般性を失わずに ``m ≦ n`` として�
     apply/idP/idP => [/eqP H | /andP [/eqP H1 /eqP H2]].
     - move/m_divn_lcm_1 in H.
       case: H => [H1 H2].
-        by apply/andP; split; apply/eqP.
+      by apply/andP; split; apply/eqP.
     - apply/eqP.
-        by apply: m_divn_lcm_2.
+      by apply: m_divn_lcm_2.
   Qed.
   
 (**
@@ -369,7 +391,7 @@ m と n が互いに素であることから、``gcdn m n = 1`` を代入して 
     rewrite /coprime.
     move=> /eqP Hco.
     Check muln_lcm_gcd : forall m n : nat, lcmn m n * gcdn m n = m * n.
-      by rewrite -muln_lcm_gcd Hco muln1.
+    by rewrite -muln_lcm_gcd Hco muln1.
   Qed.
   
 (**
@@ -382,7 +404,7 @@ m と n が互いに素であることから、``gcdn m n = 1`` を代入して 
   Proof.
     move=> Hco.
     rewrite -coprime_lcm; last done.
-      by apply: m_divn_lcm.
+    by apply: m_divn_lcm.
   Qed.
   
 (**
@@ -416,11 +438,11 @@ Gauss_dvd の証明には mulm_lcm_gcd を使っています(div.vにて)。
     - (* (m <= n) の場合 *)
       rewrite 3![m == n %[mod _]]eq_sym. (* 右辺と左辺を入れ替える。 *)
       rewrite !eqn_mod_dvd //.
-        by rewrite Gauss_dvd.
+      by rewrite Gauss_dvd.
         
     - (* (n <= m) の場合*)
       rewrite !eqn_mod_dvd //.
-        by rewrite Gauss_dvd.
+      by rewrite Gauss_dvd.
   Qed.
   
 (**
