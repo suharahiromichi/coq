@@ -51,8 +51,8 @@ ci が、文字列の連結(cat)について分配則を満たすことを証明
 *)
   Lemma ci_cat (x y : seq MIU) : ci (x ++ y) = ci x + ci y.
   Proof.
-    elim: x => //= a x IHx.
-    case: a => //=.
+    elim: x => //.                        (* x = a :: x の場合 *)
+    case=> x IHx //=.                     (* a による場合分けする。 *)
     rewrite addSn.
     by rewrite IHx.
   Qed.
