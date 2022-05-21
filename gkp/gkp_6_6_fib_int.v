@@ -57,6 +57,52 @@ Section INTFIB.
   Proof.
     done.
   Qed.
+
+  (* ********* *)
+
+  Lemma absz_total (i : int) : (i = `| i |%N%:Z) \/ (i = - `| i |%N%:Z).
+  Proof.
+    case: i => n.
+    - by left.
+    - rewrite /absz.
+      right.
+      by case: n.
+  Qed.
+
+  Lemma addzn1 (m : nat) : m%:Z + 1  = m.+1.
+  Proof.
+    rewrite -[m.+1]addn1.
+    done.
+  Qed.
+  
+  Lemma addzn2 (m : nat) : m%:Z + 2  = m.+2.
+  Proof.
+    rewrite -[m.+2]addn2.
+    done.
+  Qed.
+  
+  (* これは成り立たない。m = 0 なら -1 = 0 *)
+  Lemma subzn1 (m : nat) : m%:Z - 1  = m.-1%:Z.
+  Proof.
+  Abort.
+  
+  Lemma double_half (m : nat) : m.*2./2 = m.
+  Proof.
+    elim: m => //= m IHm.
+    by congr (_.+1).
+  Qed.
+  
+  Lemma even_odd_total (n : nat) : n = n./2.*2 \/ n = n./2.*2.+1.
+  Proof.
+    elim: n => /=.
+    - by left.
+    - move=> n [IHe | IHo].
+      * right.
+        by rewrite 2!IHe uphalf_double.
+      * left.
+        rewrite {2}IHo /= double_half doubleS.
+        by rewrite {1}IHo.
+  Qed.
   
 (**
 ``-(2n + 1)`` 負の奇数 その1
@@ -129,19 +175,44 @@ Section INTFIB.
     done.
   Qed.
 
-End INTFIB.  
-
-
-
-
-
-
+(* *************** *)
+(* *************** *)
+(* *************** *)
 
 
   Lemma fibn_n n : (fibn n + fibn n.+1)%N = fibn n.+2.
   Proof.
     done.
   Qed.
+
+  Lemma fibz_i i : fibz i + fibz (i + 1) = fibz (i + 2).
+  Proof.
+    case: (absz_total i) => ->.
+    - rewrite addzn1 addzn2.
+      done.
+    - case: (even_odd_total `|i|%N) => ->.
+      + pose n := `|i|./2.
+        rewrite -/n.
+        (* fibz (- n.*2) + fibz (- n.*2 + 1) = fibz (- n.*2 + 2) *)
+        case: n => //= n.
+        (* fibz (- (n.+1).*2) + fibz (- (n.+1).*2 + 1) = fibz (- (n.+1).*2 + 2) *)
+        admit.
+
+      + pose n := `|i|./2.
+        rewrite -/n.
+        (* fibz (- n.*2.+1) + fibz (- n.*2.+1 + 1) = fibz (- n.*2.+1 + 2) *)
+        case: n => //= n.
+        (* fibz (- (n.+1).*2.+1) + fibz (- (n.+1).*2.+1 + 1) = fibz (- (n.+1).*2.+1 + 2) *)
+        admit.
+  Admitted.
+        
+End INTFIB.
+
+(* *************** *)
+(* *************** *)
+(* *************** *)
+
+
 
   
   Variant case_of_int : int -> Prop :=
@@ -168,18 +239,6 @@ End INTFIB.
       rewrite fibz_neg_even'.
       have -> : (- n.*2.+1%:Z + 2) = - n.*2.-1%:Z by admit.
       
-
-
-End FIB.
-
-(* *************** *)
-(* *************** *)
-(* *************** *)
-(* *************** *)
-(* *************** *)
-(* *************** *)
-
-
   Lemma fibn_ind (P : nat -> nat -> Prop) :
     P 0%N 0%N ->
     P 1%N 1%N ->
