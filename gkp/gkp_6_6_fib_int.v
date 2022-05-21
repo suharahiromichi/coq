@@ -50,14 +50,6 @@ Section INTFIB.
     done.
   Qed.
   
-(**
-``n`` 正数
- *)
-  Lemma fibz_pos_n (n : nat) : fibz n%:Z = fibn n.
-  Proof.
-    done.
-  Qed.
-
   (* ********* *)
 
   Lemma absz_total (i : int) : (i = `| i |%N%:Z) \/ (i = - `| i |%N%:Z).
@@ -104,6 +96,20 @@ Section INTFIB.
         by rewrite {1}IHo.
   Qed.
   
+(**
+# F_n  =   F_n     n は正
+# F_-n = - F_n     n は偶数
+# F_-n =   F_n     n は奇数
+ *)
+  
+(**
+``n`` 正数
+ *)
+  Lemma fibz_pos_n (n : nat) : fibz n%:Z = fibn n.
+  Proof.
+    done.
+  Qed.
+
 (**
 ``-(2n + 1)`` 負の奇数 その1
  *)
@@ -175,11 +181,6 @@ Section INTFIB.
     done.
   Qed.
 
-(* *************** *)
-(* *************** *)
-(* *************** *)
-
-
   Lemma fibn_n n : (fibn n + fibn n.+1)%N = fibn n.+2.
   Proof.
     done.
@@ -196,10 +197,30 @@ Section INTFIB.
         (* fibz (- n.*2) + fibz (- n.*2 + 1) = fibz (- n.*2 + 2) *)
         case: n => //= n.
         (* fibz (- (n.+1).*2) + fibz (- (n.+1).*2 + 1) = fibz (- (n.+1).*2 + 2) *)
-        have -> : - n.+1.*2%:Z + 2 = - n.*2%:Z    by admit. (* -2n *)
-        have -> : - n.+1.*2%:Z + 1 = - n.*2.+1%:Z by admit. (* -(2n + 1) *)
+        (* -2n *)
+        have -> : - n.+1.*2%:Z + 2 = - n.*2%:Z.
+        {rewrite doubleS.
+         rewrite addrC.
+         rewrite -opprB.
+         congr (- _).
+         apply/eqP.
+         rewrite subr_eq.
+         rewrite -addzn2.             (* 整数の + 2 を .+2 にする。 *)
+         done.
+        }
+        (* -(2n + 1) *)
+        have -> : - n.+1.*2%:Z + 1 = - n.*2.+1%:Z.
+        {rewrite -addzn1.
+         rewrite doubleS.
+         rewrite addrC.
+         rewrite -opprB.
+         congr (- _).
+         rewrite -addzn2.
+         rewrite -addrA.
+         done.
+        }
         (* -(2n + 2) *)
-
+        
         (* fibz (- n+1.*2) + fibz (- n.*2.+1) = fibz (- n.*2) *)
         rewrite 2!fibz_neg_even_n.
         rewrite fibz_neg_odd_n.
@@ -223,10 +244,21 @@ Section INTFIB.
         (* fibz (- n.*2.+1) + fibz (- n.*2.+1 + 1) = fibz (- n.*2.+1 + 2) *)
         case: n => //= n.
         (* fibz (- (n.+1).*2.+1) + fibz (- (n.+1).*2.+1 + 1) = fibz (- (n.+1).*2.+1 + 2) *)
-        have -> : - n.+1.*2.+1%:Z + 2 = - n.*2.+1%:Z    by admit. (* -(2n + 1) *)
-        have -> : - n.+1.*2.+1%:Z + 1 = - n.+1.*2%:Z    by admit. (* -(2n + 2) *)
+        (* -(2n + 1) *)
+        have -> : - n.+1.*2.+1%:Z + 2 = - n.*2.+1%:Z.
+        {rewrite doubleS.
+         rewrite addrC.
+         rewrite -opprB.
+         congr (- _).
+        }
+        (* -(2n + 2) *)
+        have -> : - n.+1.*2.+1%:Z + 1 = - n.+1.*2%:Z.
+        {rewrite doubleS.
+         rewrite addrC.
+         rewrite -opprB.
+         congr (- _).
+         }
         (* -(2n + 3) *)
-        
         rewrite fibz_neg_even_n.
         rewrite 2!fibz_neg_odd_n.
         have -> : n.+1.*2.+1 = n.*2.+3 by done.
@@ -236,7 +268,7 @@ Section INTFIB.
         rewrite subr_eq.
         (* fibn n.*2.+3 == fibn n.*2.+1 + fibn n.*2.+2 *)
         done.
-  Admitted.
+  Qed.
   
 End INTFIB.
 
