@@ -196,16 +196,48 @@ Section INTFIB.
         (* fibz (- n.*2) + fibz (- n.*2 + 1) = fibz (- n.*2 + 2) *)
         case: n => //= n.
         (* fibz (- (n.+1).*2) + fibz (- (n.+1).*2 + 1) = fibz (- (n.+1).*2 + 2) *)
-        admit.
+        have -> : - n.+1.*2%:Z + 2 = - n.*2%:Z    by admit. (* -2n *)
+        have -> : - n.+1.*2%:Z + 1 = - n.*2.+1%:Z by admit. (* -(2n + 1) *)
+        (* -(2n + 2) *)
 
+        (* fibz (- n+1.*2) + fibz (- n.*2.+1) = fibz (- n.*2) *)
+        rewrite 2!fibz_neg_even_n.
+        rewrite fibz_neg_odd_n.
+        (* - fibn (n.+1).*2 + fibn n.*2.+1 = - fibn n.*2 *)
+        have -> : n.+1.*2 = n.*2.+2 by done.
+        (* - fibn n.*2.+2 + fibn n.*2.+1 = - fibn n.*2 *)
+        apply/eqP.
+        Check addr_eq0 : forall [V : zmodType] (x y : V), (x + y == 0) = (x == - y).
+        Check subr_eq0 : forall (V : zmodType) (x y : V), (x - y == 0) = (x == y).
+        Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
+        rewrite -addr_eq0.
+        rewrite -addrA.
+        rewrite -addrC.
+        rewrite subr_eq.
+        rewrite add0r.
+        rewrite addrC.
+        (* fibn n.*2 + fibn n.*2.+1 = fibn n.*2.+2 *)        
+        done.
       + pose n := `|i|./2.
         rewrite -/n.
         (* fibz (- n.*2.+1) + fibz (- n.*2.+1 + 1) = fibz (- n.*2.+1 + 2) *)
         case: n => //= n.
         (* fibz (- (n.+1).*2.+1) + fibz (- (n.+1).*2.+1 + 1) = fibz (- (n.+1).*2.+1 + 2) *)
-        admit.
-  Admitted.
+        have -> : - n.+1.*2.+1%:Z + 2 = - n.*2.+1%:Z    by admit. (* -(2n + 1) *)
+        have -> : - n.+1.*2.+1%:Z + 1 = - n.+1.*2%:Z    by admit. (* -(2n + 2) *)
+        (* -(2n + 3) *)
         
+        rewrite fibz_neg_even_n.
+        rewrite 2!fibz_neg_odd_n.
+        have -> : n.+1.*2.+1 = n.*2.+3 by done.
+        have -> : n.+1.*2 = n.*2.+2 by done.
+        (* fibn n.*2.+3 - fibn n.*2.+2 = fibn n.*2.+1 *)
+        apply/eqP.
+        rewrite subr_eq.
+        (* fibn n.*2.+3 == fibn n.*2.+1 + fibn n.*2.+2 *)
+        done.
+  Admitted.
+  
 End INTFIB.
 
 (* *************** *)
@@ -213,147 +245,7 @@ End INTFIB.
 (* *************** *)
 
 
+Check eqz_nat : forall m n : nat, (m == n :> int) = (m == n).
 
-  
-  Variant case_of_int : int -> Prop :=
-    | c_pos : forall (n : nat), case_of_int n
-    | c_zero : case_of_int 0
-    | c_neg_odd : forall (n : nat), case_of_int (- n.*2.+1%:Z)
-    | c_neg_even : forall (n : nat), case_of_int (- n.*2.+2%:Z).
+(* END *)
 
-  Lemma fibz_i i : case_of_int i -> fibz i + fibz (i + 1) = fibz (i + 2).
-  Proof.
-    case.
-    - move=> n.
-      rewrite 3!fibz_pos.
-      rewrite addn1 addn2.
-      apply/eqP.
-      rewrite eqz_nat.
-      apply/eqP.
-      by rewrite fibn_n.
-    - rewrite 2!add0r.
-      by rewrite fibz_2.
-    - move=> n.
-      rewrite fibz_neg_odd'.
-      have -> : (- n.*2.+1%:Z + 1) = - n.*2%:Z by admit.
-      rewrite fibz_neg_even'.
-      have -> : (- n.*2.+1%:Z + 2) = - n.*2.-1%:Z by admit.
-      
-  Lemma fibn_ind (P : nat -> nat -> Prop) :
-    P 0%N 0%N ->
-    P 1%N 1%N ->
-    (forall m : nat, P m (fibn m) ->
-                     P m.+1 (fibn m.+1) ->
-                     P m.+2 (fibn m + fibn m.+1))%N
-    ->
-      forall m : nat, P m (fibn m).
-  Proof.
-    move=> H1 H2 IH.
-    (* m について2回場合分して、m.+2 を取り出す。 *)
-    elim/ltn_ind => [[_ | [_ | m]]].
-    - by rewrite /fibn.
-    - by rewrite /fibn.
-    - move: (IH m).
-      rewrite -fibn_n => {IH} IH H.
-      by apply: IH; apply: H.
-  Qed.
-
-  Definition Pfibn m0 n0 :=
-    forall n, fibn (n + m0.+1) = (fibn m0.+1 * fibn n.+1 + n0 * fibn n)%N.
-  
-  Definition fibz (i : int) : int :=
-    match i with
-    | Posz n => fibn n
-    | Negz n => (-1)^n * (fibn n.+1)%:Z
-    end.
-  
-  Compute fibz 0.                           (* 0 *)
-  Compute fibz (-1%:Z).                     (* 1 *)
-  Compute fibz (-2%:Z).                     (* Negz 0 *)
-  Compute fibz (-3%:Z).                     (* 2 *)
-  
-  Lemma fibz_i (i : int) : fibz i + fibz (i + 1) = fibz (i + 2).
-  Proof.
-    case: i => n.
-    - by rewrite /= addn1 addn2.
-    - Admitted.
-
-
-  Lemma fibz_i' (i : int) : fibz (oppz (i + 2)) + fibz (oppz (i + 1)) = fibz i.
-  Proof.
-    case: i => n.
-    - admit.
-    - rewrite /fibz.
-      have -> : Negz n + 2 = Negz (n.-2) by admit.
-      have -> : Negz n + 1 = Negz (n.-1) by admit.
-      simpl.
-  
-    - 
-      case H1 : (Negz n + 1); case H2 : (Negz n + 2).
-      + elim: n H1 H2 => //= IH1n IH2n.
-        rewrite expr0z.
-        admit.                              (* 1 + fib 0 = fib 1 *)
-      + by elim: n H1 H2 => //= IH1n IH2n.
-      + admit.
-      + elim: n H1 H2 => // n IHn H1 H2.
-        
-      have -> : oppz n.+1 + 1 = oppz n by admit.
-      have -> : oppz n.+1 + 2 = oppz n.-1 by admit.
-      
-      Search _ (oppz _).
-
-elim: n => // n IHn.
-      Search _ (Negz _).
-      
-      rewrite !NegzE in IHn.
-      
-
-      Print oppz.
-      Search _ (oppz _).
-
-  Definition test (i : int) : nat :=
-    match i with
-    | Posz n => n
-    | Negz n => n.+1                       (* 2の補数なので+1する。 *)
-    end.
-  Compute test 0.
-  Compute test (-1)%Z.                      (* 1 *)
-  Compute test (-2%:Z).                     (* 2 *)
-  Compute test (-3%:Z).                     (* 3 *)
-  
-
-(*
-  NG.
-  Definition fibz' (i : int) : int :=
-    let: n := `|i|%N in (-1)^(n.-1) * (fibn n)%:Z.
-
-  Compute fibz' 0.                          (* 0 *)
-  Compute fibz' (-1%:Z).                    (* 1 *)
-  Compute fibz' (-2%:Z).                    (* Negz 0 *)
-  Compute fibz' (-3%:Z).                    (* 2 *)
- *)
-  
-
-      Search (_ %N + _ %N).
-
-      elim=> // n IHn.
-      + rewrite /fibn.
-
-
-rewrite /= expr0z add0n.
-        rewrite expr1z.
-        Search _ (_ ^ 1).
-        
-        Search _ ( _ ^ 0).
-        rewrite mulz0.
-        
-      + rewrite sub0n.
-
-
-
-  Lemma fibz_i (i : int) : fibz i + fibz (i + 1) = fibz (i + 2).
-  Proof.
-    case: i => n.
-    - rewrite /fibz.
-      
-    
