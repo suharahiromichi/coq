@@ -9,7 +9,7 @@
 
 フィボナッチ数の定義を負数に拡張する。自然数 ``n`` に対して、
 
-```F_(-n) = (-1)^(n - 1) F_n```
+```F_(-n) = (-1)^(n - 1)・F_n```
 
 とします。たとえば、
 
@@ -28,6 +28,8 @@ F_(-4) = -3
 これがフィボナッチ数の定義を満たすことを証明することが主題です。
 
 ```F_i + F_(i + 1) = F_(i + 2)```
+
+MathComp のalgebraパッケージを使って、全部で250行あります。
  *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
@@ -154,9 +156,6 @@ F_-n =   F_n     ただし n は奇数
   Qed.
   
 (**
-*)
-
-(**
 # 場合分けのための補題
 
 - 整数と正数と負数に分けられる。
@@ -194,15 +193,18 @@ F_-n =   F_n     ただし n は奇数
 (**
 # いくつかの補題
 *)
+(**
+- 定数の足し算
+*)
   Lemma addzn1 (m : nat) : m%:Z + 1  = m.+1.
   Proof.
-    rewrite -[m.+1]addn1.
+    rewrite -[in RHS]addn1.
     done.
   Qed.
   
   Lemma addzn2 (m : nat) : m%:Z + 2  = m.+2.
   Proof.
-    rewrite -[m.+2]addn2.
+    rewrite -[in RHS]addn2.
     done.
   Qed.
   
@@ -211,7 +213,16 @@ F_-n =   F_n     ただし n は奇数
   Proof.
   Abort.
   
-
+(**
+- 移項する補題
+*)
+  Lemma transpos (a b c : int) : a = c + b -> a - b = c.
+  Proof.
+    move/eqP => H.
+    apply/eqP.
+    by rewrite subr_eq.
+  Qed.
+  
 (**
 # 証明の本題
 *)
@@ -226,28 +237,16 @@ F_-n =   F_n     ただし n は奇数
         (* fibz (- n.*2) + fibz (- n.*2 + 1) = fibz (- n.*2 + 2) *)
         case: n => //= n.
         (* fibz (- (n.+1).*2) + fibz (- (n.+1).*2 + 1) = fibz (- (n.+1).*2 + 2) *)
+
+        (* 上書きしないように、右から書き換える。 *)
         (* -2n *)
-        have -> : - n.+1.*2%:Z + 2 = - n.*2%:Z.
-        {rewrite doubleS.
-         rewrite addrC.
-         rewrite -opprB.
-         congr (- _).
-         apply/eqP.
-         rewrite subr_eq.
-         rewrite -addzn2.             (* 整数の + 2 を .+2 にする。 *)
-         done.
-        }
+        have -> : - n.+1.*2%:Z + 2 = - n.*2%:Z
+          by rewrite doubleS addrC -opprB -addzn2;
+          congr (- _); apply: transpos.
         (* -(2n + 1) *)
-        have -> : - n.+1.*2%:Z + 1 = - n.*2.+1%:Z.
-        {rewrite -addzn1.
-         rewrite doubleS.
-         rewrite addrC.
-         rewrite -opprB.
-         congr (- _).
-         rewrite -addzn2.
-         rewrite -addrA.
-         done.
-        }
+        have -> : - n.+1.*2%:Z + 1 = - n.*2.+1%:Z
+          by rewrite -addzn1;                          (* 右辺 *)
+          rewrite doubleS addrC -opprB -addzn2 -addrA. (* 左辺 *)
         (* -(2n + 2) *)
         
         (* fibz (- n+1.*2) + fibz (- n.*2.+1) = fibz (- n.*2) *)
@@ -255,19 +254,13 @@ F_-n =   F_n     ただし n は奇数
         rewrite fibz_neg_odd.
         (* - fibn (n.+1).*2 + fibn n.*2.+1 = - fibn n.*2 *)
         have -> : n.+1.*2 = n.*2.+2 by done.
+      
         (* - fibn n.*2.+2 + fibn n.*2.+1 = - fibn n.*2 *)
         apply/eqP.
-        Check addr_eq0 : forall [V : zmodType] (x y : V), (x + y == 0) = (x == - y).
-        Check subr_eq0 : forall (V : zmodType) (x y : V), (x - y == 0) = (x == y).
-        Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
-        rewrite -addr_eq0.
-        rewrite -addrA.
-        rewrite -addrC.
-        rewrite subr_eq.
-        rewrite add0r.
-        rewrite addrC.
-        (* fibn n.*2 + fibn n.*2.+1 = fibn n.*2.+2 *)        
+        rewrite -addr_eq0 -addrA -addrC subr_eq add0r addrC.
+        (* fibn n.*2 + fibn n.*2.+1 = fibn n.*2.+2 *)
         done.
+        
       + pose n := `|i|./2.
         rewrite -/n.
         (* fibz (- n.*2.+1) + fibz (- n.*2.+1 + 1) = fibz (- n.*2.+1 + 2) *)
@@ -276,25 +269,21 @@ F_-n =   F_n     ただし n は奇数
            n.*2 しているので、n.+1 になると、ふたつずれる。 *)
         case: n => //= n.
         (* fibz (- (n.+1).*2.+1) + fibz (- (n.+1).*2.+1 + 1) = fibz (- (n.+1).*2.+1 + 2) *)
+        
+        (* 上書きしないように、右から書き換える。 *)
         (* -(2n + 1) *)
-        have -> : - n.+1.*2.+1%:Z + 2 = - n.*2.+1%:Z.
-        {rewrite doubleS.
-         rewrite addrC.
-         rewrite -opprB.
-         congr (- _).
-        }
+        have -> : - n.+1.*2.+1%:Z + 2 = - n.*2.+1%:Z
+          by rewrite doubleS addrC -opprB.
         (* -(2n + 2) *)
-        have -> : - n.+1.*2.+1%:Z + 1 = - n.+1.*2%:Z.
-        {rewrite doubleS.
-         rewrite addrC.
-         rewrite -opprB.
-         congr (- _).
-         }
+        have -> : - n.+1.*2.+1%:Z + 1 = - n.+1.*2%:Z
+          by rewrite doubleS addrC -opprB.
         (* -(2n + 3) *)
+        
         rewrite fibz_neg_even.
         rewrite 2!fibz_neg_odd.
         have -> : n.+1.*2.+1 = n.*2.+3 by done.
         have -> : n.+1.*2 = n.*2.+2 by done.
+        
         (* fibn n.*2.+3 - fibn n.*2.+2 = fibn n.*2.+1 *)
         apply/eqP.
         rewrite subr_eq.
@@ -355,6 +344,9 @@ Section OPTION.
 End OPTION.
 
 Check eqz_nat : forall m n : nat, (m == n :> int) = (m == n).
+Check addr_eq0 : forall [V : zmodType] (x y : V), (x + y == 0) = (x == - y).
+Check subr_eq0 : forall (V : zmodType) (x y : V), (x - y == 0) = (x == y).
+Check subr_eq : forall (V : zmodType) (x y z : V), (x - z == y) = (x == y + z).
 
 
 (* END *)
