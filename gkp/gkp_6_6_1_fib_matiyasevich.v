@@ -88,6 +88,20 @@ Proof.
   by rewrite modzMDl.
 Qed.
 
+(*
+not used
+Lemma hodai (n k : nat) :
+  fibz n * (k%:Z * fibz n * fibz n.+1 ^ k.-1) = k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2.
+Proof.
+  rewrite !mulrA.
+  rewrite [fibz n * k]mulrC.
+  rewrite -![RHS]mulrA.
+  rewrite -[fibz n.+1 ^ k.-1 * (fibz n * fibz n)]mulrC.
+  rewrite !mulrA.
+  done.
+Qed.
+*)
+
 Lemma l_mati k n : (1 < n)%N -> mati_1 k n /\ mati_2 k n.
 Proof.
   move=> Hn.
@@ -106,33 +120,43 @@ Proof.
       rewrite fibz_1; last ssromega.
       
       have -> : (fibz n * fibz (k * n).+1 + (fibz n.+1 - fibz n) * fibz (k * n)
-                = fibz n * (fibz n.+1 ^ k) +
-                    (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
-                %[mod fibz n ^ 2])%Z. (* 左辺 IHk1 と IHk2 で書き換える。 *)
-      by apply: m_addz; apply: m_mulz.
+                 = fibz n * (fibz n.+1 ^ k) +
+                     (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
+                %[mod fibz n ^ 2])%Z (* 左辺 IHk1 と IHk2 で書き換える。 *)
+        by apply: m_addz; apply: m_mulz.
       
+      have -> : (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
+                = (k%:Z * fibz n * fibz n.+1 ^ k)
+                  - (k%:Z * fibz n ^ 2 * fibz n.+1 ^ k.-1).
+        * rewrite mulrBl mulrCA -exprSz.    (* 左辺展開 *)
+          case: k IHk1 IHk2 => [| k IHk1 IHk2].
+          *** by rewrite !mulr0 !mul0r.
+          *** by rewrite !mulrA [fibz n * k.+1]mulrC.
+
+      have -> : k%:Z * fibz n ^ 2 * fibz n.+1 ^ k.-1
+                 = k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2 by rewrite mulrAC.
+      rewrite addrA.
+(*
       have -> : fibz n * (fibz n.+1 ^ k) +
                   (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
                 = fibz n * (fibz n.+1 ^ k) +
                     k%:Z * fibz n * fibz n.+1 ^ k - k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2.
+
       * rewrite mulrBl.                     (* 左辺展開 *)
         rewrite addrA.
+        rewrite mulrCA -exprSz.
         congr (_ + _ - _). 
-        ** rewrite mulrCA -exprSz.
-           case: k IHk1 IHk2 => [| k IHk1 IHk2].
+        ** case: k IHk1 IHk2 => [| k IHk1 IHk2].
            *** by rewrite !mul0r.
            *** by rewrite prednK.
-        ** rewrite !mulrA.
-           rewrite [fibz n * k]mulrC.
-           rewrite -![RHS]mulrA.
-           rewrite -[fibz n.+1 ^ k.-1 * (fibz n * fibz n)]mulrC.
-           rewrite !mulrA.
-           done.
+        ** by apply: hodai.
+*)
+
      have -> : (fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
                 - k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
                 = fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k 
-               %[mod fibz n ^ 2])%Z.
-        by rewrite modzMDr'.            (* 左辺の fib n ^ 2 を消す。 *)
+               %[mod fibz n ^ 2])%Z
+       by rewrite modzMDr'.            (* 左辺の fib n ^ 2 を消す。 *)
       
       have -> : fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
                 = k.+1%:Z * fibz n * fibz n.+1 ^ k
