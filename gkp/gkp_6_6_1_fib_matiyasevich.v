@@ -60,18 +60,18 @@ Qed.
 Lemma m_addz m n p q d  :
   (m = n %[mod d])%Z -> (p = q %[mod d])%Z -> (m + p = n + q %[mod d])%Z.
 Proof.
-Admitted.                                   (* gkp_4_6_modulo.v *)
+Admitted.                                   (* see. gkp_4_6_modulo.v *)
 
 Lemma m_mulz m n p q d  :
   (m = n %[mod d])%Z -> (p = q %[mod d])%Z -> (m * p = n * q %[mod d])%Z.
 Proof.
-Admitted.                                   (* gkp_4_6_modulo.v *)
+Admitted.                                   (* see. gkp_4_6_modulo.v *)
 
 (* 加法定理 *)
 Lemma fib_addition n m :
   (0 < n)%N -> fibz (n + m) = fibz n * fibz m.+1 + fibz n.-1 * fibz m.
 Proof.
-Admitted.                                   (* ssr_fib_2.v *)
+Admitted.                                   (* see. ssr_fib_2.v *)
 
 Check modzMDl : forall p m d : int, (p * d + m = m %[mod d])%Z.
 Lemma modzMDr : forall p m d : int, (m + p * d = m %[mod d])%Z.
@@ -88,99 +88,84 @@ Proof.
   by rewrite modzMDl.
 Qed.
 
-(*
-not used
-Lemma hodai (n k : nat) :
-  fibz n * (k%:Z * fibz n * fibz n.+1 ^ k.-1) = k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2.
-Proof.
-  rewrite !mulrA.
-  rewrite [fibz n * k]mulrC.
-  rewrite -![RHS]mulrA.
-  rewrite -[fibz n.+1 ^ k.-1 * (fibz n * fibz n)]mulrC.
-  rewrite !mulrA.
-  done.
-Qed.
-*)
-
 Lemma l_mati k n : (1 < n)%N -> mati_1 k n /\ mati_2 k n.
 Proof.
   move=> Hn.
   elim: k => /= [| k [IHk1 IHk2]].
-  - rewrite /mati_1 /mati_2.
-    split.
-    + done.
-    + by rewrite expr0z.
-  - rewrite /mati_1 /mati_2.
-    rewrite /mati_1 in IHk1.
+  - by split.
+  - rewrite /mati_1 in IHk1.
     rewrite /mati_2 in IHk2.
+    rewrite /mati_1 /mati_2.
     split.
+    
+    (* ゴールが mati_1 の場合 *)
     + rewrite -pred_Sn.
       have -> : (k.+1 * n = n + k * n)%N by done.
-      rewrite fib_addition; last ssromega. (* 左辺加法定理 fibn (n + kn) *)
+      
+      (* 左辺に加法定理を使う。 fib (n + kn) *)
+      rewrite fib_addition; last ssromega.
       rewrite fibz_1; last ssromega.
       
+      (* 左辺を IHk1 と IHk2 で書き換える。 *)
       have -> : (fibz n * fibz (k * n).+1 + (fibz n.+1 - fibz n) * fibz (k * n)
-                 = fibz n * (fibz n.+1 ^ k) +
-                     (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
-                %[mod fibz n ^ 2])%Z (* 左辺 IHk1 と IHk2 で書き換える。 *)
+      = fibz n * (fibz n.+1 ^ k) + (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
+       %[mod fibz n ^ 2])%Z
         by apply: m_addz; apply: m_mulz.
       
+      (* 左辺を展開する。 *)
       have -> : (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
-                = (k%:Z * fibz n * fibz n.+1 ^ k)
-                  - (k%:Z * fibz n ^ 2 * fibz n.+1 ^ k.-1).
-        * rewrite mulrBl mulrCA -exprSz.    (* 左辺展開 *)
-          case: k IHk1 IHk2 => [| k IHk1 IHk2].
-          *** by rewrite !mulr0 !mul0r.
-          *** by rewrite !mulrA [fibz n * k.+1]mulrC.
-
+      = (k%:Z * fibz n * fibz n.+1 ^ k) - (k%:Z * fibz n ^ 2 * fibz n.+1 ^ k.-1).
+      {
+        rewrite mulrBl mulrCA -exprSz.
+        case: k IHk1 IHk2 => [| k IHk1 IHk2].
+        * by rewrite !mulr0 !mul0r.
+        * by rewrite !mulrA [fibz n * k.+1]mulrC.
+      }.
       have -> : k%:Z * fibz n ^ 2 * fibz n.+1 ^ k.-1
-                 = k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2 by rewrite mulrAC.
+                = k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
+        by rewrite mulrAC.
       rewrite addrA.
-(*
-      have -> : fibz n * (fibz n.+1 ^ k) +
-                  (fibz n.+1 - fibz n) * (k%:Z * fibz n * fibz n.+1 ^ k.-1)
-                = fibz n * (fibz n.+1 ^ k) +
-                    k%:Z * fibz n * fibz n.+1 ^ k - k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2.
-
-      * rewrite mulrBl.                     (* 左辺展開 *)
-        rewrite addrA.
-        rewrite mulrCA -exprSz.
-        congr (_ + _ - _). 
-        ** case: k IHk1 IHk2 => [| k IHk1 IHk2].
-           *** by rewrite !mul0r.
-           *** by rewrite prednK.
-        ** by apply: hodai.
-*)
-
-     have -> : (fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
-                - k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
-                = fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k 
-               %[mod fibz n ^ 2])%Z
-       by rewrite modzMDr'.            (* 左辺の fib n ^ 2 を消す。 *)
       
+      (* 左辺の fib n ^ 2 を消す。 *)
+      have -> : (fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
+      - k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
+                 = fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k 
+      %[mod fibz n ^ 2])%Z
+        by rewrite modzMDr'.
+      
+      (* 左辺を整理する。 *)      
       have -> : fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
                 = k.+1%:Z * fibz n * fibz n.+1 ^ k
-        by rewrite -mulrDl.                    (* 左辺 整理する。 *)
+        by rewrite -mulrDl.
       done.
       
-    + have -> : ((k.+1 * n).+1 = (k * n).+1 + n)%N by ssromega.
-      rewrite fib_addition; last ssromega. (* 左辺加法定理 fibn (kn+1 + n) *)
+    (* ゴールが mati_2 の場合 *)
+    + have -> : ((k.+1 * n).+1 = (k * n).+1 + n)%N
+        by ssromega.
       
+      (* 左辺に加法定理を使う。 fib (kn+1 + n) *)
+      rewrite fib_addition; last ssromega.
+      
+      (* 左辺を IHk1 と IHk2 で書き換える。 *)      
       have -> : (fibz (k * n).+1 * fibz n.+1 + fibz (k * n) * fibz n
-                 = (fibz n.+1 ^ k) * fibz n.+1 + (k%:Z * fibz n * fibz n.+1 ^ k.-1) * fibz n
-                %[mod fibz n ^ 2])%Z
-        by apply: m_addz; apply: m_mulz. (* 左辺 IHk1 と IHk2 で書き換える。 *)
+      = (fibz n.+1 ^ k) * fibz n.+1 + (k%:Z * fibz n * fibz n.+1 ^ k.-1) * fibz n
+      %[mod fibz n ^ 2])%Z
+        by apply: m_addz; apply: m_mulz.
 
+      (* 左辺を整理する。 *)
       have -> : fibz n.+1 ^ k * fibz n.+1 + k%:Z * fibz n * fibz n.+1 ^ k.-1 * fibz n
-                = fibz n.+1 ^ k.+1 + k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
-        (* 左辺を整理する。 *)
-        by rewrite -exprSr; congr (_ + _); rewrite -!mulrA; congr (_ * _); rewrite mulrCA.
+                = fibz n.+1 ^ k.+1 + k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2.
+      {
+        rewrite -exprSr; congr (_ + _).
+        rewrite -!mulrA; congr (_ * _).
+        by rewrite mulrCA.
+      }
       
+      (* 左辺の fib n ^ 2 を消す。 *)
       have -> : (fibz n.+1 ^ k.+1 + k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
                  = fibz n.+1 ^ k.+1 %[mod fibz n ^ 2])%Z
-        by rewrite modzMDr.            (* 左辺の fib n ^ 2 を消す。 *)
+        by rewrite modzMDr.
       done.
 Qed.
 
 (* END *)
-
