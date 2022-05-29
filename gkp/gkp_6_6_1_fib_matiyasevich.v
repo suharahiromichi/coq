@@ -74,13 +74,19 @@ Proof.
 Admitted.                                   (* ssr_fib_2.v *)
 
 Check modzMDl : forall p m d : int, (p * d + m = m %[mod d])%Z.
-Lemma modzMDr' : forall p m d : int, (m - p * d = m %[mod d])%Z.
-Proof.
-Admitted.
-
 Lemma modzMDr : forall p m d : int, (m + p * d = m %[mod d])%Z.
 Proof.
-Admitted.
+  move=> p m d.
+  rewrite [m + p * d]addrC.
+  by rewrite modzMDl.
+Qed.
+
+Lemma modzMDr' : forall p m d : int, (m - p * d = m %[mod d])%Z.
+Proof.
+  move=> p m d.
+  rewrite [m - p * d]addrC -mulNr.
+  by rewrite modzMDl.
+Qed.
 
 Lemma l_mati k n : (1 < n)%N -> mati_1 k n /\ mati_2 k n.
 Proof.
@@ -113,17 +119,24 @@ Proof.
         rewrite addrA.
         congr (_ + _ - _). 
         ** rewrite mulrCA -exprSz.
-           by rewrite prednK; last admit.
-        ** admit.
-      have -> : (fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
+           case: k IHk1 IHk2 => [| k IHk1 IHk2].
+           *** by rewrite !mul0r.
+           *** by rewrite prednK.
+        ** rewrite !mulrA.
+           rewrite [fibz n * k]mulrC.
+           rewrite -![RHS]mulrA.
+           rewrite -[fibz n.+1 ^ k.-1 * (fibz n * fibz n)]mulrC.
+           rewrite !mulrA.
+           done.
+     have -> : (fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
                 - k%:Z * fibz n.+1 ^ k.-1 * fibz n ^ 2
                 = fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k 
-                                                                           %[mod fibz n ^ 2])%Z.
+               %[mod fibz n ^ 2])%Z.
         by rewrite modzMDr'.            (* 左辺の fib n ^ 2 を消す。 *)
       
       have -> : fibz n * (fibz n.+1 ^ k) + k%:Z * fibz n * fibz n.+1 ^ k
                 = k.+1%:Z * fibz n * fibz n.+1 ^ k
-        by admit.                           (* 左辺 整理する。 *)
+        by rewrite -mulrDl.                    (* 左辺 整理する。 *)
       done.
       
     + have -> : ((k.+1 * n).+1 = (k * n).+1 + n)%N by ssromega.
@@ -143,6 +156,7 @@ Proof.
                  = fibz n.+1 ^ k.+1 %[mod fibz n ^ 2])%Z
         by rewrite modzMDr.            (* 左辺の fib n ^ 2 を消す。 *)
       done.
-Admitted.
+Qed.
 
 (* END *)
+
