@@ -40,20 +40,26 @@ ssrbool.v で、排他的論理和は``addb``関数、演算子は``(+)``で定�
 下記の通り定義できます。
 *)
 Definition rule60 (x y z : bool) := x (+) y.
-Definition rule90 (x y z : bool) := x (+) z.
+Definition rule90 (x y z : bool) := x (+) z. (* N.G. *)
 
 (**
 ECA は定義を書き下すだけですが、Coqに帰納原理を生成するために Function
 コマンドをつかいます。nを行、kを列とします。
+
+注意：このECAの定義は一般性に欠ける。
+ここでは、初期値 {1, 0, 0, ....} からはじまり、列は正の方向に伸びていくECAだけを扱う。
+すると、XYだけを使うルールだけが有効になる。Zはつねにfalseであるため。
  *)
 Function eca rule (n k : nat) : bool :=
   match n, k with
-  | _, 0 => true
-  | 0, k'.+1 => false
+  | 0, 0 => true               (* 初期値は {1,0,0, …} に限定する。 *)
+  | 0, _.+1 => false
+  | n'.+1, 0 =>
+      rule false (eca rule n' 0) false
   | n'.+1, k'.+1 =>
-      rule (eca rule n' k') (eca rule n' k) (eca rule n' k.+1)
+      rule (eca rule n' k') (eca rule n' k) false (* (eca rule n' k.+1) *)
+(* 初期値を限定しているので、Z=(eca rule n' k.+1) はつねに false である。 *)
   end.
-(* 注意：(0,0) だけがtrueであるべきで、ECAとしての一般性はない！ *)
 
 (**
 # 定理の証明
@@ -69,7 +75,7 @@ Lemma binomial_ca60 (rule : bool -> bool -> bool -> bool) n k :
   odd (binomial n k) = eca rule60 n k.
 Proof.
   functional induction (eca rule n k) => //=.
-  - by elim: n.
+  - by rewrite -IHb bin0.
   - rewrite binS oddD addbC /rule60.
     by rewrite -IHb -IHb0.
 Qed.
@@ -81,19 +87,33 @@ binomial の斬化式による定義は、以下の通りです。
 *)
 Function binomial' (n k : nat) : nat :=
   match n, k with
-  | _, 0 => 1
+  | 0, 0 => 1
   | 0, _.+1 => 0
+  | n'.+1, 0 => binomial' n' 0
   | n'.+1, k'.+1 => binomial' n' k' + binomial' n' k
   end.
 (**
 また、rule60 の ECA は、以下であるため、両者が同じなのは自明といえます。
  *)
-Fixpoint ca60 (n k : nat) : bool :=
+Function eca60 (n k : nat) : bool :=
   match n, k with
-  | _, 0 => true
+  | 0, 0 => true
   | 0, k'.+1 => false
-  | n'.+1, k'.+1 => ca60 n' k (+) ca60 n' k'
+  | n'.+1, 0 => eca60 n' 0
+  | n'.+1, k'.+1 => eca60 n' k (+) eca60 n' k'
   end.
+Compute eca60 0 0.                          (* true *)
+Compute eca60 1 0.                          (* true *)
+Compute eca60 1 1.                          (* true *)
+Compute eca60 2 0.                          (* true *)
+Compute eca60 2 1.                          (* false *)
+Compute eca60 2 2.                          (* true *)
+
+Lemma binomial_eca60' n k : odd (binomial' n k) = eca60 n k.
+Proof.
+  functional induction (eca60 n k) => //=.
+  by rewrite oddD addbC IHb IHb0.
+Qed.
 
 (**
 実は、10年前に、この二つの定義だけ書きつけておいてあったものに、
@@ -187,8 +207,14 @@ each entry in the rows.
 *)
 
 (**
-引用部分は、英語版のWikipedia （文献[3]）から削除されていて、
-なにか問題があったのかもしれない。
+# 補足説明
+
+引用部分は、英語版のWikipedia （文献[3]）から削除されている。
+
+文献[4]をみると、この話は、XYだけをつかうルールのECAに限定するべきなようだ。
+
+ここでのECAの定義では、初期値が{1,0,0…} に限定しているので、
+ピラミッド様の rule 90 の絵は描けない。rule 90 への言及は参考とする。
 *)
 
 (**
@@ -199,6 +225,8 @@ each entry in the rows.
 [2] https://qiita.com/Lirimy/items/9e13b156d53a71e5b72f
 
 [3] Cellular automaton [https://en.wikipedia.org/wiki/Cellular_automaton]
+
+[4] https://www.wolframscience.com/nks/notes-6-6--general-associative-cellular-automaton-rules/
 *)
 
 (* END *)
