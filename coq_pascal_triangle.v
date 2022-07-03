@@ -40,7 +40,8 @@ ssrbool.v で、排他的論理和は``addb``関数、演算子は``(+)``で定�
 下記の通り定義できます。
 *)
 Definition rule60 (x y z : bool) := x (+) y.
-Definition rule90 (x y z : bool) := x (+) z. (* N.G. *)
+Definition rule90 (x y z : bool) := x (+) z.
+(* rule 90 は参考とする。以下のECAの定義では使用不能である。 *)
 
 (**
 ECA は定義を書き下すだけですが、Coqに帰納原理を生成するために Function
