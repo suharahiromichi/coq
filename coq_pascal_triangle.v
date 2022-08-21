@@ -72,6 +72,23 @@ Check eca_ind.
 (**
 をつかうことで、簡単に証明できます。
 *)
+Print binomial_rec.
+(*
+binomial_rec = 
+fix binomial_rec (n m : nat) {struct n} : nat :=
+  match n with
+  | 0 => match m with
+         | 0 => 1
+         | _.+1 => 0
+         end
+  | n'.+1 => match m with
+             | 0 => 1
+             | m'.+1 => binomial_rec n' m + binomial_rec n' m'
+             end
+  end
+     : nat -> nat -> nat
+*)
+
 Lemma binomial_ca60 (rule : bool -> bool -> bool -> bool) n k :
   odd (binomial n k) = eca rule60 n k.
 Proof.
@@ -83,24 +100,15 @@ Qed.
 
 (**
 # 種明かし
-
-binomial の斬化式による定義は、以下の通りです。
 *)
-Function binomial' (n k : nat) : nat :=
-  match n, k with
-  | 0, 0 => 1
-  | 0, _.+1 => 0
-  | n'.+1, 0 => binomial' n' 0
-  | n'.+1, k'.+1 => binomial' n' k' + binomial' n' k
-  end.
 (**
-また、rule60 の ECA は、以下であるため、両者が同じなのは自明といえます。
+rule60 の ECA は、以下であるため、両者が同じなのは自明といえます。
  *)
 Function eca60 (n k : nat) : bool :=
   match n, k with
   | 0, 0 => true
   | 0, k'.+1 => false
-  | n'.+1, 0 => eca60 n' 0
+  | n'.+1, 0 => true
   | n'.+1, k'.+1 => eca60 n' k (+) eca60 n' k'
   end.
 Compute eca60 0 0.                          (* true *)
@@ -109,11 +117,17 @@ Compute eca60 1 1.                          (* true *)
 Compute eca60 2 0.                          (* true *)
 Compute eca60 2 1.                          (* false *)
 Compute eca60 2 2.                          (* true *)
+Compute eca60 3 0.                          (* true *)
+Compute eca60 3 1.                          (* true *)
+Compute eca60 3 2.                          (* true *)
+Compute eca60 3 2.                          (* true *)
 
-Lemma binomial_eca60' n k : odd (binomial' n k) = eca60 n k.
+Lemma binomial_ca60' (rule : bool -> bool -> bool -> bool) n k :
+  odd (binomial n k) = eca60 n k.
 Proof.
   functional induction (eca60 n k) => //=.
-  by rewrite oddD addbC IHb IHb0.
+  - rewrite binS oddD /rule60.
+    by rewrite -IHb -IHb0.
 Qed.
 
 (**
