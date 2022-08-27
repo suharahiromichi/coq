@@ -7,7 +7,7 @@
 2021_02_20 @suharahiromichi
 *)
 From mathcomp Require Import all_ssreflect.
-Require Import ssrsumop ssromega.
+From common Require Import ssrsumop ssromega.
 Require Import Coq.Logic.FunctionalExtensionality.
 
 Set Implicit Arguments.
@@ -25,19 +25,19 @@ Set Print All.
   
   Lemma ffact0n' m : 1 <= m -> 0^_m = 0.
   Proof.
-      by apply: ffact_small.
+    by apply: ffact_small.
   Qed.
   
   Lemma ffactn2 a : a^_2 = a * a.-1.
   Proof.
     rewrite /falling_factorial /ffact_rec.
-      by rewrite muln1.
+    by rewrite muln1.
   Qed.
   
   Lemma ffactn3 a : a^_3 = a * a.-1 * a.-2.
   Proof.
     rewrite /falling_factorial /ffact_rec.
-      by rewrite muln1 mulnA.
+    by rewrite muln1 mulnA.
   Qed.
   
   Lemma id_muln1 x : id x = muln^~ 1 x.     (* notu *)
@@ -46,7 +46,7 @@ Set Print All.
   Lemma subn_eq0' n : n - n = 0.            (* notu *)
   Proof.
     have Heq x : x - x = 0 by apply/eqP; rewrite subn_eq0.
-      by rewrite Heq.
+    by rewrite Heq.
   Qed.
 
 (**
@@ -61,7 +61,7 @@ Set Print All.
     rewrite ffactSS ffactnSr.               (* m ≧ 1 の場合 *)
     rewrite mulnC leq_mul2r.
     apply/orP/or_intror.
-      by ssromega.
+    by ssromega.
   Qed.
   
 (**
@@ -93,7 +93,7 @@ Section Difference.
     c * diff f x = diff (fun x => c * f x) x.
   Proof.
     rewrite /diff.
-      by rewrite mulnBr.
+    by rewrite mulnBr.
   Qed.
   
 (**
@@ -130,7 +130,7 @@ Section Difference.
     have H : m.-1.+1 = m by rewrite prednK.
     rewrite -H -pred_Sn.
     rewrite diff_ffactE' //.
-      by ssromega.
+    by ssromega.
   Qed.
   
 (**
@@ -147,7 +147,7 @@ Section Difference.
     rewrite -(@diff_ffactE' 0 x); last done.
     rewrite /falling_factorial /ffact_rec.
     rewrite /diff.
-      by ssromega.
+    by ssromega.
   Qed.
   
 End Difference.
@@ -177,11 +177,11 @@ Section Summation.
     rewrite /summ /diff.
     elim: b.
     - rewrite sum_nil'.
-        by rewrite Hf0.
+      by rewrite Hf0.
     - move=> n IHn.
       rewrite sum_last; last done.
       rewrite IHn.
-        by rewrite subnKC.
+      by rewrite subnKC.
   Qed.
   
 (**
@@ -198,7 +198,7 @@ Section Summation.
   Lemma summ_nil f a :  summ f a a = 0.
   Proof.
     rewrite /summ.
-      by rewrite sum_nil.
+    by rewrite sum_nil.
   Qed.
   
   Lemma summ_split f g a b :
@@ -208,9 +208,9 @@ Section Summation.
     rewrite leq_eqVlt => /orP [Heq | Hlt].
     - move/eqP in Heq.                      (* a = b の場合 *)
       rewrite -Heq.
-        by rewrite 3!summ_nil.
+      by rewrite 3!summ_nil.
     - rewrite /summ.                        (* a < b の場合 *)
-        by apply: sum_split.
+      by apply: sum_split.
   Qed.
 
   Lemma summ_distr c f a b :
@@ -219,7 +219,7 @@ Section Summation.
     rewrite leq_eqVlt => /orP [Heq | Hlt].
     - move/eqP in Heq.                      (* a = b の場合 *)
       rewrite -Heq.
-        by rewrite 2!summ_nil muln0.
+      by rewrite 2!summ_nil muln0.
     - by rewrite /summ sum_distrr.
   Qed.
 
@@ -256,9 +256,9 @@ bigopの関数部分をcongrで取り出し、一般化した関数拡張の公�
     rewrite -[RHS](@summ_diff' (fun k => k^_m.+1)) //.
     - congr (summ _ 0 b).
       apply: (@functional_extensionality' _ _ (leq m)) => k Hmk.
-        by rewrite diff_ffactE'.
+      by rewrite diff_ffactE'.
     - move=> x.
-        by apply: ffact_monotone.
+      by apply: ffact_monotone.
   Qed.
   
 (**
@@ -303,7 +303,7 @@ Section SumOfRoot.
     rewrite summ_ffactE' //; last by ssromega.
     (* ^_ を消す。 *)
     rewrite ffactn3 ffactn2 -subn2 -subn1.
-      by apply: l_sor_0.
+    by apply: l_sor_0.
   Qed.
 
 (**
@@ -330,7 +330,7 @@ Section SumOfRoot.
     \sum_(0 <= j < a) (2 %/ 3 * 3 * j ^_ 2 + 3 %/ 2 * 2 * j ^_ 1) =
     summ (fun k => (2 %/ 3) * 3 * k^_2 + (3 %/ 2) * 2 * k^_1) 0 a.
   Proof.
-      by rewrite /summ.
+    by rewrite /summ.
   Qed.
   
 (**
