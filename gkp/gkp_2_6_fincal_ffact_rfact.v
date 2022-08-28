@@ -165,8 +165,10 @@ Section FFACT.
 ## 補題
  *)
   Check ffactn0 : forall n : nat, n ^_ 0 = 1.
-  Check ffact0n : forall m : nat, 0 ^_ m = (m == 0).
   Check ffactn1 : forall n : nat, n ^_ 1 = n.
+  Check ffact0n : forall m : nat, 0 ^_ m = (m == 0).
+  Lemma  ffact0n' m : 0 < m ->  0 ^_ m = 0.
+  Proof. by case: m. Qed.
   
 (**
 x^_m が x に対して単調に増加することの証明
@@ -204,6 +206,10 @@ diff (falling_factorial^~ m.+1) x = m.+1 * x ^_ m
     rewrite -mulSn.
     done.
   Qed.
+(**
+``->`` の右のxを抽象して ``=1`` のかたちにすると、
+``m <= x``の条件が無視されるため、あとで適用したときに証明が進まなくなる。
+*)
   
 (**
 より直感的かかたち：
@@ -212,28 +218,11 @@ diff (falling_factorial^~ m.+1) x = m.+1 * x ^_ m
 *)  
   Lemma diff_ffactE (m : nat) (x : nat) :
     0 < m -> m <= x -> diff (fun x => x^_m) x = m * x^_m.-1.
+  (*                         b                  a *)
   Proof.
-    move=> H0m Hmx.
-    have H : m.-1.+1 = m by rewrite prednK.
-    rewrite -H -pred_Sn.
+    case: m => //=.
+    move=> m H0m Hmx.
     rewrite diff_ffactE' //.
-    by ssromega.
-  Qed.
-  
-(**
-特殊なかたち；
-
-```Δx/Δx = 1```
-*)  
-  Check @diff_ffactE' 0
-    : forall x : nat, 0 <= x -> diff (fun x => x^_1) x = 1 * x^_0.
-
-  Lemma diff_idE (x : nat) : diff id x = 1.
-  Proof.
-    rewrite -[RHS](ffactn0 x) -[RHS]mul1n.
-    rewrite -(@diff_ffactE' 0 x); last done.
-    rewrite /falling_factorial /ffact_rec.
-    rewrite /diff.
     by ssromega.
   Qed.
   
@@ -241,24 +230,28 @@ diff (falling_factorial^~ m.+1) x = m.+1 * x ^_ m
 ## 下降階乗冪の和分
 
 下降階乗冪の和分（0から）
-
-bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
-*)
+x*)
   Lemma summ_ffactE' (m : nat) (n : nat) :
-    1 <= m -> m <= n -> summ (fun x => m.+1 * x^_m) 0 n = n^_m.+1.
+    1 <= m -> m <= n -> summ (fun x => m * x^_m.-1) 0 n = n^_m.
+  (*                          a *)
   Proof.
-    move=> Hm.                         (* 0^_1 = 1 を回避するため。 *)
+    move=> Hm.                         (* 0^^1 = 1 を回避するため。 *)
     move=> Hmn.
-    rewrite -[RHS](@summ_diff' (fun x => x^_m.+1)) //.
+    rewrite -[RHS](@summ_diff' (fun x => x^_m)) //.
+    (*                          b *)
     - congr (summ _ 0 n).
       apply: (@functional_extensionality' _ _ (leq m)) => x Hmx.
-      by rewrite diff_ffactE'.
+      by rewrite diff_ffactE.
+    - by apply: ffact0n'.
     - move=> x.
       by apply: ffact_monotone.
   Qed.
+(**
+bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
+*)
   
 (**
-## 下降階乗冪の和分（任意のaから）
+下降階乗冪の和分（任意のaから）
 *)  
   Lemma summ_ffactE (m : nat) (n1 n2 : nat) :
     n1 <= n2 -> m < n1 -> summ (fun x => x * x^_m) n1 n2 = n2^_m.+1.
@@ -279,11 +272,10 @@ Section RFACT.
                          (at level 30, right associativity).
 
   Lemma rfactn0 n : n ^^ 0 = 1. Proof. by []. Qed.
-
-  Lemma rfact0n m : 0 ^^ m = (m == 0). Proof. by case: m. Qed.
-
   Lemma rfactnS n m : n ^^ m.+1 = n * n.+1 ^^ m. Proof. by []. Qed.
-
+  Lemma rfact0n m : 0 ^^ m = (m == 0). Proof. by case: m. Qed.
+  Lemma rfact0n' m : 0 < m -> 0 ^^ m = 0. Proof. by case: m. Qed.
+  
   Lemma rfactn1 n : n ^^ 1 = n. Proof. exact: muln1. Qed.
 
   Lemma rfactSS n m : n.+1 ^^ m.+1 = n.+1 ^^ m * (n + m.+1).
@@ -332,6 +324,7 @@ x ^_ m * (x - m) <= x.+1 * x ^_ m
 *)  
   Lemma diff_rfactE (m : nat) (x : nat) :
     0 < m -> m <= x -> diff (fun x => x^^m) x = m * x.+1^^m.-1.
+  (*                         b                  a *)
   Proof.
     case: m => //=.
     move=> m H0m Hmx.
@@ -340,10 +333,60 @@ x ^_ m * (x - m) <= x.+1 * x ^_ m
   Qed.
   
 (**
-特殊なかたち；
+## 上昇階乗冪の和分
+
+上昇階乗冪の和分（0から）
+*)
+  Lemma summ_rfactE' (m : nat) (n : nat) :
+    1 <= m -> m <= n -> summ (fun x => m * x.+1^^m.-1) 0 n = n^^m.
+  (*                          a *)
+  Proof.
+    move=> Hm.                         (* 0^^1 = 1 を回避するため。 *)
+    move=> Hmn.
+    Check (@summ_diff (fun x => x^^m)).
+    rewrite -[RHS](@summ_diff' (fun x => x^^m)) //.
+    (*                          b *)
+    - congr (summ _ 0 n).
+      apply: (@functional_extensionality' _ _ (leq m)) => x Hmx.
+      by rewrite diff_rfactE.
+    - by apply: rfact0n'.
+    - move=> x.
+      by apply: rfact_monotone.
+  Qed.
+  
+(**
+上昇階乗冪の和分（任意のaから）
+*)  
+  Lemma summ_rfactE (m : nat) (n1 n2 : nat) :
+    n1 <= n2 -> m < n1 -> summ (fun x => x * x^^m) n1 n2 = n2^^m.+1.
+  Proof.
+  Admitted.                                 (* 途中！ *)
+  
+End RFACT.
+
+Section OPTION.
+(**
+# 補足
+
+## 特殊なかたち；
 
 ```Δx/Δx = 1```
 *)  
+  Check @diff_ffactE' 0
+    : forall x : nat, 0 <= x -> diff (fun x => x^_1) x = 1 * x^_0.
+
+  Lemma diff_idE (x : nat) : diff id x = 1.
+  Proof.
+    rewrite -[RHS](ffactn0 x) -[RHS]mul1n.
+    rewrite -(@diff_ffactE' 0 x); last done.
+    rewrite /falling_factorial /ffact_rec.
+    rewrite /diff.
+    by ssromega.
+  Qed.
+  
+  Notation "n ^^ m" := (rising_factorial n m)
+                         (at level 30, right associativity).
+
   Check @diff_rfactE' 0
     : forall x : nat, 0 <= x -> diff (fun x => x^^1) x = 1 * x^^0.
 
@@ -357,13 +400,25 @@ x ^_ m * (x - m) <= x.+1 * x ^_ m
   Qed.
   
 (**
-## 上昇階乗冪の和分
-
-上昇階乗冪の和分（0から）
-
-bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
+diff_ffactE' に対応する版
 *)
-  Lemma summ_rfactE' (m : nat) (n : nat) :
+  Lemma summ_ffactE'' (m : nat) (n : nat) :
+    1 <= m -> m <= n -> summ (fun x => m.+1 * x^_m) 0 n = n^_m.+1.
+  Proof.
+    move=> Hm.                         (* 0^_1 = 1 を回避するため。 *)
+    move=> Hmn.
+    rewrite -[RHS](@summ_diff' (fun x => x^_m.+1)) //.
+    - congr (summ _ 0 n).
+      apply: (@functional_extensionality' _ _ (leq m)) => x Hmx.
+      by rewrite diff_ffactE'.
+    - move=> x.
+      by apply: ffact_monotone.
+  Qed.
+
+(**
+diff_rfactE' に対応する版
+*)
+  Lemma summ_rfactE'' (m : nat) (n : nat) :
     1 <= m -> m <= n -> summ (fun x => m.+1 * x.+1^^m) 0 n = n^^m.+1.
   Proof.
     move=> Hm.                         (* 0^^1 = 1 を回避するため。 *)
@@ -377,14 +432,6 @@ bigopの関数部分をcongrで取り出し、一般化した関数拡張の公�
       by apply: rfact_monotone.
   Qed.
   
-(**
-## 上昇階乗冪の和分（任意のaから）
-*)  
-  Lemma summ_rfactE (m : nat) (n1 n2 : nat) :
-    n1 <= n2 -> m < n1 -> summ (fun x => x * x^^m) n1 n2 = n2^^m.+1.
-  Proof.
-  Admitted.                                 (* 途中！ *)
-  
-End RFACT.
+End OPTION.
 
 (* END *)
