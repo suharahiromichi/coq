@@ -262,36 +262,70 @@ End FFACT.
 
 (**
 # 上昇階乗冪 rfact, rising_factorial
+
+定義およびrfactについての証明は hm 氏による。
  *)
 Section RFACT.
-
-  Fixpoint rfact_rec n m := if m is m'.+1 then n * rfact_rec n.+1 m' else 1.
-  Definition rising_factorial := nosimpl rfact_rec.
   
-  (* 別の定義 rfactnSr の証明は易しくなるが、rfactnS の証明が困難になる。 *)
-  Fixpoint rfact_rec' n m := if m is m'.+1 then (n + m') * rfact_rec n m' else 1.
+  Fixpoint rfact_rec n m := if m is m'.+1 then (n + m') * rfact_rec n m' else 1.
+(*
+  Fixpoint rfact_rec' n m := if m is m'.+1 then n * rfact_rec' n.+1 m' else 1.
+*)
+  Definition rising_factorial := nosimpl rfact_rec.
   
   Notation "n ^^ m" := (rising_factorial n m)
                          (at level 30, right associativity).
 
   Lemma rfactn0 n : n ^^ 0 = 1. Proof. by []. Qed.
-  Lemma rfactnS n m : n ^^ m.+1 = n * n.+1 ^^ m. Proof. by []. Qed.
-  Lemma rfact0n m : 0 ^^ m = (m == 0). Proof. by case: m. Qed.
-  Lemma rfact0n' m : 0 < m -> 0 ^^ m = 0. Proof. by case: m. Qed.
   
-  Lemma rfactn1 n : n ^^ 1 = n. Proof. exact: muln1. Qed.
-
+  Lemma rfactn1 n : n ^^ 1 = n.
+  Proof.
+    rewrite /rising_factorial //=.
+    rewrite addn0.
+    by rewrite muln1.
+  Qed.
+  
   Lemma rfactnSr n m : n ^^ m.+1 = n^^m * (n + m).
   Proof.
-    elim: n m => [|n IHn] [|m] //=.
-    - rewrite rfactn1 rfactn0.
-      by ssromega.
-  Admitted.                                 (* XXXX *)
+    case: m => [|m] //=.
+    - have -> : n ^^ 0 = 1 by [].
+      rewrite addn0.
+      rewrite rfactn1.
+      by rewrite mul1n.
+    - have -> : n ^^ m.+2 = (n + m.+1) * n ^^ m.+1 by [].
+      by rewrite mulnC.
+  Qed.
+  
+  Lemma rfactnS n m : n ^^ m.+1 = n * n.+1 ^^ m.
+  Proof.
+    elim: m => [|m IHm].
+    - rewrite rfactn1.
+      have -> : n.+1 ^^ 0 = 1 by [].
+      by rewrite muln1.
+    - have -> : n ^^ m.+2 = (n + m.+1) * n ^^ m.+1 by [].
+      rewrite IHm.
+      rewrite rfactnSr.
+      have -> : n + m.+1 = (n+m+1) by ssromega.
+      have -> : n.+1 + m = (n+m+1) by ssromega.
+      ring.
+  Qed.  
   
   Lemma rfactSS n m : n.+1 ^^ m.+1 = n.+1 ^^ m * (n + m.+1).
   Proof.
     rewrite rfactnSr.
     by rewrite addSnnS.
+  Qed.
+  
+  Lemma rfact0n m : 0 ^^ m = (m == 0).
+  Proof.
+    case: m => //= m.
+    by rewrite rfactnS mul0n.    
+  Qed.
+  
+  Lemma rfact0n' m : 0 < m -> 0 ^^ m = 0.
+  Proof.
+    case: m => //= m Hm.
+    by rewrite rfactnS mul0n.
   Qed.
   
 (**
@@ -303,7 +337,7 @@ x^^m が x に対して単調に増加することの証明
     case: m => // m.                        (* m = 0 の場合を片付ける。 *)
     rewrite rfactSS rfactnS.                (* m ≧ 1 の場合 *)
 (*
-x ^_ m * (x - m) <= x.+1 * x ^_ m
+``x ^_ m * (x - m) <= x.+1 * x ^_ m``
 *)
     rewrite mulnDr mulnC.
     by rewrite leq_addr.
@@ -436,6 +470,7 @@ diff_rfactE' に対応する版
     - congr (summ _ 0 n).
       apply: (@functional_extensionality' _ _ (leq m)) => x Hmx.
       by rewrite diff_rfactE'.
+    - by apply: rfact0n'.
     - move=> x.
       by apply: rfact_monotone.
   Qed.
