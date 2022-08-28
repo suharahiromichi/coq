@@ -267,7 +267,10 @@ Section RFACT.
 
   Fixpoint rfact_rec n m := if m is m'.+1 then n * rfact_rec n.+1 m' else 1.
   Definition rising_factorial := nosimpl rfact_rec.
-
+  
+  (* 別の定義 rfactnSr の証明は易しくなるが、rfactnS の証明が困難になる。 *)
+  Fixpoint rfact_rec' n m := if m is m'.+1 then (n + m') * rfact_rec n m' else 1.
+  
   Notation "n ^^ m" := (rising_factorial n m)
                          (at level 30, right associativity).
 
