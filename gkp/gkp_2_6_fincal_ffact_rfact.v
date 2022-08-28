@@ -278,13 +278,18 @@ Section RFACT.
   
   Lemma rfactn1 n : n ^^ 1 = n. Proof. exact: muln1. Qed.
 
+  Lemma rfactnSr n m : n ^^ m.+1 = n^^m * (n + m).
+  Proof.
+    elim: n m => [|n IHn] [|m] //=.
+    - rewrite rfactn1 rfactn0.
+      by ssromega.
+  Admitted.                                 (* XXXX *)
+  
   Lemma rfactSS n m : n.+1 ^^ m.+1 = n.+1 ^^ m * (n + m.+1).
   Proof.
-  Admitted.
-
-  Lemma rfactnSr n m : n ^^ m.+1 = n * n.+1 ^^m.
-  Proof.
-  Admitted.
+    rewrite rfactnSr.
+    by rewrite addSnnS.
+  Qed.
   
 (**
 x^^m が x に対して単調に増加することの証明
@@ -293,7 +298,7 @@ x^^m が x に対して単調に増加することの証明
   Proof.
     move=> x.
     case: m => // m.                        (* m = 0 の場合を片付ける。 *)
-    rewrite rfactSS rfactnSr.               (* m ≧ 1 の場合 *)
+    rewrite rfactSS rfactnS.                (* m ≧ 1 の場合 *)
 (*
 x ^_ m * (x - m) <= x.+1 * x ^_ m
 *)
@@ -311,7 +316,7 @@ x ^_ m * (x - m) <= x.+1 * x ^_ m
   Proof.
     move=> Hmx.
     rewrite /diff.
-    rewrite rfactSS rfactnSr.
+    rewrite rfactSS rfactnS.
     rewrite [x.+1 ^^ m * (x + m.+1)]mulnC.
     rewrite mulnDl addnC -addnBA //=.
     by rewrite subnn addn0.
