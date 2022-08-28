@@ -22,21 +22,26 @@ Section FINCAL.
 (**
 ## 短調増加
 *)
-  Definition monotone f := forall (x : nat), f x <= f x.+1.
+  Definition monotone a := forall (x : nat), a x <= a x.+1.
 
 (**
 ## 差分 difference 
+
+````
+diff b = diff (fun x => b x) = Δb x / Δx = a x
+```
+を求める。連続系とのアナロジーでは、b は a の原始関数となる。
 *)
-  Definition diff f := fun x => f x.+1 - f x.
+  Definition diff b := fun x => b x.+1 - b x. (* = a *)
 
 (**
 ### 差分の公式
  *)
-  Lemma diff_split f g (x : nat) :
-    monotone f -> monotone g ->
-    diff f x + diff g x = diff (fun x => f x + g x) x.
+  Lemma diff_split a b (x : nat) :
+    monotone a -> monotone b ->
+    diff a x + diff b x = diff (fun x => a x + b x) x.
   Proof.
-    move=> Hf Hg.
+    move=> Ha Hb.
     rewrite /diff.
     rewrite addnBA; last done.
     rewrite subnDA.
@@ -44,8 +49,8 @@ Section FINCAL.
     done.
   Qed.
 
-  Lemma diff_distr c f (x : nat) :
-    c * diff f x = diff (fun x => c * f x) x.
+  Lemma diff_distr c b (x : nat) :
+    c * diff b x = diff (fun x => c * b x) x.
   Proof.
     rewrite /diff.
     by rewrite mulnBr.
@@ -56,20 +61,36 @@ Section FINCAL.
 
 ### 和分の定義
 
-```Σa,b g(k)δk = Σ(a <= k < b)g(k)```
+```Σb(x)δx = Σ(n1 <= k < n2) b(x)```
  *)
-  Definition summ g a b := \sum_(a <= k < b)(g k).
-  
+  Definition summ b n1 n2 := \sum_(n1 <= x < n2)(b x).
+
 (**
 ### 差分と和分の関係
 *) 
-  Lemma summ_diff' f b : f 0 = 0 ->
-                         (forall n, f n <= f n.+1) ->
-                         summ (diff f) 0 b = f b.
+(**
+差分・和分の基本公式 : 微積分の基本公式のアナロジー (by mh)
+
+Σ a を計算することは a n = b n+1 - b n となる数列 b が既知であれば, 
+b の差を求めることである。
+
+積分計算とのアナロジーで b を a の原始関数と言ってもよいでしょう ...
+```
+F'(x) = f(x) のとき ∫ f(x)dx = F(x_max) - F(x_min)
+```
+
+総和の場合は、(``diff b = a``)
+```
+b n+1 - b n = a n のとき Σa = b n+1 - b 0
+```
+*)
+  Lemma summ_diff' b m : b 0 = 0 ->
+                         (forall n, b n <= b n.+1) ->
+                         summ (diff b) 0 m = b m.
   Proof.
     move=> Hf0 Hfn.
     rewrite /summ /diff.
-    elim: b.
+    elim: m.
     - rewrite sum_nil'.
       by rewrite Hf0.
     - move=> n IHn.
@@ -81,7 +102,7 @@ Section FINCAL.
 (**
 一般に成立するはずの関係
 *) 
-  Lemma summ_diff f a b : a <= b -> summ (diff f) a b = f b - f a.
+  Lemma summ_diff b n1 n2 : n1 <= n2 -> summ (diff b) n1 n2 = b n2 - b n1.
   Proof.
     rewrite /summ /diff.
   Admitted.                                 (* 途中！ *)
@@ -89,29 +110,29 @@ Section FINCAL.
 (**
 ### 和分の公式
  *)
-  Lemma summ_nil f a :  summ f a a = 0.
+  Lemma summ_nil a n :  summ a n n = 0.
   Proof.
     rewrite /summ.
     by rewrite sum_nil.
   Qed.
   
-  Lemma summ_split f g a b :
-    a <= b ->
-    summ f a b + summ g a b = summ (fun k => f k + g k) a b.
+  Lemma summ_split a b n1 n2 :
+    n1 <= n2 ->
+    summ a n1 n2 + summ b n1 n2 = summ (fun x => a x + b x) n1 n2.
   Proof.
     rewrite leq_eqVlt => /orP [Heq | Hlt].
-    - move/eqP in Heq.                      (* a = b の場合 *)
+    - move/eqP in Heq.                      (* n1 = n2 の場合 *)
       rewrite -Heq.
       by rewrite 3!summ_nil.
-    - rewrite /summ.                        (* a < b の場合 *)
+    - rewrite /summ.                        (* n1 < n2 の場合 *)
       by apply: sum_split.
   Qed.
 
-  Lemma summ_distr c f a b :
-    a <= b -> c * summ f a b = summ (fun k => c * f k) a b.
+  Lemma summ_distr c a n1 n2 :
+    n1 <= n2 -> c * summ a n1 n2 = summ (fun x => c * a x) n1 n2.
   Proof.
     rewrite leq_eqVlt => /orP [Heq | Hlt].
-    - move/eqP in Heq.                      (* a = b の場合 *)
+    - move/eqP in Heq.                      (* n1 = n2 の場合 *)
       rewrite -Heq.
       by rewrite 2!summ_nil muln0.
     - by rewrite /summ sum_distrr.
@@ -130,8 +151,8 @@ functional_extensionality を使うのではだめで、
       (forall x : nat, m <= x -> f x = g x) -> f = g.
 *)
   Axiom functional_extensionality' : 
-    forall (A B : Type) (P : A -> Prop) (f g : A -> B),
-      (forall (x : A), P x -> f x = g x) -> f = g.
+    forall (A B : Type) (P : A -> Prop) (a b : A -> B),
+      (forall (x : A), P x -> a x = b x) -> a = b.
   Check fun (m : nat) => @functional_extensionality' nat nat (leq m).
 
 End FINCAL.
@@ -149,6 +170,8 @@ Section FFACT.
   
 (**
 x^_m が x に対して単調に増加することの証明
+
+``monotone (falling_factorial^~ m)`` という記法は使わないことにします。
 *)
   Lemma ffact_monotone m : monotone (fun x => x ^_ m).
   Proof.
@@ -221,13 +244,13 @@ diff (falling_factorial^~ m.+1) x = m.+1 * x ^_ m
 
 bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
 *)
-  Lemma summ_ffactE' (m : nat) (b : nat) :
-    1 <= m -> m <= b -> summ (fun x => m.+1 * x^_m) 0 b = b^_m.+1.
+  Lemma summ_ffactE' (m : nat) (n : nat) :
+    1 <= m -> m <= n -> summ (fun x => m.+1 * x^_m) 0 n = n^_m.+1.
   Proof.
     move=> Hm.                         (* 0^_1 = 1 を回避するため。 *)
-    move=> Hmb.
+    move=> Hmn.
     rewrite -[RHS](@summ_diff' (fun x => x^_m.+1)) //.
-    - congr (summ _ 0 b).
+    - congr (summ _ 0 n).
       apply: (@functional_extensionality' _ _ (leq m)) => x Hmx.
       by rewrite diff_ffactE'.
     - move=> x.
@@ -237,8 +260,8 @@ bigopの関数部分をcongrで取り出し、一般化した関数拡張の公�
 (**
 ## 下降階乗冪の和分（任意のaから）
 *)  
-  Lemma summ_ffactE (m : nat) (a b : nat) :
-    a <= b -> m < a -> summ (fun x => x * x^_m) a b = b^_m.+1.
+  Lemma summ_ffactE (m : nat) (n1 n2 : nat) :
+    n1 <= n2 -> m < n1 -> summ (fun x => x * x^_m) n1 n2 = n2^_m.+1.
   Proof.
   Admitted.                                 (* 途中！ *)
 
@@ -340,14 +363,14 @@ x ^_ m * (x - m) <= x.+1 * x ^_ m
 
 bigopの関数部分をcongrで取り出し、一般化した関数拡張の公理を使用して証明する。
 *)
-  Lemma summ_rfactE' (m : nat) (b : nat) :
-    1 <= m -> m <= b -> summ (fun x => m.+1 * x.+1^^m) 0 b = b^^m.+1.
+  Lemma summ_rfactE' (m : nat) (n : nat) :
+    1 <= m -> m <= n -> summ (fun x => m.+1 * x.+1^^m) 0 n = n^^m.+1.
   Proof.
     move=> Hm.                         (* 0^^1 = 1 を回避するため。 *)
-    move=> Hmb.
+    move=> Hmn.
     Check (@summ_diff' (fun x => x^^m)).
     rewrite -[RHS](@summ_diff' (fun x => x^^m.+1)) //.
-    - congr (summ _ 0 b).
+    - congr (summ _ 0 n).
       apply: (@functional_extensionality' _ _ (leq m)) => x Hmx.
       by rewrite diff_rfactE'.
     - move=> x.
@@ -357,11 +380,11 @@ bigopの関数部分をcongrで取り出し、一般化した関数拡張の公�
 (**
 ## 上昇階乗冪の和分（任意のaから）
 *)  
-  Lemma summ_rfactE (m : nat) (a b : nat) :
-    a <= b -> m < a -> summ (fun k => k * k^^m) a b = b^^m.+1.
+  Lemma summ_rfactE (m : nat) (n1 n2 : nat) :
+    n1 <= n2 -> m < n1 -> summ (fun x => x * x^^m) n1 n2 = n2^^m.+1.
   Proof.
   Admitted.                                 (* 途中！ *)
-
+  
 End RFACT.
 
 (* END *)
