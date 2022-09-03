@@ -141,12 +141,22 @@ Definition Img (f : M -> M) :=  ImgOf f X.
 Parameter Ker : (M -> M) -> VS.
 Axiom ImgKer : forall (f : M -> M), f @ (Ker f) = o.
 
+(* これは証明できないだろう。 *)
+Lemma test (x : M) (f : M -> M) X Y :
+  [exists x0, (x == f x0) && X x0] = [exists x0, (x == f x0) && Y x0] -> X = Y.
+Proof.
+Admitted.
+
 Lemma fex f X Y : f @ X = f @ Y -> X = Y.
 Proof.
   rewrite /ImgOf => H.
   apply: functional_extensionality => x.
   have EQ (f' g' : M -> bool) y : f' = g' -> f' y = g' y by move=> ->.
-Admitted.
+  move: (@EQ _ _ x H) => H'.
+  move/test in H'.
+  rewrite H'.
+  done.
+Qed.
 
 Lemma Endomorphism : forall (f : M -> M) (V W : VS),
     f @ V = f @ W -> V = W + Ker f. 
@@ -158,7 +168,9 @@ Proof.
   done.
 Qed.
 
-(* これは無変更で証明できる。 *)
+(* *** *)
+
+(* これは、オリジナルから無変更で証明できる。 *)
 Lemma ProjectionExisits : forall (f : M -> M),
     X = Img f + Ker f <-> f @ (f @ X) = f @ X.
 Proof.
