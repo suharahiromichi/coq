@@ -141,22 +141,45 @@ Definition Img (f : M -> M) :=  ImgOf f X.
 Parameter Ker : (M -> M) -> VS.
 Axiom ImgKer : forall (f : M -> M), f @ (Ker f) = o.
 
-(* これは証明できないだろう。 *)
-Lemma test (x : M) (f : M -> M) X Y :
-  [exists x0, (x == f x0) && X x0] = [exists x0, (x == f x0) && Y x0] -> X = Y.
+(* exists の equal に関する補題 *)
+Check eq_existsb
+  : forall (T : finType) (P1 P2 : pred T),
+    P1 =1 P2 -> [exists x, P1 x] = [exists x, P2 x].
+Check eq_existsb_in
+  : forall (T : finType) (D P1 P2 : pred T),
+    (forall x : T, D x -> P1 x = P2 x) ->
+    [exists (x | D x), P1 x] = [exists (x | D x), P2 x].
+
+Lemma eq_existsb_in'
+  : forall (T : finType) (D P1 P2 : pred T),
+    [exists (x | D x), P1 x] = [exists (x | D x), P2 x] ->
+    (forall x : T, D x -> P1 x = P2 x).
 Proof.
 Admitted.
 
+(*
+Lemma test (x : M) (f : M -> M) X Y :
+  [exists x0, (x == f x0) && X x0] = [exists x0, (x == f x0) && Y x0] -> X = Y.
+Proof.
+  move/eq_existsb_in' => H.
+  apply: functional_extensionality => y.
+  move: (H y) => H'.
+  apply: H'.
+Admitted.
+*)
+
+(* eq_existsb_in の逆が成り立つとしても。 *)
+(* これは証明できないだろう。 *)
+(* forall x,P(x) -> exists x,P(x) だが、逆は成り立たない。 *)
 Lemma fex f X Y : f @ X = f @ Y -> X = Y.
 Proof.
   rewrite /ImgOf => H.
   apply: functional_extensionality => x.
   have EQ (f' g' : M -> bool) y : f' = g' -> f' y = g' y by move=> ->.
-  move: (@EQ _ _ x H) => H'.
-  move/test in H'.
-  rewrite H'.
-  done.
-Qed.
+  move: (@EQ _ _ x H).
+  move/eq_existsb_in' => H'.
+  rewrite H' //.
+Admitted.
 
 Lemma Endomorphism : forall (f : M -> M) (V W : VS),
     f @ V = f @ W -> V = W + Ker f. 
