@@ -1,8 +1,11 @@
 1. 圏論を本格にやる
-1.1
-A Gentle Introduction to Type Classes andmRelations in Coq の復習
-1.2
-Awodeyの圏論をCoq/Classで書いた
+1.1 A Gentle Introduction to Type Classes andmRelations in Coq の復習
+
+1.2 Awodeyの圏論
+https://www.orecoli.com/entry/2016/02/27/221008         日本語解説
+https://www.kyoritsu-pub.co.jp/book/b10003662.html      訳本
+
+1.3 Awodeyの圏論をCoq/Classで書いた
 http://www.megacz.com/berkeley/coq-categories/
 http://git.megacz.com/coq-categories.git/
 
