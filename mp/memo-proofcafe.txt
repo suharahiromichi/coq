@@ -1,0 +1,32 @@
+1. 圏論を本格にやる
+1.1
+A Gentle Introduction to Type Classes andmRelations in Coq の復習
+1.2
+Awodeyの圏論をCoq/Classで書いた
+http://www.megacz.com/berkeley/coq-categories/
+http://git.megacz.com/coq-categories.git/
+
+
+2. 圏論を軽くやる
+5つの圏の定義とCoqによる実装
+https://mathlog.info/articles/2818
+Definition による定義。同値であることを証明したい。
+
+
+
+3.再帰のパターン（なんたらモーフィズム）
+数学とプログラミングの境界、Haskell的かも
+https://scrapbox.io/haskell-shoen/Recursion_Schemes
+
+- Catamorphism、Anamorphism、Hylomorphism
+https://github.com/suharahiromichi/coq/blob/master/fp/ssr_rec_pat_3.v
+
+- 動的計画法
+https://github.com/suharahiromichi/coq/blob/master/fp/ssr_rec_pat_4_dp.v
+
+
+
+*.参考
+https://coq.discourse.group/t/survey-of-category-theory-in-coq/371
+
+以上
