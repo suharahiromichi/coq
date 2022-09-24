@@ -47,18 +47,21 @@ opamでインストールしている場合は、ソースは、たとえば以�
 
 - 順序数型 (Ordinal型)
 
-
-``fT : finType`` としたとき、bool述語 ``P : fT -> bool`` がtrueを返す fT の要素を考えると、
-濃度やforall, exists, subset, proper を定義できる。ただし、ここでは P を集合とは見なさない。
-
-（このような集合は、のちに finset.v で定義する。set_finTypeはfinTypeのインスタンス型なので、
-eqTypeのインスタンス型でもあるから、集合どうしの ``==`` が定義できる）。
-
 - 濃度
 
 - forall と exists (boolean quantifiers)
 
 - \subset と \proper (⊆ と ⊂)
+
+
+finTypeとfinSetの関係についての補足：
+
+``fT : finType`` としたとき、bool述語 ``P : fT -> bool`` がtrueを返す fT の要素を考えると、
+濃度やforall, exists, subset, proper を定義できる。
+ただし、ここでは P を集合とは見なさない。
+
+このような集合は、のちに finset.v で定義する。set_finTypeはfinTypeのインスタンス型なので、
+eqTypeのインスタンス型でもあるから、集合どうしの ``==`` が定義できる。
 *)
 
 (**
@@ -178,9 +181,11 @@ Canonical ball_finType := FinType ball ball_finMixin.
 *)
 Check red : ball : predArgType.
 (**
-ball の定義のときに predArgType を明示しない場合：
-ball : predArgType は成り立つ。 predArgType = Type なので。
-しかし、finType の定義のなかで、濃度の定義がされない。card は mem_pred T -> nat であるため。
+注意：
+ball の定義のときに predArgType を明示しない場合でも、
+ball : predArgType は成り立つ。predArgType = Type であるため。
+しかし、finType の定義のなかで、濃度の定義がされなくなってしまう。
+card は mem_pred T -> nat であるため。
 *)
 Check red : ball_finType : finType.
 Check red : Finite.sort ball_finType : predArgType.
@@ -248,8 +253,8 @@ Check F : finType.
 Goal [forall x in 'I_5, x < 5].
 Proof.
   apply/forallP.
-    (* forall x, (x \in 'I_5) ==> (x < 5) *)
-    by case=> m i.
+  (* forall x, (x \in 'I_5) ==> (x < 5) *)
+  by case=> m i.
 Qed.  
 
 (**
@@ -380,6 +385,16 @@ Proof.
   done.
 Qed.
 
+(*
+predPredType の補足説明。
+A is a collective predicate over T.
+*)
+Check bool_finType : finType.
+Check (fun x => x == true)       : predPredType bool_finType.
+Check (fun x => x \in [:: true]) : predPredType bool_finType.
+Check (fun x => x \in [::])      : predPredType bool_finType.
+(*    ^^^^^^^^^^^^^^^^^^^^^^^^^^ collective predicate over bool_finType *)
+
 Check cardE : forall (T : finType) (A : predPredType T),
     #|A| = size (enum A).
 
@@ -438,7 +453,7 @@ Proof.
   apply/forallP.
   rewrite /p4 /s4.
   (* forall x : ordinal_finType 5, x <= p4 *)
-  case=> m /=.              (* Ordinal の定義にしたがって分解する。 *)
+  case=> m /=.              (* x を Ordinal の定義にしたがって分解する。 *)
   (* m < 5 -> m <= 4 *)
   done.
 Qed.
@@ -467,7 +482,8 @@ bool型を返す述語 ``P : T -> bool`` において、
 
 Check p0 \subset p4.
 (**
-``p0 \subset p4`` は、p0 でなく p4 である要素の濃度が0であることで定義されている。すなわち、
+``p0 \subset p4`` は、「p0 でなく p4 である要素」の濃度が0であることで定義されている。
+すなわち、
 *)
 Check (fun x : 'I_5 => ~~ (p0 x) && (p4 x)) : pred 'I_5.
 (**
@@ -496,7 +512,7 @@ Lemma p0_p4' : {subset p0 <= p4} : Prop.
 Proof.
   rewrite /p0 /p4 => x.
   rewrite /in_mem /=.
-    by move/eqP => ->.
+  by move/eqP => ->.
 Qed.
 
 (**
@@ -545,11 +561,11 @@ Section Test.
   Proof.
     split=> H.
     - apply/forallP => x.
-        by apply/implyP/H.
+      by apply/implyP/H.
       - move=> x.
       apply/implyP.
       move: x.
-        by apply/forallP.
+      by apply/forallP.
   Qed.
   
   Lemma mySubsetP (q1 q2 : pred T) :
@@ -558,10 +574,10 @@ Section Test.
     split.
     - move/subsetP.
       move/mySubsetP' => H.
-        by apply/mySubsetP'.
+      by apply/mySubsetP'.
     - move/mySubsetP' => H.
       apply/subsetP.
-        by apply/mySubsetP'.
+      by apply/mySubsetP'.
   Qed.
   
   Lemma mySubsetE (q1 q2 : pred T) :
@@ -571,18 +587,18 @@ Section Test.
     - move=> H.
       apply/forallP => x.
       apply/implyP.
-        by apply/mySubsetP : x.
+      by apply/mySubsetP : x.
     - move=> H.
       apply/mySubsetP => x.
       move/forallP in H.
-        by move: (H x) => {H} /implyP H /=.
+      by move: (H x) => {H} /implyP H /=.
   Qed.
 End Test.
 
 Goal [forall x, (x \in p0) ==> (x \in p4)].
 Proof.
   rewrite -mySubsetE.
-    by apply: p0_p4.
+  by apply: p0_p4.
 Qed.
 
 (* END *)
