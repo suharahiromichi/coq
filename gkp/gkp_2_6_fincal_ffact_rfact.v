@@ -105,7 +105,7 @@ b n+1 - b n = a n のとき Σa = b n+1 - b 0
   Lemma summ_diff b n1 n2 : n1 <= n2 -> summ (diff b) n1 n2 = b n2 - b n1.
   Proof.
     rewrite /summ /diff.
-  Admitted.                                 (* 途中！ *)
+  Admitted.                                 (* 不使用 *)
 
 (**
 ### 和分の公式
@@ -256,7 +256,7 @@ bigopの関数部分をcongrで取り出し、一般化した関数拡張の公�
   Lemma summ_ffactE (m : nat) (n1 n2 : nat) :
     n1 <= n2 -> m < n1 -> summ (fun x => x * x^_m) n1 n2 = n2^_m.+1.
   Proof.
-  Admitted.                                 (* 途中！ *)
+  Admitted.                                 (* 不使用 *)
 
 End FFACT.
 
@@ -266,7 +266,6 @@ End FFACT.
 定義およびrfactについての証明は hm 氏による。
  *)
 Section RFACT.
-  
   Fixpoint rfact_rec n m := if m is m'.+1 then (n + m') * rfact_rec n m' else 1.
 (*
   Fixpoint rfact_rec' n m := if m is m'.+1 then n * rfact_rec' n.+1 m' else 1.
@@ -385,7 +384,7 @@ x^^m が x に対して単調に増加することの証明
   Proof.
     move=> Hm.                         (* 0^^1 = 1 を回避するため。 *)
     move=> Hmn.
-    Check (@summ_diff (fun x => x^^m)).
+    Check (@summ_diff' (fun x => x^^m)).
     rewrite -[RHS](@summ_diff' (fun x => x^^m)) //.
     (*                          b *)
     - congr (summ _ 0 n).
@@ -402,7 +401,7 @@ x^^m が x に対して単調に増加することの証明
   Lemma summ_rfactE (m : nat) (n1 n2 : nat) :
     n1 <= n2 -> m < n1 -> summ (fun x => x * x^^m) n1 n2 = n2^^m.+1.
   Proof.
-  Admitted.                                 (* 途中！ *)
+  Admitted.                                 (* 不使用 *)
   
 End RFACT.
 
