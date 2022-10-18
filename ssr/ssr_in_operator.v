@@ -10,19 +10,21 @@ From mathcomp Require Import finfun bigop finset.
 2015/08/12
 2015/09/24
 2019/09/24
+2022/10/18 PredType
 *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 (* Set Printing All. *)
+(* Set Printing Coercions. *)
 
 (*
 # 例
 
 そのすべてが predType型のインスタンス型である(collective述語である)ことが判る。
 
-(1) collective述語      predlPredType, simplPredType
+(1) collective述語      predPredType, simplPredType
 
 (2) seq                 seq_predType, mem_seq_predType
 
@@ -73,17 +75,17 @@ Compute pred_of_mem (mem [:: 0; 1; 2]) 0.   (* true : bool *)
 (**
 ### カノニカル
 *)
-Check @mkPredType T (pred T) id : predType T.
-Canonical predPredType := @mkPredType T (pred T) id.
+Check @PredType T (pred T) id : predType T.
+Canonical predPredType := @PredType T (pred T) id.
 Check predPredType : predType T.
 
-Check @mkPredType T (simpl_pred T) (@pred_of_simpl T) : predType T.
-Canonical simplPredType := @mkPredType T (simpl_pred T) (@pred_of_simpl T).
+Check @PredType T (simpl_pred T) (@pred_of_simpl T) : predType T.
+Canonical simplPredType := @PredType T (simpl_pred T) (@pred_of_simpl T).
 Check simplPredType : predType T.
 
 (* ********************************************* *)
-Check @mkPredType T (mem_pred T) (@pred_of_mem T) : predType T.
-Canonical memPredType := @mkPredType T (mem_pred T) (@pred_of_mem T).
+Check @PredType T (mem_pred T) (@pred_of_mem T) : predType T.
+Canonical memPredType := @PredType T (mem_pred T) (@pred_of_mem T).
 Check memPredType : predType T.
 (* ********************************************* *)
 
@@ -108,14 +110,14 @@ Variable cT : Equality.type.
 About mem_seq.                              (* シンプルなmember関数 *)
 Check @mem_seq cT : seq cT -> cT -> bool.
 
-About pred_of_eq_seq.                       (* これはなんのためにあるか？ *)
-Check @pred_of_eq_seq cT : eqseq_class cT -> ssrbool.predPredType cT.
+About pred_of_seq.                    (* これはなんのためにあるか？ *)
+Check @pred_of_seq cT : seq_eqclass cT -> ssrbool.predPredType cT.
 
 (**
 ### 素朴な使用例
 *)
 Compute mem_seq [:: 0; 1; 2] 0.             (* true : bool *)
-Compute pred_of_eq_seq [:: 0; 1; 2] 0.      (* mem_seq を呼び出している。 *)
+Compute pred_of_seq [:: 0; 1; 2] 0.   (* mem_seq を呼び出している。 *)
 
 (**
 ### predType型の型であること。
@@ -128,11 +130,11 @@ Check [:: 0; 1; 2] : mem_seq_predType nat_eqType.
 ### カノニカル
  *)
 Check mem_seq_predType : forall T : eqType, predType T.
-Canonical mem_seq_predType := @mkPredType cT (seq cT) (@mem_seq cT).
+Canonical mem_seq_predType := @PredType cT (seq cT) (@mem_seq cT).
 Check mem_seq_predType : predType cT.
 
 Check seq_predType : forall T : eqType, predType T.
-Canonical seq_predType := @mkPredType cT (seq cT) (@pred_of_eq_seq cT).
+Canonical seq_predType := @PredType cT (seq cT) (@pred_of_seq cT).
 Check seq_predType : predType cT.
 
 
@@ -245,8 +247,8 @@ Check [set i] : set_predType (ordinal_finType 3). (* **** *)
 (**
 ### カノニカル
  *)
-Check @mkPredType _ (unkeyed (set_type T)) (@pred_of_set T) : predType T.
-Canonical set_predType T := @mkPredType _ (unkeyed (set_type T)) (@pred_of_set T).
+Check @PredType _ (unkeyed (set_type T)) (@pred_of_set T) : predType T.
+Canonical set_predType T := @PredType _ (unkeyed (set_type T)) (@pred_of_set T).
 
 (**
 ### \in の利用
@@ -321,9 +323,10 @@ Check bool_finType : finType.
 Check bool_finType : predPredType bool.
 (* 実際は、pred_of_argType などの壮大なコアーションである。 *)
 (* Set Printing Coercions. *)
-Check sort_of_simpl_pred
-      (pred_of_argType (Equality.sort (Finite.eqType bool_finType)))
-: pred_sort (predPredType bool).
+
+Fail Check simpl_pred
+     (pred_of_argType (Equality.sort (Finite.eqType bool_finType)))
+  : pred_sort (predPredType bool).
 (* わかりやすい範囲を抜き出すと、
 eqTypeを経由して、finTypeからpredTypeに変換されている。 *)
 Check pred_of_argType : forall T : predArgType, simpl_pred T.
@@ -383,10 +386,9 @@ Check (mem [:: 0; 1; 2]) : mem_pred nat.
 Check (mem [:: 0; 1; 2]) : simpl_pred nat.
 Check (mem [:: 0; 1; 2]) : pred nat.
 Check (mem [:: 0; 1; 2]) : nat -> bool.
-Check (pred_of_mem_pred (mem [:: 0; 1; 2])) : simpl_pred nat.
-Check (pred_of_simpl (pred_of_mem_pred (mem [:: 0; 1; 2]))) : pred nat.
-Check (pred_of_simpl (pred_of_mem_pred (mem [:: 0; 1; 2]))) : nat -> bool.
 
+Check (pred_of_simpl (simpl_of_mem (mem [:: 0; 1; 2]))) : pred nat.
+Check (pred_of_simpl (simpl_of_mem (mem [:: 0; 1; 2]))) : nat -> bool.
 Compute (mem [:: 0; 1; 2]) 0.
 
 (* 
@@ -441,7 +443,8 @@ Qed.
 *)
 
 Definition enum_mem' (T : finType) (mA : mem_pred T) :=
-  [seq x <- Finite.enum T | pred_of_simpl (pred_of_mem_pred mA) x].
+  [seq x <- Finite.enum T | mA x].
+(* [seq x <- Finite.enum T | pred_of_simpl (pred_of_mem mA) x]. *)
 
 Definition enum' (T : finType) (S : predType T) (A : S) :=
   (@enum_mem' T (@mem T S A)).
