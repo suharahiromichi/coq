@@ -510,7 +510,7 @@ Coercion pred_of_eq_pair (T : eqType) (s : T * T) : pred T := (* pred_class *)
 
 Compute pred_of_eq_pair (1, 2) 1.           (* true *)
 
-Canonical pair_predType (T : eqType) := mkPredType (@pred_of_eq_pair T).
+Canonical pair_predType (T : eqType) := PredType (@pred_of_eq_pair T).
 (* Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T). *)
 
 Check forall (T : eqType) (x : T) (l : pair_predType T) , x \in l.
