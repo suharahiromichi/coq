@@ -5,8 +5,7 @@ SSReflect の方法
 (**
 # Import
 *)
-Require Import ssreflect ssrfun ssrbool eqtype ssrnat seq.
-Require Import choice fintype.
+From mathcomp Require Import all_ssreflect.
 
 (**
 # Set
@@ -173,10 +172,10 @@ Check rel_of_simpl_rel [rel n m : nat | n < m] : nat -> nat -> bool.
 値コンストラクタ Mem
 デストラクタ   pred_of_mem_pred
 *)
+Set Printing Coercions.
 Check Mem [pred n : nat | n < 3] : mem_pred nat.
 Check Mem [pred n : nat | n < 3] : pred nat. (* コアーション *)
-Check pred_of_mem_pred (Mem [pred n : nat | n < 3]) : simpl_pred nat.
-Check pred_of_simpl (pred_of_mem_pred (Mem [pred n : nat | n < 3])) : pred nat.
+Check pred_of_simpl (simpl_of_mem (Mem [pred n : nat | n < 3])) : pred nat.
 
 Check Mem [pred n : nat | n < 3] : predPredType nat. (* コアーション *)
 Check pred_of_mem (Mem [pred n : nat | n < 3]) : predPredType nat.
@@ -284,23 +283,25 @@ Check pred_of_argType (Equality.sort (Finite.eqType bool_finType)) : predPredTyp
 
 Check {: bool_finType} : predPredType bool.
 
+Check true \in bool_finType.
 Compute true \in bool_finType.
 Compute true \in {: bool_finType}.          (* 使わない。 *)
 
 (* 参考：Canonical には使われていないようだ。 *)
 Check @in_mem bool true
-  (@mem bool (predPredType (Equality.sort (Finite.eqType bool_finType)))
-     (@sort_of_simpl_pred (Equality.sort (Finite.eqType bool_finType))
-        (pred_of_argType
-           {: (Equality.sort (Finite.eqType bool_finType))}))).
+  (@mem (Equality.sort (Finite.eqType bool_finType))
+     (predPredType (Equality.sort (Finite.eqType bool_finType)))
+     (@PredOfSimpl.coerce (Equality.sort (Finite.eqType bool_finType))
+        (pred_of_argType (Equality.sort (Finite.eqType bool_finType)))))
+     : bool.
 
 (* これでもおなじ。 *)
 (* Set Printing Coercions. *)
 (* Set Printing Implicit. *)
 (* \in の右辺が predPredType である例 *)
-Check true \in sort_of_simpl_pred          (* finType のほうが eqType を経由している。 *)
+Check true \in pred_of_simpl          (* finType のほうが eqType を経由している。 *)
                   (pred_of_argType (Equality.sort (Finite.eqType bool_finType))).
-Check true \in sort_of_simpl_pred (pred_of_argType (Equality.sort bool_eqType)).
+Check true \in pred_of_simpl (pred_of_argType (Equality.sort bool_eqType)).
 
 (* predArgType である例 *)
 Check true \in pred_of_argType (Equality.sort bool_eqType).
@@ -319,7 +320,7 @@ Check enum bool_finType.
 
 Check 1 \in {: nat_eqType}.
 Check 1 \in nat_eqType.
-Fail Check Compute 1 \in nat_finType.       (* nat_finType はない。 *)
+Fail Compute 1 \in nat_finType.       (* nat_finType はない。 *)
 
 (**
 一方enum の場合は
