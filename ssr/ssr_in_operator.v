@@ -324,8 +324,8 @@ Check bool_finType : predPredType bool.
 (* 実際は、pred_of_argType などの壮大なコアーションである。 *)
 (* Set Printing Coercions. *)
 
-Fail Check simpl_pred
-     (pred_of_argType (Equality.sort (Finite.eqType bool_finType)))
+Check pred_of_simpl
+      (pred_of_argType (Equality.sort (Finite.eqType bool_finType)))
   : pred_sort (predPredType bool).
 (* わかりやすい範囲を抜き出すと、
 eqTypeを経由して、finTypeからpredTypeに変換されている。 *)
