@@ -19,8 +19,8 @@ https://github.com/suharahiromichi/coq/blob/master/ssr/ssr_in_operator2.v
 
 CoqとMathCompのバージョンは以下の通りです。
 ```
-coq.8.16.0
-coq-mathcomp-ssreflect.1.15.0
+coq                     8.16.0
+coq-mathcomp-ssreflect  1.15.0
 ```
 *)
 
@@ -34,12 +34,13 @@ From mathcomp Require Import all_ssreflect.
 Set Implicit Arguments.                  (* Coqの引数の省略を許す。 *)
 
 (**
-省略された引数とコアーションを表示しないようにします。いずれもディフォルト（省略時解釈）ですが、
+省略された引数とコアーションを表示しないようにします。
+いずれもディフォルト（省略時解釈）ですが、
 今回はこれを切り替えることがあるかもしれないので、最初に明示しておきます。
 *)
-Unset Printing Implicit.                    (* 省略された引数を表示しない。 *)
-Unset Printing Coercions.                   (* コアーションを表示しない。 *)
-Set Printing Notations.                     (* Notationを展開しません。 *)
+Unset Printing Implicit.            (* 省略された引数を表示しない。 *)
+Unset Printing Coercions.           (* コアーションを表示しない。 *)
+Set Printing Notations.             (* Notationを展開しません。 *)
 
 (**
 # ``\in``演算子の使用例
@@ -100,6 +101,7 @@ Check fun (T : Type) (pT : predType T) (x : T) (A : pred_sort pT) =>
 (**
 # ``predType T``型の定義
 
+``\in``を使うには、``predType T``型が必要だとわかったので、調べてみます。
 ``predType T``型は、``eqType``型などと同様のMathCompの型クラスです。
 型クラスなので、``pT : predType T``なる``pT``は、型インスタンスとなります。
 
@@ -142,39 +144,73 @@ Coqのカノニカルとして、
 # ``predType T``型のインスタンスの例
 
 理解の早道は実際に作ってみることなので、やってみましょう。
+``predType T``型を実際に作って、``\in``で使えるかためしてみましょう。
+
+直積型(Prod型、Pair)のどちらかならtrueを変返すものを考えます。
+例えば次のような例ですが、まだ定義ができていないので、単純のエラーになります。
 *)
-
-
-(**
-# ``predType T``型の例
- *)
 
 Fail Compute 1 \in (1, 2).                  (* true *)
 Fail Compute 3 \in (1, 2).                  (* false *)
 
 (**
-- 「台」は、直積型(Pair)とします。ただし、fstとsndが別の型だと意味がないので、
-``T * T``とします。``pair T T``の意味です。
+- 「台」は、直積型(Prod型、Pair)とします。
+ただし、fstとsndが別の型だと意味がないので、``T * T``とします。
 
 - 「変換関数」は、
 ``x``がのfstかsndかのどちらかの要素に含まれているかを判定するので、
-次のようになります。``==``を使うために
-``T``は``eqType``にします。
+次のようになります。``==``を使うために``T``は``eqType``にします。
 *)
 Definition pred_of_eq_pair (T : eqType) (A : T * T) : (T -> bool) :=
   fun (x : T) => (A.1 == x) || (A.2 == x).
 
+(**
+「変換関数」単独で動作を確認します。
+*)
+Compute pred_of_eq_pair nat_eqType (1, 2) 1. (* true *)
+Compute pred_of_eq_pair nat_eqType (1, 2) 3. (* false *)
+
+(**
+Canonicalコマンドで定義します。
+*)
 Canonical pair_predType (T : eqType) :=
   {| pred_sort := T * T; topred := pred_of_eq_pair T |}.
+
 (**
+PredType を使って定義することもできます。
+```
 Canonical pair_predType (T : eqType) := @PredType T (T * T) (pred_of_eq_pair T).
+```
 *)
-  
+
+(**
+所望の動作をしているようです。
+*)
 Compute 1 \in (1, 2).                       (* true *)
 Compute 3 \in (1, 2).                       (* false *)
 
 (**
+補足説明：
+``pred_of_eq_pair T``を``T : eqType``で定義したため、
+``pair_predType T``も``T : eqType``になりますが、
+``predType T``の``T``については、eqTypeのコアーションが効いて、``Equality.sort T``
+になり、問題ありません。
+ *)
+(*
+(* Set Printing Coercions. *)
+Canonical pair_predType (T : eqType) :=
+  {| pred_sort := (Equality.sort T) * (Equality.sort T); topred := pred_of_eq_pair T |}.
+Check pair_predType : forall (T : eqType), predType (Equality.sort T).
+ *)
+  
+(**
 # MathCompで定義済みの``predType T``のインスタンス型
+
+既成の``predType T``のインスタンス型を見てみます。
+前述のとおり、``predType T``のインスタンス型が、
+``pred_sort``のついての正準解になっていることから、
+``Canonical Projections`` から``pred_sort``を拾うことで
+見つけられます。ここで説明しやすい、いくつかを以下にしめします。
 *)
 
 Print Canonical Projections.
@@ -184,16 +220,19 @@ Print Canonical Projections.
 seq        <- pred_sort ( seq_predType )
 tuple_of   <- pred_sort ( tuple_predType )
 set        <- pred_sort ( set_predType )
-simpl_pred <- pred_sort ( simplPredType )
 pred       <- pred_sort ( predPredType )
+simpl_pred <- pred_sort ( simplPredType )
 ```
  *)
+
+(* Set Printing Coercions. *)
 
 (**
 ## seq_predType - 「台」seq T、「変換関数」pred_of_seq
  *)
 Print seq_predType.                         (* 定義 *)
 Check [:: 1; 2] : seq nat.                  (* 「台」 *)
+Check 1 \in [:: 1; 2].                      (* \in の例 *)
 Compute 1 \in [:: 1; 2].                    (* \in の例 *)
 Check [:: 1; 2] : seq_predType nat_eqType.
 Check seq_predType nat_eqType : predType nat_eqType. (* predType のインスタンス型 *)
@@ -205,15 +244,24 @@ tval でseqに変換して、pred_of_seq を適用する。
 *)
 Print tuple_predType.                       (* 定義 *)
 Check [tuple 1; 2] : 2.-tuple nat.          (* 「台」 *)
+Check 1 \in [tuple 1; 2].                   (* \in の例 *)
 Compute 1 \in [tuple 1; 2].                 (* \in の例 *)
 Check [tuple 1; 2] : tuple_predType 2 nat_eqType.
 Check tuple_predType 2 nat_eqType : predType nat_eqType. (* predType のインスタンス型 *)
 
 (**
-## set_predType - 「台」set T（有限集合）、「変換関数」pred_of_set
+## set_predType - 「台」set_type T（有限集合）、「変換関数」pred_of_set
 *)
 Print set_predType.                         (* 定義 *)
-Check [set true] : {set bool}.              (* 「台」 *)
+Check [set true] : set_type bool_finType.   (* 「台」 *)
+(* {set bool} *)
+Check true \in [set true].                  (* \in の例 *)
+(*
+  コアーションを表示すると、
+  true \in pred_of_set [set true]
+  になっている。変換関数がコアーションに出てくるのはおかしいので、
+  ここの記述は不正確かもしれない。
+ *)
 Compute true \in [set true].                (* \in の例 *)
 Check [set true] : set_predType bool_finType.
 Check set_predType bool_finType : predType bool_finType. (* predType のインスタンス型 *)
@@ -223,18 +271,27 @@ Check set_predType bool_finType : predType bool_finType. (* predType のイン�
  *)
 Print predPredType.                         (* 定義 *)
 Check [pred n : nat | n < 3] : pred nat.    (* 「台」 *)
+Check 1 \in [pred n : nat | n < 3].         (* \in の例 *)
 Compute 1 \in [pred n : nat | n < 3].       (* \in の例 *)
 Check [pred n : nat | n < 3] : predPredType nat.
 Check predPredType nat : predType nat. (* predType のインスタンス型 *)
 
 (**
-## predPredType T - 「台」simpl_pred T、「変換関数」pred_of_simpl
+## simplPredType - 「台」simpl_pred T、「変換関数」pred_of_simpl
  *)
-Print predPredType.                         (* 定義 *)
-Check nat_eqType : simpl_pred nat.          (* 「台」 *)
-Compute 1 \in nat_eqType.                   (* \in の例 *)
-Check nat_eqType : pred nat.
-Check pred nat : predType nat.         (* predType のインスタンス型 *)
+Print simplPredType.                               (* 定義 *)
+Check (pred_of_argType nat_eqType) : simpl_pred nat. (* 「台」 *)
+
+(* 趣旨から、\in の右には型を直接書くが、 *)
+Check 1 \in nat_eqType.                     (* \in の例 *)
+(* ここに関しては、コアーションが効いていることに注意 *)
+Check nat_eqType : predArgType.
+Check pred_of_argType : forall T : predArgType, simpl_pred T.
+
+Check 1 \in (pred_of_argType nat_eqType).   (* \in の例 *)
+Compute 1 \in (pred_of_argType nat_eqType). (* \in の例 *)
+Check (pred_of_argType nat_eqType) : simplPredType nat.
+Check simplPredType nat : predType nat. (* predType のインスタンス型 *)
 
 (* END *)
 
