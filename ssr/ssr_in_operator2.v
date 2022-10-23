@@ -98,6 +98,21 @@ Unset Printing Notations.
 Check fun (T : Type) (pT : predType T) (x : T) (A : pred_sort pT) =>
         @in_mem T x (@mem T pT A).
 
+Print mem.
+(**
+```
+mem = 
+fun (T : Type) (pT : predType T) =>
+let '{| pred_sort := pred_sort0; topred := toP |} as pT0 :=
+     pT return (pT0 -> mem_pred T) in
+fun A : {| pred_sort := pred_sort0; topred := toP |} => Mem (T:=T) [eta toP A]
+     : forall (T : Type) (pT : predType T), pT -> mem_pred T
+```
+
+memの定義は複雑なように見えますが、``predType T``型のインスタンスに
+含まれる「変換関数」を``toP``として取り出して、実行しているのが判ります。
+*)
+
 (**
 # ``predType T``型の定義
 
