@@ -44,12 +44,10 @@ Set Printing Notations.                     (* Notationを展開しません。 
 (**
 # ``\in``演算子の使用例
 *)
-Check 1 \in [:: 1; 2].                      (* リスト *)
-Check 1 \in [tuple 1; 2].                   (* タプル *)
-Check true \in [set true].                  (* 有限集合 *)
-
-Check 1 \in [pred n | n < 3].               (* 命題 *)
-
+Compute 1 \in [:: 1; 2].                    (* リスト *)
+Compute 1 \in [tuple 1; 2].                 (* タプル *)
+Compute true \in [set true].                (* 有限集合 *)
+Compute 1 \in [pred n | n < 3].             (* 命題 *)
 Compute 1 \in nat_eqType.                   (* 型 *)
 
 (**
@@ -132,7 +130,7 @@ Record predType (T : Type) : Type :=
 有効になることを意味します。コアーションは``pred_sort``で行われます。
 
 - ``topred``は、to pred で、「台」と``T``から``bool``型を求めるbool述語ですが、
-「台」を``T -> bool``型に変換する関数とも取れるので、この名前になったようです。
+「台」を``T -> bool``型に変換する関数とも取れるので、以下「変換関数」と呼びます。
 
 このふたつから、``predType T``型のインスタンスを作ることができます。
 「台」から``predType T``を求める必要があるので、``predTye
@@ -158,8 +156,8 @@ Fail Compute 3 \in (1, 2).                  (* false *)
 - 「台」は、直積型(Pair)とします。ただし、fstとsndが別の型だと意味がないので、
 ``T * T``とします。``pair T T``の意味です。
 
-- 「台」から``T -> bool``への関数は、
-``x``がのfstかsndかのどちらかの要素に含まれているかを判定します。
+- 「変換関数」は、
+``x``がのfstかsndかのどちらかの要素に含まれているかを判定するので、
 次のようになります。``==``を使うために
 ``T``は``eqType``にします。
 *)
@@ -183,63 +181,81 @@ Print Canonical Projections.
 
 (**
 ```
-list       <- pred_sort ( seq_predType )
+seq        <- pred_sort ( seq_predType )
 tuple_of   <- pred_sort ( tuple_predType )
 set        <- pred_sort ( set_predType )
 simpl_pred <- pred_sort ( simplPredType )
 pred       <- pred_sort ( predPredType )
 ```
+ *)
+
+(**
+## seq_predType - 「台」seq T、「変換関数」pred_of_seq
+ *)
+Print seq_predType.                         (* 定義 *)
+Check [:: 1; 2] : seq nat.                  (* 「台」 *)
+Compute 1 \in [:: 1; 2].                    (* \in の例 *)
+Check [:: 1; 2] : seq_predType nat_eqType.
+Check seq_predType nat_eqType : predType nat_eqType. (* predType のインスタンス型 *)
+
+(**
+## tuple_predType - 「台」n-tuple T、「変換関数」pred_of_seq (tval s))
+
+tval でseqに変換して、pred_of_seq を適用する。
+*)
+Print tuple_predType.                       (* 定義 *)
+Check [tuple 1; 2] : 2.-tuple nat.          (* 「台」 *)
+Compute 1 \in [tuple 1; 2].                 (* \in の例 *)
+Check [tuple 1; 2] : tuple_predType 2 nat_eqType.
+Check tuple_predType 2 nat_eqType : predType nat_eqType. (* predType のインスタンス型 *)
+
+(**
+## set_predType - 「台」set T（有限集合）、「変換関数」pred_of_set
+*)
+Print set_predType.                         (* 定義 *)
+Check [set true] : {set bool}.              (* 「台」 *)
+Compute true \in [set true].                (* \in の例 *)
+Check [set true] : set_predType bool_finType.
+Check set_predType bool_finType : predType bool_finType. (* predType のインスタンス型 *)
+
+(**
+## predPredType - 「台」pred T（bool述語、T -> bool）、「変換関数」id
+ *)
+Print predPredType.                         (* 定義 *)
+Check [pred n : nat | n < 3] : pred nat.    (* 「台」 *)
+Compute 1 \in [pred n : nat | n < 3].       (* \in の例 *)
+Check [pred n : nat | n < 3] : predPredType nat.
+Check predPredType nat : predType nat. (* predType のインスタンス型 *)
+
+(**
+## predPredType T - 「台」simpl_pred T、「変換関数」pred_of_simpl
+ *)
+Print predPredType.                         (* 定義 *)
+Check nat_eqType : simpl_pred nat.          (* 「台」 *)
+Compute 1 \in nat_eqType.                   (* \in の例 *)
+Check nat_eqType : pred nat.
+Check pred nat : predType nat.         (* predType のインスタンス型 *)
+
+(* END *)
 
 
+(**
 
-```
-prod     <- pred_sort ( pair_predType )
-```
+# まだ説明していないもの
 
-
+## in_mem 内部使用
 
 ```
 mem_pred   <- pred_sort ( memPredType )
+```
+
+## 他の型
+
+```
 bseq_of    <- pred_sort ( bseq_predType )
 nat_pred   <- pred_sort ( nat_pred_pred )
 bitseq     <- pred_sort ( bitseq_predType )
 forall _, _ <- pred_sort ( boolfunPredType )
 ```
+
  *)
-
-(**
-## list
- *)
-Compute 1 \in [:: 1; 2].
-Check [:: 1; 2] : seq_predType nat_eqType.
-Check seq_predType nat_eqType : predType nat_eqType.
-
-(**
-## tuple
-*)
-Compute 1 \in [tuple 1; 2].
-Check [tuple 1; 2] : tuple_predType 2 nat_eqType.
-Check tuple_predType 2 nat_eqType : predType nat_eqType.
-
-(**
-## set
-*)
-Compute true \in [set true].
-Check [set true] : set_predType bool_finType.
-Check set_predType bool_finType : predType bool_finType.
-
-(**
-## simpl_pred
- *)
-Compute 1 \in [pred n : nat | n < 3].
-Check [pred n : nat | n < 3] : simpl_pred nat.
-Check simpl_pred nat : predType nat.
-
-(**
-## pred
- *)
-Compute 1 \in nat_eqType.
-Check nat_eqType : pred nat.
-Check pred nat : predType nat.
-
-(* END *)
