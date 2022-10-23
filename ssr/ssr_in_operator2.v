@@ -183,12 +183,6 @@ Canonical pair_predType (T : eqType) := @PredType T (T * T) (pred_of_eq_pair T).
 *)
 
 (**
-所望の動作をしているようです。
-*)
-Compute 1 \in (1, 2).                       (* true *)
-Compute 3 \in (1, 2).                       (* false *)
-
-(**
 「台」へのコアーションも機能しています。
 *)
 Compute pred_sort (pair_predType nat_eqType). (* (nat * nat) *)
@@ -196,7 +190,14 @@ Check (1, 2) : (nat * nat).
 Check (1, 2) : pair_predType nat_eqType.
 
 (**
+所望の動作をしているようです。
+*)
+Compute 1 \in (1, 2).                       (* true *)
+Compute 3 \in (1, 2).                       (* false *)
+
+(**
 補足説明：
+
 ``pred_of_eq_pair T``を``T : eqType``で定義したため、
 ``pair_predType T``も``T : eqType``になりますが、
 ``predType T``の``T``については、eqTypeのコアーションが効いて、``Equality.sort T``
@@ -209,6 +210,54 @@ Canonical pair_predType (T : eqType) :=
 Check pair_predType : forall (T : eqType), predType (Equality.sort T).
  *)
   
+(**
+補足説明：
+
+(1) ``\in``の定義に引数をもれなく与えてみます。
+*)
+Check (fun (T : Type) (pT : predType T) (x : T) (A : pred_sort pT) =>
+         @in_mem T x (@mem T pT A))
+      nat_eqType
+      (pair_predType nat_eqType)
+      1
+      (1, 2).
+(**
+(2) ``T``に``nat_eqType``を展開してみます。コアーションが起きます。
+*)
+Check (fun (pT : predType (Equality.sort nat_eqType))
+           (x : Equality.sort nat_eqType) (A : pred_sort pT) =>
+         @in_mem nat_eqType x (@mem nat_eqType pT A))
+      (pair_predType nat_eqType)
+      1
+      (1, 2).
+(**
+(2') ``predType``の引数や``x``の型のコアーションを計算すると、``nat``になります。
+*)
+Check (fun (pT : predType nat) (x : nat) (A : pred_sort pT) =>
+         @in_mem nat_eqType x (@mem nat_eqType pT A))
+      (pair_predType nat_eqType)
+      1
+      (1, 2).
+(**
+(3) ``pT``を展開します。
+*)
+Check (fun (x : nat) (A : pred_sort (pair_predType nat_eqType)) =>
+         @in_mem nat x (@mem nat (pair_predType nat_eqType) A))
+      1
+      (1, 2).
+(**
+(3') ``A``の型のコアーションを計算すると、
+``pred_sort (pair_predType nat_eqType))``が``(nat * nat)``になります。
+*)
+Check (fun (x : nat) (A : (nat * nat)) =>
+         @in_mem nat x (@mem nat (pair_predType nat_eqType) A))
+      1
+      (1, 2).
+(**
+(4) のこりの値も展開します。それでも、``@mem``の第2引数は``predType T``型が必要です。
+*)
+Check @in_mem nat 1 (@mem nat (pair_predType nat_eqType) (1, 2)).
+
 (**
 # MathCompで定義済みの``predType T``のインスタンス型
 
@@ -305,7 +354,7 @@ Check (pred_of_argType nat_eqType) : simpl_pred nat. (* 「台」 *)
 
 (* 趣旨から、\in の右には型を直接書きますが、 *)
 Check 1 \in nat_eqType.                     (* \in の例 *)
-(* ここの``\in``の右に関しては、コアーションが効いていることに注意してくだい。 *)
+(* ここの``\in``の右に関しては、コアーションが効いていることに注意してください。 *)
 Check nat_eqType : predArgType.
 Check pred_of_argType : forall T : predArgType, simpl_pred T.
 (* コアーションの説明終わり。 *)
