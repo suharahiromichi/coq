@@ -9,7 +9,7 @@ Coq/SSReflect/MathComp の \in 演算子の不思議を納得する
 
 (**
 MathComp の``\in``は、``∈``の意味の二項演算子ですが、右側にはリストでも、集合でも、
-型でも、命題でもよいという万能選手です。ここでは、その万能性を実現する不思議を調べて
+型でも、命題でもよいという万能選手です。ここでは、その万能性を実現するしくみを調べて
 みます。
 また、MathCompの型クラスの機能をつかって、``\in``の右に書ける型を増やしてみます。
 
@@ -78,7 +78,7 @@ where
 となり、``T``と``pT``のふたつの型が与えられていることが判ります。
 ``pred_sort``の説明はあとでしますが、
 とりあえず、``x``は任意の型``T``、``A``は``pT``型で、
-その``pT``はpredType T``型と思ってください。
+その``pT``は``predType T``型と思ってください。
 
 
 これをもとに``x``の型と``A``の型を与えてると、次のようになります。
@@ -109,7 +109,7 @@ Check fun (T : Type) (pT : predType T) (x : T) (A : pred_sort pT) =>
 で、``theories/ssr/ssrbool.v``で、以下のように定義されています。
 （改行を変更。また、``pred T = T -> bool``を展開しています。）
 
-(注1) Coqでは、RecordとStructureは同じコマンドでした。
+(注1) Coqでは、RecordとStructureは同じコマンドです。
 
 (注2) mathcomp/ssreflect/ssrbool.v から、Coq本体のコードツリーに移動されました。
 
@@ -135,8 +135,7 @@ Record predType (T : Type) : Type :=
 「台」を``T -> bool``型に変換する関数とも取れるので、以下「変換関数」と呼びます。
 
 このふたつから、``predType T``型のインスタンスを作ることができます。
-「台」から``predType T``を求める必要があるので、``predTye
-Coqのカノニカルとして、
+「台」から``predType T``を求める必要があるので、Coqのカノニカルとして、
 （Definitionではなくて）Canonicalコマンドで定義します。
 *)  
 
@@ -190,6 +189,13 @@ Compute 1 \in (1, 2).                       (* true *)
 Compute 3 \in (1, 2).                       (* false *)
 
 (**
+「台」へのコアーションも機能しています。
+*)
+Compute pred_sort (pair_predType nat_eqType). (* (nat * nat) *)
+Check (1, 2) : (nat * nat).
+Check (1, 2) : pair_predType nat_eqType.
+
+(**
 補足説明：
 ``pred_of_eq_pair T``を``T : eqType``で定義したため、
 ``pair_predType T``も``T : eqType``になりますが、
@@ -228,7 +234,10 @@ simpl_pred <- pred_sort ( simplPredType )
 (* Set Printing Coercions. *)
 
 (**
-## seq_predType - 「台」seq T、「変換関数」pred_of_seq
+## seq_predType
+
+- 「台」seq T
+- 「変換関数」pred_of_seq
  *)
 Print seq_predType.                         (* 定義 *)
 Check [:: 1; 2] : seq nat.                  (* 「台」 *)
@@ -238,7 +247,10 @@ Check [:: 1; 2] : seq_predType nat_eqType.
 Check seq_predType nat_eqType : predType nat_eqType. (* predType のインスタンス型 *)
 
 (**
-## tuple_predType - 「台」n-tuple T、「変換関数」pred_of_seq (tval s))
+## tuple_predType
+
+- 「台」n-tuple T
+- 「変換関数」pred_of_seq (tval s))
 
 tval でseqに変換して、pred_of_seq を適用する。
 *)
@@ -250,7 +262,10 @@ Check [tuple 1; 2] : tuple_predType 2 nat_eqType.
 Check tuple_predType 2 nat_eqType : predType nat_eqType. (* predType のインスタンス型 *)
 
 (**
-## set_predType - 「台」set_type T（有限集合）、「変換関数」pred_of_set
+## set_predType
+
+- 「台」set_type T（有限集合）
+- 「変換関数」pred_of_set
 *)
 Print set_predType.                         (* 定義 *)
 Check [set true] : set_type bool_finType.   (* 「台」 *)
@@ -267,7 +282,10 @@ Check [set true] : set_predType bool_finType.
 Check set_predType bool_finType : predType bool_finType. (* predType のインスタンス型 *)
 
 (**
-## predPredType - 「台」pred T（bool述語、T -> bool）、「変換関数」id
+## predPredType
+
+- 「台」pred T（bool述語、T -> bool）
+- 「変換関数」id
  *)
 Print predPredType.                         (* 定義 *)
 Check [pred n : nat | n < 3] : pred nat.    (* 「台」 *)
@@ -277,16 +295,20 @@ Check [pred n : nat | n < 3] : predPredType nat.
 Check predPredType nat : predType nat. (* predType のインスタンス型 *)
 
 (**
-## simplPredType - 「台」simpl_pred T、「変換関数」pred_of_simpl
+## simplPredType
+
+- 「台」simpl_pred T
+- 「変換関数」pred_of_simpl
  *)
 Print simplPredType.                               (* 定義 *)
 Check (pred_of_argType nat_eqType) : simpl_pred nat. (* 「台」 *)
 
-(* 趣旨から、\in の右には型を直接書くが、 *)
+(* 趣旨から、\in の右には型を直接書きますが、 *)
 Check 1 \in nat_eqType.                     (* \in の例 *)
-(* ここに関しては、コアーションが効いていることに注意 *)
+(* ここの``\in``の右に関しては、コアーションが効いていることに注意してくだい。 *)
 Check nat_eqType : predArgType.
 Check pred_of_argType : forall T : predArgType, simpl_pred T.
+(* コアーションの説明終わり。 *)
 
 Check 1 \in (pred_of_argType nat_eqType).   (* \in の例 *)
 Compute 1 \in (pred_of_argType nat_eqType). (* \in の例 *)
