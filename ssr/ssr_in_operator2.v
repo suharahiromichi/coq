@@ -98,21 +98,6 @@ Unset Printing Notations.
 Check fun (T : Type) (pT : predType T) (x : T) (A : pred_sort pT) =>
         @in_mem T x (@mem T pT A).
 
-Print mem.
-(**
-```
-mem = 
-fun (T : Type) (pT : predType T) =>
-let '{| pred_sort := pred_sort0; topred := toP |} as pT0 :=
-     pT return (pT0 -> mem_pred T) in
-fun A : {| pred_sort := pred_sort0; topred := toP |} => Mem (T:=T) [eta toP A]
-     : forall (T : Type) (pT : predType T), pT -> mem_pred T
-```
-
-memの定義は複雑なように見えますが、``predType T``型のインスタンスに
-含まれる「変換関数」を``toP``として取り出して、実行しているのが判ります。
-*)
-
 (**
 # ``predType T``型の定義
 
@@ -379,6 +364,37 @@ Compute 1 \in (pred_of_argType nat_eqType). (* \in の例 *)
 Check (pred_of_argType nat_eqType) : simplPredType nat.
 Check simplPredType nat : predType nat. (* predType のインスタンス型 *)
 
+(**
+# ``mem``と``in_memの``中身
+
+最後に``mem``と``in_memの``中身をみてみます。
+*)
+
+Print mem.
+(**
+```
+fun (T : Type) (pT : predType T) =>
+let '{| pred_sort := pred_sort0; topred := toP |} as pT0 :=
+     pT return (pT0 -> mem_pred T) in
+fun A : {| pred_sort := pred_sort0; topred := toP |} => Mem (T:=T) [eta toP A]
+     : forall (T : Type) (pT : predType T), pT -> mem_pred T
+```
+memの定義は複雑なように見えますが、``predType T``型のインスタンスに
+含まれる「変換関数」を``toP``として取り出して、実行しているのが判ります。
+*)
+
+Print in_mem.
+(**
+```
+fun (T : Type) (x : T) => pred_of_mem^~ x
+     : forall T : Type, T -> mem_pred T -> bool
+```
+これに対して、in_memは、pred_of_memで型を変換して、
+引数の順番を入れ替えているだけのようです。
+*)
+Check @pred_of_mem : forall T : Type, mem_pred T -> {pred T}.
+Check @pred_of_mem : forall T : Type, mem_pred T -> predPredType T.
+
 (* END *)
 
 
@@ -400,5 +416,4 @@ nat_pred   <- pred_sort ( nat_pred_pred )
 bitseq     <- pred_sort ( bitseq_predType )
 forall _, _ <- pred_sort ( boolfunPredType )
 ```
-
  *)
