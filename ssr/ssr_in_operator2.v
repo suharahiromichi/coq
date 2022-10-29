@@ -269,12 +269,10 @@ Check @in_mem nat 1 (@mem nat (pair_predType nat_eqType) (1, 2)).
 *)
 
 Print Canonical Projections.
-
 (**
 ```
 seq        <- pred_sort ( seq_predType )
 tuple_of   <- pred_sort ( tuple_predType )
-set        <- pred_sort ( set_predType )
 pred       <- pred_sort ( predPredType )
 simpl_pred <- pred_sort ( simplPredType )
 ```
@@ -313,18 +311,21 @@ Check tuple_predType 2 nat_eqType : predType nat_eqType. (* predType のイン�
 (**
 ## set_predType
 
+``set <- pred_sort ( set_predType )`` がないことから、
+これについては、別なメカニズムが働いてると思われる。
+ここの記述は不正確かもしれない。
+
 - 「台」set_type T（有限集合）
 - 「変換関数」pred_of_set
 *)
 Print set_predType.                         (* 定義 *)
-Check [set true] : set_type bool_finType.   (* 「台」 *)
-(* {set bool} *)
+Check [set true] : set_type bool_finType. (* {set bool} *) (* 「台」 *)
 Check true \in [set true].                  (* \in の例 *)
 (*
   コアーションを表示すると、
   true \in pred_of_set [set true]
   になっている。変換関数がコアーションに出てくるのはおかしいので、
-  ここの記述は不正確かもしれない。
+
  *)
 Compute true \in [set true].                (* \in の例 *)
 Check [set true] : set_predType bool_finType.
@@ -395,9 +396,6 @@ fun (T : Type) (x : T) => pred_of_mem^~ x
 Check @pred_of_mem : forall T : Type, mem_pred T -> {pred T}.
 Check @pred_of_mem : forall T : Type, mem_pred T -> predPredType T.
 
-(* END *)
-
-
 (**
 
 # まだ説明していないもの
@@ -417,3 +415,5 @@ bitseq     <- pred_sort ( bitseq_predType )
 forall _, _ <- pred_sort ( boolfunPredType )
 ```
  *)
+
+(* END *)
