@@ -55,7 +55,8 @@ Prologのプログラムでは、次のように表します。
 Q :- P1, P2, ... Pm.
 
 ```
-量化子の変数は大文字で書きます。また、``:- true``は省略しす。
+量化子の変数は大文字で書き、``∀x``は書きません。
+また、``:- true``は省略しす。
 
 
 - ゴール節
@@ -77,7 +78,7 @@ Prologのプログラムでは、次のように表します。
 ?-R.
 
 ```
-量化子の変数は大文字で書きます。
+量化子の変数は大文字で書き、``∃x``は書きません。
 
 - Prologのプログラムの論理式
 
@@ -105,9 +106,9 @@ Prologのプログラムは、ホーン節を並べたものです。
 ```
 rev(L, RL) :-
     rev3(L, [],  RL).
-rev3([X|XS], ACC, R) :-
-     rev3(XS, [X|ACC], R).
-rev3([], L, L).
+rev3([X|XS], ACC, RL) :-
+     rev3(XS, [X|ACC], RL).
+rev3([], RL, RL).
 ```
 
 これに対して、ふたつのゴール、ゴール1
@@ -131,9 +132,9 @@ rev3([], L, L).
 pred rev i:list A, o:list A.
 rev L RL :-
     rev3 L [] RL.
-rev3 [X|XS] ACC R :-
-     rev3 XS [X|ACC] R.
-rev3 [] L L.
+rev3 [X|XS] ACC RL :-
+     rev3 XS [X|ACC] RL.
+rev3 [] RL RL.
 ```
 
 ホーン節の部分を論理式で表すと
@@ -142,9 +143,9 @@ rev3 [] L L.
 
 \forall L~\forall RL~[rev3(L, [], RL)~\to~rev(L, RL)]
 \\\land\\
-\forall X~\forall XS~\forall ACC~\forall R~[rev3(XS, [X|ACC], R~\to~rev3([X|XS],ACC,R)]
+\forall X~\forall XS~\forall ACC~\forall RL~[rev3(XS, [X|ACC], RL~\to~rev3([X|XS],ACC,RL)]
 \\\land\\
-\forall L~[true~\to~rev3([], L, L)]
+\forall RL~[true~\to~rev3([], RL, RL)]
 ```
 
 ゴール1は
@@ -172,9 +173,9 @@ Variable rev3 : list nat -> list nat -> list nat -> Prop.
 Definition prog0 :=
   (forall L RL, rev3 L [::] RL -> rev L RL)
   /\
-    (forall X XS ACC R, rev3 XS (X :: ACC) R -> rev3 (X :: XS) ACC R)
+    (forall X XS ACC RL, rev3 XS (X :: ACC) RL -> rev3 (X :: XS) ACC RL)
   /\
-    (forall L, rev3 [::] L L).
+    (forall RL, rev3 [::] RL RL).
       
 (**
 ゴールの部分は
@@ -212,7 +213,6 @@ Proof.
 Qed.
 
 (**
-
 # 補足説明
 
 ## 古典論理と直観主義論理
@@ -260,13 +260,29 @@ Prologの論理式の意味を直観主義論理の範囲で示すことがで�
 同じく、直観主義論理を使用するCoqの上で証明することができるわけです。
 
 
+## Prologの不完全性
+
+実は、Prologでgoal2に対して実行すると無限ループになります。
+なぜなら、``rev RL [9,8,7]``に対して、rev3のはじめの節が選ばれるために、
+(``rev3 [X|XS] ACC R :- rev3 XS [X|ACC] R.``)に対して、
+``rev3 RL [] [9,8,7]``が実行されますが、
+rev3の第3引数は再帰呼び出しに対して、リストの分解が行われないため、
+再帰呼び出しの終了判定がなく、無限ループになってしまいます。
+
+これは、証明できるべき命題が証明できないという意味で、定理証明系としての
+Prologの「不完全性」の一例になっています。
+
+これに対して、Coqは、existsに対して手で値を設定しなければならない代わりに、
+このような問題が生じません。その意味ではCoqは「完全」なわけです。
+
+
 ## cut述語について
 
 Prologにはcut述語、別名、カットオペレータ(``!``)があります。
 これは、Prologの自動証明において、
 ホーン節のしらみつぶしの選択を木構造の検索と見立てた場合、
-バックトラックが生じた際に、ツリーの検索の一部をカットする、
-検索せずにただちに失敗(fail)とする、ことからこの名前があります。
+バックトラックが生じた際に、ツリーの検索の一部をカット(枝を刈る)して、
+検索せずにただちに失敗(fail)とする、ということからこの名前があります。
 
 cut述語は、論理式としてもProlog言語ではなく、手続言語の側面を実現するものなので、
 本資料では触れませんでした。
@@ -279,3 +295,5 @@ Coqにもcutタクティクがありますが、証明論におけるカット�
 このふたつは全く別の概念なので、注意してください。
 
  *)
+
+(* END *)
