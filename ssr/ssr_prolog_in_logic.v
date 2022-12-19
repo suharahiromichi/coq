@@ -5,6 +5,8 @@
 @suharahiromichi
 
 2022/12/18
+
+2022/12/19 ``ex_intro _`` を使うように修正した。
  *)
 
 (**
@@ -186,16 +188,16 @@ Definition goal1 := exists RL, rev [:: 1; 2; 3] RL.
 Definition goal2 := exists L, rev L [:: 9; 8; 7].
 
 (**
-Coqで証明してみます。Coqは``∃``を自動で証明できないので、
-答えを教えてあげる必要があります。
-それとは別に、Coqには導出原理に基づく自動証明のタクティク``auto``があるので
-それを使ってみます。
+Coqで証明してみます。
+Coqにも導出原理に基づく自動証明のタクティク``auto``があるのでそれを使ってみます。
+``apply: (ex_intro _)`` で、``∃ RL``の``RL``を Coq のメタ変数(``_``、
+表示上は``?Goal``になる)に割り当てています。
 *)
 Goal prog0 -> goal1.
 Proof.
   rewrite /prog0 /goal1.
   case=> [H [Hcons Hnil]].
-  exists [:: 3; 2; 1].
+  apply: (ex_intro _).
   apply: (H).
   apply: (Hcons).
   apply: (Hcons).
@@ -203,8 +205,9 @@ Proof.
   apply: (Hnil).
   
   Restart.
+  rewrite /prog0 /goal1.
   case=> [H [Hcons Hnil]].
-  exists [:: 3; 2; 1].
+  apply: (ex_intro _).
   debug auto.
 Qed.
 
@@ -212,7 +215,7 @@ Goal prog0 -> goal2.
 Proof.
   rewrite /prog0 /goal2.
   case=> [H [Hcons Hnil]].
-  exists [:: 7; 8; 9].
+  apply: (ex_intro _).
   debug auto.
 Qed.
 
@@ -282,10 +285,8 @@ Prologプログラムの動作の理解は「直観的」なのではないか�
 これは、証明できるべき命題が証明できないという意味で、定理証明系としての
 Prologの「不完全性」の一例になっています。
 
-これに対して、Coqは、existsに対して手で値を設定しなければならない代わりに、
-このような問題が生じません。
-ただし、Coqの完全性はタクティクの停止性とは無関係です。
-
+これに対して、Coqの完全性はタクティク(証明戦略)の停止性とは無関係です。
+（この項は、あとで追記するかもしれません。）
 
 ## cut述語について
 
