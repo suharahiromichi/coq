@@ -9,58 +9,57 @@
 
 From mathcomp Require Import all_ssreflect.
 
-Section Rev.
+(**
+reverse のプログラム例 #1
+
+λPrologのstdlibから採ったので lrev と呼びます。
+*)
+
+Section LRev.
 
 Variable T : Type.
 
-Variable rev2 : list T -> list T -> Prop.
-Variable rev3 : list T -> list T -> list T -> Prop.
+Variable lrev : list T -> list T -> Prop.
+Variable lrev3 : list T -> list T -> list T -> Prop.
 
-(**
-ホーン節の部分は以下のようになります。
-ここでは便宜的にDefinitionでまとめていますが、論理式としての意味は変わりません。
-*)
-Axiom prog0 :
-  (forall L RL, rev3 L [::] RL -> rev2 L RL)
-  /\
-    (forall X XS ACC RL, rev3 XS (X :: ACC) RL -> rev3 (X :: XS) ACC RL)
-  /\
-    (forall RL, rev3 [::] RL RL).
+Axiom lprog : forall L RL, lrev3 L [::] RL -> lrev L RL.
+Axiom lprog1 : forall X XS ACC RL, lrev3 XS (X :: ACC) RL -> lrev3 (X :: XS) ACC RL.
+Axiom lprog2 : forall RL, lrev3 [::] RL RL.
       
 (**
-# 証明1
+ループ不変式
 *)
-Lemma rev0 : @rev T [::] = [::].
+Lemma lrev_invariant A B : lrev3 A B (rev A ++ B).
 Proof.
-  done.
-Qed.
-
-Lemma test (A B : seq T) : rev3 A B (rev A ++ B).
-Proof.
-  case: prog0 => [_ [Hcons Hnil]].
-  elim: A B => //= a A IHA B.
+  elim: A B lprog1 lprog2 => //= a A IHA B Hcons Hnil.
   apply: (Hcons).
   have -> : rev (a :: A) ++ B = rev A ++ (a :: B)
     by rewrite -[a :: A]cat1s rev_cat -catA.
   by apply: IHA.
 Qed.
 
-Lemma test2 (A : seq T) : rev3 A [::] (rev A).
+(**
+rev3 と rev についての補題
+
+ループ不変式からすぐに証明できます。
+*)
+Lemma lrev3_rev L : lrev3 L [::] (rev L).
 Proof.
-  rewrite -[rev A]cats0.
-  by apply: test.
+  rewrite -[rev L]cats0.
+  by apply: lrev_invariant.
 Qed.
 
-Goal forall L, rev2 L (rev L).
+(**
+証明したかった定理
+*)
+Theorem lrev_rev L : lrev L (rev L).
 Proof.
-  case: prog0 => [Hp [Hcons Hnil]] L.
-  apply: Hp.
-  elim: L => [| a s IHs].
-  - by rewrite rev0.
-  - by apply: test2.
+  apply: lprog.
+  by apply: lrev3_rev.
 Qed.
 
-End Rev.
+End LRev.
 
 (* END *)
   
+     
