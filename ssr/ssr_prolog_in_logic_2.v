@@ -74,7 +74,7 @@ Prologの述語とCoq/MathCompの関数名が重複してしまうので、
 Prologの述語のほうを``rev2``と改名しています。
 それ以外は、Hypothesisとして定義したことを除いて、変わりはありません。
 
-p```Prolog
+```Prolog
 pred rev2 i:list A, o:list A.
 rev2 L RL  :- rev3 L []  RL.
 rev3 [X|XS] ACC R :- rev3 XS [X|ACC] R.
@@ -97,12 +97,16 @@ Module LRev.
 補助述語rev3が定義されているため、証明はちょと複雑になります。
 rev3の実行をトレースしてみます。
 
-enter: rev3([1,2,3], [],      RL)
-enter: rev3([2,3],   [1],     RL)
-enter: rev3([3],     [2,1],   RL)
-enter: rev3([],      [3,2,1], RL)
-exit:  rev3([],      [3,2,1], [3,2,1])
-enter: rev3([3],     [2,1],   [3,2,1])
+```Prolog
+enter: rev3([1,2,3],   [],      RL)
+enter: rev3([2,3],     [1],     RL)
+enter: rev3([3],       [2,1],   RL)
+enter: rev3([],        [3,2,1], RL)
+exit:  rev3([],        [3,2,1], [3,2,1])
+exit:  rev3([3],       [2,1],   [3,2,1])
+exit:  rev3([2, 3],    [1],     [3,2,1])
+exit:  rev3([1, 2, 3], [],      [3,2,1])
+```
 
 ``rev3``の、第1引数をreverseして第2引数にappendしたものが第3引数になっているようです。
 このことを証明してみましょう、これは常に成り立つので「ループ不変式」といいます。
@@ -119,7 +123,7 @@ enter: rev3([3],     [2,1],   [3,2,1])
   Qed.
   
 (**
-## rev3 と rev についての補題
+## rev3 についての補題
 
 rev3 について、第1引数をreverseしたものは第3引数であることは、
 さきの補題の特殊な場合として、簡単に証明できます。
