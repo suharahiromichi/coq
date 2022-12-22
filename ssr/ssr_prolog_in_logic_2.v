@@ -4,7 +4,7 @@
 
 @suharahiromichi
 
-2022/12/20
+2022/12/22
  *)
 
 (**
@@ -199,53 +199,8 @@ End Rev2.
 証明の説明は省いたため、Coqに親しみのない場合は難しいと思いますが、
 論理型言語Prologであっても、プログラムとしての証明は、それほど簡単ではなく、
 とくに、実装によって証明が全く変わることなど、手続き型言語や関数型言語と
-全く違いはないと、言えるのではないでしょうか。
+違いは大きくないと、言えるのではないでしょうか。
 *)
-
-(**
-# おまけ
-
-以下はSWI-Prologのreverseの定義です。証明できるでしょうか。
-
-```Prolog
-pred reverse3  o:list A, o:list A.
-pred rev3      o:list A, o:list A, o:list A, o:list A.
-
-reverse3 A B :- rev3 A [] B B.
-rev3 [] A A [] :- !, print [] A A [].
-rev3 [B | A] C D [E | F] :- print B A C D E F, rev3 A [B | C] D F, print A B C D E F.
-```
-*)
-
-Module SRev.
-
-  Variable srev : list T -> list T -> Prop.
-  Variable srev3 : list T -> list T -> list T -> list T -> Prop.
-  
-  Axiom sr0 : forall A B, srev3 A [::] B B -> srev A B.
-  Axiom sr1 : forall A, srev3 [::] A A [::].
-  Axiom sr2 : forall A B C D E F, srev3 A (B :: C) D F -> srev3 (B :: A) C D (E :: F).
-  
-(**
-```
-enter:
-[1 | [2, 3, 4, 5, 6]] []              [X0 | X1]                       [X0 | X1]
-[2 | [3, 4, 5, 6]]    [1]             [X0, X2 | X3]                   [X2 | X3]
-[3 | [4, 5, 6]]       [2, 1]          [X0, X2, X4 | X5]               [X4 | X5]
-[4 | [5, 6]]          [3, 2, 1]       [X0, X2, X4, X6 | X7]           [X6 | X7]
-[5 | [6]]             [4, 3, 2, 1]    [X0, X2, X4, X6, X8 | X9]       [X8 | X9]
-[6 | []]              [5, 4, 3, 2, 1] [X0, X2, X4, X6, X8, X10 | X11] [X10 | X11]
-exit:
-[6 | []]              [5, 4, 3, 2, 1] [6, 5, 4, 3, 2, 1]     [1 | []]
-[5 | [6]]             [4, 3, 2, 1]    [6, 5, 4, 3, 2, 1]     ]2 | [1]]
-[4 | [5, 6]]          [3, 2, 1]       [6, 5, 4, 3, 2, 1]     [3 | [2, 1]]
-[3 | [4, 5, 6]]       [2, 1]          [6, 5, 4, 3, 2, 1]     [4 | [3, 2, 1]]
-[2 | [3, 4, 5, 6]]    [1]             [6, 5, 4, 3, 2, 1]     [5 | [4, 3, 2, 1]]
-[1 | [2, 3, 4, 5, 6]] []              [6, 5, 4, 3, 2, 1]     [6 | [5, 4, 3, 2, 1]]
-```
- *)
-  
-End SRev.
 
 (**
 # 文献
