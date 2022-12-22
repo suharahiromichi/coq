@@ -5,6 +5,9 @@
 @suharahiromichi
 
 2022/12/22
+
+
+2022/12/23      SWI-Prologのreverseの話題を分割した。
  *)
 
 (**
