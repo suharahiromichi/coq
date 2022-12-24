@@ -197,6 +197,14 @@ Module Rev2.
 End Rev2.
 
 (**
+# おまけ
+
+reverseの別の定義である、SWI-Prologの実装例については、
+[2]を参照してください。
+
+*)
+
+(**
 # まとめ
 
 証明の説明は省いたため、Coqに親しみのない場合は難しいと思いますが、
@@ -211,5 +219,12 @@ End Rev2.
 [1] 論理としてのProlog
 
 https://qiita.com/suharahiromichi/items/c4427a21a7d11f468e39
+
+
+[2] SWI-Prolog の Reverse述語
+
+https://qiita.com/suharahiromichi/items/1843b81490a7171051bd
+
+ *)
 
 (* END *)
