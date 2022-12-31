@@ -8,14 +8,17 @@ Coq-Elpi によるタクティクの作成（その1）
 *)
 
 (**
-定理証明系Coqには、Embeddable Lambda Prolog Interpreter (ELPI) によってタクティク（証明戦略）を
-作成するためのパッケージ ``Coq-Elpi``が用意されています。
+定理証明系Coqには、Embeddable Lambda Prolog Interpreter (ELPI [1]) によってタクティク（証明戦略）を
+作成するためのパッケージ ``Coq-Elpi``が用意されています([3]から[6])。
 
 ``Coq-Elpi``を使う最初のサンプルとして、``P -> Q -> (P /\ Q)``を証明するタクティクを作成してみます。
 
 この記事のソースコードは Coq のソースファイルであり、以下にあります。
 
 https://github.com/suharahiromichi/coq/tree/master/elpi/coq_elpi_tactic_sample_1.v
+
+最初に明かすと、これは文献[6]の勉強ノートにすぎません。
+正確な記述を要求される方は、参考文献[3]から[6]を参照してください。
 *)
 
 (**
@@ -26,9 +29,10 @@ https://github.com/suharahiromichi/coq/tree/master/elpi/coq_elpi_tactic_sample_1
 
 Coqによる証明は、通常は、コンテキストにある仮説（注1）をゴールに適用（apply）することに
 よっておこなれますが、もう少し下位のレベルで考えると、
-ゴールの型（命題）に対する項（証明）を与えていくことになります。カリー・ハワード対応ですね。
+ゴールの型（命題）に対する項（証明）をrefine ([2])で与えていくことになります。
+カリー・ハワード対応ですね。
 
-（注1） 通常 hypothesis の頭文字``H``を先頭に付けて呼ぶことが多い
+（注1） 通常 hypothesis の頭文字``H``を先頭に付けて呼ぶことが多いです。
 *)
 Lemma test1 : forall (P Q : Prop), P -> Q -> (P /\ Q).
 Proof.
@@ -56,17 +60,9 @@ Goal : P /\ Q
 ```
 *)
 refine (conj _ _).
-(**
-```
-Goal : P
-```
-*)
+(* Goal : P *)
   refine HP.
-(**
-```
-Goal : Q
-```
-*)
+(* Goal : Q *)
   refine HQ.
 Qed.
 
@@ -91,10 +87,10 @@ goal Ctx Trigger Type Proof Args
 が与えられます。ここで、
 
 - Ctxは、コンテキストの内容のリストで、リストの要素は次のどちらかになります。
-  - ``decl <項1> <清書用の名前> <項2>`` このとき、項2は項1の型
-  - ``def <項1> <清書用の名前> <項2> <項3>`` このとき、項2は項1の型、項3は定義
+  - ``decl <項1> <Coq表示用の名前> <項2>`` このとき、項2は項1の型
+  - ``def <項1> <Coq表示用の名前> <項2> <項3>`` このとき、項2は項1の型、項3は定義
 
-  ``def`` は、Coqのsetタクティクを使った場合なので、あまり使われません。
+  ``def`` は、Coqのsetタクティクを使った場合なので、この記事では使いません。
 
 -  Triggerは、制約論理のサスペンドした条件であり、これに値を代入することで、証明が進みます。
 前述の通り、そこにHoleがあった場合、そこが次の（サブ）ゴールになります。
@@ -106,14 +102,15 @@ goal Ctx Trigger Type Proof Args
 - Argsは、Elpiで定義したタクティクに与えられた引数のリストです。
 この記事では、タクティクに引数を与えないので、使いません。``[]``になっています。
 
+
 GLについては説明を省きます。
 
 ### elpi show
 
 Elpiで書いたタクティクの例として、Ctx、Proof、Typeを表示するだけのタクティクshowを示します。
-``elpi show``で呼び出すことができます。
+``elpi show``で呼び出すことができます([6])。
 
-ここでの表示は、Coq-Elpi内部のHOAS表現であり、Coqでの表現と大きく異なります。
+ここでの表示は、Coq-Elpi内部のHOAS表現([4])であり、Coqでの表現と大きく異なります。
 そのため、参考程度にしてください。
 *)
 Elpi Tactic show.
@@ -132,7 +129,7 @@ Elpi Typecheck.
 *)
 
 (**
-## Hole-サブゴールで証明する例
+<## Hole-サブゴールで証明する例
 
 test2に対応する例から考えます、test2をみるとrefineは3箇所、2種類使われています。
 ひとつは``refine (conj _ _)``であり、
@@ -140,7 +137,7 @@ test2に対応する例から考えます、test2をみるとrefineは3箇所、
 
 ### elpi split
 
-前者については、ゴールのTypeが``_ /\ _'' のときに、
+前者については、ゴールのTypeが``_ /\ _`` のときに、
 Triggerに``conj _ _``を代入すればよいのですが、
 これらはCoqの項であるので、``{{}}``で囲む必要があります。
 
@@ -165,7 +162,7 @@ Elpi Typecheck.
 Elpi Tactic assumption.
 Elpi Accumulate lp:{{
   solve (goal Ctx Trigger Type Proof Args as G) GL :-
-    std.mem Ctx (decl H _ Type), coq.say "decl " H ":" Type,
+    std.mem Ctx (decl H _ Type), coq.say "decl" H ":" Type,
 	  Trigger = H.
   solve _ _ :-
     coq.ltac.fail _ "no such hypothesis".
@@ -204,7 +201,7 @@ AとBは、Elpiの変数として扱う必要があるため、Coqの項``{{}}``
 
 Elpi Tactic pf_conj.
 Elpi Accumulate lp:{{
-  solve (goal Ctx Trigger {{ lp:A /\ lp:B }} Proof Aargs as G) GL :- !,
+  solve (goal Ctx Trigger {{ lp:A /\ lp:B }} Proof Aargs as G) GL :-
     std.mem Ctx (decl HA _ A), coq.say "decl" HA ":" A,
     std.mem Ctx (decl HB _ B), coq.say "decl" HB ":" B,
     Trigger = {{ conj lp:HA lp:HB }}.
@@ -223,5 +220,38 @@ Proof.
  intros P Q HP HQ.
  elpi pf_conj.
 Qed.
+
+(**
+# 参考文献
+
+[1] "λProlog (Lambda Prolog) の紹介"
+
+<https://qiita.com/suharahiromichi/items/a046859da0c0883e7304>
+
+
+[2] "Coq Docs - Basic proof writing - Tactics - refine"
+
+<https://coq.inria.fr/refman/proof-engine/tactics.html#coq:tacn.refine>
+
+
+[3] "Tutorial on the Elpi programming language"
+
+<https://lpcic.github.io/coq-elpi/tutorial_elpi_lang.html>
+
+
+[4] "Tutorial on the HOAS for Coq terms"
+
+<https://lpcic.github.io/coq-elpi/tutorial_coq_elpi_HOAS.html>
+
+
+[5] "Tutorial on Coq commands"
+
+<https://lpcic.github.io/coq-elpi/tutorial_coq_elpi_command.html>
+
+
+[6] "Tutorial on Coq tactics"
+
+<https://lpcic.github.io/coq-elpi/tutorial_coq_elpi_tactic.html>
+*)
 
 (* END *)
