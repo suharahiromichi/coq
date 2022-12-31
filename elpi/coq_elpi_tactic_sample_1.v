@@ -37,6 +37,16 @@ Coqによる証明は、通常は、コンテキストにある仮説（注1）�
 Lemma test1 : forall (P Q : Prop), P -> Q -> (P /\ Q).
 Proof.
   intros P Q HP HQ.
+(**
+```
+P : Prop
+Q : Prop
+HP : P
+HQ : Q
+============
+Goal : P /\ Q
+```
+*)
   refine (conj HP HQ).
 Qed.
 
@@ -49,17 +59,8 @@ Holeの部分が次の（サブ）ゴールになります。
 Lemma test2 : forall (P Q : Prop), P -> Q -> (P /\ Q).
 Proof.
   intros P Q HP HQ.
-(**
-```
-P : Prop
-Q : Prop
-HP : P
-HQ : Q
-============
-Goal : P /\ Q
-```
-*)
-refine (conj _ _).
+(* Goal : P /\ Q *)
+  refine (conj _ _).
 (* Goal : P *)
   refine HP.
 (* Goal : Q *)
@@ -129,7 +130,7 @@ Elpi Typecheck.
 *)
 
 (**
-<## Hole-サブゴールで証明する例
+## Hole-サブゴールで証明する例
 
 test2に対応する例から考えます、test2をみるとrefineは3箇所、2種類使われています。
 ひとつは``refine (conj _ _)``であり、
@@ -215,7 +216,7 @@ Elpi Accumulate lp:{{
     std.mem Ctx (decl HB _ B), coq.say "decl" HB ":" B,
     Trigger = {{ conj lp:HA lp:HB }}.
   solve _ _ :-
-    coq.ltac.fail _ "cannot a pf_conj".
+    coq.ltac.fail _ "cannot pf_conj".
 }}.
 Elpi Typecheck.
 
