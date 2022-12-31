@@ -87,8 +87,8 @@ goal Ctx Trigger Type Proof Args
 が与えられます。ここで、
 
 - Ctxは、コンテキストの内容のリストで、リストの要素は次のどちらかになります。
-  - ``decl <項1> <Coq表示用の名前> <項2>`` このとき、項2は項1の型
-  - ``def <項1> <Coq表示用の名前> <項2> <項3>`` このとき、項2は項1の型、項3は定義
+  - ``decl <項1> <Coq表示名> <項2>`` このとき、項2は項1の型
+  - ``def <項1> <Coq表示名> <項2> <項3>`` このとき、項2は項1の型、項3は定義
 
   ``def`` は、Coqのsetタクティクを使った場合なので、この記事では使いません。
 
@@ -155,9 +155,18 @@ Elpi Typecheck.
 (**
 ### elpi assumption
 
-後者(例えば``refine HP``)の場合は、ゴール``P``に対して、コンテキストから
+後者(例えば``refine HP``)の場合は、ゴール``P``に対して、コンテキストのリストから
 型``P``をもつ仮説``HP``を探し出して、それをrefineする必要があります。
-これをassumptionと名付けます。
+
+コンテキストから探し出すには、組込述語 stdlib ([7])のstd.memを使います。
+
+ゴールの型はsolveの呼び出しの``goal Ctx Trigger Type Proof Args``
+のTypeですから、Ctxの中から``decl H _ Type``である``H``を探すことになります。
+
+declの2番目の``_``は、Coq表示名ですが、これを手がかりにすることはしないので、
+無視するようにします。ゴールのHoleとは関係ありません。
+
+実はCoqのassumptionタクティクと同じ動きなので、assumptionと名付けます。
 *)
 Elpi Tactic assumption.
 Elpi Accumulate lp:{{
@@ -252,6 +261,11 @@ Qed.
 [6] "Tutorial on Coq tactics"
 
 <https://lpcic.github.io/coq-elpi/tutorial_coq_elpi_tactic.html>
+
+
+[7] ELPI の組込述語 (stdlib編)
+
+<https://qiita.com/suharahiromichi/items/1d200a9320e04ca21953>
 *)
 
 (* END *)
