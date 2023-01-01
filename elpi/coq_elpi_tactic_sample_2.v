@@ -154,7 +154,7 @@ Coqの項を渡す場合は、Coq側で``()``で囲む必要があります。
 # エラボレーション (``coq.elaborate-skeleton``)
 
 Holeが埋められるかを事前にチェックしてから、Triggerに
-セットします。
+セットします（実際に、穴を埋めるわけではない）。
 *)
 Elpi Tactic refine.
 Elpi Accumulate lp:{{
@@ -183,12 +183,22 @@ Qed.
 # α等価からの拡張 (``coq.unify-leq``)
 
 ゴールが``id Q`` のとき、これを ``Q``として証明できるようにします。
+
+``coq.unify-leq Ty' Ty`` は、cumulativityに``Ty' ≦ Ty``であることを
+チェックするだけなので、値がきまっていないといけません。
+
+そこで、``std.mem``が、バックトラックで、Ctxから取り出す、``Ty'``の値を使い、
+``coq.unify-leq {{Q}} {{id Q}}`` すなわち``{{Q}} ≦ {{id Q}}``
+から、``Ty' = Q``、``H = HQ``を見つけ出し、
+結果として、``Trigger = {{HQ}}``を実行できることになります。
 *)
+
 Elpi Tactic assumption2.
 Elpi Accumulate lp:{{
   solve (goal Ctx Trigger Ty Proof [] as G) GL :-
     std.mem Ctx (decl H _ Ty'),
-    coq.unify-leq Ty' Ty ok, % これを ``Ty' = Ty`` にると…
+    coq.unify-leq Ty' Ty ok,
+    % ↑これを ``Ty' = Ty`` にると、うまくいかない。
     coq.say "coq.unify-leq",
     coq.say "Ty'= " {coq.term->string Ty'},
     coq.say "Ty = " {coq.term->string Ty},
