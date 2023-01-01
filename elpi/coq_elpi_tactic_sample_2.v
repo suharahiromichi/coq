@@ -41,19 +41,21 @@ Coqのタクティカルの``repeat``は、タクティクが「実行できる�
 という動きになります。
 *)
 
-Elpi Tactic split.
+Elpi Tactic split.        (* split_ll_bis *)
 Elpi Accumulate lp:{{
   solve (goal Ctx Trigger {{ _ /\ _ }} Proof Args as G) GL :-
-    Trigger = {{ conj _ _ }}.
+    Trigger = {{ conj _ _ }},
+    coq.ltac.collect-goals Proof GL _.
+    % ↑サブゴールを明確にするために、追加するべきであるらしい。
+
   solve _ _ :-  % この節を外すと ``repat elpi split`` が動かない。
    coq.ltac.fail _ "not a conjunction".
 }}.
 Elpi Typecheck.
 
 (**
-[1]で定義したsplitは、これを守っているため。
+[1]で定義したsplitは、これを守っているため、repeatの中で意図通りに動きます。
 *)
-
 Lemma test22 : forall (P1 P2 P3 P4 P5 : Prop),
   P1 -> P2 -> P3 -> P4 -> P5 -> P1 /\ P2 /\ P3 /\ P4 /\ P5.
 Proof.
