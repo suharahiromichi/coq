@@ -156,7 +156,7 @@ Coqの項を渡す場合は、Coq側で``()``で囲む必要があります。
 Holeが埋められるかを事前にチェックしてから、Triggerに
 セットします。
 *)
-Elpi Tactic refine_wc.
+Elpi Tactic refine.
 Elpi Accumulate lp:{{
   solve (goal Ctx Trigger Type Proof [trm S] as G) GL :-
     coq.elaborate-skeleton S Ty T ok, !,
@@ -174,9 +174,37 @@ Elpi Typecheck.
 Lemma test_refine : forall (P Q : Prop), P -> (P -> Q) -> Q.
 Proof.
   intros P Q HP HPQ.
-  Fail elpi refine_wc (HPQ).
-  elpi refine_wc (HPQ _).
-  elpi refine_wc (HP).
+  Fail elpi refine (HPQ).
+  elpi refine (HPQ _).
+  elpi refine (HP).
+Qed.
+
+(**
+# α等価からの拡張 (``coq.unify-leq``)
+
+ゴールが``id Q`` のとき、これを ``Q``として証明できるようにします。
+*)
+Elpi Tactic assumption2.
+Elpi Accumulate lp:{{
+  solve (goal Ctx Trigger Ty Proof [] as G) GL :-
+    std.mem Ctx (decl H _ Ty'),
+    coq.unify-leq Ty' Ty ok, % これを ``Ty' = Ty`` にると…
+    coq.say "coq.unify-leq",
+    coq.say "Ty'= " {coq.term->string Ty'},
+    coq.say "Ty = " {coq.term->string Ty},
+    coq.say "H  = " {coq.term->string H},
+    Trigger = H.
+  solve _ _ :-
+    coq.ltac.fail _ "no such hypothesis".
+}}.
+Elpi Typecheck.
+
+Lemma test_assumption2 : forall (P Q : Prop), P -> Q -> P /\ (id Q).
+Proof.
+  intros P Q HP HQ.
+  split.
+  - elpi assumption2.
+  - elpi assumption2.
 Qed.
 
 (**
