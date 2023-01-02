@@ -21,6 +21,122 @@ https://github.com/suharahiromichi/coq/tree/master/elpi/coq_elpi_tactic_sample_2
 From elpi Require Import elpi.
 
 (**
+# 証明エンジン　(``coq.ltac.collect-goals``)
+
+[1]では、solveの第1引数の``goal Ctx Trigger Type Proof Args``の
+Triggerに値を代入することで証明が進み、そここにHole(``_``)があると、
+それが新たな（サブ）ゴールになると説明しました。
+
+これはCoqの証明エンジンの機能ですが、それを明示的に呼び出して
+処理をおこなうのは、組込述語``coq.ltac.collect-goals``です(注1)。
+[2]では、Triggerへの代入と、これの呼び出しをまとめて``refine``として定義されています。
+（変数名を変更しました。）
+
+```
+pred refine i:term, i:goal, o:list sealed-goal.
+refine T (goal _ Trigger _ Proof _) GL :-
+  Trigger = T, coq.ltac.collect-goals Proof GL _.
+```
+
+(注1) 
+- ``coq.ltac.collect-goals``　は、``src/coq_elpi_builtins.ml``
+- ``refine`` は。``src/elpi/elpi-ltac.elpi``
+
+
+以下では、Triggerへの代入はおこなわず、組込述語``refine``を使うようにします。
+
+なお、Elpiのタクティクに引数を渡す箇所(``[trm S]``)は、後述します。
+*)
+Elpi Tactic refine0.
+Elpi Accumulate lp:{{
+  solve (goal Ctx Trigger Type Proof [trm S] as G) GL :-
+    Trigger = S,
+    coq.ltac.collect-goals Proof GL _,
+    coq.say "goal : " G,
+    coq.say "new goal : " GL.
+  solve (goal _ _ _ _ [trm S] as G) GL :-
+    Msg is {coq.term->string S} ^ " cannot refine",
+    coq.ltac.fail _ Msg.
+}}.
+Elpi Typecheck.
+
+Lemma test_refine0 : forall (P Q : Prop), P -> (P -> Q) -> Q.
+Proof.
+  intros P Q HP HPQ.
+  elpi refine0 (HPQ _).
+  elpi refine0 (HP).
+Qed.
+
+(**
+# エラボレーション (``coq.elaborate-skeleton``)
+
+Holeが埋められるかを事前にチェックしてから、Triggerに
+セットします（実際に、穴を埋めるわけではない）。
+*)
+Elpi Tactic refine1.
+Elpi Accumulate lp:{{
+  solve (goal Ctx Trigger Type Proof [trm S] as G) GL :-
+    coq.elaborate-skeleton S Ty T ok, !,
+    coq.say "coq.elaborate-skeleton",
+    coq.say "S  = " {coq.term->string S},
+    coq.say "Ty = " {coq.term->string Ty},
+    coq.say "T  = " {coq.term->string T},
+    refine T G GL.    % Trigger = T.
+  solve (goal _ _ _ _ [trm S]) _ :-
+  Msg is {coq.term->string S} ^ " does not fit",
+    coq.ltac.fail _ Msg.
+}}.
+Elpi Typecheck.
+
+Lemma test_refine1 : forall (P Q : Prop), P -> (P -> Q) -> Q.
+Proof.
+  intros P Q HP HPQ.
+  Fail elpi refine1 (HPQ).
+  elpi refine1 (HPQ _).
+  elpi refine1 (HP).
+Qed.
+
+(**
+# α等価からの拡張 (``coq.unify-leq``)
+
+``refine``は、λ式におけるα等価（束縛変数の名前の違いをのぞいて同じ）
+である場合だけ同じ項と判断します。
+この制限を緩和して、ゴールが``id Q`` のとき、これを ``Q``とみなして証明できるようにします。
+
+``coq.unify-leq Ty' Ty`` は、cumulativityに``Ty' ≦ Ty``であることを
+チェックするだけなので、値がきまっていないといけません。
+
+そこで、``std.mem``が、バックトラックで、Ctxから取り出す、``Ty'``の値を使い、
+``coq.unify-leq {{Q}} {{id Q}}`` すなわち``{{Q}} ≦ {{id Q}}``
+から、``Ty' = Q``、``H = HQ``を見つけ出し、
+結果として、``Trigger = {{HQ}}``を実行できることになります。
+*)
+
+Elpi Tactic assumption2.
+Elpi Accumulate lp:{{
+  solve (goal Ctx Trigger Ty Proof [] as G) GL :-
+    std.mem Ctx (decl H _ Ty'),
+    coq.unify-leq Ty' Ty ok,
+    % ↑これを ``Ty' = Ty`` にると、うまくいかない。
+    coq.say "coq.unify-leq",
+    coq.say "Ty'= " {coq.term->string Ty'},
+    coq.say "Ty = " {coq.term->string Ty},
+    coq.say "H  = " {coq.term->string H},
+    refine H G GL.    % Trigger = H.
+  solve _ _ :-
+    coq.ltac.fail _ "no such hypothesis".
+}}.
+Elpi Typecheck.
+
+Lemma test_assumption2 : forall (P Q : Prop), P -> Q -> P /\ (id Q).
+Proof.
+  intros P Q HP HQ.
+  split.
+  - elpi assumption2.
+  - elpi assumption2.
+Qed.
+
+(**
 # タクティクのエラー (``coq.ltac.fail``)
 
 Elpiで書いたタクティクが、Elpiとしして
@@ -44,10 +160,7 @@ Coqのタクティカルの``repeat``は、タクティクが「実行できる�
 Elpi Tactic split.        (* split_ll_bis *)
 Elpi Accumulate lp:{{
   solve (goal Ctx Trigger {{ _ /\ _ }} Proof Args as G) GL :-
-    Trigger = {{ conj _ _ }},
-    coq.ltac.collect-goals Proof GL _.
-    % ↑サブゴールを明確にするために、追加するべきであるらしい。
-
+    refine {{ conj _ _ }} G GL.
   solve _ _ :-  % この節を外すと ``repat elpi split`` が動かない。
    coq.ltac.fail _ "not a conjunction".
 }}.
@@ -151,73 +264,6 @@ Coqの項を渡す場合は、Coq側で``()``で囲む必要があります。
 
 前節の例を参照してください。
 *)
-
-(**
-# エラボレーション (``coq.elaborate-skeleton``)
-
-Holeが埋められるかを事前にチェックしてから、Triggerに
-セットします（実際に、穴を埋めるわけではない）。
-*)
-Elpi Tactic refine.
-Elpi Accumulate lp:{{
-  solve (goal Ctx Trigger Type Proof [trm S] as G) GL :-
-    coq.elaborate-skeleton S Ty T ok, !,
-    coq.say "coq.elaborate-skeleton",
-    coq.say "S  = " {coq.term->string S},
-    coq.say "Ty = " {coq.term->string Ty},
-    coq.say "T  = " {coq.term->string T},
-    Trigger = T.
-  solve (goal _ _ _ _ [trm S]) _ :-
-    Msg is {coq.term->string S} ^ " does not fit",
-    coq.ltac.fail _ Msg.
-}}.
-Elpi Typecheck.
-
-Lemma test_refine : forall (P Q : Prop), P -> (P -> Q) -> Q.
-Proof.
-  intros P Q HP HPQ.
-  Fail elpi refine (HPQ).
-  elpi refine (HPQ _).
-  elpi refine (HP).
-Qed.
-
-(**
-# α等価からの拡張 (``coq.unify-leq``)
-
-ゴールが``id Q`` のとき、これを ``Q``として証明できるようにします。
-
-``coq.unify-leq Ty' Ty`` は、cumulativityに``Ty' ≦ Ty``であることを
-チェックするだけなので、値がきまっていないといけません。
-
-そこで、``std.mem``が、バックトラックで、Ctxから取り出す、``Ty'``の値を使い、
-``coq.unify-leq {{Q}} {{id Q}}`` すなわち``{{Q}} ≦ {{id Q}}``
-から、``Ty' = Q``、``H = HQ``を見つけ出し、
-結果として、``Trigger = {{HQ}}``を実行できることになります。
-*)
-
-Elpi Tactic assumption2.
-Elpi Accumulate lp:{{
-  solve (goal Ctx Trigger Ty Proof [] as G) GL :-
-    std.mem Ctx (decl H _ Ty'),
-    coq.unify-leq Ty' Ty ok,
-    % ↑これを ``Ty' = Ty`` にると、うまくいかない。
-    coq.say "coq.unify-leq",
-    coq.say "Ty'= " {coq.term->string Ty'},
-    coq.say "Ty = " {coq.term->string Ty},
-    coq.say "H  = " {coq.term->string H},
-    Trigger = H.
-  solve _ _ :-
-    coq.ltac.fail _ "no such hypothesis".
-}}.
-Elpi Typecheck.
-
-Lemma test_assumption2 : forall (P Q : Prop), P -> Q -> P /\ (id Q).
-Proof.
-  intros P Q HP HQ.
-  split.
-  - elpi assumption2.
-  - elpi assumption2.
-Qed.
 
 (**
 # 参考文献
