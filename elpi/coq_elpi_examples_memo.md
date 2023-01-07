@@ -5,24 +5,24 @@ https://github.com/LPCIC/coq-elpi/tree/master/examples
 
 2023/1/7 @suharahiromichi
 
-
+q
 
 
 VSCodeでエラーになる場合は、VSCodeを再起動すること。
 
-1. example_curry_howard_tactics.v
+##  example_curry_howard_tactics.v
 
 - intro ダクティクの実装例
 
 - auto ダクティクの実装例
 
 
-1. example_data_base.v
+##  example_data_base.v
 
 - Dbの一般的な使い方。
 
 
-1. example_fuzzer.v
+##  example_fuzzer.v
 
 - fuzzer コマンド
 
@@ -40,7 +40,7 @@ In 2011, CompCert was included in a landmark study on fuzz-testing a
 large number of real-world C compilers using the CSmith tool.
 
 
-1. example_generalize.v
+##  example_generalize.v
 
 - generalize コマンド
 
@@ -50,14 +50,14 @@ Coq項{{1}} をλ変数にするコマンド。ただし結果はPrint。
 ``(2) ====> (fun x => S x)``
 
 
-1. example_import_projections.v
+##  example_import_projections.v
 
 - import.projections コマンド
 
 不明
 
 
-1. example_record_expansion.v
+##  example_record_expansion.v
 
 - record.expand コマンド
 
@@ -72,7 +72,7 @@ Is expanded to:
    Definition f1 v1 v2 := Body(v1,v2).
 ```
 
-1. example_record_to_sigma.v
+##  example_record_to_sigma.v
 
 - UM.expand コマンド
 
@@ -91,7 +91,7 @@ Inductive sigT (A:Type) (P : A -> Type) : Type :=
 （参考：通常の exists は、sig であり、``P : A -> Prop`` であるところが違う。``{x : A | P x} := sig A P `` ）
 
 
-1. example_reduction_surgery.v
+##  example_reduction_surgery.v
 
 - reduce タクティク
 
@@ -113,8 +113,7 @@ ToRed.x + ToRed.y = (let z := 1 in S z)
 2 = (let z := 1 in S z)
 ```
 
-1. example_reflexive_tactic.v
-
+## example_reflexive_tactic.v
 
 - monoid タクティク (reflexive normalizer)
 
