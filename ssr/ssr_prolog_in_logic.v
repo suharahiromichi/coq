@@ -7,6 +7,8 @@
 2022/12/18
 
 2022/12/19 ``ex_intro _`` を使うように修正した。
+
+2023/1/21 変数名を1文字にした。
  *)
 
 (**
@@ -88,7 +90,7 @@ Prologのプログラムでは、次のように表します。
 複数のホーン節 $ H_{i} $ とひとつのゴール節 $ G $ からなります。
 
 ```math
-H_{1}~\land~H_{2}~\land~…\land~H_{k}~\to~G
+(H_{1}~\land~H_{2}~\land~…\land~H_{k})~\to~G
 ```
 
 Prologのプログラムは、ホーン節を並べたものです。
@@ -108,17 +110,17 @@ Prologのプログラムは、ホーン節を並べたものです。
 例によって、リストの反転を考えてみます。
 
 ```
-rev(L, RL) :-
-    rev3(L, [],  RL).
-rev3([X|XS], ACC, RL) :-
-     rev3(XS, [X|ACC], RL).
-rev3([], RL, RL).
+rev(L, R) :-
+    rev3(L, [],  R).
+rev3([X|L], A, R) :-
+     rev3(L, [X|A], R).
+rev3([], R, R).
 ```
 
 これに対して、ふたつのゴール、ゴール1
 
 ```
-?- rev([1, 2, 3], RL).
+?- rev([1, 2, 3], R).
 ```
 
 と、ゴール2について
@@ -131,31 +133,31 @@ rev3([], RL, RL).
 
 
 なお、λPrologの文法だと次のようになります。
-この場合は、述語の引数のして方法が違うだけですね。
+この場合は、述語の引数の指定の方法が違うだけですね。
 ```
 pred rev i:list A, o:list A.
-rev L RL :-
-    rev3 L [] RL.
-rev3 [X|XS] ACC RL :-
-     rev3 XS [X|ACC] RL.
-rev3 [] RL RL.
+rev L R :-
+    rev3 L [] R.
+rev3 [X|L] A R :-
+     rev3 L [X|A] R.
+rev3 [] R R.
 ```
 
 ホーン節の部分を論理式で表すと
 
 ```math
 
-\forall L~\forall RL~[rev3(L, [], RL)~\to~rev(L, RL)]
+\forall L~\forall R~[rev3(L, [], R)~\to~rev(L, R)]
 \\\land\\
-\forall X~\forall XS~\forall ACC~\forall RL~[rev3(XS, [X|ACC], RL~\to~rev3([X|XS],ACC,RL)]
+\forall X~\forall L~\forall A~\forall R~[rev3(L, [X|A], R~\to~rev3([X|L],A,R)]
 \\\land\\
-\forall RL~[true~\to~rev3([], RL, RL)]
+\forall R~[true~\to~rev3([], R, R)]
 ```
 
 ゴール1は
 
 ```math
-\exists RL~[rev([1, 2, 3], RL)]
+\exists R~[rev([1, 2, 3], R)]
 ```
 
 ゴール2は
@@ -175,22 +177,22 @@ Variable rev3 : list nat -> list nat -> list nat -> Prop.
 ここでは便宜的にDefinitionでまとめていますが、論理式としての意味は変わりません。
 *)
 Definition prog0 :=
-  (forall L RL, rev3 L [::] RL -> rev L RL)
+  (forall L R, rev3 L [::] R -> rev L R)
   /\
-    (forall X XS ACC RL, rev3 XS (X :: ACC) RL -> rev3 (X :: XS) ACC RL)
+    (forall X L A R, rev3 L (X :: A) R -> rev3 (X :: L) A R)
   /\
-    (forall RL, rev3 [::] RL RL).
+    (forall R, rev3 [::] R R).
       
 (**
 ゴールの部分は
 *)
-Definition goal1 := exists RL, rev [:: 1; 2; 3] RL.
+Definition goal1 := exists R, rev [:: 1; 2; 3] R.
 Definition goal2 := exists L, rev L [:: 9; 8; 7].
 
 (**
 Coqで証明してみます。
 Coqにも導出原理に基づく自動証明のタクティク``auto``があるのでそれを使ってみます。
-``apply: (ex_intro _)`` で、``∃ RL``の``RL``を Coq のメタ変数(``_``、
+``apply: (ex_intro _)`` で、``∃ R``の``R``を Coq のメタ変数(``_``、
 表示上は``?Goal``になる)に割り当てています。
 *)
 Goal prog0 -> goal1.
@@ -277,7 +279,7 @@ Prologプログラムの動作の理解は「直観的」なのではないか�
 
 実は、Prologでgoal2に対して実行すると無限ループになります。
 なぜなら、最初のrev3の実行``rev3 L [] [9,8,7]``に対して、*節をならべた順番に従って* 
-``rev3 [X|XS] ACC RL :- rev3 XS [X|ACC] RL.``が選ばれます。
+``rev3 [X|L] A R :- rev3 L [X|A] R.``が選ばれます。
 これは、第3引数は再帰呼び出しに対して、リストの分解が行われないため、
 （コンストラクタが構造的に減っていかないため）再帰呼び出しの終了判定ができず、
 無限ループになってしまうわけです。
