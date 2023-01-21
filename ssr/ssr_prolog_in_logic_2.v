@@ -223,7 +223,7 @@ https://qiita.com/suharahiromichi/items/c4427a21a7d11f468e39
 
 [2] SWI-Prolog の Reverse述語
 
-https://qiita.com/suharahiromichi/items/1843b81490a7171051bd
+https://qiita.com/suharahiromichi/items/37de0c79f043836199b6
 
  *)
 
