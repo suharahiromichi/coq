@@ -13,6 +13,14 @@ Coq-Elpi Coq項のHOASについて
 https://qiita.com/suharahiromichi/private/23ecf3c91204d43a8b81
 
 https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_hoas.v
+
+この文書は、
+
+Coq項のHOASについてのチュートリアル
+
+https://qiita.com/suharahiromichi/private/62359119f7f880f94d48
+
+からの抜粋である。
 *)
 
 (**
@@ -40,8 +48,6 @@ Moduleの中で定義された場合でも、Module名を前に付けてグロ�
   - Type
 
 これらは定義できませんが、``Type``は内部的には、``Type_i``のレベルi（階層）を持っています。
-
-- Context での定義
 *)
 
 From elpi Require Import elpi.
@@ -65,14 +71,17 @@ type global     gref -> term.
 *)
 
 (**
-|id       | (‡)  　　　  | gref      | term               | term       |
-|:--------|:-----------|:-----------|:-------------------|:-----------|
-|"Nat.add"| «Nat.add»  |const «Nat.add» | global (indt «Nat.add»)| {{Nat.add}}    |
-| "nat"   | «nat»      |indt «nat»  | global (indt «nat»)| {{nat}}    |
-| "O"     | «O»        |indc «O»    | global (indc «O»)  | {{O}}      |
+|id       | (‡)  　　　  | gref      | gref         | term               | term       |
+|:--------|:-----------|:-----------|:-------------|:-------------------|:-----------|
+|"Nat.add"| «Nat.add»  |const «Nat.add» |{{:gref Nat.add}} | global (indt «Nat.add»)| {{Nat.add}}    |
+| "nat"   | «nat»      |indt «nat»  |{{:gref nat}} | global (indt «nat»)| {{nat}}    |
+| "O"     | «O»        |indc «O»    |{{:gref O}}   | global (indc «O»)  | {{O}}      |
+
+
 
 (‡) constant, inductive, constructor
 
+``{{ ... }}`` は ``{{:coq ... }}`` の略。
 *)
 
 (**
@@ -123,6 +132,7 @@ type sort       sort -> term.
 
 (**
 | univ    　| sort          | term                | term       |
+|:----------|:-------------|:---------------------|:-----------|
 | «set»     | typ «set»     | sort (typ «set»)    | {{Set}}    |
 | -         | prop          | sort prop           | {{Prop}}   |
 | -         | sprop         | sort sprop          | {{SProp}}  |
@@ -153,15 +163,36 @@ type fun        name -> term -> (term -> term) -> term.
 type prod       name -> term -> (term -> term) -> term.
 type fix        name -> int -> term -> (term -> term) -> term.
 type match      term -> term -> list term -> term.
+type let        name -> term -> term -> (term -> term) -> term.
 ```
 *)
 
 (**
 # Context
+
+```
+prod と同じだが、predとして実行される。
+type @pi-decl   name -> term -> (term -> term) -> pred.
+
+let と同じだが、predとして実行される。
+type @pi-def    name -> term -> term -> (term -> term) -> pred.
+```
 *)
 
+Elpi Query lp:{{
+  T = {{ fun x : nat => x + 1 }},
+  coq.typecheck T _ ok,
+  T =  fun N Ty Bo,
+                   /* ここの括弧は省略できる */
+  @pi-decl N Ty (x\ coq.typecheck (Bo x) _ ok)
+}}.
 
-
-
+Elpi Query lp:{{
+  T = {{ fun x : nat => x + 1 }},
+  coq.typecheck T _ ok,
+  T =  fun N Ty Bo,
+                     /* ここの括弧は省略できる */
+  @pi-def N Ty {{1}} (x\ coq.typecheck (Bo x) _ ok)
+}}.
 
 (* END *)
