@@ -88,6 +88,8 @@ type global     gref -> term.
 ## ELPIの組込述語
 
 ```
+typeabbrev id string.
+
 pred coq.locate i:id, o:gref.
 pred coq.env.typeof i:gref, o:term.
 ```
