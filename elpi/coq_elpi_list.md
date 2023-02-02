@@ -13,10 +13,6 @@ https://qiita.com/suharahiromichi/private/62fd01d0000b29156d2e
 https://gitlab.com/proofcafe/elpi/-/blob/main/tutorial_elpi_lang_jp.v
 
 
-## まとめ
-
-(まだない)
-
 
 # HOAS
 
@@ -61,7 +57,9 @@ https://gitlab.com/proofcafe/elpi/-/blob/main/tutorial_coq_elpi_command_jp.v
 
 ## まとめ
 
-(まだない)
+https://qiita.com/suharahiromichi/items/bef4ff2d7c2a15654c77
+
+https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_command.v
 
 
 # Tactic
