@@ -169,6 +169,24 @@ Elpi Accumulate lp:{{
 Elpi Typecheck.
 
 Elpi elaborate_arg (1 = true).
+(**
+Tですでにコアーションが適用されるようになったため、
+エラボレーション結果のT1と等しくなってしまう。
+
+```
+T= app [global (indt «eq»),
+      global (indt «nat»), 
+      app [global (indc «S»), global (indc «O»)], 
+      app [global (const «bool2nat»), global (indc «true»)]]
+
+T1= app [global (indt «eq»),
+      global (indt «nat»), 
+      app [global (indc «S»), global (indc «O»)], 
+      app [global (const «bool2nat»), global (indc «true»)]]
+
+Ty= sort prop
+```
+*)
 
 (**
 ## constructors_num コマンド
@@ -180,20 +198,25 @@ Elpi Accumulate lp:{{
       int->nat N {{ S lp:X }} :- M is N - 1, int->nat M X.
 
       main [str IndName, str Name] :-
-            coq.say IndName,
+            coq.say "IndName=" IndName,
             coq.locate IndName (indt GR),
-            coq.say GR,
+            coq.say "GR=" GR,
             coq.env.indt GR _ _ _ _ Kn _,
-            coq.say Kn,
+            coq.say "Kn=" Kn,
             std.length Kn N,
-            coq.say N,
+            coq.say "N=" N,
             int->nat N Nnat,
-            coq.say Nnat,
-            coq.say Name,
+            coq.say "Nnat=" Nnat,
+            coq.say "Name=" Name,
             coq.env.add-const Name Nnat _ _ _.
       }}.
 Elpi Typecheck.
 
-Elpi constructors_num bool nK_bool.
+Elpi constructors_num bool nK_bool.       (* 2 *)
+Print nK_bool.                            (* nK_bool = 2 : nat *)
+
+Inductive windrose : Set := N | E | W | S.
+Elpi constructors_num windrose nK_windrose.
+Print nK_windrose.                        (* nK_windrose = 4 : nat *)
 
 (* END *)
