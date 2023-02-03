@@ -115,7 +115,7 @@ Hello
 (**
 # coq-builtin.elpi
 
-## constant
+## Constant
 
 ```
 pred coq.env.add-const i:id, i:term, i:term, i:opaque?, o:constant.
@@ -146,6 +146,41 @@ Elpi defint one 1.
 Print one.                    (* = 1 : nat *)
 
 (**
+## Inductive
+
+```
+pred coq.env.add-indt i:indt-decl, o:inductive.
+pred coq.env.indt-decl i:inductive, o:indt-decl.
+```
+*)
+Inductive test : Set := t1.
+
+Elpi Command defindt.
+Elpi Accumulate lp:{{
+pred prime i:id, o:id.
+  prime S S1 :- S1 is S ^ "'".
+
+main [str Name] :-
+  coq.locate Name (indt Indt),
+  coq.env.indt-decl Indt Decl,
+  Decl = inductive Id Bool Arity (c0 \ [constructor T (arity c0)]),
+  coq.say Decl,
+  prime Id Id',
+  prime T T',
+  Decl' = inductive Id' Bool Arity (c0 \ [constructor T' (arity c0)]),
+  coq.say Decl',
+  std.assert-ok!
+      (coq.typecheck-indt-decl Decl')
+      "can't be abstracted",
+  std.spy (coq.env.add-indt Decl' Indt').
+}}.
+Elpi Typecheck.
+
+Print test.             (* Inductive test : Set :=  t1 : test. *)
+Elpi defindt test.
+Print test'.            (* Inductive test' : Set :=  t1' : test'. *)
+
+(**
 # コマンドの例
 *)
 (**
@@ -164,9 +199,9 @@ Elpi check_arg (1 = 0).
 ```
 The type of 
 app [global (indt «eq»),
-      global (indt «nat»), 
-      app [global (indc «S»), global (indc «O»)],
-      global (indc «O»)]
+     global (indt «nat»), 
+     app [global (indc «S»), global (indc «O»)],
+     global (indc «O»)]
 is
 sort prop
 ```
