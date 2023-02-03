@@ -38,7 +38,7 @@ Elpi hello z.w.         (* Hello [str z.w] *)
 Define や Inductive の命令は、ぞれ全体ではCoq項ではないので、
 それを渡すために、特別なコンストラクタがある。
 
-### Defininitio
+### Defininition
 
 ```
 type const-decl   id -> option term -> arity -> argument.
@@ -111,6 +111,39 @@ Hello
        end-record))]
 ```
 *)
+
+(**
+# coq-builtin.elpi
+
+## constant
+
+```
+pred coq.env.add-const i:id, i:term, i:term, i:opaque?, o:constant.
+pred coq.env.const i:constant, o:option term, o:term.
+```
+*)
+(**
+整数をDefinition するコマンド
+*)
+Elpi Command defint.
+Elpi Accumulate lp:{{
+pred int->nat i:int, o:term.
+int->nat N {{ 0 }} :- N =< 0, !.
+int->nat N {{ S lp:X }} :- M is N - 1, int->nat M X.
+
+main [str Name, int N] :-
+  int->nat N Nnat,
+  coq.env.add-const Name Nnat {{nat}} _ _,
+  coq.locate Name (const Const),
+  coq.env.const Const Val Ty,
+  coq.say "Const=" Const,
+  coq.say "Value=" Val,
+  coq.say "Type=" Ty.
+}}.
+Elpi Typecheck.
+
+Elpi defint one 1.
+Print one.                    (* = 1 : nat *)
 
 (**
 # コマンドの例
