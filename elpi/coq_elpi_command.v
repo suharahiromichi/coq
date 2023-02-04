@@ -1,3 +1,27 @@
+(**
+Coq-Elpi によるコマンドの作成
+=====================
+
+@suharahiromichi
+
+2023/2/4
+
+2023/2/18 ProofCafe
+*)
+
+(**
+# はじめに
+
+ELPIでCoqのコマンドを作成してみます。
+ここでのコマンドは Definition や Inductive などの
+Vernacularコマンドというべきかもしれません。
+
+``coq_elpi_hoas.v`` で、Coq項（Gallina項）のHOASの説明をしましたが、
+Vernacularコマンドは、Gallina項でないことに注意してください。
+
+これらのコマンドに対するHOASがあるわけではなく、Vernacular コマンド
+それぞれにELPIの組込述語が用意されています。
+*)
 From elpi Require Import elpi.
 
 (**
@@ -125,25 +149,34 @@ pred coq.env.const i:constant, o:option term, o:term.
 (**
 整数をDefinition するコマンド
 *)
-Elpi Command defint.
+Elpi Command defnat_inc.
 Elpi Accumulate lp:{{
 pred int->nat i:int, o:term.
 int->nat N {{ 0 }} :- N =< 0, !.
 int->nat N {{ S lp:X }} :- M is N - 1, int->nat M X.
 
-main [str Name, int N] :-
-  int->nat N Nnat,
-  coq.env.add-const Name Nnat {{nat}} _ _,
+pred nat->int i:term, o:int.
+nat->int {{ 0 }} 0.
+nat->int {{ S lp:X }} N :- nat->int X M, N is M + 1.
+
+pred prime i:id, o:id.
+prime S S1 :- S1 is S ^ "'".
+
+main [str Name] :-
   coq.locate Name (const Const),
-  coq.env.const Const Val Ty,
-  coq.say "Const=" Const,
-  coq.say "Value=" Val,
-  coq.say "Type=" Ty.
+  coq.env.const Const (some Nnat) {{nat}},
+  nat->int Nnat N,
+  prime Name Name1,
+  N1 is N + 1,
+  int->nat N1 Nnat1,
+  coq.env.add-const Name1 Nnat1 {{nat}} _ _.
 }}.
 Elpi Typecheck.
 
-Elpi defint one 1.
+Definition one := 1.
+Elpi defnat_inc one.
 Print one.                    (* = 1 : nat *)
+Print one'.                   (* = 2 : nat *)
 
 (**
 ## Inductive
@@ -155,7 +188,7 @@ pred coq.env.indt-decl i:inductive, o:indt-decl.
 *)
 Inductive test : Set := t1.
 
-Elpi Command defindt.
+Elpi Command defindt_p.
 Elpi Accumulate lp:{{
 pred prime i:id, o:id.
   prime S S1 :- S1 is S ^ "'".
@@ -163,11 +196,11 @@ pred prime i:id, o:id.
 main [str Name] :-
   coq.locate Name (indt Indt),
   coq.env.indt-decl Indt Decl,
-  Decl = inductive Id Bool Arity (c0 \ [constructor T (arity c0)]),
+  Decl = inductive Idt Bool Arity (c0 \ [constructor Idc (arity c0)]),
   coq.say Decl,
-  prime Id Id',
-  prime T T',
-  Decl' = inductive Id' Bool Arity (c0 \ [constructor T' (arity c0)]),
+  prime Idt Idt',
+  prime Idc Idc',
+  Decl' = inductive Idt' Bool Arity (c0 \ [constructor Idc' (arity c0)]),
   coq.say Decl',
   std.assert-ok!
       (coq.typecheck-indt-decl Decl')
@@ -177,7 +210,7 @@ main [str Name] :-
 Elpi Typecheck.
 
 Print test.             (* Inductive test : Set :=  t1 : test. *)
-Elpi defindt test.
+Elpi defindt_p test.
 Print test'.            (* Inductive test' : Set :=  t1' : test'. *)
 
 (**
