@@ -57,6 +57,15 @@ Elpi hello "y".         (* Hello [str y] *)
 Elpi hello z.w.         (* Hello [str z.w] *)
 
 (**
+注意：
+
+ここでは、hello の出力結果をコピーペーストしているが、
+これをコードに貼り付ける場合は、constantなどの「«»」で囲まれたトークンは書けないこと、
+hello の出力では、id (string) の引用符「""」が消えていることに、注意すること。
+*)
+
+
+(**
 ## Coqの命令
 
 Define や Inductive の命令は、ぞれ全体ではCoq項ではないので、
@@ -91,12 +100,17 @@ Hello
 kind indt-decl type.
 kind indc-decl type.
 type indt-decl    indt-decl -> argument.
+type parameter    id -> implicit_kind -> term -> (term -> indt-decl) -> indt-decl.
+%                                                  　　　　↑ inductive .....
 type inductive    id -> bool -> arity -> (term -> list indc-decl) -> indt-decl.
                       % tt means inductive, ff coinductive
 type constructor  id -> arity -> indc-decl.
 ```
 *)
 
+(**
+### 型引数を持たない場合
+*)
 Elpi hello Inductive windrose : Set := N | E | W | S.
 (**
 ```
@@ -110,6 +124,25 @@ Hello
                    constructor E (arity c0), 
                    constructor W (arity c0),
                    constructor S (arity c0)])]
+```
+*)
+
+(**
+### 型引数を持つ場合
+*)
+Elpi hello Inductive tree (A : Set) : Set := leaf : tree A | node : tree A -> A -> tree A -> tree A.
+(**
+```
+Hello 
+[indt-decl
+  (parameter A explicit (sort (typ «Set»))
+   c0 \
+     inductive tree
+             tt
+             (arity (sort (typ «Set»)))
+             c1 \
+                  [constructor leaf (arity c1),
+                   constructor node (arity (prod `_` c1 c2 \ prod `_` c0 c3 \ prod `_` c1 c4 \ c1))])]
 ```
 *)
 
