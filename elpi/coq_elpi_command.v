@@ -157,15 +157,38 @@ type end-record  record-decl.
 ```
 *)
 
+(**
+### 型引数を持たない場合
+*)
 Elpi hello Record test := { f1 : nat; f2 : bool }.
 (**
 ```
 Hello 
 [indt-decl
   (record test (sort (typ «Set»)) Build_test 
-	(field [coercion off, canonical tt] f1 (global (indt «nat»))  c0 \
-       field [coercion off, canonical tt] f2 (global (indt «bool»)) c1 \
-       end-record))]
+	(     field [coercion off, canonical tt] f1 (global (indt «nat»))
+       c0 \ field [coercion off, canonical tt] f2 (global (indt «bool»))
+       c1 \ end-record))]
+```
+*)
+
+(**
+### 型引数を持つ場合
+
+Structure でも Record でも同じ。
+*)
+Elpi hello Structure test2 (A : Set) := { valid : nat; value : A }.
+(**
+```
+Hello 
+[indt-decl
+  (parameter A explicit (sort (typ «Set»))
+    c0 \
+      record test2 (sort (typ «Set»)) Build_test2 
+      (     field [coercion off, canonical tt] valid (global (indt «nat»))
+       c1 \ field [coercion off, canonical tt] value c0
+       c2 \ end-record))]
+
 ```
 *)
 
