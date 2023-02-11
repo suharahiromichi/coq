@@ -197,4 +197,51 @@ Elpi Query lp:{{
   @pi-def N Ty {{1}} (x\ coq.typecheck (Bo x) _ ok)
 }}.
 
+(**
+# 次回の予習
+
+Coqの``Difinition``や``Inductive``に関する事項は、``coq_elpi_command.v``で扱います。
+
+Coqで定義された定義の中身を取り出すには、``coq.env.const`` を
+つかいますが、これには、termやgrefではなく、constant を与えることに注意してください。
+
+同様にInductiveで定義された定義の中身を取り出すには、``coq.env.indt-decl`` を
+つかいます。inductive を与えます。
+*)
+
+Print Nat.add.
+Elpi Query lp:{{
+  coq.locate "Nat.add" (const F),
+  coq.env.const F (some Bo) Ty,
+  coq.say "Body=" F,
+  coq.say "Type=" Ty
+}}.
+
+Print nat.
+Elpi Query lp:{{
+  coq.locate "nat" (indt Indt),
+  coq.env.indt-decl Indt Decl,
+  coq.say "Indt=" Indt,
+  coq.say "Decl=" Decl
+}}.
+
+(**
+# 練習問題
+
+factrial を定義して、そのCoq項の HOASを取り出してください。
+*)
+
+Fixpoint f n :=
+  match n with
+  | 0 => 1
+  | S n => S n * f n
+ end.
+
+ Elpi Query lp:{{
+  coq.locate "f" (const F),
+  coq.env.const F (some Bo) Ty,
+  coq.say "Body=" F,
+  coq.say "Type=" Ty
+}}.
+
 (* END *)
