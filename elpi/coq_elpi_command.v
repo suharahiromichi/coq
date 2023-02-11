@@ -111,14 +111,14 @@ Elpi hello Inductive windrose : Set := N | E | W | S.
 ```
 Hello 
 [indt-decl
-  (inductive windrose
+  (inductive "windrose"
              tt
              (arity (sort (typ «Set»)))
              c0 \
-                  [constructor N (arity c0),
-                   constructor E (arity c0), 
-                   constructor W (arity c0),
-                   constructor S (arity c0)])]
+                  [constructor "N" (arity c0),
+                   constructor "E" (arity c0), 
+                   constructor "W" (arity c0),
+                   constructor "S" (arity c0)])]
 ```
 *)
 
@@ -130,14 +130,14 @@ Elpi hello Inductive tree (A : Set) : Set := leaf : tree A | node : tree A -> A 
 ```
 Hello 
 [indt-decl
-  (parameter A explicit (sort (typ «Set»))
+  (parameter "A" explicit (sort (typ «Set»))
    c0 \
      inductive tree
              tt
              (arity (sort (typ «Set»)))
              c1 \
-                  [constructor leaf (arity c1),
-                   constructor node (arity (prod `_` c1 c2 \ prod `_` c0 c3 \ prod `_` c1 c4 \ c1))])]
+                  [constructor "leaf" (arity c1),
+                   constructor "node" (arity (prod `_` c1 c2 \ prod `_` c0 c3 \ prod `_` c1 c4 \ c1))])]
 ```
 *)
 
@@ -160,9 +160,9 @@ Elpi hello Record test := { f1 : nat; f2 : bool }.
 ```
 Hello 
 [indt-decl
-  (record test (sort (typ «Set»)) Build_test 
-	(     field [coercion off, canonical tt] f1 (global (indt «nat»))
-       c0 \ field [coercion off, canonical tt] f2 (global (indt «bool»))
+  (record "test" (sort (typ «Set»)) "Build_test"
+	(     field [coercion off, canonical tt] "f1" (global (indt «nat»))
+       c0 \ field [coercion off, canonical tt] "f2" (global (indt «bool»))
        c1 \ end-record))]
 ```
 *)
@@ -177,11 +177,11 @@ Elpi hello Structure test2 (A : Set) := { valid : nat; value : A }.
 ```
 Hello 
 [indt-decl
-  (parameter A explicit (sort (typ «Set»))
+  (parameter "A" explicit (sort (typ «Set»))
     c0 \
-      record test2 (sort (typ «Set»)) Build_test2 
-      (     field [coercion off, canonical tt] valid (global (indt «nat»))
-       c1 \ field [coercion off, canonical tt] value c0
+      record "test2" (sort (typ «Set»)) "Build_test2"
+      (     field [coercion off, canonical tt] "valid" (global (indt «nat»))
+       c1 \ field [coercion off, canonical tt] "value" c0
        c2 \ end-record))]
 
 ```
@@ -386,7 +386,68 @@ Elpi constructors_num windrose nK_windrose.
 Print nK_windrose.                        (* nK_windrose = 4 : nat *)
 
 (**
-# 練習問題
+# 練習問題 1
+
+1. constant の内容をPrintするコマンドを定義してくだい。
+
+2. 帰納型の内容をPrintするコマンドを定義してくだい。
+*)
+
+Elpi Command PrintConst.
+Elpi Accumulate lp:{{
+main [str Name] :-
+  coq.locate Name (const Const),
+  coq.env.const Const (some Bo) Ty,
+  coq.say "Body=" Bo,
+  coq.say "Type=" Ty.
+}}.
+Elpi Typecheck.
+
+Elpi Command PrintIncuctive.
+Elpi Accumulate lp:{{
+main [str Name] :-
+  coq.locate Name (indt Indt),
+  coq.env.indt-decl Indt Decl,
+  coq.say "Indt=" Indt,
+  coq.say "Decl=" Decl.
+}}.
+Elpi Typecheck.
+
+(**
+# 練習問題 2
+
+以下の ex1, ex2, ex3 を上のコマンドでPrintしてください。
+*)
+Module Ex2.
+  Definition ex1 := 0.
+  Inductive ex2 : Set := Ex2 : ex2.
+  Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
+
+  Elpi PrintConst "ex1".
+(**
+  ```
+global (indc «O»)
+```
+*)
+Elpi PrintIncuctive "ex2".
+(**
+```
+inductive ex2 tt (arity (sort (typ «Set»)))
+ c0 \ [constructor Ex2 (arity c0)
+```
+ *)
+Elpi PrintIncuctive "ex3".
+(**
+```
+parameter A explicit (sort (typ «Set»))
+ c0 \ inductive ex3 tt (arity (sort (typ «Set»)))
+  c1 \ [constructor Ex3 (arity c1)]
+```
+*)
+End Ex2.
+
+(**
+# 練習問題 3
 
 1. ``Definition ex1 := 1`` と同じコマンドを定義してくだい。
 
@@ -394,12 +455,18 @@ Print nK_windrose.                        (* nK_windrose = 4 : nat *)
 
 3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンドを定義してください。
 
-## (1) ``Definition ex1 := 1`` と同じコマンド。
+練習問題2 の結果を使う場合は、constantなどの「«»」で囲まれたトークンは書けないこと、
+hello の出力では、id (string) の引用符「""」が消えていることに、注意すること。
 *)
+
+(**
+## (1) ``Definition ex1 := 0`` と同じコマンド。
+*)
+Module Ex3.
 Elpi Command Ex1.
 Elpi Accumulate lp:{{
 main [] :-
-  coq.env.add-const "ex1" {{1}} {{nat}} _ Const,
+  coq.env.add-const "ex1" {{0}} {{nat}} _ Const,
   coq.env.const Const (some Bo) Ty,
   coq.say "Bo=" Bo,
   coq.say "Ty=" Ty.
@@ -442,5 +509,7 @@ main [] :-
 }}.
 Elpi Typecheck.
 Elpi Ex3.
+
+End Ex3.
 
 (* END *)

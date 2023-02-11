@@ -93,6 +93,8 @@ typeabbrev id string.
 pred coq.locate i:id, o:gref.
 pred coq.env.typeof i:gref, o:term.
 ```
+
+coq.locate は、idを環境から検索する。
 *)
 
 Elpi Query lp:{{
