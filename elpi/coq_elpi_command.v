@@ -78,18 +78,13 @@ type const-decl   id -> option term -> arity -> argument.
 type arity        term -> arity.
 ```
 *)
-Elpi hello Definition test := 0 = 1.
+Elpi hello Definition test := 0.
 (**
 ```
 Hello 
-[const-decl test 
-      (some
-	      (app [global (indt «eq»),
-                  global (indt «nat»),
-                  global (indc «O»), 
-                  app [global (indc «S»),
-                        global (indc «O»)]]))
-      (arity (sort prop))]
+[const-decl test
+      (some (global (indc «O»)))
+      (arity (global (indt «nat»)))]
 ```
 *)
 
@@ -195,15 +190,34 @@ Hello
 (**
 # coq-builtin.elpi
 
-## Constant
+以下では、Elpiから Coq　の Definition や Inductive コマンドに相当することを実行してみます。
+
+## Constant (Definition)
 
 ```
 pred coq.env.add-const i:id, i:term, i:term, i:opaque?, o:constant.
 pred coq.env.const i:constant, o:option term, o:term.
 ```
 *)
+
+(** 例は練習問題 *)
+
 (**
-整数をDefinition するコマンド
+## Inductive
+
+```
+pred coq.env.add-indt i:indt-decl, o:inductive.
+pred coq.env.indt-decl i:inductive, o:indt-decl.
+```
+*)
+
+(** 例は練習問題 *)
+
+(**
+# コマンドの例
+*)
+(**
+## 定義済みの自然数を (+1) した数を定義する するコマンド
 *)
 Elpi Command defnat_inc.
 Elpi Accumulate lp:{{
@@ -235,12 +249,10 @@ Print one.                    (* = 1 : nat *)
 Print one'.                   (* = 2 : nat *)
 
 (**
-## Inductive
+## 型をコンストラクタにプライム(')をつけるコマンド
 
-```
-pred coq.env.add-indt i:indt-decl, o:inductive.
-pred coq.env.indt-decl i:inductive, o:indt-decl.
-```
+coq.rename-indt-decl のほうが容易だが、
+ここでは、定義をしなおしてみる。
 *)
 Inductive test : Set := t1.
 
@@ -269,9 +281,6 @@ Print test.             (* Inductive test : Set :=  t1 : test. *)
 Elpi defindt_p test.
 Print test'.            (* Inductive test' : Set :=  t1' : test'. *)
 
-(**
-# コマンドの例
-*)
 (**
 ## check_arg コマンド
 *)
@@ -379,35 +388,59 @@ Print nK_windrose.                        (* nK_windrose = 4 : nat *)
 (**
 # 練習問題
 
-1. 定数 ex1 に 自然数 1 を定義するコマンドを作ってください。
+1. ``Definition ex1 := 1`` と同じコマンドを定義してくだい。
 
-2. コンストラクタ Ex2 だけある、機能型 ex2 を定義するコマンドを作ってください。
+2. ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンドを定義してください。
 
-## (1)
+3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンドを定義してください。
+
+## (1) ``Definition ex1 := 1`` と同じコマンド。
 *)
 Elpi Command Ex1.
 Elpi Accumulate lp:{{
 main [] :-
-  coq.env.add-const "ex1" {{1}} {{nat}} _ _.
+  coq.env.add-const "ex1" {{1}} {{nat}} _ Const,
+  coq.env.const Const (some Bo) Ty,
+  coq.say "Bo=" Bo,
+  coq.say "Ty=" Ty.
 }}.
 Elpi Typecheck.
 Elpi Ex1.
 Check ex1.
 
 (**
-## (2)
+## (2) ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンド。
 *)
 Elpi Command Ex2.
 Elpi Accumulate lp:{{
 main [] :-
-  coq.env.add-indt
+coq.env.add-indt
       (inductive "ex2" tt (arity {{Set}})
        c0 \ [constructor "Ex2" (arity c0)])
       Indt,
-  coq.say Indt.
+      coq.env.indt-decl Indt Bo,
+  coq.say "Bo=" Bo.
 }}.
 Elpi Typecheck.
 Elpi Ex2.
 Print ex2.
+
+(**
+## (3) ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンド。
+*)
+Elpi Command Ex3.
+Elpi Accumulate lp:{{
+main [] :-
+  coq.env.add-indt
+      (parameter "A" explicit {{Set}}
+        c0 \ inductive "ex3" tt (arity {{Set}})
+        c1 \ [constructor "Ex3" (arity c1)])
+      Indt,
+% coq.locate "ex3" (indt Indt),
+  coq.env.indt-decl Indt Bo,
+  coq.say "Bo=" Bo.
+}}.
+Elpi Typecheck.
+Elpi Ex3.
 
 (* END *)
