@@ -219,7 +219,7 @@ pred prime i:id, o:id.
 prime S S1 :- S1 is S ^ "'".
 
 main [str Name] :-
-  coq.locate Name (const Const),
+coq.locate Name (const Const),
   coq.env.const Const (some Nnat) {{nat}},
   nat->int Nnat N,
   prime Name Name1,
@@ -375,5 +375,39 @@ Print nK_bool.                            (* nK_bool = 2 : nat *)
 Inductive windrose : Set := N | E | W | S.
 Elpi constructors_num windrose nK_windrose.
 Print nK_windrose.                        (* nK_windrose = 4 : nat *)
+
+(**
+# 練習問題
+
+1. 定数 ex1 に 自然数 1 を定義するコマンドを作ってください。
+
+2. コンストラクタ Ex2 だけある、機能型 ex2 を定義するコマンドを作ってください。
+
+## (1)
+*)
+Elpi Command Ex1.
+Elpi Accumulate lp:{{
+main [] :-
+  coq.env.add-const "ex1" {{1}} {{nat}} _ _.
+}}.
+Elpi Typecheck.
+Elpi Ex1.
+Check ex1.
+
+(**
+## (2)
+*)
+Elpi Command Ex2.
+Elpi Accumulate lp:{{
+main [] :-
+  coq.env.add-indt
+      (inductive "ex2" tt (arity {{Set}})
+       c0 \ [constructor "Ex2" (arity c0)])
+      Indt,
+  coq.say Indt.
+}}.
+Elpi Typecheck.
+Elpi Ex2.
+Print ex2.
 
 (* END *)
