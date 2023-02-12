@@ -51,10 +51,14 @@ type trm       term   -> argument.
 ```
 *)
 
-Elpi hello 1.           (* Hello [int 1] *)
+Elpi hello 0.           (* Hello [int 0] *)
 Elpi hello x.           (* Hello [str x] *)
 Elpi hello "y".         (* Hello [str y] *)
 Elpi hello z.w.         (* Hello [str z.w] *)
+(* Coq項を渡すには、括弧で囲むこと。 *)
+Elpi hello (0).         (* Hello [trm (global (indc «O»))] *)
+Elpi hello (nat).
+Fail Elpi hello (f).    (* fは未定義 *)
 
 (**
 注意：
