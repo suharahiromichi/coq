@@ -429,7 +429,7 @@ Module Ex2.
 
   Elpi PrintConst "ex1".
 (**
-  ```
+```
 global (indc «O»)
 ```
 *)
@@ -444,8 +444,8 @@ Elpi PrintIncuctive "ex3".
 (**
 ```
 parameter A explicit (sort (typ «Set»))
- c0 \ inductive ex3 tt (arity (sort (typ «Set»)))
-  c1 \ [constructor Ex3 (arity c1)]
+ c0 \ (inductive ex3 tt (arity (sort (typ «Set»)))
+       c1 \ [constructor Ex3 (arity c1)])
 ```
 *)
 End Ex2.
@@ -504,8 +504,8 @@ Elpi Accumulate lp:{{
 main [] :-
   coq.env.add-indt
       (parameter "A" explicit {{Set}}
-        c0 \ inductive "ex3" tt (arity {{Set}})
-        c1 \ [constructor "Ex3" (arity c1)])
+        c0 \ (inductive "ex3" tt (arity {{Set}})
+              c1 \ [constructor "Ex3" (arity c1)]))
       Indt,
 % coq.locate "ex3" (indt Indt),
   coq.env.indt-decl Indt Bo,
@@ -514,6 +514,6 @@ main [] :-
 Elpi Typecheck.
 Elpi Ex3.
 
-End Ex3.
+1End Ex3.
 
 (* END *)
