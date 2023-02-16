@@ -221,17 +221,17 @@ pred coq.env.indt-decl i:inductive, o:indt-decl.
 # コマンドの例
 *)
 (**
-## 定義済みの自然数を (+1) した数を定義する するコマンド
+## 定義済みの自然数を (+1) した数を定義するコマンド
 *)
 Elpi Command defnat_inc.
 Elpi Accumulate lp:{{
 pred int->nat i:int, o:term.
 int->nat N {{ 0 }} :- N =< 0, !.
-int->nat N {{ S lp:X }} :- M is N - 1, int->nat M X.
+int->nat N {{ S lp:{{X}} }} :- M is N - 1, int->nat M X.
 
 pred nat->int i:term, o:int.
 nat->int {{ 0 }} 0.
-nat->int {{ S lp:X }} N :- nat->int X M, N is M + 1.
+nat->int {{ S lp:{{X}} }} N :- nat->int X M, N is M + 1.
 
 pred prime i:id, o:id.
 prime S S1 :- S1 is S ^ "'".
@@ -245,6 +245,10 @@ coq.locate Name (const Const),
   int->nat N1 Nnat1,
   coq.env.add-const Name1 Nnat1 {{nat}} _ _.
 }}.
+(**
+``lp:{{X}}`` は ``lp:X`` でよいはずだが、vscodeからではうまくいなない。
+*)
+
 Elpi Typecheck.
 
 Definition one := 1.
@@ -365,7 +369,7 @@ Elpi Command constructors_num.
 Elpi Accumulate lp:{{
       pred int->nat i:int, o:term.
       int->nat 0 {{ 0 }}.
-      int->nat N {{ S lp:X }} :- M is N - 1, int->nat M X.
+      int->nat N {{ S lp:{{X}} }} :- M is N - 1, int->nat M X.
 
       main [str IndName, str Name] :-
             coq.say "IndName=" IndName,
@@ -407,7 +411,7 @@ main [str Name] :-
 }}.
 Elpi Typecheck.
 
-Elpi Command PrintIncuctive.
+Elpi Command PrintInductive.
 Elpi Accumulate lp:{{
 main [str Name] :-
   coq.locate Name (indt Indt),
@@ -429,19 +433,22 @@ Module Ex2.
 
   Elpi PrintConst "ex1".
 (**
+出力：
 ```
 global (indc «O»)
 ```
 *)
-Elpi PrintIncuctive "ex2".
+Elpi PrintInductive "ex2".
 (**
+出力：
 ```
 inductive ex2 tt (arity (sort (typ «Set»)))
- c0 \ [constructor Ex2 (arity c0)
+ c0 \ [constructor Ex2 (arity c0)]
 ```
  *)
-Elpi PrintIncuctive "ex3".
+Elpi PrintInductive "ex3".
 (**
+出力：
 ```
 parameter A explicit (sort (typ «Set»))
  c0 \ (inductive ex3 tt (arity (sort (typ «Set»)))
@@ -514,6 +521,6 @@ main [] :-
 Elpi Typecheck.
 Elpi Ex3.
 
-1End Ex3.
+End Ex3.
 
 (* END *)
