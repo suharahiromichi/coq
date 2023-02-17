@@ -43,7 +43,7 @@ Moduleの中で定義された場合でも、Module名を前に付けてグロ�
 
 
 - Coqにあらかじめ用意されている型 (ソート)
-  - Proop
+  - Prop
   - Set
   - Type
 
@@ -107,6 +107,10 @@ Ty = prod `n` (global (indt «nat»))
        c0 \ prod `m` (global (indt «nat»))
        c1 \ global (indt «nat»)
 ```
+
+これは ``Π n:nat, Π m:nat, nat`` のことで、
+``n``と``m``が出現しない（依存型ではない）ので、
+``nat -> nat -> nat`` と書くことができる。
 *)
 
 Elpi Query lp:{{
@@ -144,6 +148,21 @@ type sort       sort -> term.
 *)
 
 (**
+補足説明： SPropとはイレバンスの成り立つ型
+*)
+Goal forall P : SProp, P -> P.
+Proof.
+  easy.
+Qed.
+
+Theorem irrelevance (A : SProp) (P : A -> Prop)
+  : forall x : A, P x -> forall y : A, P y.
+Proof.
+  intros.
+  easy.
+Qed.
+
+(**
 ## ELPIの組込述語
 
 ```
@@ -166,7 +185,7 @@ type app        list term -> term.
 type fun        name -> term -> (term -> term) -> term.
 type prod       name -> term -> (term -> term) -> term.
 type fix        name -> int -> term -> (term -> term) -> term.
-type match      term -> term -> list term -> term.
+type match      term -> term -> list term -> term.  (* リストの要素は2個で、コンストラクタを2個づづ *)
 type let        name -> term -> term -> (term -> term) -> term.
 ```
 *)
@@ -214,14 +233,16 @@ Coqで定義された定義の中身を取り出すには、``coq.env.const`` �
 Print Nat.add.
 Elpi Query lp:{{
   coq.locate "Nat.add" (const F),
+% {{:gref Nat.add}} = const F,
   coq.env.const F (some Bo) Ty,
-  coq.say "Body=" F,
+  coq.say "Body=" Bo,
   coq.say "Type=" Ty
 }}.
 
 Print nat.
 Elpi Query lp:{{
   coq.locate "nat" (indt Indt),
+% {{:gref nat}} = indt Indt,
   coq.env.indt-decl Indt Decl,
   coq.say "Indt=" Indt,
   coq.say "Decl=" Decl
@@ -241,9 +262,31 @@ Fixpoint f n :=
 
  Elpi Query lp:{{
   coq.locate "f" (const F),
+% {{:gref f}} = const F,
   coq.env.const F (some Bo) Ty,
-  coq.say "Body=" F,
+  coq.say "Body=" Bo,
   coq.say "Type=" Ty
 }}.
+
+Definition a := fun (x : nat) => match x with | 0 => 0  | 1 => 0 | _ => 0 end.
+Elpi Query lp:{{
+  coq.locate "a" (const F),
+  coq.env.const F (some Bo) Ty
+}}.
+
+(**
+答え：
+```
+fix `f` 0 (prod `n` (global (indt «nat»))
+　　c0 \ global (indt «nat»))
+  　  c0 \ fun `n` (global (indt «nat»))
+        c1 \ match c1 (fun `n` (global (indt «nat»)) c2 \ global (indt «nat»)) 
+              [app [global (indc «S»), global (indc «O»)], 
+	             fun `n` (global (indt «nat»))
+                 c2 \ app [global (const «Nat.mul»),
+                           app [global (indc «S»), c2],
+                           app [c0, c2]]]
+```
+*)
 
 (* END *)
