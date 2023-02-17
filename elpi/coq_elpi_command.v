@@ -14,13 +14,21 @@ Coq-Elpi によるコマンドの作成
 
 ELPIでCoqのコマンドを作成してみます。
 ここでのコマンドは Definition や Inductive などの
-Vernacularコマンドというべきかもしれません。
+Vernacularコマンドということもありますが、ここではCoqコマンドで統一します。
 
 ``coq_elpi_hoas.v`` で、Coq項（Gallina項）のHOASの説明をしましたが、
 Vernacularコマンドは、Gallina項でないことに注意してください。
 
 これらのコマンドに対するHOASがあるわけではなく、Vernacular コマンド
-それぞれにELPIの組込述語が用意されています。
+それぞれにに対応するコンストラクタやELPIの組込述語が用意されています。
+
+すこし紛らしいのですは、今回は次の順番で説明をします。
+
+1. Coqコマンド全体を示す、Elpiのコンストラクタ
+
+2. Coqコマンドで定義した内容を取り出すElpiの組込述語
+
+3. Coqコマンドと同じ機能のElpiの組込述語
 *)
 From elpi Require Import elpi.
 
@@ -394,7 +402,50 @@ Elpi constructors_num windrose nK_windrose.
 Print nK_windrose.                        (* nK_windrose = 4 : nat *)
 
 (**
-# 練習問題 1
+# 練習問題 1.
+
+hello を使用して、以下のコマンド全体を出力してください。
+
+1. ``Definition ex1 := 1``
+
+2. ``Inductive ex2 : Set := Ex2 : ex2``
+
+3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A``
+*)
+
+Elpi hello Definition ex1 := 1.
+(**
+出力：
+```
+[const-decl ex1 
+  (some (app [global (indc «Datatypes.S»), global (indc «O»)])) 
+  (arity (global (indt «nat»)))]
+```
+*)
+
+Elpi hello Inductive ex2 : Set := Ex2 : ex2.
+(**
+出力：
+```
+[indt-decl
+  (inductive ex2 tt (arity (sort (typ «Set»)))
+   c0 \	[constructor Ex2 (arity c0)])]
+```
+*)
+
+Elpi hello Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
+(**
+出力：
+```
+[indt-decl
+  (parameter A explicit (sort (typ «Set»))
+   c0 \	inductive ex3 tt (arity (sort (typ «Set»)))
+     c1 \ [constructor Ex3 (arity c1)])]
+```
+*)
+
+(**
+# 練習問題 2.1
 
 1. constant の内容をPrintするコマンドを定義してくだい。
 
@@ -422,7 +473,7 @@ main [str Name] :-
 Elpi Typecheck.
 
 (**
-# 練習問題 2
+# 練習問題 2.2
 
 以下の ex1, ex2, ex3 を上のコマンドでPrintしてください。
 *)
