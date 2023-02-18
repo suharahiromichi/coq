@@ -226,6 +226,180 @@ pred coq.env.indt-decl i:inductive, o:indt-decl.
 (** 例は練習問題 *)
 
 (**
+# 練習問題 1.
+
+hello を使用して、以下のコマンド全体を出力してください。
+
+1. ``Definition ex1 := 1``
+
+2. ``Inductive ex2 : Set := Ex2 : ex2``
+
+3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A``
+*)
+
+Elpi hello Definition ex1 := 1.
+(**
+出力：
+```
+[const-decl ex1 
+  (some (app [global (indc «Datatypes.S»), global (indc «O»)])) 
+  (arity (global (indt «nat»)))]
+```
+*)
+
+Elpi hello Inductive ex2 : Set := Ex2 : ex2.
+(**
+出力：
+```
+[indt-decl
+  (inductive ex2 tt (arity (sort (typ «Set»)))
+   c0 \	[constructor Ex2 (arity c0)])]
+```
+*)
+
+Elpi hello Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
+(**
+出力：
+```
+[indt-decl
+  (parameter A explicit (sort (typ «Set»))
+   c0 \	inductive ex3 tt (arity (sort (typ «Set»)))
+     c1 \ [constructor Ex3 (arity c1)])]
+```
+*)
+
+(**
+# 練習問題 2.1
+
+1. constant の内容をPrintするコマンドを定義してくだい。
+
+2. 帰納型の内容をPrintするコマンドを定義してくだい。
+*)
+
+Elpi Command PrintConst.
+Elpi Accumulate lp:{{
+main [str Name] :-
+  coq.locate Name (const Const),
+  coq.env.const Const (some Bo) Ty,
+  coq.say "Body=" Bo,
+  coq.say "Type=" Ty.
+}}.
+Elpi Typecheck.
+
+Elpi Command PrintInductive.
+Elpi Accumulate lp:{{
+main [str Name] :-
+  coq.locate Name (indt Indt),
+  coq.env.indt-decl Indt Decl,
+  coq.say "Indt=" Indt,
+  coq.say "Decl=" Decl.
+}}.
+Elpi Typecheck.
+
+(**
+# 練習問題 2.2
+
+以下の ex1, ex2, ex3 を上のコマンドでPrintしてください。
+*)
+Module Ex2.
+  Definition ex1 := 0.
+  Inductive ex2 : Set := Ex2 : ex2.
+  Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
+
+  Elpi PrintConst "ex1".
+(**
+出力：
+```
+global (indc «O»)
+```
+*)
+Elpi PrintInductive "ex2".
+(**
+出力：
+```
+inductive ex2 tt (arity (sort (typ «Set»)))
+ c0 \ [constructor Ex2 (arity c0)]
+```
+ *)
+Elpi PrintInductive "ex3".
+(**
+出力：
+```
+parameter A explicit (sort (typ «Set»))
+ c0 \ (inductive ex3 tt (arity (sort (typ «Set»)))
+       c1 \ [constructor Ex3 (arity c1)])
+```
+*)
+End Ex2.
+
+(**
+# 練習問題 3
+
+1. ``Definition ex1 := 1`` と同じコマンドを定義してくだい。
+
+2. ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンドを定義してください。
+
+3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンドを定義してください。
+
+練習問題2 の結果を使う場合は、constantなどの「«»」で囲まれたトークンは書けないこと、
+hello の出力では、id (string) の引用符「""」が消えていることに、注意すること。
+*)
+
+(**
+## (1) ``Definition ex1 := 0`` と同じコマンド。
+*)
+Module Ex3.
+Elpi Command Ex1.
+Elpi Accumulate lp:{{
+main [] :-
+  coq.env.add-const "ex1" {{0}} {{nat}} _ Const,
+  coq.env.const Const (some Bo) Ty,
+  coq.say "Bo=" Bo,
+  coq.say "Ty=" Ty.
+}}.
+Elpi Typecheck.
+Elpi Ex1.
+Check ex1.
+
+(**
+## (2) ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンド。
+*)
+Elpi Command Ex2.
+Elpi Accumulate lp:{{
+main [] :-
+coq.env.add-indt
+      (inductive "ex2" tt (arity {{Set}})
+       c0 \ [constructor "Ex2" (arity c0)])
+      Indt,
+      coq.env.indt-decl Indt Bo,
+  coq.say "Bo=" Bo.
+}}.
+Elpi Typecheck.
+Elpi Ex2.
+Print ex2.
+
+(**
+## (3) ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンド。
+*)
+Elpi Command Ex3.
+Elpi Accumulate lp:{{
+main [] :-
+  coq.env.add-indt
+      (parameter "A" explicit {{Set}}
+        c0 \ (inductive "ex3" tt (arity {{Set}})
+              c1 \ [constructor "Ex3" (arity c1)]))
+      Indt,
+% coq.locate "ex3" (indt Indt),
+  coq.env.indt-decl Indt Bo,
+  coq.say "Bo=" Bo.
+}}.
+Elpi Typecheck.
+Elpi Ex3.
+
+End Ex3.
+
+
+(**
 # コマンドの例
 *)
 (**
@@ -400,178 +574,5 @@ Print nK_bool.                            (* nK_bool = 2 : nat *)
 Inductive windrose : Set := N | E | W | S.
 Elpi constructors_num windrose nK_windrose.
 Print nK_windrose.                        (* nK_windrose = 4 : nat *)
-
-(**
-# 練習問題 1.
-
-hello を使用して、以下のコマンド全体を出力してください。
-
-1. ``Definition ex1 := 1``
-
-2. ``Inductive ex2 : Set := Ex2 : ex2``
-
-3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A``
-*)
-
-Elpi hello Definition ex1 := 1.
-(**
-出力：
-```
-[const-decl ex1 
-  (some (app [global (indc «Datatypes.S»), global (indc «O»)])) 
-  (arity (global (indt «nat»)))]
-```
-*)
-
-Elpi hello Inductive ex2 : Set := Ex2 : ex2.
-(**
-出力：
-```
-[indt-decl
-  (inductive ex2 tt (arity (sort (typ «Set»)))
-   c0 \	[constructor Ex2 (arity c0)])]
-```
-*)
-
-Elpi hello Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
-(**
-出力：
-```
-[indt-decl
-  (parameter A explicit (sort (typ «Set»))
-   c0 \	inductive ex3 tt (arity (sort (typ «Set»)))
-     c1 \ [constructor Ex3 (arity c1)])]
-```
-*)
-
-(**
-# 練習問題 2.1
-
-1. constant の内容をPrintするコマンドを定義してくだい。
-
-2. 帰納型の内容をPrintするコマンドを定義してくだい。
-*)
-
-Elpi Command PrintConst.
-Elpi Accumulate lp:{{
-main [str Name] :-
-  coq.locate Name (const Const),
-  coq.env.const Const (some Bo) Ty,
-  coq.say "Body=" Bo,
-  coq.say "Type=" Ty.
-}}.
-Elpi Typecheck.
-
-Elpi Command PrintInductive.
-Elpi Accumulate lp:{{
-main [str Name] :-
-  coq.locate Name (indt Indt),
-  coq.env.indt-decl Indt Decl,
-  coq.say "Indt=" Indt,
-  coq.say "Decl=" Decl.
-}}.
-Elpi Typecheck.
-
-(**
-# 練習問題 2.2
-
-以下の ex1, ex2, ex3 を上のコマンドでPrintしてください。
-*)
-Module Ex2.
-  Definition ex1 := 0.
-  Inductive ex2 : Set := Ex2 : ex2.
-  Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
-
-  Elpi PrintConst "ex1".
-(**
-出力：
-```
-global (indc «O»)
-```
-*)
-Elpi PrintInductive "ex2".
-(**
-出力：
-```
-inductive ex2 tt (arity (sort (typ «Set»)))
- c0 \ [constructor Ex2 (arity c0)]
-```
- *)
-Elpi PrintInductive "ex3".
-(**
-出力：
-```
-parameter A explicit (sort (typ «Set»))
- c0 \ (inductive ex3 tt (arity (sort (typ «Set»)))
-       c1 \ [constructor Ex3 (arity c1)])
-```
-*)
-End Ex2.
-
-(**
-# 練習問題 3
-
-1. ``Definition ex1 := 1`` と同じコマンドを定義してくだい。
-
-2. ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンドを定義してください。
-
-3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンドを定義してください。
-
-練習問題2 の結果を使う場合は、constantなどの「«»」で囲まれたトークンは書けないこと、
-hello の出力では、id (string) の引用符「""」が消えていることに、注意すること。
-*)
-
-(**
-## (1) ``Definition ex1 := 0`` と同じコマンド。
-*)
-Module Ex3.
-Elpi Command Ex1.
-Elpi Accumulate lp:{{
-main [] :-
-  coq.env.add-const "ex1" {{0}} {{nat}} _ Const,
-  coq.env.const Const (some Bo) Ty,
-  coq.say "Bo=" Bo,
-  coq.say "Ty=" Ty.
-}}.
-Elpi Typecheck.
-Elpi Ex1.
-Check ex1.
-
-(**
-## (2) ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンド。
-*)
-Elpi Command Ex2.
-Elpi Accumulate lp:{{
-main [] :-
-coq.env.add-indt
-      (inductive "ex2" tt (arity {{Set}})
-       c0 \ [constructor "Ex2" (arity c0)])
-      Indt,
-      coq.env.indt-decl Indt Bo,
-  coq.say "Bo=" Bo.
-}}.
-Elpi Typecheck.
-Elpi Ex2.
-Print ex2.
-
-(**
-## (3) ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンド。
-*)
-Elpi Command Ex3.
-Elpi Accumulate lp:{{
-main [] :-
-  coq.env.add-indt
-      (parameter "A" explicit {{Set}}
-        c0 \ (inductive "ex3" tt (arity {{Set}})
-              c1 \ [constructor "Ex3" (arity c1)]))
-      Indt,
-% coq.locate "ex3" (indt Indt),
-  coq.env.indt-decl Indt Bo,
-  coq.say "Bo=" Bo.
-}}.
-Elpi Typecheck.
-Elpi Ex3.
-
-End Ex3.
 
 (* END *)
