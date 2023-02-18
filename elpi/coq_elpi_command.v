@@ -39,7 +39,7 @@ Elpi Command hello.
 Elpi Accumulate lp:{{
       /* main is, well, the entry point */
       main Arguments :- coq.say "Hello" Arguments.
-      }}.
+}}.
 Elpi Typecheck.
 
 (**
@@ -63,6 +63,7 @@ Elpi hello 0.           (* Hello [int 0] *)
 Elpi hello x.           (* Hello [str x] *)
 Elpi hello "y".         (* Hello [str y] *)
 Elpi hello z.w.         (* Hello [str z.w] *)
+Elpi hello 0 1 x y z.
 (* Coq項を渡すには、括弧で囲むこと。 *)
 Elpi hello (0).         (* Hello [trm (global (indc «O»))] *)
 Elpi hello (nat).
@@ -156,6 +157,11 @@ Hello
 (**
 ## Record
 
+Recored　は Inductive な定義に変換できるが、Coqコマンドのレベルでは、変換せずに定義される
+
+Coqコマンドの Recored と Structure のどちらでも、同じようにrecord コンストラクタが使われる。
+
+
 ```
 kind record-decl type.
 type record      id -> term -> id -> record-decl -> indt-decl.
@@ -174,8 +180,8 @@ Hello
 [indt-decl
   (record "test" (sort (typ «Set»)) "Build_test"
 	(     field [coercion off, canonical tt] "f1" (global (indt «nat»))
-       c0 \ field [coercion off, canonical tt] "f2" (global (indt «bool»))
-       c1 \ end-record))]
+        c0 \ field [coercion off, canonical tt] "f2" (global (indt «bool»))
+             c1 \ end-record))]
 ```
 *)
 
@@ -257,14 +263,15 @@ Elpi hello Inductive ex2 : Set := Ex2 : ex2.
 ```
 *)
 
-Elpi hello Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
+Elpi hello Inductive ex3 (A : Set) : Set := Ex3 : A -> ex3 A.
 (**
 出力：
 ```
+Hello 
 [indt-decl
-  (parameter A explicit (sort (typ «Set»))
-   c0 \	inductive ex3 tt (arity (sort (typ «Set»)))
-     c1 \ [constructor Ex3 (arity c1)])]
+  (parameter A explicit sort (typ «Set»)) 
+    c0 \ inductive ex3 tt (arity (sort (typ «Set»))) 
+     c1 \ [constructor Ex3 (arity (prod `_` c0 c2 \ c1))])]
 ```
 *)
 
@@ -304,7 +311,7 @@ Elpi Typecheck.
 Module Ex2.
   Definition ex1 := 0.
   Inductive ex2 : Set := Ex2 : ex2.
-  Inductive ex3 (A : Set) : Set := Ex3 : ex3 A.
+  Inductive ex3 (A : Set) : Set := Ex3 (a : A) : ex3 A.
 
   Elpi PrintConst "ex1".
 (**
@@ -325,9 +332,10 @@ Elpi PrintInductive "ex3".
 (**
 出力：
 ```
-parameter A explicit (sort (typ «Set»))
- c0 \ (inductive ex3 tt (arity (sort (typ «Set»)))
-       c1 \ [constructor Ex3 (arity c1)])
+[indt-decl
+  (parameter A explicit (sort (typ «Set»)) 
+    c0 \ inductive ex3 tt (arity (sort (typ «Set»))) 
+      c1 \ [constructor Ex3 (arity (prod `_` c0 c2 \ c1))])]
 ```
 *)
 End Ex2.
@@ -339,7 +347,7 @@ End Ex2.
 
 2. ``Inductive ex2 : Set := Ex2 : ex2`` と同じコマンドを定義してください。
 
-3. ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンドを定義してください。
+3. ``Inductive ex3 (A : Set) : Set := Ex3 (a : A) : ex3 A`` と同じコマンドを定義してください。
 
 練習問題2 の結果を使う場合は、constantなどの「«»」で囲まれたトークンは書けないこと、
 hello の出力では、id (string) の引用符「""」が消えていることに、注意すること。
@@ -352,7 +360,7 @@ Module Ex3.
 Elpi Command Ex1.
 Elpi Accumulate lp:{{
 main [] :-
-  coq.env.add-const "ex1" {{0}} {{nat}} _ Const,
+coq.env.add-const "ex1" {{0}} {{nat}} _ Const,
   coq.env.const Const (some Bo) Ty,
   coq.say "Bo=" Bo,
   coq.say "Ty=" Ty.
@@ -368,18 +376,18 @@ Elpi Command Ex2.
 Elpi Accumulate lp:{{
 main [] :-
 coq.env.add-indt
-      (inductive "ex2" tt (arity {{Set}})
-       c0 \ [constructor "Ex2" (arity c0)])
-      Indt,
-      coq.env.indt-decl Indt Bo,
-  coq.say "Bo=" Bo.
+  (inductive "ex2" tt (arity {{Set}})
+   c0 \ [constructor "Ex2" (arity c0)])
+   Indt,
+coq.env.indt-decl Indt Bo,
+coq.say "Bo=" Bo.
 }}.
 Elpi Typecheck.
 Elpi Ex2.
 Print ex2.
 
 (**
-## (3) ``Inductive ex3 (A : Set) : Set := Ex3 : ex3 A`` と同じコマンド。
+## (3) ``Inductive ex3 (A : Set) : Set := Ex3 (a : A) : ex3 A`` と同じコマンド。
 *)
 Elpi Command Ex3.
 Elpi Accumulate lp:{{
@@ -387,7 +395,7 @@ main [] :-
   coq.env.add-indt
       (parameter "A" explicit {{Set}}
         c0 \ (inductive "ex3" tt (arity {{Set}})
-              c1 \ [constructor "Ex3" (arity c1)]))
+             c1 \ [constructor "Ex3" (arity (prod `a` c0 c2 \ c1))]))
       Indt,
 % coq.locate "ex3" (indt Indt),
   coq.env.indt-decl Indt Bo,
@@ -395,13 +403,37 @@ main [] :-
 }}.
 Elpi Typecheck.
 Elpi Ex3.
+Print Ex3.
 
 End Ex3.
-
 
 (**
 # コマンドの例
 *)
+Module Ex4.
+
+(**
+## Define と Inductive と同じ機能のコマンド
+*)
+Elpi Command def.
+Elpi Accumulate lp:{{
+      main [const-decl Name (some Decl) (arity Type)] :-
+        coq.env.add-const Name Decl Type _ Const,
+        coq.say Const "is defined.".
+      main [indt-decl Decl] :-
+        coq.env.add-indt Decl Indt,
+        coq.say Indt "is defined.".
+}}.
+Elpi Typecheck.
+Elpi def Definition ex1 := 0.
+Elpi def Inductive ex2 : Set := Ex2 : ex2.
+Elpi def Inductive ex3 (A : Set) : Set := Ex3 (a : A) : ex3 A.
+Print ex1.
+Print ex2.
+Print ex3.
+
+End Ex4.
+
 (**
 ## 定義済みの自然数を (+1) した数を定義するコマンド
 *)
@@ -574,5 +606,16 @@ Print nK_bool.                            (* nK_bool = 2 : nat *)
 Inductive windrose : Set := N | E | W | S.
 Elpi constructors_num windrose nK_windrose.
 Print nK_windrose.                        (* nK_windrose = 4 : nat *)
+
+(**
+# 補足説明
+*)
+
+(* 以下は同じ結果になる。matchのリストは、コンストラクタの順番に並ぶ。 *)
+Elpi hello (fun x => match x with | N => 0 | E => 1 | S => 4 | _ => 3 end).
+Elpi hello (fun x => match x with | W => 3 | E => 1 | S => 4 | _ => 0 end).
+
+(* match はふたつであり、そのネストになる。natのコンストラクタはふたつである。 *)
+Elpi hello (fun n => match n with | 0 => 0 | 1 => 2 | _ => 3 end).
 
 (* END *)
