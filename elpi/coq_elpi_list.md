@@ -34,9 +34,9 @@ https://gitlab.com/proofcafe/elpi/-/blob/main/tutorial_elpi_lang_jp.v
 
 ## まとめ
 
-https://qiita.com/suharahiromichi/private/23ecf3c91204d43a8b81
+○ https://qiita.com/suharahiromichi/private/23ecf3c91204d43a8b81
 
-https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_hoas.v
+○ https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_hoas.v
 
 
 # Command
@@ -57,9 +57,9 @@ https://gitlab.com/proofcafe/elpi/-/blob/main/tutorial_coq_elpi_command_jp.v
 
 ## まとめ
 
-https://qiita.com/suharahiromichi/items/bef4ff2d7c2a15654c77
+○ https://qiita.com/suharahiromichi/items/bef4ff2d7c2a15654c77
 
-https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_command.v
+○ https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_command.v
 
 
 # Tactic
