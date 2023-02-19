@@ -43,7 +43,7 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_ind_of_math_girl_2.v
 
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
-Require Import ssromega.                    (* ssromega タクティク *)
+From common Require Import ssromega.        (* ssromega タクティク *)
 Require Import Recdef.                      (* Function コマンド *)
 
 Set Implicit Arguments.
