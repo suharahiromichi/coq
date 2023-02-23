@@ -105,7 +105,7 @@ Elpi Query lp:{{
 ```
 Ty = prod `n` (global (indt «nat»)) 
        c0 \ prod `m` (global (indt «nat»))
-       c1 \ global (indt «nat»)
+       　　　c1 \ global (indt «nat»)
 ```
 
 これは ``Π n:nat, Π m:nat, nat`` のことで、
@@ -185,7 +185,7 @@ type app        list term -> term.
 type fun        name -> term -> (term -> term) -> term.
 type prod       name -> term -> (term -> term) -> term.
 type fix        name -> int -> term -> (term -> term) -> term.
-type match      term -> term -> list term -> term.  (* リストの要素は2個で、コンストラクタを2個づづ *)
+type match      term -> term -> list term -> term.
 type let        name -> term -> term -> (term -> term) -> term.
 ```
 *)
@@ -261,32 +261,37 @@ Fixpoint f n :=
  end.
 
  Elpi Query lp:{{
-  coq.locate "f" (const F),
-% {{:gref f}} = const F,
+% coq.locate "f" (const F),
+  {{f}} = global (const F),
   coq.env.const F (some Bo) Ty,
   coq.say "Body=" Bo,
   coq.say "Type=" Ty
 }}.
 
-Definition a := fun (x : nat) => match x with | 0 => 0  | 1 => 0 | _ => 0 end.
-Elpi Query lp:{{
-  coq.locate "a" (const F),
-  coq.env.const F (some Bo) Ty
-}}.
-
 (**
 答え：
 ```
-fix `f` 0 (prod `n` (global (indt «nat»))
-　　c0 \ global (indt «nat»))
-  　  c0 \ fun `n` (global (indt «nat»))
+fix `f` 0 (prod `n` (global (indt «nat»)) c0 \ global (indt «nat»))
+      c0 \ fun `n` (global (indt «nat»))
         c1 \ match c1 (fun `n` (global (indt «nat»)) c2 \ global (indt «nat»)) 
-              [app [global (indc «S»), global (indc «O»)], 
-	             fun `n` (global (indt «nat»))
+              [app [global (indc «S»), global (indc «O»)],    % 1st case
+               fun `n` (global (indt «nat»))                  % 2nd case
                  c2 \ app [global (const «Nat.mul»),
                            app [global (indc «S»), c2],
                            app [c0, c2]]]
 ```
 *)
+
+(**
+別の例：
+*)
+Inductive windrose := N | E | W | S.
+
+Definition w (x : windrose) :=
+  match x with | N => 0  | E => 1 | W => 2 | S => 3 end.
+Elpi Query lp:{{
+  coq.locate "w" (const F),
+  coq.env.const F (some Bo) Ty
+}}.
 
 (* END *)
