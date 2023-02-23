@@ -43,26 +43,50 @@ Compute trec_fact 5 1.					(* 120 *)
 
 (**
 fix (f\ M) の f が、match(ネストしてもよい)の節の最外側に限って出現することをチェックする。
-
-ただし、まだ「限って」のチェックはしていない。
 *)
 Elpi Command tailrec.
 Elpi Accumulate lp:{{
-
+/**
+app の先頭に出現するならば、successとする。
+*/
 pred trec i:term i:term.
-trec F M :- coq.say "trec=" F "," M, fail.		% Check
+%trec F M :- coq.say "trec=" F "," M, fail.		% Check
 trec F (fun _ _ M) :- pi n\ trec F (M n).
-trec F (match _ _ L) :- std.exists L (trec F).	% match節のリストLのどれかひとつが成立する。
-%trec F (match _ _ [N, _]) :- trec F N.
-%trec F (match _ _ [_, N]) :- trec F N.
+trec F (match _ _ L) :-	std.exists L (trec F).
 trec F (app [F | _]).
+trec F (app [N | _]) :- trec F N.
+
+/**
+app の先頭以外に出現するならば、successとする。
+*/
+pred occr i:term i:term.
+%occr F M :- coq.say "occr=" F "," M, fail.		% Check
+occr F (fun _ _ M) :- pi n\ occr F (M n).
+occr F (match _ _ L) :-	std.exists L (occr F).
+% appの先頭にFが出現した場合は、それ以外の箇所だけでを見る。
+occr F (app [F | L]) :- !, std.exists L (occr F).
+occr F (app [N | L]) :- occr F N, !, std.exists L (occr F).
+% appの先頭にFが出現ししない場合は、全体を見る。
+occr F (app L) :- std.exists L (occr F).
+occr F F.
+
+/**
+どこにでも出現するならば、successとする。(不使用)
+*/
+pred in i:term i:term.
+%in F M :- coq.say "in=" F "," M, fail.			% Check
+in F (fun _ _ M) :- pi n\ in F (M n).
+in F (match _ _ L) :- std.exists L (in F).
+in F (app L) :- std.exists L (in F).
+in F F.
 
 main [str Name] :-
 	coq.locate Name (const Const),
   	coq.env.const Const (some Bo) Ty,
   	coq.say "tailrec=" Bo,						% Check
 	Bo = fix _ _ _ M,
-	pi f\ trec f (M f).
+	pi f\ trec f (M f),
+	not (pi f\ occr f (M f)).					% おかしくなったらここを外す！
 main [str Name] :-	
 	coq.say Name "IS NOT A RECURCEIVE FUNCTION.",
 	!, fail.
