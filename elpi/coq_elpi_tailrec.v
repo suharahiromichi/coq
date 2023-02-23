@@ -10,45 +10,6 @@ see. prolog/elpi/minifp.elpi
 
 From elpi Require Import elpi.
 
-(**
-% Fibonacci
-prog "fib" 
-(fix fib\ abs n\
-  ite (eq n (i 0)) % if
-      (i 0)        % then 
-      (ite (eq n (i 1))
-           (i 1)
-           (sum (app fib (minus n (i 1))) (app fib (minus n (i 2))))
-      )
-).
-
-% Tail-recursive Fibonattii
-prog "trec-fib"
-(fix fib\ abs n\ abs a\ abs b\
-  ite (eq n (i 0))
-      a
-%     (app (app (app fib (minus (app fib n) (i 1))) b) (sum a b))   % 無理に末尾
-再帰でない例
-      (app (app (app fib (minus n (i 1))) b) (sum a b))             % OK
-).
-
-% Factorial
-prog "fact" 
-(fix fact\ abs n\
-  ite (gt n (i 0)) 
-      (times n (app fact (minus n (i 1))))
-      (i 1)
-).
-
-% Tail-recursive factorial
-prog "trec-fact"
-(fix fact\ abs n\ abs m\
-  ite (eq n (i 0)) 
-      m
-      (app (app fact (minus n (i 1))) (times n m))
-).
-*)
-
 Fixpoint fib (n : nat) : nat :=
 	match n with
 	| O => O
@@ -91,21 +52,10 @@ Elpi Accumulate lp:{{
 pred trec i:term i:term.
 trec F M :- coq.say "trec=" F "," M, fail.		% Check
 trec F (fun _ _ M) :- pi n\ trec F (M n).
-trec F (match _ _ L) :- std.exists L (trec F).
+trec F (match _ _ L) :- std.exists L (trec F).	% match節のリストLのどれかひとつが成立する。
 %trec F (match _ _ [N, _]) :- trec F N.
 %trec F (match _ _ [_, N]) :- trec F N.
 trec F (app [F | _]).
-
-/*
-trec F (abs M) :- pi n\ trec F (M n).
-
-% fix (f\ M) の f が、以下の場所に限って出現すること。
-trec _ M :- print M, fail.
-trec F (ite C N _) :- not (in F C), trec F N.         % then節
-trec F (ite C _ N) :- not (in F C), trec F N.         % else節
-trec F (app F M) :- not (in F M).                     % apply の第一引数
-trec F (app N M) :- trec F N, not (in F M).
-*/
 
 main [str Name] :-
 	coq.locate Name (const Const),
