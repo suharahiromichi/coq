@@ -89,10 +89,11 @@ Elpi Command tailrec.
 Elpi Accumulate lp:{{
 
 pred trec i:term i:term.
-trec F M :- coq.say "trec=" F "," M, fail.
+trec F M :- coq.say "trec=" F "," M, fail.		% Check
 trec F (fun _ _ M) :- pi n\ trec F (M n).
-trec F (match _ _ [N, _]) :- trec F N.
-trec F (match _ _ [_, N]) :- trec F N.
+trec F (match _ _ L) :- std.exists L (trec F).
+%trec F (match _ _ [N, _]) :- trec F N.
+%trec F (match _ _ [_, N]) :- trec F N.
 trec F (app [F | _]).
 
 /*
@@ -109,9 +110,12 @@ trec F (app N M) :- trec F N, not (in F M).
 main [str Name] :-
 	coq.locate Name (const Const),
   	coq.env.const Const (some Bo) Ty,
-  	coq.say "tailrec=" Bo,
+  	coq.say "tailrec=" Bo,						% Check
 	Bo = fix _ _ _ M,
 	pi f\ trec f (M f).
+main [str Name] :-	
+	coq.say Name "IS NOT A RECURCEIVE FUNCTION.",
+	!, fail.
 }}.
 Elpi Typecheck.
 
