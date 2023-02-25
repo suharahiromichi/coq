@@ -168,8 +168,8 @@ fun `n` {{nat}}
                    [c0, 
                     fun `v` {{nat}}
                         c1 \ match c1 (fun `v` {{nat}} c2 \ {{nat}}) 
-                                  [c1, 
-                                   fun `n0` {{nat}}
+                                   [c1, 
+                                    fun `n0` {{nat}}
                                             c2 \ match c2 (fun `n0` {{nat}} c3 \ {{nat}}) 
                                                        [c1, 
                                                         fun `n1` {{nat}}
@@ -248,6 +248,32 @@ fun `b` {{bool}}
         c0 \ match c0 (fun `b` {{bool}} c1 \ app [{{Data}}, c1]) 
                    [{{O}},
                     {{tt}}]
+```
+*)
+
+(**
+# 分岐リストが0個の例
+
+これも変わったことはありません。
+*)
+
+Print False_rect.
+(**
+```
+False_rect = 
+fun (P : Type) (f : False) => match f return P with
+	                          end
+```
+*)
+Check False_rect : forall P : Type, False -> P.
+
+Elpi print False_rect.
+(**
+```
+fun `P` {{Type}}
+    c0 \ fun `f` {{False}}
+         c1 \ match c1 (fun `_` {{False}} c2 \ c0)     % False -> P
+                    []
 ```
 *)
 
