@@ -40,12 +40,15 @@ return節、および分岐のリストを引数にとります。
 - return節
 - 分岐のリスト
 
+
 return節は、match式の型を書きます。Coq項の場合と異なり、match式の入力から書きます。
 また、省略できません。
+
 
 分岐のリストの要素の順序は、検査される項の
 帰納型宣言のCoqのコンストラクタの順序に従います。
 検査される項のコンストラクタがネストしてる場合は、``match``コンストラクタもネストします。
+
 
 分岐のリストの要素は、対応するCoqのコンストラクタの引数を入力とする関数であり、
 Elpiの``fun``コンストラクタで構成されます。ここで``name``はCoqの表示名で、
@@ -62,10 +65,10 @@ type fun  name -> term -> (term -> term) -> term.
 Elpi Command print.
 Elpi Accumulate lp:{{
 main [str Name] :-
-	coq.locate Name (const Const),
-	coq.env.const Const (some Bo) Ty,
-	coq.say "Bo=" Bo,
-	coq.say "Ty=" Ty.
+        coq.locate Name (const Const),
+        coq.env.const Const (some Bo) Ty,
+        coq.say "Bo=" Bo,
+        coq.say "Ty=" Ty.
 }}.
 Elpi Typecheck.
 
@@ -73,24 +76,24 @@ Elpi Typecheck.
 # 単純な例
 *)
 Definition test_nat (n : nat) : bool :=
-	match n return bool with	(* return bool は省略できる。 *)
-	| O => true
-	| S m => false
-	end.
+        match n return bool with        (* return bool は省略できる。 *)
+        | O => true
+        | S m => false
+        end.
 
 Elpi print test_nat.
 (**
 ```
-fun `n`							% test_natの引数の表示名
-    (global (indt «nat»)) 		% test_natの引数の型
- 	c0 \　match c0												 % 検査される項
-	   (fun `n` (global (indt «nat»)) c1 \ global (indt «bool»))  % return節
-　　　  [
-	　  global (indc «true»), 									 % 分岐のリストの第1要素
-   	　　fun `m`													　% 分岐のリストの第2要素
-　　　　	(global (indt «nat»)) 
-		   c1 \ global (indc «false»)
-	   ]
+fun `n`                                   % test_natの引数の表示名
+    (global (indt «nat»))                 % test_natの引数の型
+         c0 \ match c0                                                % 検査される項
+           (fun `n` (global (indt «nat»)) c1 \ global (indt «bool»))  % return節
+           [
+            global (indc «true»),          % 分岐のリストの第1要素
+            fun `m`                        % 分岐のリストの第2要素
+                (global (indt «nat»)) 
+                   c1 \ global (indc «false»)
+           ]
 ```
 
 test_nat の定義は、Elpiの``fun``コンストラクタで定義され、表示名``n``の自然数型をとる関数です。
@@ -118,12 +121,12 @@ nat型のCoqのコンストラクタは、``O : nat``と``S : nat -> nat``
 Coq項を書くことにします。
 
 ```
-fun `n`											% test_natの引数の表示名
-    {{nat}}										% test_natの引数の型
-	c0 \ match c0								% matchの検査される型
-	 			(fun `n` {{nat}} c1 \ {{bool}})	% matchの型
-	  			[{{true}},						% 分岐のリストの第1要素
-   			 	 fun `m` {{nat}} c1 \ {{false}}] % 分岐のリストの第2要素
+fun `n`                                                   % test_natの引数の表示名
+    {{nat}}                                               % test_natの引数の型
+        c0 \ match c0                                     % matchの検査される型
+                   (fun `n` {{nat}} c1 \ {{bool}})        % matchの型
+                   [{{true}},                             % 分岐のリストの第1要素
+                    fun `m` {{nat}} c1 \ {{false}}]       % 分岐のリストの第2要素
 ```
 *)
 
@@ -135,11 +138,11 @@ fun `n`											% test_natの引数の表示名
 ただし Standard Coqに変換した。
 *)
 Definition three_patterns n :=
-	match n return nat with		(* return nat は省略できる。 *)
-	| S (S (S (S (S u)))) => u 	(* case 1 *)
-	| S v => v           		(* case 2 *)
-	| 0 => n              		(* case 3 *)
-	end.
+    match n return nat with            (* return nat は省略できる。 *)
+    | S (S (S (S (S u)))) => u         (* case 1 *)
+    | S v => v                         (* case 2 *)
+    | 0 => n                           (* case 3 *)
+    end.
 
 (**
 実行例
@@ -186,21 +189,21 @@ fun `n` {{nat}}
 *)
 Definition three_patterns' c0 :=
   match c0 with
-  | 0 => c0                                           	(* case 0 *)
+  | 0 => c0                                                   (* case 0 *)
   | S c1 => match c1 with
-			| 0 => c1                                 	(* csae 1 *)
-			| S c2 => match c2 with
-					  | 0 => c1                       	(* case 2 *)
-					  | S c3 => match c3 with
-								| 0 => c1             	(* csae 3 *)
-								| S c4 => match c4 with
-										  | 0 => c1   	(* case 4 *)
-										  | S c5 => c5  (* case 5 *)
-										  end
-								end
-					   end
-			end
-	end.
+            | 0 => c1                                         (* csae 1 *)
+            | S c2 => match c2 with
+                      | 0 => c1                               (* case 2 *)
+                      | S c3 => match c3 with
+                                | 0 => c1                     (* csae 3 *)
+                                | S c4 => match c4 with
+                                          | 0 => c1           (* case 4 *)
+                                          | S c5 => c5        (* case 5 *)
+                                          end
+                                end
+                      end
+            end
+  end.
 (**
 実行例
 *)
@@ -224,13 +227,13 @@ Goal forall n, three_patterns n = three_patterns' n.
 Proof. easy. Qed.
 
 (**
-# match に　returnを明示する場合
+# match に returnを明示する場合
 
 とくに変わったことはありません。
 *)
 
 Definition Data (b : bool) : Set :=
-	if b then nat else unit.
+        if b then nat else unit.
 
 Definition sample_ret b :=
 match b return Data b with
@@ -242,9 +245,9 @@ Elpi print sample_ret.
 (**
 ```
 fun `b` {{bool}}
-		c0 \ match c0 (fun `b` {{bool}} c1 \ app [{{Data}}, c1]) 
-  					[{{O}},
-					 {{tt}}]
+        c0 \ match c0 (fun `b` {{bool}} c1 \ app [{{Data}}, c1]) 
+                   [{{O}},
+                    {{tt}}]
 ```
 *)
 
