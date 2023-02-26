@@ -209,6 +209,13 @@ Compute three_patterns 9.   (* 4 *)(* case 1 *)
 Compute three_patterns 10.  (* 5 *)(* case 1 *)
 Compute three_patterns 11.  (* 6 *)(* case 1 *)
 
+(**
+前の例と同じように、内部構造を見てみます。
+
+コンストラクタの``O``と``S``で分かれる構造になっています。
+また、natの帰納的な定義において、``O``の次に``S``の順番で定義されていたことを思い出してください。
+その順番を反映しています。
+*)
 Elpi print three_patterns.
 (**
 ```
@@ -286,6 +293,35 @@ Proof. easy. Qed.
 明確な構文糖衣であるため、ここでは触れないことにします。
 
 補足説明終わり。
+*)
+
+(**
+# コンストラクタが3つ以上ある例
+
+[4]の8.5節にある例で説明します。
+*)
+Inductive windrose : Set := N | E | W | S.
+
+Definition test_windrose (w : windrose) : nat :=
+    match w with
+    | S => 1
+    | N => 2
+    | _ => 0
+end.
+
+(**
+コンストラクタが4個なので、分岐のリストの要素は4個、``N``、``E``、``W``、``S``の順番に並んでいます。
+*)
+Elpi print test_windrose.
+(**
+```
+fun `w` {{windrose}}
+    c0 \ match c0 (fun `w` {{windrose}} c1 \ {{nat}})       % windrose -> nat
+               [{{2)}},                         % N => 2
+                {{0}},                          % E => 0
+                {{0}},                          % W => 0
+                {{1}}]                          % S => 1
+```
 *)
 
 (**
