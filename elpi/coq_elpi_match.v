@@ -213,21 +213,21 @@ Elpi print three_patterns.
 (**
 ```
 fun `n` {{nat}}
-        c0 \ match c0 (fun `n` {{nat}} c1 \ {{nat}}) 
-                   [c0, 
-                    fun `v` {{nat}}
-                        c1 \ match c1 (fun `v` {{nat}} c2 \ {{nat}}) 
-                                   [c1, 
-                                    fun `n0` {{nat}}
-                                            c2 \ match c2 (fun `n0` {{nat}} c3 \ {{nat}}) 
-                                                       [c1, 
-                                                        fun `n1` {{nat}}
-                                                            c3 \ match c3 (fun `n1` {{nat}} c4 \ {{nat}}) 
-                                                                       [c1, 
-                                                                        fun `n2` {{nat}}
-                                                                            c4 \ match c4 (fun `n2` {{nat}} c5 \ {{nat}})
-                                                                                       [c1,
-                                                                                        fun `u` (global (indt «nat»)) c5 \ c5]]]]]
+    c0 \ match c0 (fun `n` {{nat}} c1 \ {{nat}}) 
+               [c0, 
+                fun `v` {{nat}}
+                    c1 \ match c1 (fun `v` {{nat}} c2 \ {{nat}}) 
+                               [c1, 
+                                fun `n0` {{nat}}
+                                    c2 \ match c2 (fun `n0` {{nat}} c3 \ {{nat}}) 
+                                               [c1, 
+                                           　    fun `n1` {{nat}}
+                                                     c3 \ match c3 (fun `n1` {{nat}} c4 \ {{nat}}) 
+                                                                [c1, 
+                                                                 fun `n2` {{nat}}
+                                             　                      c4 \ match c4 (fun `n2` {{nat}} c5 \ {{nat}})
+                                                                               [c1,
+                                                                                 fun `u` (global (indt «nat»)) c5 \ c5]]]]]
 ```
 *)
 
