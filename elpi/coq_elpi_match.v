@@ -5,6 +5,21 @@ Coqのmatch式の内部構造を見る
 @suharahiromichi
 
 2022/02/25
+
+# はじめに
+
+Coqのmatch式 ([1]) は、すべての分岐の場合を尽くしていないとエラーになることはよく知られていますが、
+一方で、分岐に重複があってもよく、Hole(ワイルドカード)も使えます。
+
+match式の内部構造つまりHigh Order Abstruct Syntax (HOAS) ([2]) を調べると、
+このあたりの一端がわかります。
+
+
+このプログラムは以下にあります。実行には、Coq本体のほかにCoq-Elpiが必要です。
+
+
+https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_match.v
+
 *)
 From elpi Require Import elpi.
 
@@ -14,12 +29,15 @@ From elpi Require Import elpi.
 ## Coq項 (Gallina項) のmatch式の定義
 
 ```
-match <term_0> [return <term_t>] with
-[ | <ident_1> => <term_1> ]。。。
+match <term_0> return <term_t> with
+| <ident_1> => <term_1>
 end.
 ```
 
-r``return <term_t>`` は、match式の返す型を書きます、ただし、省略できます。
+``return <term_t>`` は、match式の返す型を書きます、ただし、省略できます。
+
+また、``| <ident_1> => <term_1>``の分岐の節は、通常は1個または複数ですが、
+後述するように0個の場合もあります。
 *)
 
 (**
@@ -61,6 +79,10 @@ type fun  name -> term -> (term -> term) -> term.
 
 (**
 # 定義済みの定数に定義されたCoq項 (Gallina項) のHOASを印刷するコマンド
+
+[3] を参考に、Coq-Elpiでコマンドを作ってみます。
+定義された定数の名前を文字列で与えると、定義の本体と定義の型のHOASを印刷します。
+今回は、定義の本体のみを使います。
 *)
 Elpi Command print.
 Elpi Accumulate lp:{{
@@ -131,11 +153,38 @@ fun `n`                                                   % test_natの引数の
 *)
 
 (**
-# 重複のある自然数の例
+# Hole (ワイルドカード) を使う場合
+*)
+Definition test_nat'' (n : nat) : bool :=
+    match n with
+    | O => true
+    | _ => false
+end.
+Elpi print test_nat''.
+(**
+結果は同じなので、省略します。
+*)
+Definition test_nat' (n : nat) : bool :=
+    match n with
+    | S m => false
+    | _ => true
+end.
+Elpi print test_nat'.
+(**
+条件の場合分けは、出現順に使われますから、ワイルドカードは一番最後に書かなければなりません。
+結果は同じなので、省略します。
+*)
 
-## MathComp Book ch1.v の例
+(**
+# 重複のある自然数の例（自然数で三つ以上の条件がある場合）
 
+## 通常の定義
+
+Mathematical Components (MathComp Book [4]) の p.23 にmatchの使いかたとして、
+最初に出てくる例です。
 ただし Standard Coqに変換した。
+
+この例の場合も、case 1をcase 2よりも優先させる必要があるため、最初に出現するようにします。
 *)
 Definition three_patterns n :=
     match n return nat with            (* return nat は省略できる。 *)
@@ -227,9 +276,22 @@ Goal forall n, three_patterns n = three_patterns' n.
 Proof. easy. Qed.
 
 (**
+補足説明
+
+この例は、Coqのmatch式として、3つ以上の条件がある例（if式で書けない例）として記載されていますが、
+同時に、本来コンストラクタが2つだけしか存在しない自然数に対して、3つ以上の条件分けをするとどうなるか、
+の例にもなっているわけです。
+
+なお、``if - is - then - else -``の式は、MathCompの拡張であり、
+明確な構文糖衣であるため、ここでは触れないことにします。
+
+補足説明終わり。
+*)
+
+(**
 # match に returnを明示する場合
 
-とくに変わったことはありません。
+[5]から例をとらせていただきました。とくに変わったことはありません。
 *)
 
 Definition Data (b : bool) : Set :=
@@ -254,7 +316,9 @@ fun `b` {{bool}}
 (**
 # 分岐リストが0個の例
 
-これも変わったことはありません。
+Prop型で偽を表すFalseは、コンストラクタの存在しない帰納型として定義されます([6])。
+
+実際に分岐のリストが``[]``になりますが、それ以外で変わったことはありません。
 *)
 
 Print False_rect.
@@ -273,8 +337,44 @@ Elpi print False_rect.
 fun `P` {{Type}}
     c0 \ fun `f` {{False}}
          c1 \ match c1 (fun `_` {{False}} c2 \ c0)     % False -> P
-                    []
+                    []                                 % 分岐のリストは空
 ```
+*)
+
+(**
+# 文献
+
+[1] Coq Reference Manual - Extended pattern matching
+
+https://coq.inria.fr/refman/language/extensions/match.html
+
+
+[2] Tutorial on the HOAS for Coq terms
+
+https://lpcic.github.io/coq-elpi/tutorial_coq_elpi_HOAS.html
+
+
+[3] Tutorial on Coq commands
+
+https://lpcic.github.io/coq-elpi/tutorial_coq_elpi_command.html
+
+
+[4] Mathematical Components (the book)
+
+https://math-comp.github.io/mcb/
+
+https://github.com/math-comp/mcb/blob/master/coq/ch1.v
+
+
+[5] 田中哲「依存型の話」産業技術総合研究所
+
+https://staff.aist.go.jp/tanaka-akira/pub/2018-09-02-deptype-proofsummit2018.pdf
+
+
+[6] 名古屋大学講義資料 2019年度前期・数理解析・計算機数学 II (同 概論II)「帰納的な定義と自己反映」
+
+https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2019_SS/ssrcoq4.pdf
+
 *)
 
 (* END *)
