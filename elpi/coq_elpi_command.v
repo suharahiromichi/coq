@@ -1,3 +1,4 @@
+
 (**
 Coq-Elpi によるコマンドの作成
 =====================
@@ -286,7 +287,7 @@ Hello
 Elpi Command PrintConst.
 Elpi Accumulate lp:{{
 main [str Name] :-
-  coq.locate Name (const Const),
+coq.locate Name (const Const),
   coq.env.const Const (some Bo) Ty,
   coq.say "Body=" Bo,
   coq.say "Type=" Ty.
@@ -509,12 +510,12 @@ Print test'.            (* Inductive test' : Set :=  t1' : test'. *)
 Elpi Command check_arg.
 Elpi Accumulate lp:{{
       main [trm T] :-
-            std.assert-ok! (coq.typecheck T Ty) "argument illtyped",
+            std.assert-ok! (c/ T Ty) "argument illtyped",
             coq.say "The type of" T "is" Ty.
 }}.
 Elpi Typecheck.
 
-Elpi check_arg (1 = 0).
+Fail Elpi check_arg (1 = 0).    (* XXXXXX コアーションがだめになった？ *)
 (**
 ```
 The type of 
@@ -541,7 +542,7 @@ The command has indeed failed with message:
  *)
 Coercion bool2nat (b : bool) := if b then 1 else 0.
 Check (1 = true).
-Elpi check_arg (1 = true).
+Fail Elpi check_arg (1 = true).
 
 (**
 ## elaborate_arg コマンド
@@ -617,5 +618,115 @@ Elpi hello (fun x => match x with | W => 3 | E => 1 | S => 4 | _ => 0 end).
 
 (* match はふたつであり、そのネストになる。natのコンストラクタはふたつである。 *)
 Elpi hello (fun n => match n with | 0 => 0 | 1 => 2 | _ => 3 end).
+
+(**
+# 帰納的定義を抽象化するコマンド
+
+HOASの一部を書き換えるにはどうするか、の例である。
+*)
+Elpi Command abstract.
+Elpi Accumulate lp:{{
+  pred prime i:id, o:id.
+  prime S S1 :- S1 is S ^ "'".
+
+  main [str Ind, trm Param] :-
+    std.spy (std.assert-ok!
+      (coq.elaborate-skeleton Param PTy P)
+      "illtyped parameter"),
+    std.assert! (coq.locate Ind (indt I)) "not an inductive type",
+    std.spy (coq.env.indt-decl I Decl),
+
+    (pi a\ copy P a => std.spy (copy-indt-decl Decl (Decl' a))),
+%   Decl'' = (Decl' a),                     % ここを　Decl''   で受けることはできないらしい。
+%   coq.say "Decl''=" Decl'',
+%   coq.say "Decl'=" Decl',
+
+    % coq-lib.elpi で定義されている copy-indt-decl は、arity の T のコピーに copy を使う。
+    % ``copy P a`` を前提に置いて、copy-indt-decl を実行する。
+    % ``=>``の左辺であるcopyは、copy-indt-decl の中から呼ばれる。
+
+    % 第1引数で指定された、Inductive定義を parameter で包む。
+    % オリジナルでは、ひとつまえの場所だったが、この場所でも支障ない。
+    % ただし、Decl` は、引数をとるラムダ式になる。
+    std.spy (NewDecl = parameter "A" explicit PTy Decl'),
+
+    % 名前に``'``を付けて定義する。この説明は省略する。
+    std.spy (coq.rename-indt-decl (=) prime prime NewDecl DeclRenamed),
+    std.assert-ok!
+      (coq.typecheck-indt-decl DeclRenamed)
+      "can't be abstracted",
+    std.spy (coq.env.add-indt DeclRenamed A).
+}}.
+Elpi Typecheck.
+
+(**
+## 実行例
+*)
+Inductive tree :=
+| leaf
+| node : tree -> option nat -> tree -> tree.
+Print tree.
+(**
+```
+Inductive tree : Set :=
+|	leaf : tree 
+| node : tree -> option nat -> tree -> tree.
+```
+*)
+(**
+tree の option nat が A に置き換わる。
+*)
+Elpi abstract tree (option nat).
+Print tree'.
+(**
+```
+Inductive tree' (A : Set) : Set :=
+|	leaf' : tree' A 
+| node' : tree' A -> A -> tree' A -> tree' A.
+```
+*)
+
+(**
+## 補足説明
+
+### copy の定義
+
+```prolog
+
+copy X X :- name X.      % checks X is a bound variable
+copy (global _ as C) C.
+copy (fun N T F) (fun N T1 F1) :-
+    copy T T1, pi x\ copy (F x) (F1 x).
+copy (app L) (app L1) :- std.map L copy L1.
+```
+
+### ``copy P a`` の意味
+
+以下が、上記のcopyの定義に優先して使われる。
+
+```prolog
+copy (app [global (indt «option»), global (indt «nat»)]) c0.
+```
+
+### copy-indt-decl
+
+copy-indt-declの実行結果は、以下である。
+``(app [global (indt «option»), global (indt «nat»)])``
+の部分を変数``c0``に置き換えながら copy したのが解る。
+
+```
+copy-indt-decl
+ (inductive tree tt (arity (sort (typ «Set»))) c1 \
+   [constructor leaf (arity c1), 
+  	constructor node 
+     (arity (prod `_` c1 c2 \ prod `_` (app [global (indt «option»), global (indt «nat»)]) 
+                         c3 \ prod `_` c1 c4 \ c1))]) 
+ (inductive tree tt (arity (sort (typ «Set»))) c1 \
+   [constructor leaf (arity c1), 
+    constructor node 
+     (arity (prod `_` c1 c2 \ prod `_` c0
+                         c3 \ prod `_` c1 c4 \ c1))])
+```
+*)
 
 (* END *)
