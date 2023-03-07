@@ -510,12 +510,12 @@ Print test'.            (* Inductive test' : Set :=  t1' : test'. *)
 Elpi Command check_arg.
 Elpi Accumulate lp:{{
       main [trm T] :-
-            std.assert-ok! (c/ T Ty) "argument illtyped",
+            std.assert-ok! (coq.typecheck T Ty) "argument illtyped",
             coq.say "The type of" T "is" Ty.
 }}.
 Elpi Typecheck.
 
-Fail Elpi check_arg (1 = 0).    (* XXXXXX コアーションがだめになった？ *)
+Elpi check_arg (1 = 0).
 (**
 ```
 The type of 
@@ -542,7 +542,7 @@ The command has indeed failed with message:
  *)
 Coercion bool2nat (b : bool) := if b then 1 else 0.
 Check (1 = true).
-Fail Elpi check_arg (1 = true).
+Elpi check_arg (1 = true).
 
 (**
 ## elaborate_arg コマンド
@@ -629,7 +629,7 @@ Elpi Accumulate lp:{{
   pred prime i:id, o:id.
   prime S S1 :- S1 is S ^ "'".
 
-  main [str Ind, trm Param] :-
+    main [str Ind, trm Param] :-
     std.spy (std.assert-ok!
       (coq.elaborate-skeleton Param PTy P)
       "illtyped parameter"),
@@ -710,6 +710,21 @@ copy (app [global (indt «option»), global (indt «nat»)]) c0.
 
 ### copy-indt-decl
 
+定義
+
+```
+pred copy-indt-decl i:indt-decl, o:indt-decl.
+copy-indt-decl (parameter ID I Ty D) (parameter ID I Ty1 D1) :-
+  copy Ty Ty1,
+  @pi-parameter ID Ty1 x\ copy-indt-decl (D x) (D1 x).
+copy-indt-decl (inductive ID CO A D) (inductive ID CO A1 D1) :-
+  copy-arity A A1,
+  @pi-inductive ID A1 i\ std.map (D i) copy-constructor (D1 i).
+copy-indt-decl (record ID T IDK F) (record ID T1 IDK F1) :-
+  copy T T1,
+  copy-fields F F1.
+```
+
 copy-indt-declの実行結果は、以下である。
 ``(app [global (indt «option»), global (indt «nat»)])``
 の部分を変数``c0``に置き換えながら copy したのが解る。
@@ -728,5 +743,5 @@ copy-indt-decl
                          c3 \ prod `_` c1 c4 \ c1))])
 ```
 *)
-
+<
 (* END *)
