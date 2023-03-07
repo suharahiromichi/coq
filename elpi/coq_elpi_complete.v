@@ -104,6 +104,22 @@ Elpi new_ax "a1'".
 Check a1.
 Check a1'.
 
+(* サブタームのコンテキストを取得する *)
+Elpi Command test.
+Elpi Accumulate lp:{{
+equation (prod `a` {{gp}}
+              c0 \ app [{{@eq}}, {{gp}},        % @eq としてください。
+                        app	[{{addg}}, {{O}}, c0],
+                        c0]).
+main [trm S] :-
+        equation T,
+        pi x\ copy S x => std.spy (copy T (Ctx x)),
+        coq.say "Ctx=" Ctx,
+        T = Ctx S.       % テスト。コンテキストにサブタームを入れると戻る。
+}}.
+Elpi Typecheck.
+Elpi test (O).
+
 (**
 # 参考文献
 
