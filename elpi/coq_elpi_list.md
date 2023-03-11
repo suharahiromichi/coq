@@ -59,7 +59,11 @@ https://gitlab.com/proofcafe/elpi/-/blob/main/tutorial_coq_elpi_command_jp.v
 
 ○ https://qiita.com/suharahiromichi/items/bef4ff2d7c2a15654c77
 
+○ https://qiita.com/suharahiromichi/items/61e3bc6bbb14ed9fce63
+
 ○ https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_command.v
+
+○ https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_command_2.v
 
 
 # Tactic
