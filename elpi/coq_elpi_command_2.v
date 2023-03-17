@@ -27,22 +27,27 @@ From elpi Require Import elpi.
 Module Ex4.
 
 (**
-## Define と Inductive と同じ機能のコマンド - def
+## Define と Axiom と Inductive と同じ機能のコマンド - def
 *)
 Elpi Command def.
 Elpi Accumulate lp:{{
-      main [const-decl Name (some Decl) (arity Type)] :-
-        coq.env.add-const Name Decl Type _ Const,
-        coq.say Const "is defined.".
-      main [indt-decl Decl] :-
-        coq.env.add-indt Decl Indt,
-        coq.say Indt "is defined.".
+  main [const-decl Name (some Decl) (arity Type)] :-
+    coq.env.add-const Name Decl Type _ Const,
+    coq.say Const "is defined.".
+  main [const-decl Name none (arity Type)] :-
+    coq.env.add-axiom Name Type Ax,
+    coq.say Ax "is defined.".
+  main [indt-decl Decl] :-
+    coq.env.add-indt Decl Indt,
+    coq.say Indt "is defined.".
 }}.
 Elpi Typecheck.
 Elpi def Definition ex1 := 0.
+Elpi def Axiom a1 : forall b, b = true.
 Elpi def Inductive ex2 : Set := Ex2 : ex2.
 Elpi def Inductive ex3 (A : Set) : Set := Ex3 (a : A) : ex3 A.
 Print ex1.
+Check a1.
 Print ex2.
 Print ex3.
 
@@ -109,7 +114,7 @@ main [str Name] :-
   std.assert-ok!
       (coq.typecheck-indt-decl Decl')
       "can't be abstracted",
-  std.spy (coq.env.add-indt Decl' Indt').
+  coq.env.add-indt Decl' Indt'.
 }}.
 Elpi Typecheck.
 
@@ -192,6 +197,8 @@ Ty= sort prop
 
 (**
 ## コンストラクタがいくつあるか調べるコマンド - constructors_num
+
+その数を第2引数で指定した定数で定義する。
 *)
 Elpi Command constructors_num.
 Elpi Accumulate lp:{{
@@ -200,7 +207,6 @@ Elpi Accumulate lp:{{
       int->nat N {{ S lp:{{X}} }} :- M is N - 1, int->nat M X.
 
       main [str IndName, str Name] :-
-            coq.say "IndName=" IndName,
             coq.locate IndName (indt GR),
             coq.say "GR=" GR,
             coq.env.indt GR _ _ _ _ Kn _,
@@ -209,7 +215,6 @@ Elpi Accumulate lp:{{
             coq.say "N=" N,
             int->nat N Nnat,
             coq.say "Nnat=" Nnat,
-            coq.say "Name=" Name,
             coq.env.add-const Name Nnat _ _ _.
       }}.
 Elpi Typecheck.
@@ -222,9 +227,8 @@ Elpi constructors_num windrose nK_windrose.
 Print nK_windrose.                        (* nK_windrose = 4 : nat *)
 
 (**
-## 帰納的定義の一部の抽象する（変数にする） - abstract
+## 帰納的定義の一部の抽象する（変数にする）コマンド - abstract
 *)
-
 Elpi Command abstract.
 Elpi Accumulate lp:{{
 
@@ -233,25 +237,25 @@ Elpi Accumulate lp:{{
 
   main [str Ind, trm Param] :-
     % the term to be abstracted out, P of type PTy
-    std.spy (std.assert-ok!
+    std.assert-ok!
       (coq.elaborate-skeleton Param PTy P)
-      "illtyped parameter"),
+      "illtyped parameter",
     
     % Ind で指定された、元の定義を取り出す。
     std.assert! (coq.locate Ind (indt I)) "not an inductive type",
-    std.spy (coq.env.indt-decl I Decl),
+    coq.env.indt-decl I Decl,
 
     % copy-clauses手法を利用した、object-level abstruction
     % ``P``を``a``にコピーする条件をテンポラリに追加した上で、``Decl``を``Decl' a``にコピー。
     % これにより、Decl' に、Elpiの``λa....``の式が設定される。
     % ``=>``の左辺であるcopyは、copy-indt-decl の中から呼ばれる（注）。
-    (pi a\ copy P a => std.spy (copy-indt-decl Decl (Decl' a))),
+    pi a\ copy P a => copy-indt-decl Decl (Decl' a),
 
     % パラメータをもつInductiveな定義のために、``parameter`` を追加する。
-    std.spy (NewDecl = parameter "A" explicit PTy Decl'),
+    NewDecl = parameter "A" explicit PTy Decl',
       
     % Inductiveな定義の全体をprime述語を使用して書き換える。
-    std.spy (coq.rename-indt-decl (=) prime prime NewDecl DeclRenamed),
+    coq.rename-indt-decl (=) prime prime NewDecl DeclRenamed,
 
     % 新しいInductiveな定義の型をチェックする。
     std.assert-ok!
@@ -259,7 +263,7 @@ Elpi Accumulate lp:{{
       "can't be abstracted",
 
     % 新しいInductiveな定義を追加する。
-    std.spy (coq.env.add-indt DeclRenamed A).
+    coq.env.add-indt DeclRenamed A.
 }}.
 Elpi Typecheck.
 
