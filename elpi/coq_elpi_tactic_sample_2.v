@@ -268,9 +268,13 @@ Coqの項を渡す場合は、Coq側で``()``で囲む必要があります。
 (**
 # 参考文献
 
-[1] Coq-Elpi によるタクティクの作成（その1）
+[1] Coq-Elpi によるタクティクの作成（その1の2）
 
-<https://qiita.com/suharahiromichi/items/4ca8805a5b21958aff87>
+<https://qiita.com/suharahiromichi/items/31096ff47ab69f4ba4ea>
+
+
+<https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_tactic_sample_1_2.v>
+
 
 
 [2] coq-ELPI
