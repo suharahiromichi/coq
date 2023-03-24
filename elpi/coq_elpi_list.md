@@ -82,8 +82,16 @@ https://qiita.com/suharahiromichi/private/2c02ac797fa99ce65d88
 
 ## まとめ
 
+https://qiita.com/suharahiromichi/items/4ca8805a5b21958aff87
+
 https://qiita.com/suharahiromichi/items/31096ff47ab69f4ba4ea
+
+https://qiita.com/suharahiromichi/private/8e572dc0c8fe48ffdfeb
+
+https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_tactic_sample_1.v
 
 https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_tactic_sample_1_2.v
 
+https://github.com/suharahiromichi/coq/blob/master/elpi/coq_elpi_tactic_sample_2.v
 
+以上
