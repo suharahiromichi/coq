@@ -83,7 +83,7 @@ Elpi Accumulate lp:{{
     coq.say "T  = " {coq.term->string T},
     refine T G GL.    % Trigger = T.
   solve (goal _ _ _ _ [trm S]) _ :-
-  Msg is {coq.term->string S} ^ " does not fit",
+    Msg is {coq.term->string S} ^ " does not fit",
     coq.ltac.fail _ Msg.
 }}.
 Elpi Typecheck.
@@ -153,7 +153,7 @@ Coqのタクティカルの``repeat``は、タクティクが「実行できる�
 
 ``coq.ltac.fail``が発生するエラーは、``repeat``がキャッチできるので、
 ``repeat``の中で使うなら、``repeat``が正常に終了し、
-``repeat``の外で使うなら、faitalエラーとなり、引数のエラーメッセージが表示される、
+``repeat``の外で使うなら、failして引数のエラーメッセージが表示される。
 という動きになります。
 *)
 
@@ -259,10 +259,10 @@ Coqの項を渡す場合は、Coq側で``()``で囲む必要があります。
 
 また、Coqの項は、内部表現で表示しても判らないので、
 組込述語``coq.term->string``が用意されています。
-述語としては2引数ですが``{}``で囲むことで、関数のように使っています。
-[1]の[3]のSpillingの節を参照してください。
+使用例は前節を参照してください。
 
-前節の例を参照してください。
+述語としては2引数ですが``{}``で囲むことで、関数のように使っています。
+``{}``については、[1]の[3]のSpillingの節を参照してください。
 *)
 
 (**

@@ -121,7 +121,7 @@ solve (goal Ctx Trigger Type Proof Args as G) GL :-
 *)
 
 (**
-### elpi id　なにもしないタクティク
+### elpi id なにもしないタクティク
 
 なにもしないのであれば、``solve``の引数になにもなくてよいので、
 以下のようになります。
@@ -157,7 +157,7 @@ CoqのコマンドにElpiが追加されるので、これを次の例のよう�
 Elpiの変数は、1つのElpiの節(Clause)をスコープとすることに違いはありません。
 
 
-(注3) 正確には、Hereditary Harrop Formula [1]　というべき。
+(注3) 正確には、Hereditary Harrop Formula [1] というべき。
 
 *)
 Elpi Tactic show.
@@ -172,19 +172,13 @@ Elpi Typecheck.
 *)
 
 (**
-前節では、test1のまとめてイッキに証明する場合と、test2のHoleを使い
-サブゴールにわけて証明する場合を示しました。
-そのどちらも重要であるため、ここでもその2通りの方法で説明します。
-
-解り易さから、test2に対応するHole-サブゴールの例から説明します。
-*)
-
-(**
 ## Coq-Elpi のタクティクの例
 
 補題testをみるとrefineは3箇所、2種類使われています。
 ひとつは``refine (conj _ _)``であり、
 もうひとつは``refine HP``と``refine HQ``です。
+この2種類に分けて説明します。
+
 
 ### elpi split
 
