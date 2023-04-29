@@ -660,16 +660,20 @@ Proof.
     : forall m n1 n2 : nat, (n1 * m < n2 * m)%N = (0 < m)%N && (n1 < n2)%N.
   rewrite ltn_mul2r.
   move/andP => [Hd Hq].
+  move: Hq.
+  have -> : (q < 1)%N = (q <= 0)%N by done.
+(*
   Locate "m < n".                           (* m.+1 <= n *)
   (* Hq : q + 1 < 1 *)
-  rewrite -addn1 in Hq.
+  rewrite -addn1.
   have H : (1 = 0 + 1)%N by done.
-  rewrite {2}H in Hq.
+  rewrite {2}H.
   Search _ ((_ + _ <= _ + _)%N).
-  rewrite leq_add2r in Hq.
+  rewrite leq_add2r.
   Search _ ((_  <= 0)%N).
-  rewrite leqn0 in Hq.
-  move/eqP in Hq.
+*)
+  rewrite leqn0.
+  move/eqP.
   done.
 Qed.
 
