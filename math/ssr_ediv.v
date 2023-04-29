@@ -5,6 +5,8 @@
 @suharahiromichi
 
 2020/08/25
+
+2023/04/29 Coq 8.17.0 (order.v)
  *)
 
 (**
@@ -95,8 +97,6 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_ediv.v
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 
-Require Import ssromega.                    (* ssromega タクティク *)
-
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -105,6 +105,10 @@ Import GRing.Theory.         (* mulrA などを使えるようにする。 *)
 Import Num.Theory.           (* unitf_gt0 などを使えるようにする。 *)
 Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
+Import Order.                (* 不等号関連 *)
+Import POrderTheory.         (* le_eqVlt など *)
+Import TotalTheory.          (* ltNge など *)
+
 Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
 
 (**
@@ -213,7 +217,7 @@ MathCompで整数に扱いになれていないひとのために（大抵のひ
 Lemma opptr (x y : int) : x = - y -> - x = y.
 Proof.
   move=> ->.
-    by rewrite opprK.
+  by rewrite opprK.
 Qed.
 
 (* 絶対値を付けるだけの補題 *)
@@ -223,15 +227,14 @@ Proof. by move=> ->. Qed.
 (* いつも欲しくなる補題の整数版 *)
 Lemma lt_le (x y : int) : x < y -> x <= y.
 Proof.
-  move=> H.
-  rewrite ler_eqVlt.
-    by apply/orP/or_intror.
+  rewrite le_eqVlt => H.                    (* ler_eqVlt から改名 *)
+  by apply/orP/or_intror.  
 Qed.
 
 Lemma nge_lt (m n : int) : (m <= n) = false -> n < m.
 Proof.
   move/negbT.
-    by rewrite -ltrNge.
+  by rewrite ltNge.                         (* ltnNge から改名 *)
 Qed.
 
 Lemma eq_subn (n : nat) : (n - n = 0)%N.    (* 自然数の補題 *)
@@ -250,7 +253,7 @@ Check divn_eq : forall m d : nat, m = (m %/ d * d + m %% d)%N.
 Lemma divn_eq' (m d : nat) : m = (m %/ d * d)%N%:Z + (m %% d)%N%:Z :> int.
 Proof.
   apply/eqP.
-    by rewrite eqz_nat -divn_eq.
+  by rewrite eqz_nat -divn_eq.
 Qed.
 
 (**
@@ -293,10 +296,10 @@ Proof.
   Check subr_eq0 : forall (V : zmodType) (x y : V), (x - y == 0) = (x == y).
   - move/eqP in H.
     rewrite absz_eq0 subr_eq0 in H.
-      by apply/eqP.
+    by apply/eqP.
   - apply/eqP.
     rewrite absz_eq0 subr_eq0.
-      by apply/eqP.
+    by apply/eqP.
 Qed.
 
 Section NORM.
@@ -320,13 +323,13 @@ End NORM.
 Lemma normq0_eq (x y : int) : `|x - y| = 0  <-> x = y.
 Proof.
   split=> H.
-  Check @normr0P : forall (R : numDomainType) (x : R), reflect (`|x| = 0) (x == 0).
+  Check @normr0P : forall (R : numDomainType) (V : normedZmodType R) (v : V), reflect (`|v| = 0) (v == 0).
   - move/normr0P in H.
     rewrite subr_eq0 in H.
-      by apply/eqP.
+    by apply/eqP.
   - apply/normr0P.
     rewrite subr_eq0.
-      by apply/eqP.
+    by apply/eqP.
 Qed.
 
 (**
@@ -401,7 +404,7 @@ Compute edivn_ceil 10 3.                    (* 4 *)
 Lemma edivn_floorp (m d : nat) : (edivn_floor m d * d <= m)%N.
 Proof.
   rewrite /edivn_floor.
-    by apply: leq_trunc_div.
+  by apply: leq_trunc_div.
 Qed.
 
 Lemma edivn_ceilp (m d : nat) : (0 < d)%N -> (m <= edivn_ceil m d * d)%N.
@@ -412,10 +415,10 @@ Proof.
   case: ifP => Hmd.
   (* m が d で、割りきれる場合 *)
   - apply/orP/or_introl.
-      by rewrite -dvdn_eq.
+    by rewrite -dvdn_eq.
   (* m が d で、割りきれない場合 *)
   - apply/orP/or_intror.
-      by rewrite ltn_ceil //.
+    by rewrite ltn_ceil //.
 Qed.
 
 (**
@@ -434,7 +437,7 @@ Proof.
   rewrite {1}(divn_eq' m d).
   rewrite -addrAC eq_subz add0r.
   Check ltn_pmod : forall m d : nat, (0 < d)%N -> (m %% d < d)%N.
-    by apply: ltn_pmod.
+  by apply: ltn_pmod.
 Qed.
 
 Lemma edivn_ceil_ltd (m d : nat) : (0 < d)%N ->
@@ -447,7 +450,7 @@ Proof.
   (* m が d で、割り切れるので m %% d = 0 の場合 *)
   - move/eqP in H.
     rewrite H /= addr0.
-      by rewrite eq_subz.
+    by rewrite eq_subz.
   (* m が d で、割りきれない場合 *)
   - rewrite opprD addrCA addrA -addn1.
     have l_dist (m' : nat) : (m' + 1)%N%:Z * d = (m' * d)%N%:Z + d
@@ -457,7 +460,7 @@ Proof.
     rewrite ltz_nat lt0n.
     (* Goal : (m %% d)%N != 0 *)
     rewrite /dvdn in H.
-      by move/negbT in H.
+    by move/negbT in H.
 Qed.
 
 (**
@@ -514,7 +517,7 @@ Compute emodz (- 10%:Z) (- 3%:Z).           (* 2 *)
 *)
 Lemma edivz_eq (m d : int) : m = (edivz m d)%Z * d + (emodz m d)%Z.
 Proof.
-    by rewrite addrC subrK.
+  by rewrite addrC subrK.
 Qed.
 
 (**
@@ -543,8 +546,8 @@ Proof.
   - rewrite -mulrAC -abszEsg mulrC subr_ge0.
     move/gez0_abs in H.
     rewrite -{2}H.
-      (* edivn_floor `|m| `|d| * `|d|%N <= `|m| *)
-      by apply: edivn_floorp.
+    (* edivn_floor `|m| `|d| * `|d|%N <= `|m| *)
+    by apply: edivn_floorp.
 
   (* 0 > m の場合 *)
   (* よく見るとわかりますが、右辺の負号は括弧だけに掛かっているので、
@@ -560,8 +563,8 @@ Proof.
     rewrite addrC subr_ge0.
     (* `|m| <= edivn_ceil `|m| `|d| * `|d|%N *)
     apply: edivn_ceilp.
-      (* (0 < `|d|)%N *)
-      by rewrite lt0n absz_eq0.
+    (* (0 < `|d|)%N *)
+    by rewrite lt0n absz_eq0.
 Qed.
 
 (**
@@ -579,28 +582,28 @@ Proof.
   - rewrite mulrAC -abszEsg mulrC.          (* 商*除数の部分 *)
     rewrite -{1}(gez0_abs Hm).              (* 被除数の部分 *)
     apply: edivn_floor_ltd.                 (* 自然数割算の補題 *)
-      by rewrite -absz_gt0 in Hd.
+    by rewrite -absz_gt0 in Hd.
     
   (* Goal : m - sgz d * edivn_floor `|m| `|d| * d < `|d| *)    
   - rewrite mulrAC -abszEsg mulrC.
     rewrite -{1}(gez0_abs Hm).
     apply: edivn_floor_ltd.
-      by rewrite -absz_gt0 in Hd.
-      (* by rewrite -normr_gt0 in Hd. *)
+    by rewrite -absz_gt0 in Hd.
+  (* by rewrite -normr_gt0 in Hd. *)
     
   (* Goal : m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)    
   - rewrite mulNr mulrAC -abszEsg mulrC opprK.
     move/nge_lt in Hm.
     rewrite -{1}(opptr (ltz0_abs Hm)) addrC.
     apply: edivn_ceil_ltd.
-      by rewrite -absz_gt0 in Hd.
+    by rewrite -absz_gt0 in Hd.
       
   (* Goal : m - - (sgz d * edivn_ceil `|m| `|d|) * d < `|d| *)
   - rewrite mulNr mulrAC -abszEsg mulrC opprK.
     move/nge_lt in Hm.
     rewrite -{1}(opptr (ltz0_abs Hm)) addrC.
     apply: edivn_ceil_ltd.
-      by rewrite -absz_gt0 in Hd.
+    by rewrite -absz_gt0 in Hd.
 Qed.
 
 (**
@@ -657,7 +660,17 @@ Proof.
     : forall m n1 n2 : nat, (n1 * m < n2 * m)%N = (0 < m)%N && (n1 < n2)%N.
   rewrite ltn_mul2r.
   move/andP => [Hd Hq].
-    by ssromega.
+  Locate "m < n".                           (* m.+1 <= n *)
+  (* Hq : q + 1 < 1 *)
+  rewrite -addn1 in Hq.
+  have H : (1 = 0 + 1)%N by done.
+  rewrite {2}H in Hq.
+  Search _ ((_ + _ <= _ + _)%N).
+  rewrite leq_add2r in Hq.
+  Search _ ((_  <= 0)%N).
+  rewrite leqn0 in Hq.
+  move/eqP in Hq.
+  done.
 Qed.
 
 (**
@@ -718,8 +731,8 @@ Proof.
     (* H2 : (`|r1| - `|r2| < d)%N *)
     
     rewrite -ltz_nat -subzn // in H2.
-      (* Goal : (`|r2| <= `|r1|)%N *)
-      by rewrite -lez_nat -subr_ge0.
+    (* Goal : (`|r2| <= `|r1|)%N *)
+    by rewrite -lez_nat -subr_ge0.
       
   (* r1 < r2 の場合 *)
   - move: {+}H => H'.
@@ -727,7 +740,7 @@ Proof.
     (* H' : (0 <= `|r1|%N - `|r2|%N) = false *)
     
     move/negbT in H.
-    rewrite -ltrNge in H.
+    rewrite -ltNge in H.                    (* ltrNge から改名 *)
     move/lt_le/lez0_abs in H.
     rewrite H opprB -(gez0_abs Hr1) -(gez0_abs Hr2).
     (* H : `|r1 - r2|%N = - (r1 - r2) *)
@@ -743,7 +756,7 @@ Proof.
     move/nge_lt in H'.
     rewrite subr_lt0 in H'.
     rewrite -lez_nat.
-      by apply: lt_le.
+    by apply: lt_le.
 Qed.
 
 (**
@@ -769,7 +782,7 @@ Proof.
   Check @lemma3 q1 q2 r1 r2 d Hq2 : `|((q1 - q2) * d)%R|%N = `|r1 - r2|%N.
   rewrite (@lemma3 q1 q2 r1 r2 d Hq2).
   
-    by apply: lemma2.
+  by apply: lemma2.
 Qed.
 
 (**
@@ -932,7 +945,7 @@ Section OPT.
   (* edivz と emodz についても、整数演算から自然数演算に変換できる。 *)
   Lemma edivz_nat (m d : nat) : edivz m d = (m %/ d)%N.
   Proof.
-      by case: d => // d; rewrite /edivz /= mul1r.
+    by case: d => // d; rewrite /edivz /= mul1r.
   Qed.
   
   Lemma emodz_nat (m d : nat) : emodz m d = (m %% d)%N.
@@ -972,7 +985,7 @@ Section OPT.
   Proof.
     move=> H.
     rewrite ltr0_norm //=.
-      by rewrite opprK.
+    by rewrite opprK.
   Qed.
 
   (* divn_eq の整数版の別証明 *)
