@@ -105,9 +105,7 @@ Import GRing.Theory.         (* mulrA などを使えるようにする。 *)
 Import Num.Theory.           (* unitf_gt0 などを使えるようにする。 *)
 Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
-Import Order.                (* 不等号関連 *)
-Import POrderTheory.         (* le_eqVlt など *)
-Import TotalTheory.          (* ltNge など *)
+Import Order.Theory.         (* 不等号関連 *)
 
 Open Scope ring_scope.       (* 環の四則演算を使えるようにする。 *)
 
