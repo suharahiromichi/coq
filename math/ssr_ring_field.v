@@ -1,26 +1,38 @@
 (**
-MathComp の環・体
+MathComp の環・体などを扱う補題
 ========================
 
 @suharahiromichi
 
 2020/07/17
-*)
 
+2023/04/30 MathComp 1.16.0 と algebra_tactics を反映した。
+
+SSReflct の ssrnat で定義される ring タクティクは半環であった。
+MathComp の algebra には ring タクティクがなかったが(Standard Coqを使っていた)、
+algebra tactics で追加された。
+*)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
-Require Import ssromega.                    (* ssromega タクティク *)
-Require Import Recdef.                      (* Function コマンド *)
+From mathcomp Require Import ring.          (* algebra_tactics *)
+From mathcomp Require Import lra.           (* algebra_tactics *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GRing.Theory.         (* mulrA などを使えるようにする。 *)
-Import Num.Theory.           (* unitf_gt0 などを使えるようにする。 *)
-Import intZmod.              (* addz など *)
-Import intRing.              (* mulz など *)
-Open Scope ring_scope.       (* (x + y)%Rを省略時解釈とする。 *)
+Import Monoid.Theory.         (* bigop addmA *)
+Import Order.Theory.          (* order ltNge 不等式 *)
+
+Import GRing.Theory.          (* ssralg  mulrA *)
+Import FinRing.Theory.        (* finring zmod1gE *)
+Import Num.Theory.            (* ssrnum unitf_gt0 *)
+Import intZmod.               (* ssrint addz *)
+Import intRing.               (* ssrint mulz *)
+Import intUnitRing.           (* ssrint mulVz *)
+Import intOrdered.            (* ssrint lez_add *)
+
+Open Scope ring_scope.        (* (x + y)%R を省略時解釈とする。 *)
 
 (*
 # 加群 Zmodule
@@ -90,7 +102,7 @@ order (順番) と norm (絶対値) のある整域（または体）(例：ガ�
 Section NumDomain.
   Variable R : numDomainType.
 
-  Check @ler_norm_add R : forall x y : R,
+  Check @ler_norm_add : forall (R : numDomainType) (V : normedZmodType R) (x y : V),
       `|x + y| <= `|x| + `|y|.
 End NumDomain.
 
@@ -112,7 +124,7 @@ End Field.
 Section RealField.
   Variables rF : realFieldType.
   
-  Check @lerif_mean_square rF : forall x y : rF,
+  Check @leif_mean_square : forall (F : realFieldType) (x y : F),
       x * y <= (x ^+ 2 + y ^+ 2) / 2%:R ?= iff (x == y).
   
   (* 左辺の=が成り立つことと、x = y であることが同値  *)
