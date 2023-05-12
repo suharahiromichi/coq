@@ -74,29 +74,11 @@ Proof.
   apply H.
 Qed.
 
-(*
-A と P の指定は不要である。
-*)
-Elpi Tactic pf_exists0.
-Elpi Accumulate lp:{{
-  solve (goal _ Trigger _ Ev []) GS1 :-
-  	Trigger = {{ ex_intro (fun x : lp:_ => lp:_ x) _ _ }},
-    coq.ltac.collect-goals Ev GS Shelved,
-    std.append GS Shelved GS1,
-    std.assert! (std.length GS1 2) "not 2 goals".
-  solve _ _ :-
-    coq.ltac.fail _ "cannot pf_exists".
-}}.
-Elpi Typecheck.
-
-Goal forall (A : Type) (P : A -> Prop) (x : A) (z : A),
-	P x -> exists y, P y.
+Goal exists x, x = 1.
 Proof.
-  intros A P x z H.   (* A なる変数が複数あってもよい。 *)
-  elpi pf_exists0.
-  apply H.
+    elpi pf_exists2 (nat) (fun x => x = 1_).
+    easy.
 Qed.
-
 
 
 (* ***** *)
