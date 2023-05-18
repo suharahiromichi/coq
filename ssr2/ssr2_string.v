@@ -1,7 +1,10 @@
 (**
 MathComp で文字列を使う (MathComp2版)
-======
+==============================
 2023/05/18
+
+
+@suharahiromichi
 
 
 - 概要
@@ -13,8 +16,8 @@ Starndard Coqの文字列の定義 [2.] を使うことになります。
 文字列型をMathCompの型として使う方法を説明します。わずか1行の定義です。
 
 MathComp 1.x系列から MathComp 2.0.0 への変更で、
-Hierarchy Builder (HB) を使って定義するように変更されましたが、
-1行で定義できることには違いがありません。
+Hierarchy Builder (HB) を使って定義するように変更され、そのインポートが必要になり
+ましたが、1行で定義できることには違いがありません。
 
 ただし、eqType型のインスタンスとしての stirng_eqType型などが廃止され、
 string型がeqType型のインスタンスに直接なるようになりました。
@@ -23,7 +26,7 @@ string型がeqType型のインスタンスに直接なるようになりまし�
 - この文書のソースコードは以下にあります。
 
 
-https://github.com/suharahiromichi/coq/blob/master/ssr2/ssr2_strin.v
+https://github.com/suharahiromichi/coq/blob/master/ssr2/ssr2_string.v
 
  *)
 
@@ -34,14 +37,22 @@ https://github.com/suharahiromichi/coq/blob/master/ssr2/ssr2_strin.v
 OCaml 4.14.1, Coq 8.17.0, MathComp 2.0.0
  *)
 
+(**
+---------------
+# MathComp2 での定義
+ *)
+
 From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
 Require Import String.
 Open Scope string_scope.
 
-(* MathComp2 での定義 *)
 HB.instance Definition _ := hasDecEq.Build string String.eqb_spec. (* MathComp2 *)
-(* ******************* *)
+
+(**
+---------------
+# MathComp で文字列型を使う
+ *)
 
 Goal forall (l : string), (l == "ABC") || (l != "ABC").
 Proof.
@@ -87,22 +98,23 @@ Fail Check [:: "ABC"] : seq_eqType string_eqType : eqType. (* MathComp1 *)
 Check [:: "ABC"]      : seq string               : eqType. (* MathComp2 *)
 
 (**
-- string_eqType は、eqType (決定性のある等式のある型）のインスタンスである、ようになった。
+- string は、eqType (決定性のある等式のある型）のインスタンスである、ようになった。
 
-- "ABC" は、string型 であると同時に、string_eqType型である（と見える）、ようにになった。
+MathComp1 では、string_eqType は eqType のインスタンスであり、"ABC"はstring型であると同時に
+コアーションによって、``"ABC" : string_eqType`` が成立していたが、MathComp2では単純になった。
 
-- 「==」の引数の "ABC" は、string_eqType であると対応づけできる、ようになった。
+- 「==」の引数の "ABC" は、string であると対応づけできる、ようになった。
 *)
 
 (**
 ---------------
-# 補足説明 (その2)
+# 補足説明
 
-String.v での定義について：
+Standard Coq の String.v での定義と証明済みの補題について：
 *)
 
 (**
-(2) bool値を返す等式の定義
+- bool値を返す決定性のある等式の定義
  *)
 
 Print String.eqb.
@@ -122,7 +134,10 @@ Fixpoint eqb s1 s2 : bool :=
 *)
 
 (**
-(3) の証明、リフレクティブ補題 ([5.])
+- リフレクティブ補題
+
+String.eqbが「=」と同値であることの証明を与える。
+ただし、bool型のtrueなら証明可能とみなす。
 *)
 
 Check String.eqb_spec
