@@ -82,7 +82,6 @@ Qed.
 
 
 (* ***** *)
-(* 盛田氏 *)
 (* ***** *)
 Elpi Tactic pf_or.
 Elpi Accumulate lp:{{
