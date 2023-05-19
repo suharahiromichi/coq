@@ -48,14 +48,18 @@ Module InstantiationInteger.
   Proof. by case. Qed.
 
 (*
-  HB.instance Definition _ : hasDecEq int := CanEqMixin natsum_of_intK.
-  HB.instance Definition _ : hasChoice int := CanChoiceMixin natsum_of_intK.
-  HB.instance Definition _ : isCountable int := CanCountMixin natsum_of_intK.
+  HB.instance Definition _ : hasDecEq int := CanEqMixin natsum_of_intK. (* MathComp2 *)
+  HB.instance Definition _ : hasChoice int := CanChoiceMixin natsum_of_intK. (* MathComp2 *)
+  HB.instance Definition _ : isCountable int := CanCountMixin natsum_of_intK. (* MathComp2 *)
 *)  
   (* こちらのほうが、よりMathComp2的である。 *)
   HB.instance Definition _ := Equality.copy int (can_type natsum_of_intK). (* MathComp2 *)
   HB.instance Definition _ := Choice.copy int (can_type natsum_of_intK). (* MathComp2 *)
   HB.instance Definition _ := Countable.copy int (can_type natsum_of_intK). (* MathComp2 *)
+
+  Check 1%:Z : int : eqType.                (* MathComp2 *)
+  Check 1%:Z : int : choiceType.            (* MathComp2 *)
+  Check 1%:Z : int : countType.             (* MathComp2 *)
   
 (**
 ## Z加群
@@ -114,7 +118,7 @@ Module InstantiationInteger.
   End intZmod.
 
   HB.instance Definition _ := intZmod.Mixin. (* MathComp2 *)
-  Check (int : zmodType).
+  Check 1%:Z : int : zmodType.               (* MathComp2 *)
 
 (*
 PoszD は、Posz (正整数) の加算 (D) について、
@@ -173,10 +177,10 @@ PoszD は、Posz (正整数) の加算 (D) について、
   End intRing.
 
   HB.instance Definition _ := intRing.comMixin. (* MathComp2 *)
-  Check (int : ringType).
-  Check (fun x : int => x + x).
-  Check (@addr0 int).
-  Check (int : comRingType).
+  Check 1%:R : int : ringType.                  (* MathComp2 *)
+  Check 1%:R : int : comRingType.               (* MathComp2 *)
+  Check fun x : int => x + x.
+  Check @addr0 int.
 
 End InstantiationInteger.
 

@@ -184,8 +184,8 @@ Arguments GRing.Zmodule.Mixin [V]%type_scope [zero] [opp add]%function_scope _ _
   End intZmod.
   
   Canonical int_ZmodType := ZmodType int intZmod.Mixin. (* MathComp1 *)
-  Check (1%:Z : int_ZmodType : zmodType).
-  Check (1%:Z : int : Type).  
+  Check 1%:Z : int_ZmodType : zmodType.                 (* MathComp1 *)
+  Check 1%:Z : int : Type.                              (* MathComp1 *)
   
 (**
 整数論に特有のアーベル群論の一部を展開することができます。
@@ -356,13 +356,12 @@ Arguments GRing.Ring.Mixin [R] [one]%ring_scope [mul]%function_scope _ _ _ _ _ _
   Canonical int_Ring := RingType int intRing.comMixin. (* MathComp1 *)
   Canonical int_comRing := ComRingType int intRing.mulzC. (* MathComp1 *)
 
-  Check (1%:R : int_Ring : ringType).
-  Check (1%:R : int : Type).
+  Check 1%:R : int_Ring : ringType.         (* MathComp1 *)
+  Check 1%:R : int_comRing : comRingType.   (* MathComp1 *)
+  Check 1%:R : int : Type.
   
-  Check (int_Ring : ringType).
-  Check (fun x : int => x + x).
-  Check (@addr0 int_Ring).
-  Check (int_comRing : comRingType).
+  Check fun x : int => x + x.
+  Check @addr0 int_Ring.
   
 End InstantiationInteger.
 
