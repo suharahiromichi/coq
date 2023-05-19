@@ -23,7 +23,6 @@ Module InstantiationInteger.
 
   Variant int : Set := Posz of nat | Negz of nat.
   Local Coercion Posz : nat >-> int.
-
   Notation "n %:Z" := (Posz n)(at level 2, left associativity, format "n %:Z", only parsing).
   
   Definition natsum_of_int (m : int) : nat + nat :=
@@ -41,15 +40,20 @@ Module InstantiationInteger.
   Lemma natsum_of_intK : cancel natsum_of_int int_of_natsum.
   Proof. by case. Qed.
 
+(*
   HB.instance Definition _ : hasDecEq int := CanEqMixin natsum_of_intK.
   HB.instance Definition _ : hasChoice int := CanChoiceMixin natsum_of_intK.
   HB.instance Definition _ : isCountable int := CanCountMixin natsum_of_intK.
-
-  (* Advanced way of doing it one go:
-  HB.instance Definition _ :=
-    Countable.copy int (can_type natsum_of_intK).
-   *)
-
+*)  
+  (* こちらのほうが、MathComp2的である。 *)
+  (* Advanced way of doing it one go: *)
+  HB.instance Definition _ := Equality.copy int (can_type natsum_of_intK).
+  HB.instance Definition _ := Choice.copy int (can_type natsum_of_intK).
+  HB.instance Definition _ := Countable.copy int (can_type natsum_of_intK).
+  
+(**
+## Z加群
+*)
   Module intZmod.
     Section intZmod.
       
@@ -99,17 +103,27 @@ Module InstantiationInteger.
   HB.instance Definition _ := intZmod.Mixin.
   Check (int : zmodType).
 
+(*
+PoszD は、Posz (正整数) の加算 (D) について、
+自然数を加算して正整数にすることと、自然数を正整数にして加算することは等しい。
+ *)
   Lemma PoszD : {morph Posz : n m / (n + m)%N >-> n + m}.
   Proof. by []. Qed.
-
+  Check PoszD : forall x y : nat, Posz (x + y) = Posz x + Posz y.
+  Check PoszD : forall x y : nat, (x + y)%:Z = x%:Z + y%:Z.
+  
+(**
+## 環
+ *)
   Module intRing.
     Section intRing.
       
       HB.howto int comRingType.
       (* HB: no solution found at depth 3 looking at depth 4
-        HB: solutions (use 'HB.about F.Build' to see the arguments of each factory F):
-        - hasDecEq; hasChoice; GRing.isRing; GRing.Ring_hasCommutativeMul
-        - hasDecEq; hasChoice; GRing.isZmodule; GRing.Zmodule_isComRing *)
+         HB: solutions (use 'HB.about F.Build' to see the arguments of each factory F):
+         - hasDecEq; hasChoice; GRing.isRing; GRing.Ring_hasCommutativeMul
+         - hasDecEq; hasChoice; GRing.isZmodule; GRing.Zmodule_isComRing
+       *)
 
       HB.about GRing.Zmodule_isComRing.Build.
       (* HB: arguments: GRing.Zmodule_isComRing.Build R [one] [mul] mulrA mulrC mul1r mulrDl oner_neq0
@@ -120,7 +134,8 @@ Module InstantiationInteger.
          - mulrC : commutative mul
          - mul1r : left_id one mul
          - mulrDl : left_distributive mul +%R
-         - oner_neq0 : is_true (one != 0) *)
+         - oner_neq0 : is_true (one != 0)
+       *)
 
       Definition mulz (m n : int) :=
         match m, n with
@@ -152,7 +167,7 @@ End InstantiationInteger.
 *)
 Section GaussianIntegers.
 (**
-- 代数的定義
+## 代数的定義
 *)
   From mathcomp Require Import algC ssrint ssrnum.
   Import Num.Theory.
@@ -171,9 +186,12 @@ Section GaussianIntegers.
   HB.instance Definition _ := GI_subring.
 
 (**
-- sigma type
+## sigma type
 *)
-  Record GI := GIof { algGI : algC; algGIP : algGI \in gaussInteger }.
+  Record GI := GIof {
+                   algGI : algC;
+                   algGIP : algGI \in gaussInteger
+                 }.
   Hint Resolve algGIP.
 
   HB.instance Definition _ := [isSub for algGI].
@@ -182,7 +200,7 @@ Section GaussianIntegers.
   Fail Check (forall x y : GI, x + y = y + x).
   HB.instance Definition _ := [SubChoice_isSubComRing of GI by <:].
   Check (GI : comRingType).
-  Check (forall x y : GI, x + y = y + x).
+  Check (forall x y : GI, x + y = y + x).   (* 可換性が成り立つ。 *)
 
 End GaussianIntegers.
 
