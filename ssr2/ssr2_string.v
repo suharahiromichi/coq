@@ -28,13 +28,19 @@ string型がeqType型のインスタンスに直接なるようになりまし�
 
 https://github.com/suharahiromichi/coq/blob/master/ssr2/ssr2_string.v
 
+
+
+- 比較のために、MathComp1 のコードを示します。
+
+
+https://github.com/suharahiromichi/coq/blob/master/pearl/ssr_string_3.v
  *)
 
 (**
 - バージョン
 
 
-OCaml 4.14.1, Coq 8.17.0, MathComp 2.0.0
+OCaml 4.14.1, Coq 8.17.0, MathComp 2.0.0, Hierarchy Builder 1.4.0 
  *)
 
 (**
