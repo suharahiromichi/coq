@@ -35,14 +35,14 @@ Fixpoint fact (n : nat) : nat :=
     | 0 => 1
     | (S n') => n * fact n'
   end.
-Eval cbv in fact 6.                         (* 720 *)
+Eval cbv in fact 6.
 
 Fixpoint fact_cps (n : nat) (cont : nat -> nat) : nat :=
   match n with
     | 0 => cont 1
     | (S n') => fact_cps n' (fun (a : nat) => cont (n * a))
   end.
-Eval cbv in fact_cps 6 (fun a => a).        (* 720 *)
+Eval cbv in fact_cps 6 (fun a => a).
 
 
 Lemma fact_Sn :
@@ -59,8 +59,8 @@ Lemma fact_cps_Sn :
 Proof.
 Admitted.
 
-Eval cbv in fact_cps 6 (fun (r:nat) => r).  (* 720 *)
-Eval cbv in fact_cps 5 (fun (r:nat) => (6 * r)). (* 720 *)
+Eval cbv in fact_cps 6 (fun (r:nat) => r).
+Eval cbv in fact_cps 5 (fun (r:nat) => (6 * r)).
 
 Lemma eq_fact_fact_cps_aux :
   forall (n:nat),
@@ -89,14 +89,14 @@ Fixpoint fact (n : nat) : nat :=
     | 0 => 1
     | (S n') => n * fact n'
   end.
-Eval cbv in fact 6.                         (* 720 *)
+Eval cbv in fact 6.
 
 Fixpoint fact_cps (n : nat) (cont : nat -> nat) : nat :=
   match n with
     | 0 => cont 1
     | (S n') => fact_cps n' (fun (a : nat) => cont (n * a))
   end.
-Eval cbv in fact_cps 6 (fun a => a).        (* 720 *)
+Eval cbv in fact_cps 6 (fun a => a).
 
 Lemma fact_Sn :
   forall n,
@@ -117,8 +117,8 @@ Proof.
   reflexivity.
 Qed.
 
-Eval cbv in fact_cps 6 (fun (r:nat) => r).  (* 720 *)
-Eval cbv in fact_cps 5 (fun (r:nat) => (6 * r)). (* 720 *)
+Eval cbv in fact_cps 6 (fun (r:nat) => r).
+Eval cbv in fact_cps 5 (fun (r:nat) => (6 * r)).
 
 Lemma eq_fact_fact_cps_aux :
   forall (n:nat),
@@ -163,6 +163,18 @@ End Anser.
 (**
 このコードでは、定理証明支援系CoqのCoqIDEなどで実行できます。
 それぞれのLemmaとTheoremの証明は、intros、simpl、reflexivityを使用しています。
+ *)
+
+(**
+# 補足説明
+
+結果に再現性はないようです。なので、あくまでも一例（とくに良かった場合ではない）と理解してください。
+
+感覚的にですが、繰り返す毎に悪くなるような気もします（NEW CHATを選んだ場合でも）。
+
+また、これも感覚的にですが、
+他の例の場合を含めて、MathCompよりもStandard Coqのほうが、まともなコードを返すことが多いようです。
+
 *)
 
 (* END *)
