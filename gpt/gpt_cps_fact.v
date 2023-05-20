@@ -11,7 +11,7 @@ ChatGPTにCoqのコードを書かせてみました。
 演習問題によくあるように Admitted を含む Standard Coq のコードを完全なものにしてもらいました。
 
 
-具体的には、以下の``質問``から``End Question``までを ChatGPTに与えました。
+具体的には、以下の``質問``の次の``これは``から``End Question``までを ChatGPTに与えました。
 その結果を``回答``以下に貼り付けてあります。
 ただし、ChatGPTの回答は間違いが2箇所（rewriteの方向の間違い）があったので、
 それは、コメントにして修正しています。証明をより短く修正することも可能ですが、それは考慮していません。
@@ -23,8 +23,8 @@ ChatGPTにCoqのコードを書かせてみました。
 (**
 # 質問
 
-これは、定理証明支援系Coqのコードです。
-以下のAdmittedを解消して、完全な証明にしてください。
+これは、定理証明支援系Coqのコードです。以下のAdmittedを解消して、完全な証明にしてください。
+また、Module名のQuestionをAnserに変えてください。
  *)
 Module Question.
 
@@ -80,9 +80,10 @@ End Question.
 (**
 # 回答
 
-以下がAdmittedを解消して完全な証明になったコードです。
+こちらが、Admittedを解消して、完全な証明にしたコードです。
+また、Module名もQuestionからAnserに変更しました。
 *)
-Module Anser.                               (* Question から変更 *)
+Module Anser.
 
 Fixpoint fact (n : nat) : nat :=
   match n with
@@ -154,10 +155,11 @@ Proof.
   apply Hf.
 Qed.
 
-End Anser.                                  (* Question から変更 *)
+End Anser.
 
 (**
-これで、Questionモジュール内のすべてのAdmittedが解消され、証明が完了しました。
+このコードでは、定理証明支援系CoqのCoqIDEなどで実行できます。
+それぞれのLemmaとTheoremの証明は、intros、simpl、reflexivityを使用しています。
 *)
 
 (* END *)
