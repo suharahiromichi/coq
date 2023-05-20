@@ -35,7 +35,7 @@ Module InstantiationInteger.
     | Negz n => inr _ n
     end.
   
-  Definition int_of_natsum (m : nat + nat) :=
+  Definition int_of_natsum (m : nat + nat) : int :=
     match m with
     | inl p => Posz p
     | inr n => Negz n
@@ -157,7 +157,8 @@ Arguments GRing.Zmodule.Mixin [V]%type_scope [zero] [opp add]%function_scope _ _
       Lemma int_ind (P : int -> Type) :
         P 0%:Z ->
         (forall n : nat, P n -> P n.+1) ->
-        (forall n : nat, P (oppz n) -> P (oppz n.+1)) -> forall n : int, P n.
+        (forall n : nat, P (oppz n) -> P (oppz n.+1)) ->
+        forall n : int, P n.
       Proof.
         by move=> P0 hPp hPn []; elim=> [|n ihn]; do ?[apply: hPn | apply: hPp].
       Qed.

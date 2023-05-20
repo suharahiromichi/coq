@@ -15,13 +15,13 @@ Starndard Coqの文字列の定義 [2.] を使うことになります。
 しかし、Import しただけでは、MathComp の機能を使えません。
 文字列型をMathCompの型として使う方法を説明します。わずか1行の定義です。
 
-MathComp 1.x系列から MathComp 2.0.0 への変更で、
+MathComp 1.x系列 (以下MathComp1) から MathComp 2.0.0 (以下MathComp2) への変更で、
 Hierarchy Builder (HB) を使って定義するように変更され、そのインポートが必要になり
 ましたが、1行で定義できることには違いがありません。
 
-ただし、eqType型のインスタンスとしての stirng_eqType型などが廃止され、
-string型がeqType型のインスタンスに直接なるようになりました。
-
+MathComp2では、eqType型のインスタンスとしての stirng_eqType型などが廃止され、
+string型がeqType型のインスタンスになるよう単純化されました。
+しかし、通常の証明では、このこととを意識することは少なく、互換性は維持されているといえます。
 
 - この文書のソースコードは以下にあります。
 
@@ -53,6 +53,13 @@ From mathcomp Require Import all_ssreflect.
 Require Import String.
 Open Scope string_scope.
 
+Print hasDecEq.Build.
+Print Equality.Mixin.
+Print hasDecEq.phant_Build.
+Print Equality.axiom.
+Print eq_axiom.
+Check @hasDecEq.Build string String.eqb String.eqb_spec.
+
 HB.instance Definition _ := hasDecEq.Build string String.eqb_spec. (* MathComp2 *)
 
 (**
@@ -60,6 +67,20 @@ HB.instance Definition _ := hasDecEq.Build string String.eqb_spec. (* MathComp2 
 # MathComp で文字列型を使う
  *)
 
+(**
+これは証明できない。
+ *)
+Goal forall (l : string), l = "ABC" \/ l <> "ABC".
+Proof.
+  move=> l.
+  Search _ (_ \/ _).
+  Check @orP.
+  Fail apply/orP.
+Admitted.
+
+(**
+bool の等式にすると証明できる。
+ *)
 Goal forall (l : string), (l == "ABC") || (l != "ABC").
 Proof.
   move=> l.

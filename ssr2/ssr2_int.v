@@ -38,7 +38,7 @@ Module InstantiationInteger.
     | Negz n => inr _ n
     end.
   
-  Definition int_of_natsum (m : nat + nat) :=
+  Definition int_of_natsum (m : nat + nat) : int :=
     match m with
     | inl p => Posz p
     | inr n => Negz n
@@ -56,6 +56,9 @@ Module InstantiationInteger.
   HB.instance Definition _ := Equality.copy int (can_type natsum_of_intK). (* MathComp2 *)
   HB.instance Definition _ := Choice.copy int (can_type natsum_of_intK). (* MathComp2 *)
   HB.instance Definition _ := Countable.copy int (can_type natsum_of_intK). (* MathComp2 *)
+
+  Print Equality.copy.
+  Print Equality.phant_on_.
 
   Check 1%:Z : int : eqType.                (* MathComp2 *)
   Check 1%:Z : int : choiceType.            (* MathComp2 *)
@@ -107,6 +110,7 @@ Module InstantiationInteger.
         | Posz n => if n is (n'.+1)%N then Negz n' else Posz 0
         | Negz n => Posz (n.+1)%N
         end.
+      
       Lemma addzC : commutative addz. Admitted.
       Lemma add0z : left_id (Posz 0) addz. Admitted.
       Lemma oppzK : involutive oppz. Admitted.
@@ -164,6 +168,7 @@ PoszD は、Posz (正整数) の加算 (D) について、
         | Posz m', Negz n' => - (m' * (n'.+1%N))%N%:Z
         | Negz n', Posz m' => - (m' * (n'.+1%N))%N%:Z
         end.
+      
       Lemma mulzA : associative mulz. Admitted.
       Lemma mulzC : commutative mulz. Admitted.
       Lemma mul1z : left_id (Posz 1) mulz. Admitted.
@@ -177,11 +182,13 @@ PoszD は、Posz (正整数) の加算 (D) について、
   End intRing.
 
   HB.instance Definition _ := intRing.comMixin. (* MathComp2 *)
+  
   Check 1%:R : int : ringType.                  (* MathComp2 *)
   Check 1%:R : int : comRingType.               (* MathComp2 *)
+  
   Check fun x : int => x + x.
   Check @addr0 int.
-
+  
 End InstantiationInteger.
 
 (**
