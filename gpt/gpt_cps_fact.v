@@ -13,8 +13,9 @@ ChatGPTにCoqのコードを書かせてみました。
 
 具体的には、以下の``質問``の次の``これは``から``End Question``までを ChatGPTに与えました。
 その結果を``回答``以下に貼り付けてあります。
-ただし、ChatGPTの回答は間違いが2箇所（rewriteの方向の間違い）があったので、
-それは、コメントにして修正しています。証明をより短く修正することも可能ですが、それは考慮していません。
+ただし、ChatGPTの回答は間違いが（simplのやりすぎと、rewriteの順番と方向の間違い）があったので、
+それは、コメントして修正しています。
+証明をより短く修正することも可能ですが、それは考慮していません。
 
 
 この結果をどう考えるかは、みなさんにお任せします。
@@ -23,7 +24,8 @@ ChatGPTにCoqのコードを書かせてみました。
 (**
 # 質問
 
-これは、定理証明支援系Coqのコードです。以下のAdmittedを解消して、完全な証明にしてください。
+これは、定理証明支援系Coqのコードです。
+以下のAdmittedを解消して、完全な証明にしてください。
 また、Module名のQuestionをAnserに変えてください。
  *)
 Module Question.
@@ -55,7 +57,6 @@ Lemma fact_cps_Sn :
     fact_cps (S n) f =
     fact_cps n (fun (r:nat) => (f (S n * r))).
 Proof.
-  intros.
 Admitted.
 
 Eval cbv in fact_cps 6 (fun (r:nat) => r).  (* 720 *)
@@ -66,13 +67,11 @@ Lemma eq_fact_fact_cps_aux :
     (forall f, f (fact n) = fact_cps n f) /\
     (forall g, g (fact (S n)) = fact_cps (S n) g).
 Proof.
-  intros.
 Admitted.
 
 Theorem eq_fact_fact_cps :
   forall n f, f (fact n) = fact_cps n f.
 Proof.
-  intros.
 Admitted.
 
 End Question.
@@ -99,7 +98,6 @@ Fixpoint fact_cps (n : nat) (cont : nat -> nat) : nat :=
   end.
 Eval cbv in fact_cps 6 (fun a => a).        (* 720 *)
 
-
 Lemma fact_Sn :
   forall n,
     fact (S n) = (S n) * fact n.
@@ -108,7 +106,6 @@ Proof.
   simpl.
   reflexivity.
 Qed.
-
 
 Lemma fact_cps_Sn :
   forall n f,
@@ -130,20 +127,27 @@ Lemma eq_fact_fact_cps_aux :
 Proof.
   intros.
   induction n.
-  - split; intros; simpl; reflexivity.
-  - destruct IHn as [IHf IHg].
-    split.
+  - split.
     + intros f.
-      rewrite fact_Sn.
-      rewrite fact_cps_Sn.
-      (* rewrite IHf.                          間違い。 *)
-      rewrite <- IHf.                       (* 修正 *)
+      simpl.
       reflexivity.
     + intros g.
+      simpl.
+      reflexivity.
+  - destruct IHn as [IHn_fact IHn_Sn].
+    split.
+    + intros f.
+(*    simpl.                                   削除 *)
+(*    rewrite IHn_fact.                        削除 *)
+      rewrite fact_cps_Sn.
+      rewrite <- IHn_fact.                  (* 追加 *)
+      reflexivity.
+    + intros g.
+(*    simpl.                                   削除 *)
+(*    rewrite IHn_Sn.                          削除 *)
       rewrite fact_Sn.
       rewrite fact_cps_Sn.
-      (* rewrite IHg.                          間違い。 *)
-      rewrite <- IHg.                       (* 修正 *)
+      rewrite <- IHn_Sn.                    (* 追加 *)
       reflexivity.
 Qed.
 
@@ -151,8 +155,7 @@ Theorem eq_fact_fact_cps :
   forall n f, f (fact n) = fact_cps n f.
 Proof.
   intros.
-  destruct (eq_fact_fact_cps_aux n) as [Hf _].
-  apply Hf.
+  apply (proj1 (eq_fact_fact_cps_aux n)).
 Qed.
 
 End Anser.
