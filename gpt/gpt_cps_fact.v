@@ -24,6 +24,8 @@ ChatGPTにCoqのコードを書かせてみました。
 (**
 # 質問
 
+「
+
 これは、定理証明支援系Coqのコードです。
 以下のAdmittedを解消して、完全な証明にしてください。
 また、Module名のQuestionをAnserに変えてください。
@@ -75,9 +77,14 @@ Proof.
 Admitted.
 
 End Question.
+(**
+」
+*)
 
 (**
 # 回答
+
+「
 
 こちらが、Admittedを解消して、完全な証明にしたコードです。
 また、Module名もQuestionからAnserに変更しました。
@@ -163,6 +170,8 @@ End Anser.
 (**
 このコードでは、定理証明支援系CoqのCoqIDEなどで実行できます。
 それぞれのLemmaとTheoremの証明は、intros、simpl、reflexivityを使用しています。
+
+」
  *)
 
 (**
@@ -172,8 +181,18 @@ End Anser.
 
 感覚的にですが、繰り返す毎に悪くなるような気もします（NEW CHATを選んだ場合でも）。
 
-また、これも感覚的にですが、
-他の例の場合を含めて、MathCompよりもStandard Coqのほうが、まともなコードを返すことが多いようです。
+質問のもとになったCoqのコードは、GitHubで公開されれいます(2010年公開)が、
+回答は、それを書き写したといえるものではありません。
+
+``https://github.com/suharahiromichi/coq/blob/master/coq_cps_fact.v``
+
+もっとも、同様の定理の証明は多くのひとが行い、公開しているはずなので、
+それらのどれかを参考にしているかのしれません。
+ChatGPTの「Coq力」を測るには、より多くのオリジナルな定理の証明をやらせてみる必要があるでしょう。
+
+
+最後に、これも感覚的にですが、MathCompよりもStandard Coqの場合のほうが、
+まともなコードを返すことが多いようです。
 
 *)
 
