@@ -5,11 +5,11 @@ Porting Coq Scripts to the Mathematical Components Library Version 2
 (**
 # 1. Target Audience of this Document このドキュメントの対象読者
 
-- 1. Canonical コマンドを使用していない MathComp ユーザーは、MathComp
+1. Canonical コマンドを使用していない MathComp ユーザーは、MathComp
 の過去のバージョン アップグレードと比較して、大きな違いは感じられな
 いはずです。 現在では役に立たないいくつかの識別子は削除されましたが、
 これは変更ログに文書化されています。 
-たとえば、 ``bool_eqType`` を bool : eqType`` または単に ``bool`` に置き換える必要がある場合があります。 
+たとえば、 ``bool_eqType`` を ``bool : eqType`` または単に ``bool`` に置き換える必要がある場合があります。 
 また、一部の書き換えの動作が変更され、明示的なパターンが必要になる場合があ
 ります。 通常、結合性補題を使用した書き換えでは、ユーザーが等価関係
 の左側と右側のどちらで起こるかを指定する必要があるため、``addrA`` の書き
@@ -18,10 +18,10 @@ Porting Coq Scripts to the Mathematical Components Library Version 2
 ようなユーザーの場合、このチュートリアルを最後まで読む必要はないかも
 しれません。
 
-- 2. 対象読者は主に、Canonical コマンドを使用して構造体をインスタンス
+2. 対象読者は主に、Canonical コマンドを使用して構造体をインスタンス
 化している MathComp ユーザーです。
 
-- 3. 独自の構造階層を開発している少数のユーザーにとって、このチュート
+3. 独自の構造階層を開発している少数のユーザーにとって、このチュート
 リアルはあまり役に立たない可能性があり、むしろ以下を参照する必要があり
 ます。
 
@@ -167,7 +167,7 @@ Coq ファイル内:
 HB.graph "hierarchy.dot".
 ```
 
-単位の中から
+端末の中から、
 
 ```
 tred hierarchy.dot | dot -Tpng > hierarchy.png
