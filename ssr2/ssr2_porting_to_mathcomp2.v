@@ -681,6 +681,7 @@ MathComp 2 への移行プロセスでは、
 
 原典を参照してください。追加として、
 
+
 Reynald Affeldt, "An Introduction to MathComp-Analysis"
 
 ``https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2022_affeldt/karate-coq-nagoya2022.pdf``
@@ -688,5 +689,3 @@ Reynald Affeldt, "An Introduction to MathComp-Analysis"
 
 ただし、MathComp2に準拠しているのは5章以降で、3章はMathComp1です。
 *)
-
-(* 以上 *)
