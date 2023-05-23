@@ -11,12 +11,11 @@ Porting Coq Scripts to the Mathematical Components Library Version 2
 これは変更ログに文書化されています。 
 たとえば、 ``bool_eqType`` を ``bool : eqType`` または単に ``bool`` に置き換える必要がある場合があります。 
 また、一部の書き換えの動作が変更され、明示的なパターンが必要になる場合があ
-ります。 通常、結合性補題を使用した書き換えでは、ユーザーが等価関係
+ります。 通常、結合法則についての補題を使用した書き換えでは、ユーザーが等価関係
 の左側と右側のどちらで起こるかを指定する必要があるため、``addrA`` の書き
-換えを ``rewrite [in LHS] addrA`` に書き換える必要がある場合があります。
-例えば。 を参照。 具体的な例については 4.4 を参照してください。 その
-ようなユーザーの場合、このチュートリアルを最後まで読む必要はないかも
-しれません。
+換えを ``rewrite [in LHS]addrA`` に書き換える必要がある場合があります。
+具体的な例については 4.4 を参照してください。 そのようなユーザーの場合、
+このチュートリアルを最後まで読む必要はないかもしれません。
 
 2. 対象読者は主に、Canonical コマンドを使用して構造体をインスタンス
 化している MathComp ユーザーです。
@@ -30,9 +29,10 @@ Porting Coq Scripts to the Mathematical Components Library Version 2
   -  various papers for more applications [1] [2, Sect. 3] [3, Sect. 4],
   -  already ported developments such as odd-order, multinomials, etc.
 
+
 具体的にするために、セクション4 で CompDecModal [5] のポートを説明します。
 その前に、セクション2 で HB の基本を確認します。
-セクション3で移植に使用できるドキュメント ツールを確認します。 
+セクション3で移植に使用できるドキュメントとツールを確認します。 
  *)
 
 (**
@@ -47,7 +47,7 @@ Porting Coq Scripts to the Mathematical Components Library Version 2
 
 ```
 HB.mixin Record isStruct params carrier := {
-... properties about the carrier ...
+  ... properties about the carrier ...
 }
 ```
 
@@ -55,7 +55,7 @@ HB.mixin Record isStruct params carrier := {
 
 ```
 #[short(type=structType)]
-HB.structure Definition Struct := {carrier of isStruct carrier}
+HB.structure Definition Struct params := {carrier of isStruct params carrier}
 ```
 
 HB は Coq 属性を使用して、構造に対応する型を宣言していることに注意してください。 
@@ -64,8 +64,8 @@ HB は Coq 属性を使用して、構造に対応する型を宣言している
 
 ```
 HB.mixin Record NewStruct_from_Struct params carrier
-of Struct params carrier := {
-... more properties about the carrier ...
+  of Struct params carrier := {
+  ... more properties about the carrier ...
 }
 ```
 
@@ -74,20 +74,21 @@ of Struct params carrier := {
 
 ```
 #[short(type=newStructType)]
-HB.structure NewStruct params :=
-  {carrier of NewStruct_from_Struct parames carrier & Struct params carrier}.
+HB.structure Definition NewStruct params :=
+             {carrier of NewStruct_from_Struct parames carrier
+                       & Struct params carrier}.
 ```
 
 このプロセスの結果、型 structType と newStructType が作成され、
 後者の要素は前者の要素としても理解されるようになります。
-最後に、Mixin Struct の宣言には、コンストラクター Struct の作成が伴います。
-次の Build コマンドを使用して構造体をインスタンス化するために使用される。
+最後に、ミックスイン Struct の宣言には、コンストラクター Struct.Build が作成され、
+次のコマンドを使用して構造体をインスタンス化するために使用されます。
 
 ```
 HB.instance Definition _ := Struct.Build params.
 ```
 
-コマンド HB.instance は、次のような数行の情報出力の出力をトリガーする必要があります。
+コマンド HB.instance は、次のような数行の情報出力の出力を引き起こすでしょう。
 
 ```
 module_type__canonical__struct_Struct is defined
@@ -107,25 +108,25 @@ module_type__canonical__struct_Struct is defined
 - Additionally, structures are documented in the headers of Coq scripts according to the following format:
 
 ```
-(********************************************************************************)
-(* Centered Title                                                               *)
-(*                                                                              *)
-(* Some introductory text: what is this file about, instructions to use this    *)
-(* file, etc.                                                                   *)
-(*                                                                              *)
-(* Reference: bib entry if any                                                  *)
-(*                                                                              *)
-(* * Section Name                                                               *)
-(* definition == prose explanation of the definition and its parameters         *)
-(*   notation == prose explanation, scope information should appear nearby      *)
-(* structType == name of structures should make clear the corresponding         *)
-(*               HB structure with the following sentence:                      *)
-(*               "The HB class is Xyz."                                         *)
-(*  shortcut := a shortcut can be explained with (pseudo-)code instead of       *)
-(*              prose                                                           *)
-(*                                                                              *)
-(* Acknowledgments: people                                                      *)
-(********************************************************************************)
+(*****************************************************************************)
+(* Centered Title                                                            *)
+(*                                                                           *)
+(* Some introductory text: what is this file about, instructions to use this *)
+(* file, etc.                                                                *)
+(*                                                                           *)
+(* Reference: bib entry if any                                               *)
+(*                                                                           *)
+(* * Section Name                                                            *)
+(* definition == prose explanation of the definition and its parameters      *)
+(*   notation == prose explanation, scope information should appear nearby   *)
+(* structType == name of structures should make clear the corresponding      *)
+(*               HB structure with the following sentence:                   *)
+(*               "The HB class is Xyz."                                      *)
+(*  shortcut := a shortcut can be explained with (pseudo-)code instead of    *)
+(*              prose                                                        *)
+(*                                                                           *)
+(* Acknowledgments: people                                                   *)
+(*****************************************************************************)
 ```
 
 たとえば、ファイル ssreflect/eqtype.v で定義されている eqType 構造を参照してください。
@@ -136,7 +137,7 @@ module_type__canonical__struct_Struct is defined
 
 ## 3.2 HB Commands Useful to Explore an Existing Hierarch
 
-変更ログと Coq スクリプトのヘッダーに加えて、
+changelog と Coq スクリプトのヘッダーに加えて、
 ユーザーは HB コマンドを使用して数学的構造の階層を探索できます。
 
 ### 3.2.1 Information about Structures with HB.about
@@ -270,19 +271,22 @@ bool がすでに備えているすべての構造をリストします。
 (2) 既存の Coq スクリプトをコンパイルし、
 (3) エラーを次々に修正することです。 
 具体的にするために、CompDecModal [5] の移植について説明します。 
+
+``https://github.com/coq-community/comp-dec-modal``
+
 これは、MathComp を適度に使用した開発であり、
 その移植には、MathComp を使用するほとんどの開発で使用される可能性が高い基本構造の
 インスタンス化の修正が含まれます。
 
 以下では、問題のあるコマンドが灰色の領域に表示されます。
 
-```
+```coq:mathcomp1
 command incompatible with MathComp 2
 ```
 
 and their fixes are singly famed:
 
-```
+```coq:mathcomp2
 MathComp 2 fix for the command above
 ```
 
@@ -297,11 +301,12 @@ From HB Require Import structures.
 ## 4.2 Instantiation of Structures with MathComp 2
 
 MathComp ユーザーの観点から見ると、主な変更点は数学的構造がインスタンス化される方法です。 
-ほとんどの Canonical (または Canonical Structure) コマンドは HB.instance (セクション 2 を参照) 
+ほとんどの Canonical (または Canonical Structure) コマンドは HB.instance (セクション2 を参照) 
 に置き換えられ、[subType ...] などの MathComp 表記に小さな変更が加えられています。
-CompDecModal に関して、最初の問題となるコマンド セットは次のとおりです (ファイル fset.v)。
+CompDecModal に関して、最初の問題となるコマンド セットは次のとおりです
+(file ``theories/libs/fset.v``)。
 
-```
+```coq:mathcomp1
 Section FinSets.
   Variable T : choiceType.
   ...
@@ -424,7 +429,7 @@ fset_subCountType is defined
 したがって、削除する必要があります。
 要約すると、完全な修正は次のとおりです。
 
-```
+```coq:mathcomp2
  1 Section FinSets.
  2 Variable T : choiceType.
  3 ...
@@ -442,7 +447,7 @@ fset_subCountType is defined
 Choice 構造体をインスタンス化して Equality 構造体を自動的に取得することで、
 より短い修正は次のようになります。
 
-```
+```coq:mathcomp2
 Section FinSets.
   Variable T : choiceType.
   ...
@@ -461,7 +466,7 @@ HB.instance Definition _ (T : countType) := [Countable of fset_type T by <:].
 CompDecModal の移植時に発生する次の一連のコンパイル エラーは、
 ほとんどの MathComp 開発で使用される可能性が高い、有限反復演算子に関するものです。
 
-```
+```coq:mathcomp1
 Canonical Structure fsetU_law (T : choiceType) :=
   Monoid.Law (@fsetUA T) (@fset0U T) (@fsetU0 T).
 Canonical Structure fsetU_comlaw (T : choiceType) :=
@@ -563,7 +568,7 @@ HB.instance Definition _ (T : choiceType) :=
 
 要約すると、以下を使用して有限反復演算子に関するコンパイル エラーを修正します。
 
-```
+```coq:mathcomp2
 HB.instance Definition _ (T : choiceType) :=
   SemiGroup.isCommutativeLaw.Build _ fsetU (@fsetUC T).
 HB.instance Definition _ (T : choiceType) :=
@@ -573,7 +578,7 @@ HB.instance Definition _ (T : choiceType) :=
 実際、Monoid.ComLaw 構造体のインスタンス化から Monoid.Law 構造体を取得できるため、
 インスタンス化を 1つだけ行うこともできます。そのため、より良い修正は次のようになります。
 
-```
+```coq:mathcomp2
 HB.instance Definition _ (T : choiceType) :=
   Monoid.isComLaw.Build _ _ fsetU (@fsetUA T) (@fsetUC T) (@fset0U T).
 ```
@@ -582,9 +587,11 @@ HB.instance Definition _ (T : choiceType) :=
 
 他のコンパイル エラーは上ですでに説明したものと似ているため、ここではさらに詳しく説明します。
 
-#### Instantiation of an Equality Structure Next failure in the file ``K/K_def.v``:
+#### Instantiation of an Equality Structure
 
-```
+次のコンパイル「エラー」はファイル ``K/K_def.v`` にあります：
+
+```coq:mathcomp1
 Definition form_eqMixin := EqMixin (compareP eq_form_dec).
 Canonical Structure form_eqType := Eval hnf in @EqType form form_eqMixin.
 ```
@@ -593,14 +600,16 @@ Canonical Structure form_eqType := Eval hnf in @EqType form form_eqMixin.
 変更ログでは、パラメータを HB.howto で二重チェックできるコンストラクター hasDecEq.Build を
 使用することを提案しており、これにより次の修正が行われます。
 
-```
+```coq:mathcomp2
 HB.instance Definition _ := hasDecEq.Build form (compareP eq_form_dec).
 ```
 
 
-#### Instantiation of a Countable Structure Next failure in the file ``K/K_def.v``:
+#### Instantiation of a Countable Structure
 
-```
+次のコンパイル「エラー」はファイル ``K/K_def.v`` にあります：
+
+```coq:mathcomp1
 Definition form_countMixin := PcanCountMixin formChoice.pickleP.
 Definition form_choiceMixin := CountChoiceMixin form_countMixin.
 Canonical Structure form_ChoiceType := Eval hnf in ChoiceType form form_choiceMixin.
@@ -609,7 +618,7 @@ Canonical Structure form_CountType := Eval hnf in CountType form form_countMixin
 
 PcanCountMixin が非推奨となり、CountChoiceMixin が廃止されたことがわかりました。 
 changelog では、PcanCountMixin の代わりに PCanIsCountable を使用することが推奨されています。
-Locate によると、PCanIsCountable はファイル ssreflect/choice.v にあり、次のタイプを持っています。
+Locate によると、PCanIsCountable はファイル ``ssreflect/choice.v`` にあり、次のタイプを持っています。
 
 ```
 PCanIsCountable :
@@ -619,7 +628,7 @@ forall [T : countType] [sT : Type] [f : sT -> T] [f' : T -> option sT], pcancel 
 
 したがって、この場合の修正は次のようになります。
 
-```
+```coq:mathcomp2
 HB.instance Definition _ : isCountable form := PCanIsCountable formChoice.pickleP.
 ```
 
@@ -628,17 +637,17 @@ HB.instance Definition _ : isCountable form := PCanIsCountable formChoice.pickle
 Countable インスタンスとともに Choice インスタンスも生成されるため、この修正で十分です。
 
 
-#### 等価構造のその他のインスタンス化
+#### ``Equality`` 構造体のその他のインスタンス化
 
-ファイル Kstar_def.v、gen_def.v、および CTL_def.v 内の次のコンパイル エラーは、
+ファイル ``Kstar_def.v``、``gen_def.v``、および ``CTL_def.v`` のなかの次のコンパイルエラーは、
 すでに上で説明したように処理されます。
 
-#### 再書き込みの失敗
+#### ``rewrite``タクティクの失敗
 
-次のコンパイル「エラー」はファイル CTL/demo.v にあります。 
+次のコンパイル「エラー」はファイル ``CTL/demo.v`` にあります。 
 これは実際には、MathComp 2 へのアップグレードによって実行が大幅に遅くなった戦術です。
 
-```
+```coq:mathcomp1
 move => [p' y]. rewrite /MRel /Mstate (negbTE (root_internal _)) [_ && _]/= orbF.
 ```
 
@@ -646,7 +655,7 @@ move => [p' y]. rewrite /MRel /Mstate (negbTE (root_internal _)) [_ && _]/= orbF
 以前は、デフォルトで ``<->`` 等価の左側に適用されていましたが、
 現在では、適切な実行時間を回復するために、ユーザーはパターンで書き換え位置を指定する必要があります。
 
-```
+```coq:mathcomp2
 move => [p' y]. rewrite /MRel /Mstate (negbTE (root_internal _)) [_ && _]/=.
 rewrite [in X in X <-> _]orbF.
 ```
@@ -668,4 +677,16 @@ MathComp 2 への移行プロセスでは、
 を通じて回答できるさらに多くの質問が確実に生成されるでしょう。
 
 
+# References
+
+原典を参照してください。追加として、
+
+Reynald Affeldt, "An Introduction to MathComp-Analysis"
+
+``https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2022_affeldt/karate-coq-nagoya2022.pdf``
+
+
+ただし、MathComp2に準拠しているのは5章以降で、3章はMathComp1です。
 *)
+
+(* 以上 *)
