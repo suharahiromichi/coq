@@ -6,7 +6,7 @@
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import bigop matrix.
      
-Require Import ssromega.
+From common Require Import ssromega.
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
 もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
@@ -258,12 +258,11 @@ $$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
     rewrite -big_cat.
     f_equal.                       (* iインデックス部分を取り出す。 *)
     rewrite /index_iota.
-    Check iota_add
-      : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
+    Check iotaD : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
     have -> : m + n1 + n2 - m = n1 + n2 by ssromega.
     have -> : m + n1 - m = n1 by ssromega.
     have -> : m + n1 + n2 - (m + n1) = n2 by ssromega.
-    rewrite -iota_add.
+    rewrite -iotaD.
     done.
   Qed.
   
