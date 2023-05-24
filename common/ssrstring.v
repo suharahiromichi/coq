@@ -1,4 +1,6 @@
+From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
@@ -26,25 +28,12 @@ Section SSRAscii.
     (* reflect (a = b) (if ascii_dec a b then true else false) *)
     apply: (iffP idP); by case: (ascii_dec a b).
   Qed.
-  
-  Fail Canonical ascii_eqType := [eqType of ascii].
 
-  Definition ascii_eqMixin := @EqMixin ascii eqAscii ascii_eqP.
-  Canonical ascii_eqType := @EqType ascii ascii_eqMixin.
-
-  Canonical ascii_eqType' := [eqType of ascii].
+  HB.instance Definition _ := hasDecEq.Build ascii ascii_eqP. (* MathComp2 *)
 End SSRAscii.
 
-Check ascii_eqType : eqType.
-Check "a"%char : ascii.
-Check "a"%char : ascii_eqType.
+Check "a"%char : ascii : eqType.
 
-Check true : bool.
-Check true : bool_eqType.
-
-Check 1 : nat.
-Check 1 : nat_eqType.
-  
 Section SSRString.
   
   Definition eqString (s t : string) : bool :=
@@ -62,10 +51,10 @@ Section SSRString.
     apply: (iffP idP); by case: (string_dec x y).
   Qed.        
   
-  Definition string_eqMixin := @EqMixin string eqString string_eqP.
-  Canonical string_eqType := @EqType string string_eqMixin.
-
+  HB.instance Definition _ := hasDecEq.Build string String.eqb_spec. (* MathComp2 *)
 End SSRString.
+
+Check "aaa"%string : string : eqType.
 
 Check "aaa"%string = "aaa"%string : Prop.
 Check "aaa"%string == "aaa"%string : bool.
