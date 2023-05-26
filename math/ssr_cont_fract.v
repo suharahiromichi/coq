@@ -1,5 +1,5 @@
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
 Require Import Program.Wf.                  (* Program wf *)
@@ -57,8 +57,8 @@ Section CF.
   Obligation 1.
   Proof.
     apply/ltP/ltn_pmod.
-    move/Lt.neq_0_lt in H.
-    apply/ltP/H.
+    move/Lt.neq_0_lt in n0.
+    apply/ltP/n0.
   Qed.
   Compute f2cf'p 36 11.                     (* [:: 3; 3; 1; 2] *)
   
