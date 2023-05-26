@@ -1,5 +1,5 @@
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -17,6 +17,9 @@ End DEFINE.
   
 Notation "n ^^ m" := (rising_factorial n m)
 (at level 30, right associativity).
+
+Compute 3 ^^ 2.
+
 
 Section LEMMAS.
   
@@ -46,12 +49,12 @@ Section LEMMAS.
   Proof.
     elim: m n => [|m IHm] n.
     - rewrite rfactn1.
-        by rewrite rfactn0 mul1n addn0.
+      by rewrite rfactn0 mul1n addn0.
     - rewrite rfactnS.
       rewrite IHm.
       rewrite mulnA.
       rewrite rfactnS.
-        by rewrite addSn addnS.
+      by rewrite addSn addnS.
   Qed.
   
   Compute 0 ^^ 0.                           (* 1 *)
@@ -84,7 +87,7 @@ Section LEMMAS.
   Proof.
     elim: n => [|n IHn] //.
     rewrite rfactnSr add1n IHn.
-      by rewrite factS mulnC.
+    by rewrite factS mulnC.
   Qed.
   
   Compute 0`! * 0.+1 ^^ 0 = (0 + 0)`!.      (* 0 0 *)
@@ -115,7 +118,7 @@ Section LEMMAS.
   Proof.
     rewrite -rfact_fact.
     rewrite mulnC mulnK; first done.
-      by rewrite fact_gt0.
+    by rewrite fact_gt0.
   Qed.
   
   (* ****************************** *)

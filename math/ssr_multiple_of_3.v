@@ -77,7 +77,7 @@ Lemma gt_exp m n : 0 < m -> 0 < m^n.
 Proof.
   move=> H.
   elim: n => // n IHn.
-    by rewrite expnS -{1}(muln0 m)ltn_pmul2l.
+  by rewrite expnS -{1}(muln0 m)ltn_pmul2l.
 Qed.
 
 Lemma dvdn3_99 n : 3 %| (10^n - 1).
@@ -94,7 +94,7 @@ Qed.
 Lemma dvdn3_99x n : 3 %| (10^n - 1) * (x n).
 Proof.
   rewrite dvdn_mulr //.
-    by apply: dvdn3_99.
+  by apply: dvdn3_99.
 Qed.
 
 (**
@@ -107,9 +107,9 @@ Proof.
   elim: n => [| n IHn].
   - rewrite big_nat1.
     apply: dvdn_mulr.
-      by apply: dvdn3_99.
+    by apply: dvdn3_99.
   - rewrite big_nat_recr // dvdn_addl // dvdn_mulr //.
-      by apply: dvdn3_99.
+    by apply: dvdn3_99.
 Qed.
 
 (**
@@ -130,7 +130,7 @@ Lemma s__s_s (n : nat) (F G : nat -> nat) :
   \sum_(0 <= i < n)(F i + G i) = 
   \sum_(0 <= i < n)(F i) + \sum_(0 <= i < n)(G i).
 Proof.
-    by rewrite big_split /=.
+  by rewrite big_split /=.
 Qed.
 
 (**
@@ -147,14 +147,14 @@ Qed.
 Lemma l_100__99_1 (n : nat) : 10 ^ n = 10 ^ n - 1 + 1.
 Proof.
   rewrite addn1 subn1 prednK //.
-    by apply: gt_exp.
+  by apply: gt_exp.
 Qed.
 
 Lemma l_100x__99x_x (i : nat) : 10^i * (x i) = (10^i - 1) * (x i) + (x i).
 Proof.
   rewrite -{3}[(x i)]mul1n.
   rewrite -mulnDl.
-    by rewrite -l_100__99_1.
+  by rewrite -l_100__99_1.
 Qed.
 
 Lemma s100x__s99x_x (n : nat) :
@@ -168,14 +168,14 @@ Proof.
     have <- : 10 ^ n.+1 * x n.+1 = (10 ^ n.+1 - 1) * x n.+1 + x n.+1
       by rewrite -{3}[x n.+1]mul1n -[(10 ^ n.+1 - 1) * x n.+1 + 1 * x n.+1]mulnDl
          -l_100__99_1.
-      by rewrite -IHn.
+    by rewrite -IHn.
 Qed.
 
 Lemma s100x__s99x_sx (n : nat) :
   \sum_(0 <= i < n.+1)(10^i * (x i)) =
   \sum_(0 <= i < n.+1)((10^i - 1) * (x i)) + \sum_(0 <= i < n.+1)(x i).
 Proof.
-    by rewrite -s__s_s s100x__s99x_x.
+  by rewrite -s__s_s s100x__s99x_x.
 Qed.
 
 (**
@@ -192,7 +192,7 @@ Theorem mo3 (n : nat) : (3 %| \sum_(0 <= i < n.+1)(10^i * (x i))) =
 Proof.
   rewrite s100x__s99x_sx.
   rewrite dvdn_addr //.
-    by apply: dvdn3_s99x.
+  by apply: dvdn3_s99x.
 Qed.
 
 (* *************************** *)
@@ -204,7 +204,7 @@ Proof.
   have -> : 100 = 99 + 1 by [].
   rewrite mulnDl mul1n.
   rewrite dvdn_addr => //=.
-    by rewrite dvdn_mulr.
+  by rewrite dvdn_mulr.
 Qed.
 
 Lemma test10 x1 : (3 %| x1) = (3 %| 10 * x1).
@@ -212,7 +212,7 @@ Proof.
   have -> : 10 = 9 + 1 by [].
   rewrite mulnDl mul1n.
   rewrite dvdn_addr => //=.
-    by rewrite dvdn_mulr.
+  by rewrite dvdn_mulr.
 Qed.
 
 Lemma dvdn3_s99 (n : nat) : 3 %| \sum_(0 <= i < n.+1)(10^i - 1).
@@ -221,7 +221,7 @@ Proof.
   - by rewrite big_nat1.
   - rewrite big_nat_recr //.
     rewrite dvdn_addl //.
-      by apply: dvdn3_99.
+    by apply: dvdn3_99.
 Qed.
 
 End multiple_of_3.

@@ -6,7 +6,7 @@
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -48,10 +48,10 @@ Compute div2 10.                            (* = 5 *)
 Goal forall m, div2 m <= m.
 Proof.
   elim.
-    by [].
-  move=> n.
-  (* div2 n <= n -> div2 n.+1 <= n.+1 *)
-  simpl.
+  - by [].
+  - move=> n.
+    (* div2 n <= n -> div2 n.+1 <= n.+1 *)
+    simpl.
 Abort.
 
 (**
@@ -84,8 +84,8 @@ Proof.
   Check ltnW : forall m n : nat, m < n -> m <= n.
   apply: ltnW.
   apply: IH.
-    (* (n < n.+2)%coq_nat *)
-    by apply/ltP.
+  (* (n < n.+2)%coq_nat *)
+  by apply/ltP.
 Qed.
 
 (**
@@ -121,7 +121,7 @@ Proof.
   elim: m {-2}m (leqnn m).                  (* ！！イデオム！！ *)
   - (* forall m : nat, m <= 0 -> div2 m <= m *)
     move=> m.
-      by rewrite leqn0 => /eqP ->.
+    by rewrite leqn0 => /eqP ->.
   - (* forall n : nat,
        (forall m : nat, m <= n -> div2 m <= m) ->
        (forall m : nat, m <= n.+1 -> div2 m <= m)
@@ -134,7 +134,7 @@ Proof.
     apply: ltnW.
     apply: (IHm n).
     rewrite ltS in Hm'.
-      by apply: ltnW.
+    by apply: ltnW.
 Qed.
 
 (**
@@ -158,8 +158,8 @@ Lemma complete_ind (P:nat -> Prop) :
   (forall n, P n).                          (* 導ける結論 *)
 Proof.
   move => H n.
-    by elim: n {-2}n (leqnn n) => [[_ | //] | n IHn m Hm];
-       apply: H => l Hl //; exact: IHn (leq_trans Hl Hm).
+  by elim: n {-2}n (leqnn n) => [[_ | //] | n IHn m Hm];
+    apply: H => l Hl //; exact: IHn (leq_trans Hl Hm).
 Qed.
 
 Goal forall m, div2 m <= m.
@@ -175,7 +175,7 @@ Proof.
   move=> n IH /=.
   apply: ltnW.
   apply: IH.
-    by apply: ltnW.
+  by apply: ltnW.
 Qed.
 
 (**
@@ -211,9 +211,9 @@ Goal forall m, div2 m <= m.
 Proof.
   move=> m.
   functional induction (div2 m).
-    by [].
-      by [].
-        by apply ltnW.
+  - by [].
+  - by [].
+  - by apply ltnW.
 Qed.
 
 (**
@@ -240,9 +240,9 @@ Check div2a_ind
 Lemma leq_div2a m : div2a m <= m.
 Proof.
   functional induction (div2a m).
-    by [].
-      by [].
-        by apply ltnW.
+  - by [].
+  - by [].
+  - by apply ltnW.
 Qed.
 
 (**
@@ -260,7 +260,7 @@ Proof.
   case: d => //= d; rewrite /modn /edivn /=.
   elim: m {-2}m 0 (leqnn m) => [|n IHn] [|m] q //=.
   rewrite ltnS !subn_if_gt; case: (d <= m) => // le_mn.
-    by apply: IHn; apply: leq_trans le_mn; exact: leq_subr.
+  by apply: IHn; apply: leq_trans le_mn; exact: leq_subr.
 Qed.
 
 (**
@@ -280,8 +280,8 @@ Proof.
   case; first by exists 0, 3.              (* 15c = 3 * 5c *)
   move=> m'; set m := _.+1; move=> mn m11.
   case: (IHn (m-4) _ isT) => [|s4 [s5 def_m4]].
-    by rewrite leq_subLR (leq_trans mn) // addSnnS leq_addl.
-      by exists s4.+1, s5; rewrite mulSn -addnA def_m4 subnKC.
+  - by rewrite leq_subLR (leq_trans mn) // addSnnS leq_addl.
+  - by exists s4.+1, s5; rewrite mulSn -addnA def_m4 subnKC.
 Qed.
 
 (* END *)

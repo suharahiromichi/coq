@@ -120,7 +120,7 @@ twoFibEq (S (S k)) =
     rewrite -IHn0.
     rewrite -IHn1.
     rewrite /fib2 [RHS]/=.
-      by rewrite add0n addn0 [RHS]addnC.
+    by rewrite add0n addn0 [RHS]addnC.
   Qed.
 
 End Two_Fib_Eq.

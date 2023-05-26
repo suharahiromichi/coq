@@ -16,7 +16,7 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_positional_notation.
 From mathcomp Require Import all_ssreflect.
 Require Import Recdef.
 Require Import Wf_nat.                      (* well_founded lt *)
-Require Import ssromega.
+From common Require Import ssromega.
 
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v

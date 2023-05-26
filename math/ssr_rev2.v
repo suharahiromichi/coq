@@ -11,7 +11,7 @@ From mathcomp Require Import all_ssreflect.
 Require Import Recdef.
 Require Import Wf_nat.                      (* well_founded lt *)
 Require Import Program.Wf.                  (* Program Fixpoint *)
-Require Import ssr_omega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -107,7 +107,7 @@ Program と if-then-else は併用できない。if条件が失われる。
     end.
   Obligation 1.
   Proof.
-    move/eqP in H.
+    move/eqP in n0.
     apply/ltP/ltn_Pdiv => //.
     (*
     rewrite -ltnNge in H.
@@ -119,7 +119,7 @@ Program と if-then-else は併用できない。if条件が失われる。
   Qed.
   Obligation 2.
   Proof.
-    move/eqP in H.
+    move/eqP in n0.
     apply/ltP/ltn_Pdiv => //.
     (*
     rewrite -ltnNge in H.
@@ -127,7 +127,7 @@ Program と if-then-else は併用できない。if条件が失われる。
     rewrite -lt0n.
       by apply: (@leq_ltn_trans 1 0 n).
      *)
-      by ssromega.
+    by ssromega.
   Qed.
 
 (**
@@ -218,15 +218,15 @@ Program と if-then-else は併用できない。if条件が失われる。
     end.
   Obligation 1.
   Proof.
-    move/eqP in H.
+    move/eqP in n0.
     apply/ltP/ltn_pred.
-      by rewrite lt0n.
+    by rewrite lt0n.
   Qed.
   Obligation 2.
   Proof.
-    move/eqP in H.
+    move/eqP in n0.
     apply/ltP/ltn_pred.
-      by rewrite lt0n.
+    by rewrite lt0n.
   Qed.
   
 (**
@@ -236,7 +236,7 @@ Program と if-then-else は併用できない。if条件が失われる。
   Proof.
     move=> H.
     rewrite size_takel //.
-      by ssromega.
+    by ssromega.
   Qed.
   
   Lemma drop_size (n : nat) (s : seq T) :
@@ -245,7 +245,7 @@ Program と if-then-else は併用できない。if条件が失われる。
     move=> Hs Hn.
     rewrite size_drop.
     (* rewrite -{2}[size s]subn0. *)
-      by ssromega.
+    by ssromega.
   Qed.
   
 (**
@@ -315,18 +315,18 @@ length は Coq、size は mathcomp である。
     end.
   Obligation 1.
   Proof.
-    move/eqP in H.
+    move/eqP in n.
     apply/ltP/drop_size.
     - by ssromega.
     - rewrite divn_gt0 //.
-        by ssromega.
+      by ssromega.
   Qed.
   Obligation 2.
   Proof.
-    move/eqP in H.
+    move/eqP in n.
     apply/ltP/take_size.
     rewrite ltn_Pdiv //.
-      by ssromega.
+    by ssromega.
   Qed.
   
 End Rev2.

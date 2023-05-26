@@ -12,7 +12,7 @@ https://qiita.com/nekonibox/items/8147291e9fd483e3d579
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -38,7 +38,7 @@ Section filter.
   Lemma filter_size {x : T} {s : seq T} (R : rel T) :
     size [seq y <- s | R y x] <= size s.
   Proof.
-      by rewrite size_filter count_size.
+    by rewrite size_filter count_size.
   Qed.
 
 End filter.
@@ -57,9 +57,9 @@ Section qsort.
       [::].
   Proof.
     - move => _ x s _ /=. apply /ltP.
-        by rewrite ltnS size_filter count_size.
+      by rewrite ltnS size_filter count_size.
     - move => _ x s _ /=. apply /ltP.
-        by rewrite ltnS size_filter count_size.
+      by rewrite ltnS size_filter count_size.
   Defined.
 
 (**
@@ -69,9 +69,11 @@ Section qsort.
   Proof. by exists m.+1. Qed.
   
   Lemma my_qsort_ind (P : seq T -> Prop) :
-    P [::] ->
-    (forall x s, P [seq y <- s | R y x] ->
-                 P [seq y <- s | ~~ R y x] -> P (x :: s)) ->
+    P [::]
+    ->
+    (forall x s,
+        P [seq y <- s | R y x] -> P [seq y <- s | ~~ R y x] -> P (x :: s))
+    ->
     forall s, P s.
   Proof.
     move=> Hnil Hcons s.
@@ -134,13 +136,13 @@ Section qsort.
     rewrite qsort_equation.
     apply: mysorted_cat => //=.
     - rewrite IHs2 andbT all_qsort.
-        by apply: (sub_all _ (filter_all _ _)) => y ->.
+      by apply: (sub_all _ (filter_all _ _)) => y ->.
     - rewrite all_qsort.
       apply: (sub_all _ (filter_all _ _)) => y Hyx.
       rewrite Hyx orbT all_qsort /=.
       apply: (sub_all _ (filter_all _ _)) => z.
       case Hzy : (R z y)=>//.
-        by rewrite (Htrans Hzy Hyx).
+      by rewrite (Htrans Hzy Hyx).
   Qed.
 
 End qsort.

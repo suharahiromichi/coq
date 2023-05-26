@@ -16,8 +16,8 @@ https://github.com/suharahiromichi/coq/blob/master/math/ssr_sum_and_recrel.v
 From mathcomp Require Import all_ssreflect.
 Require Import Recdef.
 Require Import Wf_nat.                      (* well_founded lt *)
-Require Import ssromega.
-Require Import ssrsumop.
+From common Require Import ssromega.
+From common Require Import ssrsumop.
 
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
@@ -84,7 +84,7 @@ Section Recrel.
     rewrite -[n.+1]addn1.
     rewrite -mulnn.
     rewrite exp1n.
-      by ssromega.
+    by ssromega.
   Qed.
   
 (**
@@ -95,7 +95,7 @@ Section Recrel.
     apply: negbTE.
     rewrite negb_and.
     apply/orP/or_intror.
-      by rewrite odd_double.
+    by rewrite odd_double.
   Qed.
   
   (* 共通の数式の証明 *)
@@ -113,7 +113,7 @@ Section Recrel.
     
     (* beta の項 *)
     + rewrite mulSn.
-        by ssromega.
+      by ssromega.
         
     (* gamma の項 *)
     + rewrite [gamma * n.+1]mulnC -[LHS]mulnDl.
@@ -138,9 +138,9 @@ Section Recrel.
   Proof.
     elim: n => [| n IHn].
     - rewrite /R_rel /R_sol /=.
-        by ssromega.
+      by ssromega.
     - rewrite R_rel_n IHn /R_sol.
-        by apply: alpha_beta_gamma.         (* 共通の数式の証明 *)
+      by apply: alpha_beta_gamma.           (* 共通の数式の証明 *)
   Qed.
   
 (**
@@ -163,7 +163,7 @@ Section Recrel.
       rewrite -addnA [beta + gamma * n.+1 + alpha]addnC addnA.
       rewrite IHn.
       rewrite addnA.
-        by apply: alpha_beta_gamma.         (* 共通の数式の証明 *)
+      by apply: alpha_beta_gamma.           (* 共通の数式の証明 *)
   Qed.
   
 (**
@@ -185,7 +185,7 @@ Section Recrel.
       rewrite IHn.
       rewrite addnA.
       
-        by congr (_ + _).
+      by congr (_ + _).
   Qed.
   
 End Recrel.
@@ -207,7 +207,7 @@ Section Example1.
     move: (r_sum_sol a a b).
     rewrite /R_sum /R_sol => <-.
     rewrite sum_first => //.
-      by ssromega.
+    by ssromega.
   Qed.
   
 End Example1.

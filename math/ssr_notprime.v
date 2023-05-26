@@ -1,6 +1,6 @@
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import bigop matrix.
-Require Import ssromega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -33,7 +33,7 @@ Section Summation1.
   Proof.
     move=> Hab.                             (* =1 は第1階の=です。 *)
     apply: eq_big_nat => i Hmn.
-      by rewrite Hab.
+    by rewrite Hab.
   Qed.
 
   Lemma sum_add1 n a :
@@ -45,7 +45,7 @@ Section Summation1.
     \sum_(m <= i < n)(a i) = a m + \sum_(m.+1 <= i < n)(a i).
   Proof.
     move=> Hn.
-      by rewrite big_ltn.
+    by rewrite big_ltn.
   Qed.
 
   Lemma sum_last m n a :
@@ -53,7 +53,7 @@ Section Summation1.
     \sum_(m <= i < n.+1)(a i) = \sum_(m <= i < n)(a i) + a n.
   Proof.
     move=> Hmn.
-      by rewrite big_nat_recr.
+    by rewrite big_nat_recr.
   Qed.
   
 End Summation1.
@@ -81,7 +81,7 @@ Section Notprime.
     rewrite -{1}[a]muln1.
     rewrite [a * 1 < a * b]ltn_mul2l.
     move/andP.
-      by case.
+    by case.
   Qed.
 
 (**
@@ -92,7 +92,7 @@ Section Notprime.
     move=> Hb1.
     rewrite ltn_subRL addn1.
     rewrite -{1}(expn1 2).
-      by rewrite ltn_exp2l.
+    by rewrite ltn_exp2l.
   Qed.
 
 (**
@@ -125,14 +125,14 @@ x*y もまた合成数であることを証明する必要がある。
     move=> H.
     rewrite ltn_subRL addn0.
     rewrite -{1}(expn1 2).
-      by rewrite leq_exp2l.
+    by rewrite leq_exp2l.
   Qed.
   
   (* 0 < y *)
   Lemma sum0a_e2ib_gt0 a b : 0 < a -> 0 < \sum_(0 <= i < a) 2^(i * b).
   Proof.
     move=> H.
-      by rewrite sum_first.
+    by rewrite sum_first.
   Qed.
   
   (* x*y = 2^n - 1 *)
@@ -148,7 +148,7 @@ x*y もまた合成数であることを証明する必要がある。
     (* 左辺、第1項 *)
     rewrite -sum_distrr //=.
     have H : \sum_(0 <= i < a) 2^b * 2^(i * b) = \sum_(0 <= i < a) 2^(i.+1 * b).
-      by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
+    by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
     rewrite H.
     rewrite -(sum_add1 a (fun x => 2^(x * b))).
     rewrite [\sum_(1 <= i < a.+1) 2^(i * b)]sum_last //=.
@@ -173,7 +173,7 @@ x*y もまた合成数であることを証明する必要がある。
     - rewrite -{1}(expn0 2).
       rewrite ltn_exp2l //.
       rewrite muln_gt0.
-        by apply/andP.
+      by apply/andP.
     - by rewrite ltn_exp2l //.
   Qed.
   
@@ -211,7 +211,7 @@ x*y もまた合成数であることを証明する必要がある。
     - by apply: e2b_1_lt_e2ab_1.            (* x < x*y *)
     (* ここで 1 < b が必要になる。 *)
     - have Hb1 : 1 < b by apply: (@ltn_Pmulr_r a).
-        by apply: sum0a_e2ib_lt_e2ab_1.     (* y < x*y *)
+      by apply: sum0a_e2ib_lt_e2ab_1.       (* y < x*y *)
     - by apply: l_e2_ab_1.                  (* x*y = 2^n - 1 *)
   Qed.
 
@@ -271,7 +271,7 @@ Section SumGe0.
   Proof.
     rewrite /zero.
     rewrite sum_nat_const_nat.
-      by rewrite muln0.
+    by rewrite muln0.
   Qed.
   
   Lemma ge0'_sum m n a :
@@ -279,7 +279,7 @@ Section SumGe0.
     \sum_(m <= i < n) zero i <= \sum_(m <= i < n) a i.
   Proof.
     move=> H.
-      by apply: leq_sum.
+    by apply: leq_sum.
   Qed.
   
   Lemma ge0_sum m n a :
@@ -288,7 +288,7 @@ Section SumGe0.
     move=> H.
     rewrite -{1}(sum0_0 m n).
     apply: ge0'_sum => i.
-      by rewrite /zero.
+    by rewrite /zero.
   Qed.
 End SumGe0.
 

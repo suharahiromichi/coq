@@ -9,7 +9,7 @@
 
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
-Require Import ssromega.                    (* ssromega タクティク *)
+From common Require Import ssromega.        (* ssromega タクティク *)
 Require Import Recdef.                      (* Function コマンド *)
 
 Set Implicit Arguments.
@@ -129,7 +129,7 @@ $ x \ne y $ のとき、 $ \frac{x - y}{x - y} = 1 $ としたいのですが、
     - apply/eqP.
       Check (@subr0_eq F x y).
       move/subr0_eq.
-        by apply/eqP.
+      by apply/eqP.
   Qed.
   
 (**
@@ -145,11 +145,11 @@ functional induction コマンドを使って、(fibn n) についての帰納�
     functional induction (fibn n).
     (* 0%:R = (g ^ 0 - h ^ 0) / (g - h) *)
     - rewrite 2!expr0z.
-        by rewrite addrN mul0r.             (* 割算 *)
+      by rewrite addrN mul0r.               (* 割算 *)
         
     (* 1%:R = (g ^ 1 - h ^ 1) / (g - h) *)
     - rewrite 2!expr1z.
-        by rewrite (neq__div_1 neq_gh).     (* 補題を使う。 *)
+      by rewrite (neq__div_1 neq_gh).       (* 補題を使う。 *)
         
     (* 
   IHn0 : (fibn m)%:R = (g ^ m - h ^ m) / (g - h)

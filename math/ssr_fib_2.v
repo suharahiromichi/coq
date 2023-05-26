@@ -375,6 +375,8 @@ n = qm ならば，ＦnはＦmで割り切れる。
 *)
  Lemma fib_0 n : fib n = 0 -> n = 0.
  Proof.
+   functional induction (fib n) => //.
+   rewrite -fib_n.
  Admitted.
  
  Lemma fib_ge_2 n m : 1 < gcdn n.+2 m.
@@ -384,6 +386,10 @@ n = qm ならば，ＦnはＦmで割り切れる。
  (* F_n が単射なのは、2からである。 *)
  Lemma fib_inj n1 n2 : 1 < n1 -> fib n1 = fib n2 -> n1 = n2. (* injective fib. *)
  Proof.
+   move: n2.
+   functional induction (fib n1) => //.
+   rewrite -fib_n.
+   move=> n2.
  Admitted.
  
  Lemma lemma10 (m n : nat) : fib n %| fib m -> n %| m.

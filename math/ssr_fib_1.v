@@ -213,7 +213,7 @@ Section Backup.
   Proof.
     move=> Hn.
     rewrite /index_iota.
-    rewrite -iota_add.
+    rewrite -iotaD.
     rewrite !subn0.
     rewrite subnKC //=.
   Qed.

@@ -1,5 +1,5 @@
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
 Require Import Program.Wf.                  (* Program wf *)
@@ -68,7 +68,7 @@ Section LEMMAS.
   
   Lemma mscS n m : 'H(n.+1, m.+1) = 'H(n, m.+1) + 'H(n.+1, m).
   Proof.
-      by rewrite /multiset multiset_rec_equation.
+    by rewrite /multiset multiset_rec_equation.
   Qed.
   
   Lemma msc1 n : 'H(n, 1) = n.
@@ -99,7 +99,7 @@ Section LEMMAS.
     - move=> n IHn m.
       elim: m n IHn.
       + move=> n IHn.
-          by rewrite msc0 muln1 msc1 mul1n.
+        by rewrite msc0 muln1 msc1 mul1n.
       + move=> m IHm n IHn.
         rewrite mscS mulnDr IHm.
         * rewrite ['H(n.+1, m.+2)]mscS mulnDr -IHn.
@@ -159,7 +159,7 @@ Section LEMMAS.
     rewrite -msc_fact.
     rewrite -[n`! * m`!]mul1n.
     rewrite -['H(n.+1, m) * n`! * m`!]mulnA.
-      by apply: dvdn_mul.
+    by apply: dvdn_mul.
   Qed.
   
   (* bin を使っても証明できる。こちらのほうがよいかもしれない。 *)
@@ -168,10 +168,10 @@ Section LEMMAS.
     have H : 'C(n + m, m) * (n`! * m`!) = (n + m)`!.
     - rewrite -(@bin_fact (n + m) m); last by rewrite leq_addl.
       rewrite -[n + m - m]addnBA; last by rewrite leqnn.
-        by rewrite subnn addn0 [m`! * n`!]mulnC.
+      by rewrite subnn addn0 [m`! * n`!]mulnC.
     - rewrite -H.
       rewrite -{1}[n`! * m`!]mul1n.
-        by apply: dvdn_mul.
+      by apply: dvdn_mul.
   Qed.  
   
   Lemma msc_ffact (n m : nat) : 'H(n.+1, m) * m`! = (n + m) ^_ m.

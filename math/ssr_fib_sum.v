@@ -14,7 +14,7 @@
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -101,7 +101,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
  *)
   Lemma sum_nil' a : \sum_(0 <= i < 0)(a i) = 0.
   Proof.
-      by rewrite big_nil.
+    by rewrite big_nil.
   Qed.
   
 (**
@@ -116,7 +116,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
       have -> : n - m = 0 by ssromega. (* apply/eqP; rewrite subn_eq0. *)
       done.
     - rewrite H.
-        by rewrite big_nil.
+      by rewrite big_nil.
   Qed.
   
 (**
@@ -169,7 +169,7 @@ $$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i $$
     \sum_(m <= i < n)(a i) = a m + \sum_(m.+1 <= i < n)(a i).
   Proof.
     move=> Hn.
-      by rewrite big_ltn.
+    by rewrite big_ltn.
   Qed.
 
 (**
@@ -182,7 +182,7 @@ $$ \sum_{i=m}^{n}a_i = a_m + \sum_{i=m}^{n-1}a_{i + 1} $$
     \sum_(m <= i < n.+1)(a i) = a m + \sum_(m <= i < n)(a i.+1).
   Proof.
     move=> Hn.
-      by rewrite big_nat_recl.
+    by rewrite big_nat_recl.
   Qed.
   
 (**
@@ -195,7 +195,7 @@ $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
     \sum_(m <= i < n.+1)(a i) = \sum_(m <= i < n)(a i) + a n.
   Proof.
     move=> Hmn.
-      by rewrite big_nat_recr.
+    by rewrite big_nat_recr.
   Qed.
 End Summation.  
 
@@ -238,7 +238,7 @@ F_n &=& F_{n - 2} + F_{n - 1} \\
     elim: n => // n IHn.
     rewrite fib_n.
     rewrite addn_gt0.
-      by apply/orP/or_intror.
+    by apply/orP/or_intror.
   Qed.
   
   Lemma fibn2_ge_1 n : 1 <= fib n.+2.
@@ -246,7 +246,7 @@ F_n &=& F_{n - 2} + F_{n - 1} \\
     elim: n => // n IHn.
     rewrite fib_n.
     rewrite addn_gt0.
-      by apply/orP/or_intror.
+    by apply/orP/or_intror.
   Qed.
   
 (**
@@ -314,7 +314,7 @@ $$ \sum_{i=0}^{n}F_i = F_{n+2} - 1 $$
       rewrite IHn.
       rewrite addnBAC; last by rewrite fibn2_ge_1.
       congr (_ - _).
-        by rewrite addnC.
+      by rewrite addnC.
   Qed.
 
 (**
@@ -332,7 +332,7 @@ $$ \sum_{i=0}^{n}(F_i)^2 = F_{n} F_{n + 1} $$
       rewrite IHn.
       rewrite -mulnDl.
       rewrite mulnC.
-        by congr (_ * _).
+      by congr (_ * _).
   Qed.
 
 (**
@@ -357,7 +357,7 @@ $$ \sum_{i=0}^{n}(F_i)^2 = F_{n} F_{n + 1} $$
       rewrite fib_n.                        (* 右辺 *)
       rewrite sum_last; last done.          (* 左辺 *)
       rewrite IHn.
-        by congr (_ + _).
+      by congr (_ + _).
   Qed.
 
   Lemma sum_of_seq_of_odd_index_of_fib' n :
@@ -370,7 +370,7 @@ $$ \sum_{i=0}^{n}(F_i)^2 = F_{n} F_{n + 1} $$
       rewrite fib_n.                        (* 右辺 *)
       rewrite sum_last; last done.          (* 左辺 *)
       rewrite IHn.
-        by congr (_ + _).
+      by congr (_ + _).
   Qed.
   
 (**
@@ -402,7 +402,7 @@ $$ \sum_{i=0}^{n}F_{2 i} = F_{2 n + 1} - 1 $$
     \sum_(0 <= i < n.+1)(fib i.*2) = fib n.*2.+1 - 1.
   Proof.
     rewrite -l_sum_of_seq_of_even_index_of_fib.
-      by rewrite addn1 subn1 -pred_Sn.
+    by rewrite addn1 subn1 -pred_Sn.
   Qed.
   
 (**
@@ -415,7 +415,7 @@ $$ \sum_{i=0}^{n}F_{2 i} = F_{2 n + 1} - 1 $$
     rewrite /coprime.
     elim: n => [//= | n IHn].
     rewrite fib_n.
-      by rewrite gcdnDr gcdnC.
+    by rewrite gcdnDr gcdnC.
   Qed.
 End Fib_1.
 

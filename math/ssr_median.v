@@ -8,7 +8,7 @@
  *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssr_omega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -34,28 +34,29 @@ Section Majority.
     rewrite -{1}[a && b && c]Bool.orb_diag. (* 項を複製する。 *)
     rewrite [_ || a && ~~b && c]orbC !orbA. (* 先頭に移動する。 *)
     have -> : a && ~~b && c || a && b && c = a && c.
-      (* 一旦右結合にして、~~bとbを末尾にして、左結合に戻す。 *)
-      by rewrite -!andbA [~~b && _]andbC [b && _]andbC ?andbA
-         -andb_orr orbC orbN andbT andbC.
+    (* 一旦右結合にして、~~bとbを末尾にして、左結合に戻す。 *)
+    by rewrite -!andbA [~~b && _]andbC [b && _]andbC ?andbA
+       -andb_orr orbC orbN andbT andbC.
     rewrite [a && c]andbC.
     
     rewrite [_ || a && b && c]orbC !orbA.   (* 先頭に移動する。 *)
     rewrite [_ || ~~a && b && c]orbC !orbA. (* 先頭に移動する。 *)
     have -> : ~~ a && b && c || a && b && c = b && c.
-      (* 一旦右結合にして、~~aとaを末尾にして、左結合に戻す。 *)
-      by rewrite -!andbA [~~a && _]andbC [a && _]andbC ?andbA
-         -andb_orr orbC orbN andbT andbC.
+    (* 一旦右結合にして、~~aとaを末尾にして、左結合に戻す。 *)
+    by rewrite -!andbA [~~a && _]andbC [a && _]andbC ?andbA
+       -andb_orr orbC orbN andbT andbC.
       
     rewrite [_ || a && b && c]orbC !orbA.   (* 先頭に移動する。 *)
     rewrite [_ || a && b && ~~c]orbC !orbA. (* 先頭に移動する。 *)
     have -> : a && b && ~~c || a && b && c = a && b
       (* すでに、~~cとcは末尾にある。 *)
-      by rewrite -andb_orr orbC orbN andbT andbC.                                             done.
+      by rewrite -andb_orr orbC orbN andbT andbC.
+    done.
   Qed.
 
   Lemma test2 (a b :nat) : (a + b != 0) = (a != 0) || (b != 0).
   Proof.
-      by elim: a; elim: b.
+    by elim: a; elim: b.
   Qed.
   
   Lemma test a : (nat_of_bool a != 0) = a.
@@ -75,7 +76,7 @@ Section Majority.
   
   Goal forall (a b c : bool), maj3 a b c = maj3_1 a b c.
   Proof.
-      by case; case; case.
+    by case; case; case.
   Qed.
 
 End Majority.
@@ -102,19 +103,19 @@ Section Median.
   
   Goal forall (a b c : bool), median a b c = maj3 a b c.
   Proof.
-      by case; case; case.
+    by case; case; case.
   Qed.
 
   Goal forall (a b c : bool), median a b c = median' a b c.
   Proof.
     rewrite /median /median'.
-      by case; case; case.
+    by case; case; case.
   Qed.
   
   Goal forall (a b c : bool), median a b c = median'' a b c.
   Proof.
     rewrite /median /median'.
-      by case; case; case.
+    by case; case; case.
   Qed.
   
   (* nat で証明する。 *)
@@ -208,7 +209,7 @@ Section FullAdder.
   Goal forall (a b c : bool),
       a + b + c = 2 * maj a b c + par a b c.
   Proof.
-      by case; case; case.
+    by case; case; case.
   Qed.
 
 End FullAdder.
@@ -218,7 +219,7 @@ End FullAdder.
 
 Goal forall (a b c : bool), maj3 a b c = maj a b c.
 Proof.
-    by case; case; case.
+  by case; case; case.
 Qed.
 
 (* END *)

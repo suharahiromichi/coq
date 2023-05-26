@@ -8,7 +8,7 @@
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 
 Set Implicit Arguments.
@@ -178,7 +178,7 @@ $$ F_{n + m} = F_m F_{n+1} + F_{m-1} F_n $$
   Proof.
     move=> H.
     have H' := fib_addition' n m.-1.
-      by rewrite prednK in H'.
+    by rewrite prednK in H'.
   Qed.
 
 (**

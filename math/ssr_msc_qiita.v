@@ -8,7 +8,7 @@
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
 
@@ -157,19 +157,19 @@ Section LEMMAS1.
   Proof.
     elim: m n => [| m IHm] n.
     - rewrite rfactn1.
-        by rewrite rfactn0 mul1n addn0.
+      by rewrite rfactn0 mul1n addn0.
     - rewrite rfactnS.
       rewrite IHm.
       rewrite mulnA.
       rewrite rfactnS.
-        by rewrite addSn addnS.
+      by rewrite addSn addnS.
   Qed.
   
   Lemma rfactnn n : 1 ^^ n = n`!.
   Proof.
     elim: n => [| n IHn] //.
     rewrite rfactnSr add1n IHn.
-      by rewrite factS mulnC.
+    by rewrite factS mulnC.
   Qed.
   
   Lemma rfact_fact n m : n`! * n.+1 ^^ m = (n + m)`!.
@@ -188,7 +188,7 @@ Section LEMMAS1.
   Proof.
     rewrite -rfact_fact.
     rewrite mulnC mulnK; first done.
-      by rewrite fact_gt0.
+    by rewrite fact_gt0.
   Qed.
 End LEMMAS1.
 
@@ -237,11 +237,11 @@ Section DEFINE2.
     - move=> p n m n' _ m' _ _.
       rewrite /sum.
       apply/ltP.
-        by rewrite [n'.+1 + m'.+1]addnS.
+      by rewrite [n'.+1 + m'.+1]addnS.
     - move=> p n m n' _ m' _ _.
       rewrite /sum.
       apply/ltP.
-        by rewrite [n'.+1 + m'.+1]addSn.
+      by rewrite [n'.+1 + m'.+1]addSn.
   Defined.
   
   Definition multiset := nosimpl multiset_rec.
@@ -280,7 +280,7 @@ Section LEMMAS2.
   Proof.
     elim: n => //=.
     move=> n IHn.
-      by rewrite mscS msc0 IHn addn1.
+    by rewrite mscS msc0 IHn addn1.
   Qed.
 
   Lemma msc1n (n : nat) : 'H(1, n) = 1.
@@ -301,7 +301,7 @@ Section LEMMAS2.
         * rewrite ['H(n.+1, m.+2)]mscS mulnDr -IHn.
           rewrite -!mulnDl.
           congr (_ * _).
-            by ssromega.
+          by ssromega.
         * done.
   Qed.
   
