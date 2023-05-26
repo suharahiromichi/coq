@@ -67,7 +67,7 @@ n \dbinom{2 n}{n} = (n + 1) \dbinom{2 n}{n - 1}、ただし 0 \lt n
 *)
 
 From mathcomp Require Import all_ssreflect.
-Require Import ssromega.
+From common Require Import ssromega.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
