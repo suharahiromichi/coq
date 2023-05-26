@@ -10,17 +10,20 @@ Coq/SSReflect/MathComp による定理証明
 2018_12_10 @suharahiromichi
 
 2020_8_22 @suharahiromichi
+
+2023_5_26 @suharahiromichi      mathcomp2
  *)
 
+(* HB.about を実行しない場合は、HB のImportは不要です。 *)
+From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import bigop matrix.
-
-From common Require Import ssromega.
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
-もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
-ssromega.vo ができていることを確認してください。
+
+を適当な場所に設置してください。
 *)
+From common Require Import ssromega.
      
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -34,6 +37,8 @@ Unset Printing Implicit Defensive.
 opamでインストールしている場合は、ソースは、たとえば以下にあります。
 
 ~/.opam/4.07.1/lib/coq/user-contrib/mathcomp/ssreflect/bigop.v
+
+Coq:8.17.0, MathComp:2.0.0
 *)
 
 (**
@@ -46,7 +51,7 @@ opamでインストールしている場合は、ソースは、たとえば以�
 
 Goal \sum_(i <- [:: 0; 1; 2; 3; 4] | odd i) i = 4.
 Proof.
-  rewrite unlock /BigOp.bigop.
+  rewrite unlock /bigop.
   (* reducebig 0 [:: 0; 1; 2; 3; 4] (fun i : nat => BigBody i addn (odd i) i) = 9 *)
   rewrite /reducebig /applybig.
   (* 
@@ -116,11 +121,20 @@ Qed.
 
 minn には単位元がないから、モノイドではない。
 *)
+(* mathcomp1 *)
+(*
 Compute addn_monoid. (* = Monoid.Law addnA add0n addn0 : Monoid.law 0 *)
 Compute maxn_monoid. (* = Monoid.Law maxnA max0n maxn0 : Monoid.law 0 *)
 Compute muln_monoid. (* = Monoid.Law mulnA mul1n muln1 : Monoid.law 1 *)
 Compute gcdn_monoid. (* = Monoid.Law gcdnA gcd0n gcdn0 : Monoid.law 0 *)
 Compute lcmn_monoid. (* = Monoid.Law lcmnA lcm1n lcmn1 : Monoid.law 1 *)
+*)
+(* mathcomp2 *)
+HB.about addn.
+HB.about maxn.
+HB.about muln.
+HB.about gcdn.
+HB.about lcmn.
 
 (**
 ### bigop
@@ -139,12 +153,18 @@ Check \big[lcmn/1]_(0 <= i < 5) i.
 (**
 ### モノイド (finset.v で定義)
  *)
+(* mathcomp1 *)
+(*
 Compute setU_monoid.
 (* = fun T : finType => Monoid.Law (setUA (T:=T)) (set0U (T:=T)) (setU0 (T:=T))
    : forall T : finType, Monoid.law set0 *)
 Compute setI_monoid.
 (* = fun T : finType => Monoid.Law (setIA (T:=T)) (setTI (T:=T)) (setIT (T:=T))
    : forall T : finType, Monoid.law [set: T] *)
+*)
+(* mathcomp2 *)
+HB.about setU.
+HB.about setI.
 
 (**
 ### インデックスのリストの例
@@ -159,8 +179,12 @@ Definition P5 := [:: p0; p1; p2; p3; p4].
 (**
 ### bigop
 *)
+(*
 Goal \big[@setU (ordinal_finType 5)/set0]_(i <- P5) i = \bigcup_(i <- P5) i. done. Qed.
 Goal \big[@setI (ordinal_finType 5)/setT]_(i <- P5) i = \bigcap_(i <- P5) i. done. Qed.
+ *)
+Goal \big[@setU (ordinal 5)/set0]_(i <- P5) i = \bigcup_(i <- P5) i. done. Qed.
+Goal \big[@setI (ordinal 5)/setT]_(i <- P5) i = \bigcap_(i <- P5) i. done. Qed.
 
 (**
 ## bool値
@@ -168,9 +192,16 @@ Goal \big[@setI (ordinal_finType 5)/setT]_(i <- P5) i = \bigcap_(i <- P5) i. don
 (**
 ### モノイド
  *)
+(* mathcomp1 *)
+(*
 Compute andb_monoid. (* = Monoid.Law andbA andTb andbT : Monoid.law true *)
 Compute orb_monoid.  (* = Monoid.Law orbA orFb orbF : Monoid.law false *)
-Compute andb_monoid. (* = Monoid.Law andbA andTb andbT : Monoid.law true *)
+Compute addb_monoid. (* = Monoid.Law addbA addFb addbF : Monoid.law true *)
+*)
+(* mathcomp2 *)
+HB.about andb.
+HB.about orb.
+HB.about addb.
 
 (**
 ### インデックスのリストの例
@@ -190,9 +221,14 @@ Check \big[addb/false]_(i <- B3) i.         (* exor *)
 (**
 ### モノイド
 *)
+(* mathcomp1 *)
+(*
 Compute cat_monoid.
 (* = fun T : Type => Monoid.Law (catA (T:=T)) (cat0s (T:=T)) (cats0 (T:=T))
      : forall T : Type, Monoid.law [::] *)
+*)
+(* mathcomp2 *)
+HB.about cat.
 
 (**
 ### インデックスのリストの例
@@ -214,8 +250,13 @@ monoid は、単位元が存在し、結合律が成り立つ。
 (2) これらの定義のしかたは Telescopes と呼ぶ。
 MathComp 本体の Packed Class と異なるが共存できる。math-comp-book の 7.2 を参照のこと。
  *)
+(* mathcomp1 *)
+(*
 Compute addn_comoid. (* = Monoid.ComLaw addnC         : Monoid.com_law 0 *)
 Compute addn_addoid. (* = Monoid.AddLaw mulnDl mulnDr : Monoid.add_law 0 muln *)
+*)
+(* mathcomp2 *)
+HB.about addn.
 
 (*
 # インデックスの範囲の表記
@@ -234,10 +275,10 @@ Compute addn_addoid. (* = Monoid.AddLaw mulnDl mulnDr : Monoid.add_law 0 muln *)
 Definition s5o_l1 := \sum_(i <- [:: 0; 1; 2; 3; 4] | odd i) i. (* リスト直接 *)
 Definition s5o_l2 := \sum_(i <- iota 0 5 | odd i) i.           (* iota *)
 Definition s5o_l3 := \sum_(0 <= i < 5 | odd i) i.              (* 範囲 *)
-Check @BigOp.bigop nat nat O (index_iota O 5)
-      (fun i : nat => @BigBody nat nat i addn (odd i) i).
-Check BigOp.bigop O (index_iota O 5)
-      (fun i : nat => BigBody i addn (odd i) i). (* BigBodyはコンストラクタ *)
+Check @bigop nat nat O (index_iota O 5)
+  (fun i : nat => @BigBody nat nat i addn (odd i) i).
+Check bigop O (index_iota O 5)
+  (fun i : nat => BigBody i addn (odd i) i). (* BigBodyはコンストラクタ *)
 (* i の型が nat,
    インデックスのリストが inidex_iota 0 5 *)
 
@@ -252,15 +293,15 @@ Goal s5o_l3 = s5o_l1. Proof. done. Qed.
 Definition s5o_t1 := \sum_(i in 'I_5 | odd i) i. (* 注 *)
 Definition s5o_t2 := \sum_(i : 'I_5 | odd i) i.
 Definition s5o_t3 := \sum_(i < 5 | odd i) i.
-Check @BigOp.bigop nat 'I_5 O (index_enum (ordinal_finType 5))
-      (fun i : 'I_5 => @BigBody nat 'I_5 i addn (odd (nat_of_ord i)) (nat_of_ord i)).
-Check BigOp.bigop O (index_enum (ordinal_finType 5))
-      (fun i : 'I_5 => BigBody i addn (odd i) i).
+Check @bigop nat 'I_5 O (index_enum (ordinal 5))
+  (fun i : 'I_5 => @BigBody nat 'I_5 i addn (odd (nat_of_ord i)) (nat_of_ord i)).
+Check bigop O (index_enum (ordinal 5))
+  (fun i : 'I_5 => BigBody i addn (odd i) i).
 (**
 i の型が 'I_5 のとき
 index_enum は Ordinal 型を要素とするリストを返す。
  *)
-Check index_enum (ordinal_finType 5) : seq (ordinal_finType 5).
+Check index_enum (ordinal 5) : seq (ordinal 5).
 
 (* 注： @BigBody の第5引数が、odd (nat_of_ord i) から、
    andb (i \in 'I_5) (odd (nat_of_ord i)) になる。 *)
@@ -350,7 +391,7 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
   Proof.
     move=> Hab.                             (* =1 は第1階の=です。 *)
     apply: eq_big_nat => i Hmn.
-      by rewrite Hab.
+    by rewrite Hab.
   Qed.
   
 (**
@@ -418,7 +459,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
  *)
   Lemma sum_nil' a : \sum_(0 <= i < 0)(a i) = 0.
   Proof.
-      by rewrite big_nil.
+    by rewrite big_nil.
   Qed.
   
 (**
@@ -433,7 +474,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
       have -> : n - m = 0 by ssromega. (* apply/eqP; rewrite subn_eq0. *)
       done.
     - rewrite H.
-        by rewrite big_nil.
+      by rewrite big_nil.
   Qed.
 
 (**
@@ -498,7 +539,7 @@ $$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i $$
     \sum_(m <= i < n)(a i) = a m + \sum_(m.+1 <= i < n)(a i).
   Proof.
     move=> Hn.
-      by rewrite big_ltn.
+    by rewrite big_ltn.
   Qed.
 
 (**
@@ -511,7 +552,7 @@ $$ \sum_{i=m}^{n}a_i = a_m + \sum_{i=m}^{n-1}a_{i + 1} $$
     \sum_(m <= i < n.+1)(a i) = a m + \sum_(m <= i < n)(a i.+1).
   Proof.
     move=> Hn.
-      by rewrite big_nat_recl.
+    by rewrite big_nat_recl.
   Qed.
   
 (**
@@ -526,7 +567,7 @@ $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
     \sum_(m <= i < n.+1)(a i) = \sum_(m <= i < n)(a i) + a n.
   Proof.
     move=> Hmn.
-      by rewrite big_nat_recr.
+    by rewrite big_nat_recr.
   Qed.
 
 (**
@@ -541,12 +582,12 @@ $$ \sum_{i=m}^{p-1}a_i = \sum_{i=m}^{n-1}a_i + \sum_{i=n}^{p-1}a_i $$
     rewrite -big_cat.
     f_equal.                       (* iインデックス部分を取り出す。 *)
     rewrite /index_iota.
-    Check iota_add
+    Check iotaD                             (* mathcomp2 *)
       : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
     have -> : m + n1 + n2 - m = n1 + n2 by ssromega.
     have -> : m + n1 - m = n1 by ssromega.
     have -> : m + n1 + n2 - (m + n1) = n2 by ssromega.
-    rewrite -iota_add.
+    rewrite -iotaD.
     done.
   Qed.
   
@@ -556,7 +597,7 @@ $$ \sum_{i=m}^{p-1}a_i = \sum_{i=m}^{n-1}a_i + \sum_{i=n}^{p-1}a_i $$
     \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
   Proof.
     move=> Hmn Hnp.
-      by rewrite -big_cat_nat.
+    by rewrite -big_cat_nat.
       
     Restart.
     move=> Hmn Hnp.                         (* omega が使う。 *)
@@ -564,7 +605,7 @@ $$ \sum_{i=m}^{p-1}a_i = \sum_{i=m}^{n-1}a_i + \sum_{i=n}^{p-1}a_i $$
     pose n2 := p - n.
     have -> : p = m + n1 + n2 by rewrite /n1 /n2; ssromega.
     have -> : n = m + n1 by rewrite /n1; ssromega.
-      by apply: sum_cat'.
+    by apply: sum_cat'.
   Qed.
 
 End Summation1.
@@ -681,7 +722,6 @@ $$ 6 (\sum_{k=0}^{n} k^{2}) = n (n + 1) (2 n + 1) $$
       rewrite [in n * (n * 2)]muln2.
       have -> : n * n.*2 + n * 2 + n + (2 * (n * 2) + 2 * 2 + 2)
                 = n * n.*2 + n * 7 + 6 by ssromega.
-      
       done.
   Qed.
 
@@ -818,7 +858,7 @@ v_1 = 1]
           have -> : 2 ^ l = 1 * 2^ l by rewrite mul1n.
           rewrite -mulnDl.
           have -> : 1+1 = 2 by [].
-            by rewrite expnS.
+          by rewrite expnS.
         * done.
     - done.
   Qed.
@@ -830,7 +870,7 @@ v_1 = 1]
   Proof.
     move=> Hn.
     apply: exo37' => // n'.
-      by rewrite big_mkord.
+    by rewrite big_mkord.
   Qed.
   
 (**
@@ -846,7 +886,7 @@ v0 や vn のラベルは intro するときに指定すればよいので省略
     forall n, n != 0 -> v n = 2^n.-1.
   Proof.
     move=> [v0 vn] n Hn.                    (* 一旦introすれば、 *)
-      by apply: exo37.                      (* 同じである。 *)
+    by apply: exo37.                        (* 同じである。 *)
   Qed.
   
 (**
@@ -893,7 +933,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1, ただし 1 \le a $$
     (* 左辺、第1項 *)
     rewrite -sum_distrr //=.
     have H : \sum_(0 <= i < a) 2 ^ b * 2 ^ (i * b) = \sum_(0 <= i < a) 2 ^ (i.+1 * b).
-      by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
+    by apply: eq_sum => i; rewrite -expnD mulnC -mulnS mulnC.
     rewrite H.
     rewrite -(sum_add1 a (fun x => 2 ^ (x * b))).
     rewrite [\sum_(1 <= i < a.+1) 2 ^ (i * b)]sum_last //=.
@@ -956,7 +996,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     move=> H.
     rewrite ltn_subRL addn1.
     rewrite -{1}(expn1 2).
-      by rewrite ltn_exp2l.
+    by rewrite ltn_exp2l.
   Qed.
   
   (* 2 <= y を証明する補題： *)  
@@ -969,7 +1009,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     have H1 : 1 <= 2 ^ (0 * b) by rewrite mul0n expn0.
     have H2 : 1 <= 2 ^ (1 * b) by rewrite mul1n expn_gt0 orb_idr.
     have H3 : 0 <= \sum_(2 <= i < a) 2 ^ (i * b) by done. (* 0以上は自明。 *)
-      by ssromega.
+    by ssromega.
   Qed.
   
   (* 証明したいもの *)
@@ -983,7 +1023,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     - by apply: e2b_1_ge2.    (* 2 <= x を証明する。 *)
     - by apply: sum0_2_e2ib.  (* 2 <= y を証明する。 *)
     - move/le2_le1 in Ha.     (* 前提を 2 <= a から 1 <= a にする。 *)
-        by apply: l_e2_ab_1.  (* x * y = ... を証明する。 *)
+      by apply: l_e2_ab_1.    (* x * y = ... を証明する。 *)
   Qed.
 
 (**
@@ -1004,26 +1044,26 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
   Proof.
     move=> Hm Hn.
     rewrite ltn_Pmulr //.
-      by ssromega.                          (* 1 < m -> 0 < m *)
+    by ssromega.                            (* 1 < m -> 0 < m *)
   Qed.
   
   Lemma l_1m1n_nmn (m n : nat) : 1 < m -> 1 < n -> n < m * n.
   Proof.
     move=> Hm Hn.
     rewrite ltn_Pmull //.
-      by ssromega.                          (* 1 < n -> 0 < n *)
+    by ssromega.                            (* 1 < n -> 0 < n *)
   Qed.
   
   Lemma l_nmn_1m (m n : nat) : n < m * n -> 1 < m.
   Proof.
     rewrite -{1}[n]mul1n ltn_mul2r.
-      by case/andP.
+    by case/andP.
   Qed.
   
   Lemma l_mmn_1n (m n : nat) : m < m * n -> 1 < n.
   Proof.
     rewrite -{1}[m]muln1 ltn_mul2l.
-      by case/andP.
+    by case/andP.
   Qed.
 
   Lemma l_composite_hypo (m n : nat) :
