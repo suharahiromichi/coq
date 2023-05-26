@@ -17,17 +17,17 @@
 ソースコードは以下にあります。
 
 https://github.com/suharahiromichi/coq/blob/master/math/ssr_composite_number.v
+
+Coq:8.17.0, MathComp:2.0.0
  *)
 
 From mathcomp Require Import all_ssreflect.
-
-Require Import ssromega.
 (**
 https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
 
-もダウンロードして同じディレクトリに置いて、coqc ssromega.v を実行し、
-ssromega.vo ができていることを確認してください。
+をインポートする必要があります。次の行は適宜修正してください。
 *)
+From common Require Import ssromega.
      
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -60,7 +60,7 @@ Section SUM.
   Proof.
     move=> Hab.                             (* =1 は第1階の=です。 *)
     apply: eq_big_nat => i Hmn.
-      by rewrite Hab.
+    by rewrite Hab.
   Qed.
 
   Lemma sum_distrr m n c a :
@@ -77,7 +77,7 @@ Section SUM.
     \sum_(m <= i < n)(a i) = a m + \sum_(m.+1 <= i < n)(a i).
   Proof.
     move=> Hn.
-      by rewrite big_ltn.
+    by rewrite big_ltn.
   Qed.
 
   Lemma sum_last m n a :
@@ -85,7 +85,7 @@ Section SUM.
     \sum_(m <= i < n.+1)(a i) = \sum_(m <= i < n)(a i) + a n.
   Proof.
     move=> Hmn.
-      by rewrite big_nat_recr.
+    by rewrite big_nat_recr.
   Qed.
 End SUM.
 
@@ -177,7 +177,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
     move=> H.
     rewrite ltn_subRL addn1.
     rewrite -{1}(expn1 2).
-      by rewrite ltn_exp2l.
+    by rewrite ltn_exp2l.
   Qed.
   
   (* 1 < y を証明する補題： *)  
@@ -190,13 +190,13 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
     have H1 : 1 <= 2^(0 * b) by rewrite mul0n expn0.
     have H2 : 1 <= 2^(1 * b) by rewrite mul1n expn_gt0 orb_idr.
     have H3 : 0 <= \sum_(1 <= i < a) 2^(i * b) by done. (* 0以上は自明。 *)
-      by ssromega.
+    by ssromega.
   Qed.
   
 (**
 ## 証明したいもの
  *)
-  Lemma mersenne_composite (a b : nat) :
+  Lemma l_mersenne_composite (a b : nat) :
     1 < a -> 1 < b ->
     exists (x y : nat), 1 < x /\ 1 < y /\ (x * y = 2^(a * b) - 1).
   Proof.
@@ -206,7 +206,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
     - by apply: e2b_1_ge2.    (* 1 < x を証明する。 *)
     - by apply: sum0_2_e2ib.  (* 1 < y を証明する。 *)
     - move/lt1_le1 in Ha.     (* 前提を 1 < a から 1 <= a にする。 *)
-        by apply: l_e2_ab_1.  (* x * y = ... を証明する。 *)
+      by apply: l_e2_ab_1.    (* x * y = ... を証明する。 *)
   Qed.
 
 (**
@@ -219,26 +219,26 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
   Proof.
     move=> Hm Hn.
     rewrite ltn_Pmulr //.
-      by ssromega.                          (* 1 < m -> 0 < m *)
+    by ssromega.                            (* 1 < m -> 0 < m *)
   Qed.
   
   Lemma l_1m1n_nmn (m n : nat) : 1 < m -> 1 < n -> n < m * n.
   Proof.
     move=> Hm Hn.
     rewrite ltn_Pmull //.
-      by ssromega.                          (* 1 < n -> 0 < n *)
+    by ssromega.                            (* 1 < n -> 0 < n *)
   Qed.
   
   Lemma l_nmn_1m (m n : nat) : n < m * n -> 1 < m.
   Proof.
     rewrite -{1}[n]mul1n ltn_mul2r.
-      by case/andP.
+    by case/andP.
   Qed.
   
   Lemma l_mmn_1n (m n : nat) : m < m * n -> 1 < n.
   Proof.
     rewrite -{1}[m]muln1 ltn_mul2l.
-      by case/andP.
+    by case/andP.
   Qed.
 
 (**
@@ -257,7 +257,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
 (**
 前提を書き直した命題で証明してみます。
 *)  
-  Lemma mersenne_composite' (a b : nat) :
+  Lemma l_mersenne_composite' (a b : nat) :
     a < a * b -> b < a * b ->
     exists (x y : nat), x < x * y /\ y < x * y /\ (x * y = 2^(a * b) - 1).
   Proof.
@@ -274,7 +274,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1} 2^{i b} = 2^{a b} - 1 $$
       + by apply: sum0_2_e2ib.   (* 1 < y を証明する。 *)
         
     - move/lt1_le1 in Ha.      (* 前提を 1 < a から 1 <= a にする。 *)
-        by apply: l_e2_ab_1.   (* x * y = ... を証明する。 *)
+      by apply: l_e2_ab_1.     (* x * y = ... を証明する。 *)
   Qed.
   
 End Composite_Number.
