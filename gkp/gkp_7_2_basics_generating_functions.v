@@ -9,7 +9,7 @@
 
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
-Require Import ssromega.                    (* ssromega タクティク *)
+From common Require Import ssromega.        (* ssromega タクティク *)
 Require Import ssrinv.                      (* inv *)
 Require Import Recdef.                      (* Function コマンド *)
 
@@ -42,7 +42,7 @@ Section BOOL_NAT.
   Proof.
     apply/idP/idP.
     - move/andP => [H1 H2].
-        by ssromega.
+      by ssromega.
     - by move/eqP => ->.
   Qed.
   
@@ -50,20 +50,20 @@ Section BOOL_NAT.
   Proof.
     apply/idP/idP.
     - move/andP => [H1 H2].
-        by ssromega.
+      by ssromega.
     - by move/eqP => ->.
   Qed.
   
   Lemma nsub_1_0__1' (n : nat) : ((n <= 1) - (n <= 0)) = (n == 1).
   Proof.
     rewrite -band_1_0__1'.
-      by rewrite band_nsub.
+    by rewrite band_nsub.
   Qed.
   
   Lemma nsub_1_0__1 (n : nat) : ((n.-1 <= 0) - (n <= 0)) = (n == 1).
   Proof.
     rewrite -band_1_0__1.
-      by rewrite band_nsub.
+    by rewrite band_nsub.
   Qed.
 
 End BOOL_NAT.
@@ -154,7 +154,7 @@ n が負の部分が \Z に沸いて出るので、その分を加算しない�
     Check @ztr_shift1 (fun (n : nat) => n <= 0)%N.
     rewrite (@ztr_shift1 (fun (n : nat) => n <= 0)%N).
     rewrite ztr_unit.
-      by rewrite mulr1.
+    by rewrite mulr1.
   Qed.
   
   Lemma ztr_z' : \Z_(n) (n == 1)%N = z.
@@ -309,7 +309,7 @@ Section Shift.
     - rewrite /= mul1r expr1z.
       have H : forall n, f (n - 1)%N = f n.-1.
       + move=> n.
-          by rewrite subn1.
+        by rewrite subn1.
       + rewrite (ztr_equal H).
         rewrite -ztr_shift1.
         done.
@@ -319,11 +319,11 @@ Section Shift.
       have H1 : forall n, f (n - m.+2)%N = f ((n - m.+1).-1)%N.
       + move=> n.
         f_equal.
-          by ssromega.
+        by ssromega.
       have H2 : forall n, f (n.-1 - m.+1)%N = f (n - m.+1).-1%N.
       + move=> n.
         f_equal.
-          by ssromega.
+        by ssromega.
       + rewrite (ztr_equal H1).
         rewrite -(ztr_equal H2).
         rewrite -(ztr_shift1 (fun (n : nat) => f (n - m.+1)%N)).
@@ -338,10 +338,10 @@ Section Shift.
     have H : forall n, f (n - m)%N = f (n - m.-1.+1)%N.
     - move=> n.
       f_equal.
-        by ssromega.
+      by ssromega.
     - rewrite (ztr_equal H).
       rewrite (ztr_shift f m.-1%N).
-        by rewrite prednK.
+      by rewrite prednK.
   Qed.
 
 End Shift.

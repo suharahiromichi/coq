@@ -51,8 +51,8 @@ SBRと分数（連分数）との相互変換について考えてみます。
 
 From mathcomp Require Import all_ssreflect.
 (* From mathcomp Require Import all_algebra. *)
-Require Import ssrinv.
-Require Import ssromega.
+From common Require Import ssrinv.
+From common Require Import ssromega.
 Require Import Recdef.                      (* Function *)
 Require Import Wf_nat.                      (* wf *)
 (* Require Import Program.Wf. *)            (* Program wf *)
@@ -161,7 +161,7 @@ take drop したものを cons して戻ることを証明する。
   Lemma cons_take_take_dropE s : 2 <= size s -> ↑s :: ↑↓s :: (↓↓s) = s.
   Proof.
     case: s => //= a s Hs.
-      by rewrite cons_take_dropE.
+    by rewrite cons_take_dropE.
   Qed.
   
 (**  
@@ -202,12 +202,12 @@ rev に関する補題を証明する。
 *)
   Lemma size_drop_head s : size (↓s) = (size s).-1.
   Proof.
-      by rewrite size_behead.
+    by rewrite size_behead.
   Qed.
   
   Lemma size_drop_tail s : size (s↓) = (size s).-1.
   Proof.
-      by rewrite size_belast'.    
+    by rewrite size_belast'.    
   Qed.
 End TakeDrop1.  
 
@@ -390,7 +390,7 @@ p & u
   Lemma NODEeq (N : SBNode) : ((q_ N, v_ N),
                                (p_ N, u_ N)) = N.
   Proof.
-      by rewrite -!surjective_pairing.
+    by rewrite -!surjective_pairing.
   Qed.
 
   Goal LEFT 0 = IDENT.
@@ -424,14 +424,14 @@ p & u
   Proof.
     rewrite /mul /NODE /IDENT /q_ /p_ /v_ /u_ //=.
     rewrite !muln0 !muln1 !addn0 !add0n.
-      by rewrite NODEeq.
+    by rewrite NODEeq.
   Qed.
 
   Lemma mulIl (N : SBNode) : IDENT * N = N.
   Proof.
     rewrite /mul /NODE /IDENT /q_ /p_ /v_ /u_ //=.
     rewrite !mul0n !mul1n !addn0 !add0n.
-      by rewrite NODEeq.
+    by rewrite NODEeq.
   Qed.
 
   Lemma mulLa (N : SBNode) (a : nat) :
@@ -484,7 +484,7 @@ csm_4_4_x_seq_head_last.v で証明した補題 size_belast' を使用してい�
     apply/ltP.
     (* see. csm_4_4_x_seq_head_last *)
     rewrite /drop_last 2!size_belast' /=.
-      by ssromega.
+    by ssromega.
   Defined.
   
 (**
@@ -571,10 +571,10 @@ Section GAUSSH.
   Proof.
     - move=> s n0 l n1 s' H1 H2.
       apply/ltP => /=.
-        by ssromega.
+      by ssromega.
     - move=> s n0 l n1 s' H1 H2.
       apply/ltP => /=.
-        by ssromega.
+      by ssromega.
   Defined.
   
   Compute GaussH [:: 3; 3; 1; 2].           (* 36 *)
@@ -600,7 +600,7 @@ Section GAUSSH.
     case: s.
     + done.
     + move=> n1 s Hs.
-        by rewrite GaussH_equation.
+      by rewrite GaussH_equation.
   Qed.
   
   Lemma GaussHEr (n0 n1 : nat) (s : seq nat) :
@@ -622,7 +622,7 @@ Section GAUSSH.
       rewrite !mulnDr.
       rewrite ?addnA.
       rewrite [(n2 * (n0 * GaussH (n3 :: rcons s' n1)))%nat]mulnCA.
-        by ssromega.
+      by ssromega.
   Qed.
   
 (*
@@ -658,7 +658,7 @@ Section EULERK.
   - move=> s n s' n' s'' H1 H2.
     apply/ltP.
     rewrite 2!size_belast' /=.
-      by ssromega.    
+    by ssromega.    
   - move=> s n s' n' s'' H1 H2.
     apply/ltP.
     rewrite size_belast' /=.
@@ -695,7 +695,7 @@ EulerK の再帰の1回分を補題にする。
     rewrite EulerK_equation.
     rewrite /take_last /=.
     rewrite EulerK1 EulerK0.
-      by rewrite mulnC.
+    by rewrite mulnC.
   Qed.
   
   Lemma EulerKE s :
@@ -706,7 +706,7 @@ EulerK の再帰の1回分を補題にする。
     case: s.
     + done.
     + move=> n1 s Hs.
-        by rewrite EulerK_equation.
+      by rewrite EulerK_equation.
   Qed.
   
 (**
@@ -740,7 +740,7 @@ EulerK の再帰の1回分を補題にする。
     + done.
     + move=> n1 s Hs /=.
       rewrite 3!EulerK__GaussH.
-        by apply: GaussHE.
+      by apply: GaussHE.
   Qed.
   
   Lemma EulerK__EulerK_rev s : EulerK s = EulerK (rev s).
@@ -759,7 +759,7 @@ EulerK の再帰の1回分を補題にする。
     Restart.
 *)
     rewrite 2!EulerK__GaussH.
-      by rewrite -GaussH__GaussH_rev.
+    by rewrite -GaussH__GaussH_rev.
   Qed.
 End EULERK.
 
@@ -785,16 +785,16 @@ Proof.
       rewrite take_last_drop_head.
       * done.
       * rewrite size_drop_tail.
-          by ssromega.
-    + rewrite size_drop_tail size_drop_head.
         by ssromega.
+    + rewrite size_drop_tail size_drop_head.
+      by ssromega.
   - rewrite 2!drop_head_last.
     done.
   - rewrite addnC.
     rewrite (@EulerKE (s↓)).
     + done.
     + rewrite size_drop_tail.
-        by ssromega.
+      by ssromega.
 Qed.
 
 Lemma SB_RIGHT_LEFT_SB s :
@@ -814,7 +814,7 @@ Proof.
         ** done.
         ** by ssromega.
       * rewrite size_drop_head.
-          by ssromega.
+        by ssromega.
     + rewrite (@EulerKE s).
       * done.
       * by ssromega.
@@ -834,7 +834,7 @@ Proof.
   move=> Hsize.
   apply SB_ind'.
   - move=> a0 a1 /=.
-      by rewrite /IDENT EulerK0 2!EulerK1 EulerK2.
+    by rewrite /IDENT EulerK0 2!EulerK1 EulerK2.
   - move=> s' Hsize' IHs.
     rewrite IHs.
     rewrite SB_RIGHT_LEFT_SB.
@@ -876,15 +876,15 @@ Section NUM_DEN.
     - rewrite (@EulerKE (rcons s 1)).         (* 分子 *)
       + rewrite /take_last last_rcons mul1n.
         rewrite /drop_last belast'_rcons.
-          by rewrite addnC.
+        by rewrite addnC.
       + rewrite size_rcons.
-          by ssromega.
+        by ssromega.
     - rewrite (@EulerKE (rcons (↓s) 1)).     (* 分子 *)
       + rewrite /take_last last_rcons mul1n.
         rewrite /drop_last belast'_rcons.
-          by rewrite addnC.
+        by rewrite addnC.
       + rewrite size_rcons size_drop_head.
-          by ssromega.
+        by ssromega.
   Qed.
   
 (**
@@ -905,15 +905,15 @@ ssr_cont_fract.v を参照のこと。
   Compute cf2f [:: 1; 2; 2; 2; 2; 2; 2].  
 
   Lemma num_GaussH s : (cf2f s).1 = GaussH s.
-  Admitted.                                 (* ssr_cont_fract.v *)
+  Admitted.                        (* ssr_cont_fract.v で証明済み。 *)
     
   Lemma num_EulerK s : (cf2f s).1 = EulerK s.
   Proof.
-      by rewrite EulerK__GaussH num_GaussH.
+    by rewrite EulerK__GaussH num_GaussH.
   Qed.
   
   Lemma den_GaussH n s : (cf2f (n :: s)).2 = GaussH s.
-  Admitted.                                 (* ssr_cont_fract.v *)
+  Admitted.                        (* ssr_cont_fract.v で証明済み。 *)
   
   Lemma den_EulerK s : 1 <= size s -> (cf2f s).2 = EulerK (↓s).
   Proof.
@@ -1011,7 +1011,7 @@ Section COPRIME.
     apply SB_ind'.
     - move=> a0 a1.
       rewrite /SBg /q_ /p_ /v_ /u_ /=.
-        by ssromega.
+      by ssromega.
     - move=> s' Hsize IHs.
       rewrite SBg_LEFT SBg_RIGHT IHs.
       done.
