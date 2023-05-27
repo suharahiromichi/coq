@@ -25,6 +25,7 @@ Proof.
 Qed.
 
 (* Hint Resolve not_le__lt b_false__not_b : myleq. *)
+#[global]
 Hint Resolve le_false_lt : myleq.
 
 (* **** *)
@@ -38,6 +39,7 @@ Inductive Permutation (T : eqType) : seq T -> seq T -> Prop :=
 | perm_trans : forall l l' l'' : seq T,
     Permutation l l' -> Permutation l' l'' -> Permutation l l''.
 
+#[global]
 Hint Resolve perm_nil perm_skip perm_swap perm_trans : perm.
 
 Lemma perm_refl : forall (T : eqType) (l : seq T), Permutation l l.
@@ -53,6 +55,7 @@ Proof.
   now inversion H; auto with perm.
 Qed.
 
+#[global]
 Hint Resolve perm_refl perm_cons : perm.
 
 Lemma perm_iff : forall (T : eqType) (m n : seq T),
@@ -96,6 +99,7 @@ Inductive LocallySorted (T : eqType) (R : rel T) : seq T -> Prop :=
                     R a b -> LocallySorted R (a :: b :: l).
 
 
+#[global]
 Hint Resolve LSorted_nil LSorted_cons1 LSorted_consn : sort.
 
 (* ソート処理の定義 *)

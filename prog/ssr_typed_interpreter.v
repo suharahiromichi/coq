@@ -33,6 +33,8 @@ Inductive evaluate : forall {t : Type}, exp t -> t -> Prop :=
 | e_app t1 t2 (f : exp (t1 -> t2)) (g : exp t1) (f' : t1 -> t2) (g' : t1) :
     evaluate f f' -> evaluate g g' -> evaluate (App f g) (f' g')
 | e_plus : evaluate Plus plus.
+
+#[global]
 Hint Constructors evaluate.
 
 Goal evaluate (App (App Plus (Nat 1)) (Nat 2)) (plus 1 2).
@@ -47,9 +49,9 @@ Proof.
   split.
   - elim=> //=.
     + move=> t1 t2 a b a' b' H1 H2 H3 H4.
-        by subst.
+      by subst.
     + move=> t1 t2 a b a' b' H1 H2 H3 H4.
-        by subst.
+      by subst.
   - elim: e v => [n v H | t1 t2 e1 H1 e2 H2 v IH | t1 t2 f Hf g Hg v IH | v H];
                    subst => //=.
     + apply: e_pair.

@@ -41,7 +41,7 @@ Proof.
   split => H.
   - case: (n <= n') H => H.
     + exfalso.
-        by apply H.
+      by apply H.
     + by [].
   - case: (n <= n') H => H H'.
     + by inversion H.
@@ -68,6 +68,7 @@ Proof.
 Qed.
 
 (* Hint Resolve not_le__lt b_false__not_b : myleq. *)
+#[global]
 Hint Resolve le_false_lt : myleq.
 
 (* **** *)
@@ -81,26 +82,35 @@ Qed.
 Lemma perm_sym' : forall l l' : seq nat, perm_eq l l' -> perm_eq l' l.
 Proof.
   move=> l l'.
+(*
   have H := @perm_eq_sym nat_eqType.
   rewrite /symmetric in H.
   by rewrite H.
+*)
+  by rewrite perm_sym.
 Qed.
 
 Lemma perm_trans' : forall l l' l'' : seq nat, 
     perm_eq l l' -> perm_eq l' l'' -> perm_eq l l''.
 Proof.
   move=> l l' l''.
+(*
   have H := @perm_eq_trans nat_eqType.
   rewrite /transitive in H.
-    by eapply H.
+  by eapply H.
+*)
+  by apply: perm_trans.
 Qed.
 
 Lemma perm_cons' : forall (n : nat) (l l' : seq nat), 
     perm_eq l l' -> perm_eq (n :: l) (n :: l').
 Proof.
   move=> n l l'.
+  by rewrite perm_cons.
+(*
   have H := @perm_cons nat_eqType.
-    by rewrite H.
+  by rewrite H.
+*)
 Qed.
   
 Lemma perm_iff : forall (m n : seq nat),
@@ -109,7 +119,18 @@ Proof.
   move=> m n.
   split=> H.
   - by rewrite H.
+(*
   - by apply/perm_eqlP.
+ *)
+  - move=> l.
+    apply/idP/idP.
+    + apply: perm_trans'.
+      apply: perm_sym'.
+      done.
+    + move/perm_sym' in H.
+      apply: perm_trans'.
+      apply: perm_sym'.
+      done.
 Qed.
 
 Lemma perm_swap : forall (l l' : seq nat) (x a : nat),
@@ -122,10 +143,14 @@ Proof.
   rewrite -[[:: a & l]]cat1s.
   rewrite -[[:: a, x & l]]cat1s.
   rewrite -[[:: x & l]]cat1s.
+(*
   apply/perm_eqlP.
+ *)
+  apply/permPl.
   by apply (perm_catCA [:: x] [:: a] l).
 Qed.
 
+#[global]
 Hint Resolve perm_cons' perm_refl' perm_swap perm_trans' : perm.
 
 (* **** *)
@@ -138,7 +163,7 @@ Inductive LocallySorted (T : eqType) (R : rel T) : seq T -> Prop :=
                     LocallySorted R (b :: l) ->
                     R a b -> LocallySorted R (a :: b :: l).
 
-
+#[global]
 Hint Resolve LSorted_nil LSorted_cons1 LSorted_consn : sort.
 
 (* Permutation, seq.v *)
@@ -180,7 +205,7 @@ Program Fixpoint insert n l {struct l} :
 Obligations.
 
 Next Obligation.
-    by auto with sort.
+  by auto with sort.
 Defined.
 
 Next Obligation.
@@ -188,7 +213,7 @@ Next Obligation.
   - by auto with sort.
   - split.
     + erewrite perm_swap.
-        by apply perm_cons'.
+      by apply perm_cons'.
       (* by eauto with sort. *)
     + split.
       * move=> H0.
@@ -228,9 +253,9 @@ Defined.
 Next Obligation.
   remember (insert a x).
   case H : s => /= {Heqs}; subst.
-    by intuition; eauto with perm.
+  by intuition; eauto with perm.
     
-    Undo 1.
+  Undo 1.
   intuition.
   Check @perm_trans' (a :: l') (a :: x).
   - apply (@perm_trans' (a :: l') (a :: x)).
@@ -261,6 +286,7 @@ Proof.
   - by [].
 Qed.
 
+#[global]
 Hint Resolve sorted_ind_inv : sort.
 
 Program Fixpoint merge' (ls1 ls2 : seq nat) :
@@ -354,6 +380,5 @@ Next Obligation.
   Admitted.
 Next Obligation.
   Admitted.
-
 
 (* END *)

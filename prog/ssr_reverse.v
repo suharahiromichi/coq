@@ -31,12 +31,12 @@ Section List.
   Proof.
     split.
     - elim=> b'' //= a' b' c' H IH.
-        by rewrite IH.
+      by rewrite IH.
     - elim: a b c => //=.
       + by move=> b c ->.
       + move=> n' a' IH b' c' <-.
         apply: app_cons.
-          by apply: IH.
+        by apply: IH.
   Qed.
   
   (* Program コマンドで定義する。 *)
@@ -71,7 +71,7 @@ Section List.
     split.
     - elim=> //= n a' b' c' H1 H2 H3.
       apply/appapp.
-        by rewrite H2.
+      by rewrite H2.
   - elim: a b => [b' H | n a IH c H].
     + by rewrite -H.
     + apply: rev_cons.
@@ -104,9 +104,9 @@ Section List.
     - by elim=> //=.
     - elim: a b c => [b c | h a IH b c H].
       + rewrite /rev2 => <-.
-          by apply: rev2_nil.
+        by apply: rev2_nil.
       + apply: rev2_cons.
-          by apply: IH.
+        by apply: IH.
   Qed.
 
   (* Program コマンドを使用する。 *)
@@ -171,11 +171,11 @@ Section Vector.
   Proof.
     split.
     - elim=> //= h n' m' a' b' c' H1 H2.
-        by subst.
+      by subst.
     - elim: a b c => //= [b c H | n' m' a IHa b c H]; subst.
       + done.
       + apply: vapp_cons.
-          by apply: IHa.
+        by apply: IHa.
   Qed.
   
   (* Program コマンドで定義する。 *)
@@ -215,7 +215,7 @@ Section Vector.
   end.
   Next Obligation.
   Proof.
-      by rewrite addSnnS.
+    by rewrite addSnnS.
   Defined.
 
 End Vector.

@@ -155,7 +155,8 @@ Obligation 2.
     now auto.
 *)
 Defined.
-
+Extraction insert.
+Extraction isort.
 
 Lemma sorted_ind_inv h ls : LocallySorted le (h :: ls) -> LocallySorted le ls.
 Proof.
