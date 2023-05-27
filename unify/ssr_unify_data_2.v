@@ -19,10 +19,11 @@ Module List.
         * by apply/orP/or_introl/eqP.
         * by apply/orP/or_intror/IHs.
       + move/orP; case.
-        * move/eqP => ->. by left.
+        * move/eqP => ->.
+          by left.
         * move=> H.
           move/IHs in H.
-            by right.
+          by right.
   Qed.
   
   Lemma InP {A : eqType} (x : A) (s : seq A) : reflect (List.In x s) (x \in s).
@@ -184,14 +185,14 @@ Module Types.
         * done.
         * move: H.
           rewrite Fun_eq => /andP.
-            by case.
+          by case.
         * move: H.
           rewrite Fun_eq => /andP.
-            by case.
+          by case.
     (* t1 = t2 -> eqt t1 t2 *)
     - move=> ->.
       elim: t2 => //= u1 H1 v1 H2.
-        by apply/andP.
+      by apply/andP.
   Qed.
   
 
@@ -219,13 +220,13 @@ Module Types.
       + by right.
     - elim: t => //=.
       + move=> y /eqP <-.
-          by apply: In_Var.
+        by apply: In_Var.
       + move=> t1 Ht1 t2 Ht2 /orP.
         case=> H.
         * apply: In_Fun_dom.
-            by apply: Ht1.
+          by apply: Ht1.
         * apply: In_Fun_cod.
-            by apply: Ht2.
+          by apply: Ht2.
   Qed.
   
   Lemma InP (x : Literal) (t : Term) : reflect (In x t) (inb t x).
@@ -305,11 +306,11 @@ Module Constraint.
       + inversion H; subst; clear H.
         * case: H1 => H.
           ** apply/orP/or_introl/orP/or_introl. (* left. left *)
-               by apply/Types.In_inb.
+             by apply/Types.In_inb.
           ** apply/orP/or_introl/orP/or_intror. (* left. right *)
-               by apply/Types.In_inb.
+             by apply/Types.In_inb.
         * apply/orP/or_intror.              (* right *)
-            by apply: IHs.
+          by apply: IHs.
     - elim: s => /= [| a s IHs] H.
       + done.
       + move/orP in H.
@@ -320,7 +321,7 @@ Module Constraint.
           ** by apply/or_introl/Types.In_inb. (* left *)
           ** by apply/or_intror/Types.In_inb. (* right *)
         * apply: List.Exists_cons_tl.
-            by move/IHs in H.
+          by move/IHs in H.
   Qed.
 
   Lemma InP (x : Literal) (s : Terms) : reflect (In x s) (inb s x).
