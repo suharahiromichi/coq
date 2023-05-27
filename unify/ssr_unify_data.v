@@ -25,10 +25,11 @@ Module List.
         * by apply/orP/or_introl/eqP.
         * by apply/orP/or_intror/IHs.
       + move/orP; case.
-        * move/eqP => ->. by left.
+        * move/eqP => ->.
+          by left.
         * move=> H.
           move/IHs in H.
-            by right.
+          by right.
   Qed.
   
   Lemma InP {A : eqType} (x : A) (s : seq A) : reflect (List.In x s) (x \in s).
@@ -88,14 +89,14 @@ Module Types.
         * done.
         * move: H.
           rewrite Fun_eq => /andP.
-            by case.
+          by case.
         * move: H.
           rewrite Fun_eq => /andP.
-            by case.
+          by case.
     (* t1 = t2 -> eqt t1 t2 *)
     - move=> ->.
       elim: t2 => //= u1 H1 v1 H2.
-        by apply/andP.
+      by apply/andP.
   Qed.
   
 
@@ -123,13 +124,13 @@ Module Types.
       + by right.
     - elim: t => //=.
       + move=> y /eqP <-.
-          by apply: In_Var.
+        by apply: In_Var.
       + move=> t1 Ht1 t2 Ht2 /orP.
         case=> H.
         * apply: In_Fun_dom.
-            by apply: Ht1.
+          by apply: Ht1.
         * apply: In_Fun_cod.
-            by apply: Ht2.
+          by apply: Ht2.
   Qed.
   
   Lemma InP (x : nat) (t : Term) : reflect (In x t) (inb t x).
@@ -199,11 +200,11 @@ Module Constraint.
       + inversion H; subst; clear H.
         * case: H1 => H.
           ** apply/orP/or_introl/orP/or_introl. (* left. left *)
-               by apply/Types.In_inb.
+             by apply/Types.In_inb.
           ** apply/orP/or_introl/orP/or_intror. (* left. right *)
-               by apply/Types.In_inb.
+             by apply/Types.In_inb.
         * apply/orP/or_intror.              (* right *)
-            by apply: IHs.
+          by apply: IHs.
     - elim: s => /= [| a s IHs] H.
       + done.
       + move/orP in H.
@@ -214,7 +215,7 @@ Module Constraint.
           ** by apply/or_introl/Types.In_inb. (* left *)
           ** by apply/or_intror/Types.In_inb. (* right *)
         * apply: List.Exists_cons_tl.
-            by move/IHs in H.
+          by move/IHs in H.
   Qed.
 
   Lemma InP (x : nat) (s : Terms) : reflect (In x s) (inb s x).
@@ -255,3 +256,30 @@ Compute Constraint.inb sc'' 1.
 Compute 1 \in sc''.
 
 (* END *)
+
+Check @set0.
+Variable nf : nat_finType.
+Variable s : {set nat_finType}.
+
+Inductive Finite (U : {set: nat}) : Prop :=
+| Emptt_is_finite : Finite set0
+| Union_is_finite : Finite U ->  forall n, n \notin sc -> Finite 
+
+
+  Print Ensemble.
+
+  (* 
+  Ensemble = fun U : Type => U -> Prop
+   *)
+  Print Finite.
+  (* 
+  Inductive Finite (U : Type) : Ensemble U -> Prop :=
+    Empty_is_finite : Finite U (Empty_set U)
+  | Union_is_finite : forall A : Ensemble U,
+                      Finite U A ->
+                      forall x : U, ~ Ensembles.In U A x -> Finite U (Add U A x)
+   *)
+  Print Empty_set.
+  (*
+  Inductive Empty_set (U : Type) : Ensemble U :=  
+   *)
