@@ -971,23 +971,23 @@ HB.instance Definition _ := hasDecEq.Build Constraint.Term Constraint.Term_eqP. 
 Check (varx @ vary, Base) : Constraint.Term.
 Compute (varx @ vary, Base) == (varx @ vary, Base).
 
-Definition Constraint_Terms_EqType := (seq Constraint.Term)%type.
+Definition Constraint_Terms := (seq Constraint.Term)%type.
 
 (* Canonical Constraint_Term_predType := mkPredType Constraint.inb. *)
 (* 第二引数を省くと、うまくいかない。Constraint.Terms と解釈されるため。 *)
 Canonical Constraint_Term_predType :=
-  @PredType Literal Constraint_Terms_EqType Constraint.inb.
+  @PredType Literal Constraint_Terms Constraint.inb.
 Set Printing All.
 Print Constraint_Term_predType.
 Unset Printing All.
 
 Check [:: (varx, vary)] : Constraint.Terms.
 Check [:: (varx, vary)] : seq Constraint.Term.
-Check [:: (varx, vary)] : Constraint_Terms_EqType.
+Check [:: (varx, vary)] : Constraint_Terms.
   
 Definition sc := [:: (varx, vary)] : seq Constraint.Term.
 Definition sc' := [:: (varx, vary)] : Constraint.Terms.
-Definition sc'' := [:: (varx, vary)] : Constraint_Terms_EqType.
+Definition sc'' := [:: (varx, vary)] : Constraint_Terms.
 
 Compute sc == sc''.
 
@@ -998,8 +998,8 @@ Compute Constraint.inb sc'' Literal.x.
 Compute Literal.x \in sc''.                 (* ちょっと制限がある？ *)
 
 (* コアーション *)
-(* Constraint_Terms_EqType への型推論のほうが便利なので、使わない。 *)
-Coercion card_constraints (constraints : Constraint_Terms_EqType) :
+(* Constraint_Terms への型推論のほうが便利なので、使わない。 *)
+Coercion card_constraints (constraints : Constraint_Terms) :
   Literal -> bool := Constraint.inb constraints.
 
 (* 変数の個数 cardinal *)
@@ -1112,7 +1112,7 @@ Module Unify.
       + done.
   Defined.
   
-  Lemma subsetE (s1 s2 : Constraint_Terms_EqType) :
+  Lemma subsetE (s1 s2 : Constraint_Terms) :
     s1 \subset s2 = [forall x, (x \in s1) ==> (x \in s2)].
   Proof.
     rewrite subset_disjoint /disjoint.
