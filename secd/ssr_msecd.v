@@ -1,3 +1,4 @@
+From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
 
 (** A Correct Compiler from Mini-ML to a Big-Step Machine 
@@ -29,11 +30,14 @@ Section MiniML.
   Lemma Literal_eqP (x y : Literal) : reflect (x = y) (eqLiteral x y).
   Proof.
     rewrite /eqLiteral.
-      by apply: (iffP idP); case: x; case: y.
+    by apply: (iffP idP); case: x; case: y.
   Qed.
   
+(*
   Definition Literal_eqMixin := EqMixin Literal_eqP.
   Canonical Literal_eqType := EqType Literal Literal_eqMixin.
+*)
+  HB.instance Definition _ := hasDecEq.Build Literal Literal_eqP. (* MathComp2 *)
   
   (** variables *)
   Definition Var := Literal.
@@ -124,47 +128,47 @@ Section MiniML.
     move: v2.
     elim: H1 => g'.
     - move=> n v2 H2.
-        by inversion H2; subst.
+      by inversion H2; subst.
     - move=> b v2 H2.
-        by inversion H2; subst.
+      by inversion H2; subst.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inversion H12; subst.
       congr (VNat (_ + _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inversion IH1''.
+        by inversion IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inversion IH2''.
+        by inversion IH2''.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inversion H12; subst.
       congr (VNat (_ - _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inversion IH1''.
+        by inversion IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inversion IH2''.
+        by inversion IH2''.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inversion H12; subst.
       congr (VNat (_ * _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inversion IH1''.
+        by inversion IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inversion IH2''.
+        by inversion IH2''.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inversion H12; subst.
       congr (VBool (_ == _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inversion IH1''.
+        by inversion IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inversion IH2''.
+        by inversion IH2''.
     - move=> x v2 IH.
-        by inversion IH; subst.
+      by inversion IH; subst.
     - move=> x e1 e2 v v2 H1 IH1 H2 IH2 v' H.
       inversion H; subst.
       move: (IH1 v0) => IH1'.
@@ -197,7 +201,7 @@ Section MiniML.
     - move=> g1 x x' e1 e2 e' v2 v H1 IH1 H2 IH2 H3 IH3 v' H.
       inversion H; subst.
       + move: (IH1 (VClos x0 e4 g2) H5) => IH1'.
-          by inversion IH1'.                  (* 矛盾 *)
+        by inversion IH1'.                  (* 矛盾 *)
       + move: (IH1 (VClosRec f x0 e4 g2) H5) => IH1'.          
         inversion IH1'; subst.
         move: (IH2 v0 H7) => IH2'; subst.
@@ -206,67 +210,67 @@ Section MiniML.
   Qed.
   
   Fixpoint MML_NS_interpreter (dep : nat) (g : MML_env) (e : MML_exp)
-           {struct dep} : option MML_val :=
+    {struct dep} : option MML_val :=
     match dep with
     | O => None
     | dep.+1 =>
-      match e with
-      | eNat n => Some (VNat n)
-      | eBool b => Some (VBool b)
-      | ePlus  e1 e2 => match MML_NS_interpreter dep g e1 with
-                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
-                                           | Some (VNat n) => Some (VNat (m + n))
-                                           | _ => None
-                                           end
+        match e with
+        | eNat n => Some (VNat n)
+        | eBool b => Some (VBool b)
+        | ePlus  e1 e2 => match MML_NS_interpreter dep g e1 with
+                          | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                             | Some (VNat n) => Some (VNat (m + n))
+                                             | _ => None
+                                             end
+                          | _ => None
+                          end
+        | eMinus e1 e2 => match MML_NS_interpreter dep g e1 with
+                          | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                             | Some (VNat n) => Some (VNat (m - n))
+                                             | _ => None
+                                             end
+                          | _ => None
+                          end
+        | eTimes e1 e2 => match MML_NS_interpreter dep g e1 with
+                          | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                             | Some (VNat n) => Some (VNat (m * n))
+                                             | _ => None
+                                             end
+                          | _ => None
+                          end
+        | eEq    e1 e2 => match MML_NS_interpreter dep g e1 with
+                          | Some (VNat m) => match MML_NS_interpreter dep g e2 with
+                                             | Some (VNat n) => Some (VBool (m == n))
+                                             | _ => None
+                                             end
+                          | _ => None
+                          end
+        | eVar v => Some (lookup v g)
+        | eLet x e1 e2 => match MML_NS_interpreter dep g e1 with
+                          | Some v1 =>
+                              MML_NS_interpreter dep ((x, v1) :: g) e2
+                          | _ => None
+                          end
+        | eIf e1 e2 e3 => match MML_NS_interpreter dep g e1 with
+                          | Some (VBool true) => MML_NS_interpreter dep g e2
+                          | Some (VBool false) => MML_NS_interpreter dep g e3
+                          | _ => None
+                          end
+        | eLam x e => Some (VClos x e g)
+        | eMuLam f x e => Some (VClosRec f x e g)
+        | eApp e1 e2 => match MML_NS_interpreter dep g e2 with
+                        | Some v2 =>
+                            match MML_NS_interpreter dep g e1 with
+                            | Some (VClos x e g1) =>
+                                MML_NS_interpreter dep ((x, v2) :: g1) e
+                            | Some (VClosRec f x e g1) =>
+                                MML_NS_interpreter
+                                  dep ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e
+                            | _ => None
+                            end
                         | _ => None
                         end
-      | eMinus e1 e2 => match MML_NS_interpreter dep g e1 with
-                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
-                                           | Some (VNat n) => Some (VNat (m - n))
-                                           | _ => None
-                                           end
-                        | _ => None
-                        end
-      | eTimes e1 e2 => match MML_NS_interpreter dep g e1 with
-                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
-                                           | Some (VNat n) => Some (VNat (m * n))
-                                           | _ => None
-                                           end
-                        | _ => None
-                        end
-      | eEq    e1 e2 => match MML_NS_interpreter dep g e1 with
-                        | Some (VNat m) => match MML_NS_interpreter dep g e2 with
-                                           | Some (VNat n) => Some (VBool (m == n))
-                                           | _ => None
-                                           end
-                        | _ => None
-                        end
-      | eVar v => Some (lookup v g)
-      | eLet x e1 e2 => match MML_NS_interpreter dep g e1 with
-                        | Some v1 =>
-                          MML_NS_interpreter dep ((x, v1) :: g) e2
-                        | _ => None
         end
-      | eIf e1 e2 e3 => match MML_NS_interpreter dep g e1 with
-                        | Some (VBool true) => MML_NS_interpreter dep g e2
-                        | Some (VBool false) => MML_NS_interpreter dep g e3
-                        | _ => None
-                        end
-      | eLam x e => Some (VClos x e g)
-      | eMuLam f x e => Some (VClosRec f x e g)
-      | eApp e1 e2 => match MML_NS_interpreter dep g e2 with
-                      | Some v2 =>
-                        match MML_NS_interpreter dep g e1 with
-                        | Some (VClos x e g1) =>
-                          MML_NS_interpreter dep ((x, v2) :: g1) e
-                        | Some (VClosRec f x e g1) =>
-                          MML_NS_interpreter
-                            dep ((x, v2) :: (f, (VClosRec f x e g1)) :: g1) e
-                        | _ => None
-                        end
-                      | _ => None
-                      end
-      end
     end.
   
   Compute MML_NS_interpreter 10 [::] (eNat 10). (* = Some (VNat 10) *)
@@ -284,23 +288,23 @@ Section MiniML.
   Compute MML_NS_interpreter 10 [::] (eApp (eLam X (ePlus (eVar X) (eNat 2))) (eNat 3)).
   Definition clos :=
     (VClosRec F X
-              (eIf (eEq (eVar X) (eNat 0)) (eNat 1)
-                   (eTimes (eVar X) (eApp (eVar F) (eMinus (eVar X) (eNat 1))))) [::]).
+       (eIf (eEq (eVar X) (eNat 0)) (eNat 1)
+          (eTimes (eVar X) (eApp (eVar F) (eMinus (eVar X) (eNat 1))))) [::]).
   Compute MML_NS_interpreter 19 [:: (X, VNat 5); (F, clos)] (eApp (eVar F) (eNat 5)).
   
   Definition example :=
     (eApp
        (eMuLam F X
-               (eIf (eEq (eVar X) (eNat 0))
-                    (eNat 1)
-                    (eTimes (eVar X)
-                            (eApp (eVar F)
-                                  (eMinus (eVar X) (eNat 1))))))
+          (eIf (eEq (eVar X) (eNat 0))
+             (eNat 1)
+             (eTimes (eVar X)
+                (eApp (eVar F)
+                   (eMinus (eVar X) (eNat 1))))))
        (eNat 5)).
   
   Compute MML_NS_interpreter 19 [::] example.
   (* = Some (VNat 120) : option MML_val *)
-
+  
   Lemma MML_NS_lt {dep1 dep2 g e v} :
     dep1 < dep2 ->
     MML_NS_interpreter dep1 g e = Some v ->
@@ -363,7 +367,7 @@ Section MiniML.
       by rewrite /= (MML_NS_maxl IH1) (MML_NS_maxr IH2).
 
     - move=> g' x.
-        by exists 1.
+      by exists 1.
     - move=> g' x e1 e2 v1 v2 H1 IH1 H2 IH2.
       case: IH1 => dep1 IH1.
       case: IH2 => dep2 IH2.
@@ -384,10 +388,10 @@ Section MiniML.
       
     - move=> g' x e1.
       exists 1.
-        by rewrite /=.
+      by rewrite /=.
     - move=> g' x e1.
       exists 1.
-        by rewrite /=.
+      by rewrite /=.
 
     - move=> g1 g2 x e1 e2 e' v2 v' H1 IH1 H2 IH2 H3 IH3.
       case: IH1 => dep1 IH1.
@@ -416,6 +420,17 @@ Section MiniML.
       done.
   Qed.
   
+  Theorem MML_NS_interpreter_correctnes2 :
+    forall g e v, (exists dep, MML_NS_interpreter dep g e = Some v) -> MML_NS g e v.
+  Proof.
+    move=> g e v.
+    case=> dep.
+    elim: dep => // n.
+    elim: e => //=.
+    - move=> n' IHe H.
+  Admitted.
+
+
 End MiniML.
 
 (** de Bruijn notation MiniMLdB *)
@@ -446,11 +461,7 @@ Section MiniMLdB.
   
   (** nameless environments *)
   Definition MML_dB_env := (seq MML_dB_val).
-
   Definition olookup (i : nat) (o : MML_dB_env) := nth (vBool false) o i.
-  Inductive olkup  : nat -> MML_dB_env -> MML_dB_val -> Prop := 
-  | olkup_0 o v : olkup 0 (v :: o) v
-  | olkup_i i o v v' : olkup i o v -> olkup i.+1 (v' :: o) v.
   
   (** The natural semantics of MiniMLdB *)
   Inductive MML_dB_NS : MML_dB_env -> MML_dB_exp -> MML_dB_val -> Prop :=
@@ -941,10 +952,7 @@ Section Modern_SECD.
   Definition MSECD_Env := seq MSECD_Val.
   
   Definition dlookup (i : nat) (d : MSECD_Env) := nth (mBool false) d i.
-  Inductive dlkup  : nat -> MSECD_Env -> MSECD_Val -> Prop := 
-  | dlkup_0 e v : dlkup 0 (v :: e) v
-  | dlkup_i i e v v' : dlkup i e v -> dlkup i.+1 (v' :: e) v.
-
+  
   Inductive MSECD_SVal : Set :=
   | V (v : MSECD_Val)                       (* Machine Value *)
   | S (s : MSECD_Code * MSECD_Env).         (* Stack Frame *)

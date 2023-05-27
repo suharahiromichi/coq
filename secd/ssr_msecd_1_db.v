@@ -1,5 +1,5 @@
 From mathcomp Require Import all_ssreflect.
-Require Import ssrinv.
+From common Require Import ssrinv.
 Require Import ssr_msecd_1_defs.
 
 (** de Bruijn notation MiniMLdB *)
@@ -246,21 +246,21 @@ Section MiniMLdB.
   Proof.
     elim=> //=.
     - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* plus *)
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* minus *)
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* times *)
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> p x t1 t2 d1 d2 H1 IH1 H2 IH2 /=. (* let *)
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> p t1 t2 t3 d1 d2 d3 H1 IH1 H2 IH2 H3 IH3. (* if *)
-        by rewrite IH1 IH2 IH3.
+      by rewrite IH1 IH2 IH3.
     - move=> p x e d' H IH.                 (* lam *)
-        by rewrite IH.
+      by rewrite IH.
     - move=> p f x e d' H IH.               (* mulam *)
-        by rewrite IH.
+      by rewrite IH.
     - move=> p t1 t2 d1 d2 H1 IH1 H2 IH2.   (* app *)
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
   Qed.
   
   Definition example :=

@@ -1,5 +1,6 @@
+From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
-Require Import ssrinv ssrclosure.
+From common Require Import ssrinv ssrclosure.
 
 (** MiniML *)
 
@@ -24,11 +25,14 @@ Section MiniML.
   Lemma Literal_eqP (x y : Literal) : reflect (x = y) (eqLiteral x y).
   Proof.
     rewrite /eqLiteral.
-      by apply: (iffP idP); case: x; case: y.
+    by apply: (iffP idP); case: x; case: y.
   Qed.
   
+(*
   Definition Literal_eqMixin := EqMixin Literal_eqP.
   Canonical Literal_eqType := EqType Literal Literal_eqMixin.
+*)
+  HB.instance Definition _ := hasDecEq.Build Literal Literal_eqP. (* MathComp2 *)
   
   (** variables *)
   Definition Var := Literal.
@@ -262,7 +266,7 @@ Section MiniMLdB.
   Proof.
     apply: dB_translation_NS_env_all => x.
     rewrite /lookup /olookup /mkctx /=.
-      by apply: dB_translation_NS_val_Bool.
+    by apply: dB_translation_NS_val_Bool.
   Qed.
   
   Lemma dB_translation_NS_env_cons (x : Var) (v : MML_val) (g : MML_env)
@@ -360,15 +364,15 @@ Section Modern_SECD.
       MSECD_SS (iClosRec c2 :: c1, e1,                              s)
                (          c1,      e1,         V(mClosRec c2 e1) :: s)
   | MSECD_SS_App m c1 c2 e1 e2 s :
-      MSECD_SS (  iApp :: c1,     e1,     V(m) :: V(mClos c2 e2) :: s)
+      MSECD_SS (  iApp :: c1,      e1,    V(m) :: V(mClos c2 e2) :: s)
                (          c2, m :: e2,                 S(c1, e1) :: s)
   | MSECD_SS_AppRec m c1 c2 e1 e2 s :
-      MSECD_SS (  iApp :: c1,       e1, V(m) :: V(mClosRec c2 e2) :: s)
+      MSECD_SS (  iApp :: c1,      e1, V(m) :: V(mClosRec c2 e2) :: s)
                (          c2,
             m :: mClosRec c2 e2 :: e2,                 S(c1, e1) :: s)
   | MSECD_SS_Ret m c1 c2 e1 e2 s :
-      MSECD_SS (  iRet :: c1,     e1,          V(m) :: S(c2, e2) :: s)
-               (          c2,     e2,                       V(m) :: s).
+      MSECD_SS (  iRet :: c1,      e1,         V(m) :: S(c2, e2) :: s)
+               (          c2,      e2,                      V(m) :: s).
   
   Definition RTC_MSECD_SS := refl_step_closure MSECD_SS.
   
@@ -448,7 +452,7 @@ Section Compiler.
     apply: Compiler_SS_env_all => i.
     rewrite /olookup /elookup /=.
     rewrite 2!nth_nil.
-      by apply: Compiler_SS_val_Bool.
+    by apply: Compiler_SS_val_Bool.
   Qed.
   
   Lemma Compiler_SS_env_cons v o' m1 e :
@@ -459,7 +463,7 @@ Section Compiler.
     move=> He Hv.
     apply: Compiler_SS_env_all.
     inv: He => {He} Hv'.
-      by elim=> [| i IHi] /=.
+    by elim=> [| i IHi] /=.
   Qed.
   
 End Compiler.
@@ -467,16 +471,25 @@ End Compiler.
 (* HINT *)
 (* done に効果のあるもの。 *)
 
+#[global]
 Hint Constructors MML_dB_NS.
+#[global]
 Hint Constructors dB_translation_NS.
+#[global]
 Hint Constructors dB_translation_NS_val.
+#[global]
 Hint Constructors dB_translation_NS_env.
 
+#[global]
 Hint Constructors MSECD_SS.
+#[global]
 Hint Resolve RTC_MSECD_SS_Refl.
 
+#[global]
 Hint Constructors Compiler_SS.
+#[global]
 Hint Constructors Compiler_SS_val.
+#[global]
 Hint Constructors Compiler_SS_env.
 
 (* END *)

@@ -1,5 +1,5 @@
 From mathcomp Require Import all_ssreflect.
-Require Import ssrinv.
+From common Require Import ssrinv.
 Require Import ssr_msecd_1_defs.
 (*
 Require Import ssr_msecd_1_db.
@@ -21,14 +21,14 @@ Section Compiler.
       exists (mNat n).
       split=> // s k.
       inv: H.
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* Bool *)
     - move=> o' b c H e' He.
       exists (mBool b).
       split=> // s k.
       inv: H.
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
       
     (* Plus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -43,7 +43,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* Minus *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -58,7 +58,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* Times *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -73,7 +73,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* Eq *)
     - move=> o' d1 d2 m n H1 IH1 H2 IH2 k H.
@@ -88,7 +88,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       rewrite -catA.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* Var *)
     - move=> o' i k H.
@@ -97,7 +97,7 @@ Section Compiler.
       split.
       + by inv: He => H0.
       + move=> s k.
-          by apply: RTC_MSECD_SS_Step => /=.
+        by apply: RTC_MSECD_SS_Step => /=.
           
     (* Let *)
     - move=> o' d1 d2 v1 v2 H1 IH1 H2 IH2 k H.
@@ -113,7 +113,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Step => //=.
       rewrite -/cat -catA.                  (* fold cat *)
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* IF-THEN *)
     - move=> o' d1 d2 d3 v' H1 IH1 H2 IH2 k H.
@@ -128,7 +128,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       apply: RTC_MSECD_SS_Step => //=.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* IF-ELSE *)
     - move=> o' d1 d2 d3 v' H1 IH1 H3 IH3 k H.
@@ -142,7 +142,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H21 |].
       apply: RTC_MSECD_SS_Step => //=.
       apply: RTC_MSECD_SS_Trans; [apply: H23 |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* Clos *)
     - move=> o' d' k H.
@@ -151,7 +151,7 @@ Section Compiler.
       split.
       + by apply: Compiler_SS_val_Clos.
       + move=> s k.
-          by apply: RTC_MSECD_SS_Step => /=.
+        by apply: RTC_MSECD_SS_Step => /=.
           
     (* ClosRec *)
     - move=> o' d' k H.
@@ -160,7 +160,7 @@ Section Compiler.
       split.
       + by apply: Compiler_SS_val_ClosRec.
       + move=> s k.
-          by apply: RTC_MSECD_SS_Step => /=.
+        by apply: RTC_MSECD_SS_Step => /=.
         
     (* App *)
     - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
@@ -179,7 +179,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
       apply: RTC_MSECD_SS_Step => //=.
       apply: RTC_MSECD_SS_Trans; [apply: H'' |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
         
     (* AppRec *)
     - move=> o' o1 d1 d2 d' v1 v2 H1 IH1 H2 IH2 H' IH' k H.
@@ -189,7 +189,7 @@ Section Compiler.
       case: (IH2 c2 H12 e He) => m2 [Hc2 H22] {H2 H12 IH2}.
       have He' : Compiler_SS_env (v1 :: (vClosRec d' o1) :: o1)
                                  (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0).
-        by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |]. (* Hc1 使う *)
+      by apply: Compiler_SS_env_cons; [apply: Compiler_SS_env_cons |]. (* Hc1 使う *)
       case: (IH' c Hv1 (m2 :: (mClosRec (c ++ [:: iRet]) e0) :: e0) He')
         => m' [Hc' H''] {Hv1 IH'}.
       exists m'.
@@ -200,7 +200,7 @@ Section Compiler.
       apply: RTC_MSECD_SS_Trans; [apply: H22 |].
       apply: RTC_MSECD_SS_Step => //=.
       apply: RTC_MSECD_SS_Trans; [apply: H'' |].
-        by apply: RTC_MSECD_SS_Step => /=.
+      by apply: RTC_MSECD_SS_Step => /=.
   Qed.
   
   (* ********************************************* *)
@@ -525,7 +525,7 @@ Section Compiler.
     case: Hvs => Hv Hs.
     split=> //=.
     move: (Hs [::] [::]).
-      by rewrite cats0.
+    by rewrite cats0.
   Qed.
   
   (** ******** *)
@@ -615,23 +615,23 @@ Section Compiler.
   Proof.
     elim=> //=.
     - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
     - move=> d1 d2 d3 c1 c2 c3 H1 IH1 H2 IH2 H3 IH3.
-        by rewrite IH1 IH2 IH3.
+      by rewrite IH1 IH2 IH3.
     - move=> d' c' H IH.
-        by rewrite IH.
+      by rewrite IH.
     - move=> d' c' H IH.
-        by rewrite IH.
+      by rewrite IH.
     - move=> d1 d2 c1 c2 H1 IH1 H2 IH2.
-        by rewrite IH1 IH2.
+      by rewrite IH1 IH2.
   Qed.
   
   Definition example_db :=
