@@ -45,7 +45,7 @@ HASNATDYNLINK     := $(COQMF_HASNATDYNLINK)
 OCAMLWARN         := $(COQMF_WARN)
 
 CoqMakefile.conf: 
-	coq_makefile -R . common ssrifcond.v ssrinv.v ssrneg.v ssromega.v ssrstring.v ssrsumint.v ssrsumop.v
+	coq_makefile -R . common ssrclosure.v ssrifcond.v ssrinv.v ssrneg.v ssromega.v ssrstring.v ssrsumint.v ssrsumop.v
 
 # This file can be created by the user to hook into double colon rules or
 # add any other Makefile code he may need
