@@ -1,17 +1,18 @@
+From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
-Require Import Finite_sets_facts.
+Require Import Finite_sets_facts Wf_nat.
 
 (* List.v にある定義 *)
 
 Inductive Forall {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Forall_nil : Forall P nil
 | Forall_cons : forall (x : A) (s : seq A), P x -> Forall P s -> Forall P (x :: s).
-Hint Constructors Forall.
+#[global] Hint Constructors Forall.
 
 Inductive Exists {A : Type} (P : A -> Prop) : seq A -> Prop :=
 | Exists_cons_hd : forall (x : A) (s : seq A), P x -> Exists P (x :: s)
 | Exists_cons_tl : forall (x : A) (s : seq A), Exists P s -> Exists P (x :: s).
-Hint Constructors Exists.
+#[global] Hint Constructors Exists.
 
 Lemma ForallP {A : Type} (P : A -> Prop) (p : A -> bool) :
   (forall (a : A), reflect (P a) (p a)) ->
@@ -46,17 +47,17 @@ Proof.
     + done.
     + case=> [Hpa | Hpa].
       * apply: Exists_cons_hd.
-          by apply/H.
+        by apply/H.
       * apply: Exists_cons_tl.
-          by apply: IHs.
+        by apply: IHs.
   - elim: s => /= [| a s IHs] HP.
     + by inversion HP.
     + apply/orP.
       inversion HP; subst.
       * left.
-          by apply/H.
+        by apply/H.
       * right.
-          by apply: IHs.
+        by apply: IHs.
 Qed.
 
 (* List.In の定義のbool版 など *)
@@ -81,7 +82,8 @@ Proof.
       * by apply/orP/or_introl/eqP.
       * by apply/orP/or_intror/IHs.
     + move/orP; case.
-      * move/eqP => ->. by left.
+      * move/eqP => ->.
+        by left.
       * move=> H.
         move/IHs in H.
         by right.
@@ -102,7 +104,7 @@ Proof.
   split.
   - elim.
     + move=> x H.
-        by inversion H.
+      by inversion H.
     + move=> // x s' HP H1 IHs y.
       case=> H3.
       * by rewrite -H3.
@@ -111,10 +113,10 @@ Proof.
     + by apply: Forall_nil.
     + apply: Forall_cons.
       * apply: H => /=.
-          by left.
+        by left.
       * apply: IHs => x H1 /=.
         apply: H => /=.
-          by right.
+        by right.
 Qed.
 
 Lemma Exists_exists (A : Type) (P : A -> Prop) (s : seq A) :
@@ -123,19 +125,19 @@ Proof.
   split.
   - induction 1; firstorder.
   - induction s; firstorder; subst.
-      by apply: Exists_cons_hd.
+    by apply: Exists_cons_hd.
 Qed.
 
 Lemma in_map (A B : Type) (f : A -> B) (s : seq A) (x : A) :
   List.In x s -> List.In (f x) (map f s).
 Proof.
-    by induction s; firstorder (subst; auto).
+  by induction s; firstorder (subst; auto).
 Qed.
 
 Lemma in_map_iff (A B : Type) (f : A -> B) (s : list A) (y : B) :
   List.In y (map f s) <-> (exists x : A, f x = y /\ List.In x s).
 Proof.
-    by induction s; firstorder (subst; auto).
+  by induction s; firstorder (subst; auto).
 Qed.
 
 Lemma Forall_impl {A : Type} (P Q : A -> Prop) :
@@ -143,7 +145,7 @@ Lemma Forall_impl {A : Type} (P Q : A -> Prop) :
 Proof.
   move=> H s.
   rewrite !Forall_forall.
-    by firstorder.
+  by firstorder.
 Qed.
 
 Lemma map_id {A :Type} (s : seq A) : map (fun x => x) s = s.
@@ -277,7 +279,7 @@ Module Types.
   
   Lemma size_gt0 (t : Term) : 0 < Size t.
   Proof.
-      by elim: t.
+    by elim: t.
   Qed.
   
   (* ** *)
@@ -312,19 +314,22 @@ Module Types.
         * done.
         * move: H.
           rewrite Fun_eq => /andP.
-            by case.
+          by case.
         * move: H.
           rewrite Fun_eq => /andP.
-            by case.
+          by case.
     (* t1 = t2 -> eqt t1 t2 *)
     - move=> ->.
       elim: t2 => //= u1 H1 v1 H2.
-        by apply/andP.
+      by apply/andP.
   Qed.
   
+(*
   Definition Term_Mixin := @EqMixin Term eqt Term_eqP.
   Canonical Term_EqType := @EqType Term Term_Mixin.
-  
+ *)
+  HB.instance Definition _ := hasDecEq.Build Term Term_eqP. (* MathComp2 *)
+
   Compute (Var 1) @ (Var 2) @ Base == (Var 1) @ (Var 2) @ Base.
   Compute (Var 1) @ Base @ (Var 2) == (Var 1) @ (Var 2) @ Base.
 
@@ -336,7 +341,7 @@ Module Types.
   | In_Fun_dom : forall t1 t2, In x t1 -> In x (Fun t1 t2)
   | In_Fun_cod : forall t1 t2, In x t2 -> In x (Fun t1 t2)
   | In_Var : In x (Var x).
-  Hint Constructors In.
+  #[global] Hint Constructors In.
   
   Fixpoint inb (t : Term) (x : nat) : bool :=
     match t with
@@ -353,13 +358,13 @@ Module Types.
       + by right.
     - elim: t => //=.
       + move=> y /eqP <-.
-          by apply: In_Var.
+        by apply: In_Var.
       + move=> t1 Ht1 t2 Ht2 /orP.
         case=> H.
         * apply: In_Fun_dom.
-            by apply: Ht1.
+          by apply: Ht1.
         * apply: In_Fun_cod.
-            by apply: Ht2.
+          by apply: Ht2.
   Qed.
   
   Lemma InP (x : nat) (t : Term) : reflect (In x t) (inb t x).
@@ -369,15 +374,17 @@ Module Types.
     - by apply/In_inb.
   Qed.
   
+(*
   Canonical Term_predType := @mkPredType nat Term inb.
-  
+*)  
+  Canonical Term_predType := @PredType nat Term inb.
   Compute 1 \in (Var 1) @ (Var 2) @ Base.
   Compute 3 \notin (Var 1) @ (Var 2) @ Base.
   
   Lemma notIn_Fun x t1 t2 : x \notin t1 @ t2 = (x \notin t1) && (x \notin t2).
   Proof.
     rewrite /mem /in_mem /inb /=.
-      by apply: negb_or.
+    by apply: negb_or.
   Qed.
   
   Lemma In_Fun x t1 t2 : x \in t1 @ t2 = (x \in t1) || (x \in t2).
@@ -441,7 +448,7 @@ Module Types.
         done.
     - move=> t21 IHt21 t22 IHt22.
       move/orP.
-        by case.
+      by case.
   Qed.
   
   Theorem subst_notIn x t1 t2 : x \notin t2 -> subst x t1 t2 = t2.
@@ -454,12 +461,12 @@ Module Types.
       + move/eqP in H.                      (* x \notin Var x *)
         rewrite -H.
         move/negP.
-          by move: (eq_in_var x).           (* x \in Var x から矛盾 *)
+        by move: (eq_in_var x).             (* x \in Var x から矛盾 *)
       + done.                               (* x \notin Var x *)
     - move=> t21 IHt21 t22 IHt22.           (* x \notin t11 @ t21 *)
       rewrite notIn_Fun.
       move/andP => [H11 H21] /=.
-        by rewrite -{2}(IHt21 H11) -{2}(IHt22 H21).
+      by rewrite -{2}(IHt21 H11) -{2}(IHt22 H21).
   Qed.
   
   Theorem subst_In_or x y t1 t2 : x \in (subst y t1 t2) -> (x \in t1) || (x \in t2).
@@ -471,21 +478,21 @@ Module Types.
       case H : (y == y').
       + move/eqP in H => Hx.
         apply/orP.
-          by left.
+        by left.
       + move/eqP in H => Hx.
         apply/orP.
-          by right.
+        by right.
     - move=> t11 H1 t21 H2 /=.
       rewrite !In_Fun => /orP.
       case=> [H11 | H21].
       + rewrite Bool.orb_assoc.
         apply/orP.
         left.
-          by auto.
+        by auto.
       + rewrite [(x \in t11) || (x \in t21)]Bool.orb_comm Bool.orb_assoc.
         apply/orP.
         left.
-          by auto.
+        by auto.
   Qed.
   
   (*
@@ -506,7 +513,7 @@ Module Types.
   Lemma subst_list_app subs1 subs2 t :
       subst_list (subs1 ++ subs2) t = subst_list subs2 (subst_list subs1 t).
   Proof.
-      by apply: foldl_cat.
+    by apply: foldl_cat.
   Qed.
   
   Lemma subst_list_Base subs : subst_list subs Base = Base.
@@ -542,7 +549,7 @@ Module Types.
     - move=> y.
       case H : (x == y) => /=.
       + move: (H) => /eqP Hxy.
-          by rewrite -[in (Var y)]Hxy H.
+        by rewrite -[in (Var y)]Hxy H.
       + by rewrite H.
     - move=> t1 IHt1 t2 IHt2 Hu.
       rewrite subst_list_Fun /=.
@@ -579,7 +586,7 @@ Module Types.
     move/ltP => H.
     apply/ltP.
     Check PeanoNat.Nat.lt_succ_l.
-      by apply: PeanoNat.Nat.lt_succ_l.
+    by apply: PeanoNat.Nat.lt_succ_l.
   Qed.
   
   (* バニラCoq の同名の補題 *)
@@ -589,22 +596,21 @@ Module Types.
     move=> /leP H /ltP Hpm.
     apply/ltP.
     move: H Hpm.
-      by apply: PeanoNat.Nat.le_lt_add_lt.
+    by apply: PeanoNat.Nat.le_lt_add_lt.
   Qed.
   
   Lemma lt_mpn__lt_mn p m n : m + p < n -> m < n.
   Proof.
+    rewrite -{1}[n]addn0.
+    by apply: le_lt_add_lt.
+(*
+    Restart.
     elim: p => [| n' IHn H].
-    - have H2 : m + 0 = m by [].
-        by rewrite H2.
+    - by rewrite addn0.
     - apply: IHn.
       rewrite addnS in H.
-        by apply: lt_succ_l.
-     Restart.
-
-     have H : n + 0 = n by [].
-     rewrite -[in m + p < n]H.
-       by apply: (le_lt_add_lt 0 p m n).
+      by apply: lt_succ_l.
+*)
   Qed.
   
   Lemma lt_mpn__le_mn (p m n : nat) : 0 < p -> m + p < n -> m <= n.
@@ -613,13 +619,13 @@ Module Types.
     - done.
     - move=> m' IHm => n H1 H2.
       rewrite addSnnS in H2.
-        by move/lt_mpn__lt_mn in H2.
+      by move/lt_mpn__lt_mn in H2.
   Qed.
   
   Lemma lt_pmn__le_mn (p m n : nat) : 0 < p -> p + m < n -> m <= n.
   Proof.
     rewrite [p + m]addnC.
-      by apply: lt_mpn__le_mn.
+    by apply: lt_mpn__le_mn.
   Qed.
   
   Lemma unifies_occur x t :
@@ -659,19 +665,28 @@ Notation "x @ y" := (Types.Fun x y) (at level 50, left associativity).
 Notation Var x := (Types.Var x).
 Notation Base := (Types.Base).
 
+(*
 Definition Types_Term_Mixin := @EqMixin Types.Term Types.eqt Types.Term_eqP.
 Canonical Types_Term_EqType := @EqType Types.Term Types_Term_Mixin.
+ *)
+HB.instance Definition _ := hasDecEq.Build Types.Term Types.Term_eqP. (* MathComp2 *)
   
 Compute (Var 1) @ (Var 2) @ Base == (Var 1) @ (Var 2) @ Base.
 Compute (Var 1) @ Base @ (Var 2) == (Var 1) @ (Var 2) @ Base.
 
+(*
 Canonical Types_Term_predType := @mkPredType nat Types.Term Types.inb.
-  
+ *)
+Canonical Types_Term := @PredType nat Types.Term Types.inb.
+
 Compute 1 \in (Var 1) @ (Var 2) @ Base.
 Compute 3 \notin (Var 1) @ (Var 2) @ Base.
 
 Module Constraint.
+(*
   Definition Term := (Types_Term_EqType * Types_Term_EqType)%type.
+ *)
+  Definition Term := (Types_Term * Types_Term)%type.  
   Definition Terms := (seq Term)%type.
 
   Fixpoint eqt (t1 t2 : Term) : bool :=
@@ -715,9 +730,9 @@ Module Constraint.
       + inversion H; subst; clear H.
         * case: H1 => H.
           ** apply/orP/or_introl/orP/or_introl. (* left. left *)
-               by apply/Types.In_inb.
+             by apply/Types.In_inb.
           ** apply/orP/or_introl/orP/or_intror. (* left. right *)
-               by apply/Types.In_inb.
+             by apply/Types.In_inb.
         * apply/orP/or_intror.              (* right *)
             by apply: IHs.
     - elim: s => /= [| a s IHs] H.
@@ -730,7 +745,7 @@ Module Constraint.
           ** by apply/or_introl/Types.In_inb. (* left *)
           ** by apply/or_intror/Types.In_inb. (* right *)
         * apply: Exists_cons_tl.
-            by move/IHs in H.
+          by move/IHs in H.
   Qed.
   
   Lemma InP (x : nat) (s : Terms) : reflect (In x s) (inb s x).
@@ -750,33 +765,45 @@ Module Constraint.
       + by right.
     - case=> /Types.InP H.
       + apply/orP.
-          by left.
+        by left.
       + apply/orP.
-          by right.
+        by right.
   Qed.
   
+(*
   Definition Constraint_Term_Mixin :=
     @EqMixin Constraint.Term Constraint.eqt Term_eqP.
   Canonical Constraint_Term_EqType :=
     @EqType Constraint.Term Constraint_Term_Mixin.
-
+*)
+  HB.instance Definition _ := hasDecEq.Build Constraint.Term Term_eqP. (* MathComp2 *)
+  
   Check (Var 1 @ Var 2, Base) : Constraint.Term.
+(*
   Check (Var 1 @ Var 2, Base) : Constraint_Term_EqType.
+*)
   
   Compute (Var 1 @ Var 2, Base) == (Var 1 @ Var 2, Base).
 
+(*
   Definition Constraint_Terms_EqType := (seq Constraint_Term_EqType)%type.
-  
   Canonical Constraint_Term_predType :=
     @mkPredType nat (Constraint_Terms_EqType) Constraint.inb.
-
-  Check [:: (Var 1, Var 2)] : Constraint.Terms.
-  Check [:: (Var 1, Var 2)] : seq Constraint_Term_EqType.
-  Check [:: (Var 1, Var 2)] : Constraint_Terms_EqType.
+ *)
+  Definition Constraint_Terms := (seq Constraint.Term)%type.
+  Canonical Constraint_Term :=
+    @PredType nat (Constraint_Terms) Constraint.inb.
   
-  Definition sc := [:: (Var 1, Var 2)] : seq Constraint_Term_EqType.
-  Definition sc' := [:: (Var 1, Var 2)] : Constraint.Terms.
-  Definition sc'' := [:: (Var 1, Var 2)] : Constraint_Terms_EqType.
+(*Check [:: (Var 1, Var 2)] : seq Constraint_Term_EqType. *)
+  Check [:: (Var 1, Var 2)] : seq Constraint.Term.
+(*Check [:: (Var 1, Var 2)] : Constraint_Terms_EqType. *)
+  Check [:: (Var 1, Var 2)] : Constraint_Terms.
+  
+(*Definition sc := [:: (Var 1, Var 2)] : seq Constraint_Term_EqType. *)
+  Definition sc := [:: (Var 1, Var 2)] : seq Constraint.Term.
+  Definition sc' := [:: (Var 1, Var 2)] : Constraint_Terms.
+(*Definition sc'' := [:: (Var 1, Var 2)] : Constraint_Terms_EqType. *)
+  Definition sc'' := [:: (Var 1, Var 2)] : Constraint_Terms.
   
   Compute sc == sc''.
   Compute Constraint.inb sc'' 1.
@@ -821,7 +848,7 @@ Module Constraint.
   
   (* \in の右に書けるように EqType を返すようにする。 *)
   (* [x := t0](constraints) *)
-  Definition subst x t0 constraints : Constraint_Terms_EqType :=
+  Definition subst x t0 constraints : Constraint_Terms :=
     map (fun c : Term => (Types.subst x t0 c.1, Types.subst x t0 c.2))
         constraints.
   
@@ -834,14 +861,14 @@ Module Constraint.
     inversion HIn as [[t1' t2'] constraints'' Hor |]; subst.
     - case: Hor => /= [HIn' | HIn'].
       + apply: (@Types.subst_In_occur x t0 t1).
-          by apply/Types.InP.
+        by apply/Types.InP.
       + apply: (@Types.subst_In_occur x t0 t2).
-          by apply/Types.InP.
+        by apply/Types.InP.
     - apply: IHconstraints'.
-        by apply/InP.
+      by apply/InP.
   Qed.    
   
-  Theorem subst_In_or x y t0 (constraints : Constraint_Terms_EqType) :
+  Theorem subst_In_or x y t0 (constraints : Constraint_Terms) :
     x \in (subst y t0 constraints) -> (x \in t0) || (x \in constraints).
   Proof.
     move=> HIn.
@@ -856,19 +883,19 @@ Module Constraint.
       + apply/or_intror/InP.
         left.                       (* apply/or_introl は使えない。 *)
         left.
-          by apply/Types.InP.
+        by apply/Types.InP.
       + by left.
       + apply/or_intror/InP.
          left.
          right.
-           by apply/Types.InP.
+         by apply/Types.InP.
             
     - move/InP in HIn'.
       case: (IHconstraints' HIn') => [H' | H'].
       * by left.
       * apply/or_intror/InP.
         right.
-          by apply/InP.
+        by apply/InP.
   Qed.
   
   Notation subst_list subs constraints :=
@@ -896,7 +923,7 @@ Module Constraint.
     reflect (unifies subs constraints) (unifiesb subs constraints).  
   Proof.
     apply/ForallP => a.
-      by apply/(iffP idP) => /Types.unifiesP.
+    by apply/(iffP idP) => /Types.unifiesP.
   Qed.
   
   Theorem subst_preserves_unifies x t0 subs constraints :
@@ -982,7 +1009,7 @@ Module Constraint.
   Proof.
     move=> Hunifies.
     inversion Hunifies.
-      by apply: Forall_cons.
+    by apply: Forall_cons.
   Qed.
   
   Lemma unify_comm t1 t2 subs constraints :
@@ -990,9 +1017,9 @@ Module Constraint.
   Proof.
     apply/idP/idP => /unifiesP H.
     - apply/unifiesP.
-        by apply: unify_sound_comm.
+      by apply: unify_sound_comm.
     - apply/unifiesP.
-        by apply: unify_sound_comm.
+      by apply: unify_sound_comm.
   Qed.    
   
   Lemma unify_sound_fun constraints t11 t12 t21 t22 subs :
@@ -1033,9 +1060,9 @@ Module Constraint.
   Proof.
     apply/idP/idP => /unifiesP H.
     - apply/unifiesP.
-        by apply: unify_sound_fun.
+      by apply: unify_sound_fun.
     - apply/unifiesP.
-        by apply: unify_complete_fun.
+      by apply: unify_complete_fun.
   Qed.
   
 End Constraint.
