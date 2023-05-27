@@ -117,7 +117,7 @@ Section MiniML.
   Lemma Literal_eqP (x y : Literal) : reflect (x = y) (eqLiteral x y).
   Proof.
     rewrite /eqLiteral.
-      by apply: (iffP idP); case: x; case: y.
+    by apply: (iffP idP); case: x; case: y.
   Qed.
   
   Definition Literal_eqMixin := EqMixin Literal_eqP.
@@ -211,46 +211,46 @@ Section MiniML.
     move=> H1.
     move: v2.
     elim: H1 => g'.
-    - move=> n v2.
-        by inv.
+    - move=> n v2 H2.
+      by inv: H2.
     - move=> b v2 H2.
-        by inv: H2.
+      by inv: H2.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inv: H12 => H5 H7.                   (* xxxxx *)
       congr (VNat (_ + _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5).
-          by inv.
+        by inv.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inv: IH2''.
+        by inv: IH2''.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inv: H12 => H5 H7.
       congr (VNat (_ - _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inv: IH1''.
+        by inv: IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inv: IH2''.
+        by inv: IH2''.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inv: H12 => H5 H7.
       congr (VNat (_ * _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inv: IH1''.
+        by inv: IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inv: IH2''.
+        by inv: IH2''.
     - move=> e1 e2 m n H1 IH1 H2 IH2 v2 H12.
       inv: H12 => H5 H7.
       congr (VBool (_ == _)).
       + move: (IH1 (VNat m0)) => IH1'.
         move: (IH1' H5) => IH1''.
-          by inv: IH1''.
+        by inv: IH1''.
       + move: (IH2 (VNat n0)) => IH2'.
         move: (IH2' H7) => IH2''.
-          by inv: IH2''.
+        by inv: IH2''.
     - move=> x v2 IH.
         by inv: IH.
     - move=> x e1 e2 v v2 H1 IH1 H2 IH2 v' H.
@@ -284,12 +284,12 @@ Section MiniML.
         done.
       + (* move=> g2 x0 f e4 v0 H5 H7. *)
         move: (IH1 (VClosRec f x0 e4 g2) H5) => IH1'.
-        by inv: IH1'.                  (* 矛盾 *)
+        by inv: IH1'.                       (* 矛盾 *)
     - move=> g1 x x' e1 e2 e' v2 v H1 IH1 H2 IH2 H3 IH3 v' H.
       inv: H.
       + move=> g2 x0 e4 v0 H5 H7 H9.
         move: (IH1 (VClos x0 e4 g2) H5) => IH1'.
-          by inv: IH1'.                  (* 矛盾 *)
+        by inv: IH1'.                       (* 矛盾 *)
       + move=> g2 x0 f e4 v0 H5 H7 H9.
         move: (IH1 (VClosRec f x0 e4 g2) H5) => IH1'.          
         inv: IH1'.
@@ -729,7 +729,7 @@ Section Compiler.
     elim=> [| i IHi].                       (* i *)
     - by rewrite /=.
     - rewrite /=.
-        admit.
+      admit.
   Admitted.
 
   
