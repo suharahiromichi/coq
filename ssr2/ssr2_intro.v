@@ -164,6 +164,13 @@ Check "ABC" : string        : eqType.
 ここでは、boolの等式がPropの等式と同値であることの証明を与えて定義しましたが、
 ``int``型は、nat型の直和型（``nat + nat``）との1対1であることを使って定義します。
 
+eqType以外の choiceTypeやcountType、finType 
+あるいは zmodTypeやringTypeの各型のインスタンスも同様に定義できます。
+
+MathComp1では、型の階層を順番に定義する必要がありますが、
+MathComp2では、階層を飛ばして定義できます（途中の階層も自動で定義される）。
+移植ガイドの参考文献や、``Math Comp School & Workshop - 2022`` の ``lesson5`` を参考にしてください。
+
 
 # 6. まとめ
 
