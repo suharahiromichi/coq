@@ -75,11 +75,13 @@ MathCompユーザーの立場からみると、
 ## 4.1 eqType から始まる型階層
 
 階層関係（萩原先生の本を参照）やインスタンス関係は変更はありません。
+MathComp1では、コアーションで、nat_eqType と nat が同一視される、
+という面倒がありましたが、それがなくなりました。
 
 ```coq:MathComp1
 Check 42 : nat        : Type.
 Check 42 : nat_eqType : eqType.
-
+Compute Equality.sort nat_eqType.           (* nat *)
 ```
 
 ```coq:MathComp2
@@ -91,15 +93,18 @@ Check 42 : nat        : eqType.
 ## 4.2 ΣやΠなどのbig operatorのためのモノイド
 
 bigopの使い方は変更はありません。
+MathComp1では、コアーションで、addn_monoidとaddnが同一視される、
+という面倒がありましたが、それがなくなりました。
 
 ```coq:MathComp1
 Check addn        : nat -> nat -> nat.
 Check addn_monoid : Monoid.law 0.
+Compute Monoid.operator addn_monoid.        (* addn *)
 ```
 
 ```coq:MathComp2
 Check addn      : nat -> nat -> nat.
-Check add       : Monoid.law 0.
+Check addn      : Monoid.law 0.
 ```
 
 # 5. MathCompで文字列型を定義する例
