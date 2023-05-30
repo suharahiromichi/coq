@@ -99,6 +99,7 @@ MathComp1では、コアーションで、addn_monoidとaddnが同一視され�
 ```coq:MathComp1
 Check addn        : nat -> nat -> nat.
 Check addn_monoid : Monoid.law 0.
+
 Compute Monoid.operator addn_monoid.        (* addn *)
 ```
 
@@ -177,7 +178,19 @@ MathComp2では、階層を飛ばして定義できます（途中の階層も�
 移植ガイドの参考文献や、``Math Comp School & Workshop - 2022`` の ``lesson5`` を参考にしてください。
 
 
-# 6. まとめ
+# 6. MathComp2の型
+
+| ファイル | 型名       | 構造体       | 型           |
+|:--------:|:----------:|:------------:|:------------:|
+| eqtype.v | Equality   | hasDecEq     | eqType       |
+| choice.v | Choice     | hasChoice    | choiceType   | 
+| choice.v | Countable  | isCountable  | countType    |
+| finttpe.v | Finite    | isFinite     | finType      |
+| ssralg.v | Zmodule    | isZmodule    | zmodType     |
+| ssralg.v | Ring       | isRing       | ringType     |
+
+
+# 7. まとめ
 
 MathComp2 (2.0.0) がリリースされましたが、型定義をしない使い方ではあまり影響はありません。
 なので、当面は MathComp1 (1.7.x) を使い続けてもよいでしょう。
