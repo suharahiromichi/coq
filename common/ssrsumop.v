@@ -67,7 +67,7 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
   Proof.
     move=> Hab.                             (* =1 は第1階の=です。 *)
     apply: eq_big_nat => i Hmn.
-      by rewrite Hab.
+    by rewrite Hab.
   Qed.
   
 (**
@@ -135,7 +135,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
  *)
   Lemma sum_nil' a : \sum_(0 <= i < 0)(a i) = 0.
   Proof.
-      by rewrite big_nil.
+    by rewrite big_nil.
   Qed.
   
 (**
@@ -150,7 +150,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
       have -> : n - m = 0 by ssromega. (* apply/eqP; rewrite subn_eq0. *)
       done.
     - rewrite H.
-        by rewrite big_nil.
+      by rewrite big_nil.
   Qed.
 
 (**
@@ -215,7 +215,7 @@ $$ \sum_{i=m}^{n-1}a_i = a_m + \sum_{i=m+1}^{n-1}a_i $$
     \sum_(m <= i < n)(a i) = a m + \sum_(m.+1 <= i < n)(a i).
   Proof.
     move=> Hn.
-      by rewrite big_ltn.
+    by rewrite big_ltn.
   Qed.
 
 (**
@@ -228,7 +228,7 @@ $$ \sum_{i=m}^{n}a_i = a_m + \sum_{i=m}^{n-1}a_{i + 1} $$
     \sum_(m <= i < n.+1)(a i) = a m + \sum_(m <= i < n)(a i.+1).
   Proof.
     move=> Hn.
-      by rewrite big_nat_recl.
+    by rewrite big_nat_recl.
   Qed.
   
 (**
@@ -243,7 +243,7 @@ $$ \sum_{i=m}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
     \sum_(m <= i < n.+1)(a i) = \sum_(m <= i < n)(a i) + a n.
   Proof.
     move=> Hmn.
-      by rewrite big_nat_recr.
+    by rewrite big_nat_recr.
   Qed.
 
 (**
@@ -272,7 +272,7 @@ $$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
     \sum_(m <= i < p) a i = \sum_(m <= i < n) a i + \sum_(n <= i < p) a i.
   Proof.
     move=> Hmn Hnp.
-      by rewrite -big_cat_nat.
+    by rewrite -big_cat_nat.
       
     Restart.
     move=> Hmn Hnp.                         (* omega が使う。 *)
@@ -280,7 +280,7 @@ $$ \sum_{i=m}^{p}a_i = \sum_{i=m}^{n}a_i + \sum_{i=n}^{p}a_i $$
     pose n2 := p - n.
     have -> : p = m + n1 + n2 by rewrite /n1 /n2; ssromega.
     have -> : n = m + n1 by rewrite /n1; ssromega.
-      by apply: sum_cat'.
+    by apply: sum_cat'.
   Qed.
 
 End Summation1.
