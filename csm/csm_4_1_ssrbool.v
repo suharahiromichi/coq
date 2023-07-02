@@ -504,19 +504,42 @@ Check forall (T : eqType) (x : T) (l : 3.-tuple T), x \in l.
 Goal 1 \in [tuple of [:: 1]].
 Proof. done. Qed.
 
+(*
 (* pair (prod型) が使えるようにする。コアーション....。 *)
 Coercion pred_of_eq_pair (T : eqType) (s : T * T) : pred T := (* pred_class *)
   fun x => (s.1 == x) || (s.2 == x). (* xpredU (eq_op s.1) (eq_op s.2). *)
-
 Compute pred_of_eq_pair (1, 2) 1.           (* true *)
+Compute (1, 2) 1.
+(* Canonical pair_predType (T : eqType) := PredType (@pred_of_eq_pair T). *)
+*)
+(* seq.v を見ると、上記の定義も必要で、mem_pair のほうも mem_pair_predType として定義するべきなようだが、
+   そうすると inE がうまく動かない。 *)
 
-Canonical pair_predType (T : eqType) := PredType (@pred_of_eq_pair T).
-(* Canonical pair_predType (T : eqType) := @mkPredType T (T * T) (@pred_of_eq_pair T). *)
-
-Check forall (T : eqType) (x : T) (l : pair_predType T) , x \in l.
+(* これさえあればよいように見える。 *)
+Definition mem_pair (T : eqType) (s : T * T) (x : T) :=
+  (x == s.1) || (x == s.2).
+Canonical pair_predType (T : eqType) := PredType (@mem_pair T).
 
 Goal 1 \in (1, 2).
 Proof. done. Qed.
+
+(* mem_pairのほうの定義でないと、これは証明できない。 *)
+Lemma in_pair (T : eqType) (x : T) (s : T * T) :
+  (x \in s) = (x == s.1) || (x == s.2).
+Proof.
+  done.
+Qed.
+
+Definition inE := (in_pair, inE).           (* 直積でinEを拡張する。 *)
+Check inE.
+
+Goal 1 \in (1, 2).
+Proof.
+  rewrite inE.
+  apply/orP/or_introl.
+  done.
+Qed.
+
 
 (**
 ### predArgType
