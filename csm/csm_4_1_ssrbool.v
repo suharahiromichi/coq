@@ -533,11 +533,13 @@ Goal red \in ball.
 Proof. rewrite inE. done. Qed.
 
 (* おまけ *)
+(*
 Check nat_eqType : predPredType nat.
 Goal 1 \in nat_eqType.
 Proof. rewrite inE. done. Qed.
 Goal 1 \in {: nat}.
 Proof. rewrite inE. done. Qed.
+*)
 
 (**
 以下も参照してください：
@@ -561,7 +563,7 @@ Proof.
   Set Printing All.
   rewrite /pred_of_eq_pair /=.
   Unset Printing All.
-    by rewrite orbC.
+  by rewrite orbC.
 Qed.
 
 (**
@@ -579,7 +581,7 @@ Proof.
   Set Printing All.
   rewrite /pred_of_eq_pair /=.
   Unset Printing All.
-    by case/orP => ->.
+  by case/orP => ->.
 Qed.
 
 (**
