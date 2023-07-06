@@ -120,7 +120,7 @@ Proof.
 Qed.
 
 (**
-# 応用
+# 応用 1
 
 応用として、kが奇数の時、$$a^k + 1$$ が $$a + 1$$ で割り切れることを証明します。
 
@@ -143,6 +143,30 @@ Proof.
   by apply: dvd_exp_2n1.
 Qed.
 
+
+(**
+# 応用 2
+
+もうひとつの応用として、
+
+$$2 ^ n + 1$$ が素数のとき、$$n$$は2の累乗である。
+
+これの対偶を証明してみます。すなわち、
+
+$$n$$が2の累乗でない（奇数を因数に持つ）とき、$$2 ^ n + 1$$は合成数（ふたつの自然数の積）である。
+*)
+Lemma composite_2n1 n : forall (a b : nat),
+    0 < a -> n = (2 ^ a) * b.*2.+1 -> exists (p q : nat), (2 ^ n).+1 = p * q.
+Proof.
+  move=> a b Ha ->.
+  have -> : 2 ^ ((2 ^ a) * b.*2.+1) = (2 ^ (2 ^ a)) ^ b.*2.+1 by rewrite expnM.
+  set x := 2 ^ (2 ^ a).
+  have Ho : odd b.*2.+1 by rewrite oddS odd_double.
+  have Hx : 0 < x  by rewrite expn_gt0 //.
+  exists x.+1.
+  exists (\sum_(0 <= i < b.+1) (x ^ i.*2 - x ^ i.*2.-1)).+1.
+  by rewrite addn1_exp_2n1.
+Qed.
 
 (**
 # 使わなかった補題
