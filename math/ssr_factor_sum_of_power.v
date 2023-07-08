@@ -155,8 +155,9 @@ $$2 ^ n + 1$$ が素数のとき、$$n$$は2の累乗である。
 
 $$n$$が2の累乗でない（奇数を因数に持つ）とき、$$2 ^ n + 1$$は合成数（ふたつの自然数の積）である。
 *)
-Lemma composite_2n1 n : forall (a b : nat),
-    0 < a -> n = (2 ^ a) * b.*2.+1 -> exists (p q : nat), (2 ^ n).+1 = p * q.
+Lemma expS_composite n : forall (a b : nat),
+    0 < a -> n = (2 ^ a) * b.*2.+1 ->
+    (exists p q : nat, 1 < p -> 1 < q -> (2 ^ n).+1 = p * q).
 Proof.
   move=> a b Ha ->.
   have -> : 2 ^ ((2 ^ a) * b.*2.+1) = (2 ^ (2 ^ a)) ^ b.*2.+1 by rewrite expnM.
