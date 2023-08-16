@@ -5,6 +5,7 @@ MathComp のおける Phantom Type の使用例
 @suharahiromichi
 
 2020/04/03
+2023/08/16 MathComp 2.0.0
 *)
 
 (**
@@ -76,7 +77,7 @@ set_of の引数を調べる：
 (**
 T について、bool_finType は finType のインスタンスである。
  *)
-Check bool_finType : finType.
+Check bool : finType.
 
 (**
 a について、
@@ -86,21 +87,20 @@ a について、
 a の型 ``phant bool_finType`` は、
 コアーションにより ``phant bool`` になるので、``a = Phant bool``
  *)
-Check Phant bool : phant bool_finType.
-Check Phant bool : phant (Finite.sort bool_finType).
+Check Phant bool : phant (Finite.sort bool).
 Check Phant bool : phant bool.
 
 (**
 以上より、
  *)
-Check set_of bool_finType (Phant bool).
+Check set_of bool (Phant bool).
 
 (**
 カノニカルストラクチャで、bool_finType が見つかるので、引数は省略できる。
 
 ``bool <- Finite.sort ( bool_finType )``
  *)
-Check set_of _            (Phant bool).
+Check set_of _    (Phant bool).
 
 (**
 構文糖を適用すると、
@@ -152,7 +152,7 @@ finfun_of の引数を調べる：
 
 aT について、bool_finType は finType のインスタンスである。
  *)
-Check bool_finType : finType.
+Check bool : finType.
 
 (**
 rT について、
@@ -165,14 +165,13 @@ Check nat : Type.
 a の型 ``phant (bool_finType -> nat)`` は、
 コアーションにより ``phant (bool -> nat)`` になるので、``a = Phant (bool -> nat)``
  *)
-Check Phant (bool -> nat) : phant (bool_finType -> nat).
-Check Phant (bool -> nat) : phant ((Finite.sort bool_finType) -> nat).
+Check Phant (bool -> nat) : phant ((Finite.sort bool) -> nat).
 Check Phant (bool -> nat) : phant (bool -> nat).
 
 (**
 以上より、
  *)
-Check finfun_of bool_finType nat (Phant (bool -> nat)).
+Check finfun_of bool nat (Phant (bool -> nat)).
 
 (**
 カノニカルストラクチャで、bool_finType が見つかるので、引数は省略できる。
@@ -235,7 +234,7 @@ set_of' の引数を調べる：
 (**
 T について、bool_finType は finType のインスタンスである。
  *)
-Check bool_finType : finType.
+Check bool : finType.
 
 (**
 a について、
@@ -244,21 +243,21 @@ a について、
 
 ``a = Phantom Type bool`` は、 ``phantom Type bool`` の型を持つ。
  *)
-Compute Equality.sort bool_finType.           (* = bool *)
-Check Phantom Type bool : phantom Type (Finite.sort bool_finType).
+Compute Equality.sort bool.           (* = bool *)
+Check Phantom Type bool : phantom Type (Finite.sort bool).
 Check Phantom Type bool : phantom Type bool.
 
 (**
 以上より、
  *)
-Check set_of' bool_finType (Phantom Type bool).
+Check set_of' bool (Phantom Type bool).
 
 (**
 カノニカルストラクチャで、bool_finType が見つかるので、引数は省略できる。
 
 ``bool <- Finite.sort ( bool_finType )``
  *)
-Check set_of' _            (Phantom _    bool).
+Check set_of' _    (Phantom _    bool).
 
 (**
 構文糖を適用すると、
