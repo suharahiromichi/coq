@@ -76,8 +76,8 @@ Search natmul nmodType.                     (* _ *+ _ *)
 
 (* zmodType *)
 Check zero : (_ : zmodType).
-Check opp  : (_ : zmodType) -> (_ : zmodType).
 Check add  : (_ : zmodType) -> (_ : zmodType) -> (_ : zmodType).
+Check opp  : (_ : zmodType) -> (_ : zmodType).
 Local Notation "x - y" := (x + - y) : ring_scope.
 Local Notation "x *- n" := (- (x *+ n)) : ring_scope.
 Search natmul   zmodType.                   (* _ *+ _ *)
@@ -87,8 +87,9 @@ Search (_ - _)  zmodType.
 
 (* semiRingType *)
 Check zero : (_ : semiRingType).
-Check opp  : (_ : semiRingType) -> (_ : semiRingType).
 Check add  : (_ : semiRingType) -> (_ : semiRingType) -> (_ : semiRingType).
+Check opp  : (_ : semiRingType) -> (_ : semiRingType).
+Check mul  : (_ : semiRingType) -> (_ : semiRingType) -> (_ : semiRingType).
 Check one  : forall (s :  semiRingType), s.
 Local Notation "n %:R" := (1 *+ n) : ring_scope.
 Search natmul   semiRingType.               (* _ *+ _ *)
@@ -99,24 +100,45 @@ Check commr_nat: forall [R : semiRingType] (x : R) (n : nat), comm x n%:R.
 Check commr_nat: forall [R : semiRingType] (x : R) (n : nat), x * n%:R = n%:R * x.
 
 (* ringType *)
+Check zero : (_ : ringType).
+Check add  : (_ : ringType) -> (_ : ringType) -> (_ : ringType).
+Check opp  : (_ : ringType) -> (_ : ringType).
+Check mul  : (_ : ringType) -> (_ : ringType) -> (_ : ringType).
+Check one  : forall (s :  ringType), s.
 Search natmul   ringType.                   (* _ *+ _ *)
 Search (_ *- _) ringType.
 Search add      ringType.                   (* _ + _ *)
 Search mul      ringType.                   (* _ * _ *)
 
 (* comSemiRingType *)
+Check zero : (_ : comSemiRingType).
+Check add  : (_ : comSemiRingType) -> (_ : comSemiRingType) -> (_ : comSemiRingType).
+Check opp  : (_ : comSemiRingType) -> (_ : comSemiRingType).
+Check mul  : (_ : comSemiRingType) -> (_ : comSemiRingType) -> (_ : comSemiRingType).
+Check one  : forall (s :  comSemiRingType), s.
 Search natmul   comSemiRingType.            (* _ *+ _ *)
 Search (_ *- _) comSemiRingType.
 Search add      comSemiRingType.            (* _ + _ *)
 Search mul      comSemiRingType.            (* _ * _ *)
 
 (* comRingType *)
+Check zero : (_ : comRingType).
+Check add  : (_ : comRingType) -> (_ : comRingType) -> (_ : comRingType).
+Check opp  : (_ : comRingType) -> (_ : comRingType).
+Check mul  : (_ : comRingType) -> (_ : comRingType) -> (_ : comRingType).
+Check one  : forall (s :  comRingType), s.
 Search natmul   comRingType.                (* _ *+ _ *)
 Search (_ *- _) comRingType.
 Search add      comRingType.                (* _ + _ *)
 Search mul      comRingType.                (* _ * _ *)
 
 (* unitRingType *)
+Check zero : (_ : unitRingType).
+Check add  : (_ : unitRingType) -> (_ : unitRingType) -> (_ : unitRingType).
+Check opp  : (_ : unitRingType) -> (_ : unitRingType).
+Check mul  : (_ : unitRingType) -> (_ : unitRingType) -> (_ : unitRingType).
+Check one  : forall (s :  unitRingType), s.
+Check inv  : (_ : unitRingType) -> (_ : unitRingType).
 Local Notation "x / y" := (x * y^-1).
 Local Notation "x ^- n" := ((x ^+ n)^-1).
 Search natmul   unitRingType.               (* _ *+ _ *)
@@ -128,6 +150,12 @@ Search (_ / _)  unitRingType.
 Search inv      unitRingType.
 
 (* comUnitRingType *)
+Check zero : (_ : comUnitRingType).
+Check add  : (_ : comUnitRingType) -> (_ : comUnitRingType) -> (_ : comUnitRingType).
+Check opp  : (_ : comUnitRingType) -> (_ : comUnitRingType).
+Check mul  : (_ : comUnitRingType) -> (_ : comUnitRingType) -> (_ : comUnitRingType).
+Check one  : forall (s :  comUnitRingType), s.
+Check inv  : (_ : comUnitRingType) -> (_ : comUnitRingType).
 Search natmul   comUnitRingType.            (* _ *+ _ *)
 Search (_ *- _) comUnitRingType.
 Search exp      comUnitRingType.            (* _ ^- _ *)
