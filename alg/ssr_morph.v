@@ -5,6 +5,9 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
+coq/theories/ssr/ssrfun.v   (new)
+mathcomp/ssreflect/ssrfun.v (old)
+
 Morphisms for functions and relations:
 *)
 
