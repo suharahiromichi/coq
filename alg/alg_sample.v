@@ -18,46 +18,56 @@ Open Scope ring_scope.
 
 (**
 ```
-                        eqType
-                        |
-                        choiceType                               
-                        |                                       
-                        nmodType                                 
-                        |\                                        
-                        | +-------------------+                  
-                        |                      \                 
-                        zmodType                semiRingType     
-                        |                      /|                
-                        | +-------------------+ |                
-                        |/                      |                
-                        RingType                comSemiRingTYpe  
-                       /|                      /                 
- +--------------------+ | +-------------------+                  
-/                       |/                                        
-unitRingType            comRingType                              
-\                       |                                        
- +--------------------+ |
-                       \|
-                        comUnitRingType                          
+eqType
+|
+choiceType                               
+|                                       
+nmodType                                 
+|\                                        
+| +-------------------+                  
+|                      \                 
+zmodType                semiRingType     
+|                      /|                
+| +-------------------+ |                
+|/                      |                
+RingType                comSemiRingTYpe  
+|                       |
+|                       |
+|                       |
+unitRingType            comRingType
+|                      /
+| +-------------------+
+|/
+comUnitRingType
+|
+|
+idomainType
+|
+|
+fieldType
 ```
 *)
 
 (**
 # 覚えておくべき
  *)
+Check zero : (_ : nmodType).                                     (* 0 *)
+Check add  : (_ : nmodType) -> (_ : nmodType) -> (_ : nmodType). (* +%R, + *)
+Check opp  : (_ : zmodType) -> (_ : zmodType).                   (* -%R, - *)
+Check mul  : (_ : semiRingType) -> (_ : semiRingType) -> (_ : semiRingType). (* *%R, * *)
+Check one  : forall (s : semiRingType), s.             (* 1 *)
+Check inv  : (_ : unitRingType) -> (_ : unitRingType). (* ^-1 *)
 
-Check zero : (_ : nmodType).
-Check add  : (_ : nmodType) -> (_ : nmodType) -> (_ : nmodType).
-Check opp  : (_ : zmodType) -> (_ : zmodType).
-Check mul  : (_ : semiRingType) -> (_ : semiRingType) -> (_ : semiRingType).
-Check one  : forall (s : semiRingType), s.
-Check inv  : (_ : unitRingType) -> (_ : unitRingType).
+Notation "x *+ n" := (natmul x n) : ring_scope. (* nmodType *)
+Notation "- x"    := (opp x) : ring_scope.      (* zmodType *)
+Notation "x ^+ n" := (exp x n) : ring_scope.    (* semiRingType *)
+Notation "x ^-1"  := (inv x).                   (* unitRingType *)
 
-Notation "x - y" := (x + - y) : ring_scope.     (* zmodType *)
-Notation "x *- n" := (- (x *+ n)) : ring_scope. (* zmodType *)
-Notation "n %:R" := (1 *+ n) : ring_scope.      (* semiRingType *)
-Notation "x / y" := (x * y^-1).                 (* unitRingType *)
-Notation "x ^- n" := ((x ^+ n)^-1).             (* unitRingType *)
+Notation "x - y"  := (x + - y) : ring_scope.     (* zmodType *)
+Notation "x *- n" := (- (x *+ n)) : ring_scope.  (* zmodType *)
+Notation "n %:R"  := (1 *+ n) : ring_scope.      (* semiRingType *)
+Notation "x / y"  := (x * y^-1).                 (* unitRingType *)
+Notation "x ^- n" := ((x ^+ n)^-1).              (* unitRingType *)
 
 Check @addrA : forall s : nmodType, associative +%R.
 Check @addrC : forall s : nmodType, commutative +%R.
@@ -163,5 +173,20 @@ Search add      comUnitRingType.
 Search mul      comUnitRingType.
 Search (_ / _)  comUnitRingType.
 Search inv      comUnitRingType.
+
+(* fieldType *)
+Check zero : (_ : fieldType).
+Check add  : (_ : fieldType) -> (_ : fieldType) -> (_ : fieldType).
+Check opp  : (_ : fieldType) -> (_ : fieldType).
+Check mul  : (_ : fieldType) -> (_ : fieldType) -> (_ : fieldType).
+Check one  : forall (s :  fieldType), s.
+Check inv  : (_ : fieldType) -> (_ : fieldType).
+Search natmul   fieldType.            (* _ *+ _ *)
+Search (_ *- _) fieldType.
+Search exp      fieldType.            (* _ ^- _ *)
+Search add      fieldType.
+Search mul      fieldType.
+Search (_ / _)  fieldType.
+Search inv      fieldType.
 
 (* END *)
