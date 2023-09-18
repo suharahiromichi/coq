@@ -84,6 +84,12 @@ Check add  : (_ : nmodType) -> (_ : nmodType) -> (_ : nmodType).
 Search add    nmodType.
 Search natmul nmodType.                     (* _ *+ _ *)
 
+Check mulrnDl : forall (V : nmodType) (n : nat), {morph (@natmul V)^~ n : x y / x + y}.
+Check mulrnDl : forall (V : nmodType) (n : nat) (x y : V), (x + y) *+ n = x *+ n + y *+ n.
+
+Check raddfMn : forall (U V : nmodType) (f : {additive U -> V}) (n : nat), {morph f : x / x *+ n >-> x *+ n}.
+Check raddfMn : forall (U V : nmodType) (f : {additive U -> V}) (n : nat) (x : U), f (x *+ n) = (f x) *+ n.
+
 (* zmodType *)
 Check zero : (_ : zmodType).
 Check add  : (_ : zmodType) -> (_ : zmodType) -> (_ : zmodType).
@@ -106,6 +112,7 @@ Search natmul   semiRingType.               (* _ *+ _ *)
 Search (_ *- _) semiRingType.
 Search add      semiRingType.               (* _ + _ *)
 Search mul      semiRingType.               (* _ * _ *)
+
 Check commr_nat: forall [R : semiRingType] (x : R) (n : nat), comm x n%:R.
 Check commr_nat: forall [R : semiRingType] (x : R) (n : nat), x * n%:R = n%:R * x.
 
