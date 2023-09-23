@@ -1,0 +1,9 @@
+-R /Users/suhara/WORK/coq/common common
+ssrclosure.v
+ssrifcond.v
+ssrinv.v
+ssrneg.v
+ssromega.v
+ssrstring.v
+ssrsumint.v
+ssrsumop.v
