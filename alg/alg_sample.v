@@ -20,17 +20,17 @@ Open Scope ring_scope.
 ```
 eqType
 |
-choiceType                               
-|                                       
-nmodType                                 
-|\                                        
-| +-------------------+                  
-|                      \                 
-zmodType                semiRingType     
-|                      /|                
-| +-------------------+ |                
-|/                      |                
-RingType                comSemiRingTYpe  
+choiceType
+|
+nmodType
+|\
+| +-------------------+
+|                      \
+zmodType                semiRingType
+|                      /|
+| +-------------------+ |
+|/                      |
+RingType                comSemiRingTYpe
 |                       |
 |                       |
 |                       |
