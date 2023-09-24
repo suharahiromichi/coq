@@ -8,27 +8,28 @@ About int.
      Check int : nmodType.                  (* additive abelian monoid *)
      Check int : zmodType.                  (* additive abelian group (Nmodule with an opposite) *)
      Check int : semiRingType.              (* non-commutative semi rings *)
-Fail Check int : comSemiringType.           (* commutative semi rings *)
+Fail Check int : comSemiringType.           (* commutative semi rings *) (* MAY BE BUG *)
      Check int : ringType.                  (* non-commutative rings (semi rings with an opposite) *)
      Check int : comRingType.               (* commutative rings *)
      Check int : unitRingType.              (* Rings whose units have computable inverses *)
      Check int : comUnitRingType.           (* commutative UnitRing *)
-     Check int : idomainType.               (* integral, commutative, ring with partial inverses *)
+(**) Check int : idomainType.               (* integral, commutative, ring with partial inverses *)
+
 Fail Check int : fieldType.                 (* commutative fields *)
-Fail Check int : decFieldType.
-Fail Check int : closedFieldType.
+Fail Check int : decFieldType.              (* fields with a decidable first order theory *)
+Fail Check int : closedFieldType.           (* 閉体 *)
 
 (* ssrnum で定義される型 *)
      Check int : porderZmodType.            (* join of Order.POrder and GRing.Zmodule *)
-Fail Check int : normedZmodType.            (* Zmodule with a norm *)
+Fail Check int : normedZmodType.            (* Zmodule with a norm *) (* MAY BE BUG *)
      Check int : numDomainType.             (* Integral domain with an order and a norm *)
-     Check int : realDomainType.            (* Num domain where all elements are positive or negative *)
+(**) Check int : realDomainType.            (* Num domain where all elements are positive or negative *)
+
 Fail Check int : numFieldType.              (* Field with an order and a norm *)
 Fail Check int : numClosedFieldType.        (* Partially ordered Closed Field with conjugation *)
 Fail Check int : realFieldType.             (* Num Field where all elements are positive or negative *)
-Fail Check int : archiFieldType.
-Fail Check int : rcfType.
-
+Fail Check int : archiFieldType.            (* A Real Field with the archimedean axiom *)
+Fail Check int : rcfType.                   (* A Real Field with the real closed axiom *)
 
 
 (*
