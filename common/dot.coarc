@@ -1,7 +1,0 @@
-(* .coqrc *)
-
-Add LoadPath "~/WORK/coq/common" as common.
-
-(* From common Require Import ssromega. *)
-
-(* END *)
