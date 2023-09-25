@@ -8,7 +8,7 @@ About int.
      Check int : nmodType.                  (* additive abelian monoid *)
      Check int : zmodType.                  (* additive abelian group (Nmodule with an opposite) *)
      Check int : semiRingType.              (* non-commutative semi rings *)
-Fail Check int : comSemiringType.           (* commutative semi rings *) (* MAY BE BUG *)
+     Check int : comSemiRingType.           (* commutative semi rings *)
      Check int : ringType.                  (* non-commutative rings (semi rings with an opposite) *)
      Check int : comRingType.               (* commutative rings *)
      Check int : unitRingType.              (* Rings whose units have computable inverses *)
@@ -21,7 +21,7 @@ Fail Check int : closedFieldType.           (* 閉体 *)
 
 (* ssrnum で定義される型 *)
      Check int : porderZmodType.            (* join of Order.POrder and GRing.Zmodule *)
-Fail Check int : normedZmodType.            (* Zmodule with a norm *) (* MAY BE BUG *)
+Fail Check int : normedZmodType.            (* Zmodule with a norm *)
      Check int : numDomainType.             (* Integral domain with an order and a norm *)
 (**) Check int : realDomainType.            (* Num domain where all elements are positive or negative *)
 
@@ -46,6 +46,8 @@ Check GRing.Zmodule_isComRing.Build int mulzA mulzC mul1z mulz_addl nonzero1z.
 Check comRingType.
 
 Check intUnitRing.comMixin : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
+Import intUnitRing.
+Check GRing.ComRing_hasMulInverse.Build int mulVz unitzPl invz_out.
 Check comUnitRingType.
 
 Check intUnitRing.idomain_axiomz : forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
@@ -58,7 +60,7 @@ Check Num.IntegralDomain_isLeReal.Build int
   lez_add lez_mul lez_anti subz_ge0 (lez_total 0) normzN gez0_norm ltz_def.
 Check realDomainType.
 
-
+Check GRing.isSemiringClosed.Build int Znat_pred Znat_semiring_closed.
 
 
 

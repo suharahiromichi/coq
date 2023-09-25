@@ -5,7 +5,7 @@ From mathcomp Require Import all_algebra.
      Check rat : nmodType.                  (* additive abelian monoid *)
      Check rat : zmodType.                  (* additive abelian group (Nmodule with an opposite) *)
      Check rat : semiRingType.              (* non-commutative semi rings *)
-Fail Check rat : comSemiringType.           (* commutative semi rings *) (* MAY BE BUG *)
+     Check rat : comSemiRingType.           (* commutative semi rings *)
      Check rat : ringType.                  (* non-commutative rings (semi rings with an opposite) *)
      Check rat : comRingType.               (* commutative rings *)
      Check rat : unitRingType.              (* Rings whose units have computable inverses *)
