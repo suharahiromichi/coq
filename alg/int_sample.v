@@ -35,32 +35,36 @@ Fail Check int : rcfType.                   (* A Real Field with the real closed
 (*
 int のつくりかた
  *)
-Check intZmod.Mixin : GRing.isZmodule.axioms_ int _ _.
 Import intZmod.
-Check GRing.isZmodule.Build int addzA addzC add0z addNz.
+Check GRing.isZmodule.Build int addzA addzC add0z addNz
+  : GRing.isZmodule.axioms_ int _ _.
 Check zmodType.
 
-Check intRing.comMixin : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
 Import intRing.
-Check GRing.Zmodule_isComRing.Build int mulzA mulzC mul1z mulz_addl nonzero1z.
+Check intRing.comMixin .
+Check GRing.Zmodule_isComRing.Build int mulzA mulzC mul1z mulz_addl nonzero1z
+  : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
 Check comRingType.
 
-Check intUnitRing.comMixin : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
 Import intUnitRing.
-Check GRing.ComRing_hasMulInverse.Build int mulVz unitzPl invz_out.
+Check GRing.ComRing_hasMulInverse.Build int mulVz unitzPl invz_out
+  : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
 Check comUnitRingType.
 
 Check intUnitRing.idomain_axiomz : forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
 Check GRing.ComUnitRing_isIntegral.Build int intUnitRing.idomain_axiomz.
 Check idomainType.
 
-Check intOrdered.Mixin : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
 Import intOrdered.
 Check Num.IntegralDomain_isLeReal.Build int
-  lez_add lez_mul lez_anti subz_ge0 (lez_total 0) normzN gez0_norm ltz_def.
+  lez_add lez_mul lez_anti subz_ge0 (lez_total 0) normzN gez0_norm ltz_def
+  : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
 Check realDomainType.
 
-Check GRing.isSemiringClosed.Build int Znat_pred Znat_semiring_closed.
+
+
+Check GRing.isSemiringClosed.Build int Znat_pred Znat_semiring_closed
+  : GRing.isSemiringClosed.axioms_ int Znat_pred.
 
 
 
@@ -72,19 +76,6 @@ Check GRing.isSemiringClosed.Build int Znat_pred Znat_semiring_closed.
 
 
 
-
-
-
-
-Check intZmod.Mixin : GRing.isZmodule.axioms_ int _ _.
-Check zmodType.
-Check idomainType.
-
-Check intRing.comMixin : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
-Check comRingType.
-
-Check intUnitRing.comMixin : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
-Check comUnitRingType.
 
 Check intUnitRing.idomain_axiomz : forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
 Check GRing.ComUnitRing_isIntegral.Build int intUnitRing.idomain_axiomz.
