@@ -1,3 +1,4 @@
+From HB Require Import structures.
 From mathcomp Require Import all_ssreflect.
 (* From mathcomp Require Import all_algebra. *)
 From mathcomp Require Import ssralg ssrnum ssrint.
@@ -13,7 +14,7 @@ About int.
      Check int : comRingType.               (* commutative rings *)
      Check int : unitRingType.              (* Rings whose units have computable inverses *)
      Check int : comUnitRingType.           (* commutative UnitRing *)
-(**) Check int : idomainType.               (* integral, commutative, ring with partial inverses *)
+(**) Check int : idomainType.               (* 整域 integral, commutative, ring with partial inverses *)
 
 Fail Check int : fieldType.                 (* commutative fields *)
 Fail Check int : decFieldType.              (* fields with a decidable first order theory *)
@@ -38,113 +39,119 @@ int のつくりかた
 Import intZmod.
 Check GRing.isZmodule.Build int addzA addzC add0z addNz
   : GRing.isZmodule.axioms_ int _ _.
+
+(**
+```
+HB.factory Record isZmodule V of Choice V := {
+  zero : V;
+  opp : V -> V;
+  add : V -> V -> V;
+  addrA : associative add;
+  addrC : commutative add;
+  add0r : left_id zero add;
+  addNr : left_inverse zero opp add
+}.
+```
+*)
+
 Check zmodType.
 
 Import intRing.
 Check intRing.comMixin .
 Check GRing.Zmodule_isComRing.Build int mulzA mulzC mul1z mulz_addl nonzero1z
   : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
+
+(**
+```
+HB.factory Record Zmodule_isComRing R of Zmodule R := {
+  one : R;
+  mul : R -> R -> R;
+  mulrA : associative mul;
+  mulrC : commutative mul;
+  mul1r : left_id one mul;
+  mulrDl : left_distributive mul add;
+  oner_neq0 : one != zero
+}.
+```
+*)
+
 Check comRingType.
 
 Import intUnitRing.
 Check GRing.ComRing_hasMulInverse.Build int mulVz unitzPl invz_out
   : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
+
+(**
+```
+HB.factory Record ComRing_hasMulInverse R of ComRing R := {
+  unit : {pred R};
+  inv : R -> R;
+  mulVx : {in unit, left_inverse 1 inv *%R};
+  unitPl : forall x y, y * x = 1 -> unit x;
+  invr_out : {in [predC unit], inv =1 id}
+}.
+```
+*)
+
 Check comUnitRingType.
 
-Check intUnitRing.idomain_axiomz : forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
+HB.howto comUnitRingType.
+HB.about GRing.ComRing_hasMulInverse.
+HB.about GRing.ComRing_hasMulInverse.mulVx.
+
+Check intUnitRing.idomain_axiomz :          (* 整域公理 *)
+  forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
 Check GRing.ComUnitRing_isIntegral.Build int intUnitRing.idomain_axiomz.
+
+(**
+```
+HB.mixin Record ComUnitRing_isIntegral R of ComUnitRing R := {
+  mulf_eq0_subproof : integral_domain_axiom R;
+}.
+```
+*)
+
 Check idomainType.
 
 Import intOrdered.
 Check Num.IntegralDomain_isLeReal.Build int
   lez_add lez_mul lez_anti subz_ge0 (lez_total 0) normzN gez0_norm ltz_def
   : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
+
+(**
+```
+HB.factory Record IntegralDomain_isLeReal R of GRing.IntegralDomain R := {
+  Rle : rel R;
+  Rlt : rel R;
+  norm : R -> R;
+  le0_add   : forall x y, Rle 0 x -> Rle 0 y -> Rle 0 (x + y);
+  le0_mul   : forall x y, Rle 0 x -> Rle 0 y -> Rle 0 (x * y);
+  le0_anti  : forall x, Rle 0 x -> Rle x 0 -> x = 0;
+  sub_ge0   : forall x y, Rle 0 (y - x) = Rle x y;
+  le0_total : forall x, Rle 0 x || Rle x 0;
+  normN     : forall x, norm (- x) = norm x;
+  ge0_norm  : forall x, Rle 0 x -> norm x = x;
+  lt_def    : forall x y, Rlt x y = (y != x) && Rle x y;
+}.
+```
+*)
+
 Check realDomainType.
 
 
 
-Check GRing.isSemiringClosed.Build int Znat_pred Znat_semiring_closed
-  : GRing.isSemiringClosed.axioms_ int Znat_pred.
+(* 参考 *)
+(* {in A, f y} は、y \in A -> f の意味。 *)
+Lemma memPnC (A : eqType) (x : A) : {in A, forall y, x != y}.
+Proof.
+  move=> y.
+  (* y \in A -> x != y *)
+Abort.
 
+(* comUnitRing の証明 *)
+(* ComRing_hasMulInverse の mulVx 公理 *)
+(*   mulVx : {in unit, left_inverse 1 inv *%R}; *)
+Check [eta left_inverse]
+  : forall x T R : Type, R -> (T -> x) -> (x -> T -> R) -> Prop.
+Check left_inverse 1%R GRing.inv *%R.
 
-
-
-
-
-
-
-
-
-
-
-Check intUnitRing.idomain_axiomz : forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
-Check GRing.ComUnitRing_isIntegral.Build int intUnitRing.idomain_axiomz.
-Check idomainType.
-
-Check intOrdered.Mixin : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
-Check realDomainType.
-
-
-
-
-Check HB_unnamed_mixin_4.
-Check HB_unnamed_mixin_5.
-Check HB_unnamed_mixin_6.
-Check HB_unnamed_mixin_7.
-Check HB_unnamed_mixin_8.
-Check HB_unnamed_mixin_9.
-Check HB_unnamed_mixin_10.
-Check HB_unnamed_mixin_11.
-Check HB_unnamed_mixin_12.
-Check HB_unnamed_mixin_14.
-Check HB_unnamed_mixin_15.
-Check HB_unnamed_mixin_16.
-Check HB_unnamed_mixin_17.
-Check HB_unnamed_mixin_20.
-Check HB_unnamed_mixin_21.
-Check HB_unnamed_mixin_22.
-Check HB_unnamed_mixin_23.
-Check HB_unnamed_mixin_24.
-Check HB_unnamed_mixin_26.
-Check HB_unnamed_mixin_27.
-Check HB_unnamed_mixin_28.
-Check HB_unnamed_mixin_29.
-Check HB_unnamed_mixin_30.
-Check HB_unnamed_mixin_31.
-Check HB_unnamed_mixin_33.
-
-
-
-(*
-     Check int : lmodType R.
-     Check int : lalgType R.
-     Check int : algType R.
-     Check int : comAlgType R.
-*)
-(*
-     Check int : unitAlgType R.
-     Check int : comUnitAlgType R.
-*)                 
-
-(*
-ssrint.v
-
-HB.instance Definition _ := intZmod.Mixin.
-HB.instance Definition _ := intRing.comMixin.
-HB.instance Definition _ := intUnitRing.comMixin.
-HB.instance Definition _ := intOrdered.Mixin.
-
-Definition Mixin := GRing.isZmodule.Build int addzA addzC add0z addNz.
-Definition comMixin := GRing.Zmodule_isComRing.Build int
-Definition comMixin := GRing.ComRing_hasMulInverse.Build int
-Definition Mixin := Num.IntegralDomain_isLeReal.Build int
- *)
-
-
-  (*
-ssralg.v:HB.factory Record isZmodule V of Choice V := {
-ssralg.v:HB.factory Record Zmodule_isComRing R of Zmodule R := {
-ssralg.v:HB.factory Record ComRing_hasMulInverse R of ComRing R := {
-ssrnum.v:HB.factory Record IntegralDomain_isLeReal R of GRing.IntegralDomain R := {
-
-*)
