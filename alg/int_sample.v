@@ -3,7 +3,8 @@ From mathcomp Require Import all_ssreflect.
 (* From mathcomp Require Import all_algebra. *)
 From mathcomp Require Import ssralg ssrnum ssrint.
 
-About int.
+Import Order.TTheory GRing.Theory Num.Theory. (* ssralg ssrnum *)
+Open Scope ring_scope.
 
 (* ssralg で定義される型 *)
      Check int : nmodType.                  (* additive abelian monoid *)
@@ -93,6 +94,64 @@ HB.factory Record ComRing_hasMulInverse R of ComRing R := {
 ```
 *)
 
+(* unit *)
+Check unitz : qualifier 1 int.
+Print unitz.       (* = [qualify a n | (n == 1) || (n == -1)] *)
+Compute 1 \in unitz.                        (* true *)
+Compute 0 \in unitz.                        (* false *)
+Compute -1 \in unitz.                       (* true *)
+Compute 2 \in unitz.                        (* false *)
+
+(* inv *)
+Check invz : int -> int.
+Compute invz 1.                             (* 1 *)
+Compute invz 0.                             (* 0 *)
+Compute invz (-1).                          (* -1 *)
+Compute invz 2.                             (* 2 *)
+
+(* mulVx *)
+Check mulVz : {in unitz, left_inverse 1 invz  *%R}.
+Print left_inverse.
+(* fun (S T R : Type) (e : R) (inv : T -> S) (op : S -> T -> R) => forall x : T, op (inv x) x = e *)
+(*                                                                               ~~~~~~~~~~~~~~~~ *)
+Goal {in unitz, left_inverse 1 invz  *%R}.
+Proof.
+  move=> n.
+  (* n \is a unitz -> invz n * n = 1 *)
+  move/pred2P.
+  (* n = 1 \/ n = -1 -> invz n * n = 1 *)
+  case.
+  - by move=> ->.
+  - by move=> ->.
+Qed.    
+
+(* unitPl *)
+Check unitzPl : forall m n : int, n * m = 1%R -> m \is a unitz.
+Goal forall m n : int, n * m = 1%R -> m \is a unitz.
+Proof.
+  move=> m n.
+  Check qualifE : forall (n : nat) (T : Type) (p : {pred T}) (x : T), (x \in Qualifier n (T:=T) p) = p x.
+  rewrite qualifE => /eqP.
+  case: m => m.
+  - rewrite mulzn_eq1.
+    by move=> /andP [] _ /eqP ->.
+  - rewrite ssrint.NegzE mulrN -mulNr.
+    rewrite mulzn_eq1.
+    by move=> /andP [] _ /eqP ->.
+Qed.
+
+Check invz_out : {in [predC unitz], invz =1 id}.
+Goal {in [predC unitz], invz =1 id}.
+Proof.
+  move=> x.
+  (* x \in [predC unitz] -> invz x = x *)
+  rewrite inE.
+  (* x \isn't a unitz -> invz x = x *)
+  rewrite /negb.
+  (* (if x \is a unitz then false else true) -> invz x = x *)
+  done.
+Qed.
+
 Check comUnitRingType.
 
 HB.howto comUnitRingType.
@@ -111,11 +170,28 @@ HB.mixin Record ComUnitRing_isIntegral R of ComUnitRing R := {
 ```
 *)
 
+(* idomain_axiomz 整域公理 *)
+Check idomain_axiomz : forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
+Goal forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
+Proof.
+  case=> m [] n //= /eqP.
+  - by rewrite ?(ssrint.NegzE, mulrN, mulNr) ?oppr_eq0 -PoszM [_ == _]muln_eq0.
+  - by rewrite ?(ssrint.NegzE, mulrN, mulNr) ?oppr_eq0 -PoszM [_ == _]muln_eq0.
+  - by rewrite ?(ssrint.NegzE, mulrN, mulNr) ?oppr_eq0 -PoszM [_ == _]muln_eq0.
+Qed.
+
 Check idomainType.
 
 Import intOrdered.
 Check Num.IntegralDomain_isLeReal.Build int
-  lez_add lez_mul lez_anti subz_ge0 (lez_total 0) normzN gez0_norm ltz_def
+  lez_add
+  lez_mul
+  lez_anti
+  subz_ge0
+  (lez_total 0)
+  normzN
+  gez0_norm
+  ltz_def
   : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
 
 (**
@@ -138,20 +214,4 @@ HB.factory Record IntegralDomain_isLeReal R of GRing.IntegralDomain R := {
 
 Check realDomainType.
 
-
-
-(* 参考 *)
-(* {in A, f y} は、y \in A -> f の意味。 *)
-Lemma memPnC (A : eqType) (x : A) : {in A, forall y, x != y}.
-Proof.
-  move=> y.
-  (* y \in A -> x != y *)
-Abort.
-
-(* comUnitRing の証明 *)
-(* ComRing_hasMulInverse の mulVx 公理 *)
-(*   mulVx : {in unit, left_inverse 1 inv *%R}; *)
-Check [eta left_inverse]
-  : forall x T R : Type, R -> (T -> x) -> (x -> T -> R) -> Prop.
-Check left_inverse 1%R GRing.inv *%R.
-
+(* END *)
