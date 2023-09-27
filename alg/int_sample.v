@@ -119,6 +119,9 @@ Compute 1 \in unitz.                        (* true *)
 Compute 0 \in unitz.                        (* false *)
 Compute -1 \in unitz.                       (* true *)
 Compute 2 \in unitz.                        (* false *)
+Compute 2 \is a unitz.                      (* false *)
+Locate "_ \in _".   (* Notation "x \in A" := (in_mem x (mem A)) *)
+Locate "_ \is a _". (* Notation "x \is 'a' A" := (in_mem x (mem A)) *)
 
 (* inv *)
 Check invz : int -> int.
@@ -133,6 +136,8 @@ Print left_inverse.
 (* fun (S T R : Type) (e : R) (inv : T -> S) (op : S -> T -> R) => forall x : T, op (inv x) x = e *)
 (*                                                                               ~~~~~~~~~~~~~~~~ *)
 Goal {in unitz, left_inverse 1 invz  *%R}.
+(* ,の左は、``forall n, n \in unitz`` *)
+(* ,の右は、opまで与えているので ``forall n, invz n * n = 1`` *)
 Proof.
   move=> n.
   (* n \is a unitz -> invz n * n = 1 *)
