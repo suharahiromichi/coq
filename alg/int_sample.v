@@ -38,7 +38,14 @@ Fail Check int : rcfType.                   (* A Real Field with the real closed
 int のつくりかた
  *)
 Import intZmod.
-Check GRing.isZmodule.Build int addzA addzC add0z addNz
+Check @GRing.isZmodule.Build int
+  0
+  oppz
+  addz
+  addzA
+  addzC
+  add0z
+  addNz
   : GRing.isZmodule.axioms_ int _ _.
 
 (**
@@ -59,7 +66,10 @@ Check zmodType.
 
 Import intRing.
 Check intRing.comMixin .
-Check GRing.Zmodule_isComRing.Build int mulzA mulzC mul1z mulz_addl nonzero1z
+Check @GRing.Zmodule_isComRing.Build int
+  1
+  mulz
+  mulzA mulzC mul1z mulz_addl nonzero1z
   : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
 
 (**
@@ -75,11 +85,19 @@ HB.factory Record Zmodule_isComRing R of Zmodule R := {
 }.
 ```
 *)
+Check nonzero1z : 1%Z != 0.
+Goal 1%Z != 0.
+Proof. done. Qed.
 
 Check comRingType.
 
 Import intUnitRing.
-Check GRing.ComRing_hasMulInverse.Build int mulVz unitzPl invz_out
+Check @GRing.ComRing_hasMulInverse.Build int
+  unitz
+  invz
+  mulVz
+  unitzPl
+  invz_out
   : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
 
 (**
@@ -160,7 +178,8 @@ HB.about GRing.ComRing_hasMulInverse.mulVx.
 
 Check intUnitRing.idomain_axiomz :          (* 整域公理 *)
   forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
-Check GRing.ComUnitRing_isIntegral.Build int intUnitRing.idomain_axiomz.
+Check GRing.ComUnitRing_isIntegral.Build int
+  intUnitRing.idomain_axiomz.
 
 (**
 ```
@@ -175,15 +194,25 @@ Check idomain_axiomz : forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
 Goal forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
 Proof.
   case=> m [] n //= /eqP.
-  - by rewrite ?(ssrint.NegzE, mulrN, mulNr) ?oppr_eq0 -PoszM [_ == _]muln_eq0.
-  - by rewrite ?(ssrint.NegzE, mulrN, mulNr) ?oppr_eq0 -PoszM [_ == _]muln_eq0.
-  - by rewrite ?(ssrint.NegzE, mulrN, mulNr) ?oppr_eq0 -PoszM [_ == _]muln_eq0.
+  - rewrite -PoszM [_ == _]muln_eq0.
+    done.
+  - rewrite (ssrint.NegzE, mulrN, mulNr).
+    rewrite oppr_eq0.
+    rewrite [_ == _]muln_eq0.
+    done.
+  - rewrite 2!(ssrint.NegzE, mulrN, mulNr).
+    rewrite oppr_eq0 -PoszM.
+    rewrite [_ == _]muln_eq0.
+    done.
 Qed.
 
 Check idomainType.
 
 Import intOrdered.
-Check Num.IntegralDomain_isLeReal.Build int
+Check @Num.IntegralDomain_isLeReal.Build int
+  lez
+  ltz
+  absz                                      (* normz *)
   lez_add
   lez_mul
   lez_anti
@@ -211,6 +240,12 @@ HB.factory Record IntegralDomain_isLeReal R of GRing.IntegralDomain R := {
 }.
 ```
 *)
+
+Check ltz_def : forall m n : int, ltz m n = (n != m) && lez m n.
+Goal forall m n, (ltz m n) = (n != m) && (lez m n).
+Proof.
+  by move=> [] m [] n //=; rewrite (ltn_neqAle, leq_eqVlt) // eq_sym.
+Qed.
 
 Check realDomainType.
 
