@@ -3,10 +3,29 @@ From mathcomp Require Import all_ssreflect.
 (* From mathcomp Require Import all_algebra. *)
 From mathcomp Require Import ssralg ssrnum ssrint.
 
-Import Order.TTheory GRing.Theory Num.Theory. (* ssralg ssrnum *)
-Open Scope ring_scope.
+(**
+# ssrnum までの構造を使えるようにする。
+ *)
+Import Order.TTheory.                       (* order.v *)
+Import GRing.Theory.                        (* ssralg.v *)
+Import Num.Def Num.Theory.                  (* ssrnum.v *)
 
-(* ssralg で定義される型 *)
+(* int については、適宜以下をImportしていく。 *)
+(* Import intZmod intRing intUnitRing intOrdered. *)
+
+(**
+# scope を有効にする。これはよくわかっていない。
+ *)
+Open Scope ring_scope.
+Check 1 : (_ : semiRingType).
+Open Scope int_scope.
+Check 1 : int.
+
+(**
+# int の数学構造
+
+## ssralg で定義される型
+ *)
      Check int : nmodType.                  (* additive abelian monoid *)
      Check int : zmodType.                  (* additive abelian group (Nmodule with an opposite) *)
      Check int : semiRingType.              (* non-commutative semi rings *)
@@ -21,7 +40,9 @@ Fail Check int : fieldType.                 (* commutative fields *)
 Fail Check int : decFieldType.              (* fields with a decidable first order theory *)
 Fail Check int : closedFieldType.           (* 閉体 *)
 
-(* ssrnum で定義される型 *)
+(**
+## ssrnum で定義される型
+ *)
      Check int : porderZmodType.            (* join of Order.POrder and GRing.Zmodule *)
 Fail Check int : normedZmodType.            (* Zmodule with a norm *)
      Check int : numDomainType.             (* Integral domain with an order and a norm *)
@@ -35,19 +56,8 @@ Fail Check int : rcfType.                   (* A Real Field with the real closed
 
 
 (*
-int のつくりかた
+# int のつくりかた
  *)
-Import intZmod.
-Check @GRing.isZmodule.Build int
-  0
-  oppz
-  addz
-  addzA
-  addzC
-  add0z
-  addNz
-  : GRing.isZmodule.axioms_ int _ _.
-
 (**
 ```
 HB.factory Record isZmodule V of Choice V := {
@@ -61,16 +71,18 @@ HB.factory Record isZmodule V of Choice V := {
 }.
 ```
 *)
+Import intZmod.
+Check @GRing.isZmodule.Build int
+  0
+  oppz
+  addz
+  addzA
+  addzC
+  add0z
+  addNz
+  : GRing.isZmodule.axioms_ int _ _.
 
-Check zmodType.
-
-Import intRing.
-Check intRing.comMixin .
-Check @GRing.Zmodule_isComRing.Build int
-  1
-  mulz
-  mulzA mulzC mul1z mulz_addl nonzero1z
-  : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
+Check zmodType.                             (* int が Zmoduleになった。 *)
 
 (**
 ```
@@ -85,20 +97,19 @@ HB.factory Record Zmodule_isComRing R of Zmodule R := {
 }.
 ```
 *)
+Import intRing.
+Check intRing.comMixin.
+Check @GRing.Zmodule_isComRing.Build int
+  1
+  mulz
+  mulzA mulzC mul1z mulz_addl nonzero1z
+  : GRing.Zmodule_isComRing.axioms_ int _ _ _ _.
+
 Check nonzero1z : 1%Z != 0.
 Goal 1%Z != 0.
 Proof. done. Qed.
 
-Check comRingType.
-
-Import intUnitRing.
-Check @GRing.ComRing_hasMulInverse.Build int
-  unitz
-  invz
-  mulVz
-  unitzPl
-  invz_out
-  : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
+Check comRingType.                          (* int が可換環になった。 *)
 
 (**
 ```
@@ -111,6 +122,14 @@ HB.factory Record ComRing_hasMulInverse R of ComRing R := {
 }.
 ```
 *)
+Import intUnitRing.
+Check @GRing.ComRing_hasMulInverse.Build int
+  unitz
+  invz
+  mulVz
+  unitzPl
+  invz_out
+  : GRing.ComRing_hasMulInverse.axioms_ int _ _ _ _ _ _.
 
 (* unit *)
 Check unitz : qualifier 1 int.
@@ -175,16 +194,11 @@ Proof.
   done.
 Qed.
 
-Check comUnitRingType.
+Check comUnitRingType.                      (* int が逆元をもつ可換環になった。 *)
 
 HB.howto comUnitRingType.
 HB.about GRing.ComRing_hasMulInverse.
 HB.about GRing.ComRing_hasMulInverse.mulVx.
-
-Check intUnitRing.idomain_axiomz :          (* 整域公理 *)
-  forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
-Check GRing.ComUnitRing_isIntegral.Build int
-  intUnitRing.idomain_axiomz.
 
 (**
 ```
@@ -193,6 +207,10 @@ HB.mixin Record ComUnitRing_isIntegral R of ComUnitRing R := {
 }.
 ```
 *)
+Check intUnitRing.idomain_axiomz :          (* 整域公理 *)
+  forall m n : int, (m * n)%R = 0%R -> (m == 0%R) || (n == 0%R).
+Check GRing.ComUnitRing_isIntegral.Build int
+  intUnitRing.idomain_axiomz.
 
 (* idomain_axiomz 整域公理 *)
 Check idomain_axiomz : forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
@@ -211,22 +229,7 @@ Proof.
     done.
 Qed.
 
-Check idomainType.
-
-Import intOrdered.
-Check @Num.IntegralDomain_isLeReal.Build int
-  lez
-  ltz
-  absz                                      (* normz *)
-  lez_add
-  lez_mul
-  lez_anti
-  subz_ge0
-  (lez_total 0)
-  normzN
-  gez0_norm
-  ltz_def
-  : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
+Check idomainType.                          (* int が整域になった。 *)
 
 (**
 ```
@@ -245,6 +248,20 @@ HB.factory Record IntegralDomain_isLeReal R of GRing.IntegralDomain R := {
 }.
 ```
 *)
+Import intOrdered.
+Check @Num.IntegralDomain_isLeReal.Build int
+  lez
+  ltz
+  absz                                      (* normz *)
+  lez_add
+  lez_mul
+  lez_anti
+  subz_ge0
+  (lez_total 0)
+  normzN
+  gez0_norm
+  ltz_def
+  : Num.IntegralDomain_isLeReal.axioms_ int _ _ _ _ _ _ _ _.
 
 Check ltz_def : forall m n : int, ltz m n = (n != m) && lez m n.
 Goal forall m n, (ltz m n) = (n != m) && (lez m n).
@@ -252,6 +269,6 @@ Proof.
   by move=> [] m [] n //=; rewrite (ltn_neqAle, leq_eqVlt) // eq_sym.
 Qed.
 
-Check realDomainType.
+Check realDomainType. (* orderとnormがある整域 numDomain で、要素が正か負である。 *)
 
 (* END *)
