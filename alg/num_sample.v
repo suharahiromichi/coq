@@ -23,6 +23,14 @@ numDomainType
 |
 |
 realDomainType
+|
+|
+realFieldType
+|\
+| +-------------------- archiFieldType
+|
+|
+rcfType (Real Closed Field)
 ```
 *)
 
