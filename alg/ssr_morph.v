@@ -1,8 +1,14 @@
 From mathcomp Require Import all_ssreflect.
+From mathcomp Require Import all_algebra.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+Import Order Order.TTheory.                 (* order.v *)
+Import GRing GRing.Theory.                  (* ssralg.v *)
+Import Num Num.Def Num.Theory.              (* ssrnum.v *)
+Open Scope ring_scope.
 
 (**
 coq/theories/ssr/ssrfun.v   (new)
@@ -11,7 +17,42 @@ mathcomp/ssreflect/ssrfun.v (old)
 Morphisms for functions and relations:
 *)
 
+(**
+ssrfun.v で定義されている {morph f : x / G x} などの意味をまとめる。
+
+ssreflect（またはCoq本体）で定義されている事項で、
+ここには、補題自体の説明はないが、
+ssralg.v 以降の補題では、これらが頻出するため、
+ここで覚えておくことが望ましい。
+
+2023/10/1 @suharahiromichi
+*)
+
+(**
+# 例
+
+``- (x + y) = - x - y`` というよく使う補題だが、パターンではサーチできず、
+morph の記法がわからないと、探せないし、見つけられない。
+
+``-%R``は opp 関数の表記
+ *)
+Check opprD : forall V : zmodType, {morph -%R : x y / x + y}.
+Check opprD : forall (V : zmodType) (x y : V), - (x + y) = - x - y.
+
+Search (- (_ + _)).                         (* 見つからない。 *)
+Search ({morph -%R : _ _ / _ + _}).         (* 見つかる。 *)
+
+(**
+# morph/homo/mono
+*)
+
 Variable U W V : Type.
+
+(**
+## morph
+
+Fしてからfしたものも、fしてからGしたものも、等しい。
+ *)
 (**
     {morph f : x / a >-> r} <-> f is a morphism with respect to functions
                                (fun x => a) and (fun x => r); if r == R#[#x#]#,
@@ -45,6 +86,11 @@ Axiom a4 : forall (f : V -> V) (G : V -> V -> V), {morph f : x y / G x y}. (* G 
 Check a4 : forall (f : V -> V) (G : V -> V -> V) (x y : V), f (G x y) = G (f x) (f y).
 
 (**
+## homo
+
+Fが成り立つなら、fしてからGも成り立つ。
+ *)
+(**
      {homo f : x / a >-> r} <-> f is a homomorphism with respect to the
                                predicates (fun x => a) and (fun x => r);
                                if r == R#[#x#]#, this states that a -> R#[#f x#]#
@@ -74,6 +120,11 @@ Check h3 : forall (f : U -> V) (F : U -> U -> Prop) (G : V -> V -> Prop) (x y : 
 Axiom h4 : forall (f : U -> U) (F : U -> U -> Prop), {homo f : x y / F x y}.
 Check h4 : forall (f : U -> U) (F : U -> U -> Prop) (x y : U), F x y -> F (f x) (f y).
 
+(**
+## mono
+
+Fしたものも、fしてからGしたものも、等しい。
+ *)
 (**
      {mono f : x / a >-> r} <-> f is monotone with respect to projectors
                                (fun x => a) and (fun x => r); if r == R#[#x#]#,
