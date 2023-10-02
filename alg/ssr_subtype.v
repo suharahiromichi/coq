@@ -46,6 +46,8 @@ Compute string_of_updown down.              (* "down" *)
 Compute string_of_updown off.               (* "off" *)
 
 (**
+## val の使い方
+
 val と \val は同じ。eqtype.v で定義されている。
 the generic injection from a subType S of T into T
 
@@ -62,13 +64,53 @@ Compute "up" \in EList.
 Compute "above" \in EList.
 
 (*
-うまく計算できない。
+## insubd の使い方
+
+``insubd u0 x : sT`` のとき x が sT に変換できるなら変換する。さもなければ u0 を返す。
+ *)
+Check insubd off : string -> updown.
+Check @insubd string (fun s => s \in EList) updown off : string -> updown.
+
+Check insubd off "up" = up. (* 右辺が up なので updown とわかる。*)
+(* 以下の書き方もある。 *)
+Check (insubd off "up" : updown) = up.
+Check insubd off "up" = up :> updown.
+
+Goal insubd off "up" = up.
+Proof.
+  apply: val_inj.
+  rewrite val_insubd.
+  done.
+Qed.
+
+Goal insubd off "xxx" = off.
+Proof.
+  apply: val_inj.
+  rewrite val_insubd.
+  done.
+Qed.
+
+(**
+## insub の使い方
+
+``insub x : option sT`` のとき x が sT に変換できるなら変換する。さもなければ None を返す。
 *)
-Compute insub "up".
-Compute insub "above".
+Check insub : string -> option updown.
+Check @insub string (fun s => s \in EList) updown : string -> option updown.
+
+Goal insub "up" = Some up.
+Proof.
+  by rewrite insubT.
+Qed.
+
+(* 右辺が None で option updown とわからないので、:> をつける。 *)
+Goal insub "xxx" = None :> option updown.
+Proof.
+  by rewrite insubF.
+Qed.
 
 (*
-参考
+## 参考
 
 ここでは、特別に Equality (eqType) を定義しない。
 *)
@@ -76,7 +118,7 @@ Compute up == up.            (* string へのコアーションで成り立つ�
 
 
 (**
-MathComp のサブタイプの例
+# MathComp のサブタイプの例
 
 ```
 ssreflect/tuple.v:HB.instance Definition _ := [isSub for tval].
@@ -88,6 +130,9 @@ MathComp1 の [SubType for ...] だから、少し、わかりにくくなった
 ```
 *)
 
+(**
+## \val
+*)
 Check tval       : forall (n : nat) (T : Type), n.-tuple T -> seq T.
 Check nat_of_ord : forall n : nat, 'I_n -> nat.
 Check valq       : rat -> int * int.
@@ -99,7 +144,48 @@ Check val : rat -> int * int.
 Check val : polynomial int -> seq int.
 
 (**
-サブタイプキットは、val の他に、insub や insubd を提供する。eqtype.v に説明がある。
+## insubd
+
+inord の例
+
+``inord x : 'I_n`` のとき、``x < n`` なら x を 'I_n に変換する。さもなければ ord0 を返す。
+``insubd ord0 x : 'I_n``
  *)
+Compute inord 3 : 'I_4.
+Print inord.                  (* = fun n' : nat => [eta insubd ord0] *)
+Check insubd ord0 : nat -> 'I_4.
+Check @insubd nat (ltn^~ 4) 'I_4 ord0 : nat -> 'I_4.
+
+Goal (insubd ord0 3 : 'I_4) = Ordinal (isT : 3 < 4).
+Proof.
+  apply: val_inj.
+  rewrite val_insubd.
+  done.
+Qed.
+
+Goal (insubd ord0 4 : 'I_4) = ord0.
+Proof.
+  apply: val_inj.
+  rewrite val_insubd.
+  done.
+Qed.
+
+(**
+## insub
+
+``insub x : option 'I_n`` のとき、``x < n`` なら x を 'I_n に変換する。さもなければ None を返す。
+*)
+Check insub 3 : option 'I_4.
+Check @insub nat (ltn^~ 4) 'I_4 : nat -> option 'I_4.
+
+Goal insub 3 = Some (Ordinal (isT : 3 < 4)). (* option 'I_4 *)
+Proof.
+  by rewrite insubT.
+Qed.
+
+Goal insub 4 = None :> option 'I_4. (* 右辺が None であるため、option 'I_4 とわからない。 *)
+Proof.
+  by rewrite insubF.
+Qed.
 
 (* END *)
