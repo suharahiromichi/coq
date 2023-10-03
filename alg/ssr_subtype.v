@@ -75,16 +75,22 @@ Check insubd off "up" = up. (* 右辺が up なので updown とわかる。*)
 (* 以下の書き方もある。 *)
 Check (insubd off "up" : updown) = up.
 Check insubd off "up" = up :> updown.
+(* 関数にして、値の型を明確にしておくことがふつうである。 *)
+Definition inupdownd (s : string) : updown := insubd off s.
 
-Goal insubd off "up" = up.
+Goal inupdownd "up" = up.
 Proof.
+  rewrite /inupdownd.
+  Check insubd off "up" = up.               (* updown 型 *)
   apply: val_inj.
   rewrite val_insubd.
   done.
 Qed.
 
-Goal insubd off "xxx" = off.
+Goal inupdownd "xxx" = off.
 Proof.
+  rewrite /inupdownd.
+  Check insubd off "xxx" = off.             (* updown 型 *)
   apply: val_inj.
   rewrite val_insubd.
   done.
@@ -97,15 +103,28 @@ Qed.
 *)
 Check insub : string -> option updown.
 Check @insub string (fun s => s \in EList) updown : string -> option updown.
+(* 関数にして、値の型を明確にしておくことがふつうである。 *)
+Definition inupdown (s : string) : option updown := insub s.
 
-Goal insub "up" = Some up.
+Goal inupdown "up" = Some up.
 Proof.
+  rewrite /inupdown.
+  Check insub "up" = Some up.               (* option updown 型 *)
   by rewrite insubT.
+Qed.
+
+(* inudpdown 関数の値の型から、option updown 型とわかる。 *)
+Goal inupdown "xxx" = None.
+Proof.
+  rewrite /inupdown.
+  Check insub "xxx" = None.                 (* option updown 型 *)
+  by rewrite insubF.
 Qed.
 
 (* 右辺が None で option updown とわからないので、:> をつける。 *)
 Goal insub "xxx" = None :> option updown.
 Proof.
+  rewrite /inupdown.
   by rewrite insubF.
 Qed.
 
@@ -151,20 +170,24 @@ inord の例
 ``inord x : 'I_n`` のとき、``x < n`` なら x を 'I_n に変換する。さもなければ ord0 を返す。
 ``insubd ord0 x : 'I_n``
  *)
-Compute inord 3 : 'I_4.
+Check inord 2 : 'I_4.
 Print inord.                  (* = fun n' : nat => [eta insubd ord0] *)
 Check insubd ord0 : nat -> 'I_4.
 Check @insubd nat (ltn^~ 4) 'I_4 ord0 : nat -> 'I_4.
 
-Goal (insubd ord0 3 : 'I_4) = Ordinal (isT : 3 < 4).
+Goal inord 2 = Ordinal (isT : 2 < 4).
 Proof.
+  rewrite /inord.
+  Check insubd ord0 2 = Ordinal (isT : 2 < 4) :> 'I_4.
   apply: val_inj.
   rewrite val_insubd.
   done.
 Qed.
 
-Goal (insubd ord0 4 : 'I_4) = ord0.
+Goal inord 4 = ord0 :> 'I_4.
 Proof.
+  rewrite /inord.
+  Check insubd ord0 4 = ord0 :> 'I_4.
   apply: val_inj.
   rewrite val_insubd.
   done.
@@ -175,10 +198,10 @@ Qed.
 
 ``insub x : option 'I_n`` のとき、``x < n`` なら x を 'I_n に変換する。さもなければ None を返す。
 *)
-Check insub 3 : option 'I_4.
+Check insub 2 : option 'I_4.
 Check @insub nat (ltn^~ 4) 'I_4 : nat -> option 'I_4.
 
-Goal insub 3 = Some (Ordinal (isT : 3 < 4)). (* option 'I_4 *)
+Goal insub 2 = Some (Ordinal (isT : 2 < 4)). (* option 'I_4 *)
 Proof.
   by rewrite insubT.
 Qed.
