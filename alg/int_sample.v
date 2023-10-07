@@ -1,3 +1,6 @@
+(**
+algebra/ssrint.v の使い方
+*)
 From HB Require Import structures.
 From mathcomp Require Import all_ssreflect.
 (* From mathcomp Require Import all_algebra. *)
@@ -82,7 +85,7 @@ Check @GRing.isZmodule.Build int
   addNz
   : GRing.isZmodule.axioms_ int _ _.
 
-Check zmodType.                             (* int が Zmoduleになった。 *)
+Check int : zmodType.                   (* int が Zmoduleになった。 *)
 
 (**
 ```
@@ -109,7 +112,7 @@ Check nonzero1z : 1%Z != 0.
 Goal 1%Z != 0.
 Proof. done. Qed.
 
-Check comRingType.                          (* int が可換環になった。 *)
+Check int : comRingType.                  (* int が可換環になった。 *)
 
 (**
 ```
@@ -194,7 +197,7 @@ Proof.
   done.
 Qed.
 
-Check comUnitRingType.                      (* int が逆元をもつ可換環になった。 *)
+Check int : comUnitRingType.    (* int が逆元をもつ可換環になった。 *)
 
 HB.howto comUnitRingType.
 HB.about GRing.ComRing_hasMulInverse.
@@ -229,7 +232,7 @@ Proof.
     done.
 Qed.
 
-Check idomainType.                          (* int が整域になった。 *)
+Check int : idomainType.                    (* int が整域になった。 *)
 
 (**
 ```
@@ -269,6 +272,7 @@ Proof.
   by move=> [] m [] n //=; rewrite (ltn_neqAle, leq_eqVlt) // eq_sym.
 Qed.
 
-Check realDomainType. (* orderとnormがある整域 numDomain で、要素が正か負である。 *)
+Check int : realDomainType.                 (* int が...になった。 *)
+(* orderとnormがある整域 numDomain で、要素が正か負である。 *)
 
 (* END *)
