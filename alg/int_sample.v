@@ -61,6 +61,8 @@ Fail Check int : rcfType.                   (* A Real Field with the real closed
 (*
 # int のつくりかた
  *)
+Print int.       (* Variant int : Set := Posz of nat | Negz of nat. *)
+
 (**
 ```
 HB.factory Record isZmodule V of Choice V := {
