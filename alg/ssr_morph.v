@@ -85,6 +85,20 @@ Check a3 : forall (f : U -> V) (F : U -> U -> U) (G : V -> V -> V) (x y : U), f 
 Axiom a4 : forall (f : V -> V) (G : V -> V -> V), {morph f : x y / G x y}. (* G x y >-> G x y *)
 Check a4 : forall (f : V -> V) (G : V -> V -> V) (x y : V), f (G x y) = G (f x) (f y).
 
+
+(**
+## morph 補足
+
+``{rmorphism R -> S}`` は ssralg.v で定義されている。
+複素数の共役 ``^*`` (conj_op) がこれであるため重要である。
+*)
+Section Rmorph.
+Variable R S : semiRingType.
+
+Axiom a1' : forall (f : {rmorphism R -> S}) (F : R -> R) (G : S -> S), {morph f : x / F x >-> G x}.
+Check a1' : forall (f : {rmorphism R -> S}) (F : R -> R) (G : S -> S) (x : R), f (F x) = G (f x).
+End Rmorph.
+
 (**
 ## homo
 
