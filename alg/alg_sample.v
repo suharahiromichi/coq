@@ -46,6 +46,10 @@ idomainType ~~~ (int)
 |
 fieldType
 ```
+
+- unit...Type は、unitは``1``のことで、逆元が存在する型。
+
+- idomainType は整域公理 ``m * n = 0 -> (m == 0) || (n == 0)`` が成り立つ型。
 *)
 
 (**

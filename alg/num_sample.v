@@ -15,25 +15,30 @@ From mathcomp Require Import ssralg ssrnum.
                        |\
                        | +-------------------+
                        |                      \
-                       porderZmodType          normedZmodType
-idomainType ~~~ (int)  |                      /
-|                      | +-------------------+
-|                      |/
+idomainType 整域       porderZmodType          normedZmodType
+|\                     |                      /
+| +------------------+ | +-------------------+
+|                     \|/
 fieldType              numDomainType
 |\                     |\
-| +------------------+ | +------------------+
-|                     \|                     \
-closedField            numFieldType           realDomainType ~~~ (int)
-|                      |                     /
-|                      | +------------------+
+| +------------------+ | +-------------------+
+|                     \|                      \
+closedField 閉体       numFieldType            realDomainType ~~~ (int)
+|                      |                      /
+|                      | +-------------------+
 |                      |/
 numClosedFieldType     realFieldType
 ~~~~                   |\
-(algC)                 | +-------------------- archiFieldType ~~~ (rat)
+(algC)                 | +---------------------archiFieldType ~~~ (rat)
                        |
                        |
                        rcfType (Real Closed Field)
 ```
+- num...Type は、normとorderのある型
+
+- real...Type は、要素は正か負である型。
+
+- archi...Type は、アルキメデスの公理が成り立つ型（ノルムに上限がある）。
 *)
 
 Check Num.sqrt : (_ : rcfType) -> (_ : rcfType).
