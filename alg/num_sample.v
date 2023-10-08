@@ -11,26 +11,28 @@ From mathcomp Require Import ssralg ssrnum.
 
 (**
 ```
-zmodType
-|\
-| +-------------------+
-|                      \
-porderZmodType          normedZmodType
-|                      /
-| +-------------------+
-|/
-numDomainType
-|
-|
-realDomainType
-|
-|
-realFieldType
-|\
-| +-------------------- archiFieldType
-|
-|
-rcfType (Real Closed Field)
+                       zmodType
+                       |\
+                       | +-------------------+
+                       |                      \
+                       porderZmodType          normedZmodType
+idomainType ~~~ (int)  |                      /
+|                      | +-------------------+
+|                      |/
+fieldType              numDomainType
+|\                     |\
+| +------------------+ | +------------------+
+|                     \|                     \
+closedField            numFieldType           realDomainType ~~~ (int)
+|                      |                     /
+|                      | +------------------+
+|                      |/
+numClosedFieldType     realFieldType
+~~~~                   |\
+(algC)                 | +-------------------- archiFieldType ~~~ (rat)
+                       |
+                       |
+                       rcfType (Real Closed Field)
 ```
 *)
 

@@ -41,7 +41,7 @@ unitRingType            comRingType
 comUnitRingType
 |
 |
-idomainType
+idomainType ~~~ (int)
 |
 |
 fieldType
@@ -180,6 +180,21 @@ Search add      comUnitRingType.
 Search mul      comUnitRingType.
 Search (_ / _)  comUnitRingType.
 Search inv      comUnitRingType.
+
+(* idomainType *)
+Check zero : (_ : idomainType).
+Check add  : (_ : idomainType) -> (_ : idomainType) -> (_ : idomainType).
+Check opp  : (_ : idomainType) -> (_ : idomainType).
+Check mul  : (_ : idomainType) -> (_ : idomainType) -> (_ : idomainType).
+Check one  : forall (s :  idomainType), s.
+Check inv  : (_ : idomainType) -> (_ : idomainType).
+Search natmul   idomainType.            (* _ *+ _ *)
+Search (_ *- _) idomainType.
+Search exp      idomainType.            (* _ ^- _ *)
+Search add      idomainType.
+Search mul      idomainType.
+Search (_ / _)  idomainType.
+Search inv      idomainType.
 
 (* fieldType *)
 Check zero : (_ : fieldType).

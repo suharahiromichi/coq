@@ -10,7 +10,7 @@ From mathcomp Require Import all_algebra.
      Check rat : comRingType.               (* commutative rings *)
      Check rat : unitRingType.              (* Rings whose units have computable inverses *)
      Check rat : comUnitRingType.           (* commutative UnitRing *)
-(**) Check rat : idomainType.               (* integral, commutative, ring with partial inverses *)
+     Check rat : idomainType.               (* integral, commutative, ring with partial inverses *)
 
      Check rat : fieldType.                 (* commutative fields *)
 Fail Check rat : decFieldType.              (* fields with a decidable first order theory *)
@@ -20,7 +20,7 @@ Fail Check rat : closedFieldType.           (* 閉体 *)
      Check rat : porderZmodType.            (* join of Order.POrder and GRing.Zmodule *)
 Fail Check rat : normedZmodType.            (* Zmodule with a norm *) (* MAY BE BUG *)
      Check rat : numDomainType.             (* Integral domain with an order and a norm *)
-(**) Check rat : realDomainType.            (* Num domain where all elements are positive or negative *)
+     Check rat : realDomainType.            (* Num domain where all elements are positive or negative *)
 
      Check rat : numFieldType.              (* Field with an order and a norm *)
 Fail Check rat : numClosedFieldType.        (* Partially ordered Closed Field with conjugation *)
