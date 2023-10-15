@@ -61,8 +61,14 @@ Fail Check int : rcfType.                   (* A Real Field with the real closed
 (*
 # int のつくりかた
  *)
+
+(** コンストラクタを定義する。 ********************************************************************)
 Print int.       (* Variant int : Set := Posz of nat | Negz of nat. *)
 
+(** int を Zmodule にする。************************************************************************)
+
+HB.about zmodType.
+HB.about GRing.isZmodule.
 (**
 ```
 HB.factory Record isZmodule V of Choice V := {
@@ -87,8 +93,12 @@ Check @GRing.isZmodule.Build int
   addNz
   : GRing.isZmodule.axioms_ int _ _.
 
-Check int : zmodType.                   (* int が Zmoduleになった。 *)
+Check int : zmodType.
 
+(** int を 可換環にする。**************************************************************************)
+
+HB.about comRingType.
+HB.about GRing.Zmodule_isComRing.
 (**
 ```
 HB.factory Record Zmodule_isComRing R of Zmodule R := {
@@ -114,8 +124,12 @@ Check nonzero1z : 1%Z != 0.
 Goal 1%Z != 0.
 Proof. done. Qed.
 
-Check int : comRingType.                  (* int が可換環になった。 *)
+Check int : comRingType.
 
+(** int を逆元をもつ可換環にする。*****************************************************************)
+
+HB.about comUnitRingType.
+HB.about GRing.ComRing_hasMulInverse.
 (**
 ```
 HB.factory Record ComRing_hasMulInverse R of ComRing R := {
@@ -127,6 +141,8 @@ HB.factory Record ComRing_hasMulInverse R of ComRing R := {
 }.
 ```
 *)
+HB.about GRing.ComRing_hasMulInverse.mulVx.
+
 Import intUnitRing.
 Check @GRing.ComRing_hasMulInverse.Build int
   unitz
@@ -199,12 +215,13 @@ Proof.
   done.
 Qed.
 
-Check int : comUnitRingType.    (* int が逆元をもつ可換環になった。 *)
+Check int : comUnitRingType.
 
-HB.howto comUnitRingType.
-HB.about GRing.ComRing_hasMulInverse.
-HB.about GRing.ComRing_hasMulInverse.mulVx.
+(** int を整域にする。 ****************************************************************************)
 
+HB.about idomainType.
+HB.about GRing.ComUnitRing_isIntegral.
+HB.about GRing.ComUnitRing_isIntegral.mulf_eq0_subproof.
 (**
 ```
 HB.mixin Record ComUnitRing_isIntegral R of ComUnitRing R := {
@@ -234,8 +251,12 @@ Proof.
     done.
 Qed.
 
-Check int : idomainType.                    (* int が整域になった。 *)
+Check int : idomainType.
 
+(** int を実整域にする。 **************************************************************************)
+
+HB.about realDomainType.
+HB.about Num.IntegralDomain_isLeReal.
 (**
 ```
 HB.factory Record IntegralDomain_isLeReal R of GRing.IntegralDomain R := {
@@ -274,7 +295,7 @@ Proof.
   by move=> [] m [] n //=; rewrite (ltn_neqAle, leq_eqVlt) // eq_sym.
 Qed.
 
-Check int : realDomainType.                 (* int が...になった。 *)
+Check int : realDomainType.
 (* orderとnormがある整域 numDomain で、要素が正か負である。 *)
 
 (* END *)

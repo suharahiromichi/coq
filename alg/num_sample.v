@@ -11,7 +11,7 @@ From mathcomp Require Import ssralg ssrnum.
 
 (**
 ```
-                       zmodType
+                       zmodType Z加群 アーベル群
                        |\
                        | +-------------------+
                        |                      \
@@ -19,7 +19,7 @@ idomainType 整域       porderZmodType          normedZmodType
 |\                     |                      /
 | +------------------+ | +-------------------+
 |                     \|/
-fieldType              numDomainType
+fieldType 体           numDomainType
 |\                     |\
 | +------------------+ | +-------------------+
 |                     \|                      \
@@ -27,12 +27,12 @@ closedField 閉体       numFieldType            realDomainType ~~~ (int)
 |                      |                      /
 |                      | +-------------------+
 |                      |/
-numClosedFieldType     realFieldType
+numClosedFieldType     realFieldType 実体
 ~~~~                   |\
 (algC)                 | +---------------------archiFieldType ~~~ (rat)
                        |
                        |
-                       rcfType (Real Closed Field)
+                       rcfType (Real Closed Field) 実閉体
 ```
 - num...Type は、normとorderのある型
 
@@ -40,8 +40,8 @@ numClosedFieldType     realFieldType
 
 - archi...Type は、アルキメデスの公理が成り立つ型（ノルムに上限がある）。
 *)
-
 Check Num.sqrt : (_ : rcfType) -> (_ : rcfType).
+
 Import GRing.Theory.
 Import Num.
 Import Num.Theory.
@@ -52,6 +52,9 @@ Local Open Scope ring_scope.
 (**
 # k-coq Exercise 3.5.1.
 
+``√(4 + 2 * √3) = √3 + 1``
+
+を証明します。
 sqrt は、rcfType 型の型で定義されています。
  *)
 Check sqrt 4 : (_ : rcfType).
@@ -72,9 +75,16 @@ Check (@GRing.natmul (GRing_SemiRing__to__GRing_Nmodule (Num_RealClosedField__to
 *)
 Check 4 : R.
 
+(**
+まず、平方根の2乗の証明をします。
+*)
 Lemma l1 : (sqrt (4 + sqrt 3 *+ 2)) ^+ 2 = 4 + sqrt 3 *+ 2 :> R.
 Proof.
+  Check sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> sqrt a ^+ 2 = a.
   rewrite sqr_sqrtr //.
+(**
+平方根の中身が正であることの証明が必要です。
+ *)
   apply: addr_ge0 => //.
   rewrite mulrn_wge0 //.
   by rewrite sqrtr_ge0.
@@ -90,6 +100,9 @@ Proof.
   by rewrite natr1.
 Qed.
 
+(**
+``(√3 + 1)^2 = 4 + 2*√3`` を証明しておきます。
+*)
 Lemma l2 : (sqrt 3 + 1) ^+ 2 = 4 + sqrt 3 *+ 2 :> R.
 Proof.
   rewrite sqrrD1 sqr_sqrtr //.
