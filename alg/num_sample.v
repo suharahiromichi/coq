@@ -11,6 +11,8 @@ From mathcomp Require Import ssralg ssrnum.
 
 (**
 ```
+                       (nat)
+                       ~~~~
                        zmodType Z加群 アーベル群
                        |\
                        | +-------------------+
@@ -34,11 +36,13 @@ numClosedFieldType     realFieldType 実体
                        |
                        rcfType (Real Closed Field) 実閉体
 ```
+- nat がZ加群であることは、萩原先生の本を参照
+
 - num...Type は、normとorderのある型
 
-- real...Type は、要素は正か負である型。
+- real...Type は、要素は正か負である型
 
-- archi...Type は、アルキメデスの公理が成り立つ型（ノルムに上限がある）。
+- archi...Type は、アルキメデスの公理が成り立つ型（ノルムに上限がある）
 *)
 Check Num.sqrt : (_ : rcfType) -> (_ : rcfType).
 
