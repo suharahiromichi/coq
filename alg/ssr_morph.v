@@ -85,6 +85,29 @@ Check a3 : forall (f : U -> V) (F : U -> U -> U) (G : V -> V -> V) (x y : U), f 
 Axiom a4 : forall (f : V -> V) (G : V -> V -> V), {morph f : x y / G x y}. (* G x y >-> G x y *)
 Check a4 : forall (f : V -> V) (G : V -> V -> V) (x y : V), f (G x y) = G (f x) (f y).
 
+(**
+## morph と distribution との関係
+*)
+
+Lemma morph_distrl (op : V -> V -> V) (G : V -> V -> V) :
+  (forall (v : V), {morph op^~ v : x y / G x y}) <-> left_distributive op G.
+Proof.
+  split=> H.
+  - move=> x y z.
+    by apply: H.
+  - move=> z x y.
+    by apply: H.
+Qed.
+
+Lemma morph_distr  (op : V -> V -> V) (G : V -> V -> V) :
+  (forall (v : V), {morph op v : x y / G x y}) <-> right_distributive op G.
+Proof.
+  split=> H.
+  - move=> x y z.
+    by apply: H.
+  - move=> z x y.
+    by apply: H.
+Qed. 
 
 (**
 ## morph 補足
