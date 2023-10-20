@@ -20,6 +20,8 @@ Unset Printing Implicit Defensive.
 
 MathCompの型クラスである。eqTypeのたぐいと思えばよい。サブタイプを定義するための道具は、
 サブタイプキットと呼ばれる場合もあり、eqtype.v で定義されている。
+
+string 型のサブタイプとして、up, down, off だけからなる updown型を定義してみる。
 *)
 
 Definition EList := [:: "up"; "off"; "down"].
@@ -46,7 +48,7 @@ Compute string_of_updown down.              (* "down" *)
 Compute string_of_updown off.               (* "off" *)
 
 (**
-## val の使い方
+## val の使い方 - サブタイプからもとの型の値を返す。
 
 val と \val は同じ。eqtype.v で定義されている。
 the generic injection from a subType S of T into T
@@ -54,7 +56,9 @@ the generic injection from a subType S of T into T
 eqType なら "==" が使えるように、（なにかの）サブタイプなら val や \val が使える。
 ただし、自然数に対してeqn も使い続けられるように、nat_of_ord も使える。
 *)
+Fail Check val : updown -> string.
 HB.instance Definition _ := [isSub for string_of_updown].
+Check val : updown -> string.
 
 Compute \val up.                            (* "up" *)
 Compute \val down.                          (* "down" *)
@@ -64,7 +68,7 @@ Compute "up" \in EList.
 Compute "above" \in EList.
 
 (*
-## insubd の使い方
+## insubd の使い方 - もとの型からサブタイプ型の値を作る。
 
 ``insubd u0 x : sT`` のとき x が sT に変換できるなら変換する。さもなければ u0 を返す。
  *)
@@ -97,7 +101,7 @@ Proof.
 Qed.
 
 (**
-## insub の使い方
+## insub の使い方 - もとの型からサブタイプ型の値を作る。
 
 ``insub x : option sT`` のとき x が sT に変換できるなら変換する。さもなければ None を返す。
 *)
@@ -134,7 +138,6 @@ Qed.
 ここでは、特別に Equality (eqType) を定義しない。
 *)
 Compute up == up.            (* string へのコアーションで成り立つ。 *)
-
 
 (**
 # MathComp のサブタイプの例
