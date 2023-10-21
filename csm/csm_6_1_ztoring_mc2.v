@@ -314,7 +314,16 @@ Section TEST.
     GRing.Zmodule.sort Z -> nat -> GRing.Zmodule.sort Z.
   Check @GRing.natmul Z :       (* sort Z_zmodType = Z を反映する。 *)
     Z -> nat -> Z.
-  
+
+(**
+### 掛け算と割り算
+*)
+  Locate "_ * _".                     (* GRing.mul x y : ring_scope *)
+  Locate "_ / _".                     (* GRing.mul x (GRing.inv y) : ring_scope *)
+
+  Compute 3%Z * 2%Z.                        (* 6%Z *)
+  Fail Compute 10%Z / 3%Z. (* inv は comUnitRing で導入されるので、まだ使えない。*)
+
 (**
 ## Canonical Z_zmodType の必要性の説明
 
