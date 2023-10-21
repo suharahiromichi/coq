@@ -82,7 +82,7 @@ Check @mulrC : forall s : comSemiRingType, commutative *%R.
 # 型ごとの関数と補題
 *)
 
-(* nmodType *)
+(* nmodType アーベル・モノイド *)
 Check zero : (_ : nmodType).
 Check add  : (_ : nmodType) -> (_ : nmodType) -> (_ : nmodType).
 Search add    nmodType.
@@ -94,7 +94,7 @@ Check mulrnDl : forall (V : nmodType) (n : nat) (x y : V), (x + y) *+ n = x *+ n
 Check raddfMn : forall (U V : nmodType) (f : {additive U -> V}) (n : nat), {morph f : x / x *+ n >-> x *+ n}.
 Check raddfMn : forall (U V : nmodType) (f : {additive U -> V}) (n : nat) (x : U), f (x *+ n) = (f x) *+ n.
 
-(* zmodType *)
+(* zmodType アーベル群 *)
 Check zero : (_ : zmodType).
 Check add  : (_ : zmodType) -> (_ : zmodType) -> (_ : zmodType).
 Check opp  : (_ : zmodType) -> (_ : zmodType).
