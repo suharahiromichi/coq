@@ -11,8 +11,6 @@ From mathcomp Require Import ssralg ssrnum.
 
 (**
 ```
-                       (nat)
-                       ~~~~
                        zmodType Z加群 アーベル群
                        |\
                        | +-------------------+
@@ -100,7 +98,9 @@ RCFの上では（まだ）数の足し算が定義されていないため、si
 *)
 Lemma l3_1__4 : 3 + 1 = 4 :> R.
 Proof.
-  Check natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = n.+1%:R.
+  Check natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = (n.+1)%:R.
+  (*                                                             ^^^^  *)
+  (*                                                            自然数 *)
   by rewrite natr1.
 Qed.
 
