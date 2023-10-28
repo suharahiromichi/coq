@@ -5,7 +5,9 @@ Coq/SSReflect/MathComp による定理証明
 ======
 2018_04_21 @suharahiromichi
 2021_01_30 @suharahiromichi
-2022_10_21 @suharahiromichi MathComp2
+2022_10_21 @suharahiromichi MathComp2対応
+
+OCaml:4.14.1, Coq:8.18.0, MathComp:2.1.0, ELPI:1.17.4, HB:1.6.0
  *)
 From elpi Require Import elpi.
 From HB Require Import structures.
@@ -87,93 +89,57 @@ fun (T : Type) (e : rel T) => forall x y : T, reflect (x = y) (e x y)
 ## Z_eqType 決定可能な同値関係を持つ整数型
 *)
 (*
+  MathComp1
   Definition Z_eqMixin := EqMixin Zeq_boolP.
   Canonical Z_eqType := EqType Z Z_eqMixin.
 *)
+(* MathComp2 *)
   Fail Check 0%Z == 1%Z.
   HB.instance Definition _ := hasDecEq.Build Z Zeq_boolP.
   Check 0%Z == 1%Z.
   
 (**
 ## 整数が自然数と1対1対応することを証明する。
+
+### 整数から自然数に変換する関数を定義する。
 *)
+
   Definition Z_pickle (z : Z) : nat :=
     if (0 <=? z)%Z then
       (Z.abs_nat z).*2
     else
       (Z.abs_nat (- z)).*2.+1.
   
+(**
+### 自然数から整数に変換する関数を定義する。
+*)
   Definition Z_unpickle (n : nat) : Z :=
     if odd n then
       (- (Z.of_nat n.-1./2))%Z
     else
       Z.of_nat n./2.
 
+(**
+## 実行例
+*)
   Compute Z_pickle 1%Z.                     (* 2 *)
   Compute Z_unpickle 2.                     (* 1%Z *)
-  
+  Compute Z_unpickle (Z_pickle 1%Z) == 1%Z.  (* true *)
+
+(**
+### 上記のふたつの関数がキャンセルの関係にあることを証明する。
+
+ハンズオン用のわかりやすい証明は、csm_6_1_ztoring_new.v を参照のこと。
+*)
   Lemma Z_pickleK : cancel Z_pickle Z_unpickle.
   Proof.
     move=> z; rewrite /Z_pickle.
-    case: ifP => z0;
-    rewrite /Z_unpickle /= odd_double
-            doubleK                      (* half_bit_double _ false *)
-            Zabs2Nat.id_abs Z.abs_eq ?Z.opp_nonneg_nonpos
-            ?Z.opp_involutive //.
-    + by apply: Zle_bool_imp_le.
-    + move: z0.                             (* z0 に適用していく。 *)
-      by move /Z.leb_nle /Znot_le_gt /Z.gt_lt /Z.lt_le_incl.
-  Qed.
-
-  (* ハンズオン用の証明 *)
-  (* Standard Coq の ZArith の下にある定理を使用して証明することを注意してください。 *)
-  Lemma Z_pickleK' : cancel Z_pickle Z_unpickle.
-  Proof.
-    move=> z; rewrite /Z_pickle.
-    case: ifP => Hz.
-    - rewrite /Z_unpickle /=.
-      (* if の true は成り立たないので捨てる。 *)
-      rewrite odd_double /=.
-      rewrite doubleK.
-      
-      Locate "_ <=? _".                     (* Z.leb x y : Z_scope *)
-      Locate "_ <= _".                      (* Z.le x y : Z_scope *)
-      Check Z.of_nat : nat -> Z.
-      Check Z.abs_nat : Z -> nat.
-      
-      (* Hz : (0 <=? z)%Z *)
-      (* Z.of_nat (Z.abs_nat z) = z *)
-      
-      (* z が0以上の場合、
-         整数zの絶対値を自然数で得たものを整数に変換したものは、
-         もとの自然数zに等しい。 *)
-      rewrite Zabs2Nat.id_abs.
-      Search _ (Z.abs _ = _).
-      rewrite Z.abs_eq.
-      + done.
-      + by apply: Zle_bool_imp_le.
-        
-    - rewrite /Z_unpickle /=.
-      (* if の false は成り立たないので捨てる。 *)
-      rewrite odd_double /=.
-      rewrite doubleK.
-      
-      (* Hz : (0 <=? z)%Z = false *)
-      (* (- Z.of_nat (Z.abs_nat (- z)))%Z = z *)
-      
-      (* z が0以上ではない場合、
-         整数(- z)の絶対値を自然数で得たものを整数に変換したものの(-)は、
-         もとの自然数zに等しい。 *)
-      Search _ (Z.abs_nat _).
-      Search _ (Z.abs _).
-      rewrite Nat2Z.inj_abs_nat.
-      rewrite Z.abs_eq.
-      + rewrite Z.opp_involutive.
-        Check Z.opp_involutive.
-        done.
-      + rewrite Z.opp_nonneg_nonpos.
-        move/Z.leb_gt : Hz.
-        by apply: Z.lt_le_incl.
+    case: ifP => Hz; rewrite /Z_unpickle /= odd_double doubleK.
+    - rewrite Zabs2Nat.id_abs Z.abs_eq //.
+      by apply: Zle_bool_imp_le.
+    - rewrite Nat2Z.inj_abs_nat Z.abs_eq ?Z.opp_involutive ?Z.opp_nonneg_nonpos //=.
+      move/Z.leb_gt : Hz.
+      by apply: Z.lt_le_incl.
   Qed.
   
 (**
@@ -209,7 +175,7 @@ fun (T : Type) (e : rel T) => forall x y : T, reflect (x = y) (e x y)
   Check Z_countType : countType.
   Check Z_zmodType : zmodType.
 *)
-  (* MathComp2 *)
+(* MathComp2 *)
   Check Z : eqType.
   Check Z : choiceType.
   Check Z : countType.
@@ -258,7 +224,7 @@ Section Ex_6_1.
 End Ex_6_1.
 
 (**
-# MathComp の演算子を使う
+# （おまけ）MathComp の演算子を使う
 
 MathComp の ssralg.v で定義された演算子が、Starndard Coq の整数型に使えることを示します。
 *)
