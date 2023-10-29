@@ -45,7 +45,9 @@ numClosedFieldType     realFieldType 実体
 Check Num.sqrt : (_ : rcfType) -> (_ : rcfType).
 
 Import GRing.Theory.
-Import Num.
+(* Import Num. *)
+(* Num. をインポートすると、nat が上書きされてしまうなど影響が大きいので、避ける。 *)
+(* そのため Num.sqrt と書く必要がある。 *)
 Import Num.Theory.
 Import Num.Def.
 
@@ -59,7 +61,7 @@ Local Open Scope ring_scope.
 を証明します。
 sqrt は、rcfType 型の型で定義されています。
  *)
-Check sqrt 4 : (_ : rcfType).
+Check Num.sqrt 4 : (_ : rcfType).
 
 Section RCF.
 (**
@@ -80,9 +82,9 @@ Check 4 : R.
 (**
 まず、平方根の2乗の証明をします。
 *)
-Lemma l1 : (sqrt (4 + sqrt 3 *+ 2)) ^+ 2 = 4 + sqrt 3 *+ 2 :> R.
+Lemma l1 : (Num.sqrt (4 + Num.sqrt 3 *+ 2)) ^+ 2 = 4 + Num.sqrt 3 *+ 2 :> R.
 Proof.
-  Check sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> sqrt a ^+ 2 = a.
+  Check sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> Num.sqrt a ^+ 2 = a.
   rewrite sqr_sqrtr //.
 (**
 平方根の中身が正であることの証明が必要です。
@@ -98,7 +100,8 @@ RCFの上では（まだ）数の足し算が定義されていないため、si
 *)
 Lemma l3_1__4 : 3 + 1 = 4 :> R.
 Proof.
-  Check natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = (n.+1)%:R.
+  Check @natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = n.+1%:R.
+(*Check natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = (n.+1)%:R. *)
   (*                                                             ^^^^  *)
   (*                                                            自然数 *)
   by rewrite natr1.
@@ -107,7 +110,7 @@ Qed.
 (**
 ``(√3 + 1)^2 = 4 + 2*√3`` を証明しておきます。
 *)
-Lemma l2 : (sqrt 3 + 1) ^+ 2 = 4 + sqrt 3 *+ 2 :> R.
+Lemma l2 : (Num.sqrt 3 + 1) ^+ 2 = 4 + Num.sqrt 3 *+ 2 :> R.
 Proof.
   rewrite sqrrD1 sqr_sqrtr //.
   rewrite addrAC l3_1__4.
@@ -117,10 +120,10 @@ Qed.
 (**
 両辺をn乗しても等しい、という公理があるので使います。
 *)
-Goal sqrt (4 + sqrt 3 *+ 2) = sqrt 3 + 1 :> R.
+Goal Num.sqrt (4 + Num.sqrt 3 *+ 2) = Num.sqrt 3 + 1 :> R.
 Proof.
   Check eqrXn2
-    : forall (R : numDomainType) (n : nat) (x y : R),
+    : forall (R : numDomainType) (n : Datatypes.nat) (x y : R),
       (0 < n)%N -> 0 <= x -> 0 <= y -> (x ^+ n == y ^+ n) = (x == y).
   apply/eqP.
   Check (@eqrXn2 R 2 _ _).
@@ -133,11 +136,11 @@ Qed.
 (**
 ## 補足説明
 
-sqrtは型を引数に取れるので、そのように使うこともできる。``:> R`` がいらなくなる。
+Num.sqrtは型を引数に取れるので、そのように使うこともできる。``:> R`` がいらなくなる。
 *)
-Check @sqrt R 4 : R.
+Check @Num.sqrt R 4 : R.
 
-Lemma l1'' : (@sqrt R (4 + @sqrt R 3 *+ 2)) ^+ 2 = 4 + @sqrt R 3 *+ 2.
+Lemma l1'' : (@Num.sqrt R (4 + @Num.sqrt R 3 *+ 2)) ^+ 2 = 4 + @Num.sqrt R 3 *+ 2.
 Proof.
   rewrite sqr_sqrtr //.
   apply: addr_ge0 => //.
@@ -146,9 +149,9 @@ Proof.
 Qed.
 
 (**
-sqrtの引数に `` : R`` をつけてもよい。上記と同じことである。
+Num.sqrtの引数に `` : R`` をつけてもよい。上記と同じことである。
 *)
-Lemma l1' : (sqrt ((4 + sqrt (3 : R) *+ 2) : R) : R) ^+ 2 = 4 + sqrt (3 : R) *+ 2.
+Lemma l1' : (Num.sqrt ((4 + Num.sqrt (3 : R) *+ 2) : R) : R) ^+ 2 = 4 + Num.sqrt (3 : R) *+ 2.
 Proof.
   rewrite sqr_sqrtr //.
   apply: addr_ge0 => //.
