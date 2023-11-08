@@ -145,14 +145,16 @@ fun (T : Type) (e : rel T) => forall x y : T, reflect (x = y) (e x y)
 (**
 ## choiceType   有限選択公理のある整数型
 *)
-  HB.instance Definition _ : hasChoice Z := CanChoiceMixin Z_pickleK.
-(* Choice.copy Z (can_type Z_pickleK). *)
-  
+(* HB.instance Definition _ := CanChoiceMixin Z_pickleK. (* MathComp2 で廃止 *) *)
+  HB.instance Definition _ := Choice.copy Z (can_type Z_pickleK).
+(* HB.instance Definition _ := CanHasChoice Z_pickleK. *)
+
 (**
 ## countType    数え上げ可能な整数型
-*)
-  HB.instance Definition _ : isCountable Z := CanCountMixin Z_pickleK.
-(* Countable.copy Z (can_type Z_pickleK). *)
+ *)
+(* HB.instance Definition _ := CanCountMixin Z_pickleK. (* MathComp2 で廃止 *) *)
+  HB.instance Definition _ := Countable.copy Z (can_type Z_pickleK).
+(* HB.instance Definition _ := CanIsCountable Z_pickleK. *)
 
 (**
 ## zmodType     アーベル群である整数型
