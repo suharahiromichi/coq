@@ -95,7 +95,7 @@ fun (T : Type) (e : rel T) => forall x y : T, reflect (x = y) (e x y)
 *)
 (* MathComp2 *)
   Fail Check 0%Z == 1%Z.
-  HB.instance Definition _ := hasDecEq.Build Z Zeq_boolP.
+  HB.instance Definition _ : hasDecEq Z := hasDecEq.Build Z Zeq_boolP.
   Check 0%Z == 1%Z.
   
 (**
@@ -145,12 +145,14 @@ fun (T : Type) (e : rel T) => forall x y : T, reflect (x = y) (e x y)
 (**
 ## choiceType   有限選択公理のある整数型
 *)
-  HB.instance Definition _ := Choice.copy Z (can_type Z_pickleK).
+  HB.instance Definition _ : hasChoice Z := CanChoiceMixin Z_pickleK.
+(* Choice.copy Z (can_type Z_pickleK). *)
   
 (**
 ## countType    数え上げ可能な整数型
 *)
-  HB.instance Definition _ := Countable.copy Z (can_type Z_pickleK).
+  HB.instance Definition _ : isCountable Z := CanCountMixin Z_pickleK.
+(* Countable.copy Z (can_type Z_pickleK). *)
 
 (**
 ## zmodType     アーベル群である整数型
