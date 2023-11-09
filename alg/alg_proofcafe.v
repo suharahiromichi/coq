@@ -106,4 +106,76 @@ ssrint の例：
 Import intZmod.              (* addz など *)
 Import intRing.              (* mulz など *)
 
+(**
+# k-coq Exercise 3.5.1.
+
+手始めに、平方根のある式の証明をしてみます。
+
+``√(4 + 2 * √3) = √3 + 1``
+
+を証明します。
+ *)
+Section RCF.
+(**
+rcfType 型の型 R を定義します。以降等式は ``_ = _ :> R`` で示す。
+
+sqrt は、rcfType 型の型で定義されています。
+*)
+  Variable R : rcfType.
+
+  Check Num.sqrt : R -> R.
+  Check Num.sqrt (4 : R) : R.
+
+(**
+``(√(4 + √3 * 2))^2 = 4 + √3 * 2 を証明する。
+*)
+  Lemma l1 : (Num.sqrt (4 + ((Num.sqrt 3) *+ 2))) ^+ 2 = 4 + ((Num.sqrt 3) *+ 2) :> R.
+  Proof.
+    Check sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> Num.sqrt a ^+ 2 = a.
+    rewrite sqr_sqrtr //.
+(**
+ルートと2乗を外すのは簡単ですが、平方根の中身が正であることの証明が必要です。
+ *)
+    apply: addr_ge0 => //.
+    rewrite mulrn_wge0 //.
+    by rewrite sqrtr_ge0.
+  Qed.
+
+(**
+``(√3 + 1)^2 = 4 + 2*√3`` を証明する。
+*)
+  Lemma l2 : (Num.sqrt 3 + 1) ^+ 2 = 4 + Num.sqrt 3 *+ 2 :> R.
+  Proof.
+(**
+RCFの上では数の足し算が定義されていないため、simpl などでは計算できません。
+半環上での``+ 1``の補題がありますから、これを使います。
+*)
+    Check @natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = n.+1%:R.
+(*Check natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = (n.+1)%:R. *)
+  (*                                                             ^^^^  *)
+  (*                                                            自然数 *)
+    have l3_1__4 : 3 + 1 = 4 :> R by rewrite natr1.
+    rewrite sqrrD1 sqr_sqrtr //.
+    rewrite addrAC l3_1__4.
+    done.
+  Qed.
+
+(**
+両辺をn乗しても等しい、という公理があるので使います。
+*)
+  Check eqrXn2 : forall (R : numDomainType) (n : Datatypes.nat) (x y : R),
+      (0 < n)%N -> 0 <= x -> 0 <= y -> (x ^+ n == y ^+ n) = (x == y).
+  
+  Goal Num.sqrt (4 + Num.sqrt 3 *+ 2) = Num.sqrt 3 + 1 :> R.
+  (* **** *)
+  apply/eqP.
+  Check (@eqrXn2 R 2 (Num.sqrt (4 + Num.sqrt 3 *+ 2)) (Num.sqrt 3 + 1)).
+  rewrite -(@eqrXn2 R 2 _ _) //.
+  - by rewrite l1 l2.
+  - admit.
+  - admit.
+  Admitted.
+
+End RCF.
+
 (* 以上 *)
