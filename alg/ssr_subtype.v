@@ -214,4 +214,21 @@ Proof.
   by rewrite insubF.
 Qed.
 
+(**
+# サブタイプの補題
+ *)
+
+(* val が単射である。 *)
+Check @val_inj : forall (T : Type) (P : pred T) (sT : subType P), injective \val.
+Check val_eqE : forall (T : eqType) (P : pred T) (sT : subEqType P) (u v : sT),
+    (\val u == \val v) = (u == v).
+
+(* val と insub でもとにもどる。 *)
+Check @insubK : forall (T : Type) (P : pred T) (sT : subType P), ocancel insub \val.
+
+(* val と insubd でもとにもどる。 *)
+Check val_insubd : forall (T : Type) (P : pred T) (sT : subType P) (u : sT) (x : T),
+    \val (insubd u x) = (if P x then x else \val u).
+Check @insubdK : forall (T : Type) (P : pred T) (sT : subType P) (u0 : sT), {in P, cancel (insubd u0) \val}.
+
 (* END *)
