@@ -16,6 +16,7 @@ Import intZmod.
 Open Scope ring_scope.
 (* Open Scope int_scope. *)
 
+(* ディフォルトのScopeはintにしないが、後で ``%Z`` や ``:>int`` で int scope を指定する。 *)
 Local Notation "-%Z" := (@oppz) : int_scope.
 Local Notation "- x" := (oppz x) : int_scope.
 Local Notation "+%Z" := (@addz) : int_scope.
@@ -79,8 +80,13 @@ Check GRing.opprD : forall V : zmodType, forall m n : V, - (m + n) = - m - n.
 単に elim とすると、``-`` が GRing.opp (-%R) になる。
 elim/int_ind とすると、``-`` が oppz (-%Z) となり、うまく証明できる。
 *)
-Goal forall x y z : int, addz x (addz y z) = addz (addz x y) z :> int.
+
+Goal associative addz.
 Proof.
+  rewrite /associative.
+  Check forall x y z : int, x + (y + z) = (x + y) + z :> int.
+  Check forall x y z : int, addz x (addz y z) = addz (addz x y) z :> int.
+  
   elim/int_ind => [| m ihm | m ihm] n p.
   - by rewrite !add0z.
   - by rewrite -add1n PoszD !addSz ihm.
@@ -89,33 +95,16 @@ Proof.
     by rewrite !addPz ihm.
 Qed.
 
+Goal left_inverse (0 : int) oppz addz.
+Proof.
+  elim/int_ind.                             (* elim : int *)
+  - done.
+  - elim.                                   (* elim : nat *)
+    + done.
+    + done.
+  - elim.                                   (* elim : nat *)
+    + done.
+    + done.
+Qed.
+
 (* END *)
-
-
-    Unset Printing Notations.
-  - rewrite -add1n addnC PoszD.
-    (* ゴールは -%R になってしまっている。 *)
-    Check - (m + 1%Z)%Z + (n + p)%Z = (- (m + 1%Z)%Z + n)%Z + p :> int.
-    Check (GRing.opp ((Posz m) + (Posz 1))) + (n + p) = (GRing.opp (((Posz m) + (Posz 1))) + n) + p.
-    Check (GRing.opp (m%:Z + 1%Z)) + (n + p) = (GRing.opp ((m%:Z + 1%Z) + n)) + p.    
-
-    (* oppzD は -%Z なので、 *)
-    Check forall (m n : nat), - (m%:Z + 1%Z) = - m%:Z - 1%Z :> int.
-    Set Printing All.
-    Check oppzD : {morph oppz : m n / m + n}.
-    Check oppzD : {morph -%Z : m n / m + n}.
-    (*
-    Check oppzD : {morph GRing.opp : m n / m + n}.
-    Check oppzD : {morph -%R : m n / m + n}.
-    *)
-
-    Check oppzD : forall m n, oppz (addz m n) = addz (oppz m) (oppz n).
-    Check oppzD : forall m n, - (m + n) = - m - n.
-    Check oppzD : forall m n, -%R (m + n) = -%R m - n :> int.
-    Check oppzD : forall m n, - (m + n)%Z = - m%Z - n%Z.
-    Check oppzD m 1%N : - (m%:Z + 1%Z)%Z = - m%:Z - 1%Z :> int.
-
-    Fail rewrite oppzD.
-
-
-    
