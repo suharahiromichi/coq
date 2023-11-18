@@ -29,6 +29,10 @@ From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 From mathcomp Require Import all_field.     (* 必要な場合のみ *)
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
 (**
 ssralgの範囲の機能を使う場合でも、``all_algebra`` をインポートする場合
 と ``ssralg`` だけをインポートする場合で、挙動が異なる場合があり、
@@ -41,6 +45,7 @@ ssralgの範囲の機能を使う場合でも、``all_algebra`` をインポー�
 
 文献[1] に従い、ssralgとssrnumのモジュールのうち、以下をインポートします。
 これにより、addrCA などの補題が、``GRing.addrCA`` ではなく、``addrCA`` で使えるようになります。
+補題にPostfixはつけたくないと思います。
  *)
 
 (* suhara *)
@@ -49,9 +54,11 @@ Check GRing.addrCA.
 Fail Check addrCA.
 (* /suhara *)
 
+(* **************************** *)
 Import Num.Def.
 Import Num.Theory.
 Import GRing.Theory.
+(* **************************** *)
 
 (* suhara *)
 Search left_commutative.                    (* addrCA *)
@@ -60,8 +67,8 @@ Check addrCA.
 (* /suhara *)
 
 (**
-``Num`` をインポートすると、``Num.sqrt`` が  ``sqrt`` と書ける
-ようになりますが、``nat``が上書きされてしまうため、これは避けることにします。
+``Num`` をインポートすると、``Num.sqrt`` が  ``sqrt`` と書けるようになります
+が、``nat`` が上書きされてしまい、``Datatypes.nat`` と書かなければならないので、これは避けることにします。
 同様に ``GRing`` もインポートしません。
 なお、``Num`` をインポートしても、それにつられて ``Num.Theory`` がインポートされるわけではありません。
 *)
@@ -74,7 +81,9 @@ Check nat : Set.                            (* Coqとssreflectのnat *)
 Check Datatypes.nat.                        (* Coqとssreflectのnat *)
 
 Check @nat_num (_ : archiNumDomainType) : qualifier 1 (_ : archiNumDomainType).
-Check nat_num : qualifier 1 _.              (* Import Num すると、これが nat になってしまう。  *)
+(* Import Num. *)
+(* Notation nat := @nat_num *)
+Fail Check nat : qualifier 1 _.             (* Num のなかの nat *)
 (* /suhara *)
 
 (**
@@ -122,10 +131,24 @@ rcfType 型の型 R を定義します。以降等式は ``_ = _ :> R`` で示�
 sqrt は、rcfType 型の型で定義されています。
 *)
   Variable R : rcfType.
+  
+(**
+以下の証明は、抽象的は RCF型で行うことに注意してください。
 
+数値は以下の型をもつ定数であり、``0``や``1``が、環としての意味をもち、
+また、自然数に変換できることを除いて、
+数値（整数あるいは実数）としての意味を持ちません。
+なので、計算はできず、``Num.sqrt 4`` が 2 であるわけではありません。
+まして、``Num.sqrt 3`` は、1.732... ではありません。
+*)
+  Check 4 : R.
+  Check 3 : R.
+  Check 2 : nat.
+  Check 1 : R.
+  
   Check Num.sqrt : R -> R.
   Check Num.sqrt (4 : R) : R.
-
+  
 (**
 ``(√(4 + √3 * 2))^2 = 4 + √3 * 2 を証明する。
 *)
