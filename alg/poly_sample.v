@@ -14,8 +14,12 @@ Import GRing.Theory.
 Local Open Scope ring_scope.
 
 Variable R : semiRingType.
-Variable a b c x y z : R.
+Variable a b c d : R.
 
+(**
+-------------------------------
+# 多項式のコンストラクタ
+ *)
 Definition neq0_last s := last 1 s != 0 :> R.
 Check oner_neq0 : forall s : semiRingType, 1 != 0.
 
@@ -51,6 +55,10 @@ Check [eta polyseq] : {poly R} -> seq R.
 (* polyseq は単射である。 *)
 Check @poly_inj R : forall p1 p2, polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :> {poly R}.
 
+(**
+-------------------------------
+# リストのサブタイプとしての多項式
+*)
 (* サブタイプの値からベースタイプの値を取り出す。 *)
 Check val tstp1 : seq R.                    (* polyseq とおなじ。 *)
 
@@ -74,11 +82,19 @@ Definition tstp_c := polyC c.
 Check polyC 0  : {poly R}.
 Definition tstp_c0 := @polyC R 0.
 
-(* 定数多項式についての補題 *)
+(**
+----------------------------------
+# 定数多項式についての補題
+ *)
 Compute nseq (42%N != 0) 42%N.              (* [:: 42] *)
 Compute nseq  (0%N != 0) 0%N.               (* [::] *)
 
 Lemma l_neq_false (x : R) : (x != x) = false.
+Proof.
+  by apply/eqP.
+Qed.
+
+Lemma l_eq_true (x : R) : (x == x).
 Proof.
   by apply/eqP.
 Qed.
@@ -145,6 +161,134 @@ Goal cancel polyC (@lead_coef R).
 Proof.
   move=> c.
   by rewrite lead_coefC.
+Qed.
+
+(* 係数がすべて同じなら、多項式は同じ *)
+Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q :> {poly R}.
+Goal tstp1 = tstp2 :> {poly R}.
+Proof.
+  apply/polyP.
+  rewrite /tstp1 /tstp2 /= => i.
+  rewrite insubdK //=.
+  rewrite unfold_in.
+  by apply: neq0_last_s.
+Qed.  
+(* リストとして比較するなら、この補題はいらない。 *)
+Goal tstp1 = tstp2 :> seq R.
+Proof.
+  rewrite /tstp1 /tstp2.
+  rewrite insubdK //=.
+  rewrite unfold_in.
+  by apply: neq0_last_s.
+Qed.
+
+(* サイズが1、0次の多項式、または0の多項式なら、0次の項を取り出して作った定数多項式は、同じ。 *)
+Check size1_polyC : forall (R : semiRingType) (p : {poly R}), (size p <= 1)%N -> p = (p`_0)%:P :> {poly R}.
+Goal c != 0 -> c%:P = (c%:P`_0)%:P :> {poly R}.
+Proof.
+  move=> H.
+  apply: size1_polyC => //.
+  by rewrite size_polyC H.
+Qed.
+
+Goal 0%:P = (0%:P`_0)%:P :> {poly R}.
+Proof.
+  apply: size1_polyC.
+  by rewrite size_polyC l_neq_false.
+Qed.
+
+(**
+-------------------------------
+# extension (cons) で多項式を作る。
+ *)
+(* 係数となる定数と多項式から、あらたな多項式をつくる。 *)
+Check cons_poly : forall R : semiRingType, R -> {poly R} -> {poly R}.
+
+(* p が nil (0多項式) でないなら、cons_poly は、 p に c を cons したもの。
+   p が nil (0多項式) なら、cons_poly は、 c の定数多項式。
+   これは、seq R で比較する。
+   ~~~~~~~~~~~~~~~~~~~~~~~~ *)
+Check polyseq_cons : forall (R : semiRingType) (c : R) (p : {poly R}),
+    cons_poly c p = (if ~~ nilp p then c :: p else c%:P) :> seq R.
+Goal cons_poly d tstp1 = d :: tstp1 :> seq R.
+Proof.
+  rewrite polyseq_cons.
+  done.
+Qed.
+
+Goal cons_poly d (poly_nil R) = d%:P :> seq R.
+Proof.
+  rewrite [LHS]polyseq_cons.
+  done.
+Qed.
+
+(* p が nil (0多項式) なら、cons_poly のサイズは c が 0 かどうかで決まる。
+   p が nil (0多項式) でないなら、cons_poly はサイズを 1 増やす。
+ *)
+Check size_cons_poly : forall (R : semiRingType) (c : R) (p : {poly R}),
+    size (cons_poly c p) = (if nilp p && (c == 0) then 0 else (size p).+1).
+Goal size (cons_poly d tstp1) = 4.
+Proof.
+  rewrite size_cons_poly /=.
+  done.
+Qed.
+
+Goal d != 0 -> size (cons_poly d (poly_nil R)) = 1.
+Proof.
+  rewrite size_cons_poly /=.
+  by case: ifP.
+Qed.
+
+Goal size (cons_poly 0 (poly_nil R)) = 0.
+Proof.
+  rewrite size_cons_poly /=.
+  rewrite l_eq_true.
+  done.
+Qed.  
+
+(* cons_poly した多項式の係数は、もとの係数のインデックスに-1したもの。 *)
+Check coef_cons : forall (R : semiRingType) (c : R) (p : {poly R}) (i : nat),
+    (cons_poly c p)`_i = (if i == 0 then c else p`_i.-1).
+
+Goal (cons_poly d tstp1)`_1 = tstp1`_0.
+Proof.
+  rewrite coef_cons /=.
+  done.
+Qed.
+
+Goal (cons_poly d tstp1)`_0 = d.
+Proof.
+  rewrite coef_cons /=.
+  done.
+Qed.
+(* nil 多項式でも成り立つ。 *)
+Goal (cons_poly d (poly_nil R))`_1 = (poly_nil R)`_0.
+Proof.
+  rewrite coef_cons /=.
+  done.
+Qed.
+
+(**
+-------------------------------
+# 係数リストから多項式を作る。
+*)
+(* 受け取ったリストを順番に cons_poly していく。サブタイプの関係は使わない。 *)
+Print Poly.
+(**
+fun R : semiRingType => foldr (cons_poly (R:=R)) 0%:P
+     : forall R : semiRingType, seq R -> {poly R}
+ *)
+Definition tstp3 := Poly [:: c; b; a].
+
+(* 最後の要素が0でないなら、Polyの結果はもとのリストとおなじ。 *)
+Check PolyK : forall (R : semiRingType) (c : R) (s : seq R), last c s != 0 -> Poly s = s :> seq R.
+Goal Poly [:: c; b; a] = [:: c; b; a] :> seq R.
+Proof.
+  Check @PolyK R a.
+  rewrite (@PolyK R a). (* last c の c を与えないといけないが、大丈夫か？ *)
+  - done.
+  - rewrite neqa0.
+  done.
 Qed.
 
 (* 以上 *)
