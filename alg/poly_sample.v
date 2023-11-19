@@ -19,6 +19,8 @@ Variable a b c d : R.
 (**
 -------------------------------
 # 多項式のコンストラクタ
+
+コンストラクタを直接使って多項式を作ることは、勧められない。
  *)
 Definition neq0_last s := last 1 s != 0 :> R.
 Check oner_neq0 : forall s : semiRingType, 1 != 0.
@@ -109,7 +111,7 @@ Proof.
   done.
 Qed.
 
-Goal 0%:P = [::] :> seq R.
+Lemma zeroP_nil : 0%:P = [::] :> seq R.
 Proof.
   rewrite polyseqC l_neq_false.
   done.
@@ -281,7 +283,8 @@ fun R : semiRingType => foldr (cons_poly (R:=R)) 0%:P
 Definition tstp3 := Poly [:: c; b; a].
 
 (* 最後の要素が0でないなら、Polyの結果はもとのリストとおなじ。 *)
-Check PolyK : forall (R : semiRingType) (c : R) (s : seq R), last c s != 0 -> Poly s = s :> seq R.
+Check PolyK : forall (R : semiRingType) (c : R) (s : seq R),
+    last c s != 0 -> Poly s = s :> seq R.
 Goal Poly [:: c; b; a] = [:: c; b; a] :> seq R.
 Proof.
   Check @PolyK R a.
@@ -290,6 +293,134 @@ Proof.
   - rewrite neqa0.
   done.
 Qed.
+
+Goal size (Poly tsts) = 3.
+Proof.
+  Check size (val (Poly tsts)) = 3. (* size を取る前に、ベースタイプのリストが取り出されている。 *)
+  rewrite (@PolyK R a).
+  - Check size tsts = 3.                    (* リストの長さになる。 *)
+    done.
+  - by rewrite neqa0.
+Qed.
+
+(* 任意の多項式からベースタイプのリストを取り出し、それに Poly を適用すると、もとの多項式に戻る。 *)
+Check @polyseqK : forall (R : semiRingType) (p : {poly R}), Poly p = p.
+Check @polyseqK : forall (R : semiRingType) (p : {poly R}), Poly (val p) = p :> {poly R}.
+
+Goal Poly tstp2 = tstp2 :> {poly R}.
+Proof.
+  rewrite polyseqK.
+  Check tstp2 = tstp2 :> {poly R}.
+  done.
+Qed.
+
+(* Poly s から取り出したリストのサイズは、sのサイズ以下である。 *)
+Check size_Poly : forall (R : semiRingType) (s : seq R), (size (Poly s) <= size s)%N.
+Check size_Poly : forall (R : semiRingType) (s : seq R), (size (\val (Poly s)) <= size s)%N.
+(* 通常は等しいが、0多項式ならサイズは0である。*)
+Goal size (\val (Poly [:: 0 : R; 0 : R])) = @size R [::] :> nat.
+Proof.
+  rewrite /= !polyseq_cons.
+  case: ifP => /=.
+  - by rewrite !zeroP_nil.                   (* 前提矛盾 *)
+  - by rewrite !zeroP_nil.
+Qed.
+
+(* Poly s からとりだしたリストと、もとのリストsの要素は同じ。 *)
+(* s が [:: 0] の場合、 Poly s が、0多項式になるが、[::]`_i は 0 になる（左辺）。
+   [:: 0]`_i も 0 である（右辺）ため、係数としては同じである。 *)
+Check coef_Poly : forall (R : semiRingType) (s : seq R) (i : nat), (Poly s)`_i = s`_i.
+
+(**
+# 無限の係数シーケンスと境界から多項式を作る
+ *)
+Locate "\poly_ ( i < n ) E".  (* (poly n (fun i => E)) : ring_scope *)
+Check fun (n : nat) (E : nat -> R) => poly n E.    (* 小文字の poly は使うことはない。 *)
+Check fun (n : nat) (E : nat -> R) => Poly (mkseq E n).
+
+(* \poly_ で定義した多項式の値（リスト）は、mkseq と同じ。ただし、生成関数 E の最後の値が0でないこと。
+   ほぼ、定義の両辺を seq R にしたもの。 *)
+Check polyseq_poly
+  : forall (R : semiRingType) (n : nat) (E : nat -> R),
+    E n.-1 != 0 -> \val (\poly_(i < n) E i) = mkseq E n :> seq R.
+
+Definition tstE (n : nat) :=
+  match n with
+  | 0 => c
+  | 1 => b
+  | _ => a
+  end.
+
+(* \poly_ で作った多項式の（ベースタイプのリスト）のサイズは、\poly_ の n 以下である。 *)
+Check size_poly
+  : forall (R : semiRingType) (n : nat) (E : nat -> R), (size (\poly_(i < n) E i) <= n)%N.
+
+(* \poly_ で作った多項式の（ベースタイプのリスト）のサイズは、\poly_ の n に等しい。
+   ただし、生成関数 E の最後の値が0でないとき。 *)
+Check size_poly_eq
+  : forall (R : semiRingType) (n : nat) (E : nat -> R), E n.-1 != 0 -> size (\poly_(i < n) E i) = n.
+
+Goal size (\poly_(i < 3) tstE i) = 3.
+Proof.
+  rewrite size_poly_eq //=.
+  rewrite neqa0.
+  done.
+Qed.
+
+(* \poly_ で作った多項式の係数は、生成関数 E の値に等しい。ただし、k が n 未満の場合。
+ 左辺の場合、k が n 以上なら、自動的に0だが、右辺は場合分けで0にする。 *)
+Check coef_poly
+  : forall (R : semiRingType) (n : nat) (E : nat -> R) (k : nat),
+    (\poly_(i < n) E i)`_k = (if (k < n)%N then E k else 0).
+
+(* \poly_ で作った多項式の最高次数の係数は、生成関数の E(n - 1) *)
+(* ただし、n は 0 ではないこと。0 なら、生成関数は無視される。 *)
+(* ただし、E(n - 1) は 0 でないこと。0 なら、最高次数は E(n - 2) になってしまう。 *)
+Check lead_coef_poly
+  : forall (R : semiRingType) (n : nat) (E : nat -> R),
+    (0 < n)%N -> E n.-1 != 0 -> lead_coef (\poly_(i < n) E i) = E n.-1.
+
+(* 多項式pから係数をとりだす関数を生成関数とすると、\poly_でできた多項式は p に等しい。 *)
+Check coefK : forall (R : semiRingType) (p : {poly R}), \poly_(i < size p) p`_i = p :> {poly R}.
+
+(* これは証明したい。XXXX *)
+Goal \poly_(i < 0)(tstE i) = poly_nil R.
+Proof.
+Admitted.
+
+(**
+ # アーベルモノイドとしての多項式
+ *)
+Check @add_poly R : {poly R} -> {poly R} -> {poly R}.
+
+(* 多項式の加算の係数は、多項式の係数の加算 *)
+Check coef_add_poly : forall (R : semiRingType) (p q : {poly R}) (i : nat),
+    (add_poly p q)`_i = p`_i + q`_i.
+
+(* 多項式の加算の結合則、可換、0加算 *)
+Check add_polyA : forall R p q r, add_poly p (add_poly q r) = add_poly (add_poly p q) r.
+Check add_polyC : forall R p q, add_poly p q = add_poly q p.
+Check add_poly0 : forall R p, add_poly 0%:P p = p.
+
+(**
+# 0多項式
+
+0 は GRing.zero、
+ *)
+Check {poly R} : nmodType.
+
+(* 0多項式 ``0%:P`` は、環の0元である。 *)
+Check polyC0 : forall R : semiRingType, 0%:P = 0 :> {poly R}.
+
+Check polyseq0 : forall R : semiRingType, \val (0 : {poly R}) = [::] :> seq R.
+
+(* この ``+`` は、環の加算であり、多項式の加算の意味はない。 *)
+Locate "_ + _".
+(* Notation "x + y" := (GRing.add x y) : ring_scope (default interpretation) *)
+Check forall (R : semiRingType) (p q : {poly R}), p + q = q + p.
+
+
+Check coefD.
 
 (* 以上 *)
 
@@ -308,12 +439,6 @@ Qed.
 Definition p1 := Poly [:: c; b; a].
 Check p1 : {poly R}.
 
-Fixpoint f (n : nat) :=
-  match n with
-  | 0 => c
-  | 1 => b
-  | _ => a
-  end.
 Definition p2 := \poly_(i < 3) f i.
 Check p2 : {poly R}.
 
