@@ -357,8 +357,8 @@ Check size_poly
 
 (* \poly_ で作った多項式の（ベースタイプのリスト）のサイズは、\poly_ の n に等しい。
    ただし、生成関数 E の最後の値が0でないとき。 *)
-Check size_poly_eq
-  : forall (R : semiRingType) (n : nat) (E : nat -> R), E n.-1 != 0 -> size (\poly_(i < n) E i) = n.
+Check size_poly_eq : forall (R : semiRingType) (n : nat) (E : nat -> R),
+    E n.-1 != 0 -> size (\poly_(i < n) E i) = n.
 
 Goal size (\poly_(i < 3) tstE i) = 3.
 Proof.
@@ -396,11 +396,22 @@ Check @add_poly R : {poly R} -> {poly R} -> {poly R}.
 (* 多項式の加算の係数は、多項式の係数の加算 *)
 Check coef_add_poly : forall (R : semiRingType) (p q : {poly R}) (i : nat),
     (add_poly p q)`_i = p`_i + q`_i.
+(* 左辺は多項式の加算、右辺は環の加算 *)
 
 (* 多項式の加算の結合則、可換、0加算 *)
 Check add_polyA : forall R p q r, add_poly p (add_poly q r) = add_poly (add_poly p q) r.
 Check add_polyC : forall R p q, add_poly p q = add_poly q p.
 Check add_poly0 : forall R p, add_poly 0%:P p = p.
+
+(**
+以下を定義すると、多項式は nmodTypeになるので、``+`` が使えるようになる。
+
+HB.instance Definition _ := GRing.isNmodule.Build (polynomial R)
+  add_polyA add_polyC add_poly0.
+HB.instance Definition _ := GRing.Nmodule.on {poly R}.
+*)
+Check {poly R} : nmodType.
+Check forall (R : semiRingType) (p q : {poly R}), p + q = add_poly p q :> {poly R}.
 
 (**
 # 0多項式
@@ -414,15 +425,19 @@ Check polyC0 : forall R : semiRingType, 0%:P = 0 :> {poly R}.
 
 Check polyseq0 : forall R : semiRingType, \val (0 : {poly R}) = [::] :> seq R.
 
-(* この ``+`` は、環の加算であり、多項式の加算の意味はない。 *)
-Locate "_ + _".
-(* Notation "x + y" := (GRing.add x y) : ring_scope (default interpretation) *)
-Check forall (R : semiRingType) (p q : {poly R}), p + q = q + p.
+Check size_poly0 : forall R : semiRingType, size (0 : {poly R}) = 0%N.
+
+Check coef0  : forall (R : semiRingType) (i : nat), (0 : {poly R})`_i = 0 :> R.
+
+Check lead_coef0 : forall R : semiRingType, lead_coef 0 = 0 :> R.
+
+(* 略 *)
 
 
-Check coefD.
 
-(* 以上 *)
+
+
+
 
 
 
