@@ -14,13 +14,124 @@ Import GRing.Theory.
 Local Open Scope ring_scope.
 
 (**
-# コンストラクタ
-## seqのサブタイプと、0多項式
+本資料は ``{poly R}`` が ringType であることまで扱うので、R も ringType とする。
 *)
+Variable R : ringType.
+Variable (a b c x y z : R) (p q r d : {poly R}).
+
+(**
+# コンストラクタ
+*)
+Print polynomial.
+(**
+
+R型の多項式は、R型のリストと、その最後の要素が``0``でないことの証明の組み合わせで定義される。
+```
+Record polynomial (R : semiRingType) : Type :=
+    Polynomial {
+        polyseq : seq R;
+        _ : is_true (last 1 polyseq != 0)
+ }.
+```
+
+``last 1`` の ``1`` は、lastのディフォルト値（[::]だったときの値）であり、
+``0``でなければなんでも良い数である。
+ベース型であるリストの``[::]``が``1``を意味する多項式であるとは言っていない。
+ *)
+
+Axiom neqa0 : a != 0.
+Lemma neq0_last_s : a != 0 -> last 1 [:: c; b; a] != 0.
+Proof. done. Qed.
+Check @Polynomial R [:: c; b; a] (neq0_last_s neqa0).
+Check Polynomial (neq0_last_s neqa0).
+Definition tstp1 := Polynomial (neq0_last_s neqa0).
+
+(**
+次節で insubd のディフォルトとして使うために poly_nil を定義する。
+*)
+Print poly_nil. (* = fun R : semiRingType => Polynomial (oner_neq0 R) *)
+Check poly_nil R : polynomial R.
+(**
+型Rを引数として、R型の``[::]``多項式を返す。この時点では、これが、0多項式であるという意味はない。
+ただし、``last 1 [::]``の値である``1``が、``0``でないことに依存して作るので、
+polynomial の証明部分は、``last 1`` でなければならないことが判る。
+*)
+Check oner_neq0 : forall s : semiRingType, 1 != 0.
+
+(**
+polyseq は単射である。
+ *)
+Check @poly_inj R : forall p1 p2, polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :> {poly R}.
+
+(**
+## seqのサブタイプ
+*)
+Check [isSub for polyseq]
+  : isSub.axioms_ (seq R) (fun x : seq R => last 1 x != 0) (polynomial R).
+Check val : {poly R} -> seq R.
+Check @insubd (seq R) (fun x : seq R => last 1 x != 0) {poly R} : {poly R} -> seq R -> {poly R}.
+Check insubd : {poly R} -> seq R -> {poly R}.
+
+Check @insubd (seq R) (fun s => last 1 s != 0) (polynomial R) (poly_nil R) [:: c; b; a].
+Check insubd (poly_nil R) [:: c; b; a].
+Definition tstp2 := insubd (poly_nil R) [:: c; b; a].
 
 (**
 ## ```_i`` の定義と補題
+
+```_i`` は、単なるnth であるが、空リストの場合 0%:R を返す。これにより、
+ベース型のリスト[::]から作られた多項式は、0の意味を持つことになる。
 *)
+Locate "s `_ i". (* Notation "s `_ i" := (nth GRing.zero s i) : ring_scope (default interpretation) *)
+
+Compute (poly_nil R)`_0.
+
+
+
+
+
+(* 最高次数の係数を取り出す。 *)
+Compute lead_coef tstp1.                    (* a *)
+Compute tstp1`_(size tstp1).-1.             (* a *)
+Check lead_coefE : forall (R : semiRingType) (p : {poly R}), lead_coef p = p`_(size p).-1.
+
+
+
+(* 定数多項式を作る *)
+Check insubd (poly_nil R) [:: c] : {poly R}.
+Check polyC c  : {poly R}.
+Definition tstp_c := polyC c.
+
+(* 引数に 0 が与えられる場合を考慮すると、[:: c] ではだめで、insubd で定義する必要がある。 *)
+Check polyC 0  : {poly R}.
+Definition tstp_c0 := @polyC R 0.
+
+(**
+- ``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
+もともとの poly_nil 自体には``0``の意味はないことに注意するべきである。
+*)
+Print polyC. (* = fun (R : semiRingType) (c : R) => insubd (poly_nil R) [:: c] *)
+
+Goal (val 0%:P) == [::] :> seq R.
+Proof.
+  rewrite /polyC.
+  rewrite val_insubd /=.
+  case H : (0 == 0).
+  - done.
+  - Search ((_ == _) = false).
+    by case/eqP in H.
+Qed.
+
+Goal c%:P = nseq (c != 0) c :> seq R.
+Proof.
+  (* true が 1、false が 0 にコアーションされることを使う。 *)
+  Compute nseq (0%N != 0%N) 0%N.            (* [::] *)
+  Compute nseq (1%N != 0%N) 1%N.            (* [:: 1] *)
+  Compute nseq (2%N != 0%N) 2%N.            (* [:: 2] *)
+  
+  rewrite val_insubd /=.
+  by case H : (c == 0).
+Qed.  
 
 (**
 # 定数多項式とその補題
@@ -107,27 +218,6 @@ Local Open Scope ring_scope.
 (**
 ## 因数定理
 *)
-
-
-(**
-コンストラクタにおいて、最大次数の係数が 0 でないことを
- *)
-Check fun s => last 1 s != 0.
-(**
-でチェックしている。この``1``は``0``でなければなんでも良い数である。
-ベース型であるリストの``[::]``が``1``を意味するとは言っていない。
- *)
-
-(**
-- ``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
-もともとの poly_nil 自体には``0``の意味はないことに注意するべきである。
-*)
-Print polyC. (* = fun (R : semiRingType) (c : R) => insubd (poly_nil R) [:: c] *)
-
-(**
-- ``[::]`_i``が0になるのは、```_i``の定義で、nth の代替項が、0%R であること。
- *)
-Locate "s `_ i". (* Notation "s `_ i" := (nth GRing.zero s i) : ring_scope (default interpretation) *)
 
 
 
@@ -287,26 +377,13 @@ Check @poly_inj R : forall p1 p2, polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :>
 -------------------------------
 # リストのサブタイプとしての多項式
 *)
-(* サブタイプの値からベースタイプの値を取り出す。 *)
-(* サブタイプの値を作る。 *)
-Check @insubd (seq R) neq0_last (polynomial R) (poly_nil R) tsts.
-Check insubd (poly_nil R) tsts.
-Definition tstp2 := insubd (poly_nil R) tsts.
-Check tstp2 : {poly R}.
 
-(* 最高次数の係数を取り出す。 *)
-Compute lead_coef tstp1.                    (* a *)
-Compute tstp1`_(size tstp1).-1.             (* a *)
-Check lead_coefE : forall (R : semiRingType) (p : {poly R}), lead_coef p = p`_(size p).-1.
 
-(* 定数多項式を作る *)
-Check insubd (poly_nil R) [:: c] : {poly R}.
-Check polyC c  : {poly R}.
-Definition tstp_c := polyC c.
 
-(* 引数に 0 が与えられる場合を考慮すると、[:: c] ではだめで、insubd で定義する必要がある。 *)
-Check polyC 0  : {poly R}.
-Definition tstp_c0 := @polyC R 0.
+
+
+
+
 
 (**
 ----------------------------------
