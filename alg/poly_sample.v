@@ -13,12 +13,221 @@ Import GRing.Theory.
 
 Local Open Scope ring_scope.
 
+(**
+# コンストラクタ
+## seqのサブタイプと、0多項式
+*)
+
+(**
+## ```_i`` の定義と補題
+*)
+
+(**
+# 定数多項式とその補題
+ *)
+
+
+(**
+# 多項式の作り方
+## cons_poly の定義と補題
+*)
+
+(**
+## ``Poly`` 係数のリストから作る
+*)
+
+(**
+## ``\poly_(i < n) E`` 係数の無限列（生成関数）と範囲から作る
+*)
+
+(**
+# nmodType
+*)
+
+(**
+## 0多項式についての補題
+*)
+
+(**
+## 加算についての補題
+*)
+
+
+(**
+# semiRingType
+*)
+
+(**
+## 1多項式についての補題
+ *)
+
+(**
+## 積算についての補題
+ *)
+
+
+(**
+# zmodType
+*)
+
+(**
+## 引算についての補題
+*)
+
+(**
+# ringType
+*)
+
+(**
+# lmodType
+*)
+
+(**
+## Linier についての補題
+*)
+
+(**
+# ``'X`` とその補題
+
+## poly_ind 帰納法
+ *)
+
+(**
+# Monic (最高次の係数が1の多項式)
+*)
+
+(**
+# Horner評価法の定義とその補題
+*)
+
+(**
+# rootの定義とその補題
+*)
+
+(**
+## 因数定理
+*)
+
+
+(**
+コンストラクタにおいて、最大次数の係数が 0 でないことを
+ *)
+Check fun s => last 1 s != 0.
+(**
+でチェックしている。この``1``は``0``でなければなんでも良い数である。
+ベース型であるリストの``[::]``が``1``を意味するとは言っていない。
+ *)
+
+(**
+- ``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
+もともとの poly_nil 自体には``0``の意味はないことに注意するべきである。
+*)
+Print polyC. (* = fun (R : semiRingType) (c : R) => insubd (poly_nil R) [:: c] *)
+
+(**
+- ``[::]`_i``が0になるのは、```_i``の定義で、nth の代替項が、0%R であること。
+ *)
+Locate "s `_ i". (* Notation "s `_ i" := (nth GRing.zero s i) : ring_scope (default interpretation) *)
+
+
+
+
+
+
+Section TypeClasses.
+
+  Section Polynomial.
+    Variable R : semiRingType.
+
+    Check {poly R} : choiceType.
+  End Polynomial.
+
+  Section SemiPolynomialTheory.
+    Variable R : semiRingType.
+    Implicit Types (a b c x y z : R) (p q r d : {poly R}).
+
+    Check {poly R} : nmodType.
+    Check {poly R} : semiRingType.
+
+  End SemiPolynomialTheory.
+
+  Section PolynomialTheory.
+    Variable R : ringType.
+    Implicit Types (a b c x y z : R) (p q r d : {poly R}).
+
+    Check {poly R} : zmodType.
+    
+  End PolynomialTheory.
+  
+  Section PolynomialComRing.
+    Variable R : comRingType.
+    Implicit Types p q : {poly R}.
+
+    Check {poly R} : comRingType.
+    
+  End PolynomialComRing.
+
+  Section PolynomialIdomain.
+    (* Integral domain structure on poly *)
+    Variable R : idomainType.
+    Implicit Types (a b x y : R) (p q r m : {poly R}).
+
+    Check {poly R} : idomainType.
+    
+  End PolynomialIdomain.
+
+End TypeClasses.
+
+Check coef0.
+
+Variable R : ringType.
+
+Print nseq.
+Print ncons.
+
+Compute ncons 1%N true [::].
+
+Print nseq.
+
+Compute (fun c => nseq (c != 0)%N c) 0.     (* [::] *)
+Compute (fun c => nseq (c != 0)%N c) 1.     (* [:: 1] *)
+Compute (fun c => nseq (c != 0)%N c) 2.     (* [:: 2] *)
+
+Compute nseq true 0.
+
+
+Goal (poly_nil R)`_0 = 0.
+Proof.
+  rewrite /poly_nil.
+  rewrite /oner_neq0.
+  rewrite /GRing.oner_neq0.
+
+Goal (0 : {poly R})`_0 = 0.
+Proof.
+  simpl.
+  rewrite /polyseq.
+
+
+Lemma coef0 i : (0 : {poly R})`_i = 0.
+Proof.
+  Check (0 : {poly R})`_i = 0 :> R.
+  Set Printing All.
+  
+
+
+
+
+
+Section Polynomial.
+
 Variable R : semiRingType.
 Variable a b c d : R.
 
 (**
 -------------------------------
 # 多項式のコンストラクタ
+
+Defines a polynomial as a sequence with <> 0 last element
 
 コンストラクタを直接使って多項式を作ることは、勧められない。
  *)
@@ -54,16 +263,31 @@ Compute tstp1`_0.                           (* c *)
 (* poly から seq を取り出す関数 *)
 Print polyseq.
 Check [eta polyseq] : {poly R} -> seq R.
+
+(**
+HB.instance Definition _ := [isSub for polyseq].
+HB.instance Definition _ := [Choice of polynomial by <:].
+*)
+
+End Polynomial.
+
+(* We need to break off the section here to let the Bind Scope directives     *)
+(* take effect.                                                               *)
+
+Section SemiPolynomialTheory.
+
+Variable R : semiRingType.
+Variable (a b c x y z : R) (p q r d : {poly R}).
+
 (* polyseq は単射である。 *)
 Check @poly_inj R : forall p1 p2, polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :> {poly R}.
+
 
 (**
 -------------------------------
 # リストのサブタイプとしての多項式
 *)
 (* サブタイプの値からベースタイプの値を取り出す。 *)
-Check val tstp1 : seq R.                    (* polyseq とおなじ。 *)
-
 (* サブタイプの値を作る。 *)
 Check @insubd (seq R) neq0_last (polynomial R) (poly_nil R) tsts.
 Check insubd (poly_nil R) tsts.
@@ -433,106 +657,120 @@ Check lead_coef0 : forall R : semiRingType, lead_coef 0 = 0 :> R.
 
 (* 略 *)
 
+(**
+# Size, leading coef, morphism properties of coef
+ *)
+
+Check coefD
+  : forall (R : semiRingType) (p q : {poly R}) (i : nat), (p + q)`_i = p`_i + q`_i.
+
+
+(**
+# Polynomial semiring structure.
+ *)
+Print mul_poly_def.
+
+(**
+HB.instance Definition _ := GRing.Nmodule_isSemiRing.Build (polynomial R)
+  mul_polyA mul_1poly mul_poly1 mul_polyDl mul_polyDr mul_0poly mul_poly0
+  poly1_neq0.
+HB.instance Definition _ := GRing.SemiRing.on {poly R}.
+*)
+
+End SemiPolynomialTheory.
+
+Section PolynomialTheory.
+
+Variable R : ringType.
+(* Zmodule structure for polynomial *)
+
+(**
+HB.instance Definition _ := GRing.Nmodule_isZmodule.Build (polynomial R)
+  add_polyN.
+HB.instance Definition _ := GRing.Zmodule.on {poly R}.
+ *)
+
+Check {poly R} : zmodType.
+
+
+(**
+# Size, leading coef, morphism properties of coef
+*)
 
 
 
+(*
+# Polynomial ring structure.
+ *)
+
+(**
+HB.instance Definition _ := GRing.isMultiplicative.Build R {poly R} (@polyC R)
+  polyC_multiplicative.
+ *)
+
+Check {poly R} : ringType.
+
+(*
+# Algebra structure of polynomials.
+ *)
+
+(**
+HB.instance Definition _ := GRing.Zmodule_isLmodule.Build R (polynomial R)
+  scale_polyA scale_1poly scale_polyDr scale_polyDl.
+HB.instance Definition _ := GRing.Lmodule_isLalgebra.Build R (polynomial R)
+  scale_polyAl.
+HB.instance Definition _ := GRing.Lalgebra.on {poly R}.
+ *)
 
 
+(**
+HB.instance Definition _ i := GRing.isScalable.Build R {poly R} R *%R (coefp i)
+  (fun a => (coefZ a) ^~ i).
+HB.instance Definition _ := GRing.Linear.on (coefp 0).
+*)
 
+(* The indeterminate, at last! *)
 
+(* Expansion of a polynomial as an indexed sum *)
 
+(* Some facts about regular elements. *)
 
+(* Horner evaluation of polynomials *)
 
+Print horner_rec.
+(**
+fun R : ringType =>
+fix horner_rec (s : seq R) (x : R) {struct s} : R :=
+  match s with
+  | [::] => 0
+  | a :: s' => horner_rec s' x * x + a
+  end
+ *)
 
+Print root.
+(**
+fun (R : ringType) (p : {poly R}) (x : R) => p.[x] == 0
+     : forall R : ringType, {poly R} -> pred R
+ *)
 
+Check factor_theorem
+  : forall (R : ringType) (p : {poly R}) (a : R),
+    reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
 
+(**
+HB.instance Definition _ := GRing.ComRing_hasMulInverse.Build (polynomial R)
+  poly_mulVp poly_intro_unit poly_inv_out.
+HB.instance Definition _ := GRing.ComUnitRing.on {poly R}.
 
+HB.instance Definition _ := GRing.ComUnitRing_isIntegral.Build (polynomial R)
+  poly_idomainAxiom.
+HB.instance Definition _ := GRing.IntegralDomain.on {poly R}.
+*)
 
+Check {poly R} : idomainType.
 
-
-
-Definition p1 := Poly [:: c; b; a].
-Check p1 : {poly R}.
-
-Definition p2 := \poly_(i < 3) f i.
-Check p2 : {poly R}.
-
-Check polyC c : {poly R}.
-Check c%:P : {poly R}.
-Check 'X : {poly R}.
-Definition p3 := a%:P * 'X^2 + b%:P * 'X + c%:P * 'X^0.
-Check p3 : {poly R}.
-
-Goal forall i, p2`_i = f i.
-Proof.
-Admitted.
-
-Goal forall i, coefp i p2 = f i.
-Proof.
-Admitted.
-
-
-
-
-
-Goal 'X^1 = Poly [:: 0; 1] :> {poly R}.
-Proof.
-  rewrite unlock.
-  rewrite /polyX_def.
-  done.
-Qed.
-
-Goal 'X = [:: 0; 1] :> seq R.
-Proof.
-  by rewrite polyseqX.
-Qed.
-
-Goal 'X^2 = [:: 0; 0; 1] :> seq R.
-Proof.
-  by rewrite polyseqXn.
-Qed.
-
-Goal 'X^3 = [:: 0; 0; 0; 1] :> seq R.
-Proof.
-  by rewrite polyseqXn.
-Qed.
-
-Goal size ('X : {poly R}) = 2%N.
-Proof.
-  by rewrite size_polyX.
-Qed.
-
-Goal 1%:P = 1 :> {poly R}.
-Proof.
-  by rewrite polyC1.
-Qed.
-
-Check 'X          : {poly R} : lmodType R.
-Check x *: 'X     : {poly R} : lmodType R.
-
-Check lead_coef ('X : {poly R}).
-Compute lead_coef ('X : {poly R}) = x.
-
-Implicit Types (a b c x y z : R) (p q r d : {poly R}).
-
-Local Notation "c %:P" := (polyC c).
-
-Local Notation "\poly_ ( i < n ) E" := (poly n (fun i : nat => E)).
-
-Open Scope unity_root_scope.
-
-Theorem factor_theorem p a : reflect (exists q, p = q * ('X - a%:P)) (root p a).
-Proof.
-apply: (iffP eqP) => [pa0 | [q ->]]; last first.
-rewrite hornerM_comm /comm_poly hornerXsubC subrr ?simp.
-
-exists (\poly_(i < size p) horner_rec (drop i.+1 p) a).
-apply/polyP=> i; rewrite mulrBr coefB coefMX coefMC !coef_poly.
-apply: canRL (addrK _) _; rewrite addrC; have [le_p_i | lt_i_p] := leqP.
-  rewrite nth_default // !simp drop_oversize ?if_same //.
-  exact: leq_trans (leqSpred _).
-case: i => [|i] in lt_i_p *; last by rewrite ltnW // (drop_nth 0 lt_i_p).
-by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
-Qed.
+Check max_poly_roots
+  : forall (R : idomainType) (p : {poly R}) (rs : seq R),
+    p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
 
 
