@@ -84,54 +84,10 @@ Definition tstp2 := insubd (poly_nil R) [:: c; b; a].
 *)
 Locate "s `_ i". (* Notation "s `_ i" := (nth GRing.zero s i) : ring_scope (default interpretation) *)
 
-Compute (poly_nil R)`_0.
+Goal (poly_nil R)`_0 = 0%:R.
+Proof. done. Qed.
 
 
-
-
-
-(* 最高次数の係数を取り出す。 *)
-Compute lead_coef tstp1.                    (* a *)
-Compute tstp1`_(size tstp1).-1.             (* a *)
-Check lead_coefE : forall (R : semiRingType) (p : {poly R}), lead_coef p = p`_(size p).-1.
-
-
-
-(* 定数多項式を作る *)
-Check insubd (poly_nil R) [:: c] : {poly R}.
-Check polyC c  : {poly R}.
-Definition tstp_c := polyC c.
-
-(* 引数に 0 が与えられる場合を考慮すると、[:: c] ではだめで、insubd で定義する必要がある。 *)
-Check polyC 0  : {poly R}.
-Definition tstp_c0 := @polyC R 0.
-
-(**
-- ``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
-もともとの poly_nil 自体には``0``の意味はないことに注意するべきである。
-*)
-Print polyC. (* = fun (R : semiRingType) (c : R) => insubd (poly_nil R) [:: c] *)
-
-Goal (val 0%:P) == [::] :> seq R.
-Proof.
-  rewrite /polyC.
-  rewrite val_insubd /=.
-  case H : (0 == 0).
-  - done.
-  - Search ((_ == _) = false).
-    by case/eqP in H.
-Qed.
-
-Goal c%:P = nseq (c != 0) c :> seq R.
-Proof.
-  (* true が 1、false が 0 にコアーションされることを使う。 *)
-  Compute nseq (0%N != 0%N) 0%N.            (* [::] *)
-  Compute nseq (1%N != 0%N) 1%N.            (* [:: 1] *)
-  Compute nseq (2%N != 0%N) 2%N.            (* [:: 2] *)
-  
-  rewrite val_insubd /=.
-  by case H : (c == 0).
-Qed.  
 
 (**
 # 定数多項式とその補題
@@ -219,6 +175,48 @@ Qed.
 ## 因数定理
 *)
 
+(* 最高次数の係数を取り出す。 *)
+Compute lead_coef tstp1.                    (* a *)
+Compute tstp1`_(size tstp1).-1.             (* a *)
+Check lead_coefE : forall (R : semiRingType) (p : {poly R}), lead_coef p = p`_(size p).-1.
+
+
+
+(* 定数多項式を作る *)
+Check insubd (poly_nil R) [:: c] : {poly R}.
+Check polyC c  : {poly R}.
+Definition tstp_c := polyC c.
+
+(* 引数に 0 が与えられる場合を考慮すると、[:: c] ではだめで、insubd で定義する必要がある。 *)
+Check polyC 0  : {poly R}.
+Definition tstp_c0 := @polyC R 0.
+
+(**
+- ``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
+もともとの poly_nil 自体には``0``の意味はないことに注意するべきである。
+*)
+Print polyC. (* = fun (R : semiRingType) (c : R) => insubd (poly_nil R) [:: c] *)
+
+Goal (val 0%:P) == [::] :> seq R.
+Proof.
+  rewrite /polyC.
+  rewrite val_insubd /=.
+  case H : (0 == 0).
+  - done.
+  - Search ((_ == _) = false).
+    by case/eqP in H.
+Qed.
+
+Goal c%:P = nseq (c != 0) c :> seq R.
+Proof.
+  (* true が 1、false が 0 にコアーションされることを使う。 *)
+  Compute nseq (0%N != 0%N) 0%N.            (* [::] *)
+  Compute nseq (1%N != 0%N) 1%N.            (* [:: 1] *)
+  Compute nseq (2%N != 0%N) 2%N.            (* [:: 2] *)
+  
+  rewrite val_insubd /=.
+  by case H : (c == 0).
+Qed.  
 
 
 
