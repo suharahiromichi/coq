@@ -798,4 +798,22 @@ Proof.
   done.
 Qed.
 
+(**
+## seq_poly をつかって polyP の証明をする。
+
+p と q のサイズがちがっても、``nth 0 p =1 nth 0 q`` は成立しうるため、
+``p = q :> seq R`` が成り立つとは言えない。
+polyP の証明に倣って、サイズの条件を追加する必要がある。
+*)
+Lemma polyP' (p q : {poly R}) : nth 0 p =1 nth 0 q <-> p = q :> {poly R}.
+Proof.
+  split => H.
+  - apply: seq_poly.
+    apply: eq_from_nth => //=.
+    (* Goal : size p = size q *)
+    admit.
+  - move=> i.
+    by rewrite H.
+Admitted.
+
 (* END *)
