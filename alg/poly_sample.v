@@ -645,7 +645,7 @@ Check Monoid.simpm.
 Check (Monoid.mulm1, Monoid.mulm0, Monoid.mul1m, Monoid.mul0m, Monoid.mulmA).
 
 (**
-# 多項式の定義の間の相互変換
+# 多項式の定義の間の相互変換 (eq_irrelevance を使う)
  *)
 Check neqa0 : a != 0.
 Check neq0_last_s : a != 0 -> last 1 [:: c; b; a] != 0.
@@ -755,5 +755,47 @@ Goal tstp3 = tstp6 :> {poly R}.
   rewrite mulrDl mulrA.
   done.
 Qed.  
+
+(**
+# 多項式の定義の間の相互変換 (polyP を使う)
+
+こっちのほうが簡単だった。
+ *)
+
+Goal tstp3 = tstp4 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp3 /tstp4.
+  rewrite coefE.
+  rewrite polyseq_poly //=.
+  by rewrite /= neqa0.
+Qed.
+
+Goal tstp1 = tstp2 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp1 /tstp2.
+  rewrite /= val_insubd.
+  case: ifP => //=.
+  by rewrite neqa0.
+Qed.
+
+Goal tstp1 = tstp3 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp1 /tstp3.
+  by rewrite coefE.
+Qed.
+
+Goal tstp3 = tstp6 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp3 /tstp6.
+  rewrite /=.
+  rewrite !cons_poly_def.
+  rewrite mul0r add0r expr2.
+  rewrite mulrDl mulrA.
+  done.
+Qed.
 
 (* END *)
