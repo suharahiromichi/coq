@@ -727,4 +727,33 @@ Proof.
   - by rewrite /= neqa0.
 Qed.
 
+Goal tstp1 = tstp2 :> {poly R}.
+Proof.
+  rewrite /tstp1 /tstp2.
+  rewrite /=.                               (* なにも起きない。 *)
+  apply: seq_poly.
+  rewrite /= val_insubd.
+  case: ifP => //=.
+  by rewrite neqa0.                         (* 前提矛盾 *)
+Qed.
+
+Goal tstp1 = tstp3 :> {poly R}.
+Proof.
+  rewrite /tstp1 /tstp3.
+  apply: seq_poly.
+  rewrite /=.
+  rewrite (@PolyK R a [:: c; b; a]) //=.
+  by rewrite neqa0.
+Qed.
+
+Goal tstp3 = tstp6 :> {poly R}.
+  rewrite /tstp3 /tstp6.
+  apply: seq_poly.
+  rewrite /=.
+  rewrite !cons_poly_def.
+  rewrite mul0r add0r expr2.
+  rewrite mulrDl mulrA.
+  done.
+Qed.  
+
 (* END *)
