@@ -437,6 +437,10 @@ Check polyseqXn : forall (R : ringType) (n : nat), 'X^n = rcons (nseq n 0) 1 :> 
 Check coefXnM : forall (R : ringType) (n : nat) (p : {poly R}) (i : nat),
     ('X^n * p)`_i = (if (i < n)%N then 0 else p`_(i - n)).
 
+
+Definition tstp5 := a *: 'X^2 + b *: 'X + c *: 'X^0.
+Definition tstp6 := a%:P * 'X^2 + b%:P * 'X + c%:P.
+
 (**
 ## poly_ind 帰納法
 
@@ -640,5 +644,87 @@ Qed.
 Check Monoid.simpm.
 Check (Monoid.mulm1, Monoid.mulm0, Monoid.mul1m, Monoid.mul0m, Monoid.mulmA).
 
+(**
+# 多項式の定義の間の相互変換
+ *)
+Check neqa0 : a != 0.
+Check neq0_last_s : a != 0 -> last 1 [:: c; b; a] != 0.
+Print tstE.                                 (* 略 *)
+
+Print tstp1.                  (* = Polynomial (neq0_last_s neqa0) *)
+Print tstp2.                  (* = insubd (poly_nil R) [:: c; b; a] *)
+Print tstp3.                  (* = Poly [:: c; b; a] *)
+Print tstp4.                  (* = \poly_(i < 3) tstE i *)
+Print tstp5.                  (* = a *: 'X^2 + b *: 'X + c%:P *)
+Print tstp6.                  (* = a%:P * 'X^2 + b%:P * 'X + c%:P *)
+
+(**
+## mulr (``*``)  と scale ``*:`` の間の相互変換を使う
+ *)
+Goal tstp5 = tstp6 :> {poly R}.
+Proof.
+  rewrite /tstp5 /tstp6.
+  Check mul_polyC : forall (R : ringType) (a : R) (p : {poly R}), a%:P * p = a *: p.
+  rewrite -3!mul_polyC.
+  have -> : 'X^0 = 1 by done.
+  rewrite mulr1.
+  done.
+Qed.
+
+(**
+## ``_ = _ :> seq R`` と `` _ = _ :> {poly R}`` の相互変換を使う
+*)
+Lemma poly_seq (p q : {poly R}) : p = q :> {poly R} -> p = q :> seq R.
+Proof.
+  move=> H.
+  (* Goal の両辺には、コアーションで val がついているから、rewrite で済む。 *)
+  (* Goal *) Check val p = val q :> seq R.
+  by rewrite H.
+Qed.
+
+Lemma seq_poly (p q : {poly R}) : p = q :> seq R -> p = q :> {poly R}.
+Proof.
+  case: p; case: q.
+  move=> p Hp q Hq /= H.
+(**
+``p = q`` から ``Hp = Hq`` であることを示したいが、
+*)
+  subst.
+(**
+同じ命題 ``last 1 p != 0`` の証明だからといって、一般に、それが等しいとは言えない。
+*)
+  Check eq_irrelevance : forall (T : eqType) (x y : T) (e1 e2 : x = y), e1 = e2.
+(**
+しかし、これは boolean の命題なので、等しいと言える。
+*)
+  rewrite (eq_irrelevance Hp Hq).
+  done.  
+Qed.  
+
+Goal tstp3 = tstp4 :> {poly R}.
+Proof.
+  rewrite /tstp3 /tstp4.
+  (* Goal *) Check Poly [:: c; b; a] = \poly_(i < 3) (tstE i) :> {poly R}.
+  
+  Check @PolyK R a [:: c; b; a] : last a [:: c; b; a] != 0 -> Poly [:: c; b; a] = [:: c; b; a] :> seq R.
+  Check @polyseq_poly R 3 tstE : tstE 3.-1 != 0 -> \poly_(i < 3) tstE i = mkseq [eta tstE] 3 :> seq R.
+(**
+どちらも ``_ = _ :> seq R`` の補題なので、使えない。
+ *)
+  Fail rewrite (@PolyK R a [:: c; b; a]).  
+  Fail rewrite (@polyseq_poly R 3 tstE).
+
+  apply: seq_poly.
+  (* Goal *) Check Poly [:: c; b; a] = \poly_(i < 3) (tstE i) :> seq R.
+(**
+ゴールの両辺を ``_ = _ :> seq R`` に変換できたので、使える。
+*)
+  rewrite (@PolyK R a [:: c; b; a]).  
+  rewrite (@polyseq_poly R 3 tstE).
+  
+  - done.
+  - by rewrite /= neqa0.
+  - by rewrite /= neqa0.
+Qed.
 
 (* END *)
