@@ -71,8 +71,12 @@ Check oner_neq0 : forall s : semiRingType, 1 != 0.
 
 (**
 polyseq は単射である。
+
+これは、両辺が``{poly R}``の等式を``seq R``の等式に変換する便利な補題である。
+polyP はこれを使って証明している。
  *)
-Check @poly_inj R : forall p1 p2, polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :> {poly R}.
+Check @poly_inj R : forall (p1 p2 : polynomial R), polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :> {poly R}.
+Check @poly_inj R : forall (p1 p2 : {poly R}), polyseq p1 = polyseq p2 :> seq R -> p1 = p2 :> {poly R}.
 
 (**
 ## seqのサブタイプ
@@ -645,7 +649,7 @@ Check Monoid.simpm.
 Check (Monoid.mulm1, Monoid.mulm0, Monoid.mul1m, Monoid.mul0m, Monoid.mulmA).
 
 (**
-# 多項式の定義の間の相互変換 (eq_irrelevance を使う)
+# 多項式の定義の間の相互変換
  *)
 Check neqa0 : a != 0.
 Check neq0_last_s : a != 0 -> last 1 [:: c; b; a] != 0.
@@ -657,6 +661,50 @@ Print tstp3.                  (* = Poly [:: c; b; a] *)
 Print tstp4.                  (* = \poly_(i < 3) tstE i *)
 Print tstp5.                  (* = a *: 'X^2 + b *: 'X + c%:P *)
 Print tstp6.                  (* = a%:P * 'X^2 + b%:P * 'X + c%:P *)
+
+(**
+## polyP を使う
+
+polyP は poly_inj で証明できる。
+*)
+Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q :> {poly R}.
+Check [eta @poly_inj R] : forall p q : {poly R}, p = q :> seq R -> p = q :> {poly R}.
+
+Goal tstp3 = tstp4 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp3 /tstp4.
+  rewrite coefE.
+  rewrite polyseq_poly //=.
+  by rewrite /= neqa0.
+Qed.
+
+Goal tstp1 = tstp2 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp1 /tstp2.
+  rewrite /= val_insubd.
+  case: ifP => //=.
+  by rewrite neqa0.
+Qed.
+
+Goal tstp1 = tstp3 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp1 /tstp3.
+  by rewrite coefE.
+Qed.
+
+Goal tstp3 = tstp6 :> {poly R}.
+Proof.
+  apply/polyP => i.
+  rewrite /tstp3 /tstp6.
+  rewrite /=.
+  rewrite !cons_poly_def.
+  rewrite mul0r add0r expr2.
+  rewrite mulrDl mulrA.
+  done.
+Qed.
 
 (**
 ## mulr (``*``)  と scale ``*:`` の間の相互変換を使う
@@ -672,8 +720,13 @@ Proof.
 Qed.
 
 (**
-## ``_ = _ :> seq R`` と `` _ = _ :> {poly R}`` の相互変換を使う
-*)
+*** 以下は参考である。 ****
+
+## 多項式の定義の間の相互変換 (eq_irrelevance を使う)
+
+``_ = _ :> seq R`` と `` _ = _ :> {poly R}`` の相互変換を使う
+ *)
+
 Lemma poly_seq (p q : {poly R}) : p = q :> {poly R} -> p = q :> seq R.
 Proof.
   move=> H.
@@ -682,6 +735,8 @@ Proof.
   by rewrite H.
 Qed.
 
+(* poly_inj があれば seq_poly はいらない。 *)
+(* polyP は poly_inj で証明されている。 *)
 Lemma seq_poly (p q : {poly R}) : p = q :> seq R -> p = q :> {poly R}.
 Proof.
   case: p; case: q.
@@ -755,65 +810,5 @@ Goal tstp3 = tstp6 :> {poly R}.
   rewrite mulrDl mulrA.
   done.
 Qed.  
-
-(**
-# 多項式の定義の間の相互変換 (polyP を使う)
-
-こっちのほうが簡単だった。
- *)
-
-Goal tstp3 = tstp4 :> {poly R}.
-Proof.
-  apply/polyP => i.
-  rewrite /tstp3 /tstp4.
-  rewrite coefE.
-  rewrite polyseq_poly //=.
-  by rewrite /= neqa0.
-Qed.
-
-Goal tstp1 = tstp2 :> {poly R}.
-Proof.
-  apply/polyP => i.
-  rewrite /tstp1 /tstp2.
-  rewrite /= val_insubd.
-  case: ifP => //=.
-  by rewrite neqa0.
-Qed.
-
-Goal tstp1 = tstp3 :> {poly R}.
-Proof.
-  apply/polyP => i.
-  rewrite /tstp1 /tstp3.
-  by rewrite coefE.
-Qed.
-
-Goal tstp3 = tstp6 :> {poly R}.
-Proof.
-  apply/polyP => i.
-  rewrite /tstp3 /tstp6.
-  rewrite /=.
-  rewrite !cons_poly_def.
-  rewrite mul0r add0r expr2.
-  rewrite mulrDl mulrA.
-  done.
-Qed.
-
-(**
-## seq_poly をつかって polyP の証明をする。
-
-p と q のサイズがちがっても、``nth 0 p =1 nth 0 q`` は成立しうるため、
-``p = q :> seq R`` が成り立つとは言えない。
-polyP の証明に倣って、サイズの条件を追加する必要がある。
-*)
-Lemma polyP' (p q : {poly R}) : nth 0 p =1 nth 0 q <-> p = q :> {poly R}.
-Proof.
-  split => H.
-  - apply: seq_poly.
-    apply: eq_from_nth => //=.
-    (* Goal : size p = size q *)
-    admit.
-  - move=> i.
-    by rewrite H.
-Admitted.
 
 (* END *)
