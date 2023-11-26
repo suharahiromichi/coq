@@ -27,7 +27,7 @@ Print polynomial.
 
 R型の多項式は、R型のリストと、その最後の要素が``0``でないことの証明の組み合わせで定義される。
 ```
-Record polynomial (R : semiRingType) : Type :=
+= Record polynomial (R : semiRingType) : Type :=
     Polynomial {
         polyseq : seq R;
         _ : is_true (last 1 polyseq != 0)
@@ -45,6 +45,17 @@ Proof. done. Qed.
 Check @Polynomial R [:: c; b; a] (neq0_last_s neqa0).
 Check Polynomial (neq0_last_s neqa0).
 Definition tstp1 := Polynomial (neq0_last_s neqa0).
+
+(**
+## {poly R}
+
+``{poly R}`` は ``polynomial R`` と同じ意味だが、Phantom Typeを使って semiRingType型 のみ引数にとれる。
+ *)
+Check tstp1 : polynomial R.
+Check tstp1 : {poly R}.
+
+Check bool : semiRingType.
+Check {poly bool}.
 
 (**
 次節で insubd のディフォルトとして使うために poly_nil を定義する。
@@ -77,124 +88,56 @@ Check insubd (poly_nil R) [:: c; b; a].
 Definition tstp2 := insubd (poly_nil R) [:: c; b; a].
 
 (**
-## ```_i`` の定義と補題
+## ```_i``
 
 ```_i`` は、単なるnth であるが、空リストの場合 0%:R を返す。これにより、
 ベース型のリスト[::]から作られた多項式は、0の意味を持つことになる。
 *)
-Locate "s `_ i". (* Notation "s `_ i" := (nth GRing.zero s i) : ring_scope (default interpretation) *)
+Locate "s `_ i". (* := (nth GRing.zero s i) : ring_scope (default interpretation) *)
+Print coefp.     (* = fun (R : semiRingType) (i : nat) (p : {poly R}) => p`_i *)
 
 Goal (poly_nil R)`_0 = 0%:R.
 Proof. done. Qed.
 
-
-
 (**
-# 定数多項式とその補題
- *)
-
-
-(**
-# 多項式の作り方
-## cons_poly の定義と補題
+## lead_coef 最大次数の係数をかえす関数
 *)
-
-(**
-## ``Poly`` 係数のリストから作る
-*)
-
-(**
-## ``\poly_(i < n) E`` 係数の無限列（生成関数）と範囲から作る
-*)
-
-(**
-# nmodType
-*)
-
-(**
-## 0多項式についての補題
-*)
-
-(**
-## 加算についての補題
-*)
-
-
-(**
-# semiRingType
-*)
-
-(**
-## 1多項式についての補題
- *)
-
-(**
-## 積算についての補題
- *)
-
-
-(**
-# zmodType
-*)
-
-(**
-## 引算についての補題
-*)
-
-(**
-# ringType
-*)
-
-(**
-# lmodType
-*)
-
-(**
-## Linier についての補題
-*)
-
-(**
-# ``'X`` とその補題
-
-## poly_ind 帰納法
- *)
-
-(**
-# Monic (最高次の係数が1の多項式)
-*)
-
-(**
-# Horner評価法の定義とその補題
-*)
-
-(**
-# rootの定義とその補題
-*)
-
-(**
-## 因数定理
-*)
-
-(* 最高次数の係数を取り出す。 *)
+Print lead_coef. (* = fun (R : semiRingType) (p : {poly R}) => p`_(size p).-1 *)
 Compute lead_coef tstp1.                    (* a *)
 Compute tstp1`_(size tstp1).-1.             (* a *)
+
 Check lead_coefE : forall (R : semiRingType) (p : {poly R}), lead_coef p = p`_(size p).-1.
 
+(**
+## coefE - マルチルール (inEのような補題の直積) (多分「マルチツール」の駄洒落)
 
+p`_i の簡約に便利だという。定義はずっとあとである。
+*)
+Check coefE.
+Check (coef0, coef1, coefC, coefX, coefXn, coef_sumMXn,
+        coefZ, coefMC, coefCM, coefXnM, coefMXn, coefXM, coefMX, coefMNn, coefMn,
+        coefN, coefB, coefD, coef_even_poly, coef_odd_poly,
+        coef_take_poly, coef_drop_poly, coef_cons, coef_Poly, coef_poly,
+        coef_deriv, coef_nderivn, coef_derivn, coef_map, coef_sum,
+        coef_comp_poly_Xn, coef_comp_poly).
 
-(* 定数多項式を作る *)
+(**
+# polyC %:P 定数多項式
+
+引数に 0 が与えられる場合を考慮すると、単なる ``[:: c]`` ではだめで、insubd で定義する必要がある。
+ *)
 Check insubd (poly_nil R) [:: c] : {poly R}.
 Check polyC c  : {poly R}.
 Definition tstp_c := polyC c.
 
-(* 引数に 0 が与えられる場合を考慮すると、[:: c] ではだめで、insubd で定義する必要がある。 *)
 Check polyC 0  : {poly R}.
 Definition tstp_c0 := @polyC R 0.
 
 (**
-- ``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
+``0%:P``が``[::]``になるのは、polyC の定義で insubd の代替項が、poly_nil であること。
 もともとの poly_nil 自体には``0``の意味はないことに注意するべきである。
 *)
+Locate "_ %:P". (* := (polyC c) : ring_scope (default interpretation) *)
 Print polyC. (* = fun (R : semiRingType) (c : R) => insubd (poly_nil R) [:: c] *)
 
 Goal (val 0%:P) == [::] :> seq R.
@@ -207,16 +150,377 @@ Proof.
     by case/eqP in H.
 Qed.
 
+(**
+``c%:P`` が nseq を使った式に書き換えられるという補題は、``(0 != 0) = 0`` や ``(42 != 0) = 1``
+のコアーションを使う。つまり、``c = 0`` なら、サイズ0のリストを作る。
+それ以外は、サイズ1のリストを作る。
+*)
+Check polyseqC : forall (R : semiRingType) (c : R), c%:P = nseq (c != 0) c :> seq R.
 Goal c%:P = nseq (c != 0) c :> seq R.
 Proof.
   (* true が 1、false が 0 にコアーションされることを使う。 *)
   Compute nseq (0%N != 0%N) 0%N.            (* [::] *)
   Compute nseq (1%N != 0%N) 1%N.            (* [:: 1] *)
-  Compute nseq (2%N != 0%N) 2%N.            (* [:: 2] *)
+  Compute nseq (42%N != 0%N) 42%N.          (* [:: 42] *)
   
   rewrite val_insubd /=.
   by case H : (c == 0).
 Qed.  
+
+
+(**
+# 多項式の作り方
+
+## cons_poly
+*)
+Print cons_poly.                            (* 略 *)
+Check cons_poly : forall R : semiRingType, R -> {poly R} -> {poly R}.
+
+(* p が nil (0多項式) でないなら、cons_poly は、 p に c を cons したもの。
+   p が nil (0多項式) なら、cons_poly は、 c の定数多項式。
+   これは、seq R で比較する。
+   ~~~~~~~~~~~~~~~~~~~~~~~~ *)
+Check polyseq_cons : forall (R : semiRingType) (c : R) (p : {poly R}),
+    cons_poly c p = (if ~~ nilp p then c :: p else c%:P) :> seq R.
+Goal cons_poly x tstp1 = x :: tstp1 :> seq R.
+Proof.
+  rewrite polyseq_cons.
+  done.
+Qed.
+
+Goal cons_poly x (poly_nil R) = x%:P :> seq R.
+Proof.
+  rewrite [LHS]polyseq_cons.
+  done.
+Qed.
+
+(**
+## ``Poly`` 係数のリストから作る
+*)
+Print Poly. (* = fun R : semiRingType => foldr (cons_poly (R:=R)) 0%:P *)
+Definition tstp3 := Poly [:: c; b; a].
+
+(**
+つぎのふたつの補題の結論は同じに見えるが、両辺の型が違う。
+
+``val (Poly s)`` と ``Poly (val p)`` のvalが消えているのである。
+*)
+Check PolyK : forall (R : semiRingType) (c : R) (s : seq R),
+    last c s != 0 -> Poly s = s :> seq R.
+
+Check @polyseqK : forall (R : semiRingType) (p : {poly R}),
+    Poly p = p :> {poly R}.
+
+(**
+## ``\poly_(i < n) E`` 係数の無限列（生成関数）と範囲から作る
+*)
+Locate "\poly_ ( i < n ) E".  (* := (poly n (fun i => E)) : ring_scope *)
+Check fun (n : nat) (E : nat -> R) => poly n E.    (* 小文字の poly は使うことはない。 *)
+Check fun (n : nat) (E : nat -> R) => Poly (mkseq E n).
+
+(* \poly_ で定義した多項式の値（リスト）は、mkseq と同じ。ただし、生成関数 E の最後の値が0でないこと。
+   ほぼ、定義の両辺を seq R にしたもの。 *)
+Check polyseq_poly
+  : forall (R : semiRingType) (n : nat) (E : nat -> R),
+    E n.-1 != 0 -> \val (\poly_(i < n) E i) = mkseq E n :> seq R.
+
+Definition tstE (n : nat) :=
+  match n with
+  | 0 => c
+  | 1 => b
+  | _ => a
+  end.
+Definition tstp4 := \poly_(i < 3) (tstE i).
+
+(**
+# nmodType
+
+以下の補題で Nmoduleのインスタンスにすることができる。
+*)
+Check [eta @add_polyA R] : forall x y z : {poly R}, add_poly x (add_poly y z) = add_poly (add_poly x y) z.
+Check [eta @add_polyC R] : forall x y : {poly R}, add_poly x y = add_poly y x.
+Check [eta @add_poly0 R] : forall x : {poly R}, add_poly 0%:P x = x.
+
+Check {poly R} : nmodType.
+
+(**
+## 0多項式についての補題
+
+nmodTypeのインスタンスにすることで、0多項式（左辺）が、多項式環の0（右辺）の意味を持つことになる。
+*)
+Check polyC0 : forall R : semiRingType, 0%:P = 0 :> {poly R}.
+
+(**
+## 加算についての補題
+
+多項式の加算ができるようになる。
+ *)
+(**
+多項式の加算の係数は、多項式の係数どうしの加算と同じである。
+*)
+Check coefD : forall (R : semiRingType) (p q : {poly R}) (i : nat), (p + q)`_i = p`_i + q`_i.
+
+(**
+加算結果から作った定数多項式は、定数多項式の加算結果に等しい。
+ *)
+Check polyCD : forall R : semiRingType, {morph polyC : a b / a + b >-> a + b}.
+Check polyCD : forall (R : semiRingType) (a b : R), (a + b)%:P = a%:P + b%:P.
+
+(**
+# semiRingType
+
+以下の補題で、SemiRingのインスタンスにすることができる。
+*)
+Check [eta @mul_polyA R] : forall x y z : {poly R}, mul_poly x (mul_poly y z) = mul_poly (mul_poly x y) z.
+Check [eta @mul_1poly R] : forall x : {poly R}, mul_poly 1%:P x = x.
+Check [eta @mul_poly1 R] : forall x : {poly R}, mul_poly x 1%:P = x.
+Check [eta @mul_polyDl R] : forall x y z : {poly R}, mul_poly (x + y) z = mul_poly x z + mul_poly y z.
+Check [eta @mul_polyDr R] : forall x y z : {poly R}, mul_poly x (y + z) = mul_poly x y + mul_poly x z.
+Check [eta @mul_0poly R] : forall x : {poly R}, mul_poly 0%:P x = 0%:P.
+Check [eta @mul_poly0 R] : forall x : {poly R}, mul_poly x 0%:P = 0%:P.
+Check poly1_neq0 R : 1%:P != 0.
+
+Check {poly R} : semiRingType.
+
+(**
+## 1多項式についての補題
+
+semiRingTypeのインスタンスにすることで、1多項式（左辺）が、多項式環の1（右辺）の意味を持つことになる。
+*)
+Check polyC1 : forall R : semiRingType, 1%:P = 1 :> {poly R}.
+
+(**
+## 積算についての補題
+
+多項式の積算ができるようになる。
+ *)
+Check coefM  : forall (R : semiRingType) (p q : {poly R}) (i : nat),
+    (p * q)`_i = \sum_(j < i.+1) p`_j * q`_(i - j).
+
+Check coefMr : forall (R : semiRingType) (p q : {poly R}) (i : nat),
+    (p * q)`_i = \sum_(j < i.+1) p`_(i - j) * q`_j.
+
+(**
+積算結果から作った定数多項式は、定数多項式の積算結果に等しい。
+ *)
+Check polyCM : forall R : semiRingType, {morph polyC : a b / a * b >-> a * b}.
+Check polyCM : forall (R : semiRingType) (a b : R), (a * b)%:P = a%:P * b%:P.
+
+(**
+# zmodType
+
+以下の補題で、NmoduleのインスタンスからZmoduleのインスタンスにすることができる。
+ *)
+Check [eta @add_polyN R] : forall x : {poly R}, add_poly (opp_poly x) x = 0%:P.
+
+Check {poly R} : zmodType.
+
+(**
+## 負号についての補題
+
+zmodTypeのインスタンスにすることで、係数の負（左辺）が、多項式環の負（右辺）の意味を持つことになる。
+ *)
+Check coefN : forall (R : ringType) (p : {poly R}) (i : nat), (- p)`_i = - p`_i.
+
+(**
+## 減算についての補題
+
+多項式の減算ができるようになる。
+*)
+Check coefB  : forall (R : ringType) (p q : {poly R}) (i : nat), (p - q)`_i = p`_i - q`_i.
+
+Check polyCN : forall R : ringType, {morph polyC : c / - c >-> - c}.
+Check polyCN : forall (R : ringType) (c : R), (- c)%:P = - c%:P.
+
+Check polyCB : forall R : ringType, {morph polyC : a b / a - b >-> a - b}.
+Check polyCB : forall (R : ringType) (a b : R), (a - b)%:P = a%:P - b%:P.
+
+(**
+# ringType
+
+以下の補題で、Ringのインスタンスにすることができる。``coefp 0`` は定数項を取り出す関数。
+（ここで、ほんとうに ringなのか、よくわからない）
+*)
+Check [eta coefp0_multiplicative] : forall x : ringType, multiplicative (coefp 0).
+Print GRing.multiplicative.
+(* = fun (R S : semiRingType) (f : R -> S) =>
+   ({morph f : x y / (x * y)%R >-> (x * y)%R} * (f 1 = 1))%type *)
+
+Check forall f x y, {morph f : x y / (x * y)%R >-> (x * y)%R} * (f 1 = 1)%type.
+(* 以下の意味である。 *)
+Check forall f x y, (f (x * y)%R = (f x * f y)%R)            /\ (f 1 = 1)%type.
+
+(**
+# lmodType R と lalgType R
+*)
+Check {poly R} : lmodType R.
+Check {poly R} : lalgType R.
+
+(**
+R と {poly R} の掛け算のscaleが使えるようになる。
+*)
+Locate "_ *: _". (* := (GRing.scale a m) : ring_scope (default interpretation) *)
+Check @mul_polyC R : forall (a : R) (p : {poly R}), a%:P * p = a *: p.
+
+(**
+まだ習っていない ``%:A``。
+*)
+Locate "_ %:A". (* := (GRing.scale k (GRing.one _)) : ring_scope (default interpretation) *)
+Check @alg_polyC R : forall (a : R), a%:A = a%:P :> {poly R}.
+
+(**
+# ``'X`` とその補題
+
+x についての多項式における、1次の x のこと。
+ただし、すでに多項式型なので、係数(R型)ととの足し算や掛け算はできない。
+ *)
+Locate "'X".  (* := (polyX _) : ring_scope (default interpretation) *)
+Check polyX R : {poly R}.
+Print polyX_def.            (* = fun R : ringType => Poly [:: 0; 1] *)
+
+(* polyseqなんとかシーリス *)
+Check polyseqX : forall R : ringType, 'X = [:: 0; 1] :> seq R.
+
+(**
+’X に p を掛けたときの係数
+*)
+Check coefXM
+  : forall (R : ringType) (p : {poly R}) (i : nat), ('X * p)`_i = (if i == 0%N then 0 else p`_i.-1).
+
+(* n次の x^n *)
+Locate "'X^ n". (* := (GRing.exp (polyX _) n) : ring_scope (default interpretation) *) 
+
+Check polyseqXn : forall (R : ringType) (n : nat), 'X^n = rcons (nseq n 0) 1 :> seq R.
+
+(**
+’X^n に p を掛けたときの係数
+*)
+Check coefXnM : forall (R : ringType) (n : nat) (p : {poly R}) (i : nat),
+    ('X^n * p)`_i = (if (i < n)%N then 0 else p`_(i - n)).
+
+(**
+## poly_ind 帰納法
+
+- 0多項式で成り立つ。
+- 多項式``p``で成り立つとして、任意の係数cで ``p + 'X * c`` で成り立つ。
+ならば、任意の多項式``p``で成り立つ。
+ *)
+Check poly_ind
+  : forall (R : ringType) (K : {poly R} -> Type),
+    K 0
+    -> (forall (p : {poly R}) (c : R), K p -> K (p * 'X + c%:P))
+    -> forall p : {poly R}, K p.
+
+(**
+## \poly_ と \sum_ の関係
+
+生成関数Eのとき、``E i`` が ``E i :* 'X^i`` に対応する。
+*)
+Check @poly_def R
+  : forall (n : nat) (E : nat -> R), \poly_(i < n) (E i) = \sum_(i < n) (E i *: 'X^i).
+
+(**
+# Monic (最高次の係数が1の多項式)
+*)
+Print monic.   (* = fun R : ringType => [ qualify p | monic_pred p] *)
+Print monic_pred. (* = fun (R : ringType) (p : {poly R}) => lead_coef p == 1 *)
+
+(**
+定義とおなじ補題
+*)
+Check @monicE R : forall p : {poly R}, (p \is monic) = (lead_coef p == 1).
+Check @monicP R : forall p : {poly R}, reflect (lead_coef p = 1) (p \is monic).
+
+(**
+# Horner評価法の定義とその補題
+
+多項式pをパラメータxで評価する。
+*)
+Locate "p .[ x ]". (* := (horner p x) : ring_scope (default interpretation) *)
+Print horner. (* = fun (R : ringType) (p : {poly R}) => horner_rec p *)
+Print horner_rec.                           (* 略 *)
+
+(**
+## 多項式の係数とパラメータxが可換であること、パラメータxの評価結果とパラメータxが可換であること
+*)
+Print comm_coef. (* = fun (R : ringType) (p : {poly R}) (x : R) => forall i : nat, p`_i * x = x * p`_i *)
+Print comm_poly. (* = fun (R : ringType) (p : {poly R}) (x : R) => x * p.[x] = p.[x] * x *)
+Check @comm_coef_poly R : forall (p : {poly R}) (x : R), comm_coef p x -> comm_poly p x.
+
+(**
+## Horner評価法の補題
+ *)
+(**
+定数多項式aに多項式pを掛けたものを、パラメータxで評価したものは、
+定数aに、多項式pをパラメータxで評価したものに等しい。証明には poly_ind を使う。
+*)
+Check @hornerCM R : forall (a : R) (p : {poly R}) (x : R), (a%:P * p).[x] = a * (p.[x]).
+
+(**
+多項式pと多項式qの積をパラメータxで評価したものは、
+多項式pをパラメータxで評価したものと、多項式qをパラメータxで評価したものの積に等しい。
+証明には poly_ind を使う。
+ *)
+Check @hornerM_comm R : forall (p q : {poly R}) (x : R),
+    comm_poly q x -> (p * q).[x] = p.[x] * q.[x].
+
+(**
+## hornerE と hornerE_comm - マルチルール
+*)
+Check hornerE.
+Check (hornerD, hornerN, hornerX, hornerC, horner_exp,
+        Monoid.simpm, hornerCM, hornerZ, hornerM, horner_cons). (* simp := Monoid.simpm *)
+
+Check hornerE_comm.
+Check (hornerD, hornerN, hornerX, hornerC, horner_cons,
+        Monoid.simpm, hornerCM, hornerZ,
+        (fun p x => hornerM_comm p (comm_polyX x))).
+
+(**
+# rootの定義とその補題
+
+多項式pを適当なxで評価して、値が0になること。
+*)
+Print root. (* = fun (R : ringType) (p : {poly R}) (x : R) => p.[x] == 0
+ *)
+(**
+``x \in root p`` は ``root p x`` と同じ。ただし、マルチルール``inE``に含まれないことに注意。
+*)
+Check @mem_root R : forall (p : {poly R}) (x : R), (x \in root p) = (p.[x] == 0).
+Check @mem_root R : forall (p : {poly R}) (x : R), root p x = (p.[x] == 0).
+
+Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) * ((x \in root p) = (p.[x] == 0)).
+Check @rootP R : forall (p : {poly R}) (x : R), reflect (p.[x] = 0) (root p x).
+
+(**
+## 因数定理
+*)
+Check @factor_theorem R
+  : forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
+
+Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
+Proof.
+  move=> p a.
+  apply: (iffP eqP).
+Admitted.
+
+
+(* ***************************** *)
+
+
+
+
+
+
+(* 最高次数の係数を取り出す。 *)
+
+
+
+(* 定数多項式を作る *)
+
+
+
+
 
 
 
@@ -503,38 +807,20 @@ Qed.
 # extension (cons) で多項式を作る。
  *)
 (* 係数となる定数と多項式から、あらたな多項式をつくる。 *)
-Check cons_poly : forall R : semiRingType, R -> {poly R} -> {poly R}.
 
-(* p が nil (0多項式) でないなら、cons_poly は、 p に c を cons したもの。
-   p が nil (0多項式) なら、cons_poly は、 c の定数多項式。
-   これは、seq R で比較する。
-   ~~~~~~~~~~~~~~~~~~~~~~~~ *)
-Check polyseq_cons : forall (R : semiRingType) (c : R) (p : {poly R}),
-    cons_poly c p = (if ~~ nilp p then c :: p else c%:P) :> seq R.
-Goal cons_poly d tstp1 = d :: tstp1 :> seq R.
-Proof.
-  rewrite polyseq_cons.
-  done.
-Qed.
-
-Goal cons_poly d (poly_nil R) = d%:P :> seq R.
-Proof.
-  rewrite [LHS]polyseq_cons.
-  done.
-Qed.
 
 (* p が nil (0多項式) なら、cons_poly のサイズは c が 0 かどうかで決まる。
    p が nil (0多項式) でないなら、cons_poly はサイズを 1 増やす。
  *)
 Check size_cons_poly : forall (R : semiRingType) (c : R) (p : {poly R}),
     size (cons_poly c p) = (if nilp p && (c == 0) then 0 else (size p).+1).
-Goal size (cons_poly d tstp1) = 4.
+Goal size (cons_poly x tstp1) = 4.
 Proof.
   rewrite size_cons_poly /=.
   done.
 Qed.
 
-Goal d != 0 -> size (cons_poly d (poly_nil R)) = 1.
+Goal x != 0 -> size (cons_poly x (poly_nil R)) = 1.
 Proof.
   rewrite size_cons_poly /=.
   by case: ifP.
@@ -542,9 +828,9 @@ Qed.
 
 Goal size (cons_poly 0 (poly_nil R)) = 0.
 Proof.
-  rewrite size_cons_poly /=.
-  rewrite l_eq_true.
-  done.
+  rewrite size_cons_poly //=.
+  case: ifP => //=.
+  rewrite [0 == 0]//=.
 Qed.  
 
 (* cons_poly した多項式の係数は、もとの係数のインデックスに-1したもの。 *)
@@ -568,6 +854,8 @@ Proof.
   rewrite coef_cons /=.
   done.
 Qed.
+
+
 
 (**
 -------------------------------
@@ -633,7 +921,7 @@ Check coef_Poly : forall (R : semiRingType) (s : seq R) (i : nat), (Poly s)`_i =
 (**
 # 無限の係数シーケンスと境界から多項式を作る
  *)
-Locate "\poly_ ( i < n ) E".  (* (poly n (fun i => E)) : ring_scope *)
+Locate "\poly_ ( i < n ) E".  (* := (poly n (fun i => E)) : ring_scope *)
 Check fun (n : nat) (E : nat -> R) => poly n E.    (* 小文字の poly は使うことはない。 *)
 Check fun (n : nat) (E : nat -> R) => Poly (mkseq E n).
 
