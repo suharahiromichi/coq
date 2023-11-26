@@ -501,15 +501,21 @@ Check @factor_theorem R
 Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
 Proof.
   move=> p a.
-  apply: (iffP eqP).
-Admitted.
-
+  apply: (iffP eqP) => [pa0 | [q ->]]; last first.
+  - rewrite hornerM_comm /comm_poly hornerXsubC subrr ?simp.
+    by rewrite mulr0.
+  - by rewrite mulr0 mul0r.
+  - exists (\poly_(i < size p) horner_rec (drop i.+1 p) a).
+    apply/polyP=> i; rewrite mulrBr coefB coefMX coefMC !coef_poly.
+    apply: canRL (addrK _) _; rewrite addrC; have [le_p_i | lt_i_p] := leqP.
+    - rewrite nth_default // Monoid.simpm drop_oversize ?if_same //.
+      + by rewrite mul0r.
+      + exact: leq_trans (leqSpred _).
+    - case: i => [|i] in lt_i_p *; last by rewrite ltnW // (drop_nth 0 lt_i_p).
+      by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
+Qed.
 
 (* ***************************** *)
-
-
-
-
 
 
 (* 最高次数の係数を取り出す。 *)
