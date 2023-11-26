@@ -167,6 +167,11 @@ Proof.
   by case H : (c == 0).
 Qed.  
 
+(**
+係数がすべて同じなら、多項式として同じ。
+0多項式であってもこれは成り立つ。
+*)
+Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q.
 
 (**
 # 多項式の作り方
@@ -210,6 +215,14 @@ Check PolyK : forall (R : semiRingType) (c : R) (s : seq R),
 
 Check @polyseqK : forall (R : semiRingType) (p : {poly R}),
     Poly p = p :> {poly R}.
+
+(**
+Poly s からとりだしたリストと、もとのリストsの要素は同じ。
+ 
+s が [:: 0] の場合、 Poly s が、0多項式になるが、[::]`_i は 0 になる（左辺）。
+[:: 0]`_i も 0 である（右辺）ため、係数としては同じである。
+*)
+Check coef_Poly : forall (R : semiRingType) (s : seq R) (i : nat), (Poly s)`_i = s`_i.
 
 (**
 ## ``\poly_(i < n) E`` 係数の無限列（生成関数）と範囲から作る
@@ -498,22 +511,85 @@ Check @rootP R : forall (p : {poly R}) (x : R), reflect (p.[x] = 0) (root p x).
 Check @factor_theorem R
   : forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
 
+(**
+poly.v に近いかたち
+*)
 Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
 Proof.
   move=> p a.
   apply: (iffP eqP) => [pa0 | [q ->]]; last first.
   - rewrite hornerM_comm /comm_poly hornerXsubC subrr ?simp.
-    by rewrite mulr0.
-  - by rewrite mulr0 mul0r.
+    + by rewrite mulr0.
+    + by rewrite mulr0 mul0r.
   - exists (\poly_(i < size p) horner_rec (drop i.+1 p) a).
     apply/polyP=> i; rewrite mulrBr coefB coefMX coefMC !coef_poly.
     apply: canRL (addrK _) _; rewrite addrC; have [le_p_i | lt_i_p] := leqP.
-    - rewrite nth_default // Monoid.simpm drop_oversize ?if_same //.
-      + by rewrite mul0r.
-      + exact: leq_trans (leqSpred _).
-    - case: i => [|i] in lt_i_p *; last by rewrite ltnW // (drop_nth 0 lt_i_p).
+    + rewrite nth_default // Monoid.simpm drop_oversize ?if_same //.
+      * by rewrite mul0r.
+      * exact: leq_trans (leqSpred _).
+    + case: i => [|i] in lt_i_p *; last by rewrite ltnW // (drop_nth 0 lt_i_p).
       by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
 Qed.
+
+Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
+Proof.
+  move=> p a.
+  apply: (iffP eqP) => [pa0 | [q ->]].
+  - exists (\poly_(i < size p) (horner_rec (drop i.+1 p) a)).
+
+    Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q.
+    apply/polyP => i.
+    
+    rewrite mulrBr.
+    rewrite coefB.
+    rewrite coefMX.
+    rewrite coefMC.
+    
+    Check coef_poly : forall (R : semiRingType) (n : nat) (E : nat -> R) (k : nat),
+        (\poly_(i < n) E i)`_k = (if (k < n)%N then E k else 0).
+    rewrite 2!coef_poly.
+    
+    apply: canRL (addrK _) _.
+    rewrite addrC.
+    
+    have := leqP.
+    case=> [le_p_i | lt_i_p].
+
+    (* le_p_i : (size p <= i)%N の場合 *)
+    + rewrite nth_default //.
+
+      Check Monoid.simpm.                   (* マルチルール *)
+      rewrite Monoid.simpm.
+      
+      rewrite drop_oversize.
+      * rewrite 2!if_same //.
+        by rewrite mul0r.
+      * exact: leq_trans (leqSpred _).
+        
+    (* lt_i_p : (i < size p)%N の場合 *)
+    + case: i lt_i_p => [| i] lt_i_p.
+      * rewrite drop1 /= -{}pa0 /horner.
+        case: (p : seq R) lt_i_p.
+        ** done.
+        ** rewrite /=.
+           done.
+      * rewrite ltnW.
+        ** rewrite //.
+           rewrite (drop_nth 0 lt_i_p).
+           done.
+        ** done.
+  - rewrite hornerM_comm.
+    + rewrite hornerXsubC.
+      rewrite subrr.
+      rewrite mulr0.
+      done.
+    + rewrite /comm_poly.
+      rewrite hornerXsubC.
+      rewrite subrr.
+      rewrite mulr0 mul0r.
+      done.
+Qed.
+
 
 (* ***************************** *)
 
