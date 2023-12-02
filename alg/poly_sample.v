@@ -382,7 +382,6 @@ Check polyCB : forall (R : ringType) (a b : R), (a - b)%:P = a%:P - b%:P.
 # ringType
 
 以下の補題で、Ringのインスタンスにすることができる。``coefp 0`` は定数項を取り出す関数。
-（ここで、ほんとうに ringなのか、よくわからない）
 *)
 Check [eta coefp0_multiplicative] : forall x : ringType, multiplicative (coefp 0).
 Print GRing.multiplicative.
@@ -392,6 +391,9 @@ Print GRing.multiplicative.
 Check forall f x y, {morph f : x y / (x * y)%R >-> (x * y)%R} * (f 1 = 1)%type.
 (* 以下の意味である。 *)
 Check forall f x y, (f (x * y)%R = (f x * f y)%R)            /\ (f 1 = 1)%type.
+
+(* （ここで、ほんとうに ringなのか、よくわからない） *)
+Check {poly R} : ringType.
 
 (**
 # lmodType R と lalgType R
@@ -477,6 +479,16 @@ Print monic_pred. (* = fun (R : ringType) (p : {poly R}) => lead_coef p == 1 *)
 *)
 Check @monicE R : forall p : {poly R}, (p \is monic) = (lead_coef p == 1).
 Check @monicP R : forall p : {poly R}, reflect (lead_coef p = 1) (p \is monic).
+
+(**
+mulr で閉じている。
+*)
+Check @rpred1M R : forall S : mulrClosed R, mulr_closed S.
+(**
+この補題で以下のインスタンスにできる。
+*)
+Check @monic_mulr_closed R : mulr_closed monic.
+HB.about GRing.isMulClosed.
 
 (**
 # Horner評価法の定義とその補題
