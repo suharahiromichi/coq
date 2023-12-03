@@ -100,7 +100,8 @@ Section ADDCLOSED.
 述語Sが環の加法で閉じた述語であるとき、
 多項式pの係数のすべてが``S``を成り立たせることと、多項式pは``polyOver S``を成り立たせることは、同値。
 *)
-  Check @polyOverP R S : forall p : {poly R}, reflect (forall i : nat, p`_i \in S) (p \is a polyOver S).
+  Check @polyOverP R S
+    : forall p : {poly R}, reflect (forall i : nat, p`_i \in S) (p \is a polyOver S).
 
 (**
 述語Sが環の加法で閉じた述語であるとき、
@@ -166,8 +167,10 @@ Check @deriv R (Poly [:: 3; 2; 1]).
 (**
 ## 多項式pを微分したときの係数は。。。。
 *)
-Check @coef_deriv R : forall (p : {poly R}) (i : nat), (p^`())`_i = p`_i.+1 *+ i.+1.
-Check @coef_derivn R : forall (n : nat) (p : {poly R}) (i : nat), (p^`(n))`_i = p`_(n + i) *+ (n + i) ^_ n.
+Check @coef_deriv R
+  : forall (p : {poly R}) (i : nat), (p^`())`_i = p`_i.+1 *+ i.+1.
+Check @coef_derivn R
+  : forall (n : nat) (p : {poly R}) (i : nat), (p^`(n))`_i = p`_(n + i) *+ (n + i) ^_ n.
 
 (**
 ## マルチルール
@@ -215,4 +218,66 @@ Proof.
   by rewrite linearE.
 Qed.
 
+(**
+## 高階微分の正規化式
+ *)
+Locate "a ^`N ( n )". (*  := (nderivn n a) : ring_scope (default interpretation) *)
+Print nderivn.
+(* = fun (R : ringType) (n : nat) (p : {poly R}) => \poly_(i < size p - n) (p`_(n + i) *+ 'C(n + i, n)) *)
+
+Check @coef_nderivn R
+  : forall (n : nat) (p : {poly R}) (i : nat), (p^`N(n))`_i = p`_(n + i) *+ 'C(n + i, n).
+Check @nderivn_def R
+  : forall (n : nat) (p : {poly R}), p^`(n) = p^`N(n) *+ n`!.
+
+(**
+# map poly
+
+係数に``f``を適用する。
+ *)
+Notation "p ^ f" := (map_poly (GRing.Additive.sort f) p) : ring_scope. (* locally *)
+Print map_poly. (* = fun (aR rR : ringType) (f : aR -> rR) (p : {poly aR}) => \poly_(i < size p) f p`_i *)
+
+Check map_polyE
+  : forall (aR rR : ringType) (f : aR -> rR) (p : {poly aR}), map_poly f p = Poly [seq f i | i <- val p].
+
+(**
+## 多項式を係数とする多項式
+*)
+Locate "p ^:P". (* := (map_poly polyC p) : ring_scope (default interpretation) *)
+
+(**
+## polynomial composition
+ *)
+Locate "p \Po q". (* := (comp_poly q p) : ring_scope (default interpretation) *)
+Print comp_poly. (* = fun (R : ringType) (q p : {poly R}) => p^:P.[q] *)
+
+Check @comp_polyE R : forall p q : {poly R}, p \Po q = \sum_(i < size p) (p`_i *: (q ^+ i)).
+
+(**
+# 外科手術
+
+## 多項式の偶数部
+*)
+Print even_poly. (* = fun (R : ringType) (p : {poly R}) => \poly_(i < uphalf (size p)) p`_i.*2 *)
+
+(**
+## 多項式の奇数部
+ *)
+Print odd_poly. (* = fun (R : ringType) (p : {poly R}) => \poly_(i < (size p)./2) p`_i.*2.+1 *)
+
 (* END *)
+
+
+
+Goal (Poly [:: 3; 2; 1]) ^:P = Poly [:: 3%:P; 2%:P; 1%:P] :> {poly {poly R}}.
+Proof.
+  apply/polyP=> i.
+  rewrite coefE.
+  f_equal.
+  rewrite map_polyE.
+Admitted.
+
+(**
+## 
+ *)

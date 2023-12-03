@@ -499,6 +499,9 @@ Locate "p .[ x ]". (* := (horner p x) : ring_scope (default interpretation) *)
 Print horner. (* = fun (R : ringType) (p : {poly R}) => horner_rec p *)
 Print horner_rec.                           (* 略 *)
 
+Check @horner_Poly R
+  : forall (s : seq R) (x : R), (Poly s).[x] = horner_rec s x.
+
 (**
 ## 多項式の係数とパラメータxが可換であること、パラメータxの評価結果とパラメータxが可換であること
 *)
@@ -522,6 +525,9 @@ Check @hornerCM R : forall (a : R) (p : {poly R}) (x : R), (a%:P * p).[x] = a * 
  *)
 Check @hornerM_comm R : forall (p q : {poly R}) (x : R),
     comm_poly q x -> (p * q).[x] = p.[x] * q.[x].
+
+Check @horner_poly R
+  : forall (n : nat) (E : nat -> R) (x : R), (\poly_(i < n) (E i)).[x] = \sum_(i < n) (E i * x ^+ i).
 
 (**
 ## hornerE と hornerE_comm - マルチルール
