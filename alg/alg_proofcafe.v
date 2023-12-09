@@ -43,9 +43,10 @@ ssralgの範囲の機能を使う場合でも、``all_algebra`` をインポー�
 (**
 # モジュールのインポート（ssralgとssrnum）
 
-文献[1] に従い、ssralgとssrnumのモジュールのうち、以下をインポートします。
+文献[1] に従い、ssralgとssrnumのモジュールのうち、Num.Def、Num.Theory、GRing.Theory
+をインポートします。
 これにより、addrCA などの補題が、``GRing.addrCA`` ではなく、``addrCA`` で使えるようになります。
-補題にPostfixはつけたくないと思います。
+補題にPostfixはつけ*ない*で済むようにしたいと思います。
  *)
 
 (* suhara *)
@@ -100,9 +101,10 @@ Open Scope ring_scope.
 (**
 2. デミリタや型アノテーションは乱用しない。
 
-3. ``=``や``==``の両辺の型を明示するために``:>``を使用する。
+3. 2.の代わりに、``=``や``==``の両辺の型を明示するために``:>``を使用する。
+ただし、coqtop の Goal の表示では ``:>`` は省かれることに注意する。
 
-4. 型変換演算子は必要に応じて使用する。
+4. 型変換演算子（通常の関数を後置のNotationにしたもの）は必要に応じて使用する。
 *)
 
 (**
@@ -124,8 +126,37 @@ Import intRing.              (* mulz など *)
 
 を証明します。
  *)
+
+(**
+## rcfType (Real Closed Field (実閉体))
+
+MathComp の定義に沿っていうと：
+idomainType ...... comUnitRingType で、整域公理 (integral_domain_axiom) が成り立つ。
+numDomainType .... idomainType で、orderとnormが定義される。
+rcfType .,,,,,,... numDomainType で、Real Closed Axiom が成り立つ。
+*)
+Print Num.real_closed_axiom.
+(**
+= fun R : numDomainType =>
+forall (p : {poly R}) (a b : R), a <= b -> p.[a] <= 0 <= p.[b] -> exists2 x : R, a <= x <= b & root p x
+
+多項式pにa,bのふたつを代入した値が0を跨ぐとき、方程式``p = 0``の解はaとbの間にある。
+*)
+
+(**
+## Num.sqrt
+
+In a real-closed field, a positive square root of x if x >= 0, or 0 otherwise.
+
+sqrtの定義は複雑だが、x が RCFで、0以上であるとき正の平方根を返す。負なら0を返す。
+ *)
+Fail Check @Num.sqrt (_ : numDomainType).
+Check @Num.sqrt (_ : rcfType).              (* rcfType であること。 *)
+
 Section RCF.
 (**
+## 証明…ではなく計算
+
 rcfType 型の型 R を定義します。以降等式は ``_ = _ :> R`` で示す。
 
 sqrt は、rcfType 型の型で定義されています。
