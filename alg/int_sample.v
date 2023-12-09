@@ -62,10 +62,14 @@ Fail Check int : rcfType.                   (* A Real Field with the real closed
 # int のつくりかた
  *)
 
-(** コンストラクタを定義する。 ********************************************************************)
+(**
+## コンストラクタを定義する。
+ ********************************************************************)
 Print int.       (* Variant int : Set := Posz of nat | Negz of nat. *)
 
-(** int を Zmodule にする。************************************************************************)
+(**
+## int を Zmodule にする。
+ ************************************************************************)
 
 HB.about zmodType.
 HB.about GRing.isZmodule.
@@ -95,7 +99,9 @@ Check @GRing.isZmodule.Build int
 
 Check int : zmodType.
 
-(** int を 可換環にする。**************************************************************************)
+(**
+## int を 可換環にする。
+ **************************************************************************)
 
 HB.about comRingType.
 HB.about GRing.Zmodule_isComRing.
@@ -126,7 +132,9 @@ Proof. done. Qed.
 
 Check int : comRingType.
 
-(** int を逆元をもつ可換環にする。*****************************************************************)
+(**
+## int を逆元をもつ可換環にする。
+ *****************************************************************)
 
 HB.about comUnitRingType.
 HB.about GRing.ComRing_hasMulInverse.
@@ -217,7 +225,9 @@ Qed.
 
 Check int : comUnitRingType.
 
-(** int を整域にする。 ****************************************************************************)
+(**
+## int を整域にする。
+ ****************************************************************************)
 
 HB.about idomainType.
 HB.about GRing.ComUnitRing_isIntegral.
@@ -234,7 +244,9 @@ Check intUnitRing.idomain_axiomz :          (* 整域公理 *)
 Check GRing.ComUnitRing_isIntegral.Build int
   intUnitRing.idomain_axiomz.
 
-(* idomain_axiomz 整域公理 *)
+(**
+## idomain_axiomz 整域公理
+ *)
 Check idomain_axiomz : forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
 Goal forall m n : int, m * n = 0 -> (m == 0) || (n == 0).
 Proof.
@@ -253,7 +265,9 @@ Qed.
 
 Check int : idomainType.
 
-(** int を実整域にする。 **************************************************************************)
+(**
+## int を実整域にする。
+ **************************************************************************)
 
 HB.about realDomainType.
 HB.about Num.IntegralDomain_isLeReal.
