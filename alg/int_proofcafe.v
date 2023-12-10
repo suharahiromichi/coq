@@ -69,7 +69,7 @@ Admitted.
 使う補題
  *)
 Check @add0z : left_id 0%Z addz.
-Check @add0z : forall x, addz 0 x = x.
+Check @add0z : forall x, 0 + x = x :> int.
 
 Check PoszD : {morph Posz : m n / (m + n)%N >-> m + n}.
 Check PoszD : forall (m n : nat), (m + n)%N = m + n :> int.

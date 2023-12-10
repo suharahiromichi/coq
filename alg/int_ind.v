@@ -87,18 +87,38 @@ Proof.
   Check forall x y z : int, x + (y + z) = (x + y) + z :> int.
   Check forall x y z : int, addz x (addz y z) = addz (addz x y) z :> int.
   
-  elim/int_ind => [| m ihm | m ihm] n p.
+  elim/int_ind => [| m IHm | m IHm] n p.
+  Check 0 + (n + p) = ((0 + n)%Z + p) :> int.
+  Check @add0z : forall x, 0 + x = x :> int.
   - by rewrite !add0z.
-  - by rewrite -add1n PoszD !addSz ihm.
-  - rewrite -add1n addnC PoszD.
+
+  Check m.+1 + (n + p) = (m.+1 + n)%Z + p :> int.
+  Check PoszD : forall (m n : nat), (m + n)%N = m + n :> int.
+  Check addSz : forall x y : int, (1 + x) + y = 1 + (x + y) :> int.
+  - rewrite -add1n.
+    rewrite PoszD !addSz IHm.
+    done.
+    
+  Check (- m.+1)%Z + (n + p) = ((- m.+1)%Z + n) + p :> int.
+  Check oppzD : forall (x y : int), - (x + y) = -x + -y :> int.
+  Check addPz : forall x y : int, (x + -1) + y = (x + y) +  -1 :> int.
+  - rewrite -add1n addnC.
+    rewrite PoszD.
     rewrite oppzD.
-    by rewrite !addPz ihm.
+    rewrite !addPz IHm.
+    done.
 Qed.
 
 Goal left_inverse (0 : int) oppz addz.
 Proof.
+  rewrite /left_inverse.
+  Check forall x : int, - x + x = 0 :> int.
+  
   elim/int_ind.                             (* elim : int *)
+  Check - 0 + 0 = 0 :> int.
   - done.
+    Unset Printing Notations.
+  Check forall n : nat, (- n)%Z + n = 0 :> int -> (- n.+1)%Z + n.+1 = 0 :> int.
   - elim.                                   (* elim : nat *)
     + done.
     + done.
