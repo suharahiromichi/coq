@@ -17,10 +17,15 @@ Import Num.Def Num.Theory.                  (* ssrnum.v *)
 (* Import intZmod intRing intUnitRing intOrdered. *)
 
 (**
-# scope を有効にする。これはよくわかっていない。
+# scope を有効にする。
  *)
 Open Scope ring_scope.
 Check 1 : (_ : semiRingType).
+
+(**
+int の Notation は宣言されていないので、int_scope を open しても良いことはない。
+だから、int_scope を open する必要はないのだろう。
+*)
 Open Scope int_scope.
 Check 1 : int.
 

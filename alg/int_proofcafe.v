@@ -21,6 +21,10 @@ Check 1 : (_ : semiRingType).
 
 (*
 Open Scope int_scope.
+
+int の Notation は宣言されていないので、int_scope を open しても良いことはない。
+だから、int_scope を open する必要はないのだろう。
+
 *)
 Check 1 : int.
 
@@ -94,6 +98,5 @@ Goal left_inverse (0 : int) oppz addz.
 Proof.
   elim/int_ind.                             (* elim : int *)
 Admitted.
-
 
 (* END *)

@@ -386,7 +386,7 @@ Check polyC : (_ : semiRingType) -> {poly (_ : semiRingType)}.
 ``_ = _ :> _`` のかたちで第1引数を指定できます。ここのは（デミリタでなく）型を書きます。
 
 等式を使った証明の場合は、この表記を積極的に採用するのがよいのではないかと思います。
-ただし、CoqのGoalの表示では、``:>``以降が消されてしまうので、コメントやCheckで補うとよいといでしょう。
+ただし、CoqのGoalの表示では、``:>``以降が消されてしまうのでコメントで補うとよいといでしょう。
 *)
 
 Check 0 = 0 :> int.
@@ -394,6 +394,12 @@ Check @eq int (Posz O) (Posz O).
 
 Check 0 = 0 :> rat.
 Check @eq rat (@GRing.zero rat) (@GRing.zero rat).
+
+(**
+また、Check でも ``:>``以降が消されてしまうので、ソースコードを参照するのもよいです。
+ *)
+Check oppr0.                        (* forall V : zmodType, - 0 = 0 *)
+(* Lemma oppr0 : -0 = 0 :> V. *)
 
 (**
 # 補足説明

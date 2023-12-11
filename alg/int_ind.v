@@ -16,7 +16,12 @@ Import intZmod.
 Open Scope ring_scope.
 (* Open Scope int_scope. *)
 
-(* ディフォルトのScopeはintにしないが、後で ``%Z`` や ``:>int`` で int scope を指定する。 *)
+(**
+ディフォルトのScopeはintにしないが、後で ``%Z`` や ``:>int`` で int scope を指定する。
+
+特に、``- x`` の単項の``-``は、ring_scope では GRing.opp であり、
+oppz にするには int_scope にしなければならない。
+  *)
 Local Notation "-%Z" := (@oppz) : int_scope.
 Local Notation "- x" := (oppz x) : int_scope.
 Local Notation "+%Z" := (@addz) : int_scope.
