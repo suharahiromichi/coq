@@ -270,13 +270,18 @@ Locate "0".
 Notation "0" := GRing.zero : ring_scope (default interpretation)
 Notation "0" := (vline GRing.zero) : vspace_scope
 ```
+ *)
+(**
 であり、nmodType型の型をとり、その零元を返す関数 GRing.zero です。
+
+補足説明：
+ringとvectorに対してだけ用意されていることに注意してください。intやratの0はない。
  *)
 Check @GRing.zero : forall s : nmodType, s.
 
 (**
 最初に、半環Sを定義して、それを与えてみます。S は nmodType でもあるので、指定できます。
-明示的に半環Sを指定しても、文脈から補完できてもよいわけです。
+明示的に半環Sを指定しても、文脈から補完しても、どちらでもよいわけです。
 ring_socpe のなかで、デミリタを使わずにこれができているわけです。
 *)
 Section Test2.
@@ -293,6 +298,7 @@ int も nmodType であるので、GRing.zero の第1引数にint を指定す�
 *)
 Check int : nmodType.
 Check 0 : int.
+Check GRing.zero : int.
 Check @GRing.zero int.                      (* int *)
 
 (**
@@ -300,6 +306,7 @@ rat_scope の ``%Q``も指定できます。
 *)
 Check rat : nmodType.
 Check 0 : rat.
+Check GRing.zero : rat.
 Check @GRing.zero rat.                      (* rat *)
 
 (**
@@ -307,14 +314,22 @@ nat さえも同様です。
 *)
 Check nat : nmodType.
 Check 0 : nat.
+Check GRing.zero : nat.
 Check 0%N.                                  (* nat *)
 Check @GRing.zero nat.                      (* nat *)
+
+(**
+vectorの場合は、デミリタが効きます。
+ *)
+Check 0%VS.                                 (* {vspace _} *)
 
 (**
 ## ゼロへのデミリタの使用
 
 わざわざ説明しましたが、ゼロへのデミリタの使用は、このメカニズムではありません。
 単に自然数の``0``、すなわち``O``からのコアーションです。
+
+コアーションとノーテーションのどちらが効くか（優先か）説明を補足すること。
 *)
 Check 0%Z.                                  (* int *)
 Check Posz 0.                               (* int *)
@@ -415,6 +430,7 @@ Check @GRing.zero : forall s : nmodType, s.
 (**
 GRing.zero　関数の型（依存型である）を説明しているもので、
 nmodType型の任意の型をとりそれ（型）を返す、と言っているだけです。
+``:``は右結合であることに注意してください。
 *)
 Check @GRing.zero : (forall s : nmodType, s).
 
