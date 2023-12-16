@@ -37,7 +37,9 @@ morph の記法がわからないと、探せないし、見つけられない�
 ``-%R``は opp 関数の表記
  *)
 Check opprD : forall V : zmodType, {morph -%R : x y / x + y}.
+Check opprD : forall (V : zmodType) (x y : V), - (x + y) = - x + (- y).
 Check opprD : forall (V : zmodType) (x y : V), - (x + y) = - x - y.
+(* 2項の``_ - _`` は、``_ + (- _)`` の表記である。 *)
 
 Search (- (_ + _)).                         (* 見つからない。 *)
 Search ({morph -%R : _ _ / _ + _}).         (* 見つかる。 *)

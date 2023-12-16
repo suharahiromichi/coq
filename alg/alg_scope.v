@@ -50,11 +50,11 @@ Locateコマンドで調べると、``default interpretation`` として表示�
 |    | bool_scope | %B         |               | ○ |
 |    | nat_scope  | %N         |               | ○ |
 |    | fun_scope  | %FUN       |               | ○ |
-| ↓  | pair_scope | %PAIR      |               | ○ |
-| 大 | seq_scope  | %SEQ       |               | ○ |
+|    | pair_scope | %PAIR      |               | ○ |
+| ↓  | seq_scope  | %SEQ       |               | ○ |
+| 大 | big_scope  | %BIG       |               | ○ |
 |    | coq_nat_scope | %coq_nat | Standar Coq の nat | × |
 |    | order_scope | %O        |               | × |
-|    | big_scope  | %BIG       |               | × |
 |    | ring_scope | %R         |               | × |
 |    | int_scope  | %Z         |               | × |
 |    | distn_scope |           | (本文参照)    | × |
@@ -299,7 +299,7 @@ int も nmodType であるので、GRing.zero の第1引数にint を指定す�
 Check int : nmodType.
 Check 0 : int.
 Check GRing.zero : int.
-Check @GRing.zero int.                      (* int *)
+Check @GRing.zero int :  int.                      (* int *)
 
 (**
 rat_scope の ``%Q``も指定できます。
@@ -319,11 +319,6 @@ Check 0%N.                                  (* nat *)
 Check @GRing.zero nat.                      (* nat *)
 
 (**
-vectorの場合は、デミリタが効きます。
- *)
-Check 0%VS.                                 (* {vspace _} *)
-
-(**
 ## ゼロへのデミリタの使用
 
 わざわざ説明しましたが、ゼロへのデミリタの使用は、このメカニズムではありません。
@@ -332,7 +327,7 @@ Check 0%VS.                                 (* {vspace _} *)
 コアーションとノーテーションのどちらが効くか（優先か）説明を補足すること。
 *)
 Check 0%Z.                                  (* int *)
-Check Posz 0.                               (* int *)
+Check Posz O.                               (* int *)
 
 Check 0%Q.                                  (* rat *)
 Check @Rat (@pair int int (Posz O) (Posz (S O))) (fracq_subproof (@pair int int (Posz O) (Posz (S O)))).
@@ -342,6 +337,11 @@ Check Rat (fracq_subproof (pair (Posz O) (Posz (S O)))). (* 分母を非零に�
 *)
 Check 0%N.                                  (* nat *)
 Check O.                                    (* nat *)
+
+(**
+vectorの場合は、デミリタが効きます。
+ *)
+Check 0%VS.                                 (* {vspace _} *)
 
 (**
 # 項へのデミリタの使用
@@ -402,33 +402,49 @@ Check polyC : (_ : semiRingType) -> {poly (_ : semiRingType)}.
 等式を使った証明の場合は、この表記を積極的に採用するのがよいのではないかと思います。
 ただし、CoqのGoalの表示では、``:>``以降が消されてしまうのでコメントで補うとよいといでしょう。
 *)
+
+(**
+## ``:>``のない場合
+*)
 Check 0 = 0.
 (**
 これは、ring_scope では、つぎと同じ。
 *)
 Check 0 = 0 :> (_ : ringType).
+Section TEST1.
+  Variable R : ringType.
+  Check 0 = 0 :> R.
+End TEST1.
 
-Check @eq int (Posz O) (Posz O).
 (**
-これは、次とおなじ。
-Check 0%Z = 0%Z.
+## ``:> int``の場合
 *)
+Check 0 = 0 :> int.
+Check @eq int (Posz O) (Posz O).
+Check 0%Z = 0%Z.
+Check 0%:Z = 0%:Z.
 
+(**
+## ``:> rat`` の場合
+*)
 Check 0 = 0 :> rat.
 Check @eq rat (@GRing.zero rat) (@GRing.zero rat).
+Check 0%Q = 0%Q.                            (* これとは違うようだ。 *)
 
 (**
-また、Check でも ``:>``以降が消されてしまうので、ソースコードを参照するのもよいです。
+## アドバイス
+
+Check でも ``:>``以降が消されてしまうので、ソースコードを参照するのもよいです。
  *)
 Check oppr0.                        (* forall V : zmodType, - 0 = 0 *)
 (* Lemma oppr0 : -0 = 0 :> V. *)
 
 (**
-# 補足説明
+## 補足説明
 *)
 Check @GRing.zero : forall s : nmodType, s.
 (**
-GRing.zero　関数の型（依存型である）を説明しているもので、
+GRing.zero関数の型（依存型である）を説明しているもので、
 nmodType型の任意の型をとりそれ（型）を返す、と言っているだけです。
 ``:``は右結合であることに注意してください。
 *)

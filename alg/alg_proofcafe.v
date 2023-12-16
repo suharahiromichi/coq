@@ -150,8 +150,8 @@ In a real-closed field, a positive square root of x if x >= 0, or 0 otherwise.
 
 sqrtの定義は複雑だが、x が RCFで、0以上であるとき正の平方根を返す。負なら0を返す。
  *)
-Fail Check @Num.sqrt (_ : numDomainType).
-Check @Num.sqrt (_ : rcfType).              (* rcfType であること。 *)
+Fail Check @Num.sqrt (_ : numDomainType) : 
+Check Num.sqrt (_ : rcfType).               (* rcfType であること。 *)
 
 Section RCF.
 (**
@@ -188,6 +188,10 @@ sqrt は、rcfType 型の型で定義されています。
 (**
 ルートと2乗を外すのは簡単ですが、平方根の中身が正であることの証明が必要です。
  *)
+    Check addr_ge0 : forall (R : numDomainType) (x y : R), 0 <= x -> 0 <= y -> 0 <= x + y.
+    Check mulrn_wge0 : forall (R : numDomainType) (x : R) (n : nat), 0 <= x -> 0 <= x *+ n.
+    Check sqrtr_ge0 : forall (R : rcfType) (a : R), 0 <= Num.sqrt a.
+    
     apply: addr_ge0 => //.
     rewrite mulrn_wge0 //.
     by rewrite sqrtr_ge0.
@@ -199,16 +203,22 @@ sqrt は、rcfType 型の型で定義されています。
   Lemma l2 : (Num.sqrt 3 + 1) ^+ 2 = 4 + Num.sqrt 3 *+ 2 :> R.
   Proof.
 (**
+``3 + 1`` を計算したいのですが、
 RCFの上では数の足し算が定義されていないため、simpl などでは計算できません。
 半環上での``+ 1``の補題がありますから、これを使います。
 *)
     Check @natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = n.+1%:R.
-(*Check natr1 : forall (R : semiRingType) (n : nat), n%:R + 1 = (n.+1)%:R. *)
-  (*                                                             ^^^^  *)
-  (*                                                            自然数 *)
+(*  Check natr1  : forall (R : semiRingType) (n : nat), n%:R + 1 = (n.+1)%:R. *)
+  (*                                                                ^^^^  *)
+  (*                                                               自然数 *)
     have l3_1__4 : 3 + 1 = 4 :> R by rewrite natr1.
+    
+    Check sqrrD1 : forall (R : semiRingType) (x : R), (x + 1) ^+ 2 = x ^+ 2 + x *+ 2 + 1.
+    Check sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> Num.sqrt a ^+ 2 = a.
+
     rewrite sqrrD1 sqr_sqrtr //.
-    rewrite addrAC l3_1__4.
+    rewrite addrAC.
+    rewrite l3_1__4.
     done.
   Qed.
 
@@ -221,8 +231,10 @@ RCFの上では数の足し算が定義されていないため、simpl など�
   Goal Num.sqrt (4 + Num.sqrt 3 *+ 2) = Num.sqrt 3 + 1 :> R.
   (* **** *)
   apply/eqP.
+  
   Check (@eqrXn2 R 2 (Num.sqrt (4 + Num.sqrt 3 *+ 2)) (Num.sqrt 3 + 1)).
   rewrite -(@eqrXn2 R 2 _ _) //.
+
   - by rewrite l1 l2.
   - admit.
   - admit.

@@ -45,25 +45,30 @@ Import intOrdered.
 *)
 Goal 1 != 0 :> int.
 Proof.
-Admitted.
+  done.
+Qed.
 
 (**
 ## mulVx
 *)
 Print left_inverse.
-Goal {in unitz, left_inverse 1 invz  *%R}.
+Goal {in unitz, left_inverse 1 invz *%R}.
 Proof.
   move=> n.
+  Check invz : int -> int.
   Check n \is a unitz -> (invz n) * n = 1 :> int.
   (* n が逆元を持つなら、nの逆元とnの積は1である。 *)
   
   rewrite /unitz.
   Check n \is a [qualify a n0 | (n0 == 1) || (n0 == -1)].
+  Check n \in [qualify a n0 | (n0 == 1) || (n0 == -1)].  
   (* n は 1 または -1 である。 *)
   
   Check @pred2P int int
     : forall x y z u : int, reflect (x = y \/ z = u) ((x == y) || (z == u)).
-Admitted.
+
+  by case/pred2P => ->.
+Qed.
 
 (**
 # 帰納法 (alg/int_ind.v)
@@ -91,12 +96,30 @@ Proof.
   Check forall x y z : int, addz x (addz y z) = addz (addz x y) z :> int.
   
   elim/int_ind => [| m ihm | m ihm] n p.
-
-Admitted.
+  - by rewrite 2!add0z.
+    
+  - rewrite -add1n.
+    rewrite PoszD.
+    rewrite 3!addSz.
+    rewrite ihm.
+    done.
+    
+  - rewrite -add1n.
+    rewrite addnC.
+    rewrite PoszD.
+    rewrite oppzD.
+    rewrite 3!addPz.
+    rewrite ihm.
+    done.
+Qed.
 
 Goal left_inverse (0 : int) oppz addz.
 Proof.
-  elim/int_ind.                             (* elim : int *)
-Admitted.
+  rewrite /left_inverse.
+  elim/int_ind.                             (* int の帰納法 *)
+  - done.
+  - by elim.                                (* nat の帰納法 *)
+  - by elim.                                (* nat の帰納法 *)
+Qed.
 
 (* END *)
