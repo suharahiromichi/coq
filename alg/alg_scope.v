@@ -34,8 +34,6 @@ Locateコマンドで調べると、``default interpretation`` として表示�
 - 項を Demliter で囲む方法
 項を単位としてスコープを指定します。デリミタはスコープ名に対して短いニモニックが決められています。
 
-- 型アノテーションを使う方法
-
 以降、順番に説明します。
 *)
 
@@ -64,6 +62,7 @@ Locateコマンドで調べると、``default interpretation`` として表示�
 |    | matrix_set_scope | %MS  | matrix        | × |
 |    | vspace_scope     | %VS  | vector        | × |
 |    | C_scope          | %C   | complex       | × |
+
 
 優先順位は、あとで指定したものから優先されます。
  *)
@@ -388,9 +387,17 @@ Check polyC : (_ : semiRingType) -> {poly (_ : semiRingType)}.
 等式を使った証明の場合は、この表記を積極的に採用するのがよいのではないかと思います。
 ただし、CoqのGoalの表示では、``:>``以降が消されてしまうのでコメントで補うとよいといでしょう。
 *)
+Check 0 = 0.
+(**
+これは、ring_scope では、つぎと同じ。
+*)
+Check 0 = 0 :> (_ : ringType).
 
-Check 0 = 0 :> int.
 Check @eq int (Posz O) (Posz O).
+(**
+これは、次とおなじ。
+Check 0%Z = 0%Z.
+*)
 
 Check 0 = 0 :> rat.
 Check @eq rat (@GRing.zero rat) (@GRing.zero rat).
@@ -406,12 +413,17 @@ Check oppr0.                        (* forall V : zmodType, - 0 = 0 *)
 *)
 Check @GRing.zero : forall s : nmodType, s.
 (**
-上記の``:``の右は型なので、任意のnmodType型の値を返す、と誤解しないでください。
+GRing.zero　関数の型（依存型である）を説明しているもので、
+nmodType型の任意の型をとりそれ（型）を返す、と言っているだけです。
+*)
+Check @GRing.zero : (forall s : nmodType, s).
 
+(**
+上記の``:``の右は型なので、任意のnmodType型の値を返す、と誤解しないでください。
 また、GRing.zero は関数であるため、GRing.zero を（Notation経由ではなく）
 直接呼び出している限り、``Open Scope``コマンドや、デミリタの影響をうけません。
 *)
-Check @GRing.zero%Z : forall s : nmodType, s.
+Check @GRing.zero%Z : (forall s : nmodType, s).
 Check (@GRing.zero int)%Q : int.
 
 (**
