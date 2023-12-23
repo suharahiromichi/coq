@@ -246,15 +246,18 @@ Definition tstE (n : nat) :=
 Definition tstp4 := \poly_(i < 3) (tstE i).
 
 (**
-\poly_ で定義した多項式の値（リスト）は、mkseq と同じ。ただし、生成関数 E の最後の値が0でないこと。
-定義の両辺を seq R にしたもの。 *)
+\poly_ で定義した多項式の値（リスト）は、mkseq と同じ。seq R の eq で比較。
+ただし、生成関数 E の最後の値が0でないこと。
+*)
 Check polyseq_poly
   : forall (R : semiRingType) (n : nat) (E : nat -> R),
     E n.-1 != 0 -> \val (\poly_(i < n) E i) = mkseq E n :> seq R.
+(**
+polyseq_poly は、前出の coef_Poly と同じことを言っていて、
+poly全体で比較するか、係数で比較するかの違いである。
+ *)
 
 (**
-前出の coef_Poly の poly版である。
-
 \poly_ で作った多項式の係数は、生成関数 E の値に等しい。ただし、k が n 未満の場合。
 左辺の場合、k が n 以上なら、自動的に0だが、右辺は場合分けで0にする。
 *)
@@ -443,6 +446,11 @@ Check polyseqXn : forall (R : ringType) (n : nat), 'X^n = rcons (nseq n 0) 1 :> 
 Check coefXnM : forall (R : ringType) (n : nat) (p : {poly R}) (i : nat),
     ('X^n * p)`_i = (if (i < n)%N then 0 else p`_(i - n)).
 
+(**
+なぜか、用意されていない補題
+*)
+Lemma X0_1 : 'X^0 = 1 :> {poly R}.
+Proof. done. Qed.
 
 Definition tstp5 := a *: 'X^2 + b *: 'X + c *: 'X^0.
 Definition tstp6 := a%:P * 'X^2 + b%:P * 'X + c%:P.
@@ -690,17 +698,19 @@ Check [eta @poly_inj R] : forall p q : {poly R}, p = q :> seq R -> p = q :> {pol
 
 Goal tstp3 = tstp4 :> {poly R}.
 Proof.
-  apply/polyP => i.
   rewrite /tstp3 /tstp4.
-  rewrite coefE.
+  Check Poly [:: c; b; a] = \poly_(i < 3) tstE i :> {poly R}.
+  apply/polyP => i.                         (* 係数毎 *)
+  rewrite coefE.                            (* マルチルール *)
   rewrite polyseq_poly //=.
   by rewrite /= neqa0.
 Qed.
 
 Goal tstp1 = tstp2 :> {poly R}.
 Proof.
-  apply/polyP => i.
   rewrite /tstp1 /tstp2.
+  Check Polynomial (neq0_last_s neqa0) = insubd (poly_nil R) [:: c; b; a] :> {poly R}.
+  apply/polyP => i.                         (* 係数毎 *)
   rewrite /= val_insubd.
   case: ifP => //=.
   by rewrite neqa0.
@@ -708,15 +718,17 @@ Qed.
 
 Goal tstp1 = tstp3 :> {poly R}.
 Proof.
-  apply/polyP => i.
   rewrite /tstp1 /tstp3.
-  by rewrite coefE.
+  Check Polynomial (neq0_last_s neqa0) = Poly [:: c; b; a] :> {poly R}.
+  apply/polyP => i.                         (* 係数毎 *)
+  by rewrite coefE.                         (* マルチルール *)
 Qed.
 
 Goal tstp3 = tstp6 :> {poly R}.
 Proof.
-  apply/polyP => i.
   rewrite /tstp3 /tstp6.
+  Check Poly [:: c; b; a] = a%:P * 'X^2 + b%:P * 'X + c%:P :> {poly R}.
+  apply/polyP => i.                         (* 係数毎 *)
   rewrite /=.
   rewrite !cons_poly_def.
   rewrite mul0r add0r expr2.
@@ -730,10 +742,13 @@ Qed.
 Goal tstp5 = tstp6 :> {poly R}.
 Proof.
   rewrite /tstp5 /tstp6.
+  Check a *: 'X^2 + b *: 'X + c *: 'X^0 = a%:P * 'X^2 + b%:P * 'X + c%:P :> {poly R}.
+  
   Check mul_polyC : forall (R : ringType) (a : R) (p : {poly R}), a%:P * p = a *: p.
   rewrite -3!mul_polyC.
-  have -> : 'X^0 = 1 by done.
-  rewrite mulr1.
+  
+  Check X0_1 : 'X^0 = 1.
+  rewrite X0_1 mulr1.
   done.
 Qed.
 
