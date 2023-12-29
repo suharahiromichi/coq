@@ -89,66 +89,109 @@ End NUMBER.
 (**
 # 環の述語を多項式に持ち上げる(lift)。
  *)
-(* Variable S : {pred R}. *)
 Print polyOver. (* = fun (R : ringType) (S : {pred R}) => [qualify a p | polyOver_pred S p] *)
-Print polyOver_pred. (* = fun (R : ringType) (S : {pred R}) (p : {poly R}) => all (mem S) *)
+Check @polyOverP : forall (R : ringType) (S : addrClosed R) (p : {poly R}),
+    reflect (forall i : nat, p`_i \in S) (p \is a polyOver S).
 
-Section ADDCLOSED.
-  Variable S : addrClosed R.                (* 環の述語 *)
-  Check S : {pred R}.                       (* 環の述語 *)
+Goal 1%:P`_0  \in (@Num.int_num_subdef rat).
+Proof.
+  apply/polyOverP => /=.
 (**
-述語Sが環の加法で閉じた述語であるとき、
-多項式pの係数のすべてが``S``を成り立たせることと、多項式pは``polyOver S``を成り立たせることは、同値。
+polyOverP で持ち上げる。
 *)
-  Check @polyOverP R S
-    : forall p : {poly R}, reflect (forall i : nat, p`_i \in S) (p \is a polyOver S).
+  Check 1%:P \is a polyOver Num.int_num_subdef.
+  
+(**
+定数に持ち下げる。
+*)
+  rewrite polyOverC /=.
+  Check 1 \in  Num.int_num_subdef.
+  done.
+Qed.
 
 (**
-述語Sが環の加法で閉じた述語であるとき、
-定数多項式 c が``polyOver S``を成り立たせることこ、cが``S``を成り立たせることは、同値。
+## int_num と Num.int_num_subdef ... どちらも同じ。
 *)
-  Check @polyOverC R S : forall c : R, (c%:P \is a polyOver S) = (c \in S).
-  
-  HB.about GRing.isAddClosed.
-End ADDCLOSED.
+Check (1%:P : {poly rat})`_0 \is a int_num.
+Check 1%:P`_0 \is a @int_num rat.
+Check 1%:P`_0 \is a int_num.
 
-Section SEMIRING.
-  Variable S : semiringClosed R.
-  Check S : {pred R}.
-  Check S : addrClosed R.
-  Fail Check S : zmodClosed R.
-  Check S : mulrClosed R.
-  Check S : semiringClosed R.
-  
-  Check @rpredM R S : GRing.mulr_2closed S.
-  HB.about GRing.isMul2Closed.  
-  
-  Check @rpred1 R S : 1 \in S.
-  (* isMul2 を継承するわけではない。 *)
-  HB.about GRing.isMul1Closed.
-End SEMIRING.
+Check 1%:P`_0 \is a [qualify a x0 | Num.int_num_subdef x0].
 
-Section ZMOD.
-  Variable S : zmodClosed R.
-  Check S : {pred R}.
-  Check S : addrClosed R.
-  Check S : zmodClosed R.
-  Fail Check S : mulrClosed R.
-  Fail Check S : semiringClosed R.
-  
-  Check @rpredNr R S : oppr_closed S.
-  HB.about GRing.isOppClosed.
-End ZMOD.
+Check @Num.int_num_subdef rat 1%:P`_0.
+Check Num.int_num_subdef 1%:P`_0.
 
-Section RING.
-  Variable S : subringClosed R.
-  Check S : zmodClosed R.
-  Check S : semiringClosed R.
+Check 1%:P`_0  \in @Num.int_num_subdef rat.
+Check 1%:P`_0  \in Num.int_num_subdef.
 
-  Check @rpred1 R S : 1 \in S.
-  (* GRing.Mul2Closed を継承する。 *)
-  HB.about GRing.MulClosed.
-End RING.
+(**
+## nat_num と int_num の説明
+ssrnum.v で定義された「自然数である」「整数である」。
+*)
+(**
+1 は、nat である。
+*)
+Goal 1 \is a (@nat_num rat). Proof. done. Qed.
+
+Goal (1 : rat) \is a nat_num. Proof. done. Qed.
+Goal ~~ ((-1 : rat) \is a nat_num). Proof. done. Qed.
+
+(**
+-1 は、int である。
+*)
+Goal (1 : rat) \is a int_num. Proof. done. Qed.
+Goal (-1 : rat) \is a int_num. Proof. done. Qed.
+Goal ~~ (((1 / 2) : rat) \is a int_num). Proof. done. Qed.
+
+(**
+整数係数の多項式を考える。
+*)
+Definition f : {poly rat} := 'X^2 * (3%:P - 4 *: 'X) ^+ 2.
+
+(**
+多項式を展開できれば、```\_i`` を求めることで証明できる。
+*)
+Goal forall (i : nat), f`_i \is a int_num.
+Proof.
+  rewrite /f => i.
+  have -> : 'X^2 * (3%:P - 4 *: 'X) ^+ 2 = 9 *: 'X^2 - 24 *: 'X^3 + 16 *: 'X^4 by admit.
+  case: i => [| [| [| [| [| i]]]]] //=.
+  - by rewrite !coefE.
+  - by rewrite !coefE.
+  - by rewrite !coefE.
+  - by rewrite !coefE.
+  - by rewrite !coefE.
+  - by rewrite !coefE.
+Admitted.                                   (* OK *)
+
+(**
+## ``predOverP`` で多項式に持ち上げる証明
+
+持ち上げたあと、``rpred*`` と ``polyOver*`` の補題を使うと直接証明できる。
+*)
+Goal forall (i : nat), f`_i \is a int_num.
+Proof.
+  apply/polyOverP => /=.
+  Check f \is a polyOver Num.int_num_subdef.
+  rewrite rpredM //=.
+  - rewrite rpredX //=.
+    by rewrite polyOverX.
+  - rewrite rpredX //=.
+    + rewrite rpredB //=.
+      * by rewrite polyOverC.
+      * rewrite polyOverZ //=.
+        by rewrite polyOverX.
+Qed.
+
+Check rpredD : forall (V : nmodType) (S : addrClosed V), {in S &, forall u v : V, u + v \in S}.
+Check rpredB : forall (V : zmodType) (S : zmodClosed V), {in S &, forall u v : V, u - v \in S}.
+Check rpredM : forall (R : semiRingType) (s : mulr2Closed R), GRing.mulr_2closed s.
+
+Check polyOver0 : forall (R : ringType) (S0 : {pred R}), 0 \is a polyOver S0.
+Check polyOverC : forall (R : ringType) (S0 : addrClosed R) (c : R), (c%:P \is a polyOver S0) = (c \in S0).
+Check polyOverZ : forall (R : ringType) (S0 : semiringClosed R),
+    {in S0 & polyOver S0, forall (c : R) (p : {poly R}), c *: p \is a polyOver S0}.
+Check polyOverX : forall (R : ringType) (S : semiringClosed R), 'X \is a polyOver S.
 
 (**
 # 1変数関数の微分法 (single derivation)
@@ -267,17 +310,3 @@ Print even_poly. (* = fun (R : ringType) (p : {poly R}) => \poly_(i < uphalf (si
 Print odd_poly. (* = fun (R : ringType) (p : {poly R}) => \poly_(i < (size p)./2) p`_i.*2.+1 *)
 
 (* END *)
-
-
-
-Goal (Poly [:: 3; 2; 1]) ^:P = Poly [:: 3%:P; 2%:P; 1%:P] :> {poly {poly R}}.
-Proof.
-  apply/polyP=> i.
-  rewrite coefE.
-  f_equal.
-  rewrite map_polyE.
-Admitted.
-
-(**
-## 
- *)
