@@ -100,7 +100,6 @@ Proof.
 polyOverP で持ち上げる。
 *)
   Check 1%:P \is a polyOver Num.int_num_subdef.
-  
 (**
 定数に持ち下げる。
 *)
@@ -290,12 +289,22 @@ Check map_polyE
 Locate "p ^:P". (* := (map_poly polyC p) : ring_scope (default interpretation) *)
 
 (**
-## polynomial composition
+## 多項式の合成 (polynomial composition)
  *)
 Locate "p \Po q". (* := (comp_poly q p) : ring_scope (default interpretation) *)
 Print comp_poly. (* = fun (R : ringType) (q p : {poly R}) => p^:P.[q] *)
 
 Check @comp_polyE R : forall p q : {poly R}, p \Po q = \sum_(i < size p) (p`_i *: (q ^+ i)).
+
+(**
+多項式の合成の変形
+*)
+Check comp_polyC : forall (R : ringType) (c : R) (p : {poly R}), c%:P \Po p = c%:P.
+Check comp_polyD : forall (R : ringType) (p q r : {poly R}), (p + q) \Po r = p \Po r + (q \Po r).
+Check comp_polyB : forall (R : ringType) (p q r : {poly R}), (p - q) \Po r = p \Po r - (q \Po r).
+Check comp_polyZ : forall (R : ringType) (c : R) (p q : {poly R}), (c *: p) \Po q = c *: (p \Po q).
+Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p \Po r) * (q \Po r).
+Check comp_polyX : forall (R : ringType) (p : {poly R}), 'X \Po p = p.
 
 (**
 # 外科手術
