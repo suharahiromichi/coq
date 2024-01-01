@@ -251,7 +251,7 @@ Elpi Query lp:{{
 (**
 # 練習問題
 
-factrial を定義して、そのCoq項の HOASを取り出してください。
+階乗を計算する関数を定義して、そのCoq項の HOASを取り出してください。
 *)
 
 Fixpoint f n :=
