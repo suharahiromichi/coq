@@ -61,10 +61,12 @@ Proof. nia. Qed.
 Goal forall m n : nat, (n <= m -> n ^ 2 <= m * n)%N.
 Proof. nia. Qed.
 
+(* 整数割算 *)
 Goal forall m n p : int,
     0 <= n -> (m %/ (n * p))%Z = ((m %/ n) %/ p)%Z.
 Proof. nia. Qed.
 
+(* 機能拡張 *)
 Definition triple (n : nat) : nat := n * 3.
 
 Fact Op_triple_subproof (n : nat) : (Z.of_nat (triple n) = 3 * Z.of_nat n)%Z.
@@ -83,6 +85,8 @@ Proof. lia. Qed.
 
 (**
 # [ring]: 多項式の等式のソルバ
+
+以下では、``(a + b)^2 = a^2 + b^2 + 2ab`` をいろいろな環の型で証明している。
 *)
 Goal forall a b : int, (a + b) ^+ 2 = a ^+ 2 + b ^+ 2 + 2 * a * b :> int.
 Proof. move=> a b; ring. Qed.
@@ -90,8 +94,7 @@ Proof. move=> a b; ring. Qed.
 Goal forall a b : rat, (a + b) ^+ 2 = a ^+ 2 + b ^+ 2 + 2 * a * b :> rat.
 Proof. move=> a b; ring. Qed.
 
-Goal forall (R : comRingType) (a b : R),
-    (a + b) ^+ 2 = a ^+ 2 + b ^+ 2 + 2 * a * b :> R.
+Goal forall (R : comRingType) (a b : R), (a + b) ^+ 2 = a ^+ 2 + b ^+ 2 + 2 * a * b :> R.
 Proof. move=> R a b; ring. Qed.
 
 Goal forall (R : comRingType) (a : R) (b : R * int),
