@@ -38,6 +38,9 @@ Section Summation2.
 \sum_{i=0}^{n-1} c = n c \\
 
 ```
+
+ここで、``a b : nat -> nat`` でも ``a b : 'I_n -> n`` でもどちらでもよい。
+
 *)
   Lemma sum_split n a b :
     \sum_(i < n)(a i) + \sum_(i < n)(b i) = \sum_(i < n)(a i + b i).
@@ -143,17 +146,21 @@ $$ \sum_{i=0}^{0}a_i = a_0 $$
 
 総和をとる範囲がひとつの項の場合（0以上0以下）は、``a 0`` となります。
  *)
-  Lemma sum_nat1 a :
-    \sum_(i < 1)(a i) = a ord0.
+  Lemma sum_nat1 (a : nat -> nat) : \sum_(i < 1)(a i) = a 0.
+  Proof. by rewrite big_ord_recl big_ord0 addn0. Qed.
+
+(**  
+``a : 'I_n -> nat`` の場合、
+*)
+  Lemma sum_nat1' (a : 'I_1 -> nat) : \sum_(i < 1)(a i) = a ord0.
   Proof. by rewrite big_ord_recl big_ord0 addn0. Qed.
 
 (**
 ``a ord_max`` でもあります。
 *)  
-  Lemma sum_nat1' a :
-    \sum_(i < 1)(a i) = a ord_max.
+  Lemma sum_nat1'' (a : 'I_1 -> nat) : \sum_(i < 1)(a i) = a ord_max.
   Proof. by rewrite big_ord_recr big_ord0. Qed.
-
+  
 (**
 # インデックスを調整する補題
 *)
@@ -171,12 +178,17 @@ $$ \sum_{i=0}^{0}a_i = a_0 $$
 
 $$ \sum_{i=0}^{n}a_i = a_m + \sum_{i=0}^{n-1}a_{i + 1} $$
 *)
-  Lemma sum_first n a :
+  Lemma sum_first n (a : nat -> nat) :
+    \sum_(i < n.+1)(a i) = a 0 + \sum_(i < n)(a i.+1).
+  Proof.
+    by rewrite big_ord_recl.
+  Qed.
+  
+  Lemma sum_first' n (a : 'I_n.+1 -> nat) :
     \sum_(i < n.+1)(a i) = a ord0 + \sum_(i < n)(a (lift ord0 i)).
   Proof.
     by rewrite big_ord_recl.
   Qed.
-
 
 (**
 ## 最後の項をΣの外に出す。
@@ -185,7 +197,13 @@ n(インデックスの上限)についての帰納法と組み合わせて使�
 
 $$ \sum_{i=0}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
  *)
-  Lemma sum_last n a :
+  Lemma sum_last n (a : nat -> nat) :
+    \sum_(i < n.+1)(a i) = \sum_(i < n)(a i) + a n.
+  Proof.
+    by rewrite big_ord_recr.
+  Qed.
+
+  Lemma sum_last' n (a : 'I_n.+1 -> nat) :
     \sum_(i < n.+1)(a i) = \sum_(i < n)(a (widen_ord (leqnSn n) i)) + a ord_max.
   Proof.
     by rewrite big_ord_recr.
