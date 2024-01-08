@@ -12,18 +12,14 @@ Coq/SSReflect/MathComp による定理証明
 2020_8_22 @suharahiromichi
 
 2023_5_26 @suharahiromichi      mathcomp2
+
+2024_1_8 @suharahiromichi       alg_tac
  *)
 
 (* HB.about を実行しない場合は、HB のImportは不要です。 *)
 From HB Require Import structures.          (* MathComp2 *)
 From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import bigop matrix.
-(**
-https://github.com/suharahiromichi/coq/blob/master/common/ssromega.v
-
-を適当な場所に設置してください。
-*)
-From common Require Import ssromega.
+From mathcomp Require Import zify ring lra.
      
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -377,9 +373,9 @@ $m \ge n$ の場合は、Σの中身が単位元となり成立しません。
     \sum_(m <= i < n)((a i) * c) = (\sum_(m <= i < n)(a i)) * c.
   Proof. by rewrite big_distrl. Qed.
 
-  Check sum_nat_const_nat : forall m n c,
-      \sum_(m <= i < n) c = (n - m) * c.
-
+  Lemma sum_cinst m n c :
+    \sum_(m <= i < n) c = (n - m) * c.
+  Proof. by rewrite sum_nat_const_nat. Qed.
 (**
 # Σの中身の書き換え
 
@@ -471,7 +467,7 @@ $$ \sum_{i \in \emptyset}a_i = 0 $$
     have H : \sum_(m <= i < n)(a i) = \sum_(i <- [::])(a i).
     - apply: congr_big => //=.
       rewrite /index_iota.
-      have -> : n - m = 0 by ssromega. (* apply/eqP; rewrite subn_eq0. *)
+      have -> : n - m = 0 by lia.
       done.
     - rewrite H.
       by rewrite big_nil.
@@ -509,7 +505,7 @@ $$ \sum_{i=m}^{n+m-1}a_i = \sum_{i=0}^{n-1}a_{i+m} $$
   Proof.
     rewrite -{1}[m]add0n.
     rewrite big_addn.
-    have -> : n + m - m = n by ssromega.
+    have -> : n + m - m = n by lia.
     done.
   Qed.
 
@@ -584,9 +580,9 @@ $$ \sum_{i=m}^{p-1}a_i = \sum_{i=m}^{n-1}a_i + \sum_{i=n}^{p-1}a_i $$
     rewrite /index_iota.
     Check iotaD                             (* mathcomp2 *)
       : forall m n1 n2 : nat, iota m (n1 + n2) = iota m n1 ++ iota (m + n1) n2.
-    have -> : m + n1 + n2 - m = n1 + n2 by ssromega.
-    have -> : m + n1 - m = n1 by ssromega.
-    have -> : m + n1 + n2 - (m + n1) = n2 by ssromega.
+    have -> : m + n1 + n2 - m = n1 + n2 by lia.
+    have -> : m + n1 - m = n1 by lia.
+    have -> : m + n1 + n2 - (m + n1) = n2 by lia.
     rewrite -iotaD.
     done.
   Qed.
@@ -603,8 +599,8 @@ $$ \sum_{i=m}^{p-1}a_i = \sum_{i=m}^{n-1}a_i + \sum_{i=n}^{p-1}a_i $$
     move=> Hmn Hnp.                         (* omega が使う。 *)
     pose n1 := n - m.
     pose n2 := p - n.
-    have -> : p = m + n1 + n2 by rewrite /n1 /n2; ssromega.
-    have -> : n = m + n1 by rewrite /n1; ssromega.
+    have -> : p = m + n1 + n2 by rewrite /n1 /n2; lia.
+    have -> : n = m + n1 by rewrite /n1; lia.
     by apply: sum_cat'.
   Qed.
 
@@ -715,13 +711,13 @@ $$ 6 (\sum_{k=0}^{n} k^{2}) = n (n + 1) (2 n + 1) $$
 
       (* 左辺を展開して簡約する。 *)
       rewrite [in LHS]mulnDr [in LHS]mulnDl [in LHS]muln1 [in LHS]mul1n.
-      have -> : n * n.*2 + n + (n * 6 + 6) = n * n.*2 + n * 7 + 6 by ssromega.
+      have -> : n * n.*2 + n + (n * 6 + 6) = n * n.*2 + n * 7 + 6 by lia.
       
       (* 右辺を展開して簡約する。 *)
       rewrite ![in RHS]mulnDl ![in RHS]mulnDr [in RHS]mul1n [in RHS]muln1.
       rewrite [in n * (n * 2)]muln2.
       have -> : n * n.*2 + n * 2 + n + (2 * (n * 2) + 2 * 2 + 2)
-                = n * n.*2 + n * 7 + 6 by ssromega.
+                = n * n.*2 + n * 7 + 6 by lia.
       done.
   Qed.
 
@@ -749,9 +745,9 @@ $$ (x-1) \sum_{k=0}^{n} x^{k} = x^{n+1} - 1 $$
           by rewrite mulnDl mul1n.
         rewrite subnKC.
         * by rewrite -expnS.
-        * by ssromega.
+        * lia.
       + have H : n.+1 < x ^ n.+1 by apply: ltn_expl. (* 0 < x ^ n.+1 の証明 *)
-          by ssromega.
+        lia.
   Qed.
   
   Lemma exo36 (x n : nat) :
@@ -801,8 +797,8 @@ v_1 = 1]
     rewrite sum_last.
     - rewrite sum_nil.
       + by rewrite add0n.
-      + by ssromega.
-    - by ssromega.
+      + lia.
+    - lia.
   Qed.
   
 (**
@@ -988,7 +984,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
   
   (* 何か所かで使う補題。 *)
   Lemma le2_le1 a : 2 <= a -> 1 <= a.       (* 1 < a -> 0 < a *)
-  Proof. move=> H. by rewrite ltnW. Qed.    (* ssromega でも解ける。 *)
+  Proof. move=> H. by rewrite ltnW. Qed.    (* lia でも解ける。 *)
   
   (* 2 <= x を証明する補題： *)
   Lemma e2b_1_ge2 b : 2 <= b -> 2 <= 2^b - 1. (* 1 < b -> 1 < 2^b - 1 *)
@@ -1009,7 +1005,7 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
     have H1 : 1 <= 2 ^ (0 * b) by rewrite mul0n expn0.
     have H2 : 1 <= 2 ^ (1 * b) by rewrite mul1n expn_gt0 orb_idr.
     have H3 : 0 <= \sum_(2 <= i < a) 2 ^ (i * b) by done. (* 0以上は自明。 *)
-    by ssromega.
+    lia.
   Qed.
   
   (* 証明したいもの *)
@@ -1044,14 +1040,14 @@ $$ (2^{b} - 1) \sum_{i=0}^{a-1}2^{i b} = 2^{a b} - 1 $$
   Proof.
     move=> Hm Hn.
     rewrite ltn_Pmulr //.
-    by ssromega.                            (* 1 < m -> 0 < m *)
+    lia.                                    (* 1 < m -> 0 < m *)
   Qed.
   
   Lemma l_1m1n_nmn (m n : nat) : 1 < m -> 1 < n -> n < m * n.
   Proof.
     move=> Hm Hn.
     rewrite ltn_Pmull //.
-    by ssromega.                            (* 1 < n -> 0 < n *)
+    lia.                                    (* 1 < n -> 0 < n *)
   Qed.
   
   Lemma l_nmn_1m (m n : nat) : n < m * n -> 1 < m.
