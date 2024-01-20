@@ -51,13 +51,16 @@ Proof.
 Qed.
 
 (**
-## mulVx
+## mulVz.
 *)
+Check mulVz : {in unitz, left_inverse 1 invz  *%R}.
 Print left_inverse.
+
 Goal {in unitz, left_inverse 1 invz *%R}.
 Proof.
   move=> n.
   
+  Check n \in unitz.                        (* unitz n *)
   Check invz : int -> int.
   Check n \is a unitz -> (invz n) * n = 1 :> int.
   (* n が逆元を持つなら、nの逆元とnの積は1である。 *)
