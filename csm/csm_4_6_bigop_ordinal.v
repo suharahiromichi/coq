@@ -19,6 +19,61 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
+# widen と lift についての説明
+*)
+(**
+## widen は値を変えずに、Ordinal の型を変える関数である。
+
+``'I_n``型を``'I_m``型に変換する関数。
+*)
+  Check widen_ord : forall n m : nat, n <= m -> 'I_n -> 'I_m.
+  Check leqnSn : forall n : nat, n <= n.+1. (* ``n.+1``は``n``以上であるという補題 *)
+(**
+leqnSn を使って、``'I_n`` を``'I_n.+1``にすることができる。
+lift とちがって値は変えないことに注意！
+*)
+  Check (fun (n : nat) (i : 'I_n) => widen_ord (leqnSn n) i) : forall n : nat, 'I_n -> 'I_n.+1.
+  Goal forall (n : nat) (i : 'I_n), widen_ord (leqnSn n) i = i :> nat.
+  Proof. done. Qed.
+  
+(**
+次で述べる``lit ord_max``でも同じことができる。
+ *)
+  Check (fun (n : nat) (i : 'I_n) => lift ord_max i) : forall n : nat, 'I_n -> 'I_n.+1.
+  Check lift_max : forall (n' : nat) (i : 'I_n'), lift ord_max i = i :> nat.
+  
+(**
+## lift は値も増やす(bump)。
+
+ord0 と組み合わせて、Ordinalの世界で、型と値の``+1``と考えてよい。
+*)
+  Check (fun (n : nat) (i : 'I_n) => lift ord0 i) : forall n : nat, 'I_n -> 'I_n.+1.
+  Check lift0 : forall (n : nat) (i : 'I_n), lift ord0 i = i.+1 :> nat.
+
+(**
+ord_max と組み合わせると、bumpで値が変わらないので、型だけ``+1``する。
+*)  
+  Check lift_max : forall (n' : nat) (i : 'I_n'), lift ord_max i = i :> nat.
+
+(**
+ord0 と ord_max で動きが変わる理由：
+
+bump には、第1引数と第2引数の値が渡される。型ではない。
+*)
+  Check @lift 4 : 'I_4 -> 'I_3 -> 'I_4.     (* 4 : nat は省略する。 *)
+  (* ここで、第2引数には、1 : 'I_3 を与えたとする。 *)
+  
+  Check lift ord0 : 'I_3 -> 'I_4.
+  Check @lift 4 ord0 : 'I_3 -> 'I_4.
+  Compute bump (val ord0 : 'I_4) 1.         (* = 2 ... +1される。 *)
+  Compute bump 0 1.
+  
+  Check lift ord_max : 'I_3 -> 'I_4.
+  Check @lift 4 ord_max : 'I_3 -> 'I_4.
+  Compute bump (val ord_max : 'I_4) 1.      (* = 1 ... +1されない。 *)
+  Compute bump 3 1.
+  
+(**
 # 総和についての補題（他のbigopでも成り立つ）
  *)
 Section Summation2.
@@ -178,18 +233,6 @@ $$ \sum_{i=0}^{0}a_i = a_0 $$
 
 $$ \sum_{i=0}^{n}a_i = a_m + \sum_{i=0}^{n-1}a_{i + 1} $$
 *)
-(**
-``'I_3``型の第2引数を``bump 4 3``して、``'I_4``型で返す。
-ここで4は第1引数の``'I_4``、3は第2引数の``'I_3`` である。
-``3 < 4`` なので、``bump 4 3`` は、``4``である。
-*)
-  Check lift ord0 : 'I_3 -> 'I_4.
-(**
-わかりにくいが、ord0は直接関係なく、Ordinalの世界での``+1``と考えてよい。
-*)
-  Check (fun (n : nat) (i : 'I_n) => lift ord0 i) : forall n : nat, 'I_n -> 'I_n.+1.
-  Check lift0 : forall (n : nat) (i : 'I_n), lift ord0 i = i.+1 :> nat.
-  
   Lemma sum_first n (a : nat -> nat) :
     \sum_(i < n.+1)(a i) = a 0 + \sum_(i < n)(a i.+1).
   Proof.
@@ -209,20 +252,6 @@ n(インデックスの上限)についての帰納法と組み合わせて使�
 
 $$ \sum_{i=0}^{n}a_i = \sum_{i=m}^{n-1}a_i + a_n $$
  *)
-(**
-``I'_n``型を``I'_m``型に変換する関数。
-*)
-  Check widen_ord : forall n m : nat, n <= m -> 'I_n -> 'I_m.
-  Check leqnSn : forall n : nat, n <= n.+1. (* ``n.+1``は``n``以上であるという補題 *)
-  
-  Check (fun (n : nat) (i : 'I_n) => widen_ord (leqnSn n) i) : forall n : nat, 'I_n -> 'I_n.+1.
-  (* lift とちがって値は変えないことに注意！ *)
-  Goal forall (n : nat) (i : 'I_n), widen_ord (leqnSn n) i = i :> nat.
-  Proof. done. Qed.
-  (* lit ord_max でも同じことができる。 *)
-  Check (fun (n : nat) (i : 'I_n) => lift ord_max i) : forall n : nat, 'I_n -> 'I_n.+1.
-  Check lift_max : forall (n' : nat) (i : 'I_n'), lift ord_max i = i :> nat.
-  
   Lemma sum_last n (a : nat -> nat) :
     \sum_(i < n.+1)(a i) = \sum_(i < n)(a i) + a n.
   Proof.
