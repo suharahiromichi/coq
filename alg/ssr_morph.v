@@ -115,13 +115,26 @@ Qed.
 ## morph 補足
 
 ``{rmorphism R -> S}`` は ssralg.v で定義されている。
-複素数の共役 ``^*`` (conj_op) がこれであるため重要である。
+複素数の共役 ``^*`` (conj_op) がこれであるため acs_exercise5 で使用する。
 *)
 Section Rmorph.
 Variable R S : semiRingType.
+Variable R1 S1 : ringType.
 
 Axiom a1' : forall (f : {rmorphism R -> S}) (F : R -> R) (G : S -> S), {morph f : x / F x >-> G x}.
 Check a1' : forall (f : {rmorphism R -> S}) (F : R -> R) (G : S -> S) (x : R), f (F x) = G (f x).
+
+Check @rmorph1 R S : forall f : {rmorphism R -> S}, f 1 = 1.
+
+Check @rmorphD R S : forall f : {rmorphism R -> S}, {morph f : x y / x + y >-> x + y}.
+Check @rmorphD R S : forall (f : {rmorphism R -> S}) x y, f (x + y) = f x + f y.
+
+Check @rmorphB R1 S1 : forall f : {rmorphism R1 -> S1}, {morph f : x y / x - y >-> x - y}.
+Check @rmorphB R1 S1 : forall (f : {rmorphism R1 -> S1}) x y, f (x - y) = f x - f y.
+
+Check @rmorphM R S : forall f : {rmorphism R -> S}, {morph f : x y / x * y >-> x * y}.
+Check @rmorphM R S : forall (f : {rmorphism R -> S}) x y, f (x * y) = f x * f y.
+
 End Rmorph.
 
 (**
