@@ -121,27 +121,41 @@ Section Archi.
   Check @intrEge0 R : forall x : R, 0 <= x -> (x \is a int_num) = (x \is a nat_num).
 
   Check @Rreal_int R : {subset int_num <= Num.real}.
+
+  Check @natr_exp_even R : forall (x : R) (n : nat), ~~ odd n -> x \is a int_num -> x ^+ n \is a nat_num.
 End Archi.
 
 (**
 ## 0 と 1
 *)
 Section Num.
+  (* Search numDomainType. *)
   Definition R1 : numDomainType := algC.
   
   Check pnatr_eq0 R1 : forall n : nat, (n%:R == 0) = (n == 0%N).
   Check pnatr_eq1 R1 : forall n : nat, (n%:R == 1) = (n == 1%N).
+
+  Check @real_exprn_even_ge0 R1 : forall (n : nat) (x : R1), x \is Num.real -> ~~ odd n -> 0 <= x ^+ n.
 End Num.
 
 (**
 ## 足し算と掛け算
 *)
 Section SemiRing.
+  (* Search numDomainType. *)
   Definition R2 : semiRingType := algC.
   
   Check @natrD R2 : forall m n : nat, (m + n)%:R = m%:R + n%:R.
   Check @natrM R2 : forall m n : nat, (m * n)%:R = m%:R * n%:R.
 End SemiRing.
+
+Section ComUnitRing.
+  (* Search comUnitRingType. *)
+  Definition R3 : comUnitRingType := algC.
+
+  Check @mulr1_eq R3 : forall x y : R3, x * y = 1 -> x^-1 = y.
+  Check @divr1_eq R3 : forall x y : R3, x / y = 1 -> x = y.
+End ComUnitRing.
 
 (**
 # exercise5 でつかう補題
@@ -150,8 +164,8 @@ End SemiRing.
 
 前述のとおり、algC で成り立つ。
  *)
-(* Search numClosedFieldType. *)
 Section CF.
+  (* Search numClosedFieldType. *)
   Definition C : numClosedFieldType := algC.
 
   Check Re_i C : 'Re 'i = 0.
@@ -187,7 +201,6 @@ Section CF.
 
   Check @normCK C : forall x : C, normr x ^+ 2 = x * x^*.
   Check @normC2_Re_Im C : forall z : C, normr z ^+ 2 = 'Re z ^+ 2 + 'Im z ^+ 2.
-
 End CF.
 
 (**
