@@ -66,11 +66,15 @@ Fail Check algC : archiRcfType.
 (**
 以上より、つぎのことが言える。
 *)
-(* これでは、ほとんど補題は見るからないので、 *)
+(* これでは、ほとんど補題は見つからないので、 *)
 Search algC.
-Search numClosedFieldType.      (* これで探す。 *)
+
+(* これで探す。 *)
+Search numClosedFieldType.
+
+(* これで探す。 *)
 (* Search archiClosedFieldType. *)
-Search Num.ArchiClosedField.type.           (* これで探す。 *)
+Search Num.ArchiClosedField.type.
 
 (**
 # 環 と nat や int の関係を示す補題
@@ -80,48 +84,66 @@ Search Num.ArchiClosedField.type.           (* これで探す。 *)
 (**
 ## nat_num と int_num (MathComp 2.0.0 では Cnat と Cint)
 
-どちらも定義は ``[qualify a x | P]`` の形式で、単なる ``P x``。
-ここで a は演算子の一部。
+どちらも定義は ``[qualify a x | P]`` の形式で、単なる ``P x``。ここで a は演算子の一部。
+qualifE で書き換えられる。
 *)
+Check qualifE : forall (n : nat) (T : Type) (p : {pred T}) (x : T), (x \in Qualifier n p) = p x.
+
 Section Archi.
   Definition R : archiNumDomainType := algC.
   
+  (* nat_num の定義 *)
   Check nat_num : qualifier 1 R. 
   Check [qualify a x : R | Num.nat_num_subdef x] : qualifier 1 R.
-  
-  Check 1 \is a nat_num.
+
+  (* 以下は、すべて同じ意味 *)
+  Check 1 \is a nat_num.                    (* book *)
   Check 1 \is a [qualify a x : R | Num.nat_num_subdef x].
-  Check Num.nat_num_subdef 1.               (* P 1 *)
+  Check Num.nat_num_subdef 1.
   
-  
+  (* nat_num の補題 *)
   Check nat_num1 R : 1 \is a nat_num.
   Check nat_num0 R : 0 \is a nat_num.
   Check natr_nat R : forall n : nat, n%:R \is a nat_num.
   Check @natrP R : forall x : R, reflect (exists n : nat, x = n%:R) (x \is a nat_num).
+
+  Check trunc : R -> nat.
+
   Check @natrE R : forall x : R, (x \is a nat_num) = ((trunc x)%:R == x).
   Check @Qnat_dvd : forall m d : nat, (d %| m)%N -> m%:R / d%:R \is a nat_num.
   Check @natr_ge0 R : forall x : R, x \is a nat_num -> 0 <= x.
   
   Check @Rreal_nat R : {subset nat_num <= Num.real}.
   
-  
+  (* nat_int の定義 *)
   Check int_num : qualifier 1 R.
   Check [qualify a x : R | Num.int_num_subdef x] : qualifier 1 R.
-
+  
   Check -1 \is a nat_num.
   Check -1 \is a int_num.
   Check Num.int_num_subdef (-1).
   
+  (* int_num の補題 *)
   Check int_num1 R : 1 \is a int_num.
   Check int_num0 R : 0 \is a int_num.
   Check intr_int R : forall m : int, m%:~R \is a int_num.
   Check @intrP R : forall x : R, reflect (exists m : int, x = m%:~R) (x \is a int_num).
+
+  (* suhara *)
+  Locate "_ %:R".  (* := (GRing.natmul (GRing.one _) n) : ring_scope (default interpretation) *)
+  Locate "_ %:~R". (* := (intmul (GRing.one _) n) : ring_scope (default interpretation) *)
+  Check @GRing.natmul R : R -> nat -> R.
+  Check @intmul       R : R -> int -> R.
+  (* どちらも``1``に数を掛けて R型を返すが、%:R は自然数、%:~R は整数 *)
+  (* /suhara *)
+  
   Check @intrE R : forall x : R, (x \is a int_num) = (x \is a nat_num) || (- x \is a nat_num).
   Check @Qint_dvdz : forall m d : int, (d %| m)%Z -> m%:~R / d%:~R \is a int_num.
   Check @intrEge0 R : forall x : R, 0 <= x -> (x \is a int_num) = (x \is a nat_num).
 
   Check @Rreal_int R : {subset int_num <= Num.real}.
 
+  (* 偶数乗なら整数である。 *)
   Check @natr_exp_even R : forall (x : R) (n : nat), ~~ odd n -> x \is a int_num -> x ^+ n \is a nat_num.
 End Archi.
 
