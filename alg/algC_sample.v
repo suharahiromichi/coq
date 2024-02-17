@@ -22,11 +22,15 @@ MathComp 2.1.0 で、Cnat が nat_num になり、補題の場所が移動した
 Import archimedean.Num.Theory.
 Import Num.ArchiNumDomain.Exports.
 
+Check 1 : nat.
+Fail Check 1 : algC.
 (**
 # scope を有効にする。
  *)
 Open Scope ring_scope.
-Check 1 : (_ : semiRingType).
+Check 1 : (_ : closedFieldType).
+Check 1 : (_ : numClosedFieldType).
+Check 1 : algC.
 
 (**
 # algC の数学構造
@@ -44,8 +48,8 @@ Check algC : ringType.
 Check algC : comRingType.                   (* 可換環 *)
 Check algC : unitRingType.
 Check algC : comUnitRingType.
-Check algC : idomainType.
-Check algC : fieldType.                     (* 整域 *)
+Check algC : idomainType.                   (* 整域 *)
+Check algC : fieldType.
 Check algC : decFieldType.
 Check algC : closedFieldType.               (* 閉体 *)
 
@@ -66,6 +70,10 @@ Check algC : Num.ArchiClosedField.type.    (* archiClosedFieldType. *)
 Fail Check algC : Num.ArchiDomain.type.    (* archiDomainType. *)
 Fail Check algC : Num.ArchiField.type.     (* archiFieldType. *)
 Fail Check algC : archiRcfType.
+
+(* 参考 : アルキメデスの公理 *)
+Print Num.archimedean_axiom.
+(* fun R : numDomainType => forall x : R, exists ub : nat, normr x < ub%:R *)
 
 (**
 以上より、つぎのことが言える。
@@ -90,7 +98,7 @@ Search Num.ArchiClosedField.type.
 
 どちらも定義は ``[qualify a x | P]`` の形式で、単なる ``P x``。ここで a は演算子の一部。
 qualifE で書き換えられる。
-*)
+ *)
 Check qualifE : forall (n : nat) (T : Type) (p : {pred T}) (x : T), (x \in Qualifier n p) = p x.
 
 Section Archi.
@@ -147,7 +155,7 @@ Section Archi.
 
   Check @Rreal_int R : {subset int_num <= Num.real}.
 
-  (* 偶数乗なら整数である。 *)
+  (* 偶数乗なら自然数である。 *)
   Check @natr_exp_even R : forall (x : R) (n : nat), ~~ odd n -> x \is a int_num -> x ^+ n \is a nat_num.
 End Archi.
 
@@ -300,6 +308,7 @@ Check @algCrect : forall x : algC, x = 'Re x + 'i * 'Im x. (* 前出 *)
 (**
 マルチルール。便利そうだが、まだ使わない。
 *)
+Check (1, 1) : algC * algC.
 Check CintrE.                               (* 略 *)
 Check CratrE.                               (* 略 *)
 
