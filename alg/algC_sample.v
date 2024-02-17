@@ -1,5 +1,9 @@
 (**
 field/algC.v の使用例
+
+algC は代数的数の公理的な構造を提供します。
+この構築では、次数2の自己同型性を持つ代数的閉体の存在のみを前提としています。
+これは、代数学の基本定理の純粋に代数的な内容に相当します。
 *)
 From HB Require Import structures.
 From mathcomp Require Import all_ssreflect.
@@ -106,9 +110,9 @@ Section Archi.
   Check nat_num0 R : 0 \is a nat_num.
   Check natr_nat R : forall n : nat, n%:R \is a nat_num.
   Check @natrP R : forall x : R, reflect (exists n : nat, x = n%:R) (x \is a nat_num).
-
-  Check trunc : R -> nat.
-
+  
+  Check trunc : R -> nat.                   (* 自然数にする関数 *)
+  
   Check @natrE R : forall x : R, (x \is a nat_num) = ((trunc x)%:R == x).
   Check @Qnat_dvd : forall m d : nat, (d %| m)%N -> m%:R / d%:R \is a nat_num.
   Check @natr_ge0 R : forall x : R, x \is a nat_num -> 0 <= x.
