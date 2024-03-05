@@ -313,6 +313,60 @@ Check CintrE.                               (* 略 *)
 Check CratrE.                               (* 略 *)
 
 (**
+# 問11. ガウス整数 a が単元であることと、a が ±1 か ±i であることは、同値である ...
+  を解くための補題
+*) 
+
+(**
+## ノルムが1であることと、±1 または ±i であることは同値 の証明
+
+同値変換でこの形に変換していく。
+ *)
+Section Ex11.
+  Variable a : algC.
+
+  (* gaussNorm (algGI a) == 1. *)
+
+  (* 実部と虚部の2乗和にする。 *)
+  Check algCrect : forall x : algC, x = 'Re x + 'i * 'Im x.
+  (* goal *) Check 'Re (a) ^+ 2 + 'Im (a) ^+ 2 == 1.
+  
+  (* 2乗和が1なので、1と0 または 0と1 の加算にする。 *)
+  Check normC2_rect : forall C : numClosedFieldType,
+      {in Num.real &, forall x y : C, normr (x + 'i * y) ^+ 2 = x ^+ 2 + y ^+ 2}.
+  (* goal *) 
+  Check ('Re (a) ^+ 2 == 1) && ('Im (a) ^+ 2 == 0)
+        ||
+        ('Re (a) ^+ 2 == 0) && ('Im (a) ^+ 2 == 1).
+  
+  (* 2乗を消す。 *)
+  Check sqrf_eq0 : forall (R : idomainType) (x : R), (x ^+ 2 == 0) = (x == 0).
+  Check sqrf_eq1 : forall (R : idomainType) (x : R), (x ^+ 2 == 1) = (x == 1) || (x == -1).
+  (* goal *)   
+  Check (('Re (a) == 1) || ('Re (a) == -1)) && ('Im (a) == 0)
+        ||
+        ('Re (a) == 0) && (('Im (a) == 1) || ('Im (a) == -1)).
+  
+  (* 選言標準形にする。 *)
+  (* goal *)
+  Check [|| ('Re (a) == 1) && ('Im (a) == 0),
+            ('Re (a) == -1) && ('Im (a) == 0),
+            ('Re (a) == 0) && ('Im (a) == 1)
+          | ('Re (a) == 0) && ('Im (a) == -1)].
+End Ex11.  
+
+(* その他の補題 *)
+Check Creal_Re : forall (C : numClosedFieldType) (x : C), 'Re x \is Num.real.
+Check Creal_Im : forall (C : numClosedFieldType) (x : C), 'Im x \is Num.real.
+Check Cnat_exp_even : forall (x : algC) (n : nat), ~~ odd n -> x \is a int_num -> x ^+ n \is a nat_num.
+Check raddfN : forall (U V : zmodType) (f : {additive U -> V}), {morph f : x / - x >-> - x}.
+Check Re_i : forall C : numClosedFieldType, 'Re 'i = 0.
+Check Im_i : forall C : numClosedFieldType, 'Im 'i = 1.
+Check Creal_ReP : forall (C : numClosedFieldType) (z : C), reflect ('Re z = z) (z \is Num.real).
+Check Creal_ImP : forall (C : numClosedFieldType) (z : C), reflect ('Im z = 0) (z \is Num.real).
+
+
+(**
 # 予備
  *)
 Check Num.IntegralDomain_isNumRing.Build algC.
