@@ -97,8 +97,7 @@ module_type__canonical__struct_Struct is defined
 ## 3.2 HB Commands Useful to Explore an Existing Hierarch
 changelog と Coq スクリプトのヘッダーに加えて、ユーザーは HB コマンドを使用して数学的構造の階層を探索できます。
 
-### 3.2.1 Information about Structures with HB.about
-Basic information about structures can be obtained via the command HB.about as in:
+### 3.2.1 Information about Structures with HB.about構造に関する基本情報は、次のようにコマンド HB.about を使用して取得できます。
 
 ```
 > HB.about eqType.
@@ -162,12 +161,14 @@ HB.instance Definition _ := hasDecEq.Build T proof_of_Equality_axiom.
 ```
 HB.instance Definition _ := @hasDecEq.Build T eq_op proof_of_Equality_axiom.
 ```
-そのうちの数行が出力されるはずです (この出力がない場合は、インスタンス化に問題があることを示していることが多いことを思い出してください)1:
+そのうちの数行が出力されるはずです (この出力がない場合は、インスタンス化に問題があることを示していることが多いことを思い出してください)
+この記事の執筆時点では、VSCoq では HB.instance コマンドの出力がデフォルトで表示されない可能性があることも確認しています。
 
 ```
 module_T__canonical__eqtype_Equality is defined
 ```
-エイリアスとフェザー ファクトリの検出 
+
+#### Discover Aliases and Feather Factories エイリアスとフェザー ファクトリの検出 
 HB.about でリストされている構造体とコンストラクターに加えて、ライブラリではいくつかのエイリアス (別名フェザー ファクトリ) が定義されています。 これらのエイリアスはヘッダーのコメントに記載されています。 たとえば、ある型 T の eqType インスタンスは、関数 ``f : T -> T'`` と証明 ``injf : injective f`` が与えられると、すでに eqType 構造を備えたある T' から派生できます。
 
 ```
@@ -201,14 +202,14 @@ bool がすでに備えているすべての構造をリストします。
 ```coq:mathcomp1
 command incompatible with MathComp 2
 ```
-and their fixes are singly famed:
+そしてそれらの修正は単独で有名です:
 
 ```coq:mathcomp2
 MathComp 2 fix for the command above
 ```
 
 ## 4.1 Import the HB Library
-First thing first, any Coq file using HB must start with:
+まず最初に、HB を使用する Coq ファイルは次で始まる必要があります。
 
 ```
 From HB Require Import structures.
@@ -283,8 +284,7 @@ fset_fset_type__canonical__eqtype_SubEquality is defined
 ```
 > Canonical Structure fset_choiceType := Eval hnf in ChoiceType _ [choiceMixin of fset_type by <:].
 Error: The reference ChoiceType was not found in the current environment.
-> Canonical Structure fset_countType (T : countType) :=
-> Eval hnf in CountType _ [countMixin of fset_type T by <:].
+> Canonical Structure fset_countType (T : countType) := Eval hnf in CountType _ [countMixin of fset_type T by <:].
 Error: The reference CountType was not found in the current environment.
 ```
 修正はchangelogから再度推測できます。
@@ -518,8 +518,7 @@ rewrite [in X in X <-> _]orbF.
 
 Reynald Affeldt, "An Introduction to MathComp-Analysis"
 
-``https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2022_affeldt/karate-coq-nagoya2022.pdf``
-
+``https://staff.aist.go.jp/reynald.affeldt/documents/karate-coq.pdf``
 ただし、MathComp2に準拠しているのは5章以降で、3章はMathComp1です。
 
 ```
