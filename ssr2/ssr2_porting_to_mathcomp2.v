@@ -141,6 +141,7 @@ changelog と Coq スクリプトのヘッダーに加えて、
 ユーザーは HB コマンドを使用して数学的構造の階層を探索できます。
 
 ### 3.2.1 Information about Structures with HB.about
+
 構造に関する基本情報は、次のようにコマンド HB.about を使用して取得できます。
 
 ```

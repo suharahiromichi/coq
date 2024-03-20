@@ -97,7 +97,8 @@ module_type__canonical__struct_Struct is defined
 ## 3.2 HB Commands Useful to Explore an Existing Hierarch
 changelog と Coq スクリプトのヘッダーに加えて、ユーザーは HB コマンドを使用して数学的構造の階層を探索できます。
 
-### 3.2.1 Information about Structures with HB.about構造に関する基本情報は、次のようにコマンド HB.about を使用して取得できます。
+### 3.2.1 Information about Structures with HB.about
+構造に関する基本情報は、次のようにコマンド HB.about を使用して取得できます。
 
 ```
 > HB.about eqType.
