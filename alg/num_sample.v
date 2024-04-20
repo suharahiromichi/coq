@@ -24,9 +24,9 @@ fieldType 体           numDomainType
 | +------------------+ | +-------------------+
 |                     \|                      \
 closedField 閉体       numFieldType            realDomainType ~~~ (int)
-|                      |                      /
-|                      | +-------------------+
-|                      |/
+|                     /|                      /
+| +------------------+ | +-------------------+
+|/                     |/
 numClosedFieldType     realFieldType 実体
 ~~~~                   |\
 (algC)                 | +---------------------archiFieldType ~~~ (rat)
