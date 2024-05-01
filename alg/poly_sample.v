@@ -567,6 +567,10 @@ Check @rootP R : forall (p : {poly R}) (x : R), reflect (p.[x] = 0) (root p x).
 
 (**
 ## 因数定理
+
+任意の多項式``p``に対して、
+``p = q * (X - a)`` なる多項式``q``が存在すること、と、
+方程式``p = 0``の解が``a``であることは、同値である。
 *)
 Check @factor_theorem R
   : forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
@@ -653,6 +657,9 @@ Qed.
 
 (**
 ## 代数学の基本定理
+
+任意の整数係数(idomain)の多項式（ただし 0 でない）、の重解を除いた解の数は、pの次数以下である。
+ただし、``p``の係数のサイズ``(size p)``は、次数(degree)+1 である。
  *)
 Check @max_poly_roots
   : forall (R : idomainType) (p : {poly R}) (rs : seq R),
@@ -676,6 +683,38 @@ Proof.
       by move: rnrs; rewrite -exr xrs.
 Qed.
 
+Goal forall (R : idomainType) (p : {poly R}) (rs : seq R),
+    p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
+Proof.
+  move=> R p rs.
+  elim: rs p => [p pn0 _ _ | r rs ihrs p pn0] /=.
+  - by rewrite size_poly_gt0.
+  - case/andP => rpr arrs /andP [rnrs urs].
+
+    (* rpr に因数定理を適用して、epq に変換する。 *)
+    Check factor_theorem
+      : forall (R : ringType) (p : {poly R}) (a : R),
+        reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
+    case/factor_theorem: rpr => q epq.
+    
+    Check eqVneq q 0 : eq_xor_neq q 0 (0 == q) (q == 0).
+    have [q0 | ?] := eqVneq q 0.            (* q = 0 と q != 0 に条件分けする。  *)
+    (* q = 0 の場合*)
+    + move: pn0.
+      by rewrite epq q0 mul0r eqxx.         (* epq で書き換える。 *)
+    (* q != 0 の場合*)
+    + have -> : size p = (size q).+1 by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
+      suff /eq_in_all h : {in rs, root q =1 root p} by apply: ihrs => //; rewrite h.
+      move=> x xrs.
+      rewrite epq rootM root_XsubC orbC.    (* epq で書き換える。 *)
+      
+      case: (eqVneq x r) => exr.            (* x = r と x != r に条件分けする。 *)
+      (* x = r の場合 *)
+      * move: rnrs.
+        by rewrite -exr xrs.
+      (* x != r の場合 *)
+      * done.
+Qed.
 
 (**
 # 補足説明
