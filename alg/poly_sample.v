@@ -702,18 +702,31 @@ Proof.
     (* q = 0 の場合*)
     + move: pn0.
       by rewrite epq q0 mul0r eqxx.         (* epq で書き換える。 *)
-    (* q != 0 の場合*)
-    + have -> : size p = (size q).+1 by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
-      suff /eq_in_all h : {in rs, root q =1 root p} by apply: ihrs => //; rewrite h.
-      move=> x xrs.
-      rewrite epq rootM root_XsubC orbC.    (* epq で書き換える。 *)
       
-      case: (eqVneq x r) => exr.            (* x = r と x != r に条件分けする。 *)
-      (* x = r の場合 *)
-      * move: rnrs.
-        by rewrite -exr xrs.
-      (* x != r の場合 *)
-      * done.
+    (* q != 0 の場合*)
+    + have H1 : size p = (size q).+1
+        by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
+
+      have H2 : {in rs, root q =1 root p}.
+      {
+        move=> x xrs.
+        rewrite epq rootM root_XsubC orbC.    (* epq で書き換える。 *)
+        
+        case: (eqVneq x r) => exr.            (* x = r と x != r に条件分けする。 *)
+        (* x = r の場合 *)
+        * move: rnrs.
+          by rewrite -exr xrs.
+        (* x != r の場合 *)
+        * done.
+      }.
+      move/eq_in_all in H2.
+      (* H2 : all (root q) rs = all (root p) rs *)
+      (* H1 : size p = (size q).+1 *)
+
+      rewrite H1.
+      apply: ihrs => //.
+      rewrite H2.
+      done.
 Qed.
 
 (**
