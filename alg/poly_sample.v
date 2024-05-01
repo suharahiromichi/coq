@@ -652,6 +652,32 @@ Qed.
 
 
 (**
+## 代数学の基本定理
+ *)
+Check @max_poly_roots
+  : forall (R : idomainType) (p : {poly R}) (rs : seq R),
+    p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
+
+(**
+poly.v に近いかたち
+*)
+Goal forall (R : idomainType) (p : {poly R}) (rs : seq R),
+    p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
+Proof.
+  move=> R p rs.
+  elim: rs p => [p pn0 _ _ | r rs ihrs p pn0] /=.
+  - by rewrite size_poly_gt0.
+  - case/andP => rpr arrs /andP [rnrs urs]; case/factor_theorem: rpr => q epq.
+    have [q0 | ?] := eqVneq q 0.
+    + by move: pn0; rewrite epq q0 mul0r eqxx.
+    + have -> : size p = (size q).+1 by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
+      suff /eq_in_all h : {in rs, root q =1 root p} by apply: ihrs => //; rewrite h.
+      move=> x xrs; rewrite epq rootM root_XsubC orbC; case: (eqVneq x r) => // exr.
+      by move: rnrs; rewrite -exr xrs.
+Qed.
+
+
+(**
 # 補足説明
 *)
 
