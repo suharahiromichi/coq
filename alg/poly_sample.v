@@ -25,7 +25,7 @@ Variable (a b c x y z : R) (p q r d : {poly R}).
 Print polynomial.
 (**
 
-R型の多項式は、R型のリストと、その最後の要素が``0``でないことの証明の組み合わせで定義される。
+R型の多項式は、R型のリスト（BE、降冪順）と、その最後の要素が``0``でないことの証明の組み合わせで定義される。
 ```
 = Record polynomial (R : semiRingType) : Type :=
     Polynomial {
@@ -497,6 +497,17 @@ Check @rpred1M R : forall S : mulrClosed R, mulr_closed S.
 *)
 Check @monic_mulr_closed R : mulr_closed monic.
 HB.about GRing.isMulClosed.
+
+Check size_Mmonic
+  : forall (R : ringType) (p q : {poly R}),
+    p != 0 -> q \is monic -> size (p * q) = (size p + size q).-1.
+(* これと比較 *)
+Check size_mul_leq
+  : forall (R : semiRingType) (p q : {poly R}), (size (p * q)%R <= (size p + size q).-1)%N.
+
+
+Check monicXsubC
+  : forall (R : ringType) (c : R), 'X - c%:P \is monic.
 
 (**
 # Horner評価法の定義とその補題
