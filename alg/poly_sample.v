@@ -685,22 +685,45 @@ Proof.
       by move: rnrs; rewrite -exr xrs.
 Qed.
 
+(**
+直観的な証明：
+解のリストrsについての帰納法で考える。
+
+- rs が nil の場合は、``size [::] < size p`` で明らか。
+- rs が (r :: rs') の場合は、
+
+  ``all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)``
+
+  から、次のゴールを得る。ただし、``uniq (r :: rs') == r \notin rs' && uniq rs'`` を使う。
+
+  ``all (root p) rs'        -> uniq rs'        -> (size rs').+1 < size p)``
+
+  また、因数定理から、``p = q * ('X - r%:P)`` である。
+
+  - ``q = 0`` なら、``p = q * ('X - r%:P)`` から ``p = 0`` になるから前提矛盾である。
+  - ``q != 0`` として、
+        ``p = q * ('X - r%:P)`` から、``H1 : size p = (size q).+1``
+        ``r \notin rs'``        から、``H2 : all (root q) rs' = all (root p) rs'``
+    帰納法の仮定から ``IHrs : all (root p) rs' -> uniq rs' -> (size rs' < size p)``
+    
+    H1, H2, IHrs から、上記のゴールが証明できる。
+*)
 Goal forall (R : idomainType) (p : {poly R}) (rs : seq R),
     p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
 Proof.
   move=> R p rs.
-  elim: rs p => [p pn0 _ _ | r rs ihrs p pn0].
+  elim: rs p => [p pn0 _ _ | r rs' IHrs p pn0].
 
   (* 0 でない多項式のサイズは 0 より大きい。 *)
   Check size_poly_gt0 : forall (R : semiRingType) (p : {poly R}), (0 < size p)%N = (p != 0).
   - by rewrite size_poly_gt0.
     
-    Check all (root p) (r :: rs) -> uniq (r :: rs) -> (size (r :: rs) < size p)%N.
+    Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
   - rewrite /=.
     (* ``r :: rs`` が分解され、r \notin rs になる。 *)
-    Check all (root p) (r :: rs) -> uniq (r :: rs) -> (size (r :: rs) < size p)%N.
+    Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
 
-    case/andP => rpr arrs /andP [rnrs urs].
+    case/andP => rpr arrs' /andP [rnrs' urs'].
     
     (* rpr に因数定理を適用して、epq に変換する。 *)
     Check factor_theorem
@@ -716,7 +739,6 @@ Proof.
       by rewrite epq q0 mul0r eqxx.         (* epq で書き換える。 *)
       
     (* q != 0 の場合 *)
-
       (* H1 *)
       (* p と (p の因数である) q の次数が一つ違いであることを証明する。 *)
       (* monic についての補題を使用する。 *)
@@ -728,28 +750,28 @@ Proof.
         by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
 
       (* H2 *)
-      (* q の全解がrsであることと、pの全解がrsであることは同値である。 *)
-      (* この rs は、r についての帰納法におけるseqの残りの部分である。 *)
-      (* uniq (r :: rs) から、rs に r は含まれないことに注意！！ *)
-      have H2 : {in rs, root q =1 root p}.
+      (* q の全解がrs'であることと、pの全解がrs'であることは同値である。 *)
+      (* この rs' は、r についての帰納法におけるseqの残りの部分である。 *)
+      (* uniq (r :: rs') から、rs' に r は含まれないことに注意！！ *)
+      have H2 : {in rs', root q =1 root p}.
       {
-        move=> x xrs.
+        move=> x xrs'.
         Check root q x = root p x.
         rewrite epq rootM root_XsubC orbC.    (* epq で書き換える。 *)
         
         case: (eqVneq x r) => exr.            (* x = r と x != r に条件分けする。 *)
         (* x = r の場合 *)
-        * move: rnrs.
-          by rewrite -exr xrs.
+        * move: rnrs'.
+          by rewrite -exr xrs'.
         (* x != r の場合 *)
         * done.
       }.
       move/eq_in_all in H2.
-      (* H2 : all (root q) rs = all (root p) rs ... H2をわかりやすく書き換えたもの。 *)
+      (* H2 : all (root q) rs' = all (root p) rs' ... H2をわかりやすく書き換えたもの。 *)
       (* H1 : size p = (size q).+1 *)
 
       rewrite H1.
-      apply: ihrs => //.
+      apply: IHrs => //=.
       rewrite H2.
       done.
 Qed.
