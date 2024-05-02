@@ -658,8 +658,10 @@ Qed.
 (**
 ## 代数学の基本定理
 
-任意の整数係数(idomain)の多項式（ただし 0 でない）、の重解を除いた解の数は、pの次数以下である。
+任意の整数係数(idomain)の多項式``p``（ただし 0 でない）の重解を除いた解の数は、``p``の次数以下である。
 ただし、``p``の係数のサイズ``(size p)``は、次数(degree)+1 である。
+
+因数定理とmonic についての補題を使用する。
  *)
 Check @max_poly_roots
   : forall (R : idomainType) (p : {poly R}) (rs : seq R),
@@ -687,29 +689,52 @@ Goal forall (R : idomainType) (p : {poly R}) (rs : seq R),
     p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
 Proof.
   move=> R p rs.
-  elim: rs p => [p pn0 _ _ | r rs ihrs p pn0] /=.
-  - by rewrite size_poly_gt0.
-  - case/andP => rpr arrs /andP [rnrs urs].
+  elim: rs p => [p pn0 _ _ | r rs ihrs p pn0].
 
+  (* 0 でない多項式のサイズは 0 より大きい。 *)
+  Check size_poly_gt0 : forall (R : semiRingType) (p : {poly R}), (0 < size p)%N = (p != 0).
+  - by rewrite size_poly_gt0.
+    
+    Check all (root p) (r :: rs) -> uniq (r :: rs) -> (size (r :: rs) < size p)%N.
+  - rewrite /=.
+    (* ``r :: rs`` が分解され、r \notin rs になる。 *)
+    Check all (root p) (r :: rs) -> uniq (r :: rs) -> (size (r :: rs) < size p)%N.
+
+    case/andP => rpr arrs /andP [rnrs urs].
+    
     (* rpr に因数定理を適用して、epq に変換する。 *)
     Check factor_theorem
       : forall (R : ringType) (p : {poly R}) (a : R),
         reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
     case/factor_theorem: rpr => q epq.
+    (* 「p の解が r である」を「pが(X - r) と q の積である」に言い換える。 *)
     
     Check eqVneq q 0 : eq_xor_neq q 0 (0 == q) (q == 0).
-    have [q0 | ?] := eqVneq q 0.            (* q = 0 と q != 0 に条件分けする。  *)
+    have [q0 | qn0] := eqVneq q 0. (* q = 0 と q != 0 に条件分けする。  *)
     (* q = 0 の場合*)
     + move: pn0.
       by rewrite epq q0 mul0r eqxx.         (* epq で書き換える。 *)
       
-    (* q != 0 の場合*)
+    (* q != 0 の場合 *)
+
+      (* H1 *)
+      (* p と (p の因数である) q の次数が一つ違いであることを証明する。 *)
+      (* monic についての補題を使用する。 *)
+      Check size_Mmonic                     (* monic の掛け算 *)
+        : forall (R : ringType) (p q : {poly R}),
+          p != 0 -> q \is monic -> size (p * q) = (size p + size q).-1.
+      Check monicXsubC : forall (R : ringType) (c : R), 'X - c%:P \is monic.
     + have H1 : size p = (size q).+1
         by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
 
+      (* H2 *)
+      (* q の全解がrsであることと、pの全解がrsであることは同値である。 *)
+      (* この rs は、r についての帰納法におけるseqの残りの部分である。 *)
+      (* uniq (r :: rs) から、rs に r は含まれないことに注意！！ *)
       have H2 : {in rs, root q =1 root p}.
       {
         move=> x xrs.
+        Check root q x = root p x.
         rewrite epq rootM root_XsubC orbC.    (* epq で書き換える。 *)
         
         case: (eqVneq x r) => exr.            (* x = r と x != r に条件分けする。 *)
@@ -720,7 +745,7 @@ Proof.
         * done.
       }.
       move/eq_in_all in H2.
-      (* H2 : all (root q) rs = all (root p) rs *)
+      (* H2 : all (root q) rs = all (root p) rs ... H2をわかりやすく書き換えたもの。 *)
       (* H1 : size p = (size q).+1 *)
 
       rewrite H1.
@@ -838,6 +863,7 @@ Qed.
 ``_ = _ :> seq R`` と `` _ = _ :> {poly R}`` の相互変換を使う
  *)
 
+(* 多項式として等しいならseqとして等しい。*)
 Lemma poly_seq (p q : {poly R}) : p = q :> {poly R} -> p = q :> seq R.
 Proof.
   move=> H.
@@ -846,12 +872,14 @@ Proof.
   by rewrite H.
 Qed.
 
-(* poly_inj があれば seq_poly はいらない。 *)
+(* seqとして等しいなら、多項式として等しい。 *)
+(* poly_inj があれば seq_poly はいらない。同じ意味であるため *)
 (* polyP は poly_inj で証明されている。 *)
 Lemma seq_poly (p q : {poly R}) : p = q :> seq R -> p = q :> {poly R}.
 Proof.
   case: p; case: q.
   move=> p Hp q Hq /= H.
+
 (**
 ``p = q`` から ``Hp = Hq`` であることを示したいが、
 *)
