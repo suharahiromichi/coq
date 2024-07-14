@@ -413,14 +413,18 @@ Check @mul_polyC R : forall (a : R) (p : {poly R}), a%:P * p = a *: p.
 (**
 まだ習っていない ``%:A``。
 *)
-Locate "_ %:A". (* := (GRing.scale k (GRing.one _)) : ring_scope (default interpretation) *)
+Locate "k %:A". (* := (GRing.scale k (GRing.one _)) : ring_scope (default interpretation) *)
+Locate "c %:P". (* := (polyC c) : ring_scope (default interpretation) *)
+(* 環に単位元にスケールaを掛けたものは、{poly R} の文脈では、定数多項式になる。 *)
 Check @alg_polyC R : forall (a : R), a%:A = a%:P :> {poly R}.
+(* そもそも、環の単位元 1 は、定数多項式の 1 である。 *)
+Check 1 = 1%:P :> {poly R}.
 
 (**
 # ``'X`` とその補題
 
 x についての多項式における、1次の x のこと。
-ただし、すでに多項式型なので、係数(R型)ととの足し算や掛け算はできない。
+ただし、すでに多項式型なので、係数(R 型)ととの足し算や掛け算はできない。
  *)
 Locate "'X".  (* := (polyX _) : ring_scope (default interpretation) *)
 Check polyX R : {poly R}.
@@ -573,8 +577,9 @@ Print root. (* = fun (R : ringType) (p : {poly R}) (x : R) => p.[x] == 0
 Check @mem_root R : forall (p : {poly R}) (x : R), (x \in root p) = (p.[x] == 0).
 Check @mem_root R : forall (p : {poly R}) (x : R), root p x = (p.[x] == 0).
 
-Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) * ((x \in root p) = (p.[x] == 0)).
 Check @rootP R : forall (p : {poly R}) (x : R), reflect (p.[x] = 0) (root p x).
+Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) *
+                                                  ((x \in root p) = (p.[x] == 0)).
 
 (**
 ## 因数定理
