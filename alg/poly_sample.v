@@ -565,6 +565,15 @@ Check (hornerD, hornerN, hornerX, hornerC, horner_cons,
         (fun p x => hornerM_comm p (comm_polyX x))).
 
 (**
+マルチルールに含まれない補題だが、!hornerE で解ける。
+*)
+Check hornerXsubC : forall (R : ringType) (a x : R), ('X - a%:P).[x] = x - a.
+(**
+マルチルールに含まれない補題で、!hornerE で解けないので覚えておく。
+*)
+Check hornerXn : forall (R : ringType) (x : R) (n : nat), ('X^n).[x] = x ^+ n.
+
+(**
 # rootの定義とその補題
 
 多項式pを適当なxで評価して、値が0になること。
@@ -598,7 +607,7 @@ Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X -
 Proof.
   move=> p a.
   apply: (iffP eqP) => [pa0 | [q ->]]; last first.
-  - rewrite hornerM_comm /comm_poly hornerXsubC subrr ?simp.
+  - rewrite hornerM_comm /comm_poly !hornerE subrr ?simp. (* hornerEXsubC *)
     + by rewrite mulr0.
     + by rewrite mulr0 mul0r.
   - exists (\poly_(i < size p) horner_rec (drop i.+1 p) a).
@@ -659,12 +668,12 @@ Proof.
            done.
         ** done.
   - rewrite hornerM_comm.
-    + rewrite hornerXsubC.
+    + rewrite !hornerE.                     (* hornerXsubC *)
       rewrite subrr.
       rewrite mulr0.
       done.
     + rewrite /comm_poly.
-      rewrite hornerXsubC.
+      rewrite !hornerE.                     (* hornerXsubC *)
       rewrite subrr.
       rewrite mulr0 mul0r.
       done.

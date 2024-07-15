@@ -232,6 +232,7 @@ HB.about GRing.isLinear.Build.
 *)
 Check (@deriv R) : {linear {poly R} -> {poly R}}.
 
+Check linearE.                              (* マルチルール *)
 Check linear0 (@deriv R) : 0^`() = 0.
 Check linearN (@deriv R) : {morph (@deriv R) : x / - x >-> - x}.
 Check linearD (@deriv R) : {morph (@deriv R) : x y / x + y >-> x + y}.
@@ -299,12 +300,13 @@ Check @comp_polyE R : forall p q : {poly R}, p \Po q = \sum_(i < size p) (p`_i *
 (**
 多項式の合成の変形
 *)
+Check comp_polyX : forall (R : ringType) (p : {poly R}), 'X \Po p = p.
 Check comp_polyC : forall (R : ringType) (c : R) (p : {poly R}), c%:P \Po p = c%:P.
 Check comp_polyD : forall (R : ringType) (p q r : {poly R}), (p + q) \Po r = p \Po r + (q \Po r).
 Check comp_polyB : forall (R : ringType) (p q r : {poly R}), (p - q) \Po r = p \Po r - (q \Po r).
 Check comp_polyZ : forall (R : ringType) (c : R) (p q : {poly R}), (c *: p) \Po q = c *: (p \Po q).
 Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p \Po r) * (q \Po r).
-Check comp_polyX : forall (R : ringType) (p : {poly R}), 'X \Po p = p.
+Check comp_poly_exprn : forall (p q : {poly rat}) (i : nat), p ^+ i \Po q = (p \Po q) ^+ i.
 
 (**
 # 外科手術
