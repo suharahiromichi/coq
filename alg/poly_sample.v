@@ -536,14 +536,17 @@ Check @comm_coef_poly R : forall (p : {poly R}) (x : R), comm_coef p x -> comm_p
 ## Horner評価法の補題
  *)
 (**
+``(a * p).[x]`` の分配法則；
 定数多項式aに多項式pを掛けたものを、パラメータxで評価したものは、
 定数aに、多項式pをパラメータxで評価したものに等しい。証明には poly_ind を使う。
 *)
 Check @hornerCM R : forall (a : R) (p : {poly R}) (x : R), (a%:P * p).[x] = a * (p.[x]).
 
 (**
+``(p * q).[x]`` の分配法則；
 多項式pと多項式qの積をパラメータxで評価したものは、
 多項式pをパラメータxで評価したものと、多項式qをパラメータxで評価したものの積に等しい。
+ただし、qとxの掛算が可換であること。
 証明には poly_ind を使う。
  *)
 Check @hornerM_comm R : forall (p q : {poly R}) (x : R),
@@ -556,13 +559,17 @@ Check @horner_poly R
 ## hornerE と hornerE_comm - マルチルール
 *)
 Check hornerE.
-Check (hornerD, hornerN, hornerX, hornerC, horner_exp,
-        Monoid.simpm, hornerCM, hornerZ, hornerM, horner_cons). (* simp := Monoid.simpm *)
+Check (hornerD, hornerN, hornerX, hornerC,
+        horner_exp,
+        Monoid.simpm, hornerCM, hornerZ,    (* simp := Monoid.simpm *)
+        hornerM,
+        horner_cons).
 
 Check hornerE_comm.
-Check (hornerD, hornerN, hornerX, hornerC, horner_cons,
+Check (hornerD, hornerN, hornerX, hornerC,
+        horner_cons,
         Monoid.simpm, hornerCM, hornerZ,
-        (fun p x => hornerM_comm p (comm_polyX x))).
+        (fun p x => hornerM_comm p (comm_polyX x))). (* 追加はここだけ *)
 
 (**
 マルチルールに含まれない補題だが、!hornerE で解ける。
@@ -841,9 +848,11 @@ Print tstp6.                  (* = a%:P * 'X^2 + b%:P * 'X + c%:P *)
 (**
 ## polyP を使う
 
-polyP は poly_inj で証明できる。
+nth で取り出す前に、polyをseq にするコアーション(polyseq = \val)が挿入される。
+この補題 polyP は polyseq (poly から seq を取り出す) の単射性 poly_inj で証明できる。
 *)
-Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q :> {poly R}.
+Check polyP : forall (R : semiRingType) (p q : {poly R}),
+    nth 0 (\val p) =1 nth 0 (\val q) <-> p = q :> {poly R}.
 Check [eta @poly_inj R] : forall p q : {poly R}, p = q :> seq R -> p = q :> {poly R}.
 
 Goal tstp3 = tstp4 :> {poly R}.
@@ -852,7 +861,7 @@ Proof.
   Check Poly [:: c; b; a] = \poly_(i < 3) tstE i :> {poly R}.
   apply/polyP => i.                         (* 係数毎 *)
   rewrite coefE.                            (* マルチルール *)
-  rewrite polyseq_poly //=.
+  rewrite polyseq_poly //=.                 (* mkseq にする *)
   by rewrite /= neqa0.
 Qed.
 
@@ -860,8 +869,8 @@ Goal tstp1 = tstp2 :> {poly R}.
 Proof.
   rewrite /tstp1 /tstp2.
   Check Polynomial (neq0_last_s neqa0) = insubd (poly_nil R) [:: c; b; a] :> {poly R}.
-  apply/polyP => i.                         (* 係数毎 *)
-  rewrite /= val_insubd.
+  apply/polyP => i.         (* 係数毎。左辺には \val がついている。 *)
+  rewrite /= val_insubd.    (* \val (insubd ...) を消す。 *)
   case: ifP => //=.
   by rewrite neqa0.
 Qed.
