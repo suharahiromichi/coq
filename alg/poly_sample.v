@@ -520,7 +520,15 @@ Check monicXsubC
 *)
 Locate "p .[ x ]". (* := (horner p x) : ring_scope (default interpretation) *)
 Print horner. (* = fun (R : ringType) (p : {poly R}) => horner_rec p *)
-Print horner_rec.                           (* 略 *)
+Print horner_rec.
+(*
+fun R : ringType =>
+fix horner_rec (s : seq R) (x : R) {struct s} : R :=
+  match s with
+  | [::] => 0
+  | a :: s' => horner_rec s' x * x + a
+  end
+ *)
 
 Check @horner_Poly R
   : forall (s : seq R) (x : R), (Poly s).[x] = horner_rec s x.
@@ -627,29 +635,43 @@ Proof.
       by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
 Qed.
 
+Compute drop 1%N [::1%N; 2%N; 3%N].
+Compute drop 2%N [::1%N; 2%N; 3%N].
+Compute drop 3%N [::1%N; 2%N; 3%N].
+
 Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
 Proof.
   move=> p a.
   apply: (iffP eqP) => [pa0 | [q ->]].
   - exists (\poly_(i < size p) (horner_rec (drop i.+1 p) a)).
+    Check \poly_(i < size p) (horner_rec (drop i.+1 p) a). (* 手でやる因数分解と同じ *)
+(**
+  X^2 - 5x + 6 の解は 3 である。これを利用して、
+  X^2 - 5X + 6
+= ((X - 5)(X->3) + 1(X->3)X) (X - 3)
+= (-2 + X)(X - 3)
+= (X - 2)(X - 3)
 
+  A X^2 + B X + C = 0  の解が a のとき、
+  C = -(A a^2 + B a)
+
+  {(A X + B)[X->a] + A[X->a] X}(X - a)
+= (A a + B + A X)(X - a)
+= A a X + B X + A X^2 - A a^2 - B a - A X a
+= A X^2 + B X - (A a^2 + B a)
+= A X^2 + B X + C
+*)
     Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q.
     apply/polyP => i.
     
     rewrite mulrBr.
-    rewrite coefB.
-    rewrite coefMX.
-    rewrite coefMC.
-    
-    Check coef_poly : forall (R : semiRingType) (n : nat) (E : nat -> R) (k : nat),
-        (\poly_(i < n) E i)`_k = (if (k < n)%N then E k else 0).
-    rewrite 2!coef_poly.
+(*  rewrite coefB coefMX coefMC 2!coef_poly. *)
+    rewrite !coefE.
     
     apply: canRL (addrK _) _.
     rewrite addrC.
     
-    have := leqP.
-    case=> [le_p_i | lt_i_p].
+    case: leqP => [le_p_i | lt_i_p].
 
     (* le_p_i : (size p <= i)%N の場合 *)
     + rewrite nth_default //.
