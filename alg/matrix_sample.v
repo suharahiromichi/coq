@@ -145,13 +145,22 @@ Variable m n : nat.
 (**
 ## 関数
  *)
-Check @const_mx R m n a.
+(* 定数行列 *)
+Check @const_mx R m n a : 'M_(m, n).
+Print const_mx. (* = fun R m n (a : R) => (\matrix[const_mx_key]_(_, _) a)%R  *)
 
-Check @map_mx.
+Check @map_mx : forall aT rT : Type, (aT -> rT) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n).
+Print map_mx.                   (* = fun aT rT (f : aT -> rT) m n A =>
+                                   (\matrix[map_mx_key]_(i, j) f (A i j))%R *)
 
-Check @map2_mx.
+Check @map2_mx : forall R S T : Type, (R -> S -> T) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n) -> 'M_(m, n).
+Print map2_mx.             (* = fun R S T (f : R -> S -> T) m n A B =>
+                              (\matrix[map2_mx_key]_(i, j) f (A i j) (B i j))%R *)
 
+(* 転置行列 *)
 Locate "A ^T".                              (* := (trmx A) *)
+Check @trmx : forall (R : Type) (m n : nat), 'M_(m, n) -> 'M_(n, m). (* インデックス i j を入れ替える。 *)
+Print trmx. (* = fun R m n (A : 'M_(m, n)) => (\matrix[trmx_key]_(i, j) A j i)%R *)
 
 (**
 ## 補題
