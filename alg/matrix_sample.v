@@ -216,14 +216,14 @@ Check xrow : forall R m n, 'I_m -> 'I_m -> 'M_(m, n) -> 'M_(m, n).
 Print xrow. (* = fun R m n (i1 i2 : 'I_m) => row_perm (tperm i1 i2) *)
 
 (* 列を置き換え s した行列を取り出す。 *)
-Check row_perm : forall R m n, perm_of 'I_m -> 'M_(m, n) -> 'M_(m, n).
-(* 行を置き換え s した行列を取り出す。 *)
 Check col_perm : forall R m n, perm_of 'I_n -> 'M_(m, n) -> 'M_(m, n).
+(* 行を置き換え s した行列を取り出す。 *)
+Check row_perm : forall R m n, perm_of 'I_m -> 'M_(m, n) -> 'M_(m, n).
 
-(* 高さの同じ行列を連結する。横（行）方向に連結。 *)
-Check @row_mx : forall R m n1 n2, 'M_(m, n1) -> 'M_(m, n2) -> 'M_(m, n1 + n2).
 (* 幅の同じ行列を連結する。縦（列）方向に連結。 *)
 Check @col_mx : forall R m1 m2 n, 'M_(m1, n) -> 'M_(m2, n) -> 'M_(m1 + m2 , n).
+(* 高さの同じ行列を連結する。横（行）方向に連結。 *)
+Check @row_mx : forall R m n1 n2, 'M_(m, n1) -> 'M_(m, n2) -> 'M_(m, n1 + n2).
 (* 高さと幅の同じ行列を連結する。 *)
 Check @block_mx : forall R m1 m2 n1 n2,
     'M_(m1, n1) -> 'M_(m1, n2) -> 'M_(m2, n1) -> 'M_(m2, n2) -> 'M_(m1 + m2, n1 + n2).
@@ -241,20 +241,24 @@ Check mul_col_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
 Check mul_row_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
     (A *m row_perm s B)%R = (col_perm s^-1 A *m B)%R.
 
-(* 説明を補足する。 *)
-Check rowE : forall R m n (i : 'I_m) (A : 'M_(m, n)), row i A = (delta_mx 0 i *m A)%R.
+(* i列目を列ベクトルとして取り出す関数は、(i, 0)だけが1の行列との積に等しい。 *)
 Check colE : forall R m n (i : 'I_n) (A : 'M_(m, n)), col i A = (A *m delta_mx i 0)%R.
-Check xrowE : forall R m n (i1 i2 : 'I_m) (A : 'M_(m, n)), xrow i1 i2 A = (tperm_mx i1 i2 *m A)%R.
-Check xcolE : forall R m n (j1 j2 : 'I_n) (A : 'M_(m, n)), xcol j1 j2 A = (A *m tperm_mx j1 j2)%R.
+(* j行目を行ベクトルとして取り出す関数は、(0, j)だけが1の行列との積に等しい。 *)
+Check rowE : forall R m n (j : 'I_m) (A : 'M_(m, n)), row j A = (delta_mx 0 j *m A)%R.
 
-(* 任意の行を取り出した行ベクトルが一致であることと、行列は一致であることは、同値。 *)
-Check row_matrixP : forall R m n A B, (forall i : 'I_m, row i A = row i B) <-> A = B.
+(* xcol でj1列とj2列を入れ替えた行列は、j1列とj2列を入れ替えた単位行列との積に等しい。 *)
+Check xcolE : forall R m n (j1 j2 : 'I_n) (A : 'M_(m, n)), xcol j1 j2 A = (A *m tperm_mx j1 j2)%R.
+(* xrow でi1行とi2行を入れ替えた行列は、i1行とi2行を入れ替えた単位行列との積に等しい。 *)
+Check xrowE : forall R m n (i1 i2 : 'I_m) (A : 'M_(m, n)), xrow i1 i2 A = (tperm_mx i1 i2 *m A)%R.
+
 (* 任意の列を取り出した列ベクトルが一致であることと、行列は一致であることは、同値。 *)
 Lemma col_matrixP (A B : 'M_(m, n)) : (forall j : 'I_n, @col R m n j A = col j B) <-> A = B.
 Proof.
   split=> [eqAB | -> //]; apply/matrixP=> i j.
   by move/colP/(_ i): (eqAB j); rewrite !mxE.
 Qed.
+(* 任意の行を取り出した行ベクトルが一致であることと、行列は一致であることは、同値。 *)
+Check row_matrixP : forall R m n A B, (forall i : 'I_m, row i A = row i B) <-> A = B.
 
 (* perm しない（単位元 1g) *)
 Check col_perm1 : forall R m n A, col_perm 1%g A = A.
@@ -280,6 +284,7 @@ Check eq_col_mx : forall R m1 m2 n
                          (A1 : 'M_(m1, n)) (A2 : 'M_(m2, n)) (B1 : 'M_(m1, n)) (B2 : 'M_(m2, n)),
     col_mx A1 A2 = col_mx B1 B2 -> A1 = B1 /\ A2 = B2.
 
+End MatrixStructural.
 (**
 # block matrix　ブロック行列 区分行列
 
@@ -289,8 +294,62 @@ Check eq_col_mx : forall R m1 m2 n
 (**
 # submatrix 部分行列
 *)
+(**
+## 関数
+*)
+Check @lsubmx.
+Check @rsubmx.
+Check @usubmx.
+Check @dsubmx.
 
+Check @ulsubmx.
+Check @ursubmx.
+Check @dlsubmx.
+Check @drsubmx.
 
+Check @submxblock.
+Check @submxrow.
+Check @submxcol.
+
+(* 関数　f : ``'I_m' -> 'I_m`` と g : ``'I_n' -> 'I_n`` で部分行列を選ぶ。 *)
+Check @mxsub.
+Check @rowsub _.
+Check @colsub _.
+
+(**
+## 補題
+*)
+
+(**
+# square matrix 正方行列、diagonal matrix 対角行列
+ *)
+Section Diagonal.
+
+Variable R : semiRingType.
+Variables m n : nat.
+
+(**
+## 関数
+*)
+(* 指定要素だけ1の行列 *)
+Check @delta_mx R m n : 'I_m -> 'I_n -> 'M_(m, n).
+Print delta_mx.
+
+(* 単位行列の行を s で置き換えた行列 *)
+Check @perm_mx R n : 'S_n -> 'M_n.
+Print perm_mx.
+
+(* 単位行列の i1行目 と i2行目を入れ替えた行列 *)
+Check @tperm_mx R n : 'I_n -> 'I_n -> 'M_n.
+Print tperm_mx.
+
+(* (0,0)に 1 置いて、正方行列の行と列をひとつづ増やす。 *)
+Check @lift0_mx R n : 'M_n -> 'M_(1 + n).
+Print lift0_mx.
+
+(**
+## 補題
+*)
 End MatrixStructural.
 
 (* END *)
