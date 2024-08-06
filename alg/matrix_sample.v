@@ -331,9 +331,21 @@ Variables m n : nat.
 (**
 ## 関数
 *)
-(* 指定要素だけ1の行列 *)
+
+(* 行ベクトルを対角行列にする。 *)
+Check @diag_mx R n : 'rV_n -> 'M_n.
+
+(* 指定要素だけ1の行列。対角ではない。 *)
 Check @delta_mx R m n : 'I_m -> 'I_n -> 'M_(m, n).
 Print delta_mx.
+
+(* r 未満の対角要素だけが 1 の行列 *)
+Check @pid_mx R m n.
+Print pid_mx.
+
+(* 1%:M - pid_mx r *)
+Check @copid_mx.
+Print copid_mx.
 
 (* 単位行列の行を s で置き換えた行列 *)
 Check @perm_mx R n : 'S_n -> 'M_n.
