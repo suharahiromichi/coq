@@ -48,6 +48,7 @@ Check ltmx A B : bool.
 Check eqmx A B : Prop.
 Check genmx A : 'M_n.
 Check addsmx A B : 'M_n.
+Check capmx A B : 'M_n.
 
 (**
 ## rank に関連する補題
@@ -57,6 +58,14 @@ Check @row_freeP F m n A : reflect (exists B : 'M_(n, m), A *m B = 1%:M) (row_fr
 
 (* 逆行列が存在すること（正則であること）と、row_fullは同値 *)
 Check @row_fullP F m n A : reflect (exists B : 'M_(n, m), B *m A = 1%:M) (row_full A).
+
+Check @submx1 F m n A : (A <= 1%:M)%MS.
+Check @sub1mx F m n A : (1%:M <= A)%MS = row_full A.
+Check @submx0 F m n A : (A <= 0)%MS = (A == 0).
+Check @sub0mx F m _ n A : (0 <= A)%MS. (* _ は 0 の行数、A と 0 の行数は違ってよい。 *)
+
+Check @sub_capmx F : forall (m m1 m2 n : nat) (A : 'M_(m, n)) (B : 'M_(m1, n)) (C : 'M_(m2, n)),
+    (A <= B :&: C)%MS = (A <= B)%MS && (A <= C)%MS.
 
 (**
 # Kernel 核
@@ -94,7 +103,8 @@ Check @cokermx_eq0 F n m A : (cokermx A == 0) = row_full A.
 (**
 ## kernelに関連する補題
 *)
-
+Check @sub_kermxP F : forall (p m n : nat) (A : 'M_(m, n)) (B : 'M_(p, m)),
+    reflect (B *m A = 0) (B <= kermx A)%MS.
 
 (**
 ## %MS - scope MS (matrix set space)
