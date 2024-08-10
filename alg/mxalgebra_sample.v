@@ -65,13 +65,13 @@ Section MS.
 Check submx A B : bool.                     (* <= *)
 (* A <= B かつ ~~(B <= A) *)
 Check ltmx A B : bool.                      (* < *)
-(* A と B の階数が同じで、任意の行列Cに対して、
-   ((A <= C) = (B <= C)) * ((C <= A) = (C <= B)) *)
+(* A と B の階数が同じで、任意の行列Cに対して、 ((A <= C) = (B <= C)) * ((C <= A) = (C <= B)) *)
 Check eqmx A B : Prop.                      (* :=: *)
 
 (* m✖️n行列の行空間の基底。
    n次の正方行列で1%:Mまたは、その余計なところを0にしたもの。 *)
 Check genmx A : 'M_n.                       (* << A >> *)
+(* 正則行列なら単位行列、さもなければ、階数の部分単位行列PIDにガウスの掃き出し法のL(.1.2)を掛ける。 *)
 
 (* 行列の行空間どうしのの和空間 << col_mx A B>>
    連結した行列に対して、行空間の基底を求める *)
@@ -151,6 +151,7 @@ Check @cokermx_eq0 F n m A : (cokermx A == 0) = row_full A.
 (**
 ## kernelに関連する補題
 *)
+(* 行列 B と A の積が 0 であることと、Bの行空間がAの核の行空間に含まれることは、同値である *)
 Check @sub_kermxP F : forall (p m n : nat) (A : 'M_(m, n)) (B : 'M_(p, m)),
     reflect (B *m A = 0) (B <= kermx A)%MS.
 
