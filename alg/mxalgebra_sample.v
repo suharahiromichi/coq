@@ -27,18 +27,26 @@ Check @mxrank F m n A : nat.
 (**
 ## rank に関連するbool述語
 *)
+(* 階数が行数と同じ。 *)
+Print row_free. (* = fun F m n A) => \rank A == m *)
 Check row_free A : bool.
 Check row_free : forall (F : fieldType) (m n : nat), 'M_(m, n) -> bool.
 
-(* 階数が行数と同じ。 *)
-Print row_free. (* = fun F m n A) => \rank A == m *)
 (* 階数が列数と同じ。 *)
 Print row_full. (* = fun F m n A) => \rank A == n *)
+Check row_full A : bool.
 
-Print col_ebase.
-Print row_ebase.
-Print col_base.
-Print row_base.
+Print col_ebase.                            (* LU分割のL *)
+Check col_ebase A : 'M_m.
+
+Print row_ebase.                            (* LU分割のR *)
+Check row_ebase A : 'M_n.
+
+Print col_base.                             (* = col_ebase A *m pid_mx (\rank A) *)
+Check col_base A : 'M_(m, \rank A).         (* Lと階数分の部分単位行列の積 *)
+
+Print row_base.                             (* = pid_mx (\rank A) *m row_ebase A *)
+Check row_base A : 'M_(\rank A, n).         (* 階数分の部分単位行列とRの積 *)
 
 (**
 ## rank に関連する補題
@@ -71,7 +79,7 @@ Check eqmx A B : Prop.                      (* :=: *)
 (* m✖️n行列の行空間の基底。
    n次の正方行列で1%:Mまたは、その余計なところを0にしたもの。 *)
 Check genmx A : 'M_n.                       (* << A >> *)
-(* 正則行列なら単位行列、さもなければ、階数の部分単位行列PIDにガウスの掃き出し法のL(.1.2)を掛ける。 *)
+(* 正則行列なら単位行列、さもなければ row_baseのような正方行列 *)
 
 (* 行列の行空間どうしのの和空間 << col_mx A B>>
    連結した行列に対して、行空間の基底を求める *)
