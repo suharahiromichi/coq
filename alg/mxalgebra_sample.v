@@ -20,7 +20,7 @@ Variable A : 'M[F]_(m, n).
 
 ## rank に関連する関数
  *)
-Locate "\rank A".                 (* := (mxrank.body A) : nat_scope *)
+Locate "\rank A".                 (* := (mxrank A) : nat_scope *)
 Check \rank A : nat.              (* 自然数を返す。 *)
 Check @mxrank F m n A : nat.
 
@@ -88,13 +88,16 @@ Check diffmx A B : 'M_n.                    (* :\: *)
 (**
 ## マトリクススペース(%MS)の補題
 *)
-(* 自明なもの *)
+(* 自明なもの。 *)
 Check @submx_refl F m n A : (A <= A)%MS.
 Check @addsmxSl F m m2 n A B : (A <= A + B)%MS.
 Check @addsmxSr F m m2 n A B : (B <= A + B)%MS.
 Check @capmxSr F m m2 n A B : (A :&: B <= B)%MS.
 Check @capmxSl F m m2 n A B : (A :&: B <= A)%MS.
 Check @diffmxSl F m m2 n A B : (A :\: B <= A)%MS.
+
+(* 行列Aの行空間がBの行空間の部分空間なら、Aの階数はBの階数以下である。 *)
+Check @mxrankS F m m2 n A B : (A <= B)%MS -> (\rank A <= \rank B)%N.
 
 (* 任意の行列の行空間は、単位行列の行空間に含まれる。 *)
 Check @submx1 F m n A : (A <= 1%:M)%MS.
@@ -110,6 +113,7 @@ Check @sub0mx F m _ n A : (0 <= A)%MS.
 Check @sub_capmx F : forall (m m1 m2 n : nat) (A : 'M_(m, n)) (B : 'M_(m1, n)) (C : 'M_(m2, n)),
     (A <= B :&: C)%MS = (A <= B)%MS && (A <= C)%MS.
 
+End MS.
 
 (**
 # Kernel 核
