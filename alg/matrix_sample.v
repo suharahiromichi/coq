@@ -292,33 +292,40 @@ End MatrixStructural.
  *)
 
 (**
-# submatrix 部分行列
+# submatrix 部分行列 小行列
+
+mxalgebra.v で扱う部分空間ではないことに注意
 *)
 (**
 ## 関数
-*)
-Check @lsubmx.
-Check @rsubmx.
-Check @usubmx.
-Check @dsubmx.
 
-Check @ulsubmx.
-Check @ursubmx.
-Check @dlsubmx.
-Check @drsubmx.
+型だけで連想できる。
+*)
+Check @lsubmx : forall (R : Type) (m n1 n2 : nat), 'M_(m, n1 + n2) -> 'M_(m, n1).
+Check @rsubmx : forall (R : Type) (m n1 n2 : nat), 'M_(m, n1 + n2) -> 'M_(m, n2).
+Check @usubmx : forall (R : Type) (m1 m2 n : nat), 'M_(m1 + m2, n) -> 'M_(m1, n).
+Check @dsubmx : forall (R : Type) (m1 m2 n : nat), 'M_(m1 + m2, n) -> 'M_(m2, n).
+Check @ulsubmx : forall (R : Type) (m1 m2 n1 n2 : nat), 'M_(m1 + m2, n1 + n2) -> 'M_(m1, n1).
+Check @ursubmx : forall (R : Type) (m1 m2 n1 n2 : nat), 'M_(m1 + m2, n1 + n2) -> 'M_(m1, n2).
+Check @dlsubmx : forall (R : Type) (m1 m2 n1 n2 : nat), 'M_(m1 + m2, n1 + n2) -> 'M_(m2, n1).
+Check @drsubmx : forall (R : Type) (m1 m2 n1 n2 : nat), 'M_(m1 + m2, n1 + n2) -> 'M_(m2, n2).
 
 Check @submxblock.
 Check @submxrow.
 Check @submxcol.
 
-(* 関数　f : ``'I_m' -> 'I_m`` と g : ``'I_n' -> 'I_n`` で部分行列を選ぶ。 *)
-Check @mxsub.
-Check @rowsub _.
-Check @colsub _.
+(* 関数 f : ``'I_m' -> 'I_m`` と、g : ``'I_n' -> 'I_n`` で部分行列を選ぶ。 *)
+Check @mxsub
+  : forall (R : Type) (m n m' n' : nat), ('I_m' -> 'I_m) -> ('I_n' -> 'I_n) -> 'M_(m, n) -> 'M_(m', n').
+Check rowsub _.                             (* f のみ *)
+Check colsub _.                             (* g のみ *)
 
 (**
 ## 補題
 *)
+(* row_mx で連結したものを、lsubmx で取り出す。lsubmx にn1,n2の指定は不要であることがわかる。 *)
+Check row_mxKl : forall (R : Type) (m n1 n2 : nat) (A1 : 'M_(m, n1)) (A2 : 'M_(m, n2)),
+    lsubmx (row_mx A1 A2) = A1.
 
 (**
 # square matrix 正方行列、diagonal matrix 対角行列
@@ -339,12 +346,15 @@ Check @diag_mx R n : 'rV_n -> 'M_n.
 Check @delta_mx R m n : 'I_m -> 'I_n -> 'M_(m, n).
 Print delta_mx.
 
-(* r 未満の対角要素だけが 1 の行列 *)
-Check @pid_mx R m n.
+(* 部分単位行列。r未満の対角要素だけが 1 の行列、正方行列でなくてもよい。 *)
+Check @pid_mx R m n : nat -> 'M_(m, n).
 Print pid_mx.
+(* 正方行列の右(mathcompでは*mの左)に掛けると列のサイズを調整できる。 *)
+(* 正方行列の左(mathcompでは*mの右)に掛けると行のサイズを調整できる。 *)
+(* サイズの調整とは、列または行をrの個数だけ残して、あとは0を詰める。 *)
 
 (* 1%:M - pid_mx r *)
-Check @copid_mx.
+Check @copid_mx : forall (R : ringType) (n : nat), nat -> 'M_n.
 Print copid_mx.
 
 (* 単位行列の行を s で置き換えた行列 *)

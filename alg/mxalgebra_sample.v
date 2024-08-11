@@ -39,14 +39,16 @@ Check row_full A : bool.
 Print col_ebase.                            (* LU分割のL *)
 Check col_ebase A : 'M_m.
 
-Print row_ebase.                            (* LU分割のR *)
+Print row_ebase.                            (* LU分割のU *)
 Check row_ebase A : 'M_n.
 
 Print col_base.                             (* = col_ebase A *m pid_mx (\rank A) *)
-Check col_base A : 'M_(m, \rank A).         (* Lと階数分の部分単位行列の積 *)
+Check col_base A : 'M_(m, \rank A).         (* 階数分の部分単位行列とLの積 *)
+(* 実際は、寸法mの正方行列のLに、0をつけるなどして、寸法を調整したもの *)
 
 Print row_base.                             (* = pid_mx (\rank A) *m row_ebase A *)
-Check row_base A : 'M_(\rank A, n).         (* 階数分の部分単位行列とRの積 *)
+Check row_base A : 'M_(\rank A, n).         (* Uと階数分の部分単位行列の積 *)
+(* 実際は、寸法nの正方行列のUに、0をつけるなどして、寸法を調整したもの *)
 
 (**
 ## rank に関連する補題
@@ -79,7 +81,7 @@ Check eqmx A B : Prop.                      (* :=: *)
 (* m✖️n行列の行空間の基底。
    n次の正方行列で1%:Mまたは、その余計なところを0にしたもの。 *)
 Check genmx A : 'M_n.                       (* << A >> *)
-(* 正則行列なら単位行列、さもなければ row_baseのような正方行列 *)
+(* Aが正則行列なら単位行列、さもなければ Uに0をつけたもの。 *)
 
 (* 行列の行空間どうしのの和空間 << col_mx A B>>
    連結した行列に対して、行空間の基底を求める *)
@@ -162,6 +164,9 @@ Check @cokermx_eq0 F n m A : (cokermx A == 0) = row_full A.
 (* 行列 B と A の積が 0 であることと、Bの行空間がAの核の行空間に含まれることは、同値である *)
 Check @sub_kermxP F : forall (p m n : nat) (A : 'M_(m, n)) (B : 'M_(p, m)),
     reflect (B *m A = 0) (B <= kermx A)%MS.
+
+(* カーネルの階数 *)
+Check @mxrank_ker F m n A : \rank (kermx A) = (m - \rank A)%N.
 
 (**
 ## %MS - scope MS (matrix set space)
