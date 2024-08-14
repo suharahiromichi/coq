@@ -606,7 +606,7 @@ Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) *
                                                   ((x \in root p) = (p.[x] == 0)).
 
 (**
-## 因数定理
+## 因数定理 factor_theorem
 
 任意の多項式``p``に対して、
 ``p = q * (X - a)`` なる多項式``q``が存在すること、と、
@@ -635,54 +635,69 @@ Proof.
       by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
 Qed.
 
-Compute drop 1%N [::1%N; 2%N; 3%N].
-Compute drop 2%N [::1%N; 2%N; 3%N].
-Compute drop 3%N [::1%N; 2%N; 3%N].
-
 Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
 Proof.
   move=> p a.
   apply: (iffP eqP) => [pa0 | [q ->]].
+  
+  Check exists q0 : {poly R}, p = q0 * ('X - a%:P).
+  (* 手でやる因数分解と同じことをして、q0 に具体的な多項式を与える。 *)
+  Check \poly_(i < size p) (horner_rec (drop i.+1 p) a).
   - exists (\poly_(i < size p) (horner_rec (drop i.+1 p) a)).
-    Check \poly_(i < size p) (horner_rec (drop i.+1 p) a). (* 手でやる因数分解と同じ *)
-(**
-  X^2 - 5x + 6 の解は 3 である。これを利用して、
-  X^2 - 5X + 6
-= ((X - 5)(X->3) + 1(X->3)X) (X - 3)
-= (-2 + X)(X - 3)
-= (X - 2)(X - 3)
 
+(**
+   X^2 - 5x + 6 の解は 3 である。これを利用して、
+p = X^2 - 5X + 6
+= ((X - 5)(X->3) + 1(X->3)X)・(X - 3)
+= (-2 + X)                  ・(X - 3)
+= (X - 2)                   ・(X - 3)
+= q                         ・(X - 3)
+
+Compute drop 1%N [::6; -5; 1].  (* = [:: -5; 1] *) (* i = 0, 1 の項, (X - 5)  *)
+Compute drop 2%N [::6; -5; 1].  (* = [:: 1] *)     (* i = 1, X の項, 1 *)
+ *)
+    
+(**    
   A X^2 + B X + C = 0  の解が a のとき、
   C = -(A a^2 + B a)
 
-  {(A X + B)[X->a] + A[X->a] X}(X - a)
-= (A a + B + A X)(X - a)
+p = {(A X + B)[X->a] + A[X->a] X}・(X - a)
+= (A a + B + A X)                ・(X - a)
 = A a X + B X + A X^2 - A a^2 - B a - A X a
 = A X^2 + B X - (A a^2 + B a)
 = A X^2 + B X + C
 *)
+    Check p = \poly_(i < size p) horner_rec (drop i.+1 p) a * ('X - a%:P).
     Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q.
-    apply/polyP => i.
+    apply/polyP => i.                       (* 係数どうしの比較にする。 *)
     
-    rewrite mulrBr.
-(*  rewrite coefB coefMX coefMC 2!coef_poly. *)
-    rewrite !coefE.
+    rewrite mulrBr.                         (* 積差の展開する。 *)
+    rewrite !coefE.                         (* \poly_ を外す。 *)
     
-    apply: canRL (addrK _) _.
-    rewrite addrC.
+    (* 右辺のマイナスの項を左辺に移項する。 *)
+    Check @addrK _ ((if (i < size p)%N then horner_rec (drop i.+1 p) a else 0) * a)
+      : cancel (+%R^~ ((if (i < size p)%N then horner_rec (drop i.+1 p) a else 0) * a))
+          (+%R^~ (- ((if (i < size p)%N then horner_rec (drop i.+1 p) a else 0) * a))).
+    Check @canRL _ _ _ _ _ _
+      (addrK ((if (i < size p)%N then horner_rec (drop i.+1 p) a else 0) * a)).
+    apply: (canRL (addrK _)).
+    rewrite addrC.                          (* さらに左辺の加算を入れ替える。 *)
     
     case: leqP => [le_p_i | lt_i_p].
-
+    
     (* le_p_i : (size p <= i)%N の場合 *)
-    + rewrite nth_default //.
-
-      Check Monoid.simpm.                   (* マルチルール *)
+    (* i が多項式のサイズを超える場合は、両辺は零である。 *)
+    + rewrite nth_default //.               (* 左辺は、nth のディフォルト 0 を使う *)
+      Check Monoid.simpm.                   (* モノイドのマルチルール。あとで扱う。 *)
       rewrite Monoid.simpm.
+      rewrite mul0r.
       
-      rewrite drop_oversize.
-      * rewrite 2!if_same //.
-        by rewrite mul0r.
-      * exact: leq_trans (leqSpred _).
+      rewrite drop_oversize.                (* 右辺は、drop がリストのサイズを超えてnilになる。 *)
+      * by rewrite 2!if_same.
+      * apply: (@leq_trans i (size p) (i.-1.+1)) => //=.
+        by apply: (leqSpred i).
+        Undo 2.
+        exact: leq_trans (leqSpred _).      (* こういう書き方もできる。 *)
         
     (* lt_i_p : (i < size p)%N の場合 *)
     + case: i lt_i_p => [| i] lt_i_p.
@@ -696,6 +711,8 @@ Proof.
            rewrite (drop_nth 0 lt_i_p).
            done.
         ** done.
+           
+  Check (q * ('X - a%:P)).[a] = 0.          (* 任意のp q について成り立つことを証明する。 *)
   - rewrite hornerM_comm.
     + rewrite !hornerE.                     (* hornerXsubC *)
       rewrite subrr.
@@ -710,7 +727,7 @@ Qed.
 
 
 (**
-## 代数学の基本定理
+## 代数学の基本定理 max_poly_roots
 
 任意の整数係数(idomain)の多項式``p``（ただし 0 でない）の重解を除いた解の数は、``p``の次数以下である。
 ただし、``p``の係数のサイズ``(size p)``は、次数(degree)+1 である。
