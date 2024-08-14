@@ -783,13 +783,13 @@ Goal forall (R : idomainType) (p : {poly R}) (rs : seq R),
     p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
 Proof.
   move=> R p rs.
-  elim: rs p => [p pn0 _ _ | r rs' IHrs p pn0].
-
+  elim: rs p => [p pn0 _ _ | r rs' IHrs p pn0]. (* ここで、∀ p にすることに注意！ *)
+  
   (* 0 でない多項式のサイズは 0 より大きい。 *)
   Check size_poly_gt0 : forall (R : semiRingType) (p : {poly R}), (0 < size p)%N = (p != 0).
   - by rewrite size_poly_gt0.
     
-    Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
+  Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
   - rewrite /=.
     (* ``r :: rs`` が分解され、r \notin rs になる。 *)
     Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
@@ -801,13 +801,17 @@ Proof.
       : forall (R : ringType) (p : {poly R}) (a : R),
         reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
     case/factor_theorem: rpr => q epq.
-    (* 「p の解が r である」を「pが(X - r) と q の積である」に言い換える。 *)
+    (* 「p の解が r である」を「p は (X - r) と q の積である」に言い換える。 *)
+    
+    Check epq : p = q * ('X - r%:P).        (* 前提 *)
+    Check ((size rs').+1 < size p)%N.       (* goal *)
     
     Check eqVneq q 0 : eq_xor_neq q 0 (0 == q) (q == 0).
     have [q0 | qn0] := eqVneq q 0. (* q = 0 と q != 0 に条件分けする。  *)
+    
     (* q = 0 の場合*)
-    + move: pn0.
-      by rewrite epq q0 mul0r eqxx.         (* epq で書き換える。 *)
+    + move: pn0.                            (* p != 0 *)
+      by rewrite epq q0 mul0r eqxx.         (* epq から p = 0 になるので、前提矛盾。 *)
       
     (* q != 0 の場合 *)
       (* H1 *)
@@ -837,12 +841,12 @@ Proof.
         (* x != r の場合 *)
         * done.
       }.
-      move/eq_in_all in H2.
-      (* H2 : all (root q) rs' = all (root p) rs' ... H2をわかりやすく書き換えたもの。 *)
+      move/eq_in_all in H2.           (* H2を使いやすく書き換える。 *)
+      
       (* H1 : size p = (size q).+1 *)
-
+      (* H2 : all (root q) rs' = all (root p) rs' *)
       rewrite H1.
-      apply: IHrs => //=.
+      apply: IHrs => //=.                   (* IHrs は、∀p に注意 *)
       rewrite H2.
       done.
 Qed.
@@ -867,8 +871,13 @@ Qed.
 (**
 ## モノイドのマルチルール (see. bigop.v)
 *)
-Check Monoid.simpm.
-Check (Monoid.mulm1, Monoid.mulm0, Monoid.mul1m, Monoid.mul0m, Monoid.mulmA).
+Check Monoid.simpm.                         (* 左右単位元、左右零元、結合律 *)
+(* 内訳 *)
+Check Monoid.mulm1 : forall (T : Type) (idm : T) (mul : Monoid.law idm), right_id idm mul.
+Check Monoid.mulm0 : forall (T : Type) (idm : T) (mul : Monoid.mul_law idm), right_zero idm mul.
+Check Monoid.mul1m : forall (T : Type) (idm : T) (mul : Monoid.law idm), left_id idm mul.
+Check Monoid.mul0m : forall (T : Type) (idm : T) (mul : Monoid.mul_law idm), left_zero idm mul.
+Check Monoid.mulmA : forall (T : Type) (mul : SemiGroup.law T), associative mul.
 
 (**
 # 多項式の定義の間の相互変換
