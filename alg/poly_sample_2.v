@@ -215,20 +215,24 @@ Check @coef_derivn R
   : forall (n : nat) (p : {poly R}) (i : nat), (p^`(n))`_i = p`_(n + i) *+ (n + i) ^_ n.
 
 (**
-## マルチルール
- *)
-Check derivE.
-Check (derivZ, deriv_mulC, derivC, derivX, derivMXaddC, derivXsubC, derivM, derivB,
-        derivD, derivN, derivXn, derivM, derivMn).
-
-(**
 ## ``deriv`` と ``derivn n`` は線形である。ssralg.v で定義。
  *)
 Check deriv_is_linear : forall R : ringType, linear (deriv (R:=R)).
-HB.about GRing.isLinear.Build.
+(* 証明 *)
+Goal linear (@deriv R).
+Proof.
+  move=> k p q.
+  Check (k *: p + q)^`() = k *: p^`() + q^`().
+  apply/polyP => i.
+  rewrite !(coef_deriv, coefD, coefZ).
+  rewrite mulrnDl.
+  rewrite mulrnAr.
+  done.
+Qed.
+HB.about GRing.isLinear.Build.              (* 登録 *)
 
 (**
-以下が成り立つようになり、補題が使えるようになる。
+以下が成り立つようになり、線形性についての補題が使えるようになる。
 *)
 Check (@deriv R) : {linear {poly R} -> {poly R}}.
 
@@ -259,6 +263,61 @@ Proof.
   by apply: linear0.
   Undo.
   by rewrite linearE.
+Qed.
+
+(**
+## 微分公式（マルチルール）
+ *)
+Check derivZ      : forall (R : ringType) (c : R) (p : {poly R}), (c *: p)^`() = c *: p^`().
+Check deriv_mulC  : forall (R : ringType) (c : R) (p : {poly R}), (c%:P * p)^`() = c%:P * p^`().
+Check derivC      : forall (R : ringType) (c : R), c%:P^`() = 0.
+Check derivX      : forall R : ringType, 'X ^`() = 1.
+Check derivMXaddC : forall (R : ringType) (p : {poly R}) (c : R), (p * 'X + c%:P)^`() = p + p^`() * 'X.
+Check derivXsubC  : forall (R : ringType) (a : R), ('X - a%:P)^`() = 1.
+Check derivM      : forall (R : ringType) (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
+
+Check derivB      : forall R : ringType, {morph deriv (R:=R) : p q / p - q}.
+Check derivD      : forall R : ringType, {morph deriv (R:=R) : p q / p + q}.
+Check derivN      : forall R : ringType, {morph deriv (R:=R) : p / - p}.
+
+Check derivB p q  : (p - q)^`() = p^`() - q^`().
+Check derivD p q  : (p + q)^`() = p^`() + q^`().
+Check derivN p    : (- p)^`() = - p^`().
+
+Check derivXn     : forall (R : ringType) (n : nat), 'X^n^`() = 'X^n.-1 *+ n.
+Check derivM      : forall (R : ringType) (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
+Check derivMn     : forall (R : ringType) (n : nat) (p : {poly R}), (p *+ n)^`() = p^`() *+ n.
+Check derivE.                               (* マルチルール *)
+
+(* derivZ *)
+Goal forall (c : R) (p : {poly R}), (c *: p)^`() = c *: p^`().
+Proof.
+  move=> c p.
+  Check linearZ.
+  Check linearZ (a:=c).
+  Check @linearZ R {poly R} _ GRing.scale R GRing.scale c c.
+  Check Linear.map_for {poly R} GRing.scale c ( *:%R c).
+  rewrite (@linearZ R {poly R} _ GRing.scale R GRing.scale c c).
+  simpl.
+  done.
+Qed.
+
+(* derivM *)
+Goal forall (p q : {poly R}), (p * q) ^`() = p ^`() * q + p * q ^`().
+Proof.
+  move=> p q.
+  elim/poly_ind: p => [|p b IHp].           (* poly_sample.v 参照 *)
+  
+  Check (0 * q)^`() = 0^`() * q + 0 * q^`().
+  - by rewrite !(mul0r, add0r, derivC).
+
+  Check IHp : (p * q)^`() = p^`() * q + p * q^`().
+  Check ((p * 'X + b%:P) * q)^`() = (p * 'X + b%:P)^`() * q + (p * 'X + b%:P) * q^`().
+  - rewrite mulrDl -mulrA -commr_polyX mulrA -[_ * 'X]addr0 raddfD /=.
+    rewrite !derivMXaddC.
+    rewrite deriv_mulC.
+    rewrite IHp !mulrDl -!mulrA !commr_polyX !addrA.
+    done.
 Qed.
 
 (**
