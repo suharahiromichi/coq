@@ -187,7 +187,7 @@ Check cons_poly : forall R : semiRingType, R -> {poly R} -> {poly R}.
 
 (* p が nil (0多項式) でないなら、cons_poly は、 p に c を cons したもの。
    p が nil (0多項式) なら、cons_poly は、 c の定数多項式。
-   これは、seq R で比較する。
+  これは、seq R で比較する。
    ~~~~~~~~~~~~~~~~~~~~~~~~ *)
 Check polyseq_cons : forall (R : semiRingType) (c : R) (p : {poly R}),
     cons_poly c p = (if ~~ nilp p then c :: p else c%:P) :> seq R.
@@ -534,15 +534,16 @@ Check @horner_Poly R
   : forall (s : seq R) (x : R), (Poly s).[x] = horner_rec s x.
 
 (**
-## 多項式の係数とパラメータxが可換であること、パラメータxの評価結果とパラメータxが可換であること
+## 多項式の可換性 - 因数定理の証明に使う
+
+多項式の係数とパラメータxが可換であること、パラメータxの評価結果とパラメータxが可換であること
 *)
 Print comm_coef. (* = fun (R : ringType) (p : {poly R}) (x : R) => forall i : nat, p`_i * x = x * p`_i *)
 Print comm_poly. (* = fun (R : ringType) (p : {poly R}) (x : R) => x * p.[x] = p.[x] * x *)
-Check @comm_coef_poly R : forall (p : {poly R}) (x : R), comm_coef p x -> comm_poly p x.
 
-(**
-## Horner評価法の補題
- *)
+Check @comm_coef_poly R : forall (p : {poly R}) (x : R), comm_coef p x -> comm_poly p x.
+Check @hornerM_comm R : forall (p q : {poly R}) (x : R), comm_poly q x -> (p * q).[x] = p.[x] * q.[x].
+
 (**
 ``(a * p).[x]`` の分配法則；
 定数多項式aに多項式pを掛けたものを、パラメータxで評価したものは、
@@ -560,8 +561,6 @@ Check @hornerCM R : forall (a : R) (p : {poly R}) (x : R), (a%:P * p).[x] = a * 
 Check @hornerM_comm R : forall (p q : {poly R}) (x : R),
     comm_poly q x -> (p * q).[x] = p.[x] * q.[x].
 
-Check @horner_poly R
-  : forall (n : nat) (E : nat -> R) (x : R), (\poly_(i < n) (E i)).[x] = \sum_(i < n) (E i * x ^+ i).
 
 (**
 ## hornerE と hornerE_comm - マルチルール
@@ -622,7 +621,7 @@ Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X -
 Proof.
   move=> p a.
   apply: (iffP eqP) => [pa0 | [q ->]]; last first.
-  - rewrite hornerM_comm /comm_poly !hornerE subrr ?simp. (* hornerEXsubC *)
+  - rewrite hornerM_comm /comm_poly !hornerE subrr ?simp. (* hornerXsubC *)
     + by rewrite mulr0.
     + by rewrite mulr0 mul0r.
   - exists (\poly_(i < size p) horner_rec (drop i.+1 p) a).
@@ -635,18 +634,12 @@ Proof.
       by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
 Qed.
 
-Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
-Proof.
-  move=> p a.
-  apply: (iffP eqP) => [pa0 | [q ->]].
-  
-  Check exists q0 : {poly R}, p = q0 * ('X - a%:P).
-  (* 手でやる因数分解と同じことをして、q0 に具体的な多項式を与える。 *)
-  Check \poly_(i < size p) (horner_rec (drop i.+1 p) a).
-  - exists (\poly_(i < size p) (horner_rec (drop i.+1 p) a)).
-
 (**
-   X^2 - 5x + 6 の解は 3 である。これを利用して、
+p に対する q の計算例：
+
+q = \poly_(i < size p) (horner_rec (drop i.+1 p) a)
+
+p = X^2 - 5x + 6 の解は 3 である。これを利用して、
 p = X^2 - 5X + 6
 = ((X - 5)(X->3) + 1(X->3)X)・(X - 3)
 = (-2 + X)                  ・(X - 3)
@@ -658,15 +651,46 @@ Compute drop 2%N [::6; -5; 1].  (* = [:: 1] *)     (* i = 1, X の項, 1 *)
  *)
     
 (**    
-  A X^2 + B X + C = 0  の解が a のとき、
-  C = -(A a^2 + B a)
+p = A X^2 + B X + C = 0  の解が a のとき、
+C = -(A a^2 + B a) であるから、
 
-p = {(A X + B)[X->a] + A[X->a] X}・(X - a)
-= (A a + B + A X)                ・(X - a)
+p = q・(X - a)
+= {(A X + B)[X->a] + A[X->a] X}・(X - a)
+= (A a + B + A X)              ・(X - a)
 = A a X + B X + A X^2 - A a^2 - B a - A X a
 = A X^2 + B X - (A a^2 + B a)
 = A X^2 + B X + C
 *)
+
+(**
+証明の概要：
+
+- <-方向： ``p``の解が``a``なら、``p = q * (X - a)`` を満たす``q``が存在することを証明する。
+  手でやる因数分解と同じことをして、q0 に具体的な多項式（上の計算例）を与える。
+  多項式の係数毎の比較に変換する。係数のインデックス i の場合分けで証明する。
+  + size p <= i なら、多項式のサイズから外れているから、両辺は0
+  + i < size p なら、
+    * i = 0 なら、
+    * i > 0 なら、
+- ->方向：``p = q * (X - a)`` を満たす``q``は存在するなら、``p``の解は``a``であるを証明する。
+  前提のexistsを場合分けすると、任意の多項式xに対して、以下が が成り立つことを証明すればよい。
+  ``(x * ('X - a%:P)).[a] = 0``
+  多項式の可換性（前出）を使用して、以下をそれぞれ証明する（前回の復習の箇所 acs_lesson6_proofcafe.v）。
+  + x.[a] * ('X - a%:P).[a] = 0
+  + a * ('X - a%:P).[a] = ('X - a%:P).[a] * a
+ *)
+
+Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
+Proof.
+  move=> p a.
+  apply: (iffP eqP) => [pa0 | q].
+  
+  (* <- ``p``の解が``a``なら、``p = q * (X - a)`` を満たす``q``は存在する。  *)
+  Check exists q0 : {poly R}, p = q0 * ('X - a%:P).
+  (* 手でやる因数分解と同じことをして、q0 に具体的な多項式を与える。 *)
+  Check \poly_(i < size p) (horner_rec (drop i.+1 p) a).
+  - exists (\poly_(i < size p) (horner_rec (drop i.+1 p) a)).
+
     Check p = \poly_(i < size p) horner_rec (drop i.+1 p) a * ('X - a%:P).
     Check polyP : forall (R : semiRingType) (p q : {poly R}), nth 0 p =1 nth 0 q <-> p = q.
     apply/polyP => i.                       (* 係数どうしの比較にする。 *)
@@ -688,59 +712,70 @@ p = {(A X + B)[X->a] + A[X->a] X}・(X - a)
     (* le_p_i : (size p <= i)%N の場合 *)
     (* i が多項式のサイズを超える場合は、両辺は零である。 *)
     + rewrite nth_default //.               (* 左辺は、nth のディフォルト 0 を使う *)
-      Check Monoid.simpm.                   (* モノイドのマルチルール。あとで扱う。 *)
+      Check Monoid.simpm.                   (* モノイドのマルチルール。あとで説明する。 *)
       rewrite Monoid.simpm.
       rewrite mul0r.
       
-      rewrite drop_oversize.                (* 右辺は、drop がリストのサイズを超えてnilになる。 *)
-      * by rewrite 2!if_same.
+      Check drop_oversize : forall (T : Type) (n : nat) (s : seq T), (size s <= n)%N -> drop n s = [::].
+      rewrite drop_oversize. (* 右辺は、drop がリストのサイズを超えてnilになる。 *)
+      (* ****** *)
+      * simpl.                              (* then も else も 0 であることがわかる。 *)
+        Check if_same : forall (A : Type) (b : bool) (vT : A), (if b then vT else vT) = vT.
+        by rewrite 2!if_same.
       * apply: (@leq_trans i (size p) (i.-1.+1)) => //=.
         by apply: (leqSpred i).
         Undo 2.
         exact: leq_trans (leqSpred _).      (* こういう書き方もできる。 *)
         
     (* lt_i_p : (i < size p)%N の場合 *)
-    + case: i lt_i_p => [| i] lt_i_p.
-      * rewrite drop1 /= -{}pa0 /horner.
+    + case: i lt_i_p => [/= | i] lt_i_p.
+      (* i = 0 の場合、drop 1 *)
+      * rewrite drop1 /= -pa0 /horner.
         case: (p : seq R) lt_i_p.
         ** done.
         ** rewrite /=.
            done.
+      (* i > 0 の場合、drop 2以上 *)
       * rewrite ltnW.
         ** rewrite //.
            rewrite (drop_nth 0 lt_i_p).
            done.
         ** done.
            
-  Check (q * ('X - a%:P)).[a] = 0.          (* 任意のp q について成り立つことを証明する。 *)
-  - rewrite hornerM_comm.
-    + rewrite !hornerE.                     (* hornerXsubC *)
+  (* -> ``p = q * (X - a)`` を満たす``q``は存在するなら、``p``の解は``a``である。 *)
+  (* ****** *)
+  - move: q => [] x ->.         (* 前提のexistsは場合分けする。 *)
+    Check (x * ('X - a%:P)).[a] = 0.
+    rewrite hornerM_comm.                 (* 多項式の可換性（前出） *)
+    + Check x.[a] * ('X - a%:P).[a] = 0. (* 任意のp q について成り立つことを証明する。 *)
+      rewrite !hornerE.                  (* hornerXsubC *)
       rewrite subrr.
       rewrite mulr0.
       done.
     + rewrite /comm_poly.
+      Check a * ('X - a%:P).[a] = ('X - a%:P).[a] * a.
       rewrite !hornerE.                     (* hornerXsubC *)
       rewrite subrr.
       rewrite mulr0 mul0r.
       done.
 Qed.
 
-
 (**
 ## 代数学の基本定理 max_poly_roots
 
 任意の整数係数(idomain)の多項式``p``（ただし 0 でない）の重解を除いた解の数は、``p``の次数以下である。
-ただし、``p``の係数のサイズ``(size p)``は、次数(degree)+1 である。
 
-因数定理とmonic についての補題を使用する。
+このとき、``p``の次数＋1を``size p``で示し、解の数は解のリストrsの``size rs``で表すので、
+``size rs ≦ degree p  ==  size rs < size p`` であることを証明する。
  *)
 Check @max_poly_roots
   : forall (R : idomainType) (p : {poly R}) (rs : seq R),
     p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
 
+
 (**
 poly.v に近いかたち
-*)
+ *)
 Goal forall (R : idomainType) (p : {poly R}) (rs : seq R),
     p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
 Proof.
@@ -785,7 +820,7 @@ Proof.
   move=> R p rs.
   elim: rs p => [p pn0 _ _ | r rs' IHrs p pn0]. (* ここで、∀ p にすることに注意！ *)
   
-  (* 0 でない多項式のサイズは 0 より大きい。 *)
+  (* 0多項式でない多項式のサイズは 0 より大きい。 *)
   Check size_poly_gt0 : forall (R : semiRingType) (p : {poly R}), (0 < size p)%N = (p != 0).
   - by rewrite size_poly_gt0.
     
@@ -814,9 +849,11 @@ Proof.
       by rewrite epq q0 mul0r eqxx.         (* epq から p = 0 になるので、前提矛盾。 *)
       
     (* q != 0 の場合 *)
-      (* H1 *)
-      (* p と (p の因数である) q の次数が一つ違いであることを証明する。 *)
-      (* monic についての補題を使用する。 *)
+      (* H1 : p と (p の因数である) q の次数が一つ違いであること。 *)
+      (* 零多項式の場合を考慮して、一般には ``<=`` になる。
+         pがモニックでなくとも、両方または一方が非零でなければ ``=`` になる。
+         しかし、この場合は、pがモニックで、qが非零なので、この補題を使用する。
+       *)
       Check size_Mmonic                     (* monic の掛け算 *)
         : forall (R : ringType) (p q : {poly R}),
           p != 0 -> q \is monic -> size (p * q) = (size p + size q).-1.
@@ -824,27 +861,30 @@ Proof.
     + have H1 : size p = (size q).+1
         by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
 
-      (* H2 *)
-      (* q の全解がrs'であることと、pの全解がrs'であることは同値である。 *)
+      (* H2 : q の解がrs'であることと、pの解がrs'であることは同値である。 *)
       (* この rs' は、r についての帰納法におけるseqの残りの部分である。 *)
-      (* uniq (r :: rs') から、rs' に r は含まれないことに注意！！ *)
+      (* uniq (r :: rs') から、rs' に r は含まれない。
+         rはpの解だが、重解でなければqの解ではない。 *)
+      (* in rs' であるから、rs'にすべてが解であればよく、rs’が網羅している必要はない。 *)
       have H2 : {in rs', root q =1 root p}.
       {
-        move=> x xrs'.
-        Check root q x = root p x.
+        move=> x.
+        Check x \in rs' -> root q x = root p x.
+        move=> xrs'.
         rewrite epq rootM root_XsubC orbC.    (* epq で書き換える。 *)
         
         case: (eqVneq x r) => exr.            (* x = r と x != r に条件分けする。 *)
-        (* x = r の場合 *)
+        (* x = r の場合、重解で rs' に r が含まれている場合 *)
         * move: rnrs'.
           by rewrite -exr xrs'.
         (* x != r の場合 *)
         * done.
       }.
-      move/eq_in_all in H2.           (* H2を使いやすく書き換える。 *)
+      move/eq_in_all in H2.           (* H2を使いやすく、等式の形に書き換える。 *)
       
       (* H1 : size p = (size q).+1 *)
       (* H2 : all (root q) rs' = all (root p) rs' *)
+      (* ****** *)
       rewrite H1.
       apply: IHrs => //=.                   (* IHrs は、∀p に注意 *)
       rewrite H2.
@@ -856,7 +896,7 @@ Qed.
 *)
 
 (**
-## 自明である
+## 零多項式の係数はすべて零である。
 *)
 Goal (poly_nil R)`_0 = 0.
 Proof.
