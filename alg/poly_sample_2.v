@@ -207,10 +207,22 @@ Check deriv (Poly [:: 3; 2; 1]).
 Check @deriv R (Poly [:: 3; 2; 1]).
 
 (**
-## 多項式pを微分したときの係数は。。。。
+## 多項式pを微分したときの係数 (よく使う補題)
 *)
 Check @coef_deriv R
   : forall (p : {poly R}) (i : nat), (p^`())`_i = p`_i.+1 *+ i.+1.
+
+(* coef_deriv *)
+Goal forall (p : {poly R}) i,  p ^`()`_i = p`_i.+1 *+ i.+1.
+Proof.
+  move=> p i.
+  rewrite coef_poly -subn1 ltn_subRL.
+  case: leqP => //.
+  move/(nth_default 0) ->.
+  rewrite mul0rn.
+  done.
+Qed.
+
 Check @coef_derivn R
   : forall (n : nat) (p : {poly R}) (i : nat), (p^`(n))`_i = p`_(n + i) *+ (n + i) ^_ n.
 
@@ -218,6 +230,7 @@ Check @coef_derivn R
 ## ``deriv`` と ``derivn n`` は線形である。ssralg.v で定義。
  *)
 Check deriv_is_linear : forall R : ringType, linear (deriv (R:=R)).
+
 (* 証明 *)
 Goal linear (@deriv R).
 Proof.
@@ -300,6 +313,31 @@ Proof.
   rewrite (@linearZ R {poly R} _ GRing.scale R GRing.scale c c).
   simpl.
   done.
+Qed.
+
+(* derivD 線形性 *)
+Goal forall (p q : {poly R}), (p + q)^`() = p^`() + q^`().
+Proof.
+  move=> p q.
+  by apply: linearD.
+Qed.
+
+(* deriv_mulC *)
+Goal forall (c : R) (p : {poly R}), (c%:P * p)^`() = c%:P * p^`().
+Proof.
+  move=> c p.
+  rewrite !mul_polyC.
+  rewrite derivZ.
+  done.
+Qed.
+
+(* derivMXaddC *)
+Goal forall (p : {poly R}) (c : R), (p * 'X + c%:P)^`() = p + p^`() * 'X.
+Proof.
+  move=> p c.
+  apply/polyP=> i.
+  rewrite raddfD /= derivC addr0 coefD !(coefMX, coef_deriv).
+  by case: i; rewrite ?addr0.
 Qed.
 
 (* derivM *)
