@@ -387,7 +387,7 @@ Check map_polyE
 Locate "p ^:P". (* := (map_poly polyC p) : ring_scope (default interpretation) *)
 
 (**
-## 多項式の合成 (polynomial composition)
+# 多項式の合成 (polynomial composition)
  *)
 Locate "p \Po q". (* := (comp_poly q p) : ring_scope (default interpretation) *)
 Print comp_poly. (* = fun (R : ringType) (q p : {poly R}) => p^:P.[q] *)
@@ -403,7 +403,16 @@ Check comp_polyD : forall (R : ringType) (p q r : {poly R}), (p + q) \Po r = p \
 Check comp_polyB : forall (R : ringType) (p q r : {poly R}), (p - q) \Po r = p \Po r - (q \Po r).
 Check comp_polyZ : forall (R : ringType) (c : R) (p q : {poly R}), (c *: p) \Po q = c *: (p \Po q).
 Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p \Po r) * (q \Po r).
-Check comp_poly_exprn : forall (p q : {poly rat}) (i : nat), p ^+ i \Po q = (p \Po q) ^+ i.
+
+(**
+## 多項式を係数とする多項式の値
+ *)
+Check horner_comp : forall (R : comRingType) (p q : {poly R}) (x : R), (p \Po q).[x] = p.[q.[x]].
+
+(**
+## 多項式を係数とする多項式の微分
+ *)
+Check deriv_comp : forall (R : comRingType) (p q : {poly R}), (p \Po q)^`() = (p^`() \Po q) * q^`().
 
 (**
 # 外科手術
