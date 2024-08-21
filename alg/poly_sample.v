@@ -541,8 +541,17 @@ Check @horner_Poly R
 Print comm_coef. (* = fun (R : ringType) (p : {poly R}) (x : R) => forall i : nat, p`_i * x = x * p`_i *)
 Print comm_poly. (* = fun (R : ringType) (p : {poly R}) (x : R) => x * p.[x] = p.[x] * x *)
 
-Check @comm_coef_poly R : forall (p : {poly R}) (x : R), comm_coef p x -> comm_poly p x.
-Check @hornerM_comm R : forall (p q : {poly R}) (x : R), comm_poly q x -> (p * q).[x] = p.[x] * q.[x].
+Check comm_coef_poly : forall (R : ringType) (p : {poly R}) (x : R), comm_coef p x -> comm_poly p x.
+
+Check comm_poly0 : forall (R : ringType) (x : R), comm_poly 0 x.
+Check comm_poly1 : forall (R : ringType) (x : R), comm_poly 1 x.
+Check comm_polyX : forall (R : ringType) (x : R), comm_poly 'X x.
+Check comm_polyD: forall (R : ringType) (p q : {poly R}) (x : R),
+    comm_poly p x -> comm_poly q x -> comm_poly (p + q) x.
+Check comm_polyM : forall (R : ringType) (p q : {poly R}) (x : R),
+    comm_poly p x -> comm_poly q x -> comm_poly (p * q) x.
+Check comm_poly_exp : forall (R : ringType) (p : {poly R}) (n : nat) (x : R),
+    comm_poly p x -> comm_poly (p ^+ n) x.
 
 (**
 ``(a * p).[x]`` の分配法則；
