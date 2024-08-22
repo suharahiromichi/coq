@@ -574,6 +574,17 @@ Check @hornerM_comm R : forall (p q : {poly R}) (x : R),
 (**
 ## hornerE と hornerE_comm - マルチルール
 *)
+Check hornerD : forall (R : ringType) (p q : {poly R}) (x : R), (p + q).[x] = p.[x] + q.[x].
+Check hornerN : forall (R : ringType) (p : {poly R}) (x : R), (- p).[x] = - p.[x].
+Check hornerX : forall (R : ringType) (x : R), 'X.[x] = x.
+Check hornerC : forall (R : ringType) (c x : R), c%:P.[x] = c.
+Check horner_exp : forall (R : comRingType) (p : {poly R}) (x : R) (n : nat), (p ^+ n).[x] = p.[x] ^+ n.
+Check hornerCM : forall (R : ringType) (a : R) (p : {poly R}) (x : R), (a%:P * p).[x] = a * p.[x].
+Check hornerZ : forall (R : ringType) (c : R) (p : {poly R}) (x : R), (c *: p).[x] = c * p.[x].
+Check hornerM : forall (R : comRingType) (p q : {poly R}) (x : R), (p * q).[x] = p.[x] * q.[x].
+Check horner_cons : forall (R : ringType) (p : {poly R}) (c x : R), (cons_poly c p).[x] = p.[x] * x + c.
+Check Monoid.simpm.               (* このファイルのうしろの方を参照 *)
+
 Check hornerE.
 Check (hornerD, hornerN, hornerX, hornerC,
         horner_exp,
