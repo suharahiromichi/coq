@@ -655,7 +655,7 @@ Proof.
 Qed.
 
 (**
-p に対する q の計算例：
+p に対する q の計算例（手でやる因数分解）：
 
 q = \poly_(i < size p) (horner_rec (drop i.+1 p) a)
 
@@ -734,7 +734,7 @@ Proof.
     + rewrite nth_default //.               (* 左辺は、nth のディフォルト 0 を使う *)
       Check Monoid.simpm.                   (* モノイドのマルチルール。あとで説明する。 *)
       rewrite Monoid.simpm.
-      rewrite mul0r.
+      rewrite Monoid.simpm.
       
       Check drop_oversize : forall (T : Type) (n : nat) (s : seq T), (size s <= n)%N -> drop n s = [::].
       rewrite drop_oversize. (* 右辺は、drop がリストのサイズを超えてnilになる。 *)
@@ -743,6 +743,7 @@ Proof.
         Check if_same : forall (A : Type) (b : bool) (vT : A), (if b then vT else vT) = vT.
         by rewrite 2!if_same.
       * apply: (@leq_trans i (size p) (i.-1.+1)) => //=.
+        Check leqSpred i : (i <= i.-1.+1)%N.
         by apply: (leqSpred i).
         Undo 2.
         exact: leq_trans (leqSpred _).      (* こういう書き方もできる。 *)
@@ -933,11 +934,12 @@ Qed.
 *)
 Check Monoid.simpm.                         (* 左右単位元、左右零元、結合律 *)
 (* 内訳 *)
-Check Monoid.mulm1 : forall (T : Type) (idm : T) (mul : Monoid.law idm), right_id idm mul.
-Check Monoid.mulm0 : forall (T : Type) (idm : T) (mul : Monoid.mul_law idm), right_zero idm mul.
-Check Monoid.mul1m : forall (T : Type) (idm : T) (mul : Monoid.law idm), left_id idm mul.
-Check Monoid.mul0m : forall (T : Type) (idm : T) (mul : Monoid.mul_law idm), left_zero idm mul.
-Check Monoid.mulmA : forall (T : Type) (mul : SemiGroup.law T), associative mul.
+(* op は、GRing.mul だけでなく GRing.add でもよい。 *)
+Check Monoid.mulm1 : forall (T : Type) (idm : T) (op : Monoid.law idm), right_id idm op.
+Check Monoid.mulm0 : forall (T : Type) (idm : T) (op : Monoid.mul_law idm), right_zero idm op.
+Check Monoid.mul1m : forall (T : Type) (idm : T) (op : Monoid.law idm), left_id idm op.
+Check Monoid.mul0m : forall (T : Type) (idm : T) (op : Monoid.mul_law idm), left_zero idm op.
+Check Monoid.mulmA : forall (T : Type) (op : SemiGroup.law T), associative op.
 
 (**
 # 多項式の定義の間の相互変換
