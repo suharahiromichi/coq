@@ -583,6 +583,7 @@ Check hornerCM : forall (R : ringType) (a : R) (p : {poly R}) (x : R), (a%:P * p
 Check hornerZ : forall (R : ringType) (c : R) (p : {poly R}) (x : R), (c *: p).[x] = c * p.[x].
 Check hornerM : forall (R : comRingType) (p q : {poly R}) (x : R), (p * q).[x] = p.[x] * q.[x].
 Check horner_cons : forall (R : ringType) (p : {poly R}) (c x : R), (cons_poly c p).[x] = p.[x] * x + c.
+
 Check Monoid.simpm.               (* このファイルのうしろの方を参照 *)
 
 Check hornerE.
@@ -848,7 +849,7 @@ Proof.
   Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
   - rewrite /=.
     (* ``r :: rs`` が分解され、r \notin rs になる。 *)
-    Check all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)%N.
+    Check root p r && all (root p) rs' -> (r \notin rs') && uniq rs' -> ((size rs').+1 < size p)%N.
 
     case/andP => rpr arrs' /andP [rnrs' urs'].
     
@@ -856,7 +857,7 @@ Proof.
     Check factor_theorem
       : forall (R : ringType) (p : {poly R}) (a : R),
         reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
-    case/factor_theorem: rpr => q epq.
+    case/factor_theorem : rpr => q epq.
     (* 「p の解が r である」を「p は (X - r) と q の積である」に言い換える。 *)
     
     Check epq : p = q * ('X - r%:P).        (* 前提 *)
@@ -881,8 +882,8 @@ Proof.
       Check monicXsubC : forall (R : ringType) (c : R), 'X - c%:P \is monic.
     + have H1 : size p = (size q).+1
         by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
-
-      (* H2 : q の解がrs'であることと、pの解がrs'であることは同値である。 *)
+   
+      (* H2 : q の解がrs'であることと、r以外のpの解がrs'であることは同値である。 *)
       (* この rs' は、r についての帰納法におけるseqの残りの部分である。 *)
       (* uniq (r :: rs') から、rs' に r は含まれない。
          rはpの解だが、重解でなければqの解ではない。 *)
