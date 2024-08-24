@@ -237,7 +237,7 @@ Proof.
   move=> k p q.
   Check (k *: p + q)^`() = k *: p^`() + q^`().
   apply/polyP => i.
-  rewrite !(coef_deriv, coefD, coefZ).
+  rewrite !coefE.                   (* !(coef_deriv, coefD, coefZ). *)
   rewrite mulrnDl.
   rewrite mulrnAr.
   done.
@@ -320,6 +320,13 @@ Goal forall (p q : {poly R}), (p + q)^`() = p^`() + q^`().
 Proof.
   move=> p q.
   by apply: linearD.
+Qed.
+
+(* derivB 線形性 *)
+Goal forall (p q : {poly R}), (p - q)^`() = p^`() - q^`().
+Proof.
+  move=> p q.
+  by apply: linearB.
 Qed.
 
 (* deriv_mulC *)
