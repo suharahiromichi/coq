@@ -8,10 +8,12 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+Open Scope ring_scope.
+
 Section MatrixDef.
 
 Variable R : Type.
-Variables m n : nat.
+Variables m n p : nat.
 
 (**
 # マトリクス型の表記（基本）
@@ -68,8 +70,8 @@ Check fun_of_matrix : forall R m n,
     matrix R m n -> ('I_m -> 'I_n -> R).
 
 Variable A : 'M[R]_(2, 3).
-Check A (Ordinal (_ : 1 < 2)) (Ordinal (_ : 1 < 3)).
-Check (fun_of_matrix A) (Ordinal (_ : 1 < 2)) (Ordinal (_ : 1 < 3)).
+(* Check A (Ordinal (_ : 1 < 2)) (Ordinal (_ : 1 < 3)). *)
+(* Check (fun_of_matrix A) (Ordinal (_ : 1 < 2)) (Ordinal (_ : 1 < 3)). *)
 
 (**
 ## funfun をカリー化した関数をマトリクス型に変換する関数
@@ -369,9 +371,52 @@ Print tperm_mx.
 Check @lift0_mx R n : 'M_n -> 'M_(1 + n).
 Print lift0_mx.
 
+End Diagonal.
+
+
+
+(* 行列式が環の単位元かいなかを判定する。 *)
+Check @unitmx : forall (R : comUnitRingType) (n : nat), pred 'M_n.
+Print unitmx.                        (* (\det A)%R \is a GRing.unit *)
+
 (**
 ## 補題
 *)
-End MatrixStructural.
+(* 単位行列の行列式は、環の単位元である。 *)
+Check unitmx1 : forall (R : comUnitRingType) (n : nat), (1%:M)%R \in unitmx.
+
+(**
+# おまけ - 0行、0列とはなにか。
+
+0行とは、行の数が0個（インデックスが0未満）の有限個の行列である。
+型として定義できるが、要素が取り出せない。0行n列の行列、m行0列の行列はいずれも要素が取り出せない
+*)
+Section Zero.
+
+Variable R : semiRingType.
+Variable m n : nat.
+
+(**
+m行0列の行列と0行n列の行列の積は、m行n列の零行列である。
+
+証明：
+任意の i k 要素 に対して、
+``\sum_(j : 'I_0) A i j * B j k``
+ であり、BigOpの0回は単位元であるから、これは 0である。
+*)
+
+Goal forall (A : 'M[R]_(m, 0)) (B : 'M[R]_(0, n)), A *m B = 0.
+Proof.
+  move=> A B.
+  apply/matrixP => i k.
+  rewrite 2!mxE.
+  
+  Check \sum_(j : 'I_0) A i j * B j k = 0.
+  
+  rewrite big_ord0.
+  done.
+Qed.
+
+End Zero.
 
 (* END *)
