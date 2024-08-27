@@ -16,6 +16,32 @@ Variable F : fieldType.
 Variable A : 'M[F]_(m, n).
 
 (**
+# ガウスの掃き出し法
+ *)
+Local Notation GaussE := Gaussian_elimination_.
+
+Check (GaussE A).1.1.                       (* L *)
+Check (GaussE A).1.2.                       (* U *)
+Check (GaussE A).2.                         (* rank *)
+
+Goal (\rank A <= m)%N.
+Proof.
+  rewrite mxrankE.
+  elim: m n A => [|m IHm] [|n] //= A.
+  (* pick の値 Some と None で場合分けする。  *)
+  case: pickP => [[i j] _|] //=.
+  move: (_ - _) => B. (* GaussE の引数 (_ - _) をBとして文脈に移動する。 *)
+  move: (IHm n B).
+  (* GaussE の値を ``a = (L,U)`` と ``b = rank`` で分ける。 *)
+  case: GaussE.
+  (* さらに、L U r で分ける。 *)
+  move=> [[L U] r].
+  (* 両辺の .2 を取り出す。 *)
+  simpl.
+  done.
+Qed.
+
+(**
 # Rank 階数
 
 ## rank に関連する関数
