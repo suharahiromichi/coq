@@ -86,6 +86,18 @@ Definition matrix_of_fun R (m n : nat) (k : unit) (F : 'I_m -> 'I_n -> R) :=
 (**
 # 重要な補題
 *)
+Goal 1%:M = 1%:M :> 'M[nat]_(n, n).
+Proof.
+  (* 行列の``=``を関数の``=``として、関数値の``=``にする。 *)
+  apply/matrixP => i j.
+  (* 行列の要素どうしの``=``にする。 *)
+  rewrite mxE.
+  Restart.
+  
+  (* 上記を同時に行う。 *)
+  apply/eq_mx => i j.
+  done.
+Qed.
 
 (**
 ## mxE
@@ -100,10 +112,13 @@ Check mxE : forall R m n (k : unit) (F : 'I_m -> 'I_n -> R),
 
 (**
 ## matrixP.
+
+行列の``=``を、関数
  *)
 Check matrixP : forall R m n (A B : 'M_(m, n)),
     A =2 B <-> A = B.                       (* 左は、fun_of_matrix のコアーション *)
 (* 右はマトリクス型どうし *)
+Goal 
 
 (**
 ## eq_mx
