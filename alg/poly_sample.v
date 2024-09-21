@@ -94,7 +94,7 @@ Definition tstp2 := insubd (poly_nil R) [:: c; b; a].
 (**
 ## ```_i``
 
-```_i`` は、単なるnth であるが、空リストの場合 0%:R を返す。これにより、
+```_i`` は、空のとき 0%R を返す単なるnth であるから、
 ベース型のリスト[::]から作られた多項式は、0の意味を持つことになる。
 *)
 Locate "s `_ i". (* := (nth GRing.zero s i) : ring_scope (default interpretation) *)
