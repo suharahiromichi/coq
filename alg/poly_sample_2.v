@@ -433,7 +433,7 @@ Check @nderivn_def R
 (**
 # map poly
 
-係数に``f``を適用する。
+多項式 p の係数に``f``を適用する。
  *)
 Notation "p ^ f" := (map_poly (GRing.Additive.sort f) p) : ring_scope. (* locally *)
 Print map_poly. (* = fun (aR rR : ringType) (f : aR -> rR) (p : {poly aR}) => \poly_(i < size p) f p`_i *)
@@ -443,14 +443,27 @@ Check map_polyE
 
 (**
 ## 多項式を係数とする多項式
+
+多項式 p の係数 (R型) に "%:P" を適用して定数多項式 ({poly R}型) にする。
+全体は {poly {poly R}} 型になる。
 *)
 Locate "p ^:P". (* := (map_poly polyC p) : ring_scope (default interpretation) *)
+Check p ^:P : {poly {poly R}}.
 
 (**
 # 多項式の合成 (polynomial composition)
+
+上記で作った多項式を係数とする多項式 ({poly {poly R}}型) の X に多項式 ({poly R} 型) を代入する。
+全体は {poly R} 型になる。
+
+p       = a     * X^2  + b     * X  + c
+p ^:P   = (a%:P * X^2) + (b%:P * X) + c%:P
+p \Po q = (a%:P * q^2) + (b%:P * q) + c%:P
  *)
 Locate "p \Po q". (* := (comp_poly q p) : ring_scope (default interpretation) *)
 Print comp_poly. (* = fun (R : ringType) (q p : {poly R}) => p^:P.[q] *)
+Check p^:P.[q] : {poly R}.
+Check p \Po q  : {poly R}.
 
 Check @comp_polyE R : forall p q : {poly R}, p \Po q = \sum_(i < size p) (p`_i *: (q ^+ i)).
 
@@ -465,12 +478,12 @@ Check comp_polyZ : forall (R : ringType) (c : R) (p q : {poly R}), (c *: p) \Po 
 Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p \Po r) * (q \Po r).
 
 (**
-## 多項式を係数とする多項式の値
+## 多項式の合成の多項式の値
  *)
 Check horner_comp : forall (R : comRingType) (p q : {poly R}) (x : R), (p \Po q).[x] = p.[q.[x]].
 
 (**
-## 多項式を係数とする多項式の微分
+## 多項式の合成の多項式の微分
  *)
 Check deriv_comp : forall (R : comRingType) (p q : {poly R}), (p \Po q)^`() = (p^`() \Po q) * q^`().
 
