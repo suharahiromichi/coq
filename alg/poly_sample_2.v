@@ -477,15 +477,46 @@ Check comp_polyB : forall (R : ringType) (p q r : {poly R}), (p - q) \Po r = p \
 Check comp_polyZ : forall (R : ringType) (c : R) (p q : {poly R}), (c *: p) \Po q = c *: (p \Po q).
 Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p \Po r) * (q \Po r).
 
+(* あとで使う *)
+Check comp_poly_MXaddC
+  : forall (R : ringType) (c : R) (p q : {poly R}), (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
+Goal forall (R : ringType) (c : R) (p q : {poly R}), (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
+  move=> R c p q.
+  rewrite /(_ \Po q) rmorphD rmorphM /= map_polyX map_polyC hornerMXaddC.
+  done.
+Qed.
+
 (**
 ## 多項式の合成の多項式の値
+
+ただし、comRingType であること。exercise6 では rat で扱う。
  *)
 Check horner_comp : forall (R : comRingType) (p q : {poly R}) (x : R), (p \Po q).[x] = p.[q.[x]].
 
+Goal forall (R : comRingType) (p q : {poly R}) (x : R),
+    (p \Po q).[x] = p.[q.[x]].
+Proof.
+  move=> R p q x.
+  apply: polyC_inj.
+  rewrite -!comp_polyCr.
+  rewrite comp_polyA.
+  done.
+Qed.
+
 (**
 ## 多項式の合成の多項式の微分
+
+ただし、comRingType であること。exercise6 では rat で扱う。
  *)
 Check deriv_comp : forall (R : comRingType) (p q : {poly R}), (p \Po q)^`() = (p^`() \Po q) * q^`().
+Goal forall (R : comRingType) (p q : {poly R}), (p \Po q)^`() = (p^`() \Po q) * q^`().
+Proof.
+  move=> R p q.
+  elim/poly_ind: p => [|p c IHp].
+  - by rewrite !(deriv0, comp_poly0) mul0r.
+  - rewrite comp_poly_MXaddC derivD derivC derivM IHp derivMXaddC comp_polyD.
+    by rewrite comp_polyM comp_polyX addr0 addrC mulrAC -mulrDl.
+Qed.
 
 (**
 # 外科手術
