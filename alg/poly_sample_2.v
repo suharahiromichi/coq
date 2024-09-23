@@ -61,10 +61,15 @@ Locate "n .-primitive_root". (* := (primitive_root_of_unity n) : ring_scope (def
 Print primitive_root_of_unity. (* = fun (R : ringType) (n : nat) (z : R) => (0 < n)%N
                                   && [forall i, (i.+1).-unity_root z == (i.+1 == n)] *)
 
-(* 原始n乗根である。 *)
-Check @prim_order_exists R : forall (n : nat) (z : R), (0 < n)%N -> z ^+ n = 1 ->
-                                                       {m : nat | m.-primitive_root z & (m %| n)%N}.
-(* 原始n乗根なら。 *)
+(* zが1以上の実数で、n乗して1、ならば、zは原始m乗根かつ、nはmの倍数である。 *)
+Check @prim_order_exists R :
+  forall (n : nat) (z : R), (0 < n)%N -> z ^+ n = 1 ->
+                            {m : nat | m.-primitive_root z & (m %| n)%N}.
+Check @prim_order_exists R :
+  forall (n : nat) (z : R), (0 < n)%N -> z ^+ n = 1 -> (* exists2 *)
+                            sig2 (fun m : nat => m.-primitive_root z) (fun m : nat => (m %| n)%N).
+
+(* zが原始n乗根なら、n乗すると1である。 *)
 Check @prim_expr_order R : forall (n : nat) (z : R), n.-primitive_root z -> z ^+ n = 1.
 
 Search (_ .-primitive_root).
@@ -93,12 +98,13 @@ Print polyOver. (* = fun (R : ringType) (S : {pred R}) => [qualify a p | polyOve
 Check @polyOverP : forall (R : ringType) (S : addrClosed R) (p : {poly R}),
     reflect (forall i : nat, p`_i \in S) (p \is a polyOver S).
 
+(* 多項式の係数が、整数である。 *)
 Goal 1%:P`_0  \in (@Num.int_num_subdef rat).
 Proof.
-  apply/polyOverP => /=.
 (**
 polyOverP で持ち上げる。
 *)
+  apply/polyOverP => /=.
   Check 1%:P \is a polyOver Num.int_num_subdef.
 (**
 定数に持ち下げる。
