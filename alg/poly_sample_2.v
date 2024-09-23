@@ -472,13 +472,13 @@ Check @comp_polyE R : forall p q : {poly R}, p \Po q = \sum_(i < size p) (p`_i *
 *)
 Check comp_polyX : forall (R : ringType) (p : {poly R}), 'X \Po p = p.
 Check comp_polyC : forall (R : ringType) (c : R) (p : {poly R}), c%:P \Po p = c%:P.
+Check comp_polyCr: forall (R : ringType) (p : {poly R}) (c : R), p \Po c%:P = (p.[c])%:P.
 Check comp_polyD : forall (R : ringType) (p q r : {poly R}), (p + q) \Po r = p \Po r + (q \Po r).
 Check comp_polyB : forall (R : ringType) (p q r : {poly R}), (p - q) \Po r = p \Po r - (q \Po r).
 Check comp_polyZ : forall (R : ringType) (c : R) (p q : {poly R}), (c *: p) \Po q = c *: (p \Po q).
 Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p \Po r) * (q \Po r).
-
-(* あとで使う *)
-Check comp_poly_MXaddC
+Check comp_polyA : forall (R : comRingType) (p q r : {poly R}), p \Po (q \Po r) = (p \Po q) \Po r.
+Check comp_poly_MXaddC                      (* あとで使う *)
   : forall (R : ringType) (c : R) (p q : {poly R}), (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
 Goal forall (R : ringType) (c : R) (p q : {poly R}), (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
   move=> R c p q.
