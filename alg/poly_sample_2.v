@@ -178,9 +178,12 @@ Goal forall (i : nat), f`_i \is a int_num.
 Proof.
   apply/polyOverP => /=.
   Check f \is a polyOver Num.int_num_subdef.
+  
   rewrite rpredM //=.
+  Check 'X^2 \in polyOver_pred Num.int_num_subdef.
   - rewrite rpredX //=.
     by rewrite polyOverX.
+  Check (3%:P - 4 *: 'X) ^+ 2 \in polyOver_pred Num.int_num_subdef.
   - rewrite rpredX //=.
     + rewrite rpredB //=.
       * by rewrite polyOverC.
@@ -190,13 +193,38 @@ Qed.
 
 Check rpredD : forall (V : nmodType) (S : addrClosed V), {in S &, forall u v : V, u + v \in S}.
 Check rpredB : forall (V : zmodType) (S : zmodClosed V), {in S &, forall u v : V, u - v \in S}.
-Check rpredM : forall (R : semiRingType) (s : mulr2Closed R), GRing.mulr_2closed s.
+Check rpredM : forall (R : semiRingType) (S : mulr2Closed R), {in S &, forall u v : R, u * v \in S}.
+Check rpredX : forall (R : semiRingType) (S : mulrClosed R) (n : nat), {in S, forall u : R, u ^+ n \in S}.
 
 Check polyOver0 : forall (R : ringType) (S0 : {pred R}), 0 \is a polyOver S0.
 Check polyOverC : forall (R : ringType) (S0 : addrClosed R) (c : R), (c%:P \is a polyOver S0) = (c \in S0).
 Check polyOverZ : forall (R : ringType) (S0 : semiringClosed R),
     {in S0 & polyOver S0, forall (c : R) (p : {poly R}), c *: p \is a polyOver S0}.
 Check polyOverX : forall (R : ringType) (S : semiringClosed R), 'X \is a polyOver S.
+
+Section s.
+Variable S : opprClosed R.
+Variable S1 : addrClosed R.
+Variable S2 : zmodClosed R.
+Variable S3 : mulr2Closed R.
+Check @rpredN R S x : (- x \in S) = (x \in S).
+Check @rpredD R S1 x y : x \in S1 -> y \in S1 -> x + y \in S1.
+Check @rpredB R S2 x y : x \in S2 -> y \in S2 -> x - y \in S2.
+Check @rpredM R S3 x y : x \in S3 -> y \in S3 -> x * y \in S3.
+End s.
+
+Section po.
+Variable S1 : addrClosed R.
+Variable S2 : semiringClosed R.
+Variable S3 : semiringClosed R.
+Variable c : R.
+Variable p : {poly R}.
+
+Check @polyOver0 R _      : 0 \is a polyOver R.
+Check @polyOverC R S1 c   : (c%:P \is a polyOver S1) = (c \in S1).
+Check @polyOverZ R S2 c p : c \in S2 -> p \is a polyOver S2 -> c *: p \is a polyOver S2.
+Check @polyOverX R S3     : 'X \is a polyOver S3.
+End po.
 
 (**
 # 1変数関数の微分法 (single derivation)
