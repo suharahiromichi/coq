@@ -29,7 +29,9 @@ n乗して1になる数。
 Check 3.-unity_root : pred R.
 Locate "n .-unity_root". (* := (root_of_unity n) : ring_scope (default interpretation) *)
 Print root_of_unity. (* = fun (R : ringType) (n : nat) => root ('X^n - 1) *)
+Print root.          (* = fun (R : ringType) (p : {poly R}) (x : R) => p.[x] == 0 *)
 
+(* x^n - 1 = 0 の解 z は、z^n = 1 が成り立つことと同値。 *)
 Check @unity_rootE R : forall (n : nat) (z : R), n.-unity_root z = (z ^+ n == 1).
 Check @unity_rootP R : forall (n : nat) (z : R), reflect (z ^+ n = 1) (n.-unity_root z).
 
@@ -178,8 +180,9 @@ Goal forall (i : nat), f`_i \is a int_num.
 Proof.
   apply/polyOverP => /=.
   Check f \is a polyOver Num.int_num_subdef.
-  
-  rewrite rpredM //=.
+  rewrite /f.
+  Check 'X^2 * (3%:P - 4 *: 'X) ^+ 2 \is a polyOver Num.int_num_subdef.
+  rewrite rpredM //=.                       (* 掛け算で分配する。 *)
   Check 'X^2 \in polyOver_pred Num.int_num_subdef.
   - rewrite rpredX //=.
     by rewrite polyOverX.
@@ -191,16 +194,11 @@ Proof.
         by rewrite polyOverX.
 Qed.
 
+(* int について閉じている。 *)
 Check rpredD : forall (V : nmodType) (S : addrClosed V), {in S &, forall u v : V, u + v \in S}.
 Check rpredB : forall (V : zmodType) (S : zmodClosed V), {in S &, forall u v : V, u - v \in S}.
 Check rpredM : forall (R : semiRingType) (S : mulr2Closed R), {in S &, forall u v : R, u * v \in S}.
 Check rpredX : forall (R : semiRingType) (S : mulrClosed R) (n : nat), {in S, forall u : R, u ^+ n \in S}.
-
-Check polyOver0 : forall (R : ringType) (S0 : {pred R}), 0 \is a polyOver S0.
-Check polyOverC : forall (R : ringType) (S0 : addrClosed R) (c : R), (c%:P \is a polyOver S0) = (c \in S0).
-Check polyOverZ : forall (R : ringType) (S0 : semiringClosed R),
-    {in S0 & polyOver S0, forall (c : R) (p : {poly R}), c *: p \is a polyOver S0}.
-Check polyOverX : forall (R : ringType) (S : semiringClosed R), 'X \is a polyOver S.
 
 Section s.
 Variable S : opprClosed R.
@@ -212,6 +210,12 @@ Check @rpredD R S1 x y : x \in S1 -> y \in S1 -> x + y \in S1.
 Check @rpredB R S2 x y : x \in S2 -> y \in S2 -> x - y \in S2.
 Check @rpredM R S3 x y : x \in S3 -> y \in S3 -> x * y \in S3.
 End s.
+
+Check polyOver0 : forall (R : ringType) (S0 : {pred R}), 0 \is a polyOver S0.
+Check polyOverC : forall (R : ringType) (S0 : addrClosed R) (c : R), (c%:P \is a polyOver S0) = (c \in S0).
+Check polyOverZ : forall (R : ringType) (S0 : semiringClosed R),
+    {in S0 & polyOver S0, forall (c : R) (p : {poly R}), c *: p \is a polyOver S0}.
+Check polyOverX : forall (R : ringType) (S : semiringClosed R), 'X \is a polyOver S.
 
 Section po.
 Variable S1 : addrClosed R.
@@ -245,18 +249,26 @@ Check @deriv R (Poly [:: 3; 2; 1]).
 
 微分した後の i次の係数 つまり、微分する前の i+1 次の係数に注目する。
 
-``(p_(i+1) * x^(i+1))' = p_(i+1) * (i+1) x^i``
+``(p_(i+1) * x^(i+1))' = p_(i+1) * (i+1) * x^i``
+
+これの i 次の係数は
+
+``p'_i = p_(i+1) * (i+1)``
  *)
 Check @coef_deriv R
-  : forall (p : {poly R}) (i : nat), (p^`())`_i = p`_i.+1 *+ i.+1.
+  : forall (p : {poly R}) (i : nat), (p^`())`_i = p`_(i.+1) *+ (i.+1).
 
 (* coef_deriv *)
 Goal forall (p : {poly R}) i,  p ^`()`_i = p`_i.+1 *+ i.+1.
 Proof.
   move=> p i.
   (* 左辺を 係数*X^i の式にする。ただし、左辺に i の範囲の条件が残る。 *)
+  Check coef_poly : forall (R : semiRingType) (n : nat) (E : nat -> R) (k : nat),
+       (\poly_(i < n) E i)`_k = (if (k < n)%N then E k else 0).
   rewrite coef_poly.
   Check (if (i < (size p).-1)%N then p`_i.+1 *+ i.+1 else 0) = p`_i.+1 *+ i.+1.
+
+  Check ltn_subRL : forall m n p : nat, (n < p - m)%N = (m + n < p)%N.
   rewrite -subn1 ltn_subRL.
   case: leqP => //.
   (* i が size p より大きい場合だけが残る。 *)
@@ -267,6 +279,7 @@ Proof.
   rewrite mul0rn.
   done.
 Qed.
+(* これは、coefE のマルチルールに含まれている。 *)
 
 (**
 ### n回微分、以降ではあまり言及しない。
@@ -347,31 +360,13 @@ Proof.
 Qed.
 
 (**
-## 微分公式（マルチルール）
+## 高校で習う公式を証明してみる。
  *)
-Check derivE.                               (* マルチルール *)
-(* 以下に、マルチルールの内訳を示す。 *)
-Check derivZ      : forall (R : ringType) (c : R) (p : {poly R}), (c *: p)^`() = c *: p^`().
-Check deriv_mulC  : forall (R : ringType) (c : R) (p : {poly R}), (c%:P * p)^`() = c%:P * p^`().
-Check derivC      : forall (R : ringType) (c : R), c%:P^`() = 0.
-Check derivX      : forall R : ringType, 'X ^`() = 1.
-Check derivMXaddC : forall (R : ringType) (p : {poly R}) (c : R), (p * 'X + c%:P)^`() = p + p^`() * 'X.
-Check derivXsubC  : forall (R : ringType) (a : R), ('X - a%:P)^`() = 1.
-Check derivM      : forall (R : ringType) (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
-(* morph による表記 *)
-Check derivB      : forall R : ringType, {morph deriv (R:=R) : p q / p - q}.
-Check derivD      : forall R : ringType, {morph deriv (R:=R) : p q / p + q}.
-Check derivN      : forall R : ringType, {morph deriv (R:=R) : p / - p}.
-(* 一般的な表記 *)
-Check derivB p q  : (p - q)^`() = p^`() - q^`().
-Check derivD p q  : (p + q)^`() = p^`() + q^`().
-Check derivN p    : (- p)^`() = - p^`().
 
-Check derivXn     : forall (R : ringType) (n : nat), 'X^n^`() = 'X^n.-1 *+ n.
-Check derivM      : forall (R : ringType) (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
-Check derivMn     : forall (R : ringType) (n : nat) (p : {poly R}), (p *+ n)^`() = p^`() *+ n.
+(* ***************************************** *)
+(* ここで acs_le6_deriv_proofcafe.v を解く。 *)
+(* ***************************************** *)
 
-(* 高校で習う公式を証明してみる。 *)
 (* derivC *)
 Goal c%:P^`() = 0.
 Proof.
@@ -451,6 +446,31 @@ Proof.
     rewrite IHp !mulrDl -!mulrA !commr_polyX !addrA.
     done.
 Qed.
+
+(**
+## 微分公式（マルチルール）
+ *)
+Check derivE.                               (* マルチルール *)
+(* 以下に、マルチルールの内訳を示す。 *)
+Check derivZ      : forall (R : ringType) (c : R) (p : {poly R}), (c *: p)^`() = c *: p^`().
+Check deriv_mulC  : forall (R : ringType) (c : R) (p : {poly R}), (c%:P * p)^`() = c%:P * p^`().
+Check derivC      : forall (R : ringType) (c : R), c%:P^`() = 0.
+Check derivX      : forall R : ringType, 'X ^`() = 1.
+Check derivMXaddC : forall (R : ringType) (p : {poly R}) (c : R), (p * 'X + c%:P)^`() = p + p^`() * 'X.
+Check derivXsubC  : forall (R : ringType) (a : R), ('X - a%:P)^`() = 1.
+Check derivM      : forall (R : ringType) (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
+(* morph による表記 *)
+Check derivB      : forall R : ringType, {morph deriv (R:=R) : p q / p - q}.
+Check derivD      : forall R : ringType, {morph deriv (R:=R) : p q / p + q}.
+Check derivN      : forall R : ringType, {morph deriv (R:=R) : p / - p}.
+(* 一般的な表記 *)
+Check derivB p q  : (p - q)^`() = p^`() - q^`().
+Check derivD p q  : (p + q)^`() = p^`() + q^`().
+Check derivN p    : (- p)^`() = - p^`().
+
+Check derivXn     : forall (R : ringType) (n : nat), 'X^n^`() = 'X^n.-1 *+ n.
+Check derivM      : forall (R : ringType) (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
+Check derivMn     : forall (R : ringType) (n : nat) (p : {poly R}), (p *+ n)^`() = p^`() *+ n.
 
 (**
 ## 高階微分の正規化式
