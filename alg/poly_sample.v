@@ -626,6 +626,25 @@ Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) *
                                                   ((x \in root p) = (p.[x] == 0)).
 
 (**
+証明例 2024/8/24
+*)
+Goal forall (q : {poly R}) (a : R), (q * ('X - a%:P)).[a] = 0.
+Proof.
+  Check (q * ('X - a%:P)) : {poly R}.
+  move=> q a.
+  rewrite hornerM_comm.
+  
+  Check q.[a] * ('X - a%:P).[a] = 0.
+  - by rewrite !hornerE subrr Monoid.simpm.
+
+  Check comm_poly ('X - a%:P) a.
+  - rewrite /comm_poly.
+    Check ('X - a%:P).[a] * a = a * ('X - a%:P).[a].
+    rewrite !hornerE subrr !Monoid.simpm.
+    done.
+Qed.
+
+(**
 ## 因数定理 factor_theorem
 
 任意の多項式``p``に対して、
@@ -817,21 +836,24 @@ Qed.
 直観的な証明：
 解のリストrsについての帰納法で考える。
 
-- rs が nil の場合は、``size [::] < size p`` で明らか。
+- rs が nil の場合は、``size [::] < size p`` で p は0でないので、明らか。
+
 - rs が (r :: rs') の場合は、
 
   ``all (root p) (r :: rs') -> uniq (r :: rs') -> (size (r :: rs') < size p)``
 
   から、次のゴールを得る。ただし、``uniq (r :: rs') == r \notin rs' && uniq rs'`` を使う。
 
-  ``all (root p) rs'        -> uniq rs'        -> (size rs').+1 < size p)``
+  ``root p r -> all (root p) rs' -> r \notin rs' -> uniq rs'  -> (size rs').+1 < size p)``
 
   また、因数定理から、``p = q * ('X - r%:P)`` である。
 
   - ``q = 0`` なら、``p = q * ('X - r%:P)`` から ``p = 0`` になるから前提矛盾である。
+  
   - ``q != 0`` として、
-        ``p = q * ('X - r%:P)`` から、``H1 : size p = (size q).+1``
-        ``r \notin rs'``        から、``H2 : all (root q) rs' = all (root p) rs'``
+        - ``p = q * ('X - r%:P)`` から、``H1 : size p = (size q).+1``
+        - ``r \notin rs'``        から、``H2 : all (root q) rs' = all (root p) rs'``
+
     帰納法の仮定から ``IHrs : all (root p) rs' -> uniq rs' -> (size rs' < size p)``
     
     H1, H2, IHrs から、上記のゴールが証明できる。
@@ -850,8 +872,14 @@ Proof.
   - rewrite /=.
     (* ``r :: rs`` が分解され、r \notin rs になる。 *)
     Check root p r && all (root p) rs' -> (r \notin rs') && uniq rs' -> ((size rs').+1 < size p)%N.
-
-    case/andP => rpr arrs' /andP [rnrs' urs'].
+    
+    case/andP => rpr arrs' /andP [] => rnrs' urs'.
+    Check pn0 : p != 0.
+    Check rpr : root p r.                   (* *** *)
+    Check arrs' : all (root p) rs'.
+    Check rnrs' : r \notin rs'.
+    Check urs' : uniq rs'.
+    Check ((size rs').+1 < size p)%N.       (* goal *)
     
     (* rpr に因数定理を適用して、epq に変換する。 *)
     Check factor_theorem
@@ -863,7 +891,10 @@ Proof.
     Check epq : p = q * ('X - r%:P).        (* 前提 *)
     Check ((size rs').+1 < size p)%N.       (* goal *)
     
+    (* see. acs_le4_spec_lemma.v *)
     Check eqVneq q 0 : eq_xor_neq q 0 (0 == q) (q == 0).
+    move: (eqVneq q 0) => [q0 | qn0].
+    Undo 1.
     have [q0 | qn0] := eqVneq q 0. (* q = 0 と q != 0 に条件分けする。  *)
     
     (* q = 0 の場合*)
@@ -879,7 +910,7 @@ Proof.
       Check size_Mmonic                     (* monic の掛け算 *)
         : forall (R : ringType) (p q : {poly R}),
           p != 0 -> q \is monic -> size (p * q) = (size p + size q).-1.
-      Check monicXsubC : forall (R : ringType) (c : R), 'X - c%:P \is monic.
+      Check monicXsubC : forall (R : ringType) (c : R), ('X - c%:P) \is monic.
     + have H1 : size p = (size q).+1
         by rewrite epq size_Mmonic ?monicXsubC // size_XsubC addnC.
    
