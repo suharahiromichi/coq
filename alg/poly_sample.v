@@ -626,7 +626,7 @@ Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) *
                                                   ((x \in root p) = (p.[x] == 0)).
 
 (**
-証明例 2024/8/24
+証明例 2024/8/24 - 因数定理の最後の部分で使う。
 *)
 Goal forall (q : {poly R}) (a : R), (q * ('X - a%:P)).[a] = 0.
 Proof.
@@ -846,7 +846,7 @@ Qed.
 
   ``root p r -> all (root p) rs' -> r \notin rs' -> uniq rs'  -> (size rs').+1 < size p)``
 
-  また、因数定理から、``p = q * ('X - r%:P)`` である。
+  また、因数定理から、``root p r`` から ``p = q * ('X - r%:P)`` が得られる。
 
   - ``q = 0`` なら、``p = q * ('X - r%:P)`` から ``p = 0`` になるから前提矛盾である。
   

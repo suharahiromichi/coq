@@ -99,20 +99,23 @@ End NUMBER.
 Print polyOver. (* = fun (R : ringType) (S : {pred R}) => [qualify a p | polyOver_pred S p] *)
 Check @polyOverP : forall (R : ringType) (S : addrClosed R) (p : {poly R}),
     reflect (forall i : nat, p`_i \in S) (p \is a polyOver S).
+Check polyOverC : forall (R : ringType) (S0 : addrClosed R) (c : R),
+    (c%:P \is a polyOver S0) = (c \in S0).
 
 (* 多項式の係数が、整数である。 *)
-Goal 1%:P`_0  \in (@Num.int_num_subdef rat).
+Goal 1%:P`_0  \in @int_num rat.
+(* Goal 1%:P`_0  \in (@Num.int_num_subdef rat). *)
 Proof.
 (**
 polyOverP で持ち上げる。
 *)
   apply/polyOverP => /=.
-  Check 1%:P \is a polyOver Num.int_num_subdef.
+  Check 1%:P \is a polyOver int_num.
 (**
 定数に持ち下げる。
 *)
   rewrite polyOverC /=.
-  Check 1 \in  Num.int_num_subdef.
+  Check 1 \in int_num.
   done.
 Qed.
 
@@ -240,7 +243,7 @@ Print derivn. (* = fun (R : ringType) (n : nat) => [eta iter n (deriv (R:=R))] *
 
 Check @deriv : forall R : ringType, {poly R} -> {poly R}.
 
-Check Poly [:: 3; 2; 1].
+Check Poly [:: 3; 2; 1].                    (* 3*x^2 + 2*x + 1 *)
 Check deriv (Poly [:: 3; 2; 1]).
 Check @deriv R (Poly [:: 3; 2; 1]).
 
@@ -273,7 +276,8 @@ Proof.
   case: leqP => //.
   (* i が size p より大きい場合だけが残る。 *)
   Check (size p <= 1 + i)%N -> 0 = p`_i.+1 *+ i.+1.
-  Check @nth_default R 0 p 0 : (size p <= 0)%N -> p`_0 = 0.
+  
+  Check @nth_default R 0 p i : (size p <= i)%N -> p`_i = 0.
   (* これを前提に適用する。さらにこれで右辺を書き換える。 *)
   move/(nth_default 0) ->.
   rewrite mul0rn.
@@ -326,6 +330,8 @@ HB.about GRing.isLinear.Build.              (* 登録 *)
 (**
 以下が成り立つようになり、線形性についての補題が使えるようになる。
 *)
+Check (@deriv R) : {poly R} -> {poly R}.
+Locate "{ linear _ -> _ }".
 Check (@deriv R) : {linear {poly R} -> {poly R}}.
 
 Check linearE.                              (* マルチルール *)
@@ -380,12 +386,12 @@ Goal (c *: p)^`() = c *: p^`().
 Proof.
   Check linearZ.
   Check linearZ (a:=c).
-  Check @linearZ R {poly R} _ GRing.scale R GRing.scale c c.
+  Check @linearZ R {poly R} {poly R} GRing.scale R GRing.scale c c.
   Check Linear.map_for {poly R} GRing.scale c ( *:%R c).
 
   rewrite linearZ //=.
   Undo 1.
-  rewrite (@linearZ R {poly R} _ GRing.scale R GRing.scale c c).
+  rewrite (@linearZ R {poly R} {poly R} GRing.scale R GRing.scale c c).
   simpl.
   done.
 Qed.
