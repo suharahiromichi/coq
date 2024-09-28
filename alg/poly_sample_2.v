@@ -328,7 +328,7 @@ Qed.
 HB.about GRing.isLinear.Build.              (* 登録 *)
 
 (**
-以下が成り立つようになり、線形性についての補題が使えるようになる。
+この登録により、以下が成り立つようになり、線形性についての補題が使えるようになる。
 *)
 Check (@deriv R) : {poly R} -> {poly R}.
 Locate "{ linear _ -> _ }".
@@ -436,7 +436,7 @@ Qed.
 
 (* derivM *)
 (* 多項式の積の微分、帰納法を使う。 *)
-Goal forall (p q : {poly R}), (p * q) ^`() = p ^`() * q + p * q ^`().
+Goal forall (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
 Proof.
   move=> p q.
   elim/poly_ind: p => [|p b IHp].           (* poly_sample.v 参照 *)
