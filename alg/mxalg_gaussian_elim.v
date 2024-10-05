@@ -69,33 +69,47 @@ Section S.
 
   Print block_mx.
   Check fun (R : Type) (m1 m2 n1 n2 : nat)
-            (Aul : 'M_(m1, n1)) (Aur : 'M_(m1, n2))
-            (Adl : 'M_(m2, n1)) (Adr : 'M_(m2, n2))
+            (Aul : 'M_(m1, n1))
+            (Aur : 'M_(m1, n2))
+            (Adl : 'M_(m2, n1))
+            (Adr : 'M_(m2, n2))
         => (col_mx (row_mx Aul Aur) (row_mx Adl Adr) : 'M_(m1 + m2, n1 + n2)).
   
-Fixpoint Gaussian_elimination_ {F : fieldType} {m n} : 'M[F]_(m, n) -> 'M_m * 'M_n * nat :=
-  match m, n with
-  | _.+1, _.+1 => fun A : 'M_(1 + _, 1 + _) =>
-    if [pick ij | A ij.1 ij.2 != 0] is Some (i, j) then
-      let A1 := xrow i 0 (xcol j 0 A) in
-      let a := A i j in                     (* 上左 *)
-      let u := ursubmx A1 in                (* 上右 *)
-      let v := a^-1 *: dlsubmx A1 in        (* 下左 *)
-      let aa := (drsubmx A1 - v *m u) in    (* 下右 *)
-      let: (L, U, r) := Gaussian_elimination_ aa in
-      let ll := (block_mx 1    0 v L) in
-      let uu := (block_mx a%:M u 0 U) in
-      (xrow i 0 ll,
-        xcol j 0 uu,
-        r.+1)
-    else
-      (1%:M,
-        1%:M,
-        0)
-  | _, _ => fun _ => (1%:M, 1%:M, 0)
-  end.
+  Fixpoint Gaussian_elimination_ {F : fieldType} {m n} : 'M[F]_(m, n) -> 'M_m * 'M_n * nat :=
+    match m, n with
+    | _.+1, _.+1 =>
+        fun A : 'M_(1 + _, 1 + _) =>                          (* 寸法 m, n の行列を引数にとり、 *)
+          if [pick ij | A ij.1 ij.2 != 0] is Some (i, j) then (* 要素 i, j が非零であるなら、  *)
+            let A1 := xrow i 0 (xcol j 0 A) in                (* i行目と0行目、j列目と0列目を入れ替える。 *)
+            let a := A i j in                     (* 上左 (A1 0 0) *)
+            let u := ursubmx A1 in                (* 上右 *)
+            let v := a^-1 *: dlsubmx A1 in        (* 下左 *)
+            let A' := (drsubmx A1 - v *m u) in    (* 下右 *)
+            (* /a u\ *)
+            (* \v A'/ *)
+            let: (L, U, r) := Gaussian_elimination_ A' in (* 下左の寸法 m-1 n-1 行列に対して再帰的に *)
+            let ll := (block_mx 1    0 v L) in
+            (* /1 0\ *)
+            (* \v L/ *)
+            let uu := (block_mx a%:M u 0 U) in
+            (* /a u\ *)
+            (* \0 U/ *)
+            (xrow i 0 ll,             (* i行目と0行目を入れ替える。 *)
+              xcol j 0 uu,            (* j列目と0列目を入れ替える。 *)
+              r.+1)                   (* ランクを+1 する。 *)
+          else
+            (1%:M,
+              1%:M,
+              0)
+    | _, _ => fun _ => (1%:M, 1%:M, 0)
+    end.
+  
+  Check Gaussian_elimination : forall (F : fieldType) (m n : nat), 'M_(m, n) -> 'M_m * 'M_n * nat.
+End S.
 
 (**
+Wolfram の場合：
+
 行列のサイズを求める
 Dimensions[A]           {3, 4}
 Dimensions[{{}}]        {1, 0}  ({0,0}でないので注意)
@@ -153,5 +167,5 @@ ArrayRules[A][[1]][[1]][[2]]
 
 
 *)
-Check 'M[F]_(3,1).
-Check 'M[F]_(1,3).
+
+(* END *)
