@@ -103,9 +103,49 @@ Section S.
               0)
     | _, _ => fun _ => (1%:M, 1%:M, 0)
     end.
-  
-  Check Gaussian_elimination : forall (F : fieldType) (m n : nat), 'M_(m, n) -> 'M_m * 'M_n * nat.
+  Check @Gaussian_elimination_ : forall (F : fieldType) (m n : nat), 'M_(m, n) -> 'M_m * 'M_n * nat.
+
 End S.
+
+(**
+- https://en.wikipedia.org/wiki/LU_decomposition の Through recursion
+- Packaging Mathematical Structures LUP decomposition
+*)
+Fixpoint cormen_lup {F : fieldType} {n : nat} : 'M[F]_n -> 'M[F]_n * 'M[F]_n * 'M[F]_n :=
+  match n with
+  | n0.+1 => fun A : 'M[F]_(1 + n0) =>
+               if [pick k | A k 0 != 0] is Some k then (* A k 0 が非零であるなら、  *)
+                 let A1 := xrow k 0 A in (* i行n目と0行目を入れ替える。 *)
+                 let P1 := @tperm_mx F n0.+1 k 0 in (* 左から掛けて上記の入れ替えをする単位行列 *)
+                 let a := A1 0 0 in        (* 上左 *)
+                 let w := ursubmx A1 in    (* 上右 *)
+                 let v := dlsubmx A1 in    (* 下左 *)
+                 
+                 let z := @const_mx F (1 + n0) (1 + n0) 0 in
+                 let zur := ursubmx z in    (* 上右 *)
+                 let zdl := dlsubmx z in    (* 下左 *)
+
+                 let A' := drsubmx A1 in   (* 下右 *)
+                 let A1 := (block_mx a%:M w v A') in (* = P1 *m A *)
+                 let cv := a^-1 *: v in
+                 let A'' := A' - cv *m w in
+                 let: (L', U', P') := cormen_lup A'' in
+                 let v' := P' *m v in
+                 let cv' := a^-1 *: v' in
+                 let L := block_mx 1    0 v L' in
+                 let U := block_mx a%:M w 0 U' in
+                 let P := block_mx 1 zur zdl P' *m P1 in
+                 (L, U, P)                   (* P を渡すこと。 *)
+               else
+                 (1%:M, 1%:M, 1%:M)
+  | _    => fun _ => (1%:M, 1%:M, 1%:M)
+  end.
+
+Lemma cormen_lup_correct : forall F n A,
+    let: (P, L, U) := @cormen_lup F n A in P *m A = L *m U.
+Proof.
+Admitted.
+
 
 (**
 Wolfram の場合：
