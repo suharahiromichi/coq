@@ -108,58 +108,6 @@ Section S.
 End S.
 
 (**
-- https://en.wikipedia.org/wiki/LU_decomposition の Through recursion
-- Packaging Mathematical Structures LUP decomposition
-*)
-
-Fixpoint cormen_lup {F : fieldType} {n : nat} : 'M[F]_n -> 'M[F]_n * 'M[F]_n * 'M[F]_n :=
-  match n with
-  | n0.+1 => fun A : 'M[F]_(1 + n0) =>
-               if [pick k | A k 0 != 0] is Some k then (* A k 0 が非零であるなら、  *)
-                 let A1 := xrow k 0 A in (* i行n目と0行目を入れ替える。 *)
-                 let a := A1 0 0 in        (* 上左 *)
-                 let w := ursubmx A1 in    (* 上右 *)
-                 let v := dlsubmx A1 in    (* 下左 *)
-                 let A' := drsubmx A1 in   (* 下右 *)
-                 let P1 := @tperm_mx F n0.+1 k 0 in (* 左から掛けて上記の入れ替えをする単位行列 *)
-                 
-                 (*          /a | w \ *)
-                 (* P1 * A = |      | *)
-                 (*          \v | A'/ *)
-
-                 let cv := a^-1 *: v in
-                 
-                 (*          /1  | 0\   /a | w           \ *)
-                 (* P1 * A = |      | * |                | *)
-                 (*          \cv | 1/   \0 | A' - cv *m w/ *)
-                 
-                 let: (L', U', P') := cormen_lup (A' - cv *m w) in
-
-                 (* P' * (A' - cv *m w) = L' *m U' *)
-                 
-                 let cv' := a^-1 *: P' *m v in
-                 let L := block_mx 1    0 v L' in
-                 let U := block_mx a%:M w 0 U' in
-                 let P := block_mx 1 (0 : 'rV_n0) (0 : 'cV_n0) P' *m P1 in
-                 
-                 (* /1 | 0 \            /1   | 0 \   /a | w \ *)
-                 (* |      | * P1 * A = |        | * |      | *)
-                 (* \0 | P'/            \cv' | L'/   \0 | U'/ *)
-                 
-                 (*    P          * A =      L     *    U *)
-                 (L, U, P)
-               else
-                 (1%:M, 1%:M, 1%:M)
-  | _    => fun _ => (1%:M, 1%:M, 1%:M)
-  end.
-
-Lemma cormen_lup_correct : forall F n A,
-    let: (P, L, U) := @cormen_lup F n A in P *m A = L *m U.
-Proof.
-Admitted.
-
-
-(**
 Wolfram の場合：
 
 行列のサイズを求める
