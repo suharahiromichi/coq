@@ -10,6 +10,7 @@
  *)
 
 From mathcomp Require Import all_ssreflect.
+From mathcomp Require Import all_fingroup.
 From mathcomp Require Import all_algebra.
 
 Set Implicit Arguments.
@@ -109,54 +110,89 @@ Proof.
 *)
 Qed.
 
+(**
+LUPの P が置換行列である。
+ *)
+
+(* 単位行列を置換 s で置き換えて得られた行列。 *)
+Check @perm_mx : forall (R : semiRingType) (n : nat), {perm 'I_n} -> 'M_n.
+
 Lemma cormen_lup_perm n (A : 'M_n.+1) : is_perm_mx (cormen_lup A).1.1.
 Proof.
-  elim: n => [|n IHn] /= in A *; first exact: is_perm_mx1.
-  set A' := _ - _; move/(_ A'): IHn; case: cormen_lup => [[P L U]] {A'}/=.
-  rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).
-  by case/is_perm_mxP => s ->; apply: lift0_mx_is_perm.
+  elim: n => [|n IHn] /= in A *.
+  - exact: is_perm_mx1.
+  - set A' := _ - _.
+    move/(_ A'): IHn.
+    case: cormen_lup => [[P L U]] {A'} /=.
+    rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).
+    case/is_perm_mxP => s ->.
+    rewrite lift0_mx_is_perm.
+    done.
 Qed.
 
 Lemma cormen_lup_correct n (A : 'M_n.+1) :
   let: (P, L, U) := cormen_lup A in P * A = L * U.
 Proof.
-elim: n => [|n IHn] /= in A *; first by rewrite !mul1r.
-set k := odflt _ _; set A1 : 'M_(1 + _) := xrow _ _ _.
-set A' := _ - _; move/(_ A'): IHn; case: cormen_lup => [[P' L' U']] /= IHn.
-rewrite -mulrA -!mulmxE -xrowE -/A1 /= -[n.+2]/(1 + n.+1)%N -{1}(submxK A1).
-rewrite !mulmx_block !mul0mx !mulmx0 !add0r !addr0 !mul1mx -{L' U'}[L' *m _]IHn.
-rewrite -scalemxAl !scalemxAr -!mulmxA addrC -mulrDr {A'}subrK.
-congr (block_mx _ _ (_ *m _) _).
-rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
-case: pickP => /= [k nzAk0 | no_k]; first by rewrite mulVf ?mulmx1.
-rewrite (_ : dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
-by rewrite !mxE lshift0 (elimNf eqP (no_k _)).
+  elim: n => [|n IHn] /= in A *.
+  - by rewrite !mul1r.
+  - set k := odflt _ _.
+    set A1 : 'M_(1 + _) := xrow _ _ _.
+    set A' := _ - _.
+    move/(_ A'): IHn.
+    case: cormen_lup => [[P' L' U']] /= IHn.
+    rewrite -mulrA -!mulmxE -xrowE -/A1 /= -[n.+2]/(1 + n.+1)%N -{1}(submxK A1).
+    rewrite !mulmx_block !mul0mx !mulmx0 !add0r !addr0 !mul1mx -{L' U'}[L' *m _]IHn.
+    rewrite -scalemxAl !scalemxAr -!mulmxA addrC -mulrDr {A'}subrK.
+    congr (block_mx _ _ (_ *m _) _).
+    rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
+    case: pickP => /= [k nzAk0 | no_k].
+    - by rewrite mulVf ?mulmx1.
+    - rewrite (_ : dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
+      by rewrite !mxE lshift0 (elimNf eqP (no_k _)).
 Qed.
 
 Lemma cormen_lup_detL n (A : 'M_n.+1) : \det (cormen_lup A).1.2 = 1.
 Proof.
-elim: n => [|n IHn] /= in A *; first by rewrite det1.
-set A' := _ - _; move/(_ A'): IHn; case: cormen_lup => [[P L U]] {A'}/= detL.
-by rewrite (@det_lblock _ 1) det1 mul1r.
+  elim: n => [|n IHn] /= in A *.
+  - by rewrite det1.
+  - set A' := _ - _.
+    move/(_ A'): IHn.
+    case: cormen_lup => [[P L U]] {A'}/= detL.
+    by rewrite (@det_lblock _ 1) det1 mul1r.
 Qed.
 
 Lemma cormen_lup_lower n A (i j : 'I_n.+1) :
-  i <= j -> (cormen_lup A).1.2 i j = (i == j)%:R.
+  (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R.
 Proof.
-elim: n => [|n IHn] /= in A i j *; first by rewrite [i]ord1 [j]ord1 mxE.
-set A' := _ - _; move/(_ A'): IHn; case: cormen_lup => [[P L U]] {A'}/= Ll.
-rewrite !mxE split1; case: unliftP => [i'|] -> /=; rewrite !mxE split1.
-  by case: unliftP => [j'|] -> //; apply: Ll.
-by case: unliftP => [j'|] ->; rewrite /= mxE.
+  elim: n => [|n IHn] /= in A i j *.
+  - by rewrite [i]ord1 [j]ord1 mxE.
+  - set A' := _ - _.
+    move/(_ A'): IHn.
+    case: cormen_lup => [[P L U]] {A'}/= Ll.
+    rewrite !mxE split1.
+    case: unliftP => [i'|] -> /=.
+    + rewrite !mxE split1.
+      case: unliftP => [j'|] -> //.
+      by apply: Ll.
+    + rewrite !mxE split1.
+      case: unliftP => [j'|] -> /=.
+      * rewrite mxE.
+        done.
+      * rewrite mxE.
+        done.
 Qed.
 
 Lemma cormen_lup_upper n A (i j : 'I_n.+1) :
-  j < i -> (cormen_lup A).2 i j = 0 :> F.
+  (j < i)%N -> (cormen_lup A).2 i j = 0 :> F.
 Proof.
-elim: n => [|n IHn] /= in A i j *; first by rewrite [i]ord1.
-set A' := _ - _; move/(_ A'): IHn; case: cormen_lup => [[P L U]] {A'}/= Uu.
-rewrite !mxE split1; case: unliftP => [i'|] -> //=; rewrite !mxE split1.
-by case: unliftP => [j'|] ->; [apply: Uu | rewrite /= mxE].
+  elim: n => [|n IHn] /= in A i j *.
+  - by rewrite [i]ord1.
+  - set A' := _ - _.
+    move/(_ A'): IHn; case: cormen_lup => [[P L U]] {A'}/= Uu.
+    rewrite !mxE split1; case: unliftP => [i'|] -> //=; rewrite !mxE split1.
+    case: unliftP => [j'|] ->.
+    + by apply: Uu.
+    + by rewrite /= mxE.
 Qed.
 
 End CormenLUP.
