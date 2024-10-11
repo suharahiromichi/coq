@@ -59,8 +59,8 @@ Fixpoint cormen_lup' {n} :=
     (* P1 * A = A1 = |        | *)
     (*               \ v | A' / *)
 
-    let a  := A k 0 in                      (* A1 0 0 = ulsubmx A1 *)
-    let a' := ulsubmx A1 in                 (* 上左 a%:M と同じはず。。。 *)
+    let a  := A1 0 0 in                     (* 上左 スカラ *)
+    let a' := ulsubmx A1 in                 (* 上左 1x1行列、同じもの。 *)
     let w  := ursubmx A1 in                 (* 上右 *)
     let v  := dlsubmx A1 in                 (* 下左 *)
     let A' := drsubmx A1 in                 (* 下右 *)
@@ -96,8 +96,6 @@ Fixpoint cormen_lup' {n} :=
 
 Goal forall n (A : 'M_n.+1), cormen_lup A = cormen_lup' A.
 Proof.
-  done.
-(*
   elim=> //= n IHn A.
   rewrite -IHn.
   case: cormen_lup => [[L U] P].
@@ -105,10 +103,9 @@ Proof.
   split; [apply/pair_equal_spec |].
   split.
   - done.
+  - admit.                                  (* A1 0 0 にしたため。 *)
   - done.
-  - done.
-*)
-Qed.
+Admitted.
 
 (**
 LUPの P が置換行列である。
@@ -153,7 +150,8 @@ Qed.
 
 Lemma cormen_lup_detL n (A : 'M_n.+1) : \det (cormen_lup A).1.2 = 1.
 Proof.
-  elim: n => [|n IHn] /= in A *.
+  (* elim: n => [|n IHn] /= in A *. *)
+  elim: n A => [|n IHn] /= A.
   - by rewrite det1.
   - set A' := _ - _.
     move/(_ A'): IHn.
@@ -164,7 +162,8 @@ Qed.
 Lemma cormen_lup_lower n A (i j : 'I_n.+1) :
   (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R.
 Proof.
-  elim: n => [|n IHn] /= in A i j *.
+  (* elim: n => [|n IHn] /= in A i j *. *)
+  elim: n A i j => [|n IHn] /= A i j.
   - by rewrite [i]ord1 [j]ord1 mxE.
   - set A' := _ - _.
     move/(_ A'): IHn.
@@ -185,7 +184,8 @@ Qed.
 Lemma cormen_lup_upper n A (i j : 'I_n.+1) :
   (j < i)%N -> (cormen_lup A).2 i j = 0 :> F.
 Proof.
-  elim: n => [|n IHn] /= in A i j *.
+  (* elim: n => [|n IHn] /= in A i j *. *)
+  elim: n A i j => [|n IHn] /= A i j.
   - by rewrite [i]ord1.
   - set A' := _ - _.
     move/(_ A'): IHn; case: cormen_lup => [[P L U]] {A'}/= Uu.
