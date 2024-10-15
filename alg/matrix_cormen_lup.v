@@ -114,6 +114,7 @@ LUPの P が置換行列である。
 (* 単位行列を置換 s で置き換えて得られた行列。 *)
 Check @perm_mx : forall (R : semiRingType) (n : nat), {perm 'I_n} -> 'M_n.
 
+(* Pは置換行列である。 *)
 Lemma cormen_lup_perm n (A : 'M_n.+1) : is_perm_mx (cormen_lup A).1.1.
 Proof.
   elim: n => [|n IHn] /= in A *.
@@ -127,6 +128,7 @@ Proof.
     done.
 Qed.
 
+(* P * A = L * U が成り立つ。 *)
 Lemma cormen_lup_correct n (A : 'M_n.+1) :
   let: (P, L, U) := cormen_lup A in P * A = L * U.
 Proof.
@@ -148,6 +150,7 @@ Proof.
       by rewrite !mxE lshift0 (elimNf eqP (no_k _)).
 Qed.
 
+(* L の行列式は 1 *)
 Lemma cormen_lup_detL n (A : 'M_n.+1) : \det (cormen_lup A).1.2 = 1.
 Proof.
   (* elim: n => [|n IHn] /= in A *. *)
@@ -159,6 +162,7 @@ Proof.
     by rewrite (@det_lblock _ 1) det1 mul1r.
 Qed.
 
+(* L の対角成分は 1 *)
 Lemma cormen_lup_lower n A (i j : 'I_n.+1) :
   (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R.
 Proof.
@@ -181,6 +185,7 @@ Proof.
         done.
 Qed.
 
+(* U は上三角行列 *)
 Lemma cormen_lup_upper n A (i j : 'I_n.+1) :
   (j < i)%N -> (cormen_lup A).2 i j = 0 :> F.
 Proof.
