@@ -6,6 +6,38 @@ Declare Scope hb_scope.
 Delimit Scope hb_scope with G.
 Open Scope hb_scope.
 
+(**
+```
+                             ・associative mul
+                             ・id mul
+・inverse add                ・distributive
+・commutative add              zero mul (証明)
++====================> Ring <=======================+ <==========================+
+|                   ^        ^                      |                            |
+|                    .      .                       | to_Ring_of_AbelianGroup    |
+|                     .  to_SemiRing_of_Monoid      |...........................>|
+|                      .  .                         |                            | ・inverse add
+|                       .                           |                            | ・associative mul
+SemiRing                 .                          AbelianGroup                 | ・id mul
+^                     .   .                         ^                            | ・distributive
+|                    .   to_AbelianGroup_of_Monoid  | to_AbelianGroup_of_Monoid  |   commutative add (証明)
+|                   .       .                       |...........................>|   zero mul (無視)
+|                  .         .                      |                            |
++-------------------- Monoid -----------------------+============================+
+・associative mul              ・inverse add    
+・id mul                       ・commutative add
+・distributive
+・zero mul
+
+
+-------------> mixin/structure
+=============> factory/builders
+.............> instance
+
+```
+*)
+
+
 (* Bottom mixin in Fig. 2. *)
 HB.mixin Record Monoid_of_Type M := {
   zero : M;
@@ -14,7 +46,7 @@ HB.mixin Record Monoid_of_Type M := {
   add0r : left_id zero add;
   addr0 : right_id zero add;
 }.
-HB.structure Definition Monoid := { M of Monoid_of_Type M }.
+HB.structure Definition Monoid := {M of Monoid_of_Type M}.
 Notation "0" := zero : hb_scope.
 Infix "+" := (@add _) : hb_scope.
 
@@ -24,7 +56,7 @@ HB.mixin Record AbelianGroup_of_Monoid A of Monoid A := {
   addrC : commutative (add : A -> A -> A);
   addNr : left_inverse zero opp add;
 }.
-HB.structure Definition AbelianGroup := { A of Monoid A & AbelianGroup_of_Monoid A }.
+HB.structure Definition AbelianGroup := {A of Monoid A & AbelianGroup_of_Monoid A}.
 Notation "- x" := (@opp _ x) : hb_scope.
 Notation "x - y" := (x + - y) : hb_scope.
 
@@ -40,7 +72,7 @@ HB.mixin Record SemiRing_of_Monoid S of Monoid S := {
   mul0r : left_zero zero mul;
   mulr0 : right_zero zero mul;
 }.
-HB.structure Definition SemiRing := { S of Monoid S & SemiRing_of_Monoid S }.
+HB.structure Definition SemiRing := {S of Monoid S & SemiRing_of_Monoid S}.
 Notation "1" := one : hb_scope.
 Infix "*" := (@mul _) : hb_scope.
 
@@ -75,13 +107,12 @@ HB.builders Context (R : Type) (f : Ring_of_AbelianGroup R).
   by rewrite -mulrDr add0r addrC addNr.
   Qed.
 
-  HB.instance
-  Definition to_SemiRing_of_Monoid := SemiRing_of_Monoid.Build R _ mul mulrA
-     mul1r mulr1 mulrDl mulrDr mul0r mulr0.
+  HB.instance Definition to_SemiRing_of_Monoid := SemiRing_of_Monoid.Build R _ mul mulrA
+                                                    mul1r mulr1 mulrDl mulrDr mul0r mulr0.
 
 HB.end.                                    (* Contextの終わり。 *)
 
-HB.structure Definition Ring := { R of AbelianGroup R & Ring_of_AbelianGroup R }.
+HB.structure Definition Ring := {R of AbelianGroup R & Ring_of_AbelianGroup R}.
 
 (* このfactoryとbuilder は Ring_of_SemiRing を定義しているが、なくてもよい。 *)
 (* Top left factory in Fig. 2. *)
@@ -91,8 +122,7 @@ HB.factory Definition Ring_of_SemiRing R of SemiRing R := AbelianGroup_of_Monoid
 (* The corresponding builder is the identity. *)
 HB.builders Context (R : Type) (f : Ring_of_SemiRing R).
 
-  HB.instance
-  Definition to_AbelianGroup_of_Monoid : AbelianGroup_of_Monoid R := f.
+  HB.instance Definition to_AbelianGroup_of_Monoid : AbelianGroup_of_Monoid R := f.
 
 HB.end.                                    (* Contextの終わり。 *)
 
@@ -127,13 +157,11 @@ HB.builders Context (R : Type) (f : Ring_of_Monoid R).
   Qed.
 
   (* Builder to the bottom right mixin. *)
-  HB.instance
-  Definition to_AbelianGroup_of_Monoid := AbelianGroup_of_Monoid.Build R opp addrC addNr.
+  HB.instance Definition to_AbelianGroup_of_Monoid := AbelianGroup_of_Monoid.Build R opp addrC addNr.
 
   (* Builder to the top right factory, which is compiled to the bottom left mixin. *)
-  HB.instance
-  Definition to_Ring_of_AbelianGroup := Ring_of_AbelianGroup.Build R one mul
-    mulrA mul1r mulr1 mulrDl mulrDr.
+  HB.instance Definition to_Ring_of_AbelianGroup := Ring_of_AbelianGroup.Build R one mul
+                                                      mulrA mul1r mulr1 mulrDl mulrDr.
 
 HB.end.                                     (* Contextの終わり。 *)
 
@@ -156,12 +184,10 @@ Check @addNr.
 Check @addrC. (* is still an axiom of abelian groups                     *)
 (* addrC        :   forall R : AbelianGroup.type, commutative add        *)
 
-HB.instance
-Definition Z_Monoid_axioms : Monoid_of_Type Z :=
-   Monoid_of_Type.Build Z 0%Z Z.add Z.add_assoc Z.add_0_l Z.add_0_r.
+HB.instance Definition Z_Monoid_axioms : Monoid_of_Type Z :=
+  Monoid_of_Type.Build Z 0%Z Z.add Z.add_assoc Z.add_0_l Z.add_0_r.
 
-HB.instance
-Definition Z_Ring_axioms : Ring_of_Monoid Z :=
+HB.instance Definition Z_Ring_axioms : Ring_of_Monoid Z :=
   Ring_of_Monoid.Build Z 1%Z Z.opp Z.mul
     Z.add_opp_diag_l Z.add_opp_diag_r Z.mul_assoc Z.mul_1_l Z.mul_1_r
     Z.mul_add_distr_r Z.mul_add_distr_l.
@@ -183,7 +209,7 @@ HB.about AbelianGroup_of_Monoid.          (* AbelianGroup_of_Monoid *)
 HB.about SemiRing_of_Monoid.              (* SemiRing_of_Monoid *)
 (* factory で定義だと自分はprovide せず、builders で定義されたものがprovideされる。 *)
 HB.about Ring_of_AbelianGroup.            (* SemiRing_of_Monoid *)
-HB.about Ring_of_SemiRing.                (* alias Ring_of_SemiRing XXXXX *)
+HB.about Ring_of_SemiRing.                (* alias Ring_of_SemiRing *)
 HB.about Ring_of_Monoid.                  (* SemiRing_of_Monoid, AbelianGroup_of_Monoid *)
 
 (* strucure *)
@@ -198,3 +224,5 @@ HB.about Ring. (* Monoid_of_Type, SemiRing_of_Monoid, AbelianGroup_of_Monoid *)
 (*                                             structure *)
 (* 広義のfactoryを使って定義するが、属性としては structure を持つ。 *)
 HB.about Z.                                 (* Ring, AbelianGroup, SemiRing, Monoid *)
+
+(* END *)
