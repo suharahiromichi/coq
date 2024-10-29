@@ -282,4 +282,9 @@ Print myp_add.
 Print Canonical Projections.
 *)
 
+HB.graph "Monoid.dot".
+(*
+% tred Monoid.dot | dot -T png > Monoid.png
+ *)
+
 (* END *)
