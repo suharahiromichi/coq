@@ -105,7 +105,7 @@ Proof.
   - done.
   - admit.                                  (* A1 0 0 にしたため。 *)
   - done.
-Admitted.
+Admitted.                                   (* OK *)
 
 (**
 LUPの P が置換行列である。
@@ -115,15 +115,48 @@ LUPの P が置換行列である。
 Check @perm_mx : forall (R : semiRingType) (n : nat), {perm 'I_n} -> 'M_n.
 
 (* Pは置換行列である。 *)
-Lemma cormen_lup_perm n (A : 'M_n.+1) : is_perm_mx (cormen_lup A).1.1.
+Print is_perm_mx.
+Lemma cormen_lup_perm n (A : 'M_n.+1) : is_perm_mx (cormen_lup A).1.1. (* P *)
 Proof.
   elim: n => [|n IHn] /= in A *.
   - exact: is_perm_mx1.
+
+  (* 外側のlet を ``let '(P2, L2, U2) := cormen_lup A' in`` にする。 *)
   - set A' := _ - _.
-    move/(_ A'): IHn.
-    case: cormen_lup => [[P L U]] {A'} /=.
+    move/(_ A') : IHn.                  (* move: (IHn A'). と同じ。 *)
+    case: (cormen_lup A') => [[P L U]] {A'} /=. (* cormen_lup A' を P L U に分割する。 *)
+    
+    (* is_perm_mxMr の第2引数は、-> の左であることに注意 *)
     rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).
+    Undo 1.
+    (* ------------------------------------------- *)
+    rewrite /tperm_mx.
+    Check @is_perm_mxMr F (1 + n.+1) : forall A B : 'M_(1 + n.+1),
+        is_perm_mx B ->                     (* 第2引数 *)
+        is_perm_mx (A *m B) = is_perm_mx A.
+    set MA := (block_mx 1 0 0 P).           (* 第1引数 *)
+    set MB := tperm 0 (odflt 0 [pick k | A k 0 != 0 ]).
+    Check perm_mx_is_perm F MB : is_perm_mx (perm_mx MB). (* 第2引数 *)
+(*
+    have H2 := @is_perm_mxMr F (1 + n.+1)
+                 MA                         (* 第1引数 *)
+                 (perm_mx MB)
+                 (perm_mx_is_perm F MB).    (* 第2引数 *)
+*)
+    have H2 := is_perm_mxMr MA (perm_mx_is_perm F MB).
+    Check H2 : is_perm_mx (MA *m perm_mx MB) = is_perm_mx MA.
+    rewrite H2.
+    (* ------------------------------------------- *)
+    
+    (* is_perm_mx を exist に変えて、s を代入する。 *)
+    Check @is_perm_mxP F n.+1 P
+      : reflect (exists s : {perm 'I_n.+1}, P = perm_mx s) (is_perm_mx P).
+    rewrite /MA.
     case/is_perm_mxP => s ->.
+    
+    (* lift0_mx は block_mx 1 0 0 とおなじ。 *)
+    Check lift0_mx_is_perm F s : is_perm_mx (lift0_mx (perm_mx s)).
+    Check lift0_mx_is_perm F s : is_perm_mx (block_mx 1 0 0 (perm_mx s)).
     rewrite lift0_mx_is_perm.
     done.
 Qed.
@@ -151,7 +184,7 @@ Proof.
 Qed.
 
 (* L の行列式は 1 *)
-Lemma cormen_lup_detL n (A : 'M_n.+1) : \det (cormen_lup A).1.2 = 1.
+Lemma cormen_lup_detL n (A : 'M_n.+1) : \det (cormen_lup A).1.2 = 1. (* L *)
 Proof.
   (* elim: n => [|n IHn] /= in A *. *)
   elim: n A => [|n IHn] /= A.
@@ -164,7 +197,7 @@ Qed.
 
 (* L の対角成分は 1 *)
 Lemma cormen_lup_lower n A (i j : 'I_n.+1) :
-  (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R.
+  (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R. (* L *)
 Proof.
   (* elim: n => [|n IHn] /= in A i j *. *)
   elim: n A i j => [|n IHn] /= A i j.
@@ -187,7 +220,7 @@ Qed.
 
 (* U は上三角行列 *)
 Lemma cormen_lup_upper n A (i j : 'I_n.+1) :
-  (j < i)%N -> (cormen_lup A).2 i j = 0 :> F.
+  (j < i)%N -> (cormen_lup A).2 i j = 0 :> F. (* U *)
 Proof.
   (* elim: n => [|n IHn] /= in A i j *. *)
   elim: n A i j => [|n IHn] /= A i j.
