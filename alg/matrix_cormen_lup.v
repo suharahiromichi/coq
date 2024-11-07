@@ -114,6 +114,38 @@ LUPの P が置換行列である。
 (* 単位行列を置換 s で置き換えて得られた行列。 *)
 Check @perm_mx : forall (R : semiRingType) (n : nat), {perm 'I_n} -> 'M_n.
 
+(* ふたつの置換行列の積についての補題。 *)
+Check is_perm_mxMr : forall (R : semiRingType) (n : nat) (A B : 'M_n),
+    is_perm_mx B -> is_perm_mx (A *m B) = is_perm_mx A.
+
+(* 置換行列と置換の積について、上の補題を具体的にする。 *)
+(* 実際は、置換行列が積になっていればいいので、具体的な行列で証明する必要はない。 *)
+Section mx_perm.
+  Variable n : nat.
+  Variable P : 'M[F]_n.+1.
+  Variable A : 'M[F]_n.+2.
+
+  (* LUP分解の置換行列 P の左上に 1 を置いた行列。 *)
+  Local Definition MA := @block_mx F 1 n.+1 1 n.+1 1 0 0 P.
+
+  Check [pick k | A k 0 != 0 ] : option 'I_n.+2. (* A_k_0 が非零の k を取り出す。 *)
+  Check odflt 0 [pick k | A k 0 != 0 ] : 'I_n.+2. (* Option T を T にする。 *)
+  Check @tperm 'I_n.+2 0 0 : perm_type 'I_n.+2.
+  Check @tperm 'I_n.+2 0 0 0 : 'I_n.+2.
+  (*  *)
+  Local Definition MB := tperm 0 (odflt 0 [pick k | A k 0 != 0 ]).
+  
+  Lemma is_perm_MA_MB : is_perm_mx (MA *m perm_mx MB) = is_perm_mx MA.
+  Proof.
+    rewrite (@is_perm_mxMr F n.+2
+               MA                           (* 第1引数 *)
+               (perm_mx MB)
+               (perm_mx_is_perm F MB)).     (* 第2引数 *)
+    (* is_perm_mxMr の第2引数は、-> の左であることに注意 *)
+    done.
+  Qed.
+End mx_perm.
+
 (* Pは置換行列である。 *)
 Print is_perm_mx.
 Lemma cormen_lup_perm n (A : 'M_n.+1) : is_perm_mx (cormen_lup A).1.1. (* P *)
@@ -126,27 +158,10 @@ Proof.
     move/(_ A') : IHn.                  (* move: (IHn A'). と同じ。 *)
     case: (cormen_lup A') => [[P L U]] {A'} /=. (* cormen_lup A' を P L U に分割する。 *)
     
-    (* is_perm_mxMr の第2引数は、-> の左であることに注意 *)
+    (* 置換を簡単にする。 *)
     rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).
     Undo 1.
-    (* ------------------------------------------- *)
-    rewrite /tperm_mx.
-    Check @is_perm_mxMr F (1 + n.+1) : forall A B : 'M_(1 + n.+1),
-        is_perm_mx B ->                     (* 第2引数 *)
-        is_perm_mx (A *m B) = is_perm_mx A.
-    set MA := (block_mx 1 0 0 P).           (* 第1引数 *)
-    set MB := tperm 0 (odflt 0 [pick k | A k 0 != 0 ]).
-    Check perm_mx_is_perm F MB : is_perm_mx (perm_mx MB). (* 第2引数 *)
-(*
-    have H2 := @is_perm_mxMr F (1 + n.+1)
-                 MA                         (* 第1引数 *)
-                 (perm_mx MB)
-                 (perm_mx_is_perm F MB).    (* 第2引数 *)
-*)
-    have H2 := is_perm_mxMr MA (perm_mx_is_perm F MB).
-    Check H2 : is_perm_mx (MA *m perm_mx MB) = is_perm_mx MA.
-    rewrite H2.
-    (* ------------------------------------------- *)
+    rewrite /tperm_mx is_perm_MA_MB.
     
     (* is_perm_mx を exist に変えて、s を代入する。 *)
     Check @is_perm_mxP F n.+1 P
