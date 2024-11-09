@@ -157,6 +157,7 @@ Proof.
   (* 外側のlet を ``let '(P2, L2, U2) := cormen_lup A' in`` にする。 *)
   - set A' := _ - _.
     move/(_ A') : IHn.                  (* move: (IHn A'). と同じ。 *)
+    (* IHn をジェレラライズして、それを A' に適用する。 *)
     case: (cormen_lup A') => [[P L U]] {A'} /=. (* cormen_lup A' を P L U に分割する。 *)
     
     (* 置換を簡単にする。 *)
@@ -183,20 +184,26 @@ Lemma cormen_lup_correct n (A : 'M_n.+1) :
 Proof.
   elim: n => [|n IHn] /= in A *.
   - by rewrite !mul1r.
-  - set k := odflt _ _.
-    set A1 : 'M_(1 + _) := xrow _ _ _.
-    set A' := _ - _.
+  - set k := odflt 0 [pick k | A k 0 != 0 ] : 'I_n.+2. (* odflt _ _ *)
+    set A1 : 'M_(1 + n.+1) := xrow 0 k A.   (* xrow _ _ _ *)
+    set A' := drsubmx A1 - (A k 0)^-1 *: dlsubmx A1 *m ursubmx A1. (* _ - _ *)
     move/(_ A'): IHn.
-    case: cormen_lup => [[P' L' U']] /= IHn.
+    case: cormen_lup => [[P' L' U']] IHn.
     rewrite -mulrA -!mulmxE -xrowE -/A1 /= -[n.+2]/(1 + n.+1)%N -{1}(submxK A1).
     rewrite !mulmx_block !mul0mx !mulmx0 !add0r !addr0 !mul1mx -{L' U'}[L' *m _]IHn.
     rewrite -scalemxAl !scalemxAr -!mulmxA addrC -mulrDr {A'}subrK.
     congr (block_mx _ _ (_ *m _) _).
     rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
+
     case: pickP => /= [k nzAk0 | no_k].
-    - by rewrite mulVf ?mulmx1.
-    - rewrite (_ : dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
-      by rewrite !mxE lshift0 (elimNf eqP (no_k _)).
+    (* 前提 forall x : 'I_n.+2, A x 0 != 0 *)
+    + by rewrite mulVf ?mulmx1.
+      
+    (* 前提 (fun k : 'I_n.+2 => A k 0 != 0) =1 xpred0 *)
+    + rewrite (_ : dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
+      rewrite !mxE lshift0 (elimNf eqP (no_k (tperm 0 0 (rshift 1 i)))).
+                                    (* (no_k _)                          でもよい。 *)
+      done.
 Qed.
 
 (* L の行列式は 1 *)
