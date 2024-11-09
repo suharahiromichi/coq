@@ -59,7 +59,8 @@ Fixpoint cormen_lup' {n} :=
     (* P1 * A = A1 = |        | *)
     (*               \ v | A' / *)
 
-    let a  := A1 0 0 in                     (* A1の上左 スカラ ``A k 0`` と同じ。 *)
+    (* let a  := A1 0 0 in                  (* A1の上左 スカラ *) *)
+    let a  := A k 0 in                      (* オリジナルと同じになる。 *)
     let a' := ulsubmx A1 in                 (* A1の上左 1x1行列。a と同じもの。 *)
     let w  := ursubmx A1 in                 (* A1の上右 *)
     let v  := dlsubmx A1 in                 (* A1の下左 *)
@@ -99,16 +100,8 @@ Fixpoint cormen_lup' {n} :=
 
 Goal forall n (A : 'M_n.+1), cormen_lup A = cormen_lup' A.
 Proof.
-  elim=> //= n IHn A.
-  rewrite -IHn.
-  case: cormen_lup => [[L U] P].
-  apply/pair_equal_spec.
-  split; [apply/pair_equal_spec |].
-  split.
-  - done.
-  - admit.                                  (* A1 0 0 にしたため。 *)
-  - done.
-Admitted.                                   (* OK *)
+  done.
+Qed.
 
 (**
 LUPの P が置換行列である。
@@ -131,19 +124,24 @@ Section mx_perm.
   (* LUP分解の置換行列 P の左上に 1 を置いた行列。 *)
   Local Definition MA := @block_mx F 1 n.+1 1 n.+1 1 0 0 P.
 
-  Check [pick k | A k 0 != 0 ] : option 'I_n.+2. (* A_k_0 が非零の k を取り出す。 *)
-  Check odflt 0 [pick k | A k 0 != 0 ] : 'I_n.+2. (* Option T を T にする。 *)
-  Check @tperm 'I_n.+2 0 0 : perm_type 'I_n.+2.
-  Check @tperm 'I_n.+2 0 0 0 : 'I_n.+2.
-  (*  *)
-  Local Definition MB := tperm 0 (odflt 0 [pick k | A k 0 != 0 ]).
+  Check [pick k | A k 0 != 0] : option 'I_n.+2. (* A_k_0 が非零の k を取り出す。 *)
+  Check odflt 0 [pick k | A k 0 != 0] : 'I_n.+2. (* Option T を T にする。 *)
+
+  (* (0 : 'I_n.+2) を (2 : 'I_n.+2) に置換する関数 *)
+  Check @tperm 'I_n.+2 0 2 : perm_type 'I_n.+2.
+  (* 上記の関数に 1 を与える。 *)
+  Check @tperm 'I_n.+2 0 2 1 : 'I_n.+2.
   
-  Lemma is_perm_MA_MB : is_perm_mx (MA *m perm_mx MB) = is_perm_mx MA.
+  (* A_k_0 が非零の k に対して、0番目とk番目を置換する。 *)
+  Local Definition PB := tperm 0 (odflt 0 [pick k | A k 0 != 0]).
+  Check perm_mx PB.                       (* 置換PBを行列MAにする。 *)
+  
+  Lemma is_perm_MA_PB : is_perm_mx (MA *m perm_mx PB) = is_perm_mx MA.
   Proof.
     rewrite (@is_perm_mxMr F n.+2
                MA                           (* 第1引数 *)
-               (perm_mx MB)
-               (perm_mx_is_perm F MB)).     (* 第2引数 *)
+               (perm_mx PB)
+               (perm_mx_is_perm F PB)).     (* 第2引数 *)
     (* is_perm_mxMr の第2引数は、-> の左であることに注意 *)
     done.
   Qed.
@@ -164,7 +162,7 @@ Proof.
     (* 置換を簡単にする。 *)
     rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).
     Undo 1.
-    rewrite /tperm_mx is_perm_MA_MB.
+    rewrite /tperm_mx is_perm_MA_PB.
     
     (* is_perm_mx を exist に変えて、s を代入する。 *)
     Check @is_perm_mxP F n.+1 P
