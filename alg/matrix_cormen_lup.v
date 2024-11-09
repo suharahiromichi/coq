@@ -52,30 +52,33 @@ Fixpoint cormen_lup' {n} :=
   | 0 => fun A => (1, 1, A)
   | _.+1 => fun A =>
     let k := odflt 0 [pick k | A k 0 != 0] in (* A k 0 が非零であるなら、  *)
-    let A1 : 'M_(1 + _) := xrow 0 k A in (* i行n目と0行目を入れ替える。 *)
     let P1 : 'M_(1 + _) := tperm_mx 0 k in (* P1 は 左から掛けて上記の入れ替えをする単位行列。 *)
+    let A1 : 'M_(1 + _) := xrow 0 k A in (* k行目と0行目を入れ替えた行列。 *)
 
     (*               / a | w  \ *)
     (* P1 * A = A1 = |        | *)
     (*               \ v | A' / *)
 
-    let a  := A1 0 0 in                     (* 上左 スカラ *)
-    let a' := ulsubmx A1 in                 (* 上左 1x1行列、同じもの。 *)
-    let w  := ursubmx A1 in                 (* 上右 *)
-    let v  := dlsubmx A1 in                 (* 下左 *)
-    let A' := drsubmx A1 in                 (* 下右 *)
-    let Schur := A' - ((A k 0)^-1 *: v) *m w in (* A' - (1/a)*v*w *)
+    let a  := A1 0 0 in                     (* A1の上左 スカラ ``A k 0`` と同じ。 *)
+    let a' := ulsubmx A1 in                 (* A1の上左 1x1行列。a と同じもの。 *)
+    let w  := ursubmx A1 in                 (* A1の上右 *)
+    let v  := dlsubmx A1 in                 (* A1の下左 *)
+    let A' := drsubmx A1 in                 (* A1の下右 *)
     
+    (*           L (下三角行列)      U (上三角行列)       *)
     (*          / 1        | 0 \   / a | w              \ *)
     (* P1 * A = |              | * |                    | *)
     (*          \ (1/a)*v  | 1 /   \ 0 | A' - (1/a)*v*w / *)
-
+    (*                                   ~~~~~~~~~~~~~~ Schur これを再帰的にLUP分割する。 *)
+    
+    let Schur := A' - (a^-1 *: v) *m w in   (* A' - (1/a)*v*w *)
     let: (P2, L2, U2) := cormen_lup' Schur in
     let P := (block_mx 1  0 0                   P2) *m P1 in
     let L := (block_mx 1  0 (a^-1 *: (P2 *m v)) L2) in
     let U := (block_mx a' w 0                   U2) in
     
     (* P               * A = L                    * U          *)
+
     (* / 1 | 0  \            / 1           | 0  \   / a | w  \ *)
     (* |        | * P1 * A = |                  | * |        | *)
     (* \ 0 | P2 /            \ (1/a)*P2*v  | L2 /   \ 0 | U2 / *)
