@@ -47,8 +47,9 @@ Fixpoint cormen_lup {n} :=
     (P, L, U)
   end.
 
-Fixpoint cormen_lup' {n} :=
-  match n return let M := 'M[F]_n.+1 in M -> M * M * M with
+(* match-return は match の返す型。この場合、関数の型で指定しても同じである。 *)
+Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> 'M[F]_n.+1 * 'M[F]_n.+1 * 'M[F]_n.+1 :=
+  match n (* return let M := 'M[F]_n.+1 in M -> M * M * M *) with
   | 0 => fun A => (1, 1, A)
   | _.+1 => fun A =>
     let k := odflt 0 [pick k | A k 0 != 0] in (* A k 0 が非零であるなら、  *)
@@ -200,10 +201,14 @@ Proof.
     + by rewrite mulVf ?mulmx1.
       
     (* 前提 (fun k : 'I_n.+2 => A k 0 != 0) =1 xpred0 *)
-    + rewrite (_ : dlsubmx _ = 0) ?mul0mx //; apply/colP=> i.
-      rewrite !mxE lshift0 (elimNf eqP (no_k (tperm 0 0 (rshift 1 i)))).
-                                    (* (no_k _)                          でもよい。 *)
-      done.
+    + rewrite (_ : dlsubmx _ = 0).
+      * by rewrite ?mul0mx.
+      (* H : dlsubmx (xrow 0 0 A) = 0 の証明 *)
+      * apply/colP=> i.
+        rewrite !mxE lshift0.
+        rewrite (elimNf eqP (no_k (tperm 0 0 (rshift 1 i)))).
+                         (* (no_k _)                          でもよい。 *)
+        done.
 Qed.
 
 (* L の行列式は 1 *)
