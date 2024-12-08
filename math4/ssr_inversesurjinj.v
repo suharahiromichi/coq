@@ -66,11 +66,14 @@ Section InverseSurjInj.
       : forall b, exists a : A, f a = b.
     
     (* 強い依存型に変換する。 *)
-    (* choice はスコーレム関数の存在を言っているが、
-       こういう便利な使い方もある。 *)
+    Check choice
+      : forall (X Y : Type) (P : X -> Y -> Prop),
+        (forall x : X, exists y : Y, P x y) -> {f : X -> Y & forall x : X, P x (f x)}.
+    (* choice はスコーレム関数の存在を言っているが、こういう便利な使い方もある。 *)
     Check choice hsurj                      (* sum strong dep *)
       : {g : B -> A & forall x : B, f (g x) = x}. (* g はまだ名前は決まっていない。 *)
     
+    (* 強い依存型から、値と証明を取り出す。 *)
     Check projT1 (choice hsurj).            (* 値 *)
     pose g := projT1 (choice hsurj).        (* 関数 g *)
     Check g : B -> A.
@@ -80,12 +83,7 @@ Section InverseSurjInj.
     Check hg                                (* 一見複雑な式だが、 *)
       : forall x : B, f (projT1 (choice (P:=fun (b : B) (a : A) => f a = b) hsurj) x) = x.
     Check hg : forall x : B, f (g x) = x.   (* 簡単な式とマッチする。 *)
-    
-    have gdef : forall b, f (g b) = b.
-    {
-      move=> b.
-      by rewrite hg.
-    }.
+    have gdef : forall x, f (g x) = x := hg.
     
     exists g.
     rewrite /injective => a b.
@@ -103,7 +101,6 @@ Section InverseSurjInj.
     injective f -> exists g : B -> A, surjective g.
   Proof.
   Admitted.
-  
 
 End InverseSurjInj.
 
