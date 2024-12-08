@@ -70,13 +70,16 @@ Section InverseSurjInj.
        こういう便利な使い方もある。 *)
     Check choice hsurj                      (* sum strong dep *)
       : {g : B -> A & forall x : B, f (g x) = x}. (* g はまだ名前は決まっていない。 *)
-    Check projT1 (choice hsurj).            (* 値 *)
-    Check projT2 (choice hsurj).            (* 証明 *)
     
+    Check projT1 (choice hsurj).            (* 値 *)
     pose g := projT1 (choice hsurj).        (* 関数 g *)
-    pose hg := projT2 (choice hsurj).       (* f (g b) = b *)
-    Check hg : forall x : B,
-        f (projT1 (choice (P:=fun (b : B) (a : A) => f a = b) hsurj) x) = x.
+    Check g : B -> A.
+    
+    Check projT2 (choice hsurj).            (* 証明 *)
+    pose hg := projT2 (choice hsurj).
+    Check hg                                (* 一見複雑な式だが、 *)
+      : forall x : B, f (projT1 (choice (P:=fun (b : B) (a : A) => f a = b) hsurj) x) = x.
+    Check hg : forall x : B, f (g x) = x.   (* 簡単な式とマッチする。 *)
     
     have gdef : forall b, f (g b) = b.
     {
