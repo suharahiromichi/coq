@@ -1,5 +1,5 @@
 (**
-問題：
+問題：全射・単射と左逆・右逆写像
 
 A が空でないと仮定すれば、選択原理を使うことによって、
 全射 f : A → B があれば逆方向の単射 g : B → A が構成でき、
@@ -56,20 +56,28 @@ Section InverseSurjInj.
 全射 `f : A → B` があれば、選択原理を使用することにより
 単射 `g : B → A` を作ることができる
 *)
+(**
+考え方：
+gをfの逆と考える。fは全射なので、fの値域B全体が、gの定義域Bになる。
+しかし、gの定義域Bのひとつの要素が、値域Aの複数の要素に対応してしまう。
+当該対応を「消す」すなわち制限すると、gの値域はA全体でなくなるが、これは値域Aとして構わない。
+その制限は、論理式 P = (fun b a => f a = b) で行う。
+*)
   Lemma surj_to_inj (f : A -> B) :
     surjective f -> exists g : B -> A, injective g.
   Proof.
     move=> hsurj.
     
     (* 命題 existential quant *)    
-    Check hsurj
-      : forall b, exists a : A, f a = b.
+    Check hsurj : forall b, exists a : A, f a = b.
     
     (* 強い依存型に変換する。 *)
     Check choice
       : forall (X Y : Type) (P : X -> Y -> Prop),
         (forall x : X, exists y : Y, P x y) -> {f : X -> Y & forall x : X, P x (f x)}.
+
     (* choice はスコーレム関数の存在を言っているが、こういう便利な使い方もある。 *)
+    Check @choice B A (fun b a => f a = b) hsurj.
     Check choice hsurj                      (* sum strong dep *)
       : {g : B -> A & forall x : B, f (g x) = x}. (* g はまだ名前は決まっていない。 *)
     
@@ -83,6 +91,7 @@ Section InverseSurjInj.
     Check hg                                (* 一見複雑な式だが、 *)
       : forall x : B, f (projT1 (choice (P:=fun (b : B) (a : A) => f a = b) hsurj) x) = x.
     Check hg : forall x : B, f (g x) = x.   (* 簡単な式とマッチする。 *)
+    (* have gdef : forall x, f (g x) = x by move=> x; apply hg. *)
     have gdef : forall x, f (g x) = x := hg.
     
     exists g.
@@ -90,7 +99,7 @@ Section InverseSurjInj.
     rewrite -{2}(gdef b) -{2}(gdef a).
     by move=> ->.
   Qed.
-  
+
 (**
 ## 問2: 単射から逆方向の全射
 
@@ -98,11 +107,60 @@ Section InverseSurjInj.
 全射 `g : B → A` を作ることができる。
  *)
   Lemma inj_to_surj (f : A -> B) :
-    injective f -> exists g : B -> A, surjective g.
+    inhabited A -> injective f -> exists g : B -> A, surjective g.
   Proof.
+    move=> hnonempty hinj.
+    
+    have g : B -> A.
+    {
+      move=> b.
+      case H : `[<forall b, exists a, f a = b>].
+      - move/asboolP in H.
+        apply: (projT1 (choice H)).
+        done.
+      - apply: inhabited_witness.
+        done.
+    }.
+    
+    have gdef : forall a, g (f a) = a.
+    {
+      move=> a.
+      rewrite /injective in hinj.
+      Check (hinj (g (f a)) a).
+      apply: (hinj (g (f a)) a).
+      
+      admit.
+    }.
+
+    exists g.
+    rewrite /surjective => a.
+    exists (f a).
+    by rewrite gdef.
   Admitted.
+
+(*
+  Check choose (hinj b).
+
+    case: (EM (forall b, exists a, f a = b)).
+    - move=> hsurj.
+      pose g b := projT1 (choice hsurj).
+
+
+    
+    Check fun b => exists a : A, f a = b.
+    Check fun b => `[<exists a : A, f a = b>].
+    Check fun b => @surjective B A b.
+    Check fun b => `[<surjective b>].
+
+
+
+    have hsurj' : forall b, surjective b by admit.
+    have hsurj : forall b, exists a : A, f a = b by admit.
+    
+    Check choice hsurj.
+    pose g b default := if `[<surjective b>] then projT1 (choice hsurj) else default.
+*)
 
 End InverseSurjInj.
 
 (* END *)
-
