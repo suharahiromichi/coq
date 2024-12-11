@@ -106,60 +106,47 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
 単射 `f : A → B` があれば、選択原理を使用することにより
 全射 `g : B → A` を作ることができる。
  *)
+  Lemma em_ex (f : A -> B) b : {exists a, f a = b} + {~(exists a, f a = b)}.
+  Proof.
+    by apply: pselect.
+  Defined.                                  (* !!! *)
+  
+  Definition g' (hnonempty : inhabited A) (f : A -> B) : B -> A.
+  Proof.
+    move=> b.
+    case: (em_ex f b) => H.
+    - by apply: (projT1 (cid H)).      (* lean の choose とおなじ。 *)
+    - by apply: inhabited_witness.
+  Defined.
+  
   Lemma inj_to_surj (f : A -> B) :
     inhabited A -> injective f -> exists g : B -> A, surjective g.
   Proof.
     move=> hnonempty hinj.
-    
-    have g : B -> A.
-    {
-      move=> b.
-      case H : `[<forall b, exists a, f a = b>].
-      - move/asboolP in H.
-        apply: (projT1 (choice H)).
-        done.
-      - apply: inhabited_witness.
-        done.
-    }.
+    pose g := g' hnonempty f.
     
     have gdef : forall a, g (f a) = a.
     {
       move=> a.
-      rewrite /injective in hinj.
-      Check (hinj (g (f a)) a).
-      apply: (hinj (g (f a)) a).
-      
-      admit.
+      rewrite /g /g' /em_ex.
+      case: (pselect (exists a0 : A, f a0 = f a)) => H.
+      (* H が成り立つ。 *)
+      - rewrite /injective in hinj.
+        Check projT1 (cid H).               (* f a' = f a なる a' である。 *)
+        (* injective で、a' = a なる a' にできれば、それは a に等しい。 *)
+        admit.
+        
+      (* H が成り立たない。 *)
+      - exfalso.
+        apply: H.
+        by exists a.
     }.
-
+    
     exists g.
     rewrite /surjective => a.
     exists (f a).
     by rewrite gdef.
   Admitted.
-
-(*
-  Check choose (hinj b).
-
-    case: (EM (forall b, exists a, f a = b)).
-    - move=> hsurj.
-      pose g b := projT1 (choice hsurj).
-
-
-    
-    Check fun b => exists a : A, f a = b.
-    Check fun b => `[<exists a : A, f a = b>].
-    Check fun b => @surjective B A b.
-    Check fun b => `[<surjective b>].
-
-
-
-    have hsurj' : forall b, surjective b by admit.
-    have hsurj : forall b, exists a : A, f a = b by admit.
-    
-    Check choice hsurj.
-    pose g b default := if `[<surjective b>] then projT1 (choice hsurj) else default.
-*)
 
 End InverseSurjInj.
 
