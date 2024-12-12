@@ -115,7 +115,7 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
   Proof.
     move=> b.
     case: (em_ex f b) => H.
-    - by apply: (projT1 (cid H)).      (* lean の choose とおなじ。 *)
+    - by apply: (projT1 (cid H)).     (* lean の Classical.choose h *)
     - by apply: inhabited_witness.
   Defined.
   
@@ -127,16 +127,17 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     
     have gdef : forall a, g (f a) = a.
     {
+      (* rewrite /injective in hinj. *)
       move=> a.
       rewrite /g /g' /em_ex.
-      case: (pselect (exists a0 : A, f a0 = f a)) => H.
-      (* H が成り立つ。 *)
-      - rewrite /injective in hinj.
-        Check projT1 (cid H).               (* f a' = f a なる a' である。 *)
-        (* injective で、a' = a なる a' にできれば、それは a に等しい。 *)
-        admit.
+
+      case: pselect => H.
+      (* H が成り立つ場合 *)
+      - apply: hinj.
+        Check projT2 (cid H) : f (projT1 (cid (P:=fun a0 : A => f a0 = f a) H)) = f a.
+        by rewrite (projT2 (cid H)). (* lean の Classical.choose_spec h *)
         
-      (* H が成り立たない。 *)
+      (* H が成り立たない場合。 *)
       - exfalso.
         apply: H.
         by exists a.
@@ -146,7 +147,7 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     rewrite /surjective => a.
     exists (f a).
     by rewrite gdef.
-  Admitted.
+  Qed.
 
 End InverseSurjInj.
 
