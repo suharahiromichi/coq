@@ -33,8 +33,7 @@ Qed.
  *)
 (** Cantor の対関数 *)
 Definition pair (x : nat * nat) : nat :=
-  (* let (m, n) := x in sum (m + n) + m. *)
-  sum (x.1 + x.2) + x.1.
+  let (m, n) := x in sum (m + n) + m.
 
 Lemma pair_zero (n : nat) : pair (0, 0) = 0.
 Proof.
@@ -46,14 +45,9 @@ Qed.
 Fixpoint unpair (x : nat) : nat * nat :=
   match x with
   | 0 => (0, 0)
-  | x.+1 => if (((unpair x).2) == 0) then (0, (unpair x).1.+1) else ((unpair x).1.+1, (unpair x).2.-1)
+  | x.+1 => let: (m, n) := unpair x in 
+            if n == 0 then (0, m.+1) else (m.+1, n.-1)
   end.
-
-  (*  | x.+1 => let: (m, n) := unpair x in 
-      if n == 0 then (0, m.+1) else (m.+1, n.-1) *)
-
-
-
 
 Lemma unpair_zero : unpair 0 = (0, 0).
 Proof.
@@ -73,6 +67,7 @@ Lemma pair_unpair_eq_id (x : nat) : pair (unpair x) = x.
   (** 見やすさのために `(m, n) := unpair x` とおく． *)
   pose m := (unpair x).1.
   pose n := (unpair x).2.
+  rewrite (surjective_pairing (unpair x)).  
   rewrite -/m -/n.
 
   case: ifP.                                (* split_ifs *)
@@ -91,6 +86,7 @@ Lemma pair_unpair_eq_id (x : nat) : pair (unpair x) = x.
     (** `pair` から `sum` に書き換えることができて、 *)
 
     rewrite /pair in IHx.
+    rewrite (surjective_pairing (unpair x)) in IHx.
     rewrite -/m -/n in IHx.
     rewrite H in IHx.
     rewrite addn0 in IHx.
