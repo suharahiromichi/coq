@@ -97,23 +97,25 @@ Lemma pair_unpair_eq_id (x : nat) : pair (unpair x) = x.
     (** `sum m + m = x` であることが分かる。 *)
     done.
     
-    (** `n ≠ 0` の場合 *)
-    (** `pair (m + 1, n - 1) = x + 1` を示せばよい。 *)
-  - have H : pair (m.+1, n.-1) = x.+1.
+  (** `n ≠ 0` の場合 *)
+  (** `pair (m + 1, n - 1) = x + 1` を示せばよい。 *)
+  - rewrite /pair => H.
+  (** `pair` の定義を展開して、示すべきことを `sum` を使って書き直すと *)
+  (** `sum (m + n) + m = x` を示せば良いことが分かる。 *)
+    suff : sum (m + n) + m = x.
     {
-    (** `pair` の定義を展開して、示すべきことを `sum` を使って書き直すと *)
-      rewrite /pair /=.
-      (** `sum (m + n) + m = x` を示せば良いことが分かる。 *)
-      have H2 : sum (m + n) + m = x by admit.
-      
-      (** 帰納法の仮定の主張に対しても、 *)
-      (** `pair` から `sum` に書き換えることができて、 *)
-      (** `sum (m + n) + m = x` が成り立つことが分かる。 *)
+      rewrite addSnnS prednK.
+      + by rewrite addnS => ->.
+      + by apply: neq0_lt0n.
+    }.
+    (** 帰納法の仮定の主張に対しても、 *)
+    (** `pair` から `sum` に書き換えることができて、 *)
+    rewrite /pair in IHx.
+    rewrite (surjective_pairing (unpair x)) in IHx.
+    rewrite -/m -/n in IHx.
+    (** `sum (m + n) + m = x` が成り立つことが分かる。 *)
+    (** 従って示すべきことが言えた。 *)
+    done.
+Qed.
 
-      
 
-      replace ih : sum (m + n) + m = x := by
-        sorry
-
-          (** 従って示すべきことが言えた。 *)
-      assumption
