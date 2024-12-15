@@ -16,6 +16,20 @@ Cantor の対関数とその全単射性
 From mathcomp Require Import all_ssreflect.
 
 (**
+sum n = x.+1
+->
+sum n != 0
+*)
+Lemma addn1_to_neq0 (X x : nat) : X = x.+1 -> X != 0.
+Proof.
+  Check ltn0Sn : forall n : nat, 0 < n.+1.
+  Check lt0n : forall n : nat, (0 < n) = (n != 0).
+  rewrite -lt0n.
+  move=> ->.
+  by rewrite ltn0Sn.
+Qed.
+
+(**
 ## sum 関数
 *)
 (** `0` から `n` までの自然数の和 *)
@@ -33,6 +47,18 @@ Proof.
   - by move=> ->.
 Qed.
 
+Lemma sum_zero_iff_zero'' {n : nat} : (sum n == 0) = (n == 0).
+Proof.
+  apply/idP/idP; move/eqP.
+  - by move/sum_zero_iff_zero => ->.
+  - by move=> ->.
+Qed.
+
+Lemma sum_not_zero_iff_not_zero'' {n : nat} : (sum n != 0) = (n != 0).
+Proof.
+  by rewrite sum_zero_iff_zero''.
+Qed.
+
 (**
 ## 対関数とその逆関数
  *)
@@ -47,7 +73,36 @@ Qed.
 
 Lemma pair_zero' (m n : nat) : pair (m, n) = 0 <-> (m = 0 /\ n = 0).
 Proof.
-Admitted.
+  split.
+  - rewrite /pair.
+    move/eqP.
+    rewrite addn_eq0.
+    case/andP.
+    move/eqP.
+    move/sum_zero_iff_zero.
+    move=> Hmn.
+    move/eqP.
+    move=> Hm.
+    move: Hmn.
+    rewrite Hm.
+    rewrite add0n.
+    move=> -> .
+    done.
+  - by case=> -> ->.
+Qed.
+
+Lemma pair_zero'' (m n : nat) : (pair (m, n) == 0) = ((m == 0) && (n == 0)).
+Proof.
+  rewrite /pair.
+  rewrite addn_eq0.
+  rewrite sum_zero_iff_zero''.
+  rewrite addn_eq0.
+  rewrite andbC.
+  rewrite andbA.
+  f_equal.
+  rewrite Bool.andb_diag.
+  done.
+Qed.
 
 (** カントールの対関数の逆関数 *)
 
@@ -179,13 +234,22 @@ h : pair (m, n) = x + 1
       {
         move: H2.
         rewrite /pair add0n addn0.
-        admit.
+        move=> H.
+        have : sum n != 0 by apply: (@addn1_to_neq0 (sum n) x).
+        rewrite sum_zero_iff_zero''.
+        rewrite lt0n.
+        done.
       }.
       
       (** よって `sum n = sum (n - 1) + n` と書くことができて、 *)
       have lem : sum n = sum n.-1 + n.
       {
-        admit.
+        Check l0 n.-1 : n.-1.+1 + sum n.-1 = sum n.-1.+1.
+        Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n.
+        move : (l0 n.-1).
+        rewrite prednK => //=.
+        rewrite addnC.
+        by move=> ->.
       }.
       
       (** `pair (n - 1, 0) = x` が結論できる。 *)
@@ -194,10 +258,13 @@ h : pair (m, n) = x + 1
         rewrite /pair addn0.
         rewrite -{2}subn1.
         Search (_ + (_ - _)).
-        rewrite addnBA.
-        * rewrite -lem.
-          admit.
-        * done.
+        rewrite addnBA //=.
+        rewrite -lem.
+        move: H2.
+        rewrite /pair addn0 add0n.
+        move=> ->.
+        rewrite subn1.
+        done.
       }.
       (** 後は帰納法の仮定から従う。 *)
       (* Lean の振る舞いとは一致している。 *)
