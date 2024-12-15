@@ -113,6 +113,13 @@ Fixpoint unpair (x : nat) : nat * nat :=
             if n == 0 then (0, m.+1) else (m.+1, n.-1)
   end.
 
+(* *************************** *)
+Lemma unpair_rec_m0 x n : unpair x = (n.-1, 0) -> unpair x.+1 = (0, n).
+Proof.
+  elim: x => //=.
+Admitted.
+(* *************************** *)
+
 Lemma unpair_zero : unpair 0 = (0, 0).
 Proof.
   done.
@@ -271,17 +278,28 @@ h : pair (m, n) = x + 1
       (*
 x : ℕ
 ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
+
 h : pair (0, n) = x + 1
 npos : n > 0
 lem : sum n = sum (n - 1) + n
 this : pair (n - 1, 0) = x
 ⊢ unpair (x + 1) = (0, n)
 *)
-      Check IHx n.-1 0.
-      move/IHx.
-      admit.
 
+      move=> H3.
+      (* 対関数の繰り上がり。 *)
+      have unpair_rec_m0 : unpair x = (n.-1, 0) -> unpair x.+1 = (0, n).
+      {
+        move=> H4.
+        rewrite -H2.
+        rewrite /pair add0n addn0.
+        Admitted.
+      }.
+      apply: unpair_rec_m0.
+      apply: IHx.
+      by apply: H3.
+
+    (* ************************************* *)
       (** `m = m' + 1` のとき *)
 (*
 x : ℕ
@@ -312,15 +330,19 @@ this : pair (m', n + 1) = x
         admit.
 Admitted.
 
-Lemma test m' n : unpair (pair (m', n.+1)) = (m', n.+1) -> unpair (pair (m'.+1, n)) = (m'.+1, n).
+
+
+
+
+(* 一部の条件のみ *)
+Lemma unpair_rec (m n x : nat) : unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
 Proof.
-  rewrite (surjective_pairing (unpair (pair (m', n.+1)))).
-  rewrite (surjective_pairing (unpair (pair (m'.+1, n)))).
-  rewrite /pair.
-  Search sum.
+  rewrite (surjective_pairing (unpair x.+1)).
+  simpl.
+  rewrite (surjective_pairing (unpair x)).
+  simpl.
+  case: ifP => H.
 Admitted.
-
-
 
 
   (* NGNGNGNGNGN *)
