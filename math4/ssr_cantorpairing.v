@@ -113,16 +113,21 @@ Fixpoint unpair (x : nat) : nat * nat :=
             if n == 0 then (0, m.+1) else (m.+1, n.-1)
   end.
 
-(* *************************** *)
-Lemma unpair_rec_m0 x n : unpair x = (n.-1, 0) -> unpair x.+1 = (0, n).
-Proof.
-  elim: x => //=.
-Admitted.
-(* *************************** *)
-
 Lemma unpair_zero : unpair 0 = (0, 0).
 Proof.
   done.
+Qed.
+
+Lemma unpair_rec_m0 m x : unpair x = (m, 0) -> unpair x.+1 = (0, m.+1).
+Proof.
+  by rewrite /unpair => ->.
+Qed.
+
+Lemma unpair_rec_m0' m x : 0 < m -> unpair x = (m.-1, 0) -> unpair x.+1 = (0, m).
+Proof.
+  move=> Hm.
+  rewrite /unpair => ->.
+  by rewrite prednK.
 Qed.
 
 (**
@@ -288,14 +293,7 @@ this : pair (n - 1, 0) = x
 
       move=> H3.
       (* 対関数の繰り上がり。 *)
-      have unpair_rec_m0 : unpair x = (n.-1, 0) -> unpair x.+1 = (0, n).
-      {
-        move=> H4.
-        rewrite -H2.
-        rewrite /pair add0n addn0.
-        Admitted.
-      }.
-      apply: unpair_rec_m0.
+      apply: unpair_rec_m0' => //=.
       apply: IHx.
       by apply: H3.
 
