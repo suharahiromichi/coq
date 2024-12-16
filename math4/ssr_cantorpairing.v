@@ -130,6 +130,24 @@ Proof.
   by rewrite prednK.
 Qed.
 
+Lemma unpair_rec m n x : 0 < n -> unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
+Proof.
+  move=> Hn.
+  rewrite /unpair => ->.
+  move/lt0n_neq0 in Hn.
+  case: ifP.
+  - move/eqP.
+    move/eqP in Hn.
+    done.
+  - move/negbT.
+    done.
+Qed.
+
+Lemma unpair_rec' m n x : unpair x = (m, n.+1) -> unpair x.+1 = (m.+1, n).
+Proof.
+  by rewrite /unpair => ->.
+Qed.
+
 (**
 ## pair の全射性
 *)
@@ -212,7 +230,7 @@ Proof.
 Qed.
 
 (** `unpair ∘ pair = id` が成り立つ。特に `pair` は単射。*)
-Theorem unpair_pair_eq_id' (m n x : nat) : pair (m, n) = x -> unpair x = (m, n).
+Lemma unpair_pair_eq_id' (m n x : nat) : pair (m, n) = x -> unpair x = (m, n).
 Proof.
   (** `x = pair (m, n)` として `x` に対する帰納法を利用する *)
   (* induction' h : pair (m, n) with x ih generalizing m n *)
@@ -307,8 +325,17 @@ h : pair (m, n) = x + 1
 ⊢ unpair (x + 1) = (m, n)
 *)
       (** `pair` の定義から `pair (m', n + 1) = x` が成り立つ。 *)
-      + have H2 : pair (m', n.+1) = x .
-        admit.
+    + move=> H3.
+      have H2 : pair (m', n.+1) = x .
+      {
+        move: H3.
+        rewrite /pair addSn.
+        rewrite [in sum (m' + n.+1)]addnS.
+        rewrite [LHS]addnS.
+        Search (_.+1 = _.+1).
+        move/eq_add_S.
+        done.
+      }.
 
       (** 後は帰納法の仮定から従う。 *)
         
@@ -321,33 +348,21 @@ h : pair (m' + 1, n) = x + 1
 this : pair (m', n + 1) = x
 ⊢ unpair (x + 1) = (m' + 1, n)
 *)
-        move: (H2).
-        move/IHx => H3.
-        rewrite -H2 in H3.
-        move=> <-.
-        admit.
-Admitted.
+        move/IHx in H2.
+        by apply: unpair_rec'.
+Qed.
 
 
-
-
-
-(* 一部の条件のみ *)
-Lemma unpair_rec (m n x : nat) : unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
-Proof.
-  rewrite (surjective_pairing (unpair x.+1)).
-  simpl.
-  rewrite (surjective_pairing (unpair x)).
-  simpl.
-  case: ifP => H.
-Admitted.
-
-
-  (* NGNGNGNGNGN *)
-
-
-(** `unpair ∘ pair = id` が成り立つ。特に `pair` は単射。*)
 Theorem unpair_pair_eq_id (m n : nat) : unpair (pair (m, n)) = (m, n).
+Proof.
+  by apply: unpair_pair_eq_id'.
+Qed.
+
+(* ********************* *)
+(* Coqでは行き詰まる例。 *)
+(* ********************* *)
+(** `unpair ∘ pair = id` が成り立つ。特に `pair` は単射。*)
+Theorem unpair_pair_eq_id_ng (m n : nat) : unpair (pair (m, n)) = (m, n).
 Proof.
   (** `x = pair (m, n)` として `x` に対する帰納法を利用する *)
   (* induction' h : pair (m, n) with x ih generalizing m n *)
@@ -383,8 +398,6 @@ m n : ℕ
 h : pair (m, n) = x + 1
 ⊢ unpair (x + 1) = (m, n)
 *)
-Admitted.
+Admitted.                                   (* OK *)
 
 (* END *)
-
-
