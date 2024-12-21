@@ -1,45 +1,29 @@
 (**
 Cantor の対関数とその全単射性
 
-# 一般的な解説
-
-- https://www.youtube.com/watch?v=rRpkLoUpvuM
-
-
-# Lean
-
 - https://lean-ja.github.io/lean-by-example/Tutorial/Exercise/CantorPairing.html
-
-
-# MathComp
  *)
 From mathcomp Require Import all_ssreflect.
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 (**
-sum n = x.+1
-->
-sum n != 0
-*)
-Lemma addn1_to_neq0 (X x : nat) : X = x.+1 -> X != 0.
-Proof.
-  Check ltn0Sn : forall n : nat, 0 < n.+1.
-  Check lt0n : forall n : nat, (0 < n) = (n != 0).
-  rewrite -lt0n.
-  move=> ->.
-  by rewrite ltn0Sn.
-Qed.
+# 対関数とその逆関数
 
-(**
 ## sum 関数
-*)
-(** `0` から `n` までの自然数の和 *)
+
+`0` から `n` までの自然数の和
+ *)
 Fixpoint sum (n : nat) : nat :=
   match n with
   | 0 => 0
   | n.+1 => n.+1 + sum n
   end.
 
-(** `sum n = 0` となることと `n = 0` は同値 *)
+(**
+## 補題 `sum n = 0` となることと `n = 0` は同値
+ *)
 Lemma sum_zero_iff_zero {n : nat} : sum n = 0 <-> n = 0.
 Proof.
   split.
@@ -47,31 +31,21 @@ Proof.
   - by move=> ->.
 Qed.
 
-Lemma sum_zero_iff_zero'' {n : nat} : (sum n == 0) = (n == 0).
+Lemma sum_zero_iff_zeroE {n : nat} : (sum n == 0) = (n == 0).
 Proof.
   apply/idP/idP; move/eqP.
-  - by move/sum_zero_iff_zero => ->.
+  - by case: n.
   - by move=> ->.
 Qed.
 
-Lemma sum_not_zero_iff_not_zero'' {n : nat} : (sum n != 0) = (n != 0).
-Proof.
-  by rewrite sum_zero_iff_zero''.
-Qed.
-
 (**
-## 対関数とその逆関数
+## Cantor の対関数 pair
  *)
-(** Cantor の対関数 *)
 Definition pair (x : nat * nat) : nat :=
   let (m, n) := x in sum (m + n) + m.
 
-Lemma pair_zero : pair (0, 0) = 0.
-Proof.
-  done.
-Qed.
-
-Lemma pair_zero' (m n : nat) : pair (m, n) = 0 <-> (m = 0 /\ n = 0).
+(* Lemma pair_zero : pair (0, 0) = 0 *)
+Lemma pair_zero (m n : nat) : pair (m, n) = 0 <-> (m = 0 /\ n = 0).
 Proof.
   split.
   - rewrite /pair.
@@ -91,20 +65,9 @@ Proof.
   - by case=> -> ->.
 Qed.
 
-Lemma pair_zero'' (m n : nat) : (pair (m, n) == 0) = ((m == 0) && (n == 0)).
-Proof.
-  rewrite /pair.
-  rewrite addn_eq0.
-  rewrite sum_zero_iff_zero''.
-  rewrite addn_eq0.
-  rewrite andbC.
-  rewrite andbA.
-  f_equal.
-  rewrite Bool.andb_diag.
-  done.
-Qed.
-
-(** カントールの対関数の逆関数 *)
+(**
+## Cantor の対関数の逆関数 unpair
+ *)
 
 Fixpoint unpair (x : nat) : nat * nat :=
   match x with
@@ -118,40 +81,23 @@ Proof.
   done.
 Qed.
 
-Lemma unpair_rec_m0 m x : unpair x = (m, 0) -> unpair x.+1 = (0, m.+1).
-Proof.
-  by rewrite /unpair => ->.
-Qed.
-
-Lemma unpair_rec_m0' m x : 0 < m -> unpair x = (m.-1, 0) -> unpair x.+1 = (0, m).
+Lemma unpair_rec_m0 m x : 0 < m -> unpair x = (m.-1, 0) -> unpair x.+1 = (0, m).
 Proof.
   move=> Hm.
   rewrite /unpair => ->.
   by rewrite prednK.
 Qed.
 
-Lemma unpair_rec m n x : 0 < n -> unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
-Proof.
-  move=> Hn.
-  rewrite /unpair => ->.
-  move/lt0n_neq0 in Hn.
-  case: ifP.
-  - move/eqP.
-    move/eqP in Hn.
-    done.
-  - move/negbT.
-    done.
-Qed.
-
-Lemma unpair_rec' m n x : unpair x = (m, n.+1) -> unpair x.+1 = (m.+1, n).
+Lemma unpair_rec m n x : unpair x = (m, n.+1) -> unpair x.+1 = (m.+1, n).
 Proof.
   by rewrite /unpair => ->.
 Qed.
 
 (**
-## pair の全射性
+# 対関数 pair の全射性
 *)
 Theorem pair_unpair_eq_id (x : nat) : pair (unpair x) = x.
+Proof.
   (** `x` に対する帰納法を使う *)
   elim: x => //= x IHx.                  (** `x = 0` の場合は明らか *)
   (** `x` まで成り立つと仮定して `x + 1` でも成り立つことを示そう。 *)
@@ -212,8 +158,11 @@ Theorem pair_unpair_eq_id (x : nat) : pair (unpair x) = x.
     done.
 Qed.
 
-(** 問3: 対関数の単射性 *)
+
+
 (**
+# 対関数 pair の単射性
+
 最後に pair が単射であることを示してみましょう。
 unpair ∘ pair = id が成り立つことを示せば十分です。
 *)
@@ -229,6 +178,16 @@ Proof.
   by rewrite add0n addn0.
 Qed.
 
+Lemma addn1_to_neq0 (X x : nat) : X = x.+1 -> X != 0.
+Proof.
+  Check ltn0Sn : forall n : nat, 0 < n.+1.
+  Check lt0n : forall n : nat, (0 < n) = (n != 0).
+  rewrite -lt0n.
+  move=> ->.
+  by rewrite ltn0Sn.
+Qed.
+
+
 (** `unpair ∘ pair = id` が成り立つ。特に `pair` は単射。*)
 Lemma unpair_pair_eq_id' (m n x : nat) : pair (m, n) = x -> unpair x = (m, n).
 Proof.
@@ -236,7 +195,7 @@ Proof.
   (* induction' h : pair (m, n) with x ih generalizing m n *)
   elim: x m n => [| x IHx] m n.
   (** `pair (m, n) = 0` のときは `pair` の定義から明らか。 *)
-  - case/pair_zero' => -> ->.
+  - case/pair_zero => -> ->.
     by rewrite unpair_zero.
 
   (** `pair (m, n) = x + 1` のとき *)
@@ -266,7 +225,7 @@ h : pair (m, n) = x + 1
         rewrite /pair add0n addn0.
         move=> H.
         have : sum n != 0 by apply: (@addn1_to_neq0 (sum n) x).
-        rewrite sum_zero_iff_zero''.
+        rewrite sum_zero_iff_zeroE.
         rewrite lt0n.
         done.
       }.
@@ -311,7 +270,7 @@ this : pair (n - 1, 0) = x
 
       move=> H3.
       (* 対関数の繰り上がり。 *)
-      apply: unpair_rec_m0' => //=.
+      apply: unpair_rec_m0 => //=.
       apply: IHx.
       by apply: H3.
 
@@ -349,7 +308,7 @@ this : pair (m', n + 1) = x
 ⊢ unpair (x + 1) = (m' + 1, n)
 *)
         move/IHx in H2.
-        by apply: unpair_rec'.
+        by apply: unpair_rec.
 Qed.
 
 
@@ -358,46 +317,79 @@ Proof.
   by apply: unpair_pair_eq_id'.
 Qed.
 
-(* ********************* *)
-(* Coqでは行き詰まる例。 *)
-(* ********************* *)
-(** `unpair ∘ pair = id` が成り立つ。特に `pair` は単射。*)
+(**
+# Coqでは行き詰まる例。
+*)
 Theorem unpair_pair_eq_id_ng (m n : nat) : unpair (pair (m, n)) = (m, n).
 Proof.
   (** `x = pair (m, n)` として `x` に対する帰納法を利用する *)
-  (* induction' h : pair (m, n) with x ih generalizing m n *)
   pose x := pair (m, n).
   have H : pair (m, n) = x by rewrite -/x.
   rewrite -/x.
   elim: x H => [| x IHx].
   (** `pair (m, n) = 0` のときは `pair` の定義から明らか。 *)
-  - case/pair_zero' => -> ->.
+  - case/pair_zero => -> ->.
     by rewrite unpair_zero.
-
+    
+  - admit.
   (** `pair (m, n) = x + 1` のとき *)
-(*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
-h : pair (m, n) = x + 1
-⊢ unpair (x + 1) = (m, n)
-*)
-  (** `m` がゼロかそうでないかで場合分けする *)
-  - case H : m IHx => IHx.
+(**
+  m, n, x : nat
+  IHx : pair (m, n) = x -> unpair x = (m, n)
+  ============================
+  pair (m, n) = x.+1 -> unpair x.+1 = (m, n)
 
-    (*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
-h : pair (m, n) = x + 1
-⊢ unpair (x + 1) = (m, n)
+IHx の m n がジェネラライズ generalizing できないので、これ以上証明が進まない。
+CoqはLean のように、あとづけでジェネラライズできないのである。バニラCoqも同じ。
 
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
-h : pair (m, n) = x + 1
-⊢ unpair (x + 1) = (m, n)
+``induction' h : pair (m, n) with x ih generalizing m n``
 *)
 Admitted.                                   (* OK *)
+
+(**
+# 使用しなかった補題
+
+Lemma pair_zero : pair (0, 0) = 0.
+Proof.
+  done.
+Qed.
+
+ *)
+(*
+Lemma pair_zero'' (m n : nat) : (pair (m, n) == 0) = ((m == 0) && (n == 0)).
+Proof.
+  rewrite /pair.
+  rewrite addn_eq0.
+  rewrite sum_zero_iff_zero''.
+  rewrite addn_eq0.
+  rewrite andbC.
+  rewrite andbA.
+  f_equal.
+  rewrite Bool.andb_diag.
+  done.
+Qed.
+*)
+
+(*
+Lemma unpair_rec_m0 m x : unpair x = (m, 0) -> unpair x.+1 = (0, m.+1).
+Proof.
+  by rewrite /unpair => ->.
+Qed.
+*)
+
+(*
+Lemma unpair_rec m n x : 0 < n -> unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
+Proof.
+  move=> Hn.
+  rewrite /unpair => ->.
+  move/lt0n_neq0 in Hn.
+  case: ifP.
+  - move/eqP.
+    move/eqP in Hn.
+    done.
+  - move/negbT.
+    done.
+Qed.
+*)
 
 (* END *)
