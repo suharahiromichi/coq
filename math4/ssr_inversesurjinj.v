@@ -109,12 +109,13 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
   Lemma em_ex (f : A -> B) b : {exists a, f a = b} + {~(exists a, f a = b)}.
   Proof.
     by apply: pselect.
-  Defined.                                  (* !!! *)
+  Defined.                      (* em_ex がunfoldできる必要がある。 *)
   
-  Definition g' (hnonempty : inhabited A) (f : A -> B) : B -> A.
+  (* 左逆写像 *)
+  Definition linv (hnonempty : inhabited A) (f : A -> B) : B -> A.
   Proof.
     move=> b.
-    case: (em_ex f b) => H.
+    case: (em_ex f b) => H.     (* em_ex がunfoldできる必要がある。 *)
     - by apply: (projT1 (cid H)).     (* lean の Classical.choose h *)
     - by apply: inhabited_witness.
   Defined.
@@ -123,13 +124,13 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     inhabited A -> injective f -> exists g : B -> A, surjective g.
   Proof.
     move=> hnonempty hinj.
-    pose g := g' hnonempty f.
+    pose g := linv hnonempty f.
     
     have gdef : forall a, g (f a) = a.
     {
       (* rewrite /injective in hinj. *)
       move=> a.
-      rewrite /g /g' /em_ex.
+      rewrite /g /linv /em_ex.
 
       case: pselect => H.
       (* H が成り立つ場合 *)
