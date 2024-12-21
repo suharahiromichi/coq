@@ -36,6 +36,9 @@ Karate-coq.pdf
 *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_classical.
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
 
 (* 全射 *)
 Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
@@ -148,6 +151,29 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     rewrite /surjective => a.
     exists (f a).
     by rewrite gdef.
+  Qed.
+
+
+(**
+## 追加
+
+Theorem Proving in Lean 4
+12. 公理と計算
+
+の最後の定理
+ *)
+  Theorem linv_comp_self (f : A -> B) (hnonempty : inhabited A) :
+    injective f -> (linv hnonempty f) \o f = id.
+  Proof.
+    move=> hinj.
+    apply: functional_extensionality_dep => a.
+    rewrite compE /linv /em_ex.
+    case: pselect => H.    
+    - apply: hinj.
+      by rewrite (projT2 (cid H)).
+    - exfalso.
+      apply: H.
+      by exists a.
   Qed.
 
 End InverseSurjInj.
