@@ -9,6 +9,16 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
+# ありそうで無い補題
+*)
+Lemma addn1_to_neq0 (m n : nat) : m = n.+1 -> m != 0.
+Proof.
+  rewrite -lt0n.
+  move=> ->.
+  by rewrite ltn0Sn.
+Qed.
+
+(**
 # 対関数とその逆関数
 
 ## sum 関数
@@ -44,31 +54,29 @@ Qed.
 Definition pair (x : nat * nat) : nat :=
   let (m, n) := x in sum (m + n) + m.
 
-(* Lemma pair_zero : pair (0, 0) = 0 *)
+(*
+Lemma pair_zero : pair (0, 0) = 0.
+Proof. done. Qed.  
+*)
+
 Lemma pair_zero (m n : nat) : pair (m, n) = 0 <-> (m = 0 /\ n = 0).
 Proof.
   split.
-  - rewrite /pair.
-    move/eqP.
+(*
+  - rewrite /pair => /eqP.
     rewrite addn_eq0.
-    case/andP.
-    move/eqP.
-    move/sum_zero_iff_zero.
-    move=> Hmn.
-    move/eqP.
-    move=> Hm.
+    case/andP => /eqP /sum_zero_iff_zero Hmn /eqP Hm.
     move: Hmn.
-    rewrite Hm.
-    rewrite add0n.
-    move=> -> .
-    done.
+    by rewrite Hm add0n => ->.
+*)
+  - elim: m => //=.
+    elim: n => //=.
   - by case=> -> ->.
 Qed.
 
 (**
 ## Cantor の対関数の逆関数 unpair
  *)
-
 Fixpoint unpair (x : nat) : nat * nat :=
   match x with
   | 0 => (0, 0)
@@ -100,65 +108,48 @@ Theorem pair_unpair_eq_id (x : nat) : pair (unpair x) = x.
 Proof.
   (** `x` に対する帰納法を使う *)
   elim: x => //= x IHx.                  (** `x = 0` の場合は明らか *)
+  
   (** `x` まで成り立つと仮定して `x + 1` でも成り立つことを示そう。 *)
-  
   (** まず `unpair` の定義を展開する。 *)
-  
   (** 見やすさのために `(m, n) := unpair x` とおく． *)
   pose m := (unpair x).1.
   pose n := (unpair x).2.
-  rewrite (surjective_pairing (unpair x)).  
-  rewrite -/m -/n.
+  rewrite (surjective_pairing (unpair x)) -/m -/n.
 
   case: ifP.                                (* split_ifs *)
   (** `n = 0` の場合 *)
   - move/eqP => H.
-    (* show pair (0, m + 1) = x + 1 *)
-
-    (** `pair (0, m + 1) = x + 1` を示せばよい。 *)
-    
+    Check pair (0, m.+1) = x.+1.
     (** `pair` の定義を展開して、示すべきことを `sum` を使って書き直すと *)
     rewrite /pair /= addn0.
     (** `sum (m + 1) = x + 1` を示せば良いことが分かる。 *)
     suff : sum m.+1 = x.+1 by have -> : m.+1 + sum m = sum m.+1 by done.
     
-    (** 帰納法の仮定の主張に対しても、 *)
-    (** `pair` から `sum` に書き換えることができて``、 *)
-
-    rewrite /pair in IHx.
-    rewrite (surjective_pairing (unpair x)) in IHx.
-    rewrite -/m -/n in IHx.
-    rewrite H in IHx.
-    rewrite addn0 in IHx.
+    (* 帰納法の仮定の主張に対しても、
+      `pair` から `sum` に書き換えることができて、
+      `sum m + m = x` であることが分かる。 *)
+    rewrite /pair (surjective_pairing (unpair x)) -/m -/n H addn0 in IHx.
     have <- : m.+1 + sum m = sum m.+1 by done.
-    rewrite addSn addnC.
-    rewrite IHx.
-    
-    (** `sum m + m = x` であることが分かる。 *)
-    done.
+    by rewrite addSn addnC IHx.
     
   (** `n ≠ 0` の場合 *)
-  (** `pair (m + 1, n - 1) = x + 1` を示せばよい。 *)
+  Check pair (m.+1, n.-1) = x.+1.
+  (* `pair` の定義を展開して、示すべきことを `sum` を使って書き直すと *)
   - rewrite /pair => H.
-  (** `pair` の定義を展開して、示すべきことを `sum` を使って書き直すと *)
-  (** `sum (m + n) + m = x` を示せば良いことが分かる。 *)
+    (* `sum (m + n) + m = x` を示せば良いことが分かる。 *)
     suff : sum (m + n) + m = x.
     {
       rewrite addSnnS prednK.
       + by rewrite addnS => ->.
       + by apply: neq0_lt0n.
     }.
-    (** 帰納法の仮定の主張に対しても、 *)
-    (** `pair` から `sum` に書き換えることができて、 *)
-    rewrite /pair in IHx.
-    rewrite (surjective_pairing (unpair x)) in IHx.
-    rewrite -/m -/n in IHx.
-    (** `sum (m + n) + m = x` が成り立つことが分かる。 *)
+    (* 帰納法の仮定の主張に対しても、
+       `pair` から `sum` に書き換えることができて、
+       `sum (m + n) + m = x` が成り立つことが分かる。 *)
+    rewrite /pair (surjective_pairing (unpair x)) -/m -/n in IHx.
     (** 従って示すべきことが言えた。 *)
     done.
 Qed.
-
-
 
 (**
 # 対関数 pair の単射性
@@ -166,27 +157,6 @@ Qed.
 最後に pair が単射であることを示してみましょう。
 unpair ∘ pair = id が成り立つことを示せば十分です。
 *)
-
-Lemma l0 m : m.+1 + sum m = sum m.+1.
-Proof.
-  done.
-Qed.
-
-Lemma l1 n : pair (0, n) = sum n.
-Proof.
-  rewrite /pair.
-  by rewrite add0n addn0.
-Qed.
-
-Lemma addn1_to_neq0 (X x : nat) : X = x.+1 -> X != 0.
-Proof.
-  Check ltn0Sn : forall n : nat, 0 < n.+1.
-  Check lt0n : forall n : nat, (0 < n) = (n != 0).
-  rewrite -lt0n.
-  move=> ->.
-  by rewrite ltn0Sn.
-Qed.
-
 
 (** `unpair ∘ pair = id` が成り立つ。特に `pair` は単射。*)
 Lemma unpair_pair_eq_id' (m n x : nat) : pair (m, n) = x -> unpair x = (m, n).
@@ -197,25 +167,10 @@ Proof.
   (** `pair (m, n) = 0` のときは `pair` の定義から明らか。 *)
   - case/pair_zero => -> ->.
     by rewrite unpair_zero.
-
+    
   (** `pair (m, n) = x + 1` のとき *)
-(*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
-h : pair (m, n) = x + 1
-⊢ unpair (x + 1) = (m, n)
-*)
   (** `m` がゼロかそうでないかで場合分けする *)
   - case: m => [| m'].
-    (*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
-h : pair (m, n) = x + 1
-⊢ unpair (x + 1) = (m, n)
-*)
-
     (** `m = 0` のとき *)
     (** `pair (0, n) = x + 1` により `n > 0` が成り立つ。 *)
     + move=> H2.
@@ -233,9 +188,7 @@ h : pair (m, n) = x + 1
       (** よって `sum n = sum (n - 1) + n` と書くことができて、 *)
       have lem : sum n = sum n.-1 + n.
       {
-        Check l0 n.-1 : n.-1.+1 + sum n.-1 = sum n.-1.+1.
-        Check prednK : forall n : nat, 0 < n -> n.-1.+1 = n.
-        move : (l0 n.-1).
+        have: n.-1.+1 + sum n.-1 = sum n.-1.+1 by done.
         rewrite prednK => //=.
         rewrite addnC.
         by move=> ->.
@@ -256,33 +209,13 @@ h : pair (m, n) = x + 1
         done.
       }.
       (** 後は帰納法の仮定から従う。 *)
-      (* Lean の振る舞いとは一致している。 *)
-      (*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-
-h : pair (0, n) = x + 1
-npos : n > 0
-lem : sum n = sum (n - 1) + n
-this : pair (n - 1, 0) = x
-⊢ unpair (x + 1) = (0, n)
-*)
-
       move=> H3.
       (* 対関数の繰り上がり。 *)
       apply: unpair_rec_m0 => //=.
       apply: IHx.
       by apply: H3.
-
-    (* ************************************* *)
+      
       (** `m = m' + 1` のとき *)
-(*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n : ℕ
-h : pair (m, n) = x + 1
-⊢ unpair (x + 1) = (m, n)
-*)
       (** `pair` の定義から `pair (m', n + 1) = x` が成り立つ。 *)
     + move=> H3.
       have H2 : pair (m', n.+1) = x .
@@ -295,23 +228,14 @@ h : pair (m, n) = x + 1
         move/eq_add_S.
         done.
       }.
-
       (** 後は帰納法の仮定から従う。 *)
-        
-        (* Lean の振る舞いとは一致している。 *)
-        (*
-x : ℕ
-ih : ∀ (m n : ℕ), pair (m, n) = x → unpair x = (m, n)
-m n m' : ℕ
-h : pair (m' + 1, n) = x + 1
-this : pair (m', n + 1) = x
-⊢ unpair (x + 1) = (m' + 1, n)
-*)
-        move/IHx in H2.
-        by apply: unpair_rec.
+      move/IHx in H2.
+      by apply: unpair_rec.
 Qed.
 
-
+(**
+証明したかったもの。
+*)
 Theorem unpair_pair_eq_id (m n : nat) : unpair (pair (m, n)) = (m, n).
 Proof.
   by apply: unpair_pair_eq_id'.
@@ -348,19 +272,17 @@ Admitted.                                   (* OK *)
 
 (**
 # 使用しなかった補題
-
-Lemma pair_zero : pair (0, 0) = 0.
+*)
+Lemma pair_zero' : pair (0, 0) = 0.
 Proof.
   done.
 Qed.
 
- *)
-(*
 Lemma pair_zero'' (m n : nat) : (pair (m, n) == 0) = ((m == 0) && (n == 0)).
 Proof.
   rewrite /pair.
   rewrite addn_eq0.
-  rewrite sum_zero_iff_zero''.
+  rewrite sum_zero_iff_zeroE.
   rewrite addn_eq0.
   rewrite andbC.
   rewrite andbA.
@@ -368,17 +290,13 @@ Proof.
   rewrite Bool.andb_diag.
   done.
 Qed.
-*)
 
-(*
-Lemma unpair_rec_m0 m x : unpair x = (m, 0) -> unpair x.+1 = (0, m.+1).
+Lemma unpair_rec_m0' m x : unpair x = (m, 0) -> unpair x.+1 = (0, m.+1).
 Proof.
   by rewrite /unpair => ->.
 Qed.
-*)
 
-(*
-Lemma unpair_rec m n x : 0 < n -> unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
+Lemma unpair_rec' m n x : 0 < n -> unpair x = (m, n) -> unpair x.+1 = (m.+1, n.-1).
 Proof.
   move=> Hn.
   rewrite /unpair => ->.
@@ -390,6 +308,11 @@ Proof.
   - move/negbT.
     done.
 Qed.
-*)
+
+Lemma l1 n : pair (0, n) = sum n.
+Proof.
+  rewrite /pair.
+  by rewrite add0n addn0.
+Qed.
 
 (* END *)
