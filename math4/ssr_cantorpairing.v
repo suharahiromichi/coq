@@ -1,8 +1,11 @@
 (**
 Cantor の対関数とその全単射性
 
+- https://zenn.dev/leanja/articles/cantor_pairing
+
 - https://lean-ja.github.io/lean-by-example/Tutorial/Exercise/CantorPairing.html
  *)
+
 From mathcomp Require Import all_ssreflect.
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -109,13 +112,15 @@ Proof.
   (** `x` に対する帰納法を使う *)
   elim: x => //= x IHx.                  (** `x = 0` の場合は明らか *)
   
-  (** `x` まで成り立つと仮定して `x + 1` でも成り立つことを示そう。 *)
-  (** まず `unpair` の定義を展開する。 *)
   (** 見やすさのために `(m, n) := unpair x` とおく． *)
   pose m := (unpair x).1.
   pose n := (unpair x).2.
+  
+  (** `x` まで成り立つと仮定して `x + 1` でも成り立つことを示そう。 *)
+  (** まず `unpair` の定義を展開する。 *)
   rewrite (surjective_pairing (unpair x)) -/m -/n.
-
+  (* IHx も同時に書き換えてもよいが、Lean版にあわせて、あとにする。 *)
+  
   case: ifP.                                (* split_ifs *)
   (** `n = 0` の場合 *)
   - move/eqP => H.
@@ -128,8 +133,8 @@ Proof.
     (* 帰納法の仮定の主張に対しても、
       `pair` から `sum` に書き換えることができて、
       `sum m + m = x` であることが分かる。 *)
-    rewrite /pair (surjective_pairing (unpair x)) -/m -/n H addn0 in IHx.
     have <- : m.+1 + sum m = sum m.+1 by done.
+    rewrite /pair (surjective_pairing (unpair x)) -/m -/n H addn0 in IHx.
     by rewrite addSn addnC IHx.
     
   (** `n ≠ 0` の場合 *)
