@@ -15,38 +15,31 @@ Unset Printing Implicit Defensive.
 Import Num.Def.
 Import Num.Theory.
 Import GRing.Theory.
+Import Order.Theory.
 
 Open Scope ring_scope.
 
 Import intZmod.                             (* addz など *)
 Import intRing.                             (* mulz など *)
 
-Print set_surj.                             (* 全射 *)
-Print set_inj.                              (* 単射 *)
-Print set_bij.                              (* 全単射 *)
+Section Sample.
+
+  Variable R : realDomainType.
+  Variable x y z : R.
+  
+  Check lerN10 R : -1 <= 0.
+  Check @gtrN R x : 0 < x -> - x < x.
+  Check lerN2 x y : (- x <= - y) = (y <= x).
+  Check ltrN2 x y : (- x < - y) = (y < x).
+  Check lerNr x y : (x <= - y) = (y <= - x).
+  Check @real_neqr_lt R x y.
+
+End Sample.
+
 
 Section Functions.
 
-  Variable Rt : ringType.
-  Variable R : (set Rt).
-  
-  Definition q (x : Rt) := x + 3.
-  Goal set_inj R q.
-  Proof.
-    rewrite /set_inj => x y Hx Hy.
-    rewrite /q.
-    have H : {homo (fun (x : Rt) => x - 3) : a b / a = b} by move=> a b ->.
-    move/H.
-    rewrite -2!addrA.
-    have -> a : a - a = 0 by apply/eqP; rewrite subr_eq0.
-    rewrite 2!addr0.
-    by move ->.
-  Qed.
-
-End Functions.
-
-Section f.
-  Variable R : numDomainType.
+  Variable R : realDomainType.
   
   Goal injective (fun x : R => x + 3).
   Proof.
@@ -63,18 +56,13 @@ Section f.
   Proof.
     apply/eqP.
     rewrite real_neqr_lt.
-    - apply/orP/or_introl.
-      by apply gtrN.   
-    - Check (-1 \is Num.real).
-      Search (_ \is Num.real).
-      rewrite realE.
-      apply/orP.
-      right.
-      by apply: lerN10.
+    - by apply/orP/or_introl/gtrN.
+    - rewrite realE.
+      by apply/orP/or_intror/lerN10.
     - done.
   Qed.
   
-  Goal ~injective  (fun x : R => x^+2).
+  Goal ~ injective  (fun x : R => x^+2).
   Proof.
     rewrite /injective.
     have H : (- 1) ^+ 2 = 1 ^+ 2 :> R by ring.
@@ -82,6 +70,37 @@ Section f.
     by move/neq1N1.
   Qed.
   
-End f.
+  Definition surjective (rT aT : Type) (f : aT -> rT) := forall y, exists x, f x = y.
+  
+  Goal surjective (fun (a : rat) => 3 * a + 2).
+  Proof.
+    rewrite /surjective => y.
+    exists ((y - 2) / 3).
+    have -> (a : rat) : 3 * (a / 3) = a
+      by rewrite mulrA [3 * a]mulrC -mulrA divff; first rewrite mulr1.
+    ring.
+  Qed.
+  
+  Lemma ne_of_gt (a b : R) : b < a -> a != b.
+  Proof.
+    move=> H.
+    rewrite real_neqr_lt //=.
+    by apply/orP/or_intror.
+  Qed.
+
+  Goal ~ surjective  (fun x : R => x^+2).
+  Proof.
+    rewrite /surjective.
+    move/(_ (- 1)).
+    case=> x.
+    apply/eqP/ne_of_gt.
+    Check sqr_ge0 x : 0  <= x ^+ 2.
+    Check ltrN10 R : -1 < 0.
+    apply: lt_le_trans.
+    - exact (ltrN10 R).
+    - exact (sqr_ge0 x).
+  Qed.
+  
+End Functions.
 
 (* END *)
