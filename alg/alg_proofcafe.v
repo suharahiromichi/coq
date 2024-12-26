@@ -58,6 +58,7 @@ Fail Check addrCA.
 (* **************************** *)
 Import Num.Def.
 Import Num.Theory.
+Import Order.Theory.                        (* 不等号 *)
 Import GRing.Theory.
 (* **************************** *)
 
