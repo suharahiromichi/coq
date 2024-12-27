@@ -119,6 +119,59 @@ Section Functions.
     - exact (ltrN10 R).
     - exact (sqr_ge0 x).
   Qed.
+
+(**
+## Musketeer type
+ *)
+  Inductive Musketeer :=
+  | athos
+  | porthos
+  | aramis.
+
+  Definition f (x : Musketeer) : Musketeer :=
+    match x with
+    | athos => aramis
+    | porthos => aramis
+    | aramis => athos
+    end.
+
+  Goal ~ injective f.
+  Proof.
+    rewrite /injective.
+    move/(_ athos porthos)/(_ erefl).
+    Check (aramis = aramis -> athos = porthos) -> False.
+    (* -> の右が /(_ erefl) で消える。 *)
+    done.
+  Qed.
+  
+  Goal ~ surjective f.
+  Proof.
+    rewrite /surjective.
+    move/(_ porthos) => [].
+    by case.                     (* x を三つの要素で場合分けする。  *)
+    (* どれも = porthos にならない。 *)
+  Qed.
+
+  Definition g (x : Musketeer) : Musketeer :=
+    match x with
+    | athos => porthos
+    | porthos => aramis
+    | aramis => athos
+    end.
+
+  Goal injective g.
+  Proof.
+    by case; case.
+  Qed.
+
+  Goal surjective g.
+  Proof.
+    rewrite /surjective.
+    case.
+    - exists aramis => //=.
+    - exists athos => //=.
+    - exists porthos => //=.
+  Qed.
   
 End Functions.
 
