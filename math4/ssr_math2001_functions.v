@@ -166,13 +166,128 @@ Section Functions.
 
   Goal surjective g.
   Proof.
-    rewrite /surjective.
     case.
     - exists aramis => //=.
     - exists athos => //=.
     - exists porthos => //=.
   Qed.
   
+(**
+##
+*)
+  Lemma test (x : R) : ~~ (x < x).
+  Proof.
+    apply/negP.
+    move/lt_eqF.
+    rewrite eq_refl.
+    done.
+  Qed.
+
+  Lemma test2 (x : R) : (x < x) = false.
+  Proof.
+    apply/negP.
+    move/lt_eqF.
+    rewrite eq_refl.
+    done.
+  Qed.
+  
+  Lemma test3 (x1 x2 : R) : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = x1 ^+ 3 - x2 ^+ 3.
+  Proof.
+    ring.
+  Qed.
+  
+  Lemma test4 (x1 x2 : R) : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) = x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
+  Proof.
+    ring.
+  Qed.
+  
+  Search (0 < _ + _).
+  Search "addr".
+
+  Lemma addr_ge0 (x y : R) : 0 <= x -> 0 <= y -> 0 <= x + y.
+  Proof.
+    rewrite le0r.
+    Check (x == 0) || (0 < x) -> 0 <= y -> 0 <= x + y.
+    Check @predU1P : forall (T : eqType) (x y : T) (b : bool), reflect (x = y \/ b) ((x == y) || b).
+
+    case/predU1P=> [-> | x_pos]; rewrite ?add0r // le0r.
+    by case/predU1P=> [-> | y_pos]; rewrite ltW ?addr0 ?addr_gt0.
+  Qed.
+
+  Check paddr_eq0. (* の結論だけ対偶を取る。 *)
+  Lemma paddr_eq0' (x y : R) : 0 <= x -> 0 <= y -> (x + y != 0) = (x != 0) || (y != 0).
+  Proof.
+  Admitted.
+  
+  Lemma test8 (a b : R) : 0 < a -> 0 <= b -> a + b != 0.
+  Proof.
+    rewrite lt0r.
+    case/andP => H0 Ha Hb.
+    rewrite paddr_eq0' //=.
+    by apply/orP/or_introl.
+  Qed.
+  
+  Lemma test6 (a b : R) : 0 < a -> 0 <= b -> 0 < a + b.
+  Proof.
+    move=> Ha Hb.
+    rewrite lt0r.
+    apply/andP.
+    split.
+    - by apply: test8.
+    - have H : 0 < a -> 0 <= a.
+      {
+        rewrite lt0r.
+        by case/andP.
+      }.
+      move/H in Ha.
+      by apply: addr_ge0.
+  Qed.
+  
+  Lemma test7 (a : R) : a <> 0 -> 0 < a ^+2.
+  Proof.
+    move/eqP.
+    by rewrite exprn_even_gt0.
+  Qed.
+  
+  Lemma test5 (x1 x2 : R) : x1 <> 0 -> 0 < x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
+  Proof.
+    move=> H.
+    Search (0 <= _).
+    Check mulr_ge0 : forall (R : numDomainType) (x y : R), 0 <= x -> 0 <= y -> 0 <= x * y.
+    apply: test6; [| apply: addr_ge0].
+    - exact: test7.
+    - exact: sqr_ge0.
+    - exact: sqr_ge0.
+  Qed.
+  
+  Goal injective (fun (x : R) => x ^+ 3).
+  Proof.
+    have Hab a b : (a * b == 0) = (a == 0) || (b == 0) by admit.
+    (* Mathcomp では、integral domain でないと成り立たないか。 *)
+
+    move=> x1 x2 H.
+    have : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = 0 by rewrite test3 H; ring.
+    
+    move/eqP.
+    rewrite Hab.
+    case/orP => /eqP.
+    - by move/subr0_eq.
+    - case Ha1 : (x1 == 0); move/eqP in Ha1.
+      + rewrite Ha1 expr0n /= add0r mul0r add0r.
+        move/eqP.
+        by rewrite expf_eq0 => /andP [] _ /eqP.
+        
+      + have H3 : x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2) > 0 by apply: test5.
+        (* 二乗和に x1 は 非零 *)
+        have H4 : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) > 0 by rewrite test4 H3.
+        have H5 : x1 ^ 2 + x1 * x2 + x2 ^ 2 > 0 by rewrite -(pmulr_rgt0 (x:=2)).
+        move=> H6.
+        move: H5.
+        rewrite H6.
+        Check test2 0.
+        by rewrite test2.
+  Admitted.
+
 End Functions.
 
 (* END *)
