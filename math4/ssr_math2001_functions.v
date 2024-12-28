@@ -175,6 +175,113 @@ Section Functions.
 (**
 ## ``x |-> x^3`` は単射である。
 *)
+  (* ********************************* *)
+
+  (* 公理 *)
+  (* Mathcomp では、integral domain でないと成り立たないか。 *)
+  Axiom ax : forall (a b : R), (a * b == 0) = (a == 0) || (b == 0).
+  
+  (* 便利な補題 *)
+  Lemma ltF (x : R) : (x < x) = false.
+  Proof.
+    apply/negP.
+    move/lt_eqF.
+    rewrite eq_refl.
+    done.
+  Qed.
+  
+  Check paddr_eq0. (* の結論だけ対偶を取る。 *)
+  Lemma paddr_eq0' (x y : R) : 0 <= x -> 0 <= y -> (x + y != 0) = (x != 0) || (y != 0).
+  Proof.
+    move=> Hx Hy.
+    rewrite -negb_and.
+    apply/idP/idP => /eqP H.
+    - apply/negP => Hc.
+      apply: H.
+      apply/eqP.
+      rewrite paddr_eq0 //=.
+    - apply/negP => Hc.
+      move/eqP in H.
+      move/negP in H.
+      apply: H.
+      rewrite -paddr_eq0 //=.
+  Qed.
+  
+  Check @addr_ge0 R : forall (x y : R), 0 <= x -> 0 <= y -> 0 <= x + y.
+  Lemma addr_gt0_ge0 (a b : R) : 0 < a -> 0 <= b -> 0 < a + b.
+  Proof.
+    move=> Ha Hb.
+    rewrite lt0r.
+    apply/andP.
+    split.
+    - have -> : 0 < a -> 0 <= b -> a + b != 0.
+      {
+        rewrite lt0r.
+        case/andP => Ha' Haa' Hbb'.
+        rewrite paddr_eq0' //=.
+        by apply/orP/or_introl.
+      }.
+      done.
+      done.
+      done.
+    - have H : 0 < a -> 0 <= a.
+      {
+        rewrite lt0r //=.
+        case/andP.
+        done.
+      }.
+      move/H in Ha.
+      by apply: addr_ge0.
+  Qed.
+  
+  (* 計算 *)
+  Lemma calc1 (x1 x2 : R) : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = x1 ^+ 3 - x2 ^+ 3.
+  Proof.
+    ring.
+  Qed.
+  
+  Lemma calc2 (x1 x2 : R) : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) = x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
+  Proof.
+    ring.
+  Qed.
+  
+  Lemma calc3 (x1 x2 : R) : x1 <> 0 -> 0 < x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
+  Proof.
+    move=> H.
+    Search (0 <= _).
+    Check mulr_ge0 : forall (R : numDomainType) (x y : R), 0 <= x -> 0 <= y -> 0 <= x * y.
+    apply: addr_gt0_ge0; [| apply: addr_ge0].
+    - rewrite exprn_even_gt0 //=.
+      by apply/eqP.
+    - exact: sqr_ge0.
+    - exact: sqr_ge0.
+  Qed.
+
+  Goal injective (fun (x : R) => x ^+ 3).
+  Proof.
+    move=> x1 x2 H.
+    have : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = 0 by rewrite calc1 H; ring.
+    move/eqP.
+    rewrite ax.
+    case/orP => /eqP.
+    - by move/subr0_eq.
+    - case Ha1 : (x1 == 0); move/eqP in Ha1.
+      + rewrite Ha1 expr0n /= add0r mul0r add0r.
+        move/eqP.
+        by rewrite expf_eq0 => /andP [] _ /eqP.
+        
+      + have H3 : x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2) > 0 by apply: calc3.
+        have H4 : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) > 0 by rewrite calc2 H3.
+        have H5 : x1 ^ 2 + x1 * x2 + x2 ^ 2 > 0 by rewrite -(pmulr_rgt0 (x:=2)).
+        move=> H6.
+        move: H5.
+        rewrite H6.
+        by rewrite ltF.
+  Qed.
+
+  (* ********************************* *)
+  
+(*
   Lemma test (x : R) : ~~ (x < x).
   Proof.
     apply/negP.
@@ -299,7 +406,7 @@ Section Functions.
         Check test2 0.
         by rewrite test2.
   Admitted.
-
+*)  
 End Functions.
 
 (* END *)
