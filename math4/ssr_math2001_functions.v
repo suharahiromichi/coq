@@ -121,7 +121,7 @@ Section Functions.
   Qed.
 
 (**
-## Musketeer type
+## Musketeer type 三銃士型
  *)
   Inductive Musketeer :=
   | athos
@@ -173,7 +173,7 @@ Section Functions.
   Qed.
   
 (**
-##
+## ``x |-> x^3`` は単射である。
 *)
   Lemma test (x : R) : ~~ (x < x).
   Proof.
@@ -217,7 +217,19 @@ Section Functions.
   Check paddr_eq0. (* の結論だけ対偶を取る。 *)
   Lemma paddr_eq0' (x y : R) : 0 <= x -> 0 <= y -> (x + y != 0) = (x != 0) || (y != 0).
   Proof.
-  Admitted.
+    move=> Hx Hy.
+    rewrite -negb_and.
+    apply/idP/idP => /eqP H.
+    - apply/negP => Hc.
+      apply: H.
+      apply/eqP.
+      rewrite paddr_eq0 //=.
+    - apply/negP => Hc.
+      move/eqP in H.
+      move/negP in H.
+      apply: H.
+      rewrite -paddr_eq0 //=.
+  Qed.
   
   Lemma test8 (a b : R) : 0 < a -> 0 <= b -> a + b != 0.
   Proof.
