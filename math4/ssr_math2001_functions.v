@@ -175,8 +175,6 @@ Section Functions.
 (**
 ## ``x |-> x^3`` は単射である。
 *)
-  (* ********************************* *)
-
   (* 公理 *)
   (* Mathcomp では、integral domain でないと成り立たないか。 *)
   Axiom ax : forall (a b : R), (a * b == 0) = (a == 0) || (b == 0).
@@ -190,47 +188,38 @@ Section Functions.
     done.
   Qed.
   
-  Check paddr_eq0. (* の結論だけ対偶を取る。 *)
+  Lemma lt0_le0 (x : R) : 0 < x -> 0 <= x.
+  Proof.
+    rewrite lt0r //=.
+    case/andP.
+    done.
+  Qed.
+  
+  (* の結論だけ対偶を取る。 *) (* notu *)
+  Check @paddr_eq0 R : forall x y : R, 0 <= x -> 0 <= y -> (x + y == 0) = (x == 0) && (y == 0).
   Lemma paddr_eq0' (x y : R) : 0 <= x -> 0 <= y -> (x + y != 0) = (x != 0) || (y != 0).
   Proof.
-    move=> Hx Hy.
-    rewrite -negb_and.
-    apply/idP/idP => /eqP H.
-    - apply/negP => Hc.
-      apply: H.
-      apply/eqP.
-      rewrite paddr_eq0 //=.
-    - apply/negP => Hc.
-      move/eqP in H.
-      move/negP in H.
-      apply: H.
-      rewrite -paddr_eq0 //=.
+    move=> Hx0 Hy0.
+    by rewrite paddr_eq0 //= negb_and.
   Qed.
   
   Check @addr_ge0 R : forall (x y : R), 0 <= x -> 0 <= y -> 0 <= x + y.
-  Lemma addr_gt0_ge0 (a b : R) : 0 < a -> 0 <= b -> 0 < a + b.
+  Lemma addr_gt0_ge0 (x y : R) : 0 < x -> 0 <= y -> 0 < x + y.
   Proof.
-    move=> Ha Hb.
+    move=> H0ltx H0ley.
     rewrite lt0r.
     apply/andP.
     split.
-    - have -> : 0 < a -> 0 <= b -> a + b != 0.
-      {
-        rewrite lt0r.
-        case/andP => Ha' Haa' Hbb'.
-        rewrite paddr_eq0' //=.
-        by apply/orP/or_introl.
-      }.
-      done.
-      done.
-      done.
-    - have H : 0 < a -> 0 <= a.
-      {
-        rewrite lt0r //=.
-        case/andP.
-        done.
-      }.
-      move/H in Ha.
+    
+    Check x + y != 0.
+    - suff -> : 0 < x -> x + y != 0 => //=.
+      rewrite lt0r.
+      case/andP => Hxn0 H0le0.
+      rewrite paddr_eq0 //= negb_and.
+      by apply/orP/or_introl.      
+      
+    Check 0 <= x + y.
+    - move/lt0_le0 in H0ltx.
       by apply: addr_ge0.
   Qed.
   
@@ -248,8 +237,6 @@ Section Functions.
   Lemma calc3 (x1 x2 : R) : x1 <> 0 -> 0 < x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
   Proof.
     move=> H.
-    Search (0 <= _).
-    Check mulr_ge0 : forall (R : numDomainType) (x y : R), 0 <= x -> 0 <= y -> 0 <= x * y.
     apply: addr_gt0_ge0; [| apply: addr_ge0].
     - rewrite exprn_even_gt0 //=.
       by apply/eqP.
