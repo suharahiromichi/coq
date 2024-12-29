@@ -64,11 +64,11 @@ Section Functions.
 *)
   Goal injective (fun x : R => x + 3).
   Proof.
-    rewrite /injective => x y.
-    have H a b : a = b -> a - 3 = b - 3 by move=> ->.
+    rewrite /injective => x1 x2.
+    have H x y : x = y -> x - 3 = y - 3 by move=> ->.
     move/H.
     rewrite -2![_ + 3 - 3]addrA.
-    have -> a : a - a = 0 by apply/eqP; rewrite subr_eq0.
+    have -> x : x - x = 0 by apply/eqP; rewrite subr_eq0.
     rewrite 2!addr0.
     by move ->.
   Qed.
@@ -272,135 +272,71 @@ Section Functions.
         suff : x1 ^ 2 + x1 * x2 + x2 ^ 2 > 0 by rewrite H' ltF.
         by rewrite -(pmulr_rgt0 (x:=2)) //= calc2 calc3.
   Qed.
-  
-  (* ********************************* *)
-  
-(*
-  Lemma test (x : R) : ~~ (x < x).
+
+(**
+## Exercise
+*)
+  Goal injective (fun (x : rat) => x - 12).
   Proof.
-    apply/negP.
-    move/lt_eqF.
-    rewrite eq_refl.
+    move=> x1 x2.
+    have H (x y : rat) : x = y -> x + 12 = y + 12 by move=> ->.
+    move/H.
+    rewrite -2!addrA.
+    have -> : -12 + 12 = 0 :> rat by done.
+    by rewrite 2!addr0.
+  Qed.
+  
+  Goal ~ injective (fun (x : R) => (3 : R)).
+  Proof.
+    Check 3 = 3 -> 0 = 3 -> False.
+    have H : 3 = 3 :> R by ring.
+    move/(_ 0 3 H)/eqP.
+    have -> : (0 == 3 :> R) = false by apply: lt_eqF.
     done.
   Qed.
 
-  Lemma test2 (x : R) : (x < x) = false.
+  Lemma addIf : forall (R : idomainType) (a : R), injective (+%R^~ a).
   Proof.
-    apply/negP.
-    move/lt_eqF.
-    rewrite eq_refl.
+    move=> R' a x1 x2.
+    have H x y : x = y -> x - a = y - a by move=> ->.
+    move/H.
+    rewrite -2!addrA.
+    have -> : a - a = 0 by ring.
+    by rewrite 2!addr0.
+  Qed.
+  
+  (* see. ssralg.v *)
+  Lemma mulfI : forall (R : idomainType) (a : R), a != 0 -> injective (fun x => a * x).
+  Proof.
+    move=> R0 x nz_x x1 x2.
+    apply: contra_eq => neq_yz.
+    rewrite -subr_eq0.
+    rewrite -mulrBr.
+    Check x * (x1 - x2) != 0.
+    rewrite mulf_neq0 //=.
+    rewrite subr_eq0.
     done.
   Qed.
   
-  Lemma test3 (x1 x2 : R) : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = x1 ^+ 3 - x2 ^+ 3.
+  Goal injective (fun (x : int) => 3 * x - 1).
   Proof.
-    ring.
-  Qed.
-  
-  Lemma test4 (x1 x2 : R) : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) = x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
-  Proof.
-    ring.
-  Qed.
-  
-  Search (0 < _ + _).
-  Search "addr".
+    move=> x1 x2.
+    lia.
 
-  Lemma addr_ge0 (x y : R) : 0 <= x -> 0 <= y -> 0 <= x + y.
-  Proof.
-    rewrite le0r.
-    Check (x == 0) || (0 < x) -> 0 <= y -> 0 <= x + y.
-    Check @predU1P : forall (T : eqType) (x y : T) (b : bool), reflect (x = y \/ b) ((x == y) || b).
-
-    case/predU1P=> [-> | x_pos]; rewrite ?add0r // le0r.
-    by case/predU1P=> [-> | y_pos]; rewrite ltW ?addr0 ?addr_gt0.
-  Qed.
-
-  Check paddr_eq0. (* の結論だけ対偶を取る。 *)
-  Lemma paddr_eq0' (x y : R) : 0 <= x -> 0 <= y -> (x + y != 0) = (x != 0) || (y != 0).
-  Proof.
-    move=> Hx Hy.
-    rewrite -negb_and.
-    apply/idP/idP => /eqP H.
-    - apply/negP => Hc.
-      apply: H.
-      apply/eqP.
-      rewrite paddr_eq0 //=.
-    - apply/negP => Hc.
-      move/eqP in H.
-      move/negP in H.
-      apply: H.
-      rewrite -paddr_eq0 //=.
-  Qed.
-  
-  Lemma test8 (a b : R) : 0 < a -> 0 <= b -> a + b != 0.
-  Proof.
-    rewrite lt0r.
-    case/andP => H0 Ha Hb.
-    rewrite paddr_eq0' //=.
-    by apply/orP/or_introl.
-  Qed.
-  
-  Lemma test6 (a b : R) : 0 < a -> 0 <= b -> 0 < a + b.
-  Proof.
-    move=> Ha Hb.
-    rewrite lt0r.
-    apply/andP.
-    split.
-    - by apply: test8.
-    - have H : 0 < a -> 0 <= a.
-      {
-        rewrite lt0r.
-        by case/andP.
-      }.
-      move/H in Ha.
-      by apply: addr_ge0.
-  Qed.
-  
-  Lemma test7 (a : R) : a <> 0 -> 0 < a ^+2.
-  Proof.
-    move/eqP.
-    by rewrite exprn_even_gt0.
-  Qed.
-  
-  Lemma test5 (x1 x2 : R) : x1 <> 0 -> 0 < x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2).
-  Proof.
-    move=> H.
-    Search (0 <= _).
-    Check mulr_ge0 : forall (R : numDomainType) (x y : R), 0 <= x -> 0 <= y -> 0 <= x * y.
-    apply: test6; [| apply: addr_ge0].
-    - exact: test7.
-    - exact: sqr_ge0.
-    - exact: sqr_ge0.
-  Qed.
-  
-  Goal injective (fun (x : R) => x ^+ 3).
-  Proof.
-    have Hab a b : (a * b == 0) = (a == 0) || (b == 0) by admit.
-    (* Mathcomp では、integral domain でないと成り立たないか。 *)
-
+    Restart.
+    have H3n0 : 3 != 0 :> int by lia.
     move=> x1 x2 H.
-    have : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = 0 by rewrite test3 H; ring.
+    apply/(mulfI H3n0)/addIf/H.
+    Restart.
     
-    move/eqP.
-    rewrite Hab.
-    case/orP => /eqP.
-    - by move/subr0_eq.
-    - case Ha1 : (x1 == 0); move/eqP in Ha1.
-      + rewrite Ha1 expr0n /= add0r mul0r add0r.
-        move/eqP.
-        by rewrite expf_eq0 => /andP [] _ /eqP.
-        
-      + have H3 : x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2) > 0 by apply: test5.
-        (* 二乗和に x1 は 非零 *)
-        have H4 : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) > 0 by rewrite test4 H3.
-        have H5 : x1 ^ 2 + x1 * x2 + x2 ^ 2 > 0 by rewrite -(pmulr_rgt0 (x:=2)).
-        move=> H6.
-        move: H5.
-        rewrite H6.
-        Check test2 0.
-        by rewrite test2.
-  Admitted.
-*)  
+    move=> x1 x2 H.
+    Check @mulfI int 3 _ x1 x2 : 3 * x1 = 3 * x2 -> x1 = x2.
+    Check @addIf int (-1) (3 * x1) (3 * x2) : 3 * x1 - 1 = 3 * x2 - 1 -> 3 * x1 = 3 * x2.
+    apply: (@mulfI int 3 _ x1 x2) => //=.
+    apply: (@addIf int (-1) (3 * x1) (3 * x2)).
+    done.
+  Qed.
+  
 End Functions.
 
 (* END *)
