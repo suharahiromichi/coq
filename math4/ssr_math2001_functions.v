@@ -257,15 +257,13 @@ Section Functions.
         move/eqP.
         by rewrite expf_eq0 => /andP [] _ /eqP.
         
-      + have H3 : x1 ^+ 2 + ((x1 + x2) ^+ 2 + x2 ^+ 2) > 0 by apply: calc3.
-        have H4 : 2 * (x1 ^ 2 + x1 * x2 + x2 ^ 2) > 0 by rewrite calc2 H3.
-        have H5 : x1 ^ 2 + x1 * x2 + x2 ^ 2 > 0 by rewrite -(pmulr_rgt0 (x:=2)).
-        move=> H6.
-        move: H5.
-        rewrite H6.
-        by rewrite ltF.
+      + move=> H'.
+        Check H' : x1 ^+ 2 + x1 * x2 + x2 ^+ 2 = 0.
+        (* これに対して、以下を証明して、前提矛盾を導く。 *)
+        suff : x1 ^ 2 + x1 * x2 + x2 ^ 2 > 0 by rewrite H' ltF.
+        by rewrite -(pmulr_rgt0 (x:=2)) //= calc2 calc3.
   Qed.
-
+  
   (* ********************************* *)
   
 (*
