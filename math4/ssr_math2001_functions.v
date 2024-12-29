@@ -247,16 +247,25 @@ Section Functions.
   Goal injective (fun (x : R) => x ^+ 3).
   Proof.
     move=> x1 x2 H.
+
+    (* 前提を因数分解する。 *)
     have : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = 0 by rewrite calc1 H; ring.
     move/eqP.
     rewrite ax.
     case/orP => /eqP.
+
+    Check x1 - x2 = 0.
     - by move/subr0_eq.
-    - case Ha1 : (x1 == 0); move/eqP in Ha1.
-      + rewrite Ha1 expr0n /= add0r mul0r add0r.
+
+    Check x1 ^+ 2 + x1 * x2 + x2 ^+ 2 = 0.
+    - case Hx1 : (x1 == 0); move/eqP in Hx1.
+
+      Check Hx1 : x1 = 0.                   (* の場合 *)
+      + rewrite Hx1 expr0n /= add0r mul0r add0r.
         move/eqP.
         by rewrite expf_eq0 => /andP [] _ /eqP.
         
+      Check Hx1 : x1 <> 0.                  (* の場合 *)
       + move=> H'.
         Check H' : x1 ^+ 2 + x1 * x2 + x2 ^+ 2 = 0.
         (* これに対して、以下を証明して、前提矛盾を導く。 *)
