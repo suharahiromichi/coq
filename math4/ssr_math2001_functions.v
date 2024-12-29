@@ -294,7 +294,25 @@ Section Functions.
     have -> : (0 == 3 :> R) = false by apply: lt_eqF.
     done.
   Qed.
+  
+(**
+有理数の場合
+*)
+  Goal injective (fun (x : rat) => 3 * x - 1).
+  Proof.
+    move=> x1 x2.
+    have Hinv (x y : rat) : x = y -> (x + 1) / 3 = (y + 1) / 3 by move=> ->.
+    move/Hinv.
+    rewrite -2!addrA.
+    have -> : -1 + 1 = 0 :> rat by ring.
+    rewrite 2!addr0 2![3 * _]mulrC -2!mulrA.
+    have -> : 3 / 3 = 1 :> rat by rewrite mulrC; apply: mulVq.
+    by rewrite 2!mulr1.
+  Qed.
 
+(**
+整数の場合は、単射の合成でも、逆関数でもできるが、そもそも、lia で解ける。
+*)
   Lemma addIf : forall (R : idomainType) (a : R), injective (+%R^~ a).
   Proof.
     move=> R' a x1 x2.
