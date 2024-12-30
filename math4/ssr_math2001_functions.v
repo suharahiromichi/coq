@@ -57,7 +57,8 @@ End Sample.
 
 Section Functions.
 
-  Variable R : realDomainType.
+  (* Variable R : realDomainType. *)
+  Variable R : rcfType.                     (* XXXXXX *)
   
 (**
 ## 単射
@@ -177,7 +178,11 @@ Section Functions.
 *)
   (* 公理 *)
   (* Mathcomp では、integral domain でないと成り立たないか。 *)
-  Axiom ax : forall (a b : R), (a * b == 0) = (a == 0) || (b == 0).
+  Lemma ax : forall (a b : R), (a * b == 0) = (a == 0) || (b == 0).
+  Proof.
+    move=> a b.
+    by rewrite GRing.mulf_eq0.
+  Qed.
   
   (* 便利な補題 *)
   Lemma ltF (x : R) : (x < x) = false.
@@ -354,7 +359,30 @@ Section Functions.
     apply: (@addIf int (-1) (3 * x1) (3 * x2)).
     done.
   Qed.
+
+End Functions.  
+
+From mathcomp Require Import all_field.
+
+Section Functions2.
+
+  Variable R : fieldType.
+
+  Variable a : R.
+  Axiom Ha : a != 0.
   
+  Goal surjective (fun (x : R) => a * x).
+  Proof.
+    move=> y.
+    exists (y / a).
+    rewrite mulrC -mulrA mulVf.
+    - by rewrite mulr1.
+    - exact Ha.
+  Qed.
+  
+  Check @GRing.mulf_eq0 R.
+  Search (_ * _ == 0).
+
 End Functions.
 
 (* END *)
