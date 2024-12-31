@@ -61,7 +61,14 @@ Section Functions.
   Variable R : rcfType.                     (* XXXXXX *)
   
 (**
-## 単射
+## 8.1.2. Definition
+
+単射
+*)
+  Print injective.
+
+(**
+## 8.1.3. Example
 *)
   Goal injective (fun x : R => x + 3).
   Proof.
@@ -74,6 +81,9 @@ Section Functions.
     by move ->.
   Qed.
 
+(**
+## 8.1.4. Example
+*)
   Lemma neq1N1 : (- 1) <> 1 :> R.
   Proof.
     Search ((- _) = _).
@@ -94,10 +104,15 @@ Section Functions.
   Qed.
   
 (**
-## 全射
+## 8.1.5. Definition
+
+全射
 *)
   Definition surjective (rT aT : Type) (f : aT -> rT) := forall y, exists x, f x = y.
   
+(**
+## 8.1.6. Example
+*)
   Goal surjective (fun (a : rat) => 3 * a + 2).
   Proof.
     rewrite /surjective => y.
@@ -107,6 +122,9 @@ Section Functions.
     ring.
   Qed.
   
+(**
+## 8.1.7. Example
+*)
   Goal ~ surjective  (fun x : R => x^+2).
   Proof.
     rewrite /surjective.
@@ -122,7 +140,9 @@ Section Functions.
   Qed.
 
 (**
-## Musketeer type 三銃士型
+## 8.1.8. Example
+
+Musketeer type 三銃士型
  *)
   Inductive Musketeer :=
   | athos
@@ -145,6 +165,9 @@ Section Functions.
     done.
   Qed.
   
+(**
+## 8.1.9. Example
+*)
   Goal ~ surjective f.
   Proof.
     rewrite /surjective.
@@ -153,6 +176,9 @@ Section Functions.
     (* どれも = porthos にならない。 *)
   Qed.
 
+(**
+## 8.1.10. Example
+*)
   Definition g (x : Musketeer) : Musketeer :=
     match x with
     | athos => porthos
@@ -165,6 +191,9 @@ Section Functions.
     by case; case.
   Qed.
 
+(**
+## 8.1.11. Example
+*)
   Goal surjective g.
   Proof.
     case.
@@ -174,7 +203,9 @@ Section Functions.
   Qed.
   
 (**
-## ``x |-> x^3`` は単射である。
+## 8.1.12. Example
+
+``x |-> x^3`` は単射である。
 *)
   (* 公理 *)
   (* Mathcomp では、integral domain でないと成り立たないか。 *)
@@ -279,7 +310,9 @@ Section Functions.
   Qed.
 
 (**
-## Exercise
+## 8.1.13 Exercise
+
+### 8.1.13. Exercises 1.
 *)
   Goal injective (fun (x : rat) => x - 12).
   Proof.
@@ -290,7 +323,10 @@ Section Functions.
     have -> : -12 + 12 = 0 :> rat by done.
     by rewrite 2!addr0.
   Qed.
-  
+
+(**
+### 8.1.13. Exercises 2.
+*)  
   Goal ~ injective (fun (x : R) => (3 : R)).
   Proof.
     Check 3 = 3 -> 0 = 3 -> False.
@@ -301,6 +337,8 @@ Section Functions.
   Qed.
   
 (**
+### 8.1.13. Exercises 3.
+
 有理数の場合
 *)
   Goal injective (fun (x : rat) => 3 * x - 1).
@@ -316,6 +354,8 @@ Section Functions.
   Qed.
 
 (**
+### 8.1.13. Exercises 4.
+
 整数の場合は、単射の合成でも、逆関数でもできるが、そもそも、lia で解ける。
 *)
   Lemma addIf : forall (R : idomainType) (a : R), injective (+%R^~ a).
@@ -360,29 +400,64 @@ Section Functions.
     done.
   Qed.
 
-End Functions.  
-
-From mathcomp Require Import all_field.
-
-Section Functions2.
-
-  Variable R : fieldType.
-
-  Variable a : R.
-  Axiom Ha : a != 0.
-  
-  Goal surjective (fun (x : R) => a * x).
+(**
+### 8.1.13. Exercises 5.
+*)
+  Goal surjective (fun (x : R) => 3 * x).
   Proof.
     move=> y.
-    exists (y / a).
+    exists (y / 3).
     rewrite mulrC -mulrA mulVf.
     - by rewrite mulr1.
-    - exact Ha.
+    - exact: ne_of_gt.                      (* 0 < 3 *)
   Qed.
-  
-  Check @GRing.mulf_eq0 R.
-  Search (_ * _ == 0).
 
+(**
+### 8.1.13. Exercises 6.
+*)
+  Goal ~ surjective (fun (x : int) => 3 * x).
+  Proof.
+    move/(_ 2).
+    case=> x.
+    lia.
+  Qed.
+
+(**
+### 8.1.13. Exercises 7.
+*)
+  Lemma not_prime (m : nat) : (2 <= m)%N -> ~~ prime (m * m).
+  Proof.
+    move=> Hm.
+    apply/primePn.
+    right.
+    exists m.
+    - apply/andP.
+      split.
+      + lia.
+      + by apply: ltn_Pmull; lia.
+    - by apply: dvdn_mulr.
+  Qed.
+
+  Goal ~ surjective (fun (n : nat) => (n ^ 2)%N).
+  Proof.
+    move/(_ 3%N).
+    case=> n.
+    case: n => //= n.
+    case: n => //= n.
+    have H x y : x = y -> prime x = prime y by move=> ->.
+    move/H.
+    (* 右辺 *)
+    have -> : prime 3 by done.
+    (* 左辺 *)
+    have Hp m : ~~ prime (m.+2 ^ 2)%N by rewrite -mulnn; apply: not_prime.
+    move: (Hp n) => Hp'.
+    move/negbTE in Hp'.
+    rewrite Hp'.
+    (* false = true *)
+    done.
+  Qed.
+
+  
 End Functions.
 
 (* END *)
