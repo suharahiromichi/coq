@@ -552,6 +552,7 @@ Musketeer type 三銃士型
     move=> f HIf.
     move=> x1 x2 H.
     apply: HIf.
+    rewrite /injective.
   Admitted.
 
   Goal forall (f : rat -> rat), (~ injective f -> ~ injective (fun x => f x + x)).
@@ -568,11 +569,14 @@ Musketeer type 三銃士型
  *)
   Goal forall (f : int -> int), (~ surjective f -> ~ surjective (fun x => 2 * f x)).
   Proof.
+    rewrite /surjective.
     move=> f.
-    apply: contra_not.
-    move=> HSf.
-    move=> y.
-  Admitted.
+    apply/contra_not.
+    move=> /= Hc y.
+    case: (Hc (2 * y)) => x {Hc} Hc'.
+    exists x.
+    lia.
+  Qed.
   
 End Functions.
 
