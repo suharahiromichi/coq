@@ -595,8 +595,12 @@ f は、狭義単調増加、ならば単射。
  *)
   Lemma lt_trichotomy (x y : rat) : x < y \/ x = y \/ x > y. (* 問題文は誤記 *)
   Proof.
-  Admitted.
-
+    case: ltgtP => H.                       (* Order.v *)
+    - by apply/or_introl.
+    - by apply/or_intror/or_intror.
+    - by apply/or_intror/or_introl.
+  Qed.
+  
   (* injective の対偶 *)
   Lemma contra_injective (f : rat -> rat) :
     (forall (x1 x2 : rat), x1 != x2 -> f x1 != f x2) -> injective f.
@@ -624,6 +628,20 @@ f は、狭義単調増加、ならば単射。
       by move: Hc => /Hxy/gt_eqF ->.
   Qed.
     
+(**
+### 8.1.13. Exercises 18.
+ *)
+  Goal forall (X : Type) (f : X -> nat) (x0 : X) (i : X -> X),
+      f x0 = 0 -> (forall (x : X), f (i x) = (f x).+1) -> surjective f.
+  Proof.
+    move=> X f x0 i Hf H.
+    elim=> [| y [x IHy]].  (* ついでに IHy の exists x を取り出す。 *)
+    - exists x0 => //.
+    - exists (i x).
+      rewrite H.
+      by congr (_ .+1).
+  Qed.
+  
 End Functions.
 
 (* END *)
