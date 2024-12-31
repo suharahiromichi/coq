@@ -20,9 +20,8 @@ Import Order.Theory.
 Open Scope ring_scope.
 
 Section Sample.
-
+  
   Variable R : realDomainType.
-  (* Variable R : rcfType. *)
   
   Variable x y z : R.
   
@@ -63,9 +62,10 @@ End Sample.
 
 
 Section Functions.
-
-  (* Variable R : realDomainType. *)
-  Variable R : rcfType.                     (* XXXXXX *)
+  
+  (* ここで使う実数型 R *)
+  Variable R : rcfType.                 (* Real Closed Field 実閉体 *)
+  (* MathComp-analysis の realType は rcf である。 *)
   
 (**
 ## 8.1.2. Definition
@@ -139,7 +139,7 @@ Section Functions.
   Goal ~ surjective  (fun x : R => x^+2).
   Proof.
     rewrite /surjective.
-    move/(_ (- 1)).
+    move/(_ (- 1)).                         (* 届かない値 *)
     case=> x.
     apply/eqP/negbT.
     rewrite gt_eqF //=.
@@ -218,14 +218,6 @@ Musketeer type 三銃士型
 
 ``x |-> x^3`` は単射である。
 *)
-  (* 公理 *)
-  (* Mathcomp では、integral domain でないと成り立たないか。 *)
-  Lemma ax : forall (a b : R), (a * b == 0) = (a == 0) || (b == 0).
-  Proof.
-    move=> a b.
-    by rewrite GRing.mulf_eq0.
-  Qed.
-  
   (* 便利な補題 *)
   Lemma ltF (x : R) : (x < x) = false.
   Proof.
@@ -298,7 +290,7 @@ Musketeer type 三銃士型
     (* 前提を因数分解する。 *)
     have : (x1 - x2) * (x1 ^+ 2 + x1 * x2 + x2 ^+ 2) = 0 by rewrite calc1 H; ring.
     move/eqP.
-    rewrite ax.
+    rewrite GRing.mulf_eq0.                 (* fieldで成立する。 *)
     case/orP => /eqP.
 
     Check x1 - x2 = 0.
@@ -531,6 +523,56 @@ Musketeer type 三銃士型
       Check contraPP : forall Q P : Prop, (~ Q -> ~ P) -> P -> Q. (* 二重否定除去を使う。 *)
       by move/contraPP.
   Qed.
+
+(**
+### 8.1.13. Exercises 13.
+ *)
+  Lemma addq_inj a : injective (fun (x : rat) => x + a).
+  Proof.
+    move=> x1 x2.
+    have H x y : x = y -> x - a = y - a by move=> ->.
+    move/H.
+    rewrite -2!addrA.
+    have -> : a - a = 0 by ring.
+    by rewrite 2!addr0.
+  Qed.
+  
+  Goal forall (f : rat -> rat), (injective f -> injective (fun x => f x + 1)).
+  Proof.
+    move=> f Hf x1 x2 H.
+    apply: Hf.
+    by apply: (@addq_inj 1).
+  Qed.
+  
+(**
+### 8.1.13. Exercises 14.
+ *)
+  Goal forall (f : rat -> rat), (injective f -> injective (fun x => f x + x)).
+  Proof.
+    move=> f HIf.
+    move=> x1 x2 H.
+    apply: HIf.
+  Admitted.
+
+  Goal forall (f : rat -> rat), (~ injective f -> ~ injective (fun x => f x + x)).
+  Proof.
+    move=> f.
+    apply: contra_not.
+    move=> H x1 x2 Hc.
+    apply: H.
+    rewrite Hc.
+  Admitted.
+
+(**
+### 8.1.13. Exercises 15.
+ *)
+  Goal forall (f : int -> int), (~ surjective f -> ~ surjective (fun x => 2 * f x)).
+  Proof.
+    move=> f.
+    apply: contra_not.
+    move=> HSf.
+    move=> y.
+  Admitted.
   
 End Functions.
 
