@@ -73,7 +73,11 @@ Section Functions.
 単射
 *)
   Print injective.
-
+  (*
+    fun (rT aT : Type) (f : aT -> rT) => forall x1 x2 : aT, f x1 = f x2 -> x1 = x2
+    : forall [rT aT : Type], (aT -> rT) -> Prop
+  *)
+  
 (**
 ## 8.1.3. Example
 *)
@@ -515,6 +519,19 @@ Musketeer type 三銃士型
     by case.                                (* x で場合分けする。 *)
   Qed.
 
+(**
+### 8.1.13. Exercises 12.
+ *)
+  Goal forall (X Y : Type) (f : X -> Y), injective f <-> forall (x1 x2 : X), x1 <> x2 -> f x1 <> f x2.
+  Proof.
+    move=> X Y f.
+    split=> H x1 x2.
+    - by auto.
+    - move: (H x1 x2).
+      Check contraPP : forall Q P : Prop, (~ Q -> ~ P) -> P -> Q. (* 二重否定除去を使う。 *)
+      by move/contraPP.
+  Qed.
+  
 End Functions.
 
 (* END *)
