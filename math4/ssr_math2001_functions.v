@@ -22,6 +22,8 @@ Open Scope ring_scope.
 Section Sample.
 
   Variable R : realDomainType.
+  (* Variable R : rcfType. *)
+  
   Variable x y z : R.
   
   (* order *)
@@ -52,6 +54,11 @@ Section Sample.
     by rewrite gt_eqF.
   Qed.
 
+  Goal 3 != 0 :> R.
+  Proof.
+    by apply: ne_of_gt.                     (* 0 < 3  *)
+  Qed.
+  
 End Sample.
 
 
@@ -171,8 +178,8 @@ Musketeer type 三銃士型
   Goal ~ surjective f.
   Proof.
     rewrite /surjective.
-    move/(_ porthos) => [].
-    by case.                     (* x を三つの要素で場合分けする。  *)
+    case/(_ porthos).        (* 前提のexists x を forall x にする。 *)
+    by case.                 (* x を三つの要素で場合分けする。  *)
     (* どれも = porthos にならない。 *)
   Qed.
 
@@ -424,17 +431,16 @@ Musketeer type 三銃士型
 
 (**
 ### 8.1.13. Exercises 7.
+
+自然数の場合。素数と合成数から矛盾を導く。
 *)
   Lemma not_prime (m : nat) : (2 <= m)%N -> ~~ prime (m * m).
   Proof.
     move=> Hm.
-    apply/primePn.
-    right.
+    apply/primePn/or_intror.
     exists m.
     - apply/andP.
-      split.
-      + lia.
-      + by apply: ltn_Pmull; lia.
+      by split; [lia | apply: ltn_Pmull; lia].
     - by apply: dvdn_mulr.
   Qed.
 
@@ -442,22 +448,73 @@ Musketeer type 三銃士型
   Proof.
     move/(_ 3%N).
     case=> n.
-    case: n => //= n.
-    case: n => //= n.
+    case: n => //= n.                       (* n.+1, n >= 1 *)
+    case: n => //= n.                       (* n.+2, n >= 2 *)
     have H x y : x = y -> prime x = prime y by move=> ->.
     move/H.
-    (* 右辺 *)
+    (* 右辺、素数 *)
     have -> : prime 3 by done.
-    (* 左辺 *)
+    (* 左辺、合成数 *)
     have Hp m : ~~ prime (m.+2 ^ 2)%N by rewrite -mulnn; apply: not_prime.
-    move: (Hp n) => Hp'.
-    move/negbTE in Hp'.
-    rewrite Hp'.
+    move/(_ n) : Hp.
+    move/negbTE => ->.
     (* false = true *)
     done.
   Qed.
 
+(**
+### 8.1.13. Exercises 8.
+ *)
+  Inductive White :=
+  | meg
+  | jack.
+
+  Definition h (x : Musketeer) : White :=
+    match x with
+    | athos => jack
+    | porthos => meg
+    | aramis => jack
+    end.
+
+  Goal ~ injective h.
+  Proof.
+    by move/(_ athos aramis)/(_ erefl).
+  Qed.
   
+(**
+### 8.1.13. Exercises 9.
+ *)
+  Goal surjective h.
+  Proof.
+    case.
+    - exists porthos => //=.
+    - exists athos => //=.
+  Qed.
+
+(**
+### 8.1.13. Exercises 10.
+ *)
+  Definition l (x : White) : Musketeer :=
+    match x with
+    | meg => aramis
+    | jack => porthos
+    end.
+  (* athos に行かない。 *)
+
+  Goal injective l.
+  Proof.
+    by case; case.
+  Qed.
+  
+(**
+### 8.1.13. Exercises 11.
+ *)
+  Goal ~ surjective l.
+  Proof.
+    case/(_ athos).                         (* 前提のexists x を forall x にする。 *)
+    by case.                                (* x で場合分けする。 *)
+  Qed.
+
 End Functions.
 
 (* END *)
