@@ -557,11 +557,9 @@ Musketeer type 三銃士型
 
   Goal forall (f : rat -> rat), (~ injective f -> ~ injective (fun x => f x + x)).
   Proof.
-    move=> f.
+    move=> f Hf.
+    rewrite /injective.
     apply: contra_not.
-    move=> H x1 x2 Hc.
-    apply: H.
-    rewrite Hc.
   Admitted.
 
 (**
@@ -569,7 +567,6 @@ Musketeer type 三銃士型
  *)
   Goal forall (f : int -> int), (~ surjective f -> ~ surjective (fun x => 2 * f x)).
   Proof.
-    rewrite /surjective.
     move=> f.
     apply/contra_not.
     move=> /= Hc y.
@@ -578,6 +575,55 @@ Musketeer type 三銃士型
     lia.
   Qed.
   
+(**
+### 8.1.13. Exercises 16.
+
+``c != 0`` の条件が必要であろう。
+ *)
+  Goal forall (c : R), c != 0 -> surjective (fun (x : R) => c * x).
+  Proof.
+    move=> c Hc y.
+    exists (y / c).
+    rewrite mulrC -mulrA mulVf //=.
+    by rewrite mulr1.
+  Qed.
+
+(**
+### 8.1.13. Exercises 17.
+
+f は、狭義単調増加、ならば単射。
+ *)
+  Lemma lt_trichotomy (x y : rat) : x < y \/ x = y \/ x > y. (* 問題文は誤記 *)
+  Proof.
+  Admitted.
+
+  (* injective の対偶 *)
+  Lemma contra_injective (f : rat -> rat) :
+    (forall (x1 x2 : rat), x1 != x2 -> f x1 != f x2) -> injective f.
+  Proof.
+    move=> Hc x1 x2.
+    move: (Hc x1 x2) => {Hc} /contra.
+    rewrite 2!negbK.
+    move=> Hc /eqP H.
+    apply/eqP.
+    by auto.
+  Qed.
+  
+  Goal forall (f : rat -> rat), (forall x y, x < y -> f x < f y) -> injective f.
+  Proof.
+    move=> f Hxy.
+    apply: contra_injective => x1 x2.
+    case: (lt_trichotomy x1 x2) => [|[]].
+    (* x1 < x2 *)
+    - move=> Hc _.
+      by move: Hc => /Hxy/lt_eqF ->.
+    (* x1 = x2 *)
+    - by move/eqP => ->.                    (* 前提矛盾 *)
+    (* x2 > x1 *)
+    - move=> Hc _.
+      by move: Hc => /Hxy/gt_eqF ->.
+  Qed.
+    
 End Functions.
 
 (* END *)
