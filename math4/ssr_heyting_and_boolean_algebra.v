@@ -2,12 +2,132 @@
 lean-by-example/LeanByExample/Tutorial/Exercise/HeytingAndBooleanAlgebra.lean
  *)
 
+From elpi Require Import elpi.
+From HB Require Import structures.
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import zify ring lra.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+HB.about porderType.
+HB.about latticeType.
+HB.about distrLatticeType.                  (* 分配束 *)
+HB.about tbDistrLatticeType.                (* top と bot がある。 *)
+HB.about ctbDistrLatticeType.               (* 可補束 *)
+
+HB.about finPOrderType.
+HB.about finLatticeType.
+HB.about finDistrLatticeType.               (* 分配束 *)
+HB.about finCDistrLatticeType.              (* 可補束 *)
+
+Import Order.
+Import Order.Theory.
+
+(**
+BoolOrder の例
+*)
+Module BoolOrder.
+Section BoolOrder.
+Implicit Types (x y : bool).
+
+Fact bool_display : unit. Proof. exact: tt. Qed.
+
+Fact andbE x y : x && y = if (x < y)%N then x else y.
+Proof. by case: x y => [] []. Qed.
+
+Fact orbE x y : x || y = if (x < y)%N then y else x.
+Proof. by case: x y => [] []. Qed.
+
+Fact ltn_def x y : (x < y)%N = (y != x) && (x <= y)%N.
+Proof. by case: x y => [] []. Qed.
+
+Fact anti : antisymmetric (leq : rel bool).
+Proof. by move=> x y /anti_leq /(congr1 odd); rewrite !oddb. Qed.
+
+Definition sub x y := x && ~~ y.
+
+Lemma subKI x y : y && sub x y = false. Proof. by case: x y => [] []. Qed.
+Lemma joinIB x y : (x && y) || sub x y = x. Proof. by case: x y => [] []. Qed.
+
+HB.instance Definition _ := @isOrder.Build
+                              bool_display bool
+                              _             (* le *)
+                              _             (* lt *)
+                              andb          (* meet *)
+                              orb           (* join *)
+                              ltn_def       (* lt_def *)
+                              andbE         (* meet_def *)
+                              orbE          (* join_def *)
+                              anti          (* le_anti *)
+                              leq_trans     (* le_trans *)
+                              leq_total.    (* le_total *)
+
+HB.instance Definition _ := @hasBottom.Build
+                              _ bool
+                              false         (* bottom *)
+                              leq0n.        (* le0x *)
+Check @le0x : forall (disp : unit) (L : bLatticeType disp)
+                     (x : L), (\bot <= x)%O.
+Check leq0n : forall n : nat, 0 <= n.
+
+HB.instance Definition _ := @hasTop.Build
+                              _ bool
+                              true          (* top *)
+                              leq_b1.       (* lex1 *)
+Check @lex1 : forall (disp : unit) (L : tLatticeType disp)
+                     (x : L), (x <= \top)%O.
+Check leq_b1 : forall b : bool, b <= 1.
+
+HB.instance Definition _ := @hasRelativeComplement.Build
+                              _ bool
+                              sub           (* diff *)
+                              subKI         (* diffKI *)
+                              joinIB.
+Check @diffKI : forall (disp : unit) (L : cbDistrLatticeType disp)
+                       (x y : L), (y `&` Order.sub x y)%O = \bot%O.
+Check subKI : forall x y, y && sub x y = false.
+
+Check @Order.joinIB : forall (d : unit) (s : cbDistrLatticeType d)
+         (x
+          y : {|
+                Lattice.sort := s;
+                Lattice.class :=
+                  {|
+                    Lattice.choice_hasChoice_mixin := CBDistrLattice.class s;
+                    Lattice.eqtype_hasDecEq_mixin := CBDistrLattice.class s;
+                    Lattice.Order_isPOrder_mixin := CBDistrLattice.class s;
+                    Lattice.Order_POrder_isLattice_mixin := CBDistrLattice.class s
+                  |}
+              |}),
+    (x `&` y `|` Order.sub x y)%O = x.
+Check joinIB : forall x y, x && y || sub x y = x.
+
+HB.instance Definition _ := @hasComplement.Build
+                              _ bool
+                              negb          (* compl *)
+                              (fun x => erefl : ~~ x = sub true x). (* complE *)
+Check @complE : forall (disp : unit) (L : ctbDistrLatticeType disp)
+                       (x : L), (~` x)%O = Order.sub \top%O x.
+Check (fun x => erefl : ~~ x = sub true x) : forall x, ~~ x = sub true x.
+
+
+Reserved Notation "A `\` B" (at level 50, left associativity).
+Notation "x `\` y" := (diff x y) : order_scope.
+
+Open Scope order_scope.
+
+Lemma leEbool : le = (leq : rel bool). Proof. by []. Qed.
+Lemma ltEbool x y : (x < y) = (x < y)%N. Proof. by []. Qed.
+Lemma andEbool : meet = andb. Proof. by []. Qed.
+Lemma orEbool : meet = andb. Proof. by []. Qed.
+Lemma subEbool x y : x `\` y = x && ~~ y. Proof. by []. Qed.
+
+Lemma complEbool : compl = negb. Proof. by []. Qed.
+End BoolOrder.
+End BoolOrder.
+
 
 Module three.
 
