@@ -27,6 +27,8 @@ Import Order.Theory.
 
 (**
 BoolOrder の例
+
+補元を ``a \ top`` で定義する。
 *)
 Module BoolOrder.
 Section BoolOrder.
@@ -48,15 +50,16 @@ Proof. by move=> x y /anti_leq /(congr1 odd); rewrite !oddb. Qed.
 
 Definition sub x y := x && ~~ y.
 
-Lemma subKI x y : y && sub x y = false. Proof. by case: x y => [] []. Qed.
-Lemma joinIB x y : (x && y) || sub x y = x. Proof. by case: x y => [] []. Qed.
+Lemma subKI x y : (y && (sub x y)) = false. Proof. by case: x y => [] []. Qed.
+Lemma joinIB x y : ((x && y) || (sub x y)) = x. Proof. by case: x y => [] []. Qed.
 
+(* ***** *)
 HB.instance Definition _ := @isOrder.Build
                               bool_display bool
                               _             (* le *)
                               _             (* lt *)
-                              andb          (* meet *)
-                              orb           (* join *)
+                              andb          (* meet `&` *)
+                              orb           (* join `|` *)
                               ltn_def       (* lt_def *)
                               andbE         (* meet_def *)
                               orbE          (* join_def *)
@@ -64,6 +67,7 @@ HB.instance Definition _ := @isOrder.Build
                               leq_trans     (* le_trans *)
                               leq_total.    (* le_total *)
 
+(* ***** *)
 HB.instance Definition _ := @hasBottom.Build
                               _ bool
                               false         (* bottom *)
@@ -72,6 +76,7 @@ Check @le0x : forall (disp : unit) (L : bLatticeType disp)
                      (x : L), (\bot <= x)%O.
 Check leq0n : forall n : nat, 0 <= n.
 
+(* ***** *)
 HB.instance Definition _ := @hasTop.Build
                               _ bool
                               true          (* top *)
@@ -80,15 +85,19 @@ Check @lex1 : forall (disp : unit) (L : tLatticeType disp)
                      (x : L), (x <= \top)%O.
 Check leq_b1 : forall b : bool, b <= 1.
 
+(* ***** *)
 HB.instance Definition _ := @hasRelativeComplement.Build
                               _ bool
                               sub           (* diff *)
                               subKI         (* diffKI *)
                               joinIB.
+
+(* y と ``y - x`` は同時にtrueにならない。 *)
 Check @diffKI : forall (disp : unit) (L : cbDistrLatticeType disp)
                        (x y : L), (y `&` Order.sub x y)%O = \bot%O.
-Check subKI : forall x y, y && sub x y = false.
+Check subKI : forall x y, (y && sub x y) = false.
 
+(* ``x & y`  と ``x \ y`` をあわせると x になる。 *)
 Check @Order.joinIB : forall (d : unit) (s : cbDistrLatticeType d)
          (x
           y : {|
@@ -102,17 +111,20 @@ Check @Order.joinIB : forall (d : unit) (s : cbDistrLatticeType d)
                   |}
               |}),
     (x `&` y `|` Order.sub x y)%O = x.
-Check joinIB : forall x y, x && y || sub x y = x.
+Check joinIB : forall x y, ((x && y) || sub x y) = x.
 
+(* ***** *)
 HB.instance Definition _ := @hasComplement.Build
                               _ bool
                               negb          (* compl *)
                               (fun x => erefl : ~~ x = sub true x). (* complE *)
+
+(* compl は ``a \ top`` に等しい。 *)
 Check @complE : forall (disp : unit) (L : ctbDistrLatticeType disp)
                        (x : L), (~` x)%O = Order.sub \top%O x.
 Check (fun x => erefl : ~~ x = sub true x) : forall x, ~~ x = sub true x.
 
-
+(* ***** *)
 Reserved Notation "A `\` B" (at level 50, left associativity).
 Notation "x `\` y" := (diff x y) : order_scope.
 
@@ -129,6 +141,9 @@ End BoolOrder.
 End BoolOrder.
 
 
+(**
+補元を ``a -> top`` で定義する。
+*)
 Module three.
 
   Definition Three := 'I_3.
