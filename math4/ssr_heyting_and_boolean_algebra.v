@@ -1,6 +1,22 @@
 (**
 lean-by-example/LeanByExample/Tutorial/Exercise/HeytingAndBooleanAlgebra.lean
+
+Threeの場合の sub を定義する。
+それが、boolOrderのように公理を満たさないことを示す。どこで。
  *)
+
+(*
+補元 compl をLean by example では、``a -> bot`` で定義する。
+order.v では、``top \ a`` で定義する。
+
+本来は真理値表を書くべきだが、bool代数では両者は同じになる：
+
+P -> Q == ~P \/ Q
+P -> F == ~P
+
+P \ Q == P /\ ~Q
+T \ Q == ~Q
+*)
 
 From elpi Require Import elpi.
 From HB Require Import structures.
@@ -12,10 +28,23 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 HB.about porderType.
+HB.about Order.isPOrder. (* new, not from inheritance *)
+
 HB.about latticeType.
+HB.about Order.POrder_isLattice. (* new, not from inheritance *)
+
 HB.about distrLatticeType.                  (* 分配束 *)
+HB.about Order.Lattice_Meet_isDistrLattice. (* new, not from inheritance *)
+
+(* ********************* *)
 HB.about tbDistrLatticeType.                (* top と bot がある。 *)
+(* ********************* *)
+
+HB.about cbDistrLatticeType.
+HB.about Order.hasRelativeComplement. (* new, not from inheritance *)
+
 HB.about ctbDistrLatticeType.               (* 可補束 *)
+HB.about Order.hasComplement. (* new, not from inheritance *)
 
 HB.about finPOrderType.
 HB.about finLatticeType.
@@ -28,7 +57,7 @@ Import Order.Theory.
 (**
 BoolOrder の例
 
-補元を ``a \ top`` で定義する。
+補元を ``top \ a`` で定義する。
 *)
 Module BoolOrder.
 Section BoolOrder.
@@ -60,6 +89,7 @@ HB.instance Definition _ := @isOrder.Build
                               _             (* lt *)
                               andb          (* meet `&` *)
                               orb           (* join `|` *)
+
                               ltn_def       (* lt_def *)
                               andbE         (* meet_def *)
                               orbE          (* join_def *)
@@ -119,7 +149,7 @@ HB.instance Definition _ := @hasComplement.Build
                               negb          (* compl *)
                               (fun x => erefl : ~~ x = sub true x). (* complE *)
 
-(* compl は ``a \ top`` に等しい。 *)
+(* compl は ``top \ a`` に等しい。 *)
 Check @complE : forall (disp : unit) (L : ctbDistrLatticeType disp)
                        (x : L), (~` x)%O = Order.sub \top%O x.
 Check (fun x => erefl : ~~ x = sub true x) : forall x, ~~ x = sub true x.
@@ -142,7 +172,7 @@ End BoolOrder.
 
 
 (**
-補元を ``a -> top`` で定義する。
+補元を ``a -> bot`` で定義する。
 *)
 Module three.
 
