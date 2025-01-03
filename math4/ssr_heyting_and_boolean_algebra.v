@@ -137,14 +137,67 @@ Section Three.
   Compute \bot == t0.                       (* true *)
   Compute \top == t2.                       (* true *)
   
+  Compute t0 `&` t0 == t0.                  (* true *)
   Compute t0 `&` t1 == t0.                  (* true *)
-  Compute t0 `|` t1 == t1.                  (* true *)
+  Compute t0 `&` t2 == t0.                  (* true *)
+  Compute t1 `&` t0 == t0.                  (* true *)
+  Compute t1 `&` t1 == t1.                  (* true *)
+  Compute t1 `&` t2 == t1.                  (* true *)
+  Compute t2 `&` t0 == t0.                  (* true *)
+  Compute t2 `&` t1 == t1.                  (* true *)
+  Compute t2 `&` t2 == t2.                  (* true *)
 
+  Compute t0 `|` t0 == t0.                  (* true *)
+  Compute t0 `|` t1 == t1.                  (* true *)
+  Compute t0 `|` t2 == t2.                  (* true *)
+  Compute t1 `|` t0 == t1.                  (* true *)
+  Compute t1 `|` t1 == t1.                  (* true *)
+  Compute t1 `|` t2 == t2.                  (* true *)
+  Compute t2 `|` t0 == t2.                  (* true *)
+  Compute t2 `|` t1 == t2.                  (* true *)
+  Compute t2 `|` t2 == t2.                  (* true *)
+  
   Compute \bot <= t1.                       (* true *)
   Compute t1 <= \top.                       (* true *)
   
   Compute le t0 t0.                         (* true *)
   Compute lt t0 t1.                         (* true *)
+
+
+  Check leq_subr : forall m n : nat, (n - m <= n)%N.
+  Check ltn_ord: forall [n : nat] (i : 'I_n), (i < n)%N.
+  
+  Definition subo (x y : Three) : Three :=
+    match (x - y) with
+    | 0 => t0
+    | 1 => t1
+    | 2 => t2
+    | _ => t0
+    end.
+  
+  Compute subo \top t0 == t2.               (* true *)
+  Compute subo \top t1 == t1.               (* true *)
+  Compute subo \top t2 == t0.               (* true *)
+  
+  Lemma em (x : Three) : (x = t0) \/ (x = t1) \/ (x = t2).
+  Proof.
+  Admitted.
+  
+  Lemma suboKI (x y : Three) : y `&` (subo x y) = \bot.
+  Proof.
+    apply/eqP.
+    case: (em y) => [| []]; case: (em x) => [| []] => -> -> //=.
+    Check t1 `&` subo t2 t1 == \bot.        (* 左辺は t1 *)
+  Admitted.
+
+  Lemma joinoIB (x y : Three) : (x `&` y) `|` (subo x y) = x.
+  Proof.
+    apply/eqP.
+    case: (em y) => [| []]; case: (em x) => [| []] => -> -> //=.
+    Check (t2 `&` t1) `|` subo t2 t1 == t2.   (* 左辺は (t2 & t1) | t1 = t1 *)
+  Admitted.
+
+  (* t2 - t1 の結果の見直しでは、修正できない。 *)
 
 End Three.
 
@@ -263,6 +316,26 @@ Lemma orEbool : meet = andb. Proof. by []. Qed.
 Lemma subEbool x y : (x `\` y = x && ~~ y)%O. Proof. by []. Qed.
 
 Lemma complEbool : compl = negb. Proof. by []. Qed.
+
+
+Section Sample.
+  Local Open Scope order_scope.
+
+  Compute \top == true.                     (* true *)
+  Compute \bot == false.                    (* true *)
+
+  Compute true `&` false.                   (* false *)
+  Compute true `|` false.                   (* true *)
+
+  Compute false `\` false.                  (* false *)
+  Compute false `\` true.                   (* false *)
+  Compute true `\` false.                   (* true *)
+  Compute true `\` true.                    (* false *)
+
+  Compute compl true.                       (* false *)
+  Compute compl false.                      (* true *)
+End Sample.
+
 End BoolOrder.
 End BoolOrder.
 
