@@ -54,6 +54,50 @@ HB.about finCDistrLatticeType.              (* 可補束 *)
 Import Order.
 Import Order.Theory.
 
+(* order_scope は常用しないほうが良いようだ。 *)
+(* Open Scope order_scope. *)
+
+(**
+OrdinalOrder の例
+ *)
+Module OrdinalOrder.
+Section OrdinalOrder.
+
+Fact ord_display : unit. Proof. exact: tt. Qed.
+
+Section PossiblyTrivial.
+Variable (n : nat).
+
+HB.instance Definition _ := [SubChoice_isSubOrder of 'I_n by <: with ord_display].
+
+Lemma leEord : (le : rel 'I_n) = leq. Proof. by []. Qed.
+Lemma ltEord : (lt : rel 'I_n) = (fun m n => m < n)%N. Proof. by []. Qed.
+End PossiblyTrivial.
+
+Section NonTrivial.
+Variable (n' : nat).
+Let n := n'.+1.                             (* n > 0 とする。 *)
+
+HB.instance Definition _ := @hasBottom.Build
+                              _ 'I_n
+                              ord0
+                              leq0n. (* le0x *)
+Check @le0x : forall (disp : unit) (L : bLatticeType disp) (x : L), (\bot <= x)%O.
+Check leq0n : forall x, ord0 <= x.
+
+HB.instance Definition _ := @hasTop.Build
+                              _ 'I_n
+                              ord_max
+                              (@leq_ord ord_max). (* lex1 *)
+Check @lex1 : forall (disp : unit) (L : tLatticeType disp) (x : L), (x <= \top)%O.
+Check @leq_ord ord_max : forall i : 'I_ord_max.+1, i <= ord_max.
+
+Lemma botEord : (\bot = ord0 :> 'I_n)%O. Proof. by []. Qed.
+Lemma topEord : (\top = ord_max :> 'I_n)%O. Proof. by []. Qed.
+End NonTrivial.
+End OrdinalOrder.
+End OrdinalOrder.
+
 (**
 BoolOrder の例
 
@@ -89,7 +133,6 @@ HB.instance Definition _ := @isOrder.Build
                               _             (* lt *)
                               andb          (* meet `&` *)
                               orb           (* join `|` *)
-
                               ltn_def       (* lt_def *)
                               andbE         (* meet_def *)
                               orbE          (* join_def *)
@@ -113,7 +156,7 @@ HB.instance Definition _ := @hasTop.Build
                               leq_b1.       (* lex1 *)
 Check @lex1 : forall (disp : unit) (L : tLatticeType disp)
                      (x : L), (x <= \top)%O.
-Check leq_b1 : forall b : bool, b <= 1.
+Check leq_b1 : forall b : bool, (b <= 1)%N.
 
 (* ***** *)
 HB.instance Definition _ := @hasRelativeComplement.Build
@@ -158,13 +201,11 @@ Check (fun x => erefl : ~~ x = sub true x) : forall x, ~~ x = sub true x.
 Reserved Notation "A `\` B" (at level 50, left associativity).
 Notation "x `\` y" := (diff x y) : order_scope.
 
-Open Scope order_scope.
-
 Lemma leEbool : le = (leq : rel bool). Proof. by []. Qed.
 Lemma ltEbool x y : (x < y) = (x < y)%N. Proof. by []. Qed.
 Lemma andEbool : meet = andb. Proof. by []. Qed.
 Lemma orEbool : meet = andb. Proof. by []. Qed.
-Lemma subEbool x y : x `\` y = x && ~~ y. Proof. by []. Qed.
+Lemma subEbool x y : (x `\` y = x && ~~ y)%O. Proof. by []. Qed.
 
 Lemma complEbool : compl = negb. Proof. by []. Qed.
 End BoolOrder.
