@@ -36,12 +36,12 @@ HB.about Order.POrder_isLattice. (* new, not from inheritance *)
 HB.about distrLatticeType.                  (* 分配束 *)
 HB.about Order.Lattice_Meet_isDistrLattice. (* new, not from inheritance *)
 
-(* ********************* *)
-HB.about tbDistrLatticeType.                (* top と bot がある。 *)
-(* ********************* *)
+HB.about bDistrLatticeType.                 (* bottom がある。 *)
 
 HB.about cbDistrLatticeType.
 HB.about Order.hasRelativeComplement. (* new, not from inheritance *)
+
+HB.about tbDistrLatticeType.                (* top と bottom がある。 *)
 
 HB.about ctbDistrLatticeType.               (* 可補束 *)
 HB.about Order.hasComplement. (* new, not from inheritance *)
@@ -50,6 +50,35 @@ HB.about finPOrderType.
 HB.about finLatticeType.
 HB.about finDistrLatticeType.               (* 分配束 *)
 HB.about finCDistrLatticeType.              (* 可補束 *)
+
+HB.graph "hierarchy.dot".
+(* tred hierarchy.dot | dot -T png > hierarchy.png *)
+
+(**
+```
+porderType
+|
+latticeType
+|\______________________________________
+|                       \               \
+|                       tLatticeType    bLatticeType
+|                       \               |
+|                        ~~~~~~~~~~~~~~\|
+|                                       tbLatticeType
+|                                       |
+|                                      (tbDistrLatticeType)
+distrLatticeType
+|
+bDistrLatticeType
+|\______________________
+|                       \
+tbDistrLatticeType      cbDistrLatticeType
+|                       /
+|/~~~~~~~~~~~~~~~~~~~~~~
+|
+ctbDistrLatticeType
+```
+*)
 
 Import Order.
 Import Order.Theory.
@@ -95,6 +124,32 @@ Check @leq_ord ord_max : forall i : 'I_ord_max.+1, i <= ord_max.
 Lemma botEord : (\bot = ord0 :> 'I_n)%O. Proof. by []. Qed.
 Lemma topEord : (\top = ord_max :> 'I_n)%O. Proof. by []. Qed.
 End NonTrivial.
+
+Section Three.
+  Local Open Scope order_scope.
+  
+  Definition Three := 'I_3.
+
+  Definition t0 := @Ordinal 3 0 is_true_true.
+  Definition t1 := @Ordinal 3 1 is_true_true.
+  Definition t2 := @Ordinal 3 2 is_true_true.
+
+  Compute \bot == t0.                       (* true *)
+  Compute \top == t2.                       (* true *)
+  
+  Compute t0 `&` t1 == t0.                  (* true *)
+  Compute t0 `|` t1 == t1.                  (* true *)
+
+  Compute \bot <= t1.                       (* true *)
+  Compute t1 <= \top.                       (* true *)
+  
+  Compute le t0 t0.                         (* true *)
+  Compute lt t0 t1.                         (* true *)
+
+End Three.
+
+
+
 End OrdinalOrder.
 End OrdinalOrder.
 
