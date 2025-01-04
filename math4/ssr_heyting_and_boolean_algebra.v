@@ -93,7 +93,7 @@ Import Order.Theory.
 Heyting Lattice の定義
 *)
 HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
-    hdiff  : T -> T -> T;
+    hdiff  : T -> T -> T;                   (* 名称間違い *)
     hcompl : T -> T;
     hcomplE : forall x : T, hcompl x = hdiff x bottom
   }.
@@ -103,9 +103,10 @@ HB.structure Definition HeytingLattice d := {
   }.
 
 Reserved Notation "A --> B" (at level 50, left associativity).
-Notation "x --> y" := (hcompl x y) : order_scope.
+Notation "x --> y" := (hdiff x y) : order_scope.
 
 
+Module Three.
 Section Three.
   Local Open Scope order_scope.
   
@@ -166,18 +167,47 @@ Section Three.
     
     HB.instance Definition _ := @hasHComplement.Build
                                   _ Three
-                                  himpl
-                                  hneg
-                                  hnegE.
+                                  himpl     (* hdiff *)
+                                  hneg      (* hcompl *)
+                                  hnegE.    (* hcomplE *)
   End NonTrivial.
 End Three.
 
-(*
-使えない。なぜ？
+Module Exports.
+  HB.reexport Three.
+  
+  Definition leEord := leEord.
+  Definition ltEord := ltEord.
+  Definition botEord := botEord.
+  Definition topEord := topEord.
+End Exports.
+End Three.
+HB.export Three.Exports.
 
-Check t0 : Three.
-Check t0 --> t0.
-*)
+Section Test.
+
+  Import Three.
+  Local Open Scope order_scope.
+
+  Check Three.t0 : 'I_3.
+  Check Three.t0 : Three.
+
+  Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
+  Set Printing All.
+  Check meet Three.t0 Three.t0 : Three.
+  Check Three.t0 `&` Three.t0 : Three.
+  Check @meet OrdinalOrder.ord_display (OrdinalOrder.fintype_ordinal__canonical__Order_Lattice 3)
+    Three.t0 
+    Three.t0.
+
+  Check @hdiff : forall (d : unit) (s : HeytingLattice.type d), s -> s -> s.
+  Check @himpl : Three -> Three -> Three.
+  
+  Fail Check @hdiff _ _ Three.t0 Three.t1.
+  Fail Compute hcompl Three.t0 == Three.t2.
+
+End Test.
+
 
 (* order_scope は常用しないほうが良いようだ。 *)
 (* Open Scope order_scope. *)
