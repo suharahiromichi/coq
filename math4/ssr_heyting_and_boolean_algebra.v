@@ -117,14 +117,56 @@ Section Three.
   Definition t2 := @Ordinal 3 2 is_true_true.
 
   Fact three_display : unit. Proof. exact: tt. Qed.
-
+(*
   Section PossiblyTrivial.
     Variable (n : nat).
+    
     HB.instance Definition _ := [SubChoice_isSubOrder of 'I_n by <: with three_display].
 
     Lemma leEord : (le : rel Three) = leq. Proof. by []. Qed.
     Lemma ltEord : (lt : rel Three) = (fun m n => m < n)%N. Proof. by []. Qed.
   End PossiblyTrivial.
+*)
+  HB.instance Definition _ := Choice.copy Three 'I_3. (* これが必要！！ *)
+
+  Definition three_leq (x y : Three) := x <= y.
+  
+  Definition three_ltn (x y : Three) := x < y.
+
+  Definition three_minn (x y : Three) := if (x < y)%N then x else y.
+
+  Definition three_maxn (x y : Three) := if (x < y)%N then y else x.
+  
+  Lemma ltn_def x y : (x < y)%N = (y != x) && (x <= y)%N.
+  Proof. by rewrite ltn_neqAle eq_sym. Qed.
+  
+  Lemma three_meet_def x y : three_minn x y = if (x < y)%N then x else y.
+  Proof. by case: x y => [] []. Qed.  
+  
+  Lemma three_join_def x y : three_maxn x y = if (x < y)%N then y else x.
+  Proof. by case: x y => [] []. Qed.  
+
+  Lemma three_anti : antisymmetric three_leq.
+  Proof.
+    rewrite /antisymmetric.
+    move=> x y H.
+    apply/eqP.
+    by rewrite eq_le.
+  Qed.
+
+  HB.instance Definition _ := @isOrder.Build
+                                three_display (* unit *)
+                                Three         (* T *)
+                                three_leq      (* le *)
+                                three_ltn      (* lt *)
+                                three_minn     (* meet `&` *)
+                                three_maxn     (* join `|` *)
+                                ltn_def        (* lt_def *)
+                                three_meet_def (* meet_def *)
+                                three_join_def  (* join_def *)
+                                three_anti      (* le_anti *)
+                                leq_trans     (* le_trans *)
+                                leq_total.    (* le_total *)
 
   Section NonTrivial.
 (*
@@ -200,7 +242,7 @@ Section Test.
   Check latticeType three_display.
   
   Check Three : latticeType OrdinalOrder.ord_display.
-  Fail Check Three : latticeType three_display.
+  Check Three : latticeType three_display.  (* choice.copy で通る *)
   
   Set Printing All.
   Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
@@ -211,8 +253,21 @@ Section Test.
   Check @hdiff : forall (d : unit) (s : HeytingLattice.type d), s -> s -> s.
   Check @himpl : Three -> Three -> Three.
   
-  Fail Check @hdiff _ _ t0 t1.
-  Fail Compute hcompl t0 == t2.
+  Check himpl t0 t1.
+  Check hneg t0.
+  
+  Check @hdiff three_display Three t0 t2.
+  Check @hcompl three_display Three t1.
+
+  Compute himpl t0 t1 == t2.                (* true *)
+  Compute hneg t0 == t2.                    (* true *)
+  
+  Compute @hdiff three_display Three t0 t2 == t2. (* true *)
+  Compute @hcompl three_display Three t0 == t2.   (* true *)
+
+  (* 引数を略せないが、定義はできている。 *)
+  Fail Check hdiff t0 t2 == t2. (* true *)
+  Fail Check hcompl t0 == t2.   (* true *)
 
 End Test.
 
