@@ -16,6 +16,7 @@ Local Open Scope ring_scope.
 (**
 本資料は ``{poly R}`` が ringType であることまで扱うので、R も ringType とする。
 *)
+Section sample.
 Variable R : ringType.
 Variable (a b c x y z : R) (p q r d : {poly R}).
 
@@ -75,6 +76,9 @@ Check @prim_order_exists R :
 Check @prim_expr_order R : forall (n : nat) (z : R), n.-primitive_root z -> z ^+ n = 1.
 
 Search (_ .-primitive_root).
+(*
+セクションの都合で、ファイルの末尾におきます。
+
 Section NUMBER.
   Variable R : numDomainType.
 
@@ -92,6 +96,7 @@ Section NUMBER.
       by rewrite 2!eq_refl.
   Qed.
 End NUMBER.
+*)
 
 (**
 # 環の述語を多項式に持ち上げる(lift)。
@@ -175,7 +180,7 @@ Proof.
 Admitted.                                   (* OK *)
 
 (**
-## ``predOverP`` で多項式に持ち上げる証明
+## ``polyOverP`` で多項式に持ち上げる証明
 
 持ち上げたあと、``rpred*`` と ``polyOver*`` の補題を使うと直接証明できる。
 *)
@@ -224,8 +229,6 @@ Section po.
 Variable S1 : addrClosed R.
 Variable S2 : semiringClosed R.
 Variable S3 : semiringClosed R.
-Variable c : R.
-Variable p : {poly R}.
 
 Check @polyOver0 R _      : 0 \is a polyOver R.
 Check @polyOverC R S1 c   : (c%:P \is a polyOver S1) = (c \in S1).
@@ -264,7 +267,7 @@ Check @coef_deriv R
 (* coef_deriv *)
 Goal forall (p : {poly R}) i,  p ^`()`_i = p`_i.+1 *+ i.+1.
 Proof.
-  move=> p i.
+  move=> p' i.
   (* 左辺を 係数*X^i の式にする。ただし、左辺に i の範囲の条件が残る。 *)
   Check coef_poly : forall (R : semiRingType) (n : nat) (E : nat -> R) (k : nat),
        (\poly_(i < n) E i)`_k = (if (k < n)%N then E k else 0).
@@ -316,8 +319,8 @@ Check (a *: p + q)^`() = a *: p^`() + q^`().
 (* 証明 *)
 Goal linear (@deriv R).
 Proof.
-  move=> k p q.
-  Check (k *: p + q)^`() = k *: p^`() + q^`().
+  move=> k p' q'.
+  Check (k *: p' + q')^`() = k *: p'^`() + q'^`().
   apply/polyP => i.                 (* 係数毎の等式にする。 *)
   rewrite !coefE.                   (* !(coef_deriv, coefD, coefZ). *)
   Check (k * p`_i.+1 + q`_i.+1) *+ i.+1 = k * (p`_i.+1 *+ i.+1) + q`_i.+1 *+ i.+1.
@@ -399,21 +402,21 @@ Qed.
 (* derivD 線形性 *)
 Goal forall (p q : {poly R}), (p + q)^`() = p^`() + q^`().
 Proof.
-  move=> p q.
+  move=> p' q'.
   by apply: linearD.
 Qed.
 
 (* derivB 線形性 *)
 Goal forall (p q : {poly R}), (p - q)^`() = p^`() - q^`().
 Proof.
-  move=> p q.
+  move=> p' q'.
   by apply: linearB.
 Qed.
 
 (* deriv_mulC *)
 Goal forall (c : R) (p : {poly R}), (c%:P * p)^`() = c%:P * p^`().
 Proof.
-  move=> c p.
+  move=> c' p'.
   (* 定数多項式と多項式の積は、定数と多項式の積に書き換えられる。Cは可換ではなく、定数のC *)
   Check mul_polyC : forall (R : ringType) (a : R) (p : {poly R}), a%:P * p = a *: p.
   rewrite !mul_polyC.
@@ -425,7 +428,7 @@ Qed.
 (* 多項式の積の微分の証明に使う。「多項式 * X + C の微分」。 *)
 Goal forall (p : {poly R}) (c : R), (p * 'X + c%:P)^`() = p + p^`() * 'X.
 Proof.
-  move=> p c.
+  move=> p' c'.
   apply/polyP=> i.
   (* rewrite raddfD /=. *)
   rewrite derivD.
@@ -438,13 +441,13 @@ Qed.
 (* 多項式の積の微分、帰納法を使う。 *)
 Goal forall (p q : {poly R}), (p * q)^`() = p^`() * q + p * q^`().
 Proof.
-  move=> p q.
-  elim/poly_ind: p => [|p b IHp].           (* poly_sample.v 参照 *)
+  move=> p' q'.
+  elim/poly_ind: p' => [|p' b' IHp].           (* poly_sample.v 参照 *)
   
   Check (0 * q)^`() = 0^`() * q + 0 * q^`().
   - by rewrite !(mul0r, add0r, derivC).
 
-  Check IHp : (p * q)^`() = p^`() * q + p * q^`().
+  Check IHp : (p' * q')^`() = p'^`() * q' + p' * q'^`().
   Check ((p * 'X + b%:P) * q)^`() = (p * 'X + b%:P)^`() * q + (p * 'X + b%:P) * q^`().
   - rewrite mulrDl -mulrA -commr_polyX mulrA -[_ * 'X]addr0 raddfD /=.
     rewrite !derivMXaddC.
@@ -531,6 +534,7 @@ Check @comp_polyE R : forall p q : {poly R}, p \Po q = \sum_(i < size p) (p`_i *
 多項式の合成の変形
 *)
 Check comp_polyX : forall (R : ringType) (p : {poly R}), 'X \Po p = p.
+Check comp_polyXr: forall (R : ringType) (p : {poly R}), p \Po 'X = p.
 Check comp_polyC : forall (R : ringType) (c : R) (p : {poly R}), c%:P \Po p = c%:P.
 Check comp_polyCr: forall (R : ringType) (p : {poly R}) (c : R), p \Po c%:P = (p.[c])%:P.
 Check comp_polyD : forall (R : ringType) (p q r : {poly R}), (p + q) \Po r = p \Po r + (q \Po r).
@@ -540,8 +544,7 @@ Check comp_polyM : forall (R : comRingType) (p q r : {poly R}), p * q \Po r = (p
 Check comp_polyA : forall (R : comRingType) (p q r : {poly R}), p \Po (q \Po r) = (p \Po q) \Po r.
 Check comp_poly_MXaddC                      (* あとで使う *)
   : forall (R : ringType) (c : R) (p q : {poly R}), (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
-Goal forall (R : ringType) (c : R) (p q : {poly R}), (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
-  move=> R c p q.
+Goal (p * 'X + c%:P) \Po q = (p \Po q) * q + c%:P.
   rewrite /(_ \Po q) rmorphD rmorphM /= map_polyX map_polyC hornerMXaddC.
   done.
 Qed.
@@ -556,7 +559,7 @@ Check horner_comp : forall (R : comRingType) (p q : {poly R}) (x : R), (p \Po q)
 Goal forall (R : comRingType) (p q : {poly R}) (x : R),
     (p \Po q).[x] = p.[q.[x]].
 Proof.
-  move=> R p q x.
+  move=> R' p' q' x'.
   apply: polyC_inj.
   rewrite -!comp_polyCr.
   rewrite comp_polyA.
@@ -571,8 +574,8 @@ Qed.
 Check deriv_comp : forall (R : comRingType) (p q : {poly R}), (p \Po q)^`() = (p^`() \Po q) * q^`().
 Goal forall (R : comRingType) (p q : {poly R}), (p \Po q)^`() = (p^`() \Po q) * q^`().
 Proof.
-  move=> R p q.
-  elim/poly_ind: p => [|p c IHp].
+  move=> R' p' q'.
+  elim/poly_ind: p' => [|p' c' IHp].
   - by rewrite !(deriv0, comp_poly0) mul0r.
   - rewrite comp_poly_MXaddC derivD derivC derivM IHp derivMXaddC comp_polyD.
     by rewrite comp_polyM comp_polyX addr0 addrC mulrAC -mulrDl.
@@ -589,5 +592,28 @@ Print even_poly. (* = fun (R : ringType) (p : {poly R}) => \poly_(i < uphalf (si
 ## 多項式の奇数部
  *)
 Print odd_poly. (* = fun (R : ringType) (p : {poly R}) => \poly_(i < (size p)./2) p`_i.*2.+1 *)
+
+End sample.
+
+(**
+セクションの都合で後回し。
+*)
+Section NUMBER.
+  Variable R : numDomainType.
+
+  Goal 2.-primitive_root (-1 : R).
+  Proof.
+    apply/andP.
+    split=> //=.
+    apply/forallP => /= i.
+    rewrite unity_rootE.
+    case: i.
+    case; [| case] => //= _.
+    - rewrite expr1.
+      by rewrite eqNr oner_eq0.
+    - rewrite expr2 mulNr mul1r opprK.
+      by rewrite 2!eq_refl.
+  Qed.
+End NUMBER.
 
 (* END *)

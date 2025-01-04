@@ -16,6 +16,7 @@ Local Open Scope ring_scope.
 (**
 本資料は ``{poly R}`` が ringType であることまで扱うので、R も ringType とする。
 *)
+Section sample.
 Variable R : ringType.
 Variable (a b c x y z : R) (p q r d : {poly R}).
 
@@ -588,16 +589,16 @@ Check Monoid.simpm.               (* このファイルのうしろの方を参�
 
 Check hornerE.
 Check (hornerD, hornerN, hornerX, hornerC,
-        horner_exp,
+        horner_exp,                         (* 違い。 *)
         Monoid.simpm, hornerCM, hornerZ,    (* simp := Monoid.simpm *)
-        hornerM,
+        hornerM,                            (* 違い。 *)
         horner_cons).
 
 Check hornerE_comm.
 Check (hornerD, hornerN, hornerX, hornerC,
-        horner_cons,
+        horner_cons,                        (* 違い。 *)
         Monoid.simpm, hornerCM, hornerZ,
-        (fun p x => hornerM_comm p (comm_polyX x))). (* 追加はここだけ *)
+        (fun p x => hornerM_comm p (comm_polyX x))). (* 違い。 *)
 
 (**
 マルチルールに含まれない補題だが、!hornerE で解ける。
@@ -631,7 +632,7 @@ Check @rootE R : forall (p : {poly R}) (x : R), (root p x = (p.[x] == 0)) *
 Goal forall (q : {poly R}) (a : R), (q * ('X - a%:P)).[a] = 0.
 Proof.
   Check (q * ('X - a%:P)) : {poly R}.
-  move=> q a.
+  move=> q' a'.
   rewrite hornerM_comm.
   
   Check q.[a] * ('X - a%:P).[a] = 0.
@@ -643,6 +644,11 @@ Proof.
     rewrite !hornerE subrr !Monoid.simpm.
     done.
 Qed.
+End sample.
+
+Section t.
+Variable R : ringType.
+Variable (a : R) (p q : {poly R}).
 
 (**
 ## 因数定理 factor_theorem
@@ -657,10 +663,9 @@ Check @factor_theorem R
 (**
 poly.v に近いかたち
 *)
-Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
+Goal reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
 Proof.
-  move=> p a.
-  apply: (iffP eqP) => [pa0 | [q ->]]; last first.
+  apply: (iffP eqP) => [pa0 | [q' ->]]; last first.
   - rewrite hornerM_comm /comm_poly !hornerE subrr ?simp. (* hornerXsubC *)
     + by rewrite mulr0.
     + by rewrite mulr0 mul0r.
@@ -673,7 +678,6 @@ Proof.
     + case: i => [|i] in lt_i_p *; last by rewrite ltnW // (drop_nth 0 lt_i_p).
       by rewrite drop1 /= -{}pa0 /horner; case: (p : seq R) lt_i_p.
 Qed.
-
 (**
 p に対する q の計算例（手でやる因数分解）：
 
@@ -720,10 +724,9 @@ p = q・(X - a)
   + a * ('X - a%:P).[a] = ('X - a%:P).[a] * a
  *)
 
-Goal (forall (p : {poly R}) (a : R), reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a)).
+Goal reflect (exists q : {poly R}, p = q * ('X - a%:P)) (root p a).
 Proof.
-  move=> p a.
-  apply: (iffP eqP) => [pa0 | q].
+  apply: (iffP eqP) => [pa0 | q'].
   
   (* <- ``p``の解が``a``なら、``p = q * (X - a)`` を満たす``q``は存在する。  *)
   Check exists q0 : {poly R}, p = q0 * ('X - a%:P).
@@ -785,7 +788,7 @@ Proof.
            
   (* -> ``p = q * (X - a)`` を満たす``q``は存在するなら、``p``の解は``a``である。 *)
   (* ****** *)
-  - move: q => [] x ->.         (* 前提のexistsは場合分けする。 *)
+  - move: q' => [] x ->.         (* 前提のexistsは場合分けする。 *)
     Check (x * ('X - a%:P)).[a] = 0.
     rewrite hornerM_comm.                 (* 多項式の可換性（前出） *)
     + Check x.[a] * ('X - a%:P).[a] = 0. (* 任意のp q について成り立つことを証明する。 *)
@@ -800,7 +803,9 @@ Proof.
       rewrite mulr0 mul0r.
       done.
 Qed.
+End t.
 
+Section u.
 (**
 ## 代数学の基本定理 max_poly_roots
 
@@ -812,7 +817,6 @@ Qed.
 Check @max_poly_roots
   : forall (R : idomainType) (p : {poly R}) (rs : seq R),
     p != 0 -> all (root p) rs -> uniq rs -> (size rs < size p)%N.
-
 
 (**
 poly.v に近いかたち
@@ -943,10 +947,14 @@ Proof.
       rewrite H2.
       done.
 Qed.
+End u.
 
 (**
 # 補足説明
 *)
+Section sample2.
+Variable R : ringType.
+Variable (a b c : R).
 
 (**
 ## 零多項式の係数はすべて零である。
@@ -976,9 +984,10 @@ Check Monoid.mulmA : forall (T : Type) (op : SemiGroup.law T), associative op.
 (**
 # 多項式の定義の間の相互変換
  *)
-Check neqa0 : a != 0.
-Check neq0_last_s : a != 0 -> last 1 [:: c; b; a] != 0.
-Print tstE.                                 (* 略 *)
+Check neqa0 : forall (R : ringType) (a : R), a != 0.
+Check neq0_last_s a b : a != 0 -> last 1 [:: c; b; a] != 0.
+Definition tstE' := tstE a b c.
+Print tstE'.                                (* 略 *)
 
 Print tstp1.                  (* = Polynomial (neq0_last_s neqa0) *)
 Print tstp2.                  (* = insubd (poly_nil R) [:: c; b; a] *)
@@ -997,35 +1006,37 @@ Check polyP : forall (R : semiRingType) (p q : {poly R}),
     nth 0 (\val p) =1 nth 0 (\val q) <-> p = q :> {poly R}.
 Check [eta @poly_inj R] : forall p q : {poly R}, p = q :> seq R -> p = q :> {poly R}.
 
-Goal tstp3 = tstp4 :> {poly R}.
+Goal tstp3 a b c = tstp4 a b c :> {poly R}.
 Proof.
   rewrite /tstp3 /tstp4.
-  Check Poly [:: c; b; a] = \poly_(i < 3) tstE i :> {poly R}.
+  Check Poly [:: c; b; a] = \poly_(i < 3) tstE' i :> {poly R}.
   apply/polyP => i.                         (* 係数毎 *)
   rewrite coefE.                            (* マルチルール *)
   rewrite polyseq_poly //=.                 (* mkseq にする *)
   by rewrite /= neqa0.
 Qed.
 
-Goal tstp1 = tstp2 :> {poly R}.
+Goal tstp1 a b c = tstp2 a b c :> {poly R}.
 Proof.
   rewrite /tstp1 /tstp2.
-  Check Polynomial (neq0_last_s neqa0) = insubd (poly_nil R) [:: c; b; a] :> {poly R}.
+  Check @neq0_last_s R a b c.
+  Check @neqa0 R a.
+  Check Polynomial (@neq0_last_s R a b c (@neqa0 R a)) = insubd (poly_nil R) [:: c; b; a] :> {poly R}.
   apply/polyP => i.         (* 係数毎。左辺には \val がついている。 *)
   rewrite /= val_insubd.    (* \val (insubd ...) を消す。 *)
   case: ifP => //=.
   by rewrite neqa0.
 Qed.
 
-Goal tstp1 = tstp3 :> {poly R}.
+Goal tstp1 a b c = tstp3 a b c :> {poly R}.
 Proof.
   rewrite /tstp1 /tstp3.
-  Check Polynomial (neq0_last_s neqa0) = Poly [:: c; b; a] :> {poly R}.
+  Check Polynomial (@neq0_last_s R a b c (@neqa0 R a)) = Poly [:: c; b; a] :> {poly R}.
   apply/polyP => i.                         (* 係数毎 *)
   by rewrite coefE.                         (* マルチルール *)
 Qed.
 
-Goal tstp3 = tstp6 :> {poly R}.
+Goal tstp3 a b c = tstp6 a b c :> {poly R}.
 Proof.
   rewrite /tstp3 /tstp6.
   Check Poly [:: c; b; a] = a%:P * 'X^2 + b%:P * 'X + c%:P :> {poly R}.
@@ -1040,7 +1051,7 @@ Qed.
 (**
 ## mulr (``*``)  と scale ``*:`` の間の相互変換を使う
  *)
-Goal tstp5 = tstp6 :> {poly R}.
+Goal tstp5 a b c = tstp6 a b c :> {poly R}.
 Proof.
   rewrite /tstp5 /tstp6.
   Check a *: 'X^2 + b *: 'X + c *: 'X^0 = a%:P * 'X^2 + b%:P * 'X + c%:P :> {poly R}.
@@ -1048,7 +1059,7 @@ Proof.
   Check mul_polyC : forall (R : ringType) (a : R) (p : {poly R}), a%:P * p = a *: p.
   rewrite -3!mul_polyC.
   
-  Check X0_1 : 'X^0 = 1.
+  Check X0_1 R : 'X^0 = 1.
   rewrite X0_1 mulr1.
   done.
 Qed.
@@ -1093,13 +1104,14 @@ Proof.
   done.  
 Qed.  
 
-Goal tstp3 = tstp4 :> {poly R}.
+Goal tstp3 a b c = tstp4 a b c :> {poly R}.
 Proof.
   rewrite /tstp3 /tstp4.
-  (* Goal *) Check Poly [:: c; b; a] = \poly_(i < 3) (tstE i) :> {poly R}.
+  (* Goal *) Check Poly [:: c; b; a] = \poly_(i < 3) (tstE' i) :> {poly R}.
   
   Check @PolyK R a [:: c; b; a] : last a [:: c; b; a] != 0 -> Poly [:: c; b; a] = [:: c; b; a] :> seq R.
-  Check @polyseq_poly R 3 tstE : tstE 3.-1 != 0 -> \poly_(i < 3) tstE i = mkseq [eta tstE] 3 :> seq R.
+  Check @polyseq_poly R 3 (tstE') : tstE' 3.-1 != 0 ->
+                                         \poly_(i < 3) tstE' i = mkseq [eta tstE'] 3 :> seq R.
 (**
 どちらも ``_ = _ :> seq R`` の補題なので、使えない。
  *)
@@ -1107,19 +1119,19 @@ Proof.
   Fail rewrite (@polyseq_poly R 3 tstE).
 
   apply: seq_poly.
-  (* Goal *) Check Poly [:: c; b; a] = \poly_(i < 3) (tstE i) :> seq R.
+  (* Goal *) Check Poly [:: c; b; a] = \poly_(i < 3) (tstE' i) :> seq R.
 (**
 ゴールの両辺を ``_ = _ :> seq R`` に変換できたので、使える。
 *)
   rewrite (@PolyK R a [:: c; b; a]).  
-  rewrite (@polyseq_poly R 3 tstE).
+  rewrite (@polyseq_poly R 3 tstE').
   
   - done.
   - by rewrite /= neqa0.
   - by rewrite /= neqa0.
 Qed.
 
-Goal tstp1 = tstp2 :> {poly R}.
+Goal tstp1 a b c = tstp2 a b c :> {poly R}.
 Proof.
   rewrite /tstp1 /tstp2.
   rewrite /=.                               (* なにも起きない。 *)
@@ -1129,7 +1141,7 @@ Proof.
   by rewrite neqa0.                         (* 前提矛盾 *)
 Qed.
 
-Goal tstp1 = tstp3 :> {poly R}.
+Goal tstp1 a b c = tstp3 a b c :> {poly R}.
 Proof.
   rewrite /tstp1 /tstp3.
   apply: seq_poly.
@@ -1138,7 +1150,7 @@ Proof.
   by rewrite neqa0.
 Qed.
 
-Goal tstp3 = tstp6 :> {poly R}.
+Goal tstp3 a b c = tstp6 a b c :> {poly R}.
   rewrite /tstp3 /tstp6.
   apply: seq_poly.
   rewrite /=.
