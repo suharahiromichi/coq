@@ -89,6 +89,96 @@ ctbDistrLatticeType
 Import Order.
 Import Order.Theory.
 
+(**
+Heyting Lattice の定義
+*)
+HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
+    hdiff  : T -> T -> T;
+    hcompl : T -> T;
+    hcomplE : forall x : T, hcompl x = hdiff x bottom
+  }.
+
+HB.structure Definition HeytingLattice d := {
+    T of hasHComplement d T & TBDistrLattice d T
+  }.
+
+Reserved Notation "A --> B" (at level 50, left associativity).
+Notation "x --> y" := (hcompl x y) : order_scope.
+
+
+Section Three.
+  Local Open Scope order_scope.
+  
+  Definition Three := 'I_3.
+
+  Definition t0 := @Ordinal 3 0 is_true_true.
+  Definition t1 := @Ordinal 3 1 is_true_true.
+  Definition t2 := @Ordinal 3 2 is_true_true.
+
+  Fact ord_display : unit. Proof. exact: tt. Qed.
+
+  Section PossiblyTrivial.
+    Variable (n : nat).
+    HB.instance Definition _ := [SubChoice_isSubOrder of 'I_n by <: with ord_display].
+
+    Lemma leEord : (le : rel 'I_n) = leq. Proof. by []. Qed.
+    Lemma ltEord : (lt : rel 'I_n) = (fun m n => m < n)%N. Proof. by []. Qed.
+  End PossiblyTrivial.
+
+  Section NonTrivial.
+    Variable (n' : nat).
+    Let n := n'.+1.                         (* n > 0 とする。 *)
+
+    HB.instance Definition _ := @hasBottom.Build
+                                  _ 'I_n
+                                  ord0
+                                  leq0n. (* le0x *)
+    Check @le0x : forall (disp : unit) (L : bLatticeType disp) (x : L), (\bot <= x)%O.
+    Check leq0n : forall x, ord0 <= x.
+
+    HB.instance Definition _ := @hasTop.Build
+                                  _ 'I_n
+                                  ord_max
+                                  (@leq_ord ord_max). (* lex1 *)
+    Check @lex1 : forall (disp : unit) (L : tLatticeType disp) (x : L), (x <= \top)%O.
+    Check @leq_ord ord_max : forall i : 'I_ord_max.+1, i <= ord_max.
+
+    Lemma botEord : (\bot = ord0 :> 'I_n)%O. Proof. by []. Qed.
+    Lemma topEord : (\top = ord_max :> 'I_n)%O. Proof. by []. Qed.
+
+    (* 含意 *)
+    (* https://en.wikipedia.org/wiki/Heyting_algebra *)
+    Definition himpl (a b : Three) : Three := if a <= b then \top else b.
+  
+    (* 補元 *)
+    (* https://en.wikipedia.org/wiki/Heyting_algebra *)
+    Definition hneg (a : Three) : Three := if a == \bot then \top else \bot.
+    
+    Lemma hnegE (a : Three) : hneg a = himpl a \bot.
+    Proof.
+      rewrite /himpl /hneg /top /bottom /=.
+      Check leqn0 : forall n : nat, (n <= 0)%N = (n == 0). (* これの書き換えができない。 *)
+      case: ifP.
+      - by move/eqP => ->.
+      - case/negbT/lt_total/orP => //=.
+        by rewrite leNgt => ->.
+    Qed.
+    
+    HB.instance Definition _ := @hasHComplement.Build
+                                  _ Three
+                                  himpl
+                                  hneg
+                                  hnegE.
+  End NonTrivial.
+End Three.
+
+(*
+使えない。なぜ？
+
+Check t0 : Three.
+Check t0 --> t0.
+*)
+
 (* order_scope は常用しないほうが良いようだ。 *)
 (* Open Scope order_scope. *)
 
@@ -140,6 +230,9 @@ Section Three.
   Definition t1 := @Ordinal 3 1 is_true_true.
   Definition t2 := @Ordinal 3 2 is_true_true.
 
+  Check t0 `&` t0 : OrdinalOrder.fintype_ordinal__canonical__Order_Lattice 3.
+  Check t0 `&` t0 : OrdinalOrder.fintype_ordinal__canonical__Order_Lattice 3.
+  
   Compute \bot == t0.                       (* true *)
   Compute \top == t2.                       (* true *)
   
