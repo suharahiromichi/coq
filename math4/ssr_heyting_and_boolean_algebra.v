@@ -116,36 +116,37 @@ Section Three.
   Definition t1 := @Ordinal 3 1 is_true_true.
   Definition t2 := @Ordinal 3 2 is_true_true.
 
-  Fact ord_display : unit. Proof. exact: tt. Qed.
+  Fact three_display : unit. Proof. exact: tt. Qed.
 
   Section PossiblyTrivial.
     Variable (n : nat).
-    HB.instance Definition _ := [SubChoice_isSubOrder of 'I_n by <: with ord_display].
+    HB.instance Definition _ := [SubChoice_isSubOrder of 'I_n by <: with three_display].
 
-    Lemma leEord : (le : rel 'I_n) = leq. Proof. by []. Qed.
-    Lemma ltEord : (lt : rel 'I_n) = (fun m n => m < n)%N. Proof. by []. Qed.
+    Lemma leEord : (le : rel Three) = leq. Proof. by []. Qed.
+    Lemma ltEord : (lt : rel Three) = (fun m n => m < n)%N. Proof. by []. Qed.
   End PossiblyTrivial.
 
   Section NonTrivial.
+(*
     Variable (n' : nat).
     Let n := n'.+1.                         (* n > 0 とする。 *)
-
+*)
     HB.instance Definition _ := @hasBottom.Build
-                                  _ 'I_n
+                                  _ Three   (* 'I_n *)
                                   ord0
                                   leq0n. (* le0x *)
     Check @le0x : forall (disp : unit) (L : bLatticeType disp) (x : L), (\bot <= x)%O.
     Check leq0n : forall x, ord0 <= x.
 
     HB.instance Definition _ := @hasTop.Build
-                                  _ 'I_n
+                                  _ Three   (* 'I_n *)
                                   ord_max
                                   (@leq_ord ord_max). (* lex1 *)
     Check @lex1 : forall (disp : unit) (L : tLatticeType disp) (x : L), (x <= \top)%O.
     Check @leq_ord ord_max : forall i : 'I_ord_max.+1, i <= ord_max.
 
-    Lemma botEord : (\bot = ord0 :> 'I_n)%O. Proof. by []. Qed.
-    Lemma topEord : (\top = ord_max :> 'I_n)%O. Proof. by []. Qed.
+    Lemma botEord : (\bot = ord0 :> Three)%O. Proof. by []. Qed.
+    Lemma topEord : (\top = ord_max :> Three)%O. Proof. by []. Qed.
 
     (* 含意 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
@@ -189,22 +190,29 @@ Section Test.
   Import Three.
   Local Open Scope order_scope.
 
-  Check Three.t0 : 'I_3.
-  Check Three.t0 : Three.
+  Check t0 : 'I_3.
+  Check t0 : Three.
 
-  Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
+  Check OrdinalOrder.ord_display.
+  Check latticeType OrdinalOrder.ord_display.
+
+  Check three_display.
+  Check latticeType three_display.
+  
+  Check Three : latticeType OrdinalOrder.ord_display.
+  Fail Check Three : latticeType three_display.
+  
   Set Printing All.
+  Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
   Check meet Three.t0 Three.t0 : Three.
   Check Three.t0 `&` Three.t0 : Three.
-  Check @meet OrdinalOrder.ord_display (OrdinalOrder.fintype_ordinal__canonical__Order_Lattice 3)
-    Three.t0 
-    Three.t0.
+  Fail Check @meet three_display (_ : latticeType three_display) t0 t0.
 
   Check @hdiff : forall (d : unit) (s : HeytingLattice.type d), s -> s -> s.
   Check @himpl : Three -> Three -> Three.
   
-  Fail Check @hdiff _ _ Three.t0 Three.t1.
-  Fail Compute hcompl Three.t0 == Three.t2.
+  Fail Check @hdiff _ _ t0 t1.
+  Fail Compute hcompl t0 == t2.
 
 End Test.
 
