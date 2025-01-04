@@ -93,9 +93,9 @@ Import Order.Theory.
 Heyting Lattice の定義
 *)
 HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
-    hdiff  : T -> T -> T;                   (* 名称間違い *)
+    himpl  : T -> T -> T;                   (* 名称間違い *)
     hcompl : T -> T;
-    hcomplE : forall x : T, hcompl x = hdiff x bottom
+    hcomplE : forall x : T, hcompl x = himpl x bottom
   }.
 
 HB.structure Definition HeytingLattice d := {
@@ -103,7 +103,7 @@ HB.structure Definition HeytingLattice d := {
   }.
 
 Reserved Notation "A --> B" (at level 50, left associativity).
-Notation "x --> y" := (hdiff x y) : order_scope.
+Notation "x --> y" := (himpl x y) : order_scope.
 
 
 Module Three.
@@ -192,15 +192,15 @@ Section Three.
 
     (* 含意 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
-    Definition himpl (a b : Three) : Three := if a <= b then \top else b.
+    Definition three_impl (a b : Three) : Three := if a <= b then \top else b.
   
     (* 補元 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
-    Definition hneg (a : Three) : Three := if a == \bot then \top else \bot.
+    Definition three_neg (a : Three) : Three := if a == \bot then \top else \bot.
     
-    Lemma hnegE (a : Three) : hneg a = himpl a \bot.
+    Lemma three_negE (a : Three) : three_neg a = three_impl a \bot.
     Proof.
-      rewrite /himpl /hneg /top /bottom /=.
+      rewrite /three_impl /three_neg /top /bottom /=.
       Check leqn0 : forall n : nat, (n <= 0)%N = (n == 0). (* これの書き換えができない。 *)
       case: ifP.
       - by move/eqP => ->.
@@ -210,9 +210,9 @@ Section Three.
     
     HB.instance Definition _ := @hasHComplement.Build
                                   _ Three
-                                  himpl     (* hdiff *)
-                                  hneg      (* hcompl *)
-                                  hnegE.    (* hcomplE *)
+                                  three_impl (* himpl *)
+                                  three_neg  (* hcompl *)
+                                  three_negE. (* hcomplE *)
   End NonTrivial.
 End Three.
 
@@ -250,23 +250,23 @@ Section Test.
   Check Three.t0 `&` Three.t0 : Three.
   Fail Check @meet three_display (_ : latticeType three_display) t0 t0.
 
-  Check @hdiff : forall (d : unit) (s : HeytingLattice.type d), s -> s -> s.
-  Check @himpl : Three -> Three -> Three.
+  Check @himpl : forall (d : unit) (s : HeytingLattice.type d), s -> s -> s.
+  Check @three_impl : Three -> Three -> Three.
   
-  Check himpl t0 t1.
-  Check hneg t0.
+  Check three_impl t0 t1.
+  Check three_neg t0.
   
-  Check @hdiff three_display Three t0 t2.
+  Check @himpl three_display Three t0 t2.
   Check @hcompl three_display Three t1.
 
-  Compute himpl t0 t1 == t2.                (* true *)
-  Compute hneg t0 == t2.                    (* true *)
+  Compute three_impl t0 t1 == t2.           (* true *)
+  Compute three_neg t0 == t2.               (* true *)
   
-  Compute @hdiff three_display Three t0 t2 == t2. (* true *)
+  Compute @himpl three_display Three t0 t2 == t2. (* true *)
   Compute @hcompl three_display Three t0 == t2.   (* true *)
 
   (* 引数を略せないが、定義はできている。 *)
-  Fail Check hdiff t0 t2 == t2. (* true *)
+  Fail Check himpl t0 t2 == t2. (* true *)
   Fail Check hcompl t0 == t2.   (* true *)
 
 End Test.
