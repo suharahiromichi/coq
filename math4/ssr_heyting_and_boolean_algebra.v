@@ -102,9 +102,17 @@ HB.structure Definition HeytingLattice d := {
     T of hasHComplement d T & TBDistrLattice d T
   }.
 
+Arguments himpl {d s} x y.
+Arguments hcompl {d s} x.
+
 Reserved Notation "A --> B" (at level 50, left associativity).
 Notation "x --> y" := (himpl x y) : order_scope.
 
+Reserved Notation "A --> B" (at level 50, left associativity).
+Notation "x --> y" := (himpl x y) : order_scope.
+
+Reserved Notation "~~~ A" (at level 35, right associativity).
+Notation "~~~ x" := (hcompl x) : order_scope.
 
 Module Three.
 Section Three.
@@ -264,11 +272,17 @@ Section Test.
   
   Compute @himpl three_display Three t0 t2 == t2. (* true *)
   Compute @hcompl three_display Three t0 == t2.   (* true *)
+  
+  (* 引数がうまく略せないが、定義はできている。 *)
+  Check himpl (t0 : Three) t2 == t2. (* true *)
+  Check hcompl (t0 : Three) == t2.   (* true *)
+  
+  Compute himpl (t0 : Three) t2 == t2. (* true *)
+  Compute hcompl (t0 : Three) == t2.   (* true *)
 
-  (* 引数を略せないが、定義はできている。 *)
-  Fail Check himpl t0 t2 == t2. (* true *)
-  Fail Check hcompl t0 == t2.   (* true *)
-
+  Compute (t0 : Three) --> t2 == t2. (* true *)
+  Compute ~~~ (t0 : Three) == t2.   (* true *)
+  
 End Test.
 
 
