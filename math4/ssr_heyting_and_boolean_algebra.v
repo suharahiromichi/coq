@@ -18,6 +18,12 @@ P \ Q == P /\ ~Q
 T \ Q == ~Q
 *)
 
+(**
+これから、
+tbDistrLatticeType を継承した heytingType を定義する。
+このとき、compl の定義が、order.v のと別になる。
+*)
+
 From elpi Require Import elpi.
 From HB Require Import structures.
 From mathcomp Require Import all_ssreflect.
@@ -62,8 +68,8 @@ latticeType
 |\______________________________________
 |                       \               \
 |                       tLatticeType    bLatticeType
-|                       \               |
-|                        ~~~~~~~~~~~~~~\|
+|                       |               |
+|                       \~~~~~~~~~~~~~~\|
 |                                       tbLatticeType
 |                                       |
 |                                      (tbDistrLatticeType)
@@ -167,7 +173,39 @@ Section Three.
   Check leq_subr : forall m n : nat, (n - m <= n)%N.
   Check ltn_ord: forall [n : nat] (i : 'I_n), (i < n)%N.
   
+  (* subo t2 - x = ~ x になるようにする。 *)
+  (* subo t2 - t2 = t0 *)
+  (* subo t2 - t0 = t2 *)
+  Definition subong (x y : Three) : Three :=
+    match (\val x), (\val y) with
+    | 0, 0 => t0
+    | 0, 1 => t2
+    | 0, 2 => t2
+    | 1, 0 => t0
+    | 1, 1 => t0
+    | 1, 2 => t0
+    | 2, 0 => t0
+    | 2, 1 => t0                            (* XXX *)
+    | 2, 2 => t0
+    | _, _ => t0
+    end.
+
   Definition subo (x y : Three) : Three :=
+    match (\val x), (\val y) with
+    | 0, 0 => t0
+    | 0, 1 => t0
+    | 0, 2 => t0
+    | 1, 0 => t1
+    | 1, 1 => t0
+    | 1, 2 => t0
+    | 2, 0 => t2
+    | 2, 1 => t0                            (* XXX *)
+    | 2, 2 => t0
+    | _, _ => t0
+    end.
+
+
+  Definition subo_diff (x y : Three) : Three :=
     match (x - y) with
     | 0 => t0
     | 1 => t1
@@ -183,21 +221,24 @@ Section Three.
   Proof.
   Admitted.
   
+  (* diffKIを満たす。 *)
   Lemma suboKI (x y : Three) : y `&` (subo x y) = \bot.
   Proof.
     apply/eqP.
     case: (em y) => [| []]; case: (em x) => [| []] => -> -> //=.
-    Check t1 `&` subo t2 t1 == \bot.        (* 左辺は t1 *)
+    Compute t1 `&` subo t2 t1 == t0.
   Admitted.
 
+  (* joinIB を満たす。 *)
   Lemma joinoIB (x y : Three) : (x `&` y) `|` (subo x y) = x.
   Proof.
     apply/eqP.
     case: (em y) => [| []]; case: (em x) => [| []] => -> -> //=.
-    Check (t2 `&` t1) `|` subo t2 t1 == t2.   (* 左辺は (t2 & t1) | t1 = t1 *)
+    Compute (t2 `&` t1) `|` subo t2 t1 == t2.
   Admitted.
-
   (* t2 - t1 の結果の見直しでは、修正できない。 *)
+  (* それでも、subo 全体を見直すと、成立するだろうか？ *)
+  (* ハイティング代数は、cbtdistri か？ *)
 
 End Three.
 
@@ -364,9 +405,11 @@ Module three.
   Definition bot := t0.
 
   (* 含意 *)
+  (* https://en.wikipedia.org/wiki/Heyting_algebra *)
   Definition himp (a b : Three) := if a <= b then top else b.
   
   (* 補元 *)
+  (* https://en.wikipedia.org/wiki/Heyting_algebra *)
   Definition compl (a : Three) := if a == bot then top else bot.
   
   (* テスト *)
