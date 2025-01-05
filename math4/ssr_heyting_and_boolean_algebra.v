@@ -93,10 +93,17 @@ Import Order.Theory.
 Heyting Lattice の定義
 *)
 HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
-    himpl  : T -> T -> T;                   (* 名称間違い *)
+    himpl  : T -> T -> T;
     hcompl : T -> T;
+(*  himplE : forall a b c : T, (a <= (himpl b c))%O == (meet a b <= c)%O; *)
     hcomplE : forall x : T, hcompl x = himpl x bottom
   }.
+
+(*
+この条件を追加する。
+ /-- `· ⊓ b` の右随伴 `b ⇨ ·` が存在する -/
+  le_himp_iff (a b c : α) : a ≤ b ⇨ c ↔ a ⊓ b ≤ c
+*)
 
 HB.structure Definition HeytingLattice d := {
     T of hasHComplement d T & TBDistrLattice d T
@@ -137,9 +144,9 @@ Section Three.
 *)
   HB.instance Definition _ := Choice.copy Three 'I_3. (* これが必要！！ *)
 
-  Definition three_leq (x y : Three) := x <= y.
+  Definition three_leq (x y : Three) := (x <= y).
   
-  Definition three_ltn (x y : Three) := x < y.
+  Definition three_ltn (x y : Three) := (x < y).
 
   Definition three_minn (x y : Three) := if (x < y)%N then x else y.
 
@@ -200,12 +207,46 @@ Section Three.
 
     (* 含意 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
-    Definition three_impl (a b : Three) : Three := if a <= b then \top else b.
+    Definition three_impl (a b : Three) : Three := if (a <= b) then \top else b.
   
     (* 補元 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
-    Definition three_neg (a : Three) : Three := if a == \bot then \top else \bot.
+    Definition three_neg (a : Three) : Three := if (a == \bot) then \top else \bot.
     
+    (* 便利な補題 *)
+    Lemma sup_top (a : Three) : three_maxn top a = top.
+    Proof.
+    Admitted.
+
+    Lemma sup_bot (a : Three) : three_maxn bottom a = a.
+    Proof.
+    Admitted.
+    
+    Lemma inf_top (a : Three) : three_minn top a = a.
+    Proof.
+    Admitted.
+    
+    Lemma inf_bot (a : Three) : three_minn bottom a = bottom.
+    Proof.
+    rewrite /three_minn.
+    Admitted.
+    
+    (* himplE *)
+    (* 含意の条件 *)
+(*
+    Lemma three_himplE (b c : Three) : exists (a : Three),
+        (a <= three_impl b c)%N == (three_minn a b <= c)%N.
+    Proof.
+      rewrite /three_impl.
+      case H : (b <= c)%N.
+      - exists top.
+        by rewrite inf_top.
+      - exists bottom.
+        by rewrite inf_bot.
+    Qed.
+*)    
+    (* hcomplE *)
+    (* 補元の条件 *)
     Lemma three_negE (a : Three) : three_neg a = three_impl a \bot.
     Proof.
       rewrite /three_impl /three_neg /top /bottom /=.
@@ -216,10 +257,12 @@ Section Three.
         by rewrite leNgt => ->.
     Qed.
     
+    
     HB.instance Definition _ := @hasHComplement.Build
                                   _ Three
                                   three_impl (* himpl *)
                                   three_neg  (* hcompl *)
+(*                                three_himplE (* himplE *) *)
                                   three_negE. (* hcomplE *)
   End NonTrivial.
 End Three.
@@ -252,7 +295,7 @@ Section Test.
   Check Three : latticeType OrdinalOrder.ord_display.
   Check Three : latticeType three_display.  (* choice.copy で通る *)
   
-  Set Printing All.
+  (* Set Printing All. *)
   Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
   Check meet Three.t0 Three.t0 : Three.
   Check Three.t0 `&` Three.t0 : Three.
@@ -695,7 +738,7 @@ Module three.
     by case.
   Qed.
   
-  (* 含意の条件 *)  
+  (* 含意の条件 *)
   Goal forall (b c : Three), exists a, (a <= himp b c) == (inf a b <= c).
   Proof.
     move=> b c.
