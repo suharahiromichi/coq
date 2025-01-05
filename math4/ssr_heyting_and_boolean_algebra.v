@@ -148,20 +148,28 @@ Section Three.
   Definition three_leq (x y : Three) := (x <= y)%N.
   
   Definition three_ltn (x y : Three) := (x < y)%N.
-
+  
+  (* minn にすると、Three -> Three -> nat になる。 *)
+  (* これは、Three -> Three -> Three でなければならない。 *)
   Definition three_minn (x y : Three) := if (x < y)%N then x else y.
-
+  
   Definition three_maxn (x y : Three) := if (x < y)%N then y else x.
   
   Lemma ltn_def x y : (x < y)%N = (y != x)%N && (x <= y)%N.
   Proof. by rewrite ltn_neqAle eq_sym. Qed.
   
   Lemma three_meet_def (x y : Three) : three_minn x y = if (x < y)%N then x else y.
-  Proof. by case: x y => [] []. Qed.  
+  Proof.
+    (* by case: x y => [] []. *)
+    done.
+  Qed.
   
   Lemma three_join_def (x y : Three) : three_maxn x y = if (x < y)%N then y else x.
-  Proof. by case: x y => [] []. Qed.  
-
+  Proof.
+    (* by case: x y => [] []. Qed.   *)
+    done.
+  Qed.
+  
   Lemma three_anti : antisymmetric three_leq.
   Proof.
     rewrite /antisymmetric.
@@ -239,7 +247,9 @@ Section Three.
     Lemma infC (a b : Three) :  three_minn a b = three_minn b a :> nat.
     Proof.
       rewrite /three_minn.
-      case: ltngtP => //=.
+      by case: ltngtP => //=.
+    Qed.
+(*
       move/esym => H.
       case: a H.
       case: b.
@@ -247,6 +257,7 @@ Section Three.
       Set Printing All.
     Admitted.
     Unset Printing All.
+*)
     
     Lemma inf_bot (a : Three) : three_minn a t0 = t0.
     Proof.
