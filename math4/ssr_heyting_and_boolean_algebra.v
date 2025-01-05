@@ -225,14 +225,54 @@ Section Three.
     Proof.
     Admitted.
     
-    Lemma inf_top (a : Three) : three_minn top a = a.
+    Lemma inf_top (a : Three) : three_minn t2 a = a.
     Proof.
-    Admitted.
+      rewrite /three_minn.
+      case: a => i H.
+      rewrite /t2 /=.
+      case: ifP.
+      - lia.
+      - move/negbT.
+        by rewrite -leqNgt -ltnS.
+    Qed.
     
-    Lemma inf_bot (a : Three) : three_minn bottom a = bottom.
+    Lemma infC (a b : Three) :  three_minn a b = three_minn b a :> nat.
     Proof.
-    rewrite /three_minn.
+      rewrite /three_minn.
+      case: ltngtP => //=.
+      move/esym => H.
+      case: a H.
+      case: b.
+      move=> i Hi j Hj H.
+      Set Printing All.
     Admitted.
+    Unset Printing All.
+    
+    Lemma inf_bot (a : Three) : three_minn a t0 = t0.
+    Proof.
+      rewrite /three_minn.
+      rewrite ltnNge.
+      by rewrite leq0n.
+    Qed.
+
+(*
+    Lemma inf_bot (a : Three) : three_minn t0 a = t0.
+    Proof.
+      Check leqn0 : forall n : nat, (n <= 0)%N = (n == 0).
+      rewrite /three_minn.
+      case H : (a == t0).
+      - move/eqP in H.
+        by rewrite H.
+      - case: ltnP.
+        + by move/lt0n_neq0.
+        + rewrite leq_eqVlt => /orP [].
+          * move/eqP.
+            simpl => H'.
+            move/eqP in H.
+            case: H'.
+          * done.
+    Admitted.
+*)
     
     (* himplE *)
     (* 含意の条件 *)
@@ -241,10 +281,10 @@ Section Three.
     Proof.
       rewrite /three_impl.
       case H : (b <= c)%N.
-      - exists top.
+      - exists t2.
         by rewrite inf_top.
-      - exists bottom.
-        by rewrite inf_bot.
+      - exists t0.
+        by rewrite infC inf_bot.
     Qed.
     
     (* hcomplE *)
