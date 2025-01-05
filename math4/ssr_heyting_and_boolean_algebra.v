@@ -95,7 +95,7 @@ Heyting Lattice の定義
 HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
     himpl  : T -> T -> T;
     hcompl : T -> T;
-(*  himplE : forall a b c : T, (a <= (himpl b c))%O == (meet a b <= c)%O; *)
+    himplE : forall (b c : T), exists (a : T), (a <= (himpl b c))%O == (meet a b <= c)%O;
     hcomplE : forall x : T, hcompl x = himpl x bottom
   }.
 
@@ -132,6 +132,8 @@ Section Three.
   Definition t2 := @Ordinal 3 2 is_true_true.
 
   Fact three_display : unit. Proof. exact: tt. Qed.
+
+  HB.instance Definition _ := Choice.copy Three 'I_3. (* これが必要！！ *)
 (*
   Section PossiblyTrivial.
     Variable (n : nat).
@@ -142,23 +144,22 @@ Section Three.
     Lemma ltEord : (lt : rel Three) = (fun m n => m < n)%N. Proof. by []. Qed.
   End PossiblyTrivial.
 *)
-  HB.instance Definition _ := Choice.copy Three 'I_3. (* これが必要！！ *)
 
-  Definition three_leq (x y : Three) := (x <= y).
+  Definition three_leq (x y : Three) := (x <= y)%N.
   
-  Definition three_ltn (x y : Three) := (x < y).
+  Definition three_ltn (x y : Three) := (x < y)%N.
 
   Definition three_minn (x y : Three) := if (x < y)%N then x else y.
 
   Definition three_maxn (x y : Three) := if (x < y)%N then y else x.
   
-  Lemma ltn_def x y : (x < y)%N = (y != x) && (x <= y)%N.
+  Lemma ltn_def x y : (x < y)%N = (y != x)%N && (x <= y)%N.
   Proof. by rewrite ltn_neqAle eq_sym. Qed.
   
-  Lemma three_meet_def x y : three_minn x y = if (x < y)%N then x else y.
+  Lemma three_meet_def (x y : Three) : three_minn x y = if (x < y)%N then x else y.
   Proof. by case: x y => [] []. Qed.  
   
-  Lemma three_join_def x y : three_maxn x y = if (x < y)%N then y else x.
+  Lemma three_join_def (x y : Three) : three_maxn x y = if (x < y)%N then y else x.
   Proof. by case: x y => [] []. Qed.  
 
   Lemma three_anti : antisymmetric three_leq.
@@ -189,29 +190,31 @@ Section Three.
     Let n := n'.+1.                         (* n > 0 とする。 *)
 *)
     HB.instance Definition _ := @hasBottom.Build
-                                  _ Three   (* 'I_n *)
-                                  ord0
+                                  three_display
+                                  Three     (* 'I_n *)
+                                  t0        (* ord0 *)
                                   leq0n. (* le0x *)
     Check @le0x : forall (disp : unit) (L : bLatticeType disp) (x : L), (\bot <= x)%O.
     Check leq0n : forall x, ord0 <= x.
 
     HB.instance Definition _ := @hasTop.Build
-                                  _ Three   (* 'I_n *)
-                                  ord_max
-                                  (@leq_ord ord_max). (* lex1 *)
+                                  three_display
+                                  Three     (* 'I_n *)
+                                  t2        (* ord_max *)
+                                  (@leq_ord t2). (* (@leq_ord ord_max). (* lex1 *) *)
     Check @lex1 : forall (disp : unit) (L : tLatticeType disp) (x : L), (x <= \top)%O.
     Check @leq_ord ord_max : forall i : 'I_ord_max.+1, i <= ord_max.
 
-    Lemma botEord : (\bot = ord0 :> Three)%O. Proof. by []. Qed.
-    Lemma topEord : (\top = ord_max :> Three)%O. Proof. by []. Qed.
+    Lemma botEord : (\bot = t0 :> Three)%O. Proof. by []. Qed. (* ord0 *)
+    Lemma topEord : (\top = t2 :> Three)%O. Proof. by []. Qed. (* ord_max *)
 
     (* 含意 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
-    Definition three_impl (a b : Three) : Three := if (a <= b) then \top else b.
+    Definition three_impl (a b : Three) : Three := if (a <= b)%N then t2 else b.
   
     (* 補元 *)
     (* https://en.wikipedia.org/wiki/Heyting_algebra *)
-    Definition three_neg (a : Three) : Three := if (a == \bot) then \top else \bot.
+    Definition three_neg (a : Three) : Three := if (a == t0)%N then t2 else t0.
     
     (* 便利な補題 *)
     Lemma sup_top (a : Three) : three_maxn top a = top.
@@ -233,7 +236,6 @@ Section Three.
     
     (* himplE *)
     (* 含意の条件 *)
-(*
     Lemma three_himplE (b c : Three) : exists (a : Three),
         (a <= three_impl b c)%N == (three_minn a b <= c)%N.
     Proof.
@@ -244,25 +246,28 @@ Section Three.
       - exists bottom.
         by rewrite inf_bot.
     Qed.
-*)    
+    
     (* hcomplE *)
     (* 補元の条件 *)
     Lemma three_negE (a : Three) : three_neg a = three_impl a \bot.
     Proof.
+      rewrite /three_impl /three_neg /=.
+      Check leqn0 : forall n : nat, (n <= 0)%N = (n == 0).
+      by rewrite leqn0.
+(*
       rewrite /three_impl /three_neg /top /bottom /=.
-      Check leqn0 : forall n : nat, (n <= 0)%N = (n == 0). (* これの書き換えができない。 *)
       case: ifP.
       - by move/eqP => ->.
       - case/negbT/lt_total/orP => //=.
         by rewrite leNgt => ->.
+*)
     Qed.
-    
     
     HB.instance Definition _ := @hasHComplement.Build
                                   _ Three
                                   three_impl (* himpl *)
                                   three_neg  (* hcompl *)
-(*                                three_himplE (* himplE *) *)
+                                  three_himplE (* himplE *)
                                   three_negE. (* hcomplE *)
   End NonTrivial.
 End Three.
@@ -282,6 +287,20 @@ Section Test.
 
   Import Three.
   Local Open Scope order_scope.
+  
+  (* Three の世界 *)
+  Check Three : Type.
+  Check t0 : Three.
+  Check (t0 <= t2)%N.
+  Check (t0 < t2)%N.
+
+  (* Heyting Algebra の世界 *)
+  (* Set Printing All. *)
+  Check HeytingLattice three_display Three : Type.
+  Check (t0 <= t2)%O.
+  Check @le three_display Three.            (* <=%O は使えない。 *)
+  Check @le three_display Three t0 t2.
+  Check (t0 < t2)%O.
 
   Check t0 : 'I_3.
   Check t0 : Three.
@@ -289,7 +308,7 @@ Section Test.
   Check OrdinalOrder.ord_display.
   Check latticeType OrdinalOrder.ord_display.
 
-  Check three_display.
+  Check three_display : unit.
   Check latticeType three_display.
   
   Check Three : latticeType OrdinalOrder.ord_display.
@@ -739,7 +758,7 @@ Module three.
   Qed.
   
   (* 含意の条件 *)
-  Goal forall (b c : Three), exists a, (a <= himp b c) == (inf a b <= c).
+  Goal forall (b c : Three), exists (a : Three), (a <= himp b c) == (inf a b <= c).
   Proof.
     move=> b c.
     rewrite /himp /compl.
