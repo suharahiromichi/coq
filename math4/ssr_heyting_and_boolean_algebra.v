@@ -3,7 +3,7 @@ Distr になっているか確認する。distr を継承できているか。
 ならば、補元の一意を証明する。
 
 Check Three : tbDistrLatticeType three_display.  (* choice.copy で通る *)  
-Check Three : heytingLatticeType three_display. (* #[short(type="heytingLatticeType")] で通る。 *)
+Check Three : heytingAlgebraType three_display. (* #[short(type="heytingAlgebraType")] で通る。 *)
 
  *)
 
@@ -110,7 +110,7 @@ HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
     hcomplE : forall x : T, hcompl x = himpl x bottom
   }.
 
-#[short(type="heytingLatticeType")]
+#[short(type="heytingAlgebraType")]
 HB.structure Definition HeytingLattice d := {
     T of hasHComplement d T & TBDistrLattice d T
   }.
@@ -363,16 +363,16 @@ Section Test.
   Check latticeType three_display.
   
   Check tbDistrLatticeType three_display : Type.
-  Check heytingLatticeType three_display : Type. (* #[short(type=heytingLatticeType")] の効果 *)
+  Check heytingAlgebraType three_display : Type. (* #[short(type=heytingAlgebraType")] の効果 *)
 
   Check 'I_3 : latticeType OrdinalOrder.ord_display.
-  Fail Check 'I_3 : heytingLatticeType three_display.
+  Fail Check 'I_3 : heytingAlgebraType three_display.
   
   Check Three : latticeType OrdinalOrder.ord_display.
   Check Three : latticeType three_display.  (* choice.copy で通る *)
   Check Three : distrLatticeType three_display.  (* choice.copy で通る *)  
   Check Three : tbDistrLatticeType three_display.  (* choice.copy で通る *)  
-  Check Three : heytingLatticeType three_display. (* #[short(type=heytingLatticeType")] の効果 *)
+  Check Three : heytingAlgebraType three_display. (* #[short(type=heytingAlgebraType")] の効果 *)
   
   (* Set Printing All. *)
   Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
@@ -431,7 +431,7 @@ Section Test.
   Qed.
 End Test.
 
-HB.about heytingLatticeType.
+HB.about heytingAlgebraType.
 
 (* ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！ *)
 (* ここで一応完成した！！！ *)
