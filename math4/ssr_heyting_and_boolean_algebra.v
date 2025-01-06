@@ -3,13 +3,8 @@ Distr になっているか確認する。distr を継承できているか。
 ならば、補元の一意を証明する。
 
 Check Three : tbDistrLatticeType three_display.  (* choice.copy で通る *)  
+Check Three : heytingLatticeType three_display. (* #[short(type="heytingLatticeType")] で通る。 *)
 
-しかし
-
-Check HeytingLattice three_display : Type -> Type.
-Fail Check Three : HeytingLattice three_display.  (* XXXXXXXXXXXXX *)
-
-なので、まだなにか足りていない感じがする！！！
  *)
 
 (**
@@ -106,6 +101,7 @@ Import Order.Theory.
 (**
 Heyting Lattice の定義
 *)
+
 #[key="T"]
 HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
     himpl  : T -> T -> T;
@@ -368,6 +364,10 @@ Section Test.
   
   Check tbDistrLatticeType three_display : Type.
   Check heytingLatticeType three_display : Type. (* #[short(type=heytingLatticeType")] の効果 *)
+
+  Check 'I_3 : latticeType OrdinalOrder.ord_display.
+  Fail Check 'I_3 : heytingLatticeType three_display.
+  
   Check Three : latticeType OrdinalOrder.ord_display.
   Check Three : latticeType three_display.  (* choice.copy で通る *)
   Check Three : distrLatticeType three_display.  (* choice.copy で通る *)  
@@ -411,9 +411,25 @@ Section Test.
 
   Compute (t0 : Three) --> t2 == t2. (* true *)
   Compute ~~~ (t0 : Three) == t2.   (* true *)
+  Compute ~~~ (t1 : Three) == t0.   (* true *)
+  Compute ~~~ (t2 : Three) == t0.   (* true *)
+
+  (* bool でないことの判例 *)
+  Compute t0 `|` ~~~ (t0 : Three) == t2.    (* true *)
+  Compute t1 `|` ~~~ (t1 : Three) == t2.    (* false !!! *)
+  Compute t2 `|` ~~~ (t2 : Three) == t2.    (* true *)
+
+  Compute t0 `&` ~~~ (t0 : Three) == t0.    (* true *)
+  Compute t1 `&` ~~~ (t1 : Three) == t0.    (* true *)
+  Compute t2 `&` ~~~ (t2 : Three) == t0.    (* true *)
 
 End Test.
 
+HB.about heytingLatticeType.
+
+(* ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！ *)
+(* ここで一応完成した！！！ *)
+(* ！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！ *)
 
 (* order_scope は常用しないほうが良いようだ。 *)
 (* Open Scope order_scope. *)
