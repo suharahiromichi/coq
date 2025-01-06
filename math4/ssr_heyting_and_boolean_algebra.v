@@ -423,6 +423,12 @@ Section Test.
   Compute t1 `&` ~~~ (t1 : Three) == t0.    (* true *)
   Compute t2 `&` ~~~ (t2 : Three) == t0.    (* true *)
 
+  (* 補元の不在の証明、ブール束でないことの証明 *)
+  (* 1 ⊔ 1ᶜ ≠ ⊤ *)
+  Goal exists (x : Three), x `|` ~~~ x != t2.
+  Proof.
+    by exists t1.
+  Qed.
 End Test.
 
 HB.about heytingLatticeType.
