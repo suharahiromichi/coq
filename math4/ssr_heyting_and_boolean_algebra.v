@@ -1,4 +1,18 @@
 (**
+Distr になっているか確認する。distr を継承できているか。
+ならば、補元の一意を証明する。
+
+Check Three : tbDistrLatticeType three_display.  (* choice.copy で通る *)  
+
+しかし
+
+Check HeytingLattice three_display : Type -> Type.
+Fail Check Three : HeytingLattice three_display.  (* XXXXXXXXXXXXX *)
+
+なので、まだなにか足りていない感じがする！！！
+ *)
+
+(**
 lean-by-example/LeanByExample/Tutorial/Exercise/HeytingAndBooleanAlgebra.lean
 
 Threeの場合の sub を定義する。
@@ -92,6 +106,7 @@ Import Order.Theory.
 (**
 Heyting Lattice の定義
 *)
+#[key="T"]
 HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
     himpl  : T -> T -> T;
     hcompl : T -> T;
@@ -99,21 +114,10 @@ HB.mixin Record hasHComplement d (T : Type) of TBDistrLattice d T := {
     hcomplE : forall x : T, hcompl x = himpl x bottom
   }.
 
-(*
-この条件を追加する。
- /-- `· ⊓ b` の右随伴 `b ⇨ ·` が存在する -/
-  le_himp_iff (a b c : α) : a ≤ b ⇨ c ↔ a ⊓ b ≤ c
-*)
-
+#[short(type="heytingLatticeType")]
 HB.structure Definition HeytingLattice d := {
     T of hasHComplement d T & TBDistrLattice d T
   }.
-
-Arguments himpl {d s} x y.
-Arguments hcompl {d s} x.
-
-Reserved Notation "A --> B" (at level 50, left associativity).
-Notation "x --> y" := (himpl x y) : order_scope.
 
 Reserved Notation "A --> B" (at level 50, left associativity).
 Notation "x --> y" := (himpl x y) : order_scope.
@@ -362,8 +366,13 @@ Section Test.
   Check three_display : unit.
   Check latticeType three_display.
   
+  Check tbDistrLatticeType three_display : Type.
+  Check heytingLatticeType three_display : Type. (* #[short(type=heytingLatticeType")] の効果 *)
   Check Three : latticeType OrdinalOrder.ord_display.
   Check Three : latticeType three_display.  (* choice.copy で通る *)
+  Check Three : distrLatticeType three_display.  (* choice.copy で通る *)  
+  Check Three : tbDistrLatticeType three_display.  (* choice.copy で通る *)  
+  Check Three : heytingLatticeType three_display. (* #[short(type=heytingLatticeType")] の効果 *)
   
   (* Set Printing All. *)
   Check @meet : forall (d : unit) (s : latticeType d), s -> s -> s.
@@ -386,6 +395,13 @@ Section Test.
   Compute @himpl three_display Three t0 t2 == t2. (* true *)
   Compute @hcompl three_display Three t0 == t2.   (* true *)
   
+  Check top : Three.
+  Check \top : Three.
+  Check \top --> \bot.
+  Check ~~~ \top.
+  
+  Compute t0 `&` t1 == t0.                  (* true *)
+  Compute t0 `|` t1 == t1.                  (* true *)
   (* 引数がうまく略せないが、定義はできている。 *)
   Check himpl (t0 : Three) t2 == t2. (* true *)
   Check hcompl (t0 : Three) == t2.   (* true *)
@@ -395,7 +411,7 @@ Section Test.
 
   Compute (t0 : Three) --> t2 == t2. (* true *)
   Compute ~~~ (t0 : Three) == t2.   (* true *)
-  
+
 End Test.
 
 
