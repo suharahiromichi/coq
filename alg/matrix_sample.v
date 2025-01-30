@@ -10,6 +10,36 @@ Unset Printing Implicit Defensive.
 
 Open Scope ring_scope.
 
+(**
+概要
+- マトリクス型の表記（基本）
+- マトリクス型の作り方
+- 重要な補題
+  - mxE
+  - matrixP
+  - eq_mx
+- マトリクス型の応用
+  - 表記
+  - 補題
+- 行列の構造
+  - 関数
+    - 定数行列
+    - 転置行列
+  - 補題
+    - 転置する前と後
+- 列（行）の入れ替え、列（行）の取り出し
+  - 関数
+  - 補題
+- block matrix ブロック行列 区分行列
+- submatrix 部分行列 小行列
+  - 関数
+  - 補題
+- square matrix 正方行列、diagonal matrix 対角行列
+  - 関数
+  - 補題
+- おまけ - 0行、0列とはなにか  
+*)
+
 Section MatrixDef.
 
 Variable R : Type.
@@ -113,12 +143,11 @@ Check mxE : forall R m n (k : unit) (F : 'I_m -> 'I_n -> R),
 (**
 ## matrixP.
 
-行列の``=``を、関数
+行列の``=``を、関数の``=``にする。
  *)
 Check matrixP : forall R m n (A B : 'M_(m, n)),
     A =2 B <-> A = B.                       (* 左は、fun_of_matrix のコアーション *)
 (* 右はマトリクス型どうし *)
-Goal 
 
 (**
 ## eq_mx
@@ -150,7 +179,8 @@ Locate "\matrix[ k ]_ ( i , j ) E". (* := (matrix_of_fun k          (fun i j => 
 Locate "\col_ i E".                 (* := (matrix_of_fun matrix_key (fun i _ => E)) *)
 Locate "\row_ i E".                 (* := (matrix_of_fun matrix_key (fun _ j => E)) *)
 
-(* ``\matrix_i E`` のEは 行ベクトルを返す関数。matrix型はベクトルのベクトルではないが、これは用意されている。 *)
+(* ``\matrix_ i E`` で、一次元の i と、Eは 行ベクトルを返す関数。
+   matrix型はベクトルのベクトルではないが、これは用意されている。 *)
 Locate "\matrix_ ( i < m ) E ". (* := (matrix_of_fun matrix_key (fun i j => E GRing.zero j)) *)
 
 (**
@@ -303,7 +333,7 @@ Check eq_col_mx : forall R m1 m2 n
 
 End MatrixStructural.
 (**
-# block matrix　ブロック行列 区分行列
+# block matrix ブロック行列 区分行列
 
 (略)
  *)
