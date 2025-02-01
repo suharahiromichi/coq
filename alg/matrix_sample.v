@@ -30,8 +30,10 @@ Open Scope ring_scope.
 - 列（行）の入れ替え、列（行）の取り出し
   - 関数
   - 補題
-- block matrix ブロック行列 区分行列
-- submatrix 部分行列 小行列
+- block matrix ブロック行列 区分行列 小行列を連結する。
+  - 関数
+  - 補題
+- submatrix 部分行列 小行列を取り出す。
   - 関数
   - 補題
 - square matrix 正方行列、diagonal matrix 対角行列
@@ -186,9 +188,10 @@ Locate "\matrix_ ( i < m ) E ". (* := (matrix_of_fun matrix_key (fun i j => E GR
 (**
 ## 補題
  *)
-(* ``'cV_n = matrix R n 1`` 1 のことろは固定値(0)なので、もうひとつの引数で同じなら、同じ。  *)
+(* ``'cV_n = matrix R n 1`` 1 のことろは固定値(0)なので、もうひとつの引数で同じ (``=1``) なら、同じ。  *)
 Check colP : forall R m (u v : 'cV_m), u^~ 0%R =1 v^~ 0%R <-> u = v.
-(* ``'rV_n = matrix R 1 n`` 1 のことろは固定値(0)なので、もうひとつの引数で同じなら、同じ。  *)
+
+(* ``'rV_n = matrix R 1 n`` 1 のことろは固定値(0)なので、もうひとつの引数で同じ (``=1``) なら、同じ。  *)
 Check rowP : forall R n (u v : 'rV_n), u 0%R =1 v 0%R <-> u = v.
 
 End MatrixDef.
@@ -209,11 +212,13 @@ Variable m n : nat.
 Check @const_mx R m n a : 'M_(m, n).
 Print const_mx. (* = fun R m n (a : R) => (\matrix[const_mx_key]_(_, _) a)%R  *)
 
+(* 要素のすべてに f を適用する。 *)
 Locate " A ^ f ".                           (* := map_mx A f *)
 Check @map_mx : forall aT rT : Type, (aT -> rT) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n).
 Print map_mx.                   (* = fun aT rT (f : aT -> rT) m n A =>
                                    (\matrix[map_mx_key]_(i, j) f (A i j))%R *)
 
+(* ふたつの行列の要素どうしに f を適用する。 *)
 Check @map2_mx : forall R S T : Type, (R -> S -> T) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n) -> 'M_(m, n).
 Print map2_mx.             (* = fun R S T (f : R -> S -> T) m n A B =>
                               (\matrix[map2_mx_key]_(i, j) f (A i j) (B i j))%R *)
@@ -236,6 +241,7 @@ Check tr_row  : forall R m n (i0 : 'I_m) A, ((row i0 A)^T)%R = col i0 A^T.
 Check tr_col  : forall R m n (j0 : 'I_n) A, ((col j0 A)^T)%R = row j0 A^T.
 Check tr_row' : forall R m n (i0 : 'I_m) A, ((row' i0 A)^T)%R = col' i0 A^T.
 Check tr_col' : forall R m n (j0 : 'I_n) A, ((col' j0 A)^T)%R = row' j0 A^T.
+(* row_perm などの定義はすぐ後 *)
 
 (**
 # 列（行）の入れ替え、列（行）の取り出し
@@ -271,7 +277,7 @@ Check row_perm : forall R m n, perm_of 'I_m -> 'M_(m, n) -> 'M_(m, n).
 Check @col_mx : forall R m1 m2 n, 'M_(m1, n) -> 'M_(m2, n) -> 'M_(m1 + m2 , n).
 (* 高さの同じ行列を連結する。横（行）方向に連結。 *)
 Check @row_mx : forall R m n1 n2, 'M_(m, n1) -> 'M_(m, n2) -> 'M_(m, n1 + n2).
-(* 高さと幅の同じ行列を連結する。 *)
+(* 高さと幅の同じ行列を連結する。ブロック行列（区分行列）をつくる。 *)
 Check @block_mx : forall R m1 m2 n1 n2,
     'M_(m1, n1) -> 'M_(m1, n2) -> 'M_(m2, n1) -> 'M_(m2, n2) -> 'M_(m1 + m2, n1 + n2).
 
@@ -280,7 +286,8 @@ Check @block_mx : forall R m1 m2 n1 n2,
 *)
 (* インデックス1個の \matrix_i の関数 u は、行ベクトルを返すので、
    行列のi0行目を行ベクトルとして取り出したものは、u の i0行目の行ベクトルと同じ。 *)
-Check rowK : forall R m n (u_ : 'I_m -> 'rV_n) (i0 : 'I_m), row i0 (\matrix_i u_ i) = u_ i0.
+Check rowK : forall R m n (u_ : 'I_m -> 'rV_n) (i0 : 'I_m),
+    row i0 (\matrix_i u_ i) = u_ i0 :> 'rV_n.
 
 (* 行列の積をperm する。 *)
 Check mul_col_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
@@ -298,16 +305,16 @@ Check xcolE : forall R m n (j1 j2 : 'I_n) (A : 'M_(m, n)), xcol j1 j2 A = (A *m 
 (* xrow でi1行とi2行を入れ替えた行列は、i1行とi2行を入れ替えた単位行列との積に等しい。 *)
 Check xrowE : forall R m n (i1 i2 : 'I_m) (A : 'M_(m, n)), xrow i1 i2 A = (tperm_mx i1 i2 *m A)%R.
 
-(* 任意の列を取り出した列ベクトルが一致であることと、行列は一致であることは、同値。 *)
+(* 行列の任意の列を取り出した列ベクトルが一致であることと、行列が一致であることは、同値。 *)
 Lemma col_matrixP (A B : 'M_(m, n)) : (forall j : 'I_n, @col R m n j A = col j B) <-> A = B.
 Proof.
   split=> [eqAB | -> //]; apply/matrixP=> i j.
   by move/colP/(_ i): (eqAB j); rewrite !mxE.
 Qed.
-(* 任意の行を取り出した行ベクトルが一致であることと、行列は一致であることは、同値。 *)
+(* 行列の任意の行を取り出した行ベクトルが一致であることと、行列は一致であることは、同値。 *)
 Check row_matrixP : forall R m n A B, (forall i : 'I_m, row i A = row i B) <-> A = B.
 
-(* perm しない（単位元 1g) *)
+(* perm しない（単位元 1g による perm) *)
 Check col_perm1 : forall R m n A, col_perm 1%g A = A.
 Check row_perm1 : forall R m n A, row_perm 1%g A = A.
 (* perm t と perm s の合成 *)
@@ -333,13 +340,32 @@ Check eq_col_mx : forall R m1 m2 n
 
 End MatrixStructural.
 (**
-# block matrix ブロック行列 区分行列
-
-(略)
+# block matrix ブロック行列 区分行列 （4つの小行列を組み合わせる）
  *)
+(**
+## 関数
+ *)
+Check @block_mx : forall (R : Type) (m1 m2 n1 n2 : nat),
+    'M_(m1, n1) -> 'M_(m1, n2) -> 'M_(m2, n1) -> 'M_(m2, n2) -> 'M_(m1 + m2, n1 + n2).
 
 (**
-# submatrix 部分行列 小行列
+## 補題
+ *)
+(* 小行列のサイズはそれぞれ同じ場合 *)
+Check eq_block_mx
+  : forall (R : Type) (m1 m2 n1 n2 : nat)
+           (Aul : 'M_(m1, n1)) (Aur : 'M_(m1, n2)) (Adl : 'M_(m2, n1)) (Adr : 'M_(m2, n2))
+           (Bul : 'M_(m1, n1)) (Bur : 'M_(m1, n2)) (Bdl : 'M_(m2, n1)) (Bdr : 'M_(m2, n2)),
+    block_mx Aul Aur Adl Adr = block_mx Bul Bur Bdl Bdr ->
+    [/\ Aul = Bul, Aur = Bur, Adl = Bdl & Adr = Bdr].
+
+(* 定数行列の場合、サイズは合成されている。 *)
+Check block_mx_const : forall (R : Type) (m1 m2 n1 n2 : nat) (a : R),
+    block_mx (@const_mx R m1 n1 a) (@const_mx R m1 n2 a) (@const_mx R m2 n1 a) (@const_mx R m2 n2 a)
+    = @const_mx R (m1 + m2) (n1 + n2) a.
+
+(**
+# submatrix 部分行列 （小行列をとりだす）
 
 mxalgebra.v で扱う部分空間ではないことに注意
 *)
