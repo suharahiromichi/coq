@@ -123,25 +123,34 @@ Definition matrix_of_fun R (m n : nat) (k : unit) (F : 'I_m -> 'I_n -> R) :=
 
 (**
 # 三つの重要な補題
+
+恣意的な例：
 *)
 Goal 1%:M = 1%:M :> 'M[nat]_(n, n).
 Proof.
+  Set Printing Coercions.
   (* 行列の``=``を関数の``=``として、関数値の``=``にする。 *)
   apply/matrixP => i j.
   Check 1%:M i j = 1%:M i j.
+  Check fun_of_matrix 1%:M i j = fun_of_matrix 1%:M i j.
   
-  (* 行列の要素どうしの``=``にする。 *)
+  (* 行列の要素どうしの``=``にする。fun_of_matrix が消える。 *)
   rewrite mxE.
   Check (i == j)%:R = (i == j)%:R.
+  Check (nat_of_bool (i == j))%:R = (nat_of_bool (i == j))%:R.
   Restart.
   
   (* 上記を同時に行う。 *)
   apply/eq_mx => i j.
   done.
+  Unset Printing Coercions.
 Qed.
 
 (**
 ## mxE
+
+左から右への書き換えで、fun_of_matrix が消えることに気づいてください。
+行列を関数とみなした式から、行列の中身の式に書き換えられる。
  *)
 Check mxE : forall R m n (k : unit) (F : 'I_m -> 'I_n -> R),
     (\matrix[k]_(i, j) F i j)%R =2 F.
@@ -221,17 +230,18 @@ Variable m n : nat.
 ## 関数
  *)
 (* 定数行列 *)
-Check @const_mx R m n a : 'M_(m, n).
+Check @const_mx R m n a : 'M_(m, n).        (* Notation はない。 *)
 Print const_mx. (* = fun R m n (a : R) => (\matrix[const_mx_key]_(_, _) a)%R  *)
 
 (* 要素のすべてに f を適用する。 *)
-Locate " A ^ f ".                           (* := map_mx A f *)
+Locate "A ^ f".                             (* := map_mx A f *)
 Check @map_mx : forall aT rT : Type, (aT -> rT) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n).
 Print map_mx.                   (* = fun aT rT (f : aT -> rT) m n A =>
                                    (\matrix[map_mx_key]_(i, j) f (A i j))%R *)
 
 (* ふたつの行列の要素どうしに f を適用する。 *)
-Check @map2_mx : forall R S T : Type, (R -> S -> T) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n) -> 'M_(m, n).
+Check @map2_mx                              (* Notaion はない。 *)
+  : forall R S T : Type, (R -> S -> T) -> forall m n : nat, 'M_(m, n) -> 'M_(m, n) -> 'M_(m, n).
 Print map2_mx.             (* = fun R S T (f : R -> S -> T) m n A B =>
                               (\matrix[map2_mx_key]_(i, j) f (A i j) (B i j))%R *)
 
@@ -245,6 +255,8 @@ Print trmx. (* = fun R m n (A : 'M_(m, n)) => (\matrix[trmx_key]_(i, j) A j i)%R
 *)
 
 (* 転置する前と後 *)
+(* row_perm して転置するのは、転置して col_perm するのと同じ。 *)
+(* row_perm などの定義はすぐ後 *)
 Check tr_row_perm : forall R m n (s : 'S_m) A, ((row_perm s A)^T)%R = col_perm s A^T.
 Check tr_col_perm : forall R m n (s : 'S_n) A, ((col_perm s A)^T)%R = row_perm s A^T.
 Check tr_xrow : forall R m n (i1 i2 : 'I_m) A, ((xrow i1 i2 A)^T)%R = xcol i1 i2 A^T.
@@ -253,7 +265,6 @@ Check tr_row  : forall R m n (i0 : 'I_m) A, ((row i0 A)^T)%R = col i0 A^T.
 Check tr_col  : forall R m n (j0 : 'I_n) A, ((col j0 A)^T)%R = row j0 A^T.
 Check tr_row' : forall R m n (i0 : 'I_m) A, ((row' i0 A)^T)%R = col' i0 A^T.
 Check tr_col' : forall R m n (j0 : 'I_n) A, ((col' j0 A)^T)%R = row' j0 A^T.
-(* row_perm などの定義はすぐ後 *)
 
 (**
 # 列（行）の入れ替え、列（行）の取り出し
@@ -293,24 +304,32 @@ Check @row_mx : forall R m n1 n2, 'M_(m, n1) -> 'M_(m, n2) -> 'M_(m, n1 + n2).
 Check @block_mx : forall R m1 m2 n1 n2,
     'M_(m1, n1) -> 'M_(m1, n2) -> 'M_(m2, n1) -> 'M_(m2, n2) -> 'M_(m1 + m2, n1 + n2).
 
+(* 指定要素だけ1の行列。対角ではない。 *)
+Section s.
+  Variable S : semiRingType.
+  Variable i : 'I_m.                  (* 1 である行を指定する i < m *)
+  Variable j : 'I_n.                  (* 1 である列を指定する i < n *)
+  
+  (* delta_mx i j までがマトリクス *)
+  Check @delta_mx S m n i j : 'M_(m, n).
+  Check delta_mx i j : 'M_(m, n).
+End s.
+
 (**
 ## 補題
 *)
-(* インデックス1個の \matrix_i の関数 u は、行ベクトルを返すので、
+(* インデックス1個の ``\matrix_i u i`` の関数 u は、行ベクトルを返すので、
    行列のi0行目を行ベクトルとして取り出したものは、u の i0行目の行ベクトルと同じ。 *)
 Check rowK : forall R m n (u_ : 'I_m -> 'rV_n) (i0 : 'I_m),
     row i0 (\matrix_i u_ i) = u_ i0 :> 'rV_n.
 
-(* 行列の積をperm する。``+`` について可換であること。 *)
-(* 証明は、acs_lesson7_proofcafe.v *)
+(* A の col_perm B の積は、A と B の row_perm の積に等しい。 *)
+(* ``+`` について可換であること。証明は、acs_lesson7_proofcafe.v *)
 Check mul_col_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
     (col_perm s A *m B)%R = (A *m row_perm s^-1 B)%R.
 Check mul_row_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
     (A *m row_perm s B)%R = (col_perm s^-1 A *m B)%R.
 
-
-(* 指定要素だけ1の行列。対角ではない。 *)
-Check delta_mx.
 
 (* i列目を列ベクトルとして取り出す関数は、(i, 0)だけが1の行列（単位列ベクトル）との積に等しい。 *)
 Check colE : forall R m n (i : 'I_n) (A : 'M_(m, n)), col i A = (A *m delta_mx i 0)%R :> 'cV_m.
@@ -323,6 +342,7 @@ Check xcolE : forall R m n (j1 j2 : 'I_n) (A : 'M_(m, n)), xcol j1 j2 A = (A *m 
 Check xrowE : forall R m n (i1 i2 : 'I_m) (A : 'M_(m, n)), xrow i1 i2 A = (tperm_mx i1 i2 *m A)%R.
 
 (* 行列の任意の列を取り出した列ベクトルが一致であることと、行列が一致であることは、同値。 *)
+(* row_matrixP があるのに、col_matrixP がないので、証明してみる。 *)
 (* acs_lesson7_proofcafe.v *)
 Lemma col_matrixP (A B : 'M_(m, n)) : (forall j : 'I_n, @col R m n j A = col j B) <-> A = B.
 Proof.
@@ -342,13 +362,15 @@ Check row_permM : forall R m n (s t : 'S_m) A, row_perm (s * t) A = row_perm s (
 Check col_row_permC : forall R m n (s : 'S_n) (t : 'S_m) A,
     col_perm s (row_perm t A) = row_perm t (col_perm s A).
 
-(* 横（縦）方向に連結した行列の、連結する前の要素にアクセスする。 *)
+(* 横方向に連結した行列の、連結する前の要素にアクセスする。 *)
 Check row_mxEl : forall R m n1 n2 A1 A2 (i : 'I_m) (j : 'I_n1), row_mx A1 A2 i (lshift n2 j) = A1 i j.
 Check row_mxEr : forall R m n1 n2 A1 A2 (i : 'I_m) (j : 'I_n2), row_mx A1 A2 i (rshift n1 j) = A2 i j.
+(* 縦方向に連結した行列の、連結する前の要素にアクセスする。 *)
 Check col_mxEu : forall R m1 m2 n A1 A2 (i : 'I_m1) (j : 'I_n), col_mx A1 A2 (lshift m2 i) j = A1 i j.
 Check col_mxEd : forall R m1 m2 n A1 A2 (i : 'I_m2) (j : 'I_n), col_mx A1 A2 (rshift m1 i) j = A2 i j.
 
-(* 連結した行列が同じなら、もとの行列も同じ。もとの行列の寸法が同じであったことに注意！ *)
+(* もとの行列のそれぞれの寸法が同じである場合、連結した行列が同じなら、連結する前の行列も同じ。 *)
+(* A1とB1、A2とB2の寸法が同じなので、当然成り立つ。 *)
 Check eq_row_mx : forall R m n1 n2
                          (A1 : 'M_(m, n1)) (A2 : 'M_(m, n2)) (B1 : 'M_(m, n1)) (B2 : 'M_(m, n2)),
     row_mx A1 A2 = row_mx B1 B2 -> A1 = B1 /\ A2 = B2.
@@ -369,7 +391,7 @@ Check @block_mx : forall (R : Type) (m1 m2 n1 n2 : nat),
 (**
 ## 補題
  *)
-(* 小行列のサイズはそれぞれ同じ場合 *)
+(* もとの小行列のそれぞれの寸法が同じである場合、連結した行列が同じなら、連結する前の行列も同じ。 *)
 Check eq_block_mx
   : forall (R : Type) (m1 m2 n1 n2 : nat)
            (Aul : 'M_(m1, n1)) (Aur : 'M_(m1, n2)) (Adl : 'M_(m2, n1)) (Adr : 'M_(m2, n2))
@@ -377,7 +399,7 @@ Check eq_block_mx
     block_mx Aul Aur Adl Adr = block_mx Bul Bur Bdl Bdr ->
     [/\ Aul = Bul, Aur = Bur, Adl = Bdl & Adr = Bdr].
 
-(* 定数行列の場合、サイズは合成されている。 *)
+(* （全部同じ）定数行列の場合、サイズは合成される。 *)
 Check block_mx_const : forall (R : Type) (m1 m2 n1 n2 : nat) (a : R),
     block_mx (@const_mx R m1 n1 a) (@const_mx R m1 n2 a) (@const_mx R m2 n1 a) (@const_mx R m2 n2 a)
     = @const_mx R (m1 + m2) (n1 + n2) a.
@@ -408,8 +430,10 @@ Check @submxcol.
 (* 関数 f : ``'I_m' -> 'I_m`` と、g : ``'I_n' -> 'I_n`` で部分行列を選ぶ。 *)
 Check @mxsub
   : forall (R : Type) (m n m' n' : nat), ('I_m' -> 'I_m) -> ('I_n' -> 'I_n) -> 'M_(m, n) -> 'M_(m', n').
-Check rowsub _.                             (* f のみ *)
-Check colsub _.                             (* g のみ *)
+(* とくに難しことはしていない。f, g は単射でなくてもよい。 *)
+Print mxsub.                        (* \matrix_(i, j) A (f i) (g j) *)
+Check rowsub _.                     (* f のみの Notation *)
+Check colsub _.                     (* g のみの Notation *)
 
 (**
 ## 補題
@@ -466,9 +490,7 @@ Print lift0_mx.
 
 End Diagonal.
 
-
-
-(* 行列式が環の単位元かいなかを判定する。 *)
+(* 行列式が環の単位元か否かを判定する。 *)
 Check @unitmx : forall (R : comUnitRingType) (n : nat), pred 'M_n.
 Print unitmx.                        (* (\det A)%R \is a GRing.unit *)
 
@@ -501,10 +523,16 @@ m行0列の行列と0行n列の行列の積は、m行n列の零行列である�
 Goal forall (A : 'M[R]_(m, 0)) (B : 'M[R]_(0, n)), A *m B = 0.
 Proof.
   move=> A B.
-  apply/matrixP => i k.
-  rewrite 2!mxE.
+  Check A *m B = 0 :> 'M[R]_(m, n).         (* 行列の= *)
   
-  Check \sum_(j : 'I_0) A i j * B j k = 0.
+  apply/matrixP => i k.
+  Check (A *m B) i k = (const_mx 0) i k. (* const_mx がコアーションではない。これは間違い。 *)
+  Check (A *m B) i k = (0 : 'M_(m,n)) i k. (* 環の単位元である 0 はそれだけで、行列の意味を持つ。 *)
+  Check fun_of_matrix (A *m B) i k = fun_of_matrix 0 i k. (* 関数値の= *)
+  
+  rewrite 2!mxE.
+  Check \sum_(j < 0) fun_of_matrix A i j * fun_of_matrix B j k = 0.
+  Check \sum_(j : 'I_0) A i j * B j k = 0.  (* 行列の要素どうしの= *)
   
   rewrite big_ord0.
   done.
