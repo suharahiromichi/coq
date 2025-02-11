@@ -526,9 +526,9 @@ Proof.
   Check A *m B = 0 :> 'M[R]_(m, n).         (* 行列の= *)
   
   apply/matrixP => i k.
+  Check fun_of_matrix (A *m B) i k = (GRing.zero : 'M_(m, n)) i k. (* 関数値の= *)
+  Check fun_of_matrix (A *m B) i k = fun_of_matrix 0 i k. (* コアーションは fun_of_matrix *)
   Check (A *m B) i k = (const_mx 0) i k. (* const_mx がコアーションではない。これは間違い。 *)
-  Check (A *m B) i k = (0 : 'M_(m,n)) i k. (* 環の単位元である 0 はそれだけで、行列の意味を持つ。 *)
-  Check fun_of_matrix (A *m B) i k = fun_of_matrix 0 i k. (* 関数値の= *)
   
   rewrite 2!mxE.
   Check \sum_(j < 0) fun_of_matrix A i j * fun_of_matrix B j k = 0.

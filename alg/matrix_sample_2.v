@@ -11,9 +11,52 @@ Import Num.Theory Num.Def.
 Import GRing.Theory.
 Open Scope ring_scope.
 
-Variables m n p : nat.                      (* 行列の寸法 *)
+(**
+```
+eqType
+|
+choiceType
+|
+nmodType
+|\
+| +-------------------+
+|                      \
+zmodType                semiRingType
+|                      /|
+| +-------------------+ |
+|/                      |
+RingType                comSemiRingTYpe
+|                       |
+|                       |
+|                       |
+unitRingType            comRingType
+|                      /
+| +-------------------+
+|/
+comUnitRingType
+```
+ *)
 
+Print left_zero.
+
+(**
+概要
+- 型クラス上の行列
+  - LModuleであるが、半環ではない。
+    行列どうしの掛け算は環の掛け算ではないので ``*m`` を使う。
+  - 正方行列は、サイズが1以上の場合、半環となる。
+    サイズが0だと、``1 = 0`` となり、``1 != 0`` を満たさない。
+- ``%M`` スカラ行列を作る。
+- 正方行列、ベクトル
+- 対角行列
+- 行列の作り方 
+*)
+
+(**
+# 型クラス上の行列
+*)
 Section MatrixRing.
+  Variables m n p : nat.                    (* 行列の寸法 *)
 
 (**
 ringType を要素とする行列は ``lmodType R`` である。
@@ -24,10 +67,19 @@ ringType を要素とする行列は ``lmodType R`` である。
   Check 'M[R]_(m, n) : choiceType.
   Fail Check 'M[R]_(m, n) : countType.
   Check 'M[R]_(m, n) : nmodType.
-  Check 'M[R]_(m, n) : zmodType.
-  Check 'M[R]_(m, n) : lmodType R.
-  Fail Check 'M[R]_(m, n) : semiRingType.
-
+  Check 'M[R]_(m, n) : zmodType.            (* アーベル群、Z加群 *)
+  Check 'M[R]_(m, n) : lmodType R.          (* 左から Rで定数倍できる。 *)
+  Fail Check 'M[R]_(m, n) : semiRingType. 
+  
+  (* matrix.v l.2725 *)
+  Fail Check 'M[R]_(0) : semiRingType.      (* サイズ0の正方行列 *)
+  Check 'M[R]_(n.+1) : semiRingType.        (* サイズ1以上の正方行列 *)
+  (**
+     matrix.v では、以下のようにして、``n > 0`` としている。
+     Variable n' : nat.
+     Local Notation n := n'.+1.
+   *)
+  
 (**
 Zmodule が Lmodule である公理
 *)
@@ -74,7 +126,7 @@ Zmodule が Lmodule である公理
   Qed.
 
 (**
-``%M`` スカラ行列を作る。
+# ``%M`` スカラ行列を作る。
 *)
   Locate "_ %:M". (* := (scalar_mx a) : ring_scope (default interpretation) *)
   Check scalar_mx : R -> 'M_m.              (* 正方行列 *)
@@ -87,7 +139,6 @@ Zmodule が Lmodule である公理
   Check @GRing.mul : forall s : semiRingType,                  s -> s -> s.        (* * *)
   Check @scalemx : forall (R : ringType) (m n : nat), R -> 'M_(m, n) -> 'M_(m, n). (* *m: *)
   Check mulmx :                               'M_(m, n) -> 'M_(n, p) -> 'M_(m, p). (* *m *)
-
   
   (* 行列に左からスカラを掛けるのば、スカラ行列に行列を掛けることに等しい。 *)
   Lemma test2 (a : R) (A : 'M[R]_(m, n)) : a *: A = a%:M *m A.
@@ -97,7 +148,7 @@ Zmodule が Lmodule である公理
   Qed.
   
 (**
-正方行列、ベクトル
+# 正方行列、ベクトル
 *)
   Goal 'M[R]_(m, m) = 'M[R]_m. Proof. done. Qed. (* 正方行列 *)
   Goal 'M[R]_(1, m) = 'rV[R]_m. Proof. done. Qed. (* row 行ベクトル *)
@@ -127,7 +178,17 @@ Zmodule が Lmodule である公理
   End TEST.
 
 (**
-行列の作り方
+# 対角行列
+*)
+  Check mul_diag_mx : forall (R : semiRingType) (m n : nat) (d : 'rV_m) (A : 'M_(m, n)),
+      (diag_mx d) *m A = \matrix_(i, j) (d 0 i * A i j).
+  Check mul_mx_diag : forall (R : semiRingType) (m n : nat) (A : 'M_(m, n)) (d : 'rV_n),
+      A *m (diag_mx d) = \matrix_(i, j) (A i j * d 0 j).
+  Check mulmx_diag : forall (R : semiRingType) (n : nat) (d e : 'rV_n),
+      (diag_mx d) *m (diag_mx e) = diag_mx (\row_j (d 0 j * e 0 j)).
+    
+(**
+# 行列の作り方
 *)  
   Search matrix_of_fun.
   
@@ -160,19 +221,7 @@ Zmodule が Lmodule である公理
     rewrite !mxE.
     done.
   Qed.
-  
 
-(**
-対角行列
-*)
-  Check mul_diag_mx : forall (R : semiRingType) (m n : nat) (d : 'rV_m) (A : 'M_(m, n)),
-      (diag_mx d) *m A = \matrix_(i, j) (d 0 i * A i j).
-  Check mul_mx_diag : forall (R : semiRingType) (m n : nat) (A : 'M_(m, n)) (d : 'rV_n),
-      A *m (diag_mx d) = \matrix_(i, j) (A i j * d 0 j).
-  Check mulmx_diag : forall (R : semiRingType) (n : nat) (d e : 'rV_n),
-      (diag_mx d) *m (diag_mx e) = diag_mx (\row_j (d 0 j * e 0 j)).
-    
 End MatrixRing.
-
 
 (* END *)
