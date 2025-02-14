@@ -330,6 +330,31 @@ Check mul_col_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
 Check mul_row_perm : forall R m n p (s : 'S_n) (A : 'M_(m, n)) (B : 'M_(n, p)),
     (A *m row_perm s B)%R = (col_perm s^-1 A *m B)%R.
 
+Section a.
+  Variable S : semiRingType.
+  Variable p : nat.
+  
+  Goal forall (s : 'S_n) (A : 'M[S]_(m, n)) (B : 'M_(n, p)),
+      (col_perm s A *m B)%R = (A *m row_perm s^-1 B)%R.
+  Proof.
+    move=> s A B.
+    (* 関数値どうしの等式 *)
+    apply/matrixP=> i k.
+    (* 要素どうしの等式 *)
+    rewrite 2!mxE.
+    (* 左辺の j に s^-1 をかける。 *)
+    Check reindex_perm s.            (* 加法は可換であること。 *)
+    rewrite (reindex_perm s^-1) /=.
+    (* 関数値どうしの等式 *)
+    apply: eq_bigr => j _.
+    (* 要素どうしの等式 *)
+    rewrite 2!mxE.
+    (* 置換 s (s^-1) は元にもどる。 *)
+    Check @permKV : forall (T : finType) (s : {perm T}), cancel (s^-1)%g s.
+    rewrite permKV.
+    done.
+  Qed.
+End a.
 
 (* i列目を列ベクトルとして取り出す関数は、(i, 0)だけが1の行列（単位列ベクトル）との積に等しい。 *)
 Check colE : forall R m n (i : 'I_n) (A : 'M_(m, n)), col i A = (A *m delta_mx i 0)%R :> 'cV_m.
@@ -485,8 +510,10 @@ Check @tperm_mx R n : 'I_n -> 'I_n -> 'M_n.
 Print tperm_mx.
 
 (* (0,0)に 1 置いて、正方行列の行と列をひとつづ増やす。 *)
-Check @lift0_mx R n : 'M_n -> 'M_(1 + n).
+Check @lift0_mx R n : 'M_n -> 'M_(n.+1).
 Print lift0_mx.
+(* lift0_mx A = / 1 0 \ *)
+(*              \ 0 A / *)
 
 End Diagonal.
 

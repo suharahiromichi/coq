@@ -45,7 +45,7 @@ Print left_zero.
   - LModuleであるが、半環ではない。
     行列どうしの掛け算は環の掛け算ではないので ``*m`` を使う。
   - 正方行列は、サイズが1以上の場合、半環となる。
-    サイズが0だと、``1 = 0`` となり、``1 != 0`` を満たさない。
+    サイズが0だと、要素が1個の環なので、``1 = 0`` となり、``1 != 0`` を満たさない。
 - ``%M`` スカラ行列を作る。
 - 正方行列、ベクトル
 - 対角行列
@@ -59,21 +59,23 @@ Section MatrixRing.
   Variables m n p : nat.                    (* 行列の寸法 *)
 
 (**
-ringType を要素とする行列は ``lmodType R`` である。
+## ringType を要素とする行列は ``lmodType R`` である。
 *)
   Variable R : ringType.
   
   Check 'M[R]_(m, n) : eqType.
-  Check 'M[R]_(m, n) : choiceType.
-  Fail Check 'M[R]_(m, n) : countType.
-  Check 'M[R]_(m, n) : nmodType.
-  Check 'M[R]_(m, n) : zmodType.            (* アーベル群、Z加群 *)
-  Check 'M[R]_(m, n) : lmodType R.          (* 左から Rで定数倍できる。 *)
+  Check 'M[R]_(m, n) : choiceType.      (* 条件を満たす要素を取り出せる。 *)
+  (* http://www.a-k-r.org/d/2024-12.html#a2024_12_22 *)
+  Fail Check 'M[R]_(m, n) : countType.  (* 自然数と1対1対応しない。 *)
+  
+  Check 'M[R]_(m, n) : nmodType.        (* 加算について *)
+  Check 'M[R]_(m, n) : zmodType.        (* 加算について、アーベル群（Z加群） *)
+  Check 'M[R]_(m, n) : lmodType R.      (* 次項参照 *)
   Fail Check 'M[R]_(m, n) : semiRingType. 
   
   (* matrix.v l.2725 *)
-  Fail Check 'M[R]_(0) : semiRingType.      (* サイズ0の正方行列 *)
-  Check 'M[R]_(n.+1) : semiRingType.        (* サイズ1以上の正方行列 *)
+  Fail Check 'M[R]_0 : semiRingType.       (* サイズ0の正方行列 *)
+  Check 'M[R]_n.+1 : semiRingType.         (* サイズ1以上の正方行列 *)
   (**
      matrix.v では、以下のようにして、``n > 0`` としている。
      Variable n' : nat.
@@ -81,7 +83,7 @@ ringType を要素とする行列は ``lmodType R`` である。
    *)
   
 (**
-Zmodule が Lmodule である公理
+## Zmodule が Lmodule である公理
 *)
   HB.about GRing.Zmodule_isLmodule.Build.
 
@@ -114,7 +116,7 @@ Zmodule が Lmodule である公理
       (x + y) *m: A = x *m: A + y *m: A.
 
 (**
-``+`` と addrC は、nmodType で成り立つので、ringType の行列でも成り立つ。
+## ``+`` と addrC は、nmodType で成り立つので、ringType の行列でも成り立つ。
 *)
   Check @GRing.add : forall s : nmodType, s -> s -> s. (* + *)
   Check addrC : forall x : nmodType, commutative GRing.add.
@@ -133,7 +135,7 @@ Zmodule が Lmodule である公理
   Check scalar_mx : R -> 'M_(m, m).         (* 正方行列 *)
   
 (**
-``*`` は半環でないといけないので行列には使えない。``*m`` を使う。
+## ``*`` は半環でないといけないので行列には使えない。``*m`` を使う。
 *)
   Check @GRing.scale : forall (R : ringType) (s : lmodType R), R -> s -> s.        (* *: *)
   Check @GRing.mul : forall s : semiRingType,                  s -> s -> s.        (* * *)
@@ -171,10 +173,12 @@ Zmodule が Lmodule である公理
     Check A *m Q : 'cV_m.
 
     (* 行ベクトルを使うほうが多いので、固有ベクトルは教科書とは違う表現になっている。 *)
+    (* 固有値は mxalgebra_sample_2.v 参照のこと。 *)
     Check @eigenvalueP
       : forall (F : fieldType) (n : nat) (g : 'M[F]_n) (a : F),
-        reflect (exists2 v : 'rV[F]_n, (v *m g = a *: v) & (v != 0)) (eigenvalue g a).
-    (*                                                   ↑ exists2 に対応するAND *)
+        reflect (exists2 v : 'rV[F]_n, (v *m g = a *: v) & (v != 0))
+          (*                                             ↑ exists2 に対応するAND *)
+          (eigenvalue g a).
   End TEST.
 
 (**
@@ -190,6 +194,9 @@ Zmodule が Lmodule である公理
 (**
 # 行列の作り方
 *)  
+  (* \matrix_ の実体 *)
+  (* 関数をマトリクスとみなす。 *)
+  Check matrix_of_fun : forall (R : Type) (m n : nat), unit -> ('I_m -> 'I_n -> R) -> 'M_(m, n).
   Search matrix_of_fun.
   
   Check mxE : forall (R : Type) (m n : nat) (k : unit) (F : 'I_m -> 'I_n -> R),
