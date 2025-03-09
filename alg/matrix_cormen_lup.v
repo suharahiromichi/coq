@@ -29,7 +29,7 @@ Variable F : fieldType.
 
 (* Decomposition of the matrix A to P A = L U with *)
 (*   - P a permutation matrix                      *)
-(*   - L a unipotent lower triangular matrix       *)
+(*   - L a unipotent lower triangular matrix 冪単三角行列 実際は 単三角行列 *)
 (*   - U an upper triangular matrix                *)
 
 Fixpoint cormen_lup {n} :=
@@ -52,7 +52,9 @@ Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> 'M[F]_n.+1 * 'M[F]_n.+1 * 'M[F]_n
   match n (* return let M := 'M[F]_n.+1 in M -> M * M * M *) with
   | 0 => fun A => (1, 1, A)
   | _.+1 => fun A =>
-    let k := odflt 0 [pick k | A k 0 != 0] in (* A k 0 が非零であるなら、  *)
+              (* odflt は option T 型を T 型にする。ディフォルトはここで用意する。  *)
+              (* odflt 0 (Some k) == k, odflt 0 None == 0 *)
+    let k := odflt 0 [pick k | A k 0 != 0] in (* A k 0 が非零である k を取り出す。 *)
     let P1 : 'M_(1 + _) := tperm_mx 0 k in (* P1 は 左から掛けて上記の入れ替えをする単位行列。 *)
     let A1 : 'M_(1 + _) := xrow 0 k A in (* k行目と0行目を入れ替えた行列。 *)
 
@@ -68,6 +70,7 @@ Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> 'M[F]_n.+1 * 'M[F]_n.+1 * 'M[F]_n
     let A' := drsubmx A1 in                 (* A1の下右 *)
     
     (*           L (下三角行列)      U (上三角行列)       *)
+    (*                                                    *)
     (*          / 1        | 0 \   / a | w              \ *)
     (* P1 * A = |              | * |                    | *)
     (*          \ (1/a)*v  | 1 /   \ 0 | A' - (1/a)*v*w / *)
@@ -107,9 +110,13 @@ Qed.
 (**
 LUPの P が置換行列である。
  *)
-
-(* 単位行列を置換 s で置き換えて得られた行列。 *)
+(* 準備 *)
+(* サイズnの単位行列を置換 s で置き換えて行列を得る関数 *)
 Check @perm_mx : forall (R : semiRingType) (n : nat), {perm 'I_n} -> 'M_n.
+
+(* 行列 A は、perm_mx で得られた行列である。 *)
+Print is_perm_mx.
+Check fun (R : semiRingType) (n : nat) (A : 'M_n) => [exists s : {perm 'I_n}, A == perm_mx s].
 
 (* ふたつの置換行列の積についての補題。 *)
 Check is_perm_mxMr : forall (R : semiRingType) (n : nat) (A B : 'M_n),
@@ -137,6 +144,7 @@ Section mx_perm.
   Local Definition PB := tperm 0 (odflt 0 [pick k | A k 0 != 0]).
   Check perm_mx PB.                       (* 置換PBを行列MAにする。 *)
   
+  (* PB は置換である。 *)
   Lemma is_perm_MA_PB : is_perm_mx (MA *m perm_mx PB) = is_perm_mx MA.
   Proof.
     rewrite (@is_perm_mxMr F n.+2
@@ -144,27 +152,28 @@ Section mx_perm.
                (perm_mx PB)
                (perm_mx_is_perm F PB)).     (* 第2引数 *)
     (* is_perm_mxMr の第2引数は、-> の左であることに注意 *)
+    Undo 1.
+    rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).    
     done.
   Qed.
 End mx_perm.
 
 (* Pは置換行列である。 *)
-Print is_perm_mx.
 Lemma cormen_lup_perm n (A : 'M_n.+1) : is_perm_mx (cormen_lup A).1.1. (* P *)
 Proof.
   elim: n => [|n IHn] /= in A *.
+  Check is_perm_mx 1.                       (* Goal *)
   - exact: is_perm_mx1.
 
   (* 外側のlet を ``let '(P2, L2, U2) := cormen_lup A' in`` にする。 *)
   - set A' := _ - _.
+    Check A' : 'M_n.+1.
     move/(_ A') : IHn.                  (* move: (IHn A'). と同じ。 *)
-    (* IHn をジェレラライズして、それを A' に適用する。 *)
+    (* IHn をジェネラライズして、それを A' に適用する。 *)
     case: (cormen_lup A') => [[P L U]] {A'} /=. (* cormen_lup A' を P L U に分割する。 *)
     
     (* 置換を簡単にする。 *)
-    rewrite (is_perm_mxMr _ (perm_mx_is_perm _ _)).
-    Undo 1.
-    rewrite /tperm_mx is_perm_MA_PB.
+    rewrite is_perm_MA_PB.
     
     (* is_perm_mx を exist に変えて、s を代入する。 *)
     Check @is_perm_mxP F n.+1 P
@@ -185,10 +194,10 @@ Lemma cormen_lup_correct n (A : 'M_n.+1) :
 Proof.
   elim: n => [|n IHn] /= in A *.
   - by rewrite !mul1r.
-  - set k := odflt 0 [pick k | A k 0 != 0 ] : 'I_n.+2. (* odflt _ _ *)
-    set A1 : 'M_(1 + n.+1) := xrow 0 k A.   (* xrow _ _ _ *)
-    set A' := drsubmx A1 - (A k 0)^-1 *: dlsubmx A1 *m ursubmx A1. (* _ - _ *)
-    move/(_ A'): IHn.
+  - set k := odflt 0 [pick k | A k 0 != 0 ] : 'I_n.+2. (* 右辺は ``odflt _ _`` とだけでもよい。 *)
+    set A1 : 'M_(1 + n.+1) := xrow 0 k A.              (* ``xrow _ _ _`` *)
+    set A' := drsubmx A1 - (A k 0)^-1 *: dlsubmx A1 *m ursubmx A1. (* ``_ - _`` *)
+    move/(_ A') : IHn.
     case: cormen_lup => [[P' L' U']] IHn.
     rewrite -mulrA -!mulmxE -xrowE -/A1 /= -[n.+2]/(1 + n.+1)%N -{1}(submxK A1).
     rewrite !mulmx_block !mul0mx !mulmx0 !add0r !addr0 !mul1mx -{L' U'}[L' *m _]IHn.
@@ -197,15 +206,19 @@ Proof.
     rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
 
     case: pickP => /= [k nzAk0 | no_k].
+    (* A k 0 が非零である k を取り出せた場合。 *)
     (* 前提 forall x : 'I_n.+2, A x 0 != 0 *)
     + by rewrite mulVf ?mulmx1.
       
+    (* A k 0 が非零である k を取り出せず、デフォルトの0になった場合。 *)
     (* 前提 (fun k : 'I_n.+2 => A k 0 != 0) =1 xpred0 *)
+    (* ``H : dlsubmx (xrow 0)``_A = 0`` の rewrite をおこない、H を後で証明する。 *)
     + rewrite (_ : dlsubmx _ = 0).
       * by rewrite ?mul0mx.
-      (* H : dlsubmx (xrow 0 0 A) = 0 の証明 *)
+      (* H : dlsubmx (xrow 0)``_A) = 0 の証明 *)
       * apply/colP=> i.
-        rewrite !mxE lshift0.
+        rewrite !mxE.
+        rewrite lshift0.
         rewrite (elimNf eqP (no_k (tperm 0 0 (rshift 1 i)))).
                          (* (no_k _)                          でもよい。 *)
         done.
@@ -218,12 +231,12 @@ Proof.
   elim: n A => [|n IHn] /= A.
   - by rewrite det1.
   - set A' := _ - _.
-    move/(_ A'): IHn.
-    case: cormen_lup => [[P L U]] {A'}/= detL.
+    move/(_ A') : IHn.
+    case: cormen_lup => [[P L U]] {A'}/=.   (* {A'}/= は ``simpl in A'`` の意味 *)
     by rewrite (@det_lblock _ 1) det1 mul1r.
 Qed.
 
-(* L の対角成分は 1 *)
+(* L の対角成分は 1、単三角行列 *)
 Lemma cormen_lup_lower n A (i j : 'I_n.+1) :
   (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R. (* L *)
 Proof.
@@ -231,9 +244,10 @@ Proof.
   elim: n A i j => [|n IHn] /= A i j.
   - by rewrite [i]ord1 [j]ord1 mxE.
   - set A' := _ - _.
-    move/(_ A'): IHn.
+    move/(_ A') : IHn.
     case: cormen_lup => [[P L U]] {A'}/= Ll.
     rewrite !mxE split1.
+    
     case: unliftP => [i'|] -> /=.
     + rewrite !mxE split1.
       case: unliftP => [j'|] -> //.
@@ -262,5 +276,96 @@ Proof.
 Qed.
 
 End CormenLUP.
+
+(**
+補足説明 Ordinal型の補題
+
+block_mx (row_mx と col_mx) の定義で split を使う。行列を分割するために、
+``i : 'I_m+n`` を m を境界にして、 ``'I_m + 'I_n`` の直積に変換することを行う。
+
+いかにおいて、そのsplitを定義するまでと、'I_(1 + n) の場合の補題 split1 の説明をする。
+ *)
+
+(* bump と lift *)
+Print bump.             (* h 以上なら +1 する。 *)
+(* bump = fun h i : nat => ((h <= i) + i)%N
+   : nat -> nat -> nat
+ *)
+Print lift.                                 (* h 以上なら +1 する。 *)
+(* fun (n : nat) (h : 'I_n) (i : 'I_n.-1) => Ordinal (lift_subproof h i)
+     : forall [n : nat], 'I_n -> 'I_n.-1 -> 'I_n
+                         h       i
+ *)
+(* h が取りうる最大は n-1 であり、i が取りうる最大は n-2 である。
+   bump の値が取りうる最大は n-1 である (h = i = n-2 の場合、+1 して i = n-1) から、
+   帰り値は 'I_n.-1 でよい。 *)
+
+(* split1 補題の中で unlift や unbump を使う。そのためそれらの補題が必要になる。 *)
+(* unbump と unlift *)
+Print unbump.             (* h を超えるなら -1 する。 *)
+(* unbump = fun h i : nat => (i - (h < i))%N
+     : nat -> nat -> nat
+ *)
+Print unlift.                         (* h を超えるなら -1 する。 *)
+(* fun (n : nat) (h i : 'I_n) =>
+   omap (fun u : {j : fintype_ordinal__canonical__eqtype_Equality n | j != h} =>
+   Ordinal (unlift_subproof u))
+   (insub i)
+   : forall [n : nat], 'I_n -> 'I_n -> option 'I_n.-1
+                        h      i
+ *)
+(* h = i の場合 None とする。それ以外の場合は、 *)
+(* h が取りうる最大は n-1 であり、i が取りうる最大は n-1 である。
+   unbump の値が取りうる最大は n-2 である (h = n-2、i = n-1 の場合、-1 して i = n-2) から、
+   帰り値は 'I_n.-1 でよい。 *)
+
+
+(* lshift と rshift *)
+Print lshift.                     (* i の値を変えずに、型を変える。 *)
+(* fun (m n : nat) (i : 'I_m) => Ordinal (lshift_subproof n i)
+   : forall [m : nat] (n : nat), 'I_m -> 'I_(m + n)
+*)
+(* 0 をシフトしても 0 であるが、型は面倒なことになっている。 *)
+Check lshift0 : forall m n : nat, @lshift n.+1 m (0 : 'I_n.+1) =
+                                    (0 : 'I_ ((fix add (n0 m0 : nat) {struct n0} : nat :=
+                                                 match n0 with
+                                                 | 0%N => m0
+                                                 | p.+1 => (add p m0).+1
+                                                 end) n m).+1).
+
+Print rshift.                     (* i - m を返して、型を変える。 *)
+(* fun (m n : nat) (i : 'I_n) => Ordinal (rshift_subproof m i)
+     : forall (m : nat) [n : nat], 'I_n -> 'I_(m + n)
+*)
+
+(* split *)
+(* lshift と rshift のどちらかを行う。どちらかは、引数が直和になっているので決める。 *)
+Print unsplit.
+(* fun (m n : nat) (jk : 'I_m + 'I_n) => match jk with
+                                      | inl j => lshift n j
+                                      | inr k => rshift m k
+                                      end
+     : forall {m n : nat}, 'I_m + 'I_n -> 'I_(m + n)
+ *)
+(* unsplit の逆、lshift の逆か rshift の逆をやる。 *)
+Print split.
+(* fun (m n : nat) (i : 'I_(m + n)) =>
+   match ltnP i m with
+   | LtnNotGeq lt_i_m => inl (Ordinal lt_i_m)
+   | GeqNotLtn ge_i_m => inr (Ordinal (split_subproof ge_i_m))
+   end
+   : forall {m n : nat}, 'I_(m + n) -> 'I_m + 'I_n
+*)
+
+(**
+右辺は、oapp の機能によって、unlift の値が None なら ``inl 0`` を返す。``Some y`` なら ``inr y`` を返す。
+よって、h = 0 なので、i = 0 なら ``0 : 'I_1`` を返す。さもなければ ``i-1 :  'I_n`` を返す。
+*)
+Check split1 : forall (n : nat) (i : 'I_(1 + n)), split i = oapp inr (inl 0) (unlift (n:=n.+1))``_i.
+Check split1 : forall (n : nat) (i : 'I_(1 + n)), split i = oapp inr (inl 0) (@unlift n.+1 0 i).
+(* ``_i は 0 と i を適用するという意味。 *)
+Locate "u '``_' i".                         (* := u 0 i *)
+Check split1 : forall (n : nat) (i : 'I_(1 + n)), split i =
+                                                    oapp inr (inl 0) (@unlift n.+1 0 i) :> 'I_1 + 'I_n.
 
 (* END *)
