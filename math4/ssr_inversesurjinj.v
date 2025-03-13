@@ -109,16 +109,19 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
 単射 `f : A → B` があれば、選択原理を使用することにより
 全射 `g : B → A` を作ることができる。
  *)
+  Definition em_ex (f : A -> B) b := pselect (exists a, f a = b).
+  (*
   Lemma em_ex (f : A -> B) b : {exists a, f a = b} + {~(exists a, f a = b)}.
   Proof.
     by apply: pselect.
   Defined.                      (* em_ex がunfoldできる必要がある。 *)
+  *)
   
   (* 左逆写像 *)
   Definition linv (hnonempty : inhabited A) (f : A -> B) : B -> A.
   Proof.
     move=> b.
-    case: (em_ex f b) => H.     (* em_ex がunfoldできる必要がある。 *)
+    case: (em_ex f b) => H.
     - by apply: (projT1 (cid H)).     (* lean の Classical.choose h *)
     - by apply: inhabited_witness.
   Defined.
@@ -150,9 +153,8 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     exists g.
     rewrite /surjective => a.
     exists (f a).
-    by rewrite gdef.
+    by apply: gdef.
   Qed.
-
 
 (**
 ## 追加
