@@ -126,6 +126,18 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     - by apply: inhabited_witness.
   Defined.
   
+  Lemma linv_spec (f : A -> B) (y : B) (hnonempty : inhabited A) :
+    (exists x, f x = y) -> f (linv hnonempty f y) = y.
+  Proof.
+    case=> x fx_y.
+    rewrite /linv /em_ex.
+    case: pselect => H.
+    - by rewrite (projT2 (cid H)). (* lean の Classical.choose_spec h *)
+    - exfalso.
+      apply: H.
+      by exists x.
+  Qed.
+  
   Lemma inj_to_surj (f : A -> B) :
     inhabited A -> injective f -> exists g : B -> A, surjective g.
   Proof.
