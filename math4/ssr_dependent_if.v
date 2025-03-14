@@ -17,7 +17,7 @@ Proof.
   - by apply: e.
 Defined.
 Arguments dite {a} c t e.
-Notation "'if' h '|' c 'then' t 'else' e" := (dite c (fun h => t) (fun h => e)) (at level 200).
+Notation "'if' h 'of' c 'then' t 'else' e" := (dite c (fun h => t) (fun h => e)) (at level 200).
 
 (**
 使用例
@@ -38,7 +38,7 @@ Section a.
 Notationのif-then-elseを使った例
 *)
   Definition linv' (b : B) (f : A -> B) :=
-    if h | exists a, f a = b then projT1 (cid h) else inhabited_witness hnonempty.
+    if h of exists a, f a = b then projT1 (cid h) else inhabited_witness hnonempty.
 
   Section d.
     Variable f : A -> B.
@@ -64,5 +64,16 @@ Notationのif-then-elseを使った例
   Qed.
 
 End a.
+
+(**
+補足
+
+Lean にあるこの補題は証明できなさそう。左辺のcのインスタンスがhcと限らないため。
+*)
+Lemma dif_pos {a : Type} (c : Prop) (hc : c) (t : c -> a) (e : ~ c -> a) : dite c t e = t hc.
+Proof.
+  rewrite /dite.
+  case: pselect => //=.
+  Abort.
 
 (* END *)
