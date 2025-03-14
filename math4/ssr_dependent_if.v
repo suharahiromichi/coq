@@ -20,6 +20,26 @@ Arguments dite {a} c t e.
 Notation "'if' h 'of' c 'then' t 'else' e" := (dite c (fun h => t) (fun h => e)) (at level 200).
 
 (**
+Lean にある補題
+ProofIrrelevance が証明に必要になる。
+*)
+Require Import ProofIrrelevance.
+
+Lemma dif_pos {a : Type} (c : Prop) (hc : c) (t : c -> a) (e : ~ c -> a) : dite c t e = t hc.
+Proof.
+  rewrite /dite.
+  case: pselect => h //=.
+  by rewrite (proof_irrelevance c h hc).
+Qed.
+
+Lemma dif_neg {a : Type} (c : Prop) (hnc : ~ c) (t : c -> a) (e : ~ c -> a) : dite c t e = e hnc.
+Proof.
+  rewrite /dite.
+  case: pselect => h //=.
+  by rewrite (proof_irrelevance (~ c) h hnc).
+Qed.
+
+(**
 使用例
 *)
 Section a.
@@ -62,18 +82,18 @@ Notationのif-then-elseを使った例
       apply: H.
       by exists x.
   Qed.
-
-End a.
-
+  
 (**
-補足
-
-Lean にあるこの補題は証明できなさそう。左辺のcのインスタンスがhcと限らないため。
+補題を使ってみる。
 *)
-Lemma dif_pos {a : Type} (c : Prop) (hc : c) (t : c -> a) (e : ~ c -> a) : dite c t e = t hc.
-Proof.
-  rewrite /dite.
-  case: pselect => //=.
-  Abort.
+  Lemma linv_spec' (y : B) (f : A -> B) : (exists x, f x = y) -> f (linv y f) = y.
+  Proof.
+    case=> x fx_y.
+    rewrite /linv dif_pos // => [| H].
+    - by exists x.
+    - by rewrite (projT2 (cid H)).
+  Qed.
+  
+End a.
 
 (* END *)
