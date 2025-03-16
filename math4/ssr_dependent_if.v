@@ -1,30 +1,77 @@
 (**
-Dependent if-then-else を Coq/MathComp で定義してみた。
+Lean で多用されている Dependent if-then-else を Coq/MathComp で定義してみた
+
+# Lean 側の文献
+
+## dependent if-then-else
+
+- https://leanprover.github.io/theorem_proving_in_lean/type_classes.html
+
+- https://github.com/leanprover/lean4/blob/master/src/Init/Prelude.lean
+
+- https://github.com/leanprover/lean4/blob/master/src/Init/Core.lean
+
+## 古典公理
+
+- https://github.com/leanprover/lean4/blob/master/src/Init/Classical.lean
+
+- Mathematics in Lean
+4.2 Functions
+
+# MathComp 側の文献
+
+## 古典公理
+
+- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v
+
+- projT1 について ssrcoq.pdf
+Dependent Pairs
+
+- choice について Karate-coq.pdf
+4.1.4 Consequences of Classical Axioms
  *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_classical.
+Require Import ProofIrrelevance.            (* proof_irrelevance *)
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
 Dependent if-then-else の定義
+
+``dite c t e``
+
+命題 c は決定可能であるとする。
+命題 c が成立するときに、その証明 h を then節に適用して (t h) を得る。
+命題 ~ c が成立するときに、その証明 hc を else節に適用して (e hc) を得る。
  *)
 Definition dite {a : Type} (c : Prop) (t : c -> a) (e : ~ c -> a) : a.
 Proof.
-  case: (pselect c).
+  case: (pselect c).                      (* 排中律で場合分けする。 *)
   - by apply: t.
   - by apply: e.
 Defined.
 Arguments dite {a} c t e.
 Notation "'if' h 'of' c 'then' t 'else' e" := (dite c (fun h => t) (fun h => e)) (at level 200).
+(**
+if-then-else らしい構文糖衣を用意する。h は単なる束縛変数であり、
+c の真偽を決めたときの証明そのものではないことに注意すること。
+もっとも ``h : c`` または ``h : ~ c`` であることに間違いはない。
+*)
 
 (**
 Lean にある補題
-ProofIrrelevance が証明に必要になる。
-*)
-Require Import ProofIrrelevance.
 
+- dif_pos c t e == c が成立する場合、``hc : c`` として ``dite c t e = t hc`` である。
+- dif_neg c t e == ~ c が成立する場合、``hnc : ~ c`` として ``dite c t e = e hnc`` である。
+
+どちらも、条件が成立しない場合は前提矛盾 (absure) とする。
+ProofIrrelevance が証明に必要になる。なぜなら、
+c が成立するの証明項 hc と、t に与えられる hc は同じものでなく、
+c が成立しないの証明項 hnc と、e に与えられる hnc は同じものでないため。
+*)
 Lemma dif_pos {a : Type} (c : Prop) (hc : c) (t : c -> a) (e : ~ c -> a) : dite c t e = t hc.
 Proof.
   rewrite /dite.
@@ -40,58 +87,75 @@ Proof.
 Qed.
 
 (**
-使用例
+使用例：左逆写像を定義する。
 *)
 Section a.
+(**
+定義域 A と値域 B を考える。A は空集合でないものとする。
+*)
   Variable A B : Type.
   Variable hnonempty : inhabited A.
   
 (**
-左逆関数の定義
+関数 f の左逆写像を得る。
+
+関数 ``f : A -> B`` に対して、任意の ``b : B`` について、
+``f a = b`` なる ``a : A`` が存在する場合は、``exists a : A, f a = b`` を満たす a を取り出す。
+``a : A`` が存在しない場合は、A に含まれる適当な要素を返す。
+これは逆写像 ``B -> A`` が A を返せばよく、無理矢理全域化するためである。
 *)
-  Definition linv (b : B) (f : A -> B) :=
-    dite (exists a, f a = b)
-      (fun h => projT1 (cid h))    (* lean の Classical.choose_spec h *)
-      (fun h => inhabited_witness hnonempty). (* default *)
+  Definition linv (f : A -> B) (b : B) : A :=
+    dite (exists a : A, f a = b)
+      (fun h => projT1 (cid h))       (* lean の Classical.choose h *)
+      (fun h => inhabited_witness hnonempty). (* lean の default *)
   
 (**
 Notationのif-then-elseを使った例
-*)
-  Definition linv' (b : B) (f : A -> B) :=
-    if h of exists a, f a = b then projT1 (cid h) else inhabited_witness hnonempty.
 
+上記と同じ定義であるが、Notation を使った例である。
+*)
+  Definition linv' (f : A -> B) (b : B) : A :=
+    if h of exists a : A, f a = b then projT1 (cid h) else inhabited_witness hnonempty.
+  
+  (* 同じであることの証明。 *)
+  Goal linv = linv'. Proof. done. Qed.
+  
+(**
+逆写像を求めてみる。
+*)
   Section d.
     Variable f : A -> B.
     Variable y : B.
     
-    Check linv y f.
-    Check linv' y f.
+    Check linv f y.
+    Check linv' f y.
   End d.
   
 (**
 左逆関数が仕様を満たすことの証明
 *)
-  Lemma linv_spec (y : B) (f : A -> B) : (exists x, f x = y) -> f (linv y f) = y.
+  Lemma linv_spec (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
   Proof.
     case=> x fx_y.
     rewrite /linv /dite.
-    case: pselect => H //=.
-    - by rewrite (projT2 (cid H)). (* lean の Classical.choose_spec h *)
-    (* default のほうは、前提矛盾で使われない。 *)
-    - exfalso.
-      apply: H.
-      by exists x.
+    case: pselect => h //=.               (* 排中律で場合分けする。 *)
+    (* ``h : exists x, f x = y`` が成立する場合 *)
+    - by rewrite (projT2 (cid h)). (* lean の Classical.choose_spec h *)
+    (* ``~ (exists x, f x = y)`` が成立する場合 *)
+    - exfalso.                              (* default は使わない。 *)
+      apply: h.
+      by exists x.                          (* 前提矛盾 *)
   Qed.
   
 (**
 補題を使ってみる。
 *)
-  Lemma linv_spec' (y : B) (f : A -> B) : (exists x, f x = y) -> f (linv y f) = y.
+  Lemma linv_spec' (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
   Proof.
     case=> x fx_y.
-    rewrite /linv dif_pos // => [| H].
+    rewrite /linv dif_pos // => [| h].
     - by exists x.
-    - by rewrite (projT2 (cid H)).
+    - by rewrite (projT2 (cid h)).
   Qed.
   
 End a.
