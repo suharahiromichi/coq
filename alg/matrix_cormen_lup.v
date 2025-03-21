@@ -265,23 +265,28 @@ Proof.
     (* ``split i`` の値、直和のどちらかを取るかの場合分けを行う。*)
     rewrite split1.
     case: unliftP => [i'|] -> /=.
-    (*
-goal 1 (ID 67243) is:
+(*
+i が 0 ではない場合：
+goal 1 is:
   (bump 0 i' <= j)%N ->
   row_mx
     ((A (odflt 0 [pick k | A k 0 != 0 ]) 0)^-1 *:
      (P *m dlsubmx (xrow 0 (odflt 0 [pick k | A k 0 != 0 ]) A))) L i' j = ((lift (n:=n.+2))``_i' == j)%:R
-
-goal 2 (ID 67244) is:
- (0 <= j)%N -> (row_mx 1 0)``_j = (0 == j)%:R
-     *)
+*)
     + rewrite !mxE split1.
       case: unliftP => [j'|] -> //.
       by apply: Ll.
+(*
+i が 0 である場合：
+goal 2 is:
+ (0 <= j)%N -> (row_mx 1 0)``_j = (0 == j)%:R
+*)
     + rewrite !mxE split1.
       case: unliftP => [j'|] -> /=.
+      (* j が 0 でない場合 *)
       * rewrite mxE.
         done.
+      (* j が 0 である場合 *)
       * rewrite mxE.
         done.
 Qed.
@@ -309,7 +314,9 @@ End CormenLUP.
 block_mx (row_mx と col_mx) の定義で split を使う。行列を分割するために、
 ``i : 'I_m+n`` を m を境界にして、 ``'I_m`` と ``'I_n`` のふたつの行列（直積）に変換することを行う。
 
-以下において、そのsplitを定義するまでと、'I_(1 + n) の場合の補題 split1 の説明をする。
+以下において、そのsplitを定義するまでと、'I_(1 + n) の場合の補題 split1 の説明、さらに
+split の値が直和のどちらかで場合分けするとき、
+split1 で unlift の出てくる式に書き換えたのち、出てきたunliftを Some か None で場合分けする。
  *)
 
 (* bump と lift *)
@@ -392,15 +399,8 @@ Print split.
 (* ltnP を証明で使う場合は ``case: ltnP`` でよいが、関数定義に使う場合は上のようにする。 *)
 
 (* split1 補題 *)
-(**
-split の値が直和のどちらかで場合分けするとき、
-split1 で unlift の出てくる式に書き換えたのち、出てきたunliftを Some か None で場合分けする。
-
-*)
-
 (* Option 型から中身をとりだす。Noneならdefault値を使う。 *)
 Check oapp : forall aT rT : Type, (aT -> rT) -> rT -> option aT -> rT.
-
 (**
 右辺は、oapp の機能によって、unlift の値が None なら ``inl 0`` を返す。``Some y`` なら ``inr y`` を返す。
 よって、h = 0 なので、i = 0 なら ``0 : 'I_1`` を返す。さもなければ ``i-1 :  'I_n`` を返す。
@@ -418,5 +418,16 @@ Check unliftP : forall (n : nat) (h i : 'I_n), unlift_spec h i (unlift h i).
 Print unlift_spec.
 (* unlift が Some i0 ただし i0 : 'I_n.+2.-1 を返すか、None を返すかで場合分けする。 *)
 (* 前者の場合、i0 の中身の自然数を i' として取り出す。 *)
+
+(**
+ここを最初に読む。
+
+split の値が直和のどちらかで場合分けするとき、
+split1 で unlift の出てくる式に書き換えたのち、出てきたunliftを Some か None で場合分けする。
+
+このとき、option 型の定義から、goal 1 が Some、goal 2 が None になることに注意
+*)
+Print option.
+(* Inductive option (A : Type) : Type :=  Some : A -> option A | None : option A. *)
 
 (* END *)
