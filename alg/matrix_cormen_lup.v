@@ -32,7 +32,7 @@ Variable F : fieldType.
 (*   - L a unipotent lower triangular matrix 冪単三角行列 実際は 単三角行列 *)
 (*   - U an upper triangular matrix                *)
 
-Fixpoint cormen_lup {n} :=
+Fixpoint cormen_lup {n} :=                  (* (P, L), U *)
   match n return let M := 'M[F]_n.+1 in M -> M * M * M with
   | 0 => fun A => (1, 1, A)
   | _.+1 => fun A =>
@@ -47,10 +47,17 @@ Fixpoint cormen_lup {n} :=
     (P, L, U)
   end.
 
+(*
+  P * A = L * U
+  (cormen_lup A).1.1  == P
+  (cormen_lup A).1.2  == L
+  (cormen_lup A).2    == U
+ *)
+
 (* match-return は match の返す型。この場合、関数の型で指定しても同じである。 *)
-Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> 'M[F]_n.+1 * 'M[F]_n.+1 * 'M[F]_n.+1 :=
+Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> ('M[F]_n.+1 * 'M[F]_n.+1) * 'M[F]_n.+1 :=
   match n (* return let M := 'M[F]_n.+1 in M -> M * M * M *) with
-  | 0 => fun A => (1, 1, A)
+  | 0 => fun A => (1, 1, A)                 (* 1 * A = 1 * A *)
   | _.+1 => fun A =>
               (* odflt は option T 型を T 型にする。ディフォルトはここで用意する。  *)
               (* odflt 0 (Some k) == k, odflt 0 None == 0 *)
@@ -82,22 +89,23 @@ Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> 'M[F]_n.+1 * 'M[F]_n.+1 * 'M[F]_n
     let L := (block_mx 1  0 (a^-1 *: (P2 *m v)) L2) in
     let U := (block_mx a' w 0                   U2) in
     
-    (* P               * A = L                    * U          *)
+    (* P               * A = L                    * U            *)
 
-    (* / 1 | 0  \            / 1           | 0  \   / a | w  \ *)
-    (* |        | * P1 * A = |                  | * |        | *)
-    (* \ 0 | P2 /            \ (1/a)*P2*v  | L2 /   \ 0 | U2 / *)
+    (* / 1 | 0  \            / 1           | 0  \   / a | w  \   *)
+    (* |        | * P1 * A = |                  | * |        |   *)
+    (* \ 0 | P2 /            \ (1/a)*P2*v  | L2 /   \ 0 | U2 /   *)
     
-    (*        / 1 | 0  \   / a | w  \   / a    | w     \ *)
-    (* 左辺 = |        | * |        | = |              | *)
-    (*        \ 0 | P2 /   \ v | A2 /   \ P2*v | P2*A2 / *)
+    (*        / 1 | 0  \   / a | w  \   / a    | w     \         *)
+    (* 左辺 = |        | * |        | = |              |         *)
+    (*        \ 0 | P2 /   \ v | A2 /   \ P2*v | P2*A2 /         *)
     
-    (*        / a    | w                   \   / a    | w     \ *)
-    (* 右辺 = |                            | = |              | *)
-    (*        \ P2*v | (1/a)*P2*v*w + L2*U2/   \ P2*v | P2*A2 / *)
-    (*                 ~~~~~~~~~~~~~~~~~~~~             ~~~~~   *)
+    (*        / a    | w                    \   / a    | w     \ *)
+    (* 右辺 = |                             | = |              | *)
+    (*        \ P2*v | (1/a)*P2*v*w + L2*U2 /   \ P2*v | P2*A2 / *)
+    (*                 ~~~~~~~~~~~~~~~~~~~~~             ~~~~~   *)
     
     (* ただし、シューア部分行列に対して 再帰的に LUP分割を行ったことから *)
+    (* P2 * Schur            = L2*U2 *)
     (* P2 * (A2 - (1/a)*v*w) = L2*U2 *)
     (* これを変形して、P2*A2 = P2*(1/a)*v*w + L2*U2 であることを使う。 *)
     
@@ -132,8 +140,8 @@ Section mx_perm.
   Variable A : 'M[F]_n.+2.
 
   (* LUP分解の置換行列 P の左上に 1 を置いた行列。 *)
-  Local Definition MA := @block_mx F 1 n.+1 1 n.+1 1 0 0 P.
-
+  Local Definition MA := @block_mx F 1 n.+1 1 n.+1 1 0 0 P. (* 置換行列 *)
+  
   Check [pick k | A k 0 != 0] : option 'I_n.+2. (* A_k_0 が非零の k を取り出す。 *)
   Check odflt 0 [pick k | A k 0 != 0] : 'I_n.+2. (* Option T を T にする。 *)
 
@@ -143,7 +151,7 @@ Section mx_perm.
   Check @tperm 'I_n.+2 0 2 1 : 'I_n.+2.
   
   (* A_k_0 が非零の k に対して、0番目とk番目を置換する。 *)
-  Local Definition PB := tperm 0 (odflt 0 [pick k | A k 0 != 0]).
+  Local Definition PB := tperm 0 (odflt 0 [pick k | A k 0 != 0]). (* 置換 *)
   Check perm_mx PB.                       (* 置換PBを行列MAにする。 *)
   
   (* 行列 MA が置換行列なら、PB は置換である。 *)
@@ -176,6 +184,7 @@ Proof.
     case: (cormen_lup A') => [[P L U]] {A'} /=. (* cormen_lup A' を P L U に分割する。 *)
     
     (* 置換を簡単にする。 *)
+    Check is_perm_MA_PB P A.
     rewrite is_perm_MA_PB.
     Check is_perm_mx P -> is_perm_mx (MA P).
     
@@ -198,7 +207,7 @@ Lemma cormen_lup_correct n (A : 'M_n.+1) :
   let: (P, L, U) := cormen_lup A in P * A = L * U.
 Proof.
   elim: n => [|n IHn] /= in A *.
-  - by rewrite !mul1r.
+  - done.                                   (* by rewrite !mul1r. *)
   - set k := odflt 0 [pick k | A k 0 != 0 ] : 'I_n.+2. (* 右辺は ``odflt _ _`` とだけでもよい。 *)
     set A1 : 'M_(1 + n.+1) := xrow 0 k A.              (* ``xrow _ _ _`` *)
     set A' := drsubmx A1 - (A k 0)^-1 *: dlsubmx A1 *m ursubmx A1. (* ``_ - _`` *)
@@ -212,6 +221,8 @@ Proof.
     congr (block_mx _ _ (_ *m _) _).
     rewrite [_ *: _]mx11_scalar !mxE lshift0 tpermL {}/A1 {}/k.
     
+    Check odflt : forall T : Type, T -> option T -> T.
+    
     (* [pick k | A k 0 != 0 ] で場合分けする。 *)
     case: pickP => /= [k nzAk0 | no_k].
     (* A k 0 が非零である k を取り出せた場合。 *)
@@ -221,15 +232,17 @@ Proof.
       
     (* A k 0 が非零である k を取り出せず、デフォルトの0になった場合。 *)
     (* 前提 : (fun k : 'I_n.+2 => A k 0 != 0) =1 xpred0 *)
-    (* ``H : dlsubmx (xrow 0)``_A = 0`` の rewrite をおこない、H を後で証明する。 *)
+    (* ``H : dlsubmx (xrow 0 0 A = 0`` の rewrite をおこない、H を後で証明する。 *)
     (* (xrow 0)``_A は ``xrow 0 0 A`` の意味。わかりにくいと思うが、ring_scope *)
     + rewrite (_ : dlsubmx _ = 0).
-      * by rewrite ?mul0mx.
-
-      (* H : dlsubmx (xrow 0)``_A) = 0 の証明 *)
+      * by rewrite mul0mx.
+        
+      (* H : dlsubmx (xrow 0 0 A) = 0 の証明 *)
       * apply/colP=> i.
         rewrite !mxE.
         rewrite lshift0.
+        Check elimNf : forall (P : Prop) (b : bool), reflect P b -> ~~ b = false -> P.
+        Check elimNf eqP (no_k (tperm 0 0 (rshift 1 i))) : A (tperm 0)``_(rshift 1 i) 0 = 0.
         rewrite (elimNf eqP (no_k (tperm 0 0 (rshift 1 i)))).
                          (* (no_k _)                          でもよい。 *)
         done.
@@ -278,7 +291,7 @@ goal 1 is:
      (P *m dlsubmx (xrow 0 (odflt 0 [pick k | A k 0 != 0 ]) A))) L i' j = ((lift (n:=n.+2))``_i' == j)%:R
 *)
     + rewrite !mxE split1.
-      case: unliftP => [j'|] -> //.
+      case: unliftP => [j'|] -> //=.
       by apply: Ll.
 (*
 i が 0 である場合：
@@ -330,6 +343,7 @@ Print bump.             (* 自然数の関数。h 以上なら +1 する。 *)
 (* bump = fun h i : nat => ((h <= i) + i)%N
    : nat -> nat -> nat
  *)
+(*      bump h i *)
 Compute bump 2 1.                           (* 1 *)
 Compute bump 2 2.                           (* 3 *)
 Print lift.                                 (* h 以上なら +1 する。 *)
@@ -347,8 +361,9 @@ Print unbump.             (* 自然数の関数。h を超えるなら -1 する
 (* unbump = fun h i : nat => (i - (h < i))%N
      : nat -> nat -> nat
  *)
+(*      unbump h i *)
 Compute unbump 2 2.                   (* 2 *)
-Compute unbump 2 3.                   (* 3 *)
+Compute unbump 2 3.                   (* 2 *)
 Print unlift.                         (* h を超えるなら -1 する。 *)
 Check fun (n : nat) (h i : 'I_n) =>
         omap (fun u : {j : 'I_n | j != h} => Ordinal (unlift_subproof u)) (* omap に渡す関数 *)
@@ -406,6 +421,7 @@ Print split.
    : forall {m n : nat}, 'I_(m + n) -> 'I_m + 'I_n
 *)
 (* ltnP を証明で使う場合は ``case: ltnP`` でよいが、関数定義に使う場合は上のようにする。 *)
+Check ltnP.
 
 (* split1 補題 *)
 (* Option 型から中身をとりだす。Noneならdefault値を使う。 *)
