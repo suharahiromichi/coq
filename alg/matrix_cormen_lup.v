@@ -95,9 +95,11 @@ Fixpoint cormen_lup' {n : nat} : 'M[F]_n.+1 -> 'M[F]_n.+1 * 'M[F]_n.+1 * 'M[F]_n
     (*        / a    | w                   \   / a    | w     \ *)
     (* 右辺 = |                            | = |              | *)
     (*        \ P2*v | (1/a)*P2*v*w + L2*U2/   \ P2*v | P2*A2 / *)
+    (*                 ~~~~~~~~~~~~~~~~~~~~             ~~~~~   *)
     
-    (* ただし、再帰的なLUP分割から、P2 * (A2 - (1/a)*v*w) = L2*U2 *)
-    (* 変形して、P2*A2 = P2*(1/a)*v*w + L2*U2 *)
+    (* ただし、シューア部分行列に対して 再帰的に LUP分割を行ったことから *)
+    (* P2 * (A2 - (1/a)*v*w) = L2*U2 *)
+    (* これを変形して、P2*A2 = P2*(1/a)*v*w + L2*U2 であることを使う。 *)
     
     (P, L, U)
   end.
@@ -245,6 +247,8 @@ Proof.
     by rewrite (@det_lblock _ 1) det1 mul1r.
 Qed.
 
+(* 補足説明 Ordinal型の補題 *)
+
 (* 補題：L の対角成分は 1。単三角行列 *)
 Lemma cormen_lup_lower n A (i j : 'I_n.+1) :
   (i <= j)%N -> (cormen_lup A).1.2 i j = (i == j)%:R. (* L *)
@@ -311,16 +315,18 @@ End CormenLUP.
 (**
 補足説明 Ordinal型の補題
 
-block_mx (row_mx と col_mx) の定義で split を使う。行列を分割するために、
-``i : 'I_m+n`` を m を境界にして、 ``'I_m`` と ``'I_n`` のふたつの行列（直積）に変換することを行う。
+ブロック行列 (区分行列) を作る block_mx (row_mx と col_mx) の定義で split を使う。
+行列を分割するために、``i : 'I_m+n`` を m を境界にして、
+``'I_m`` と ``'I_n`` のふたつの行列（直積）に変換することを行う。
 
-以下において、そのsplitを定義するまでと、'I_(1 + n) の場合の補題 split1 の説明、さらに
+``i : 'I_m+n`` が、境界のどちらにあるか判定して、``'I_m``か``'I_n`` かを返す関数 split を使用する。
+以下において、そのsplitを定義するまでと、'I_(1+n) の場合の補題 split1 の説明、さらに
 split の値が直和のどちらかで場合分けするとき、
-split1 で unlift の出てくる式に書き換えたのち、出てきたunliftを Some か None で場合分けする。
+split1 で unlift の出てくる式に書き換えたのち、出てきたunliftを Some か None で場合分けする方法を説明する。
  *)
 
 (* bump と lift *)
-Print bump.             (* 自然数の補題。h 以上なら +1 する。 *)
+Print bump.             (* 自然数の関数。h 以上なら +1 する。 *)
 (* bump = fun h i : nat => ((h <= i) + i)%N
    : nat -> nat -> nat
  *)
@@ -337,7 +343,7 @@ Print lift.                                 (* h 以上なら +1 する。 *)
 
 (* split1 補題の中で unlift や unbump を使う。そのためそれらの補題が必要になる。 *)
 (* unbump と unlift *)
-Print unbump.             (* h を超えるなら -1 する。 *)
+Print unbump.             (* 自然数の関数。h を超えるなら -1 する。 *)
 (* unbump = fun h i : nat => (i - (h < i))%N
      : nat -> nat -> nat
  *)
@@ -376,6 +382,7 @@ Print rshift.                     (* m + i を返して、型を変える。 *)
 *)
 
 (* unsplit *)
+(* lshift と rshift をひとつにまとめる。 *)
 (* ``'I_m`` と ``'I_n`` を ``'I_(m + n)`` に変換する。``'I_m`` なら値はそのまま。
  ``'I_n``なら m を加算してシフトする。 *)
 (* lshift と rshift のどちらかを行う。どちらかは、引数が直和になっているので決める。 *)
@@ -386,8 +393,10 @@ Print unsplit.
                                       end
      : forall {m n : nat}, 'I_m + 'I_n -> 'I_(m + n)
  *)
+
 (* split *)
-(* unsplit の逆、lshift の逆か rshift の逆をやる。 *)
+(* unsplit の逆、lshift の逆か rshift の逆関数。 *)
+Check splitK : cancel split unsplit.
 Print split.
 (* fun (m n : nat) (i : 'I_(m + n)) =>
    match ltnP i m with
