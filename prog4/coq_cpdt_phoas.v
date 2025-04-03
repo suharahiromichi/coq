@@ -42,10 +42,10 @@ Module HigherOrder.
   Arguments Const [var] _.
   Arguments Abs [var dom ran] _.
 
-  Definition Term t := forall var, term var t. (* var : type -> Type *)
+  Definition Term t := forall (var : type -> Type), term var t.
   Check term : (type -> Type) -> type -> Type.
   Check Term : type -> Type.
-
+  
   Example add : Term (Func Nat (Func Nat Nat)) :=
     fun var => Abs (fun x => Abs (fun y => Plus (Var x) (Var y))).
   Example three_the_hard_way : Term Nat :=
@@ -67,30 +67,21 @@ Module HigherOrder.
       we must provide the data value to annotate on the new variable we pass beneath.
       For our current choice of [unit] data, we always pass [tt].
 *)
-
   (* sample *)
-  Module test.
-    Section test.
-      Variable t : type.
-      
-      (* 抽象型 var を与える。具体的な型は与えられない。 *)
-      Variable var : type -> Type.
-      Check term var t : Type.
-      Check @Var var t _ : term var t.
-      Check Var _ : term var t.
-      
-      (* e : ``term var t`` の var を具体的に与える。 *)
-      Check (fun _ : type => unit) : type -> Type.
-      (* ``var t`` は、上記の型に依存する。この場合 unit 型になる。 *)
-      Check tt : (fun _ : type => unit) t.
-      (* ``term var t`` の具体的な型は Type になる。 *)
-      Check term (fun _ : type => unit) t : Type.
-      (* @Var は4引数、略すと1引数である。 *)
-      Check @Var (fun _ => unit) t          tt      : term (fun _ => unit) t.
-      (*         (var)           (forall t) (var t) *)
-      Check Var                             tt      : term (fun _ => unit) t.
-      (* 次の match 式のパターンが 2引数である理由は判らない。 *)
-    End test.
+  Section test.
+    Check Term (Func Nat Nat).
+    (* これは、以下と同じ。 *)
+    Check forall (var : type -> Type), term var (Func Nat Nat).
+    
+    (* この型を持つ値は、 *)
+    Check (fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) : Term (Func Nat Nat).
+    Check (fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+      : forall (var : type -> Type), term var (Func Nat Nat).
+    
+    (* constVars の引数は、``E (fun _ => unit)`` であるから *)
+    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+             (fun _ => unit)).
+    (* : term (fun _ : type => unit) (Func Nat Nat) *)
   End test.
   
   Fixpoint countVars (t : type) (e : term (fun _ => unit) t) : nat :=
@@ -122,13 +113,13 @@ Module HigherOrder.
   
   Eval compute in CountVars three_the_hard_way. (* 2 *)
   (* sample *)
-  Compute CountVars (fun var : type -> Type => Var _).
+  Compute CountVars (fun var : type -> Type => (Abs (fun x => Var x))).
   Compute CountVars (fun var : type -> Type => Const 1).
   Compute CountVars (fun var : type -> Type => Plus (Const 1) (Const 1)).
-  Compute CountVars (fun var : type -> Type => Plus (Const 1) (Var _)).
-  Compute CountVars (fun var : type -> Type => Plus (Plus (Const 1) (Const 2)) (Var _)).
-  Compute CountVars (fun var : type -> Type => Plus (Const 1) (Plus (Const 2) (Var _))).
-
+  Compute CountVars (fun var : type -> Type => (Abs (fun x => Plus (Const 1) (Var x)))).
+  Compute CountVars (fun var : type -> Type => (Abs (fun x => Plus (Plus (Const 1) (Const 2)) (Var x)))).
+  Compute CountVars (fun var : type -> Type =>
+                       (Abs (fun x => Abs (fun y => Plus (Const 1) (Plus (Var x) (Var x)))))).
   
   (** *** Pretty *)  
   
@@ -144,21 +135,11 @@ Module HigherOrder.
   Require Import String.
   Open Scope string_scope.
 
-  (* sample *)
-  Module test2.
-    Section test2.
-      Variable t : type.
-      (* e : ``term var t`` の var を具体的に与える。 *)
-      Check (fun _ : type => string) : type -> Type.
-      (* ``var t`` は、上記の型に依存する。この場合 string 型になる。 *)
-      Check "x" : (fun _ : type => string) t.
-      (* ``term var t`` の具体的な型は Type になる。 *)
-      Check term (fun _ : type => string) t : Type.
-      (* @Var は4引数、略すと1引数である。 *)
-      Check @Var (fun _ => string) t          "x"      : term (fun _ => string) t.
-      (*         (var)             (forall t) (var t) *)
-      Check Var                               "x"      : term (fun _ => string) t.
-    End test2.
+  Section test2.
+    (* pretty の引数は、``E (fun _ => string)`` であるから *)
+    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+             (fun _ => string)).
+    (* : term (fun _ : type => unit) (Func Nat Nat) *)
   End test2.
   
   Fixpoint pretty (t : type) (e : term (fun _ => string) t) (x : string) : string :=
@@ -177,35 +158,35 @@ Module HigherOrder.
 
   Eval compute in Pretty three_the_hard_way. (* "(((fun x => (fun x' => (x + x'))) N) N)" *)
   (* sample *)
-  Compute Pretty (fun var : type -> Type => Var _).
+  Compute Pretty (fun var : type -> Type => Abs (fun x => Var x)).
   Compute Pretty (fun var : type -> Type => Const 1).
   Compute Pretty (fun var : type -> Type => Plus (Const 1) (Const 1)).
-  Compute Pretty (fun var : type -> Type => Plus (Const 1) (Var _)).
-  Compute Pretty (fun var : type -> Type => Plus (Plus (Const 1) (Const 2)) (Var _)).
-  Compute Pretty (fun var : type -> Type => Plus (Const 1) (Plus (Const 2) (Var _))).
-
+  Compute Pretty (fun var : type -> Type => Abs (fun x => Plus (Const 1) (Var x))).
+  Compute Pretty (fun var : type -> Type => Abs (fun x => Plus (Plus (Const 1) (Const 2)) (Var x))).
+  Compute Pretty (fun var : type -> Type => Abs (fun x => Plus (Const 1) (Plus (Const 2) (Var x)))).
+  
   (** *** squash *)
   (** Note that this function squash is parameterized over a specific var choice.
       この関数 squash は、特定の var 選択に対してパラメーター化されることに注意してください。
    *)
+
+  Definition Term1 (t1 t2 : type) := forall (var : type -> Type), var t1 -> term var t2.
   
-  Module test3.
-    Section test3.
-      Variable var : type -> Type.
-      (* e : ``term var t`` の var を具体的に与える。 *)
-      Check (term var).
-      (* ``term var t`` の具体的な型は Type になる。 *)
-      Check term (term var) Nat : Type.
-      (* @Var は4引数、略すと1引数である。 *)
-      Check @Var (term var) Nat        (Const 3) : term (term var) Nat.
-      (*         (var)      (forall t) (var t) *)
-      Check Var                        (Const 3) : term (term var) Nat.
-      Check @Var (term var) Nat        (three_the_hard_way var)  : term (term var) Nat.
-      Check Var                        (three_the_hard_way var)  : term (term var) Nat.
-      
-      Check (three_the_hard_way var) : term var Nat. (* これは既出。*)
-      Check Var (three_the_hard_way var) : term (term var) Nat. (* 上記を Var の引数にとる。 *)
-    End test3.
+  Section test3.
+    Check Term1 Nat Nat.
+    (* これは、以下と同じ。 *)
+    Check forall (var : type -> Type), var Nat -> term var Nat.
+
+    (* この型を持つ値は、 *)
+    Check (fun (var : type -> Type) => fun (x : var Nat) => Var x) : Term1 Nat Nat.
+    Check (fun (var : type -> Type) => fun (x : var Nat) => Var x)
+      : forall (var : type -> Type), var Nat -> term var Nat.
+
+    (* squash の引数は、``E (term var) (E' var))`` であるから *)
+    (* ******************** *)
+    (* ここを補足する！！！ *)
+    (* ******************** *)
+    
   End test3.
   
   Fixpoint squash var (t : type) (e : term (term var) t) : term var t :=
@@ -218,7 +199,6 @@ Module HigherOrder.
     | Let _ _ e1 e2 => Let (squash e1) (fun x => squash (e2 (Var x)))
     end.
   
-  Definition Term1 (t1 t2 : type) := forall var, var t1 -> term var t2.
   Definition Subst (t1 t2 : type) (E : Term1 t1 t2) (E' : Term t1) : Term t2 :=
     fun var => squash (E (term var) (E' var)).
 
@@ -264,6 +244,14 @@ Module HigherOrder.
   
   (** 表示的意味論を与える関数を定義できる。 *)
   
+  (* sample *)
+  Section test4.
+    (* termDenote の引数は、``E typeDenote`` であるから *)
+    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+             typeDenote).
+    (* : term typeDenote (Func Nat Nat) *)
+  End test4.
+  
   Fixpoint termDenote t (e : term typeDenote t) : typeDenote t :=
     match e with
     | Var _ v => v
@@ -278,15 +266,13 @@ Module HigherOrder.
   
   Eval compute in TermDenote three_the_hard_way. (* = 3 *)
   (* sample *)
-  Compute TermDenote (fun var : type -> Type => Var _).
+  Compute TermDenote (fun var : type -> Type => Abs (fun (x : var Nat) => Var x)).
   Compute TermDenote (fun var : type -> Type => Const 1).
   Compute TermDenote (fun var : type -> Type => Plus (Const 1) (Const 1)).
-  Compute TermDenote (fun var : type -> Type => Plus (Const 1) (Var _)).
-  Compute TermDenote (fun var : type -> Type => Plus (Plus (Const 1) (Const 2)) (Var _)).
-  Compute TermDenote (fun var : type -> Type => Plus (Const 1) (Plus (Const 2) (Var _))).
+  Compute TermDenote (fun var : type -> Type => Abs (fun (x : var Nat) => Plus (Const 1) (Var x))).
+  Compute TermDenote (fun var : type -> Type => App (Abs (fun (x : var Nat) => Var x))
+                                                  (Const 1)).
   
-  (* Subst をunfold してから計算する。 *)
-
   (** 要約すると、
       PHOAS 表現はより標準的な first-order エンコーディングの表現力をすべて備えており、
       変数にデータをタグ付けするという新しい機能のおかげで、
@@ -303,14 +289,11 @@ Module HigherOrder.
    *)
   
   (* sample *)
-  Check (fun var : type -> Type => Var _)                    : forall var, term var Nat.
-  (* λ式のボディは term var Nat である。 *)
-  Check (fun var : type -> Type => Var _)                    : Term Nat.
-  Check (fun var : type -> Type => Const 1)                  : Term Nat.
-  Check (fun var : type -> Type => Plus (Const 1) (Const 2)) : Term Nat.
-  Check (fun var : type -> Type => Plus (Const 1) (Var _))   : Term Nat.
-  Check (fun var : type -> Type => Plus (Plus (Const 1) (Const 2)) (Var _)) : Term Nat.
-  Check (fun var : type -> Type => Plus (Const 1) (Plus (Const 2) (Var _))) : Term Nat.
+  Section test5.
+    (* ident の引数は、``E var`` であるから *)
+    Check fun var => (fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) var.
+    (* forall var : type -> Type, term var (Func Nat Nat) *)
+  End test5.
   
   Fixpoint ident var t (e : term var t) : term var t :=
     match e with
@@ -325,13 +308,13 @@ Module HigherOrder.
   Definition Ident t (E : Term t) : Term t := fun var => ident (E var).
 
   (* sample *)
-  Compute Ident (fun var : type -> Type => Var _).
+  Compute Ident (fun var : type -> Type => Abs (fun (x : var Nat) => Var x)).
   Compute Ident (fun var : type -> Type => Const 1).
   Compute Ident (fun var : type -> Type => Plus (Const 1) (Const 1)).
-  Compute Ident (fun var : type -> Type => Plus (Const 1) (Var _)).
-  Compute Ident (fun var : type -> Type => Plus (Plus (Const 1) (Const 2)) (Var _)).
-  Compute Ident (fun var : type -> Type => Plus (Const 1) (Plus (Const 2) (Var _))).
-
+  Compute Ident (fun var : type -> Type => Abs (fun (x : var Nat) => Plus (Const 1) (Var x))).
+  Compute Ident (fun var : type -> Type => App (Abs (fun (x : var Nat) => Var x))
+                                             (Const 1)).
+  
   Lemma identSound : forall t (e : term typeDenote t),
       termDenote (ident e) = termDenote e.
   Proof.
@@ -460,7 +443,7 @@ Module HigherOrder.
       -> wf G (Var x) (Var x')
 
     | WfConst : forall G n, wf G (Const n) (Const n)
-
+                               
     | WfPlus : forall G e1 e2 e1' e2', wf G e1 e1'
       -> wf G e2 e2'
       -> wf G (Plus e1 e2) (Plus e1' e2')
