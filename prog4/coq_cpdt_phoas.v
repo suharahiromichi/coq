@@ -69,6 +69,34 @@ Module HigherOrder.
 *)
   (* sample *)
   Section test.
+    
+    (* (1) Nat *)
+    Check Term Nat.
+    (* これは、以下と同じ。 *)
+    Check forall (var : type -> Type), term var Nat.
+    
+    (* この型を持つ値は、 *)
+    Check (fun (var : type -> Type) => Const 3) : Term Nat.
+    Check (fun (var : type -> Type) => Const 3)
+      : forall (var : type -> Type), term var Nat.
+    
+    (* constVars の引数は、``E (fun _ => unit)`` であるから *)
+    Check ((fun (var : type -> Type) => Const 3) (fun _ => unit))
+      : term (fun _ : type => unit) Nat.
+    Compute ((fun (var : type -> Type) => Const 3) (fun _ => unit)).
+    (* 評価結果 *)
+    Check Const 3 : term (fun _ : type => unit) Nat.
+    Check @Const (fun _ : type => unit) 3.
+    
+    (* termDenote の引数は、``E typeDenote`` であるから *)
+    Check ((fun (var : type -> Type) => Const 3) typeDenote)
+      : term typeDenote Nat.
+    Compute ((fun (var : type -> Type) => Const 3) typeDenote).
+    (* 評価結果 *)
+    Check Const 3 : term typeDenote Nat.
+    Check @Const typeDenote 3.
+    
+    (* (2) Nat -> Nat *)
     Check Term (Func Nat Nat).
     (* これは、以下と同じ。 *)
     Check forall (var : type -> Type), term var (Func Nat Nat).
@@ -81,7 +109,51 @@ Module HigherOrder.
     (* constVars の引数は、``E (fun _ => unit)`` であるから *)
     Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
              (fun _ => unit)).
-    (* : term (fun _ : type => unit) (Func Nat Nat) *)
+    Compute ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+               (fun _ => unit)).
+    (* 評価結果 *)
+    Check Abs (fun x : (fun _ : type => unit) Nat => Var x)
+      : term (fun _ : type => unit) (Func Nat Nat).
+    Check @Abs (fun _ : type => unit)
+      Nat
+      Nat
+      (fun x : (fun _ : type => unit) Nat => @Var (fun _ : type => unit) Nat x).
+    
+    (* termDenote の引数は、``E typeDenote`` であるから *)
+    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+             typeDenote).
+    Compute ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
+               typeDenote).
+    (* 評価結果 *)
+    Check Abs (fun x : typeDenote Nat => Var x) : term typeDenote (Func Nat Nat).
+    Check @Abs typeDenote
+      Nat
+      Nat
+      (fun x : typeDenote Nat => @Var typeDenote Nat x) : term typeDenote (Func Nat Nat).
+
+    Section var.
+      Variable var : type -> Type.
+
+      (* 引数は、``E : Term t`` のとき ``E var`` であるから *)
+      Check (fun (var : type -> Type) => Const 3) : Term Nat.
+      Check ((fun (var : type -> Type) => Const 3) var) : term var Nat.
+      Compute ((fun (var : type -> Type) => Const 3) var). (* = Const 3 *)
+        (* 評価結果 *)
+      Check Const 3 : term var Nat.
+      Check @Const var 3.
+
+      Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) var) : term var (Func Nat Nat).
+      Compute ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) var).
+      (* 評価結果 *)
+      Check Abs (fun x : var Nat => Var x) : term var (Func Nat Nat).
+      Check @Abs var Nat Nat (fun x : var Nat => @Var var Nat x).
+
+      Check term : (type -> Type) -> type -> Type.
+      Check term var : type -> Type.
+      Check term (term var) : type -> Type.
+      Check term (term (term var)) : type -> Type.
+      
+    End var.
   End test.
   
   Fixpoint countVars (t : type) (e : term (fun _ => unit) t) : nat :=
