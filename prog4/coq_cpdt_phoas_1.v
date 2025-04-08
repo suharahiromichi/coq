@@ -85,12 +85,6 @@ Module HigherOrder.
                                      (@Const var 1))
     : Term Nat.
   
-  (**
-     Abs の中身は、``var Nat -> term Nat`` 型である。
-     ``x : var Nat`` は Type型 であるから、x は coqの普通のオブジェクトでよい。
-     むしろ x を与えないと ``Term Nat`` にならない。
-   *)
-  
   (** ** 17.2.1 Functional Programming with PHOAS *)
 
   (** *** termDenote 表示的意味論を与える関数 *)
@@ -114,8 +108,18 @@ Module HigherOrder.
   (** termDenote の引数は、Term t に typeDenote を適用したもの。 *)
   Check (fun var => (App (Abs (fun x : var Nat => Var x)) (Const 1))) typeDenote.
   Compute (fun var => (App (Abs (fun x : var Nat => Var x)) (Const 1))) typeDenote.
+  Set Printing All.
+  Check @App typeDenote Nat Nat
+    (@Abs typeDenote Nat Nat (fun x : typeDenote Nat => @Var typeDenote Nat x))
+    (@Const typeDenote 1) : term typeDenote Nat.
   Check App (Abs (fun x : typeDenote Nat => Var x)) (Const 1)
     : term typeDenote Nat.
+  
+  (**
+     Abs の中身は、``typeDenote Nat -> term typeDenote Nat`` 型である。
+     ``x : typeDenote Nat`` は  nat であるから、x は 自然数であってよい。
+     むしろ x を与えないと ``Term Nat`` にならない。
+   *)
   
   (** TermDenote を実行してみる。引数は Term t  *)
   Check (fun var => (App (Abs (fun x : var Nat => Var x)) (Const 1))) : Term Nat.
