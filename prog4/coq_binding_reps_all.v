@@ -2,7 +2,19 @@
 Parametric Higher-Order Abstract Syntax (PHOAS) などの 変数束縛を扱う構文の表現の比較
 
 2025_04_12
+
+
+PHOASの必要性
+
+- ホスト言語(Coq)は、Lispのようなメタ表現がないので、
+  ホスト言語をソース言語やターゲット言語にするわけにいかない。
+- Named ASTと同等以上の表現力が欲しいが、Substをホスト言語の機能を利用して楽をしたい。
+- PHOAS は、Named ASTの変数をパラメタライズしたもの。これにより、Subst を自分で実装しなくてもよい。
+- パラメタライズに当たって、ソース言語やターゲット言語の型を表す場合と、
+  ソース言語やターゲット言語の型からホスト言語の型への変換を表す場合がある。Typed PHOAS、TPHOAS。
+  CPDTでは、後者をPHOASと呼んでいる。後者(TPHOAS)の方がホスト言語への埋め込みが易しい。
  *)
+
 Require Import String.
 Require Import List.
 Import ListNotations.
