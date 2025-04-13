@@ -9,15 +9,6 @@ Import ListNotations.
 
 Open Scope string_scope.
 
-Module HOAS.
-  Section HOAS.
-    
-    Fail Inductive expr : Type :=
-    | App : expr -> expr -> expr
-    | Lam : (expr -> expr) -> expr.
-  End HOAS.
-End HOAS.
-
 (**
 De Bruijn Index
 *)
@@ -32,8 +23,9 @@ Module DeBrujin.
 
   Definition I := Lam (Var 0).
   Definition K := Lam (Lam (Var 1)).
-  Definition S := Lam (Lam (Lam (App (App (Var 2) (Var 0))
-                                   (App (Var 1) (Var 0))))).
+  Definition S := Lam (Lam (Lam
+                              (App (App (Var 2) (Var 0))
+                                 (App (Var 1) (Var 0))))).
 End DeBrujin.
 
 (**
@@ -50,10 +42,55 @@ Module NAST.
 
   Definition I := Lam "x" (Var "x").
   Definition K := Lam "x" (Lam "y" (Var "x")).
-  Definition S := Lam "x" (Lam "y"
-                             (Lam "z" (App (App (Var "x") (Var "z"))
-                                         (App (Var "y") (Var "z"))))).
+  Definition S := Lam "x"
+                    (Lam "y"
+                       (Lam "z"
+                          (App (App (Var "x") (Var "z"))
+                             (App (Var "y") (Var "z"))))).
 End NAST.
+
+(**
+これはCoqでは実装できない。
+*)
+Module HOAS.
+  Section HOAS.
+    
+    Fail Inductive expr : Type :=
+    | App : expr -> expr -> expr
+    | Lam : (expr -> expr) -> expr.
+  End HOAS.
+  
+  Fail Definition I := Lam (fun x => x).
+  Fail Definition K := Lam (fun x => Lam (fun y => x)).
+  Fail Definition S := Lam (fun x =>
+                              Lam (fun y =>
+                                     Lam (fun z =>
+                                       App (App x z)
+                                         (App y z)))).
+End HOAS.
+
+(**
+HOAS2
+
+NAST と比べると、似ていて異なる。
+ *)
+Module HOAS2.
+  Section HOAS2.
+    
+    Inductive expr : Type :=
+    | Var : string -> expr
+    | App : expr -> expr -> expr
+    | Lam : (string -> expr) -> expr.
+  End HOAS2.
+  
+  Definition I := Lam (fun x => Var x).
+  Definition K := Lam (fun x => Lam (fun y => Var x)).
+  Definition S := Lam (fun x =>
+                         Lam (fun y =>
+                                Lam (fun z =>
+                                       App (App (Var x) (Var z))
+                                         (App (Var y) (Var z))))).
+End HOAS2.
 
 (**
 PHOAS
@@ -109,6 +146,23 @@ Module TPHOAS.
                                                    Lam var (fun z : var Nat =>
                                                               App var (App var (Var var x) (Var var z))
                                                                 (App var (Var var y) (Var var z))))).
+
+  Definition I' := fun var => @Lam var Nat Nat (fun x : var Nat => @Var var Nat x).
+  Definition K' := fun var => @Lam var Nat (Arrow Nat Nat)
+                                (fun x : var Nat => @Lam var Nat Nat
+                                                      (fun _ : var Nat => @Var var Nat x)).
+  Definition S' := fun var : forall _ : type, Type =>
+                    @Lam var (Arrow Nat (Arrow Nat Nat)) (Arrow (Arrow Nat Nat) (Arrow Nat Nat))
+                      (fun x : var (Arrow Nat (Arrow Nat Nat)) =>
+                         @Lam var (Arrow Nat Nat) (Arrow Nat Nat)
+                           (fun y : var (Arrow Nat Nat) =>
+                              @Lam var Nat Nat
+                                (fun z : var Nat =>
+                                   @App var Nat Nat
+                                     (@App var Nat (Arrow Nat Nat)
+                                        (@Var var (Arrow Nat (Arrow Nat Nat)) x)
+                                        (@Var var Nat z))
+                                     (@App var Nat Nat (@Var var (Arrow Nat Nat) y) (@Var var Nat z))))).
 End TPHOAS.
 
 (* END *)
