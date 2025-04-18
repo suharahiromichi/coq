@@ -16,13 +16,17 @@ Lean で多用されている Dependent if-then-else を Coq/MathComp で定義�
 - https://github.com/leanprover/lean4/blob/master/src/Init/Classical.lean
 
 - Mathematics in Lean
+
 4.2 Functions
+
+def inverse (f : α -> β) : β -> α := fun y : β =>
+  if h : ∃ x, f x = y then Classical.choose h else default
 
 # MathComp 側の文献
 
 ## 古典公理
 
-- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v
+- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v 個人メモ
 
 - projT1 について ssrcoq.pdf
 Dependent Pairs
@@ -39,7 +43,7 @@ Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
 (**
-Dependent if-then-else の定義
+# Dependent if-then-else の定義
 
 ``dite c t e``
 
@@ -54,7 +58,8 @@ Proof.
   - by apply: e.
 Defined.
 Arguments dite {a} c t e.
-Notation "'if' h 'of' c 'then' t 'else' e" := (dite c (fun h => t) (fun h => e)) (at level 200).
+Notation "'if' h 'of' c 'then' t 'else' e" :=
+  (dite c (fun h => t) (fun h => e)) (at level 200).
 (**
 if-then-else らしい構文糖衣を用意する。h は単なる束縛変数であり、
 c の真偽を決めたときの証明そのものではないことに注意すること。
@@ -62,7 +67,7 @@ c の真偽を決めたときの証明そのものではないことに注意す
 *)
 
 (**
-Lean にある補題
+## Lean にある補題
 
 - dif_pos c t e == c が成立する場合、``hc : c`` として ``dite c t e = t hc`` である。
 - dif_neg c t e == ~ c が成立する場合、``hnc : ~ c`` として ``dite c t e = e hnc`` である。
@@ -87,7 +92,7 @@ Proof.
 Qed.
 
 (**
-使用例：左逆写像を定義する。
+# 使用例：左逆写像を定義する。
 *)
 Section a.
 (**
@@ -97,42 +102,28 @@ Section a.
   Variable hnonempty : inhabited A.
   
 (**
-関数 f の左逆写像を得る。
+## 関数 f の左逆写像を得る。
 
 関数 ``f : A -> B`` に対して、任意の ``b : B`` について、
-``f a = b`` なる ``a : A`` が存在する場合は、``exists a : A, f a = b`` を満たす a を取り出す。
+``f a = b`` なる ``a : A`` が存在する場合は、``exists a : A, f a = b`` を満たす a を取り出す。選択公理。
 ``a : A`` が存在しない場合は、A に含まれる適当な要素を返す。
 これは逆写像 ``B -> A`` が A を返せばよく、無理矢理全域化するためである。
+
+Notationのif-then-elseを使った例
 *)
   Definition linv (f : A -> B) (b : B) : A :=
-    dite (exists a : A, f a = b)
-      (fun h => projT1 (cid h))       (* lean の Classical.choose h *)
-      (fun h => inhabited_witness hnonempty). (* lean の default *)
+    if h of exists a : A, f a = b then projT1 (cid h) (* lean の Classical.choose h *)
+    else inhabited_witness hnonempty.       (* lean の default *)
   
-(**
-Notationのif-then-elseを使った例
-
-上記と同じ定義であるが、Notation を使った例である。
-*)
-  Definition linv' (f : A -> B) (b : B) : A :=
-    if h of exists a : A, f a = b then projT1 (cid h) else inhabited_witness hnonempty.
-  
-  (* 同じであることの証明。 *)
-  Goal linv = linv'. Proof. done. Qed.
-  
-(**
-逆写像を求めてみる。
-*)
   Section d.
     Variable f : A -> B.
     Variable y : B.
     
-    Check linv f y.
-    Check linv' f y.
+    Check linv f y : A.
   End d.
   
 (**
-左逆関数が仕様を満たすことの証明
+## 左逆関数が仕様を満たすことの証明
 *)
   Lemma linv_spec (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
   Proof.
@@ -148,7 +139,7 @@ Notationのif-then-elseを使った例
   Qed.
   
 (**
-補題を使ってみる。
+## 補題を使って証明した例
 *)
   Lemma linv_spec' (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
   Proof.
@@ -157,7 +148,29 @@ Notationのif-then-elseを使った例
     - by exists x.
     - by rewrite (projT2 (cid h)).
   Qed.
-  
+
 End a.
+
+(**
+# おまけ 1 : 左逆写像 を直接求める
+*)
+Section b.
+
+  Variable A B : Type.
+
+  Definition linv' (hnonempty : inhabited A) (f : A -> B) : B -> A.
+  Proof.
+    move=> b.
+    case: (pselect (exists a, f a = b)) => H.
+    - by apply: (projT1 (cid H)).
+    - by apply: inhabited_witness.
+  Defined.
+
+End b.
+
+Goal linv = linv'.
+Proof.
+  done.
+Qed.
 
 (* END *)
