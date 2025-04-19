@@ -19,20 +19,17 @@ Lean で多用されている Dependent if-then-else を Coq/MathComp で定義�
 
 4.2 Functions
 
-def inverse (f : α -> β) : β -> α := fun y : β =>
-  if h : ∃ x, f x = y then Classical.choose h else default
-
 # MathComp 側の文献
 
 ## 古典公理
 
-- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v 個人メモ
-
-- projT1 について ssrcoq.pdf
+- proj1_sig について ssrcoq.pdf
 Dependent Pairs
 
 - choice について Karate-coq.pdf
 4.1.4 Consequences of Classical Axioms
+
+- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v 個人メモ
  *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_classical.
@@ -112,13 +109,12 @@ Section a.
 Notationのif-then-elseを使った例
 *)
   Definition linv (f : A -> B) (b : B) : A :=
-    if h of exists a : A, f a = b then projT1 (cid h) (* lean の Classical.choose h *)
+    if H of exists a : A, f a = b then proj1_sig (cid H) (* lean の Classical.choose h *)
     else inhabited_witness hnonempty.       (* lean の default *)
   
   Section d.
     Variable f : A -> B.
     Variable y : B.
-    
     Check linv f y : A.
   End d.
   
@@ -129,12 +125,12 @@ Notationのif-then-elseを使った例
   Proof.
     case=> x fx_y.
     rewrite /linv /dite.
-    case: pselect => h //=.               (* 排中律で場合分けする。 *)
+    case: pselect => H //=.               (* 排中律で場合分けする。 *)
     (* ``h : exists x, f x = y`` が成立する場合 *)
-    - by rewrite (projT2 (cid h)). (* lean の Classical.choose_spec h *)
+    - by rewrite (proj2_sig (cid H)). (* lean の Classical.choose_spec h *)
     (* ``~ (exists x, f x = y)`` が成立する場合 *)
     - exfalso.                              (* default は使わない。 *)
-      apply: h.
+      apply: H.
       by exists x.                          (* 前提矛盾 *)
   Qed.
   
@@ -144,9 +140,9 @@ Notationのif-then-elseを使った例
   Lemma linv_spec' (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
   Proof.
     case=> x fx_y.
-    rewrite /linv dif_pos // => [| h].
+    rewrite /linv dif_pos // => [| H].
     - by exists x.
-    - by rewrite (projT2 (cid h)).
+    - by rewrite (proj2_sig (cid H)).
   Qed.
 
 End a.
@@ -162,7 +158,7 @@ Section b.
   Proof.
     move=> b.
     case: (pselect (exists a, f a = b)) => H.
-    - by apply: (projT1 (cid H)).
+    - by apply: (proj1_sig (cid H)).
     - by apply: inhabited_witness.
   Defined.
 
