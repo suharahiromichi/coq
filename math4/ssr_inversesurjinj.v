@@ -9,9 +9,13 @@ A が空でないと仮定すれば、選択原理を使うことによって、
 
 - 演習問題
 https://lean-ja.github.io/lean-by-example/Tutorial/Exercise/InverseSurjInj.html
+以下に移動した
+https://github.com/lean-ja/lean-problems/blob/main/LeanBook/Exercise/InverseSurjInj.lean
 
 - 解答
 https://github.com/lean-ja/lean-by-example/blob/main/LeanByExample/Tutorial/Solution/InverseSurjInj.lean
+以下に移動した
+https://github.com/lean-ja/lean-problems/blob/main/LeanBook/Solution/InverseSurjInj.lean
 
 - ビデオ
 https://www.youtube.com/watch?v=aWUmWX5Nro4&t=2727s
