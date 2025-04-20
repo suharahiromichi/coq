@@ -47,10 +47,8 @@ End a1.
 (* 型Aに要素が存在するなら、その要素を返す。 *)
 Check default : forall A : Type, inhabited A -> A.
 
-
-(* 202412 天泣記 *)
 Section b.
-  
+
   Check inhabited : Type -> Prop.
   (* 公理として提供 *)
   (* 型Aに要素が存在するなら、弱い依存和として定義できる。 *)
@@ -79,7 +77,8 @@ Section b2.
   Definition default' : A.
   Proof.
     apply: epsilon => //=.
-    by apply: xpredT.                       (* A -> Prop *)
+    Check xpredT : A -> Prop.
+    by apply: xpredT.
   Qed.
 
 End b2.
