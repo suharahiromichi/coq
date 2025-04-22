@@ -35,9 +35,16 @@ From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_classical.
 Require Import ProofIrrelevance.            (* proof_irrelevance *)
 
+Require Import Epsilon.                     (* epsilon_statement *)
+Require Import FunctionalExtensionality.
+
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+
+(* 全射 *)
+Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
+Check @surjective : forall B A : Type, (A -> B) -> Prop.
 
 (**
 # Dependent if-then-else の定義
@@ -119,7 +126,7 @@ Notationのif-then-elseを使った例
   End d.
   
 (**
-## 左逆関数が仕様を満たすことの証明
+## 左逆写像が仕様を満たすことの証明
 *)
   Lemma linv_spec (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
   Proof.
@@ -168,5 +175,43 @@ Goal linv = linv'.
 Proof.
   done.
 Qed.
+
+(**
+# 問2: 単射から逆方向の全射
+
+次に `f : A → B` が単射であれば、逆方向の全射 `g : B → A` も存在することを示しましょう。
+*)
+Section c.
+  
+  Variable A B : Type.
+  
+  Lemma inj_to_surj (f : A -> B) :
+    inhabited A -> injective f -> exists g : B -> A, surjective g.
+  Proof.
+    move=> hnonempty hinj.
+    pose g := linv hnonempty f.
+    
+    have gdef : forall a, g (f a) = a.
+    {
+      move=> a.
+      rewrite /g /linv /dite.
+      
+      case: (pselect (exists a0, f a0 = f a)) => H.
+      (* H が成り立つ場合 *)
+      - apply: hinj.
+        by rewrite (projT2 (cid H)).
+        
+      (* H が成り立たない場合。 *)
+      - exfalso.
+        apply: H.
+        by exists a.
+    }.
+    exists g.
+    rewrite /surjective => a.
+    exists (f a).
+    by apply: gdef.
+  Qed.
+
+End c.
 
 (* END *)
