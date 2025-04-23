@@ -26,7 +26,7 @@ https://www.youtube.com/watch?v=aWUmWX5Nro4&t=2727s
 - 個人メモ
 https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v
 
-- projT1 について
+- projT1 , proj1_sig について
 ssrcoq.pdf
 Dependent Pairs
 
@@ -44,15 +44,15 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-(* 全射 *)
-Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
-Check @surjective : forall B A : Type, (A -> B) -> Prop.
-
 (* 単射 mathcomp の定意を使用する。 *)
 Print injective.
 Check injective : forall B A : Type, (A -> B) -> Prop.
 Check fun (B A : Type) (f : A -> B) => forall x1 x2 : A, f x1 = f x2 -> x1 = x2.
   
+(* 全射 *)
+Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
+Check @surjective : forall B A : Type, (A -> B) -> Prop.
+
 Section InverseSurjInj.
 
   Variable A B : Type.
@@ -67,7 +67,7 @@ Section InverseSurjInj.
 考え方：
 gをfの逆と考える。fは全射なので、fの値域B全体が、gの定義域Bになる。
 しかし、gの定義域Bのひとつの要素が、値域Aの複数の要素に対応してしまう。
-当該対応を「消す」すなわち制限すると、gの値域はA全体でなくなるが、これは値域Aとして構わない。
+当該対応を「消す」すなわち制限すると、gの値域はA全体でなくなる、つまり全射でなくなるが、関数である。
 その制限は、論理式 P = (fun b a => f a = b) で行う。
 *)
   Lemma surj_to_inj (f : A -> B) :
@@ -126,7 +126,7 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
   Proof.
     move=> b.
     case: (em_ex f b) => H.
-    - by apply: (projT1 (cid H)).     (* lean の Classical.choose h *)
+    - by apply: (proj1_sig (cid H)).     (* lean の Classical.choose h *)
     - by apply: inhabited_witness.
   Defined.
   
@@ -136,7 +136,7 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
     case=> x fx_y.
     rewrite /linv /em_ex.
     case: pselect => H.
-    - by rewrite (projT2 (cid H)). (* lean の Classical.choose_spec h *)
+    - by rewrite (proj2_sig (cid H)). (* lean の Classical.choose_spec h *)
     - exfalso.
       apply: H.
       by exists x.
@@ -157,8 +157,8 @@ gをfの逆と考える。fは全射なので、fの値域B全体が、gの定�
       case: pselect => H.
       (* H が成り立つ場合 *)
       - apply: hinj.
-        Check projT2 (cid H) : f (projT1 (cid (P:=fun a0 : A => f a0 = f a) H)) = f a.
-        by rewrite (projT2 (cid H)). (* lean の Classical.choose_spec h *)
+        Check proj2_sig (cid H) : f (projT1 (cid (P:=fun a0 : A => f a0 = f a) H)) = f a.
+        by rewrite (proj2_sig (cid H)). (* lean の Classical.choose_spec h *)
         
       (* H が成り立たない場合。 *)
       - exfalso.
@@ -188,7 +188,7 @@ Theorem Proving in Lean 4
     rewrite compE /linv /em_ex.
     case: pselect => H.    
     - apply: hinj.
-      by rewrite (projT2 (cid H)).
+      by rewrite (proj2_sig (cid H)).
     - exfalso.
       apply: H.
       by exists a.
