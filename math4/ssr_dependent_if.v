@@ -1,35 +1,42 @@
 (**
 Lean で多用されている Dependent if-then-else を Coq/MathComp で定義してみた
 
-# Lean 側の文献
+# Lean の式を読み解く
 
-## dependent if-then-else
+- https://github.com/lean-ja/lean-problems/blob/main/LeanBook/Exercise/InverseSurjInj.lean
+- https://github.com/lean-ja/lean-problems/blob/main/LeanBook/Solution/InverseSurjInj.lean
 
-- https://leanprover.github.io/theorem_proving_in_lean/type_classes.html
+
+f の左逆写像：
+
+def inverse (f : α -> β) : β -> α := fun y : β =>
+  if h : (∃ x, f x = y) then choose h else default
+
+
+# dependent if-then-else の定義と使用例
 
 - https://github.com/leanprover/lean4/blob/master/src/Init/Prelude.lean
 
-- https://github.com/leanprover/lean4/blob/master/src/Init/Core.lean
+- https://github.com/suharahiromichi/coq/blob/master/math4/ssr_dependent_if.v
 
-## 古典公理
+
+
+# exists の証明から要素をとりだす。 (choose)
 
 - https://github.com/leanprover/lean4/blob/master/src/Init/Classical.lean
 
-- Mathematics in Lean
+- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v
 
-4.2 Functions
-
-# MathComp 側の文献
-
-## 古典公理
-
-- proj1_sig について ssrcoq.pdf
-Dependent Pairs
-
-- choice について Karate-coq.pdf
 4.1.4 Consequences of Classical Axioms
 
-- https://gitlab.com/proofcafe/karate/-/blob/main/4.1_Axioms.v 個人メモ
+
+
+# 空でない集合 inhabited A から要素をとりだす。(default)
+
+- https://github.com/leanprover/lean4/blob/master/src/Init/Prelude.lean
+
+- https://github.com/suharahiromichi/coq/blob/master/math4/ssr_inhabited.v
+
  *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_classical.
@@ -41,10 +48,6 @@ Require Import FunctionalExtensionality.
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
-
-(* 全射 *)
-Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
-Check @surjective : forall B A : Type, (A -> B) -> Prop.
 
 (**
 # Dependent if-then-else の定義
@@ -155,32 +158,15 @@ Notationのif-then-elseを使った例
 End a.
 
 (**
-# おまけ 1 : 左逆写像 を直接求める
+# 単射から逆方向の全射
+
+`f : A → B` が単射であれば、逆方向の全射 `g : B → A` も存在することを示しましょう。
 *)
-Section b.
 
-  Variable A B : Type.
+(* 全射 *)
+Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
+Check @surjective : forall B A : Type, (A -> B) -> Prop.
 
-  Definition linv' (hnonempty : inhabited A) (f : A -> B) : B -> A.
-  Proof.
-    move=> b.
-    case: (pselect (exists a, f a = b)) => H.
-    - by apply: (proj1_sig (cid H)).
-    - by apply: inhabited_witness.
-  Defined.
-
-End b.
-
-Goal linv = linv'.
-Proof.
-  done.
-Qed.
-
-(**
-# 問2: 単射から逆方向の全射
-
-次に `f : A → B` が単射であれば、逆方向の全射 `g : B → A` も存在することを示しましょう。
-*)
 Section c.
   
   Variable A B : Type.
@@ -213,5 +199,27 @@ Section c.
   Qed.
 
 End c.
+
+(**
+# おまけ 1 : 左逆写像 を直接求める
+*)
+Section b.
+
+  Variable A B : Type.
+
+  Definition linv' (hnonempty : inhabited A) (f : A -> B) : B -> A.
+  Proof.
+    move=> b.
+    case: (pselect (exists a, f a = b)) => H.
+    - by apply: (proj1_sig (cid H)).
+    - by apply: inhabited_witness.
+  Defined.
+
+End b.
+
+Goal linv = linv'.
+Proof.
+  done.
+Qed.
 
 (* END *)
