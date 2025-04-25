@@ -26,9 +26,11 @@ Section Sample.
   Variable x y z : R.
   
   (* order *)
-  Check @lt_eqF : forall (disp : unit) (T : porderType disp) (x y : T), (x < y)%O -> (x == y) = false.
-  Check @gt_eqF : forall (disp : unit) (T : porderType disp) (x y : T), (y < x)%O -> (x == y) = false.
-
+  Check @lt_eqF
+    : forall (disp : order.Order.disp_t) (T : porderType disp) (x y : T), (x < y)%O -> (x == y) = false.
+  Check @gt_eqF
+    : forall (disp : order.Order.disp_t) (T : porderType disp) (x y : T), (y < x)%O -> (x == y) = false.
+  
   (* ssrnum *)
   Check lerN10 R : -1 <= 0.
   Check @gtrN R x : 0 < x -> - x < x.
@@ -73,10 +75,7 @@ Section Functions.
 単射
 *)
   Print injective.
-  (*
-    fun (rT aT : Type) (f : aT -> rT) => forall x1 x2 : aT, f x1 = f x2 -> x1 = x2
-    : forall [rT aT : Type], (aT -> rT) -> Prop
-  *)
+  Check fun (rT aT : Type) (f : aT -> rT) => (forall x1 x2 : aT, f x1 = f x2 -> x1 = x2).
   
 (**
 ## 8.1.3. Example
@@ -547,20 +546,29 @@ Musketeer type 三銃士型
 (**
 ### 8.1.13. Exercises 14.
  *)
-  Goal forall (f : rat -> rat), (injective f -> injective (fun x => f x + x)).
-  Proof.
-    move=> f HIf.
-    move=> x1 x2 H.
-    apply: HIf.
-    rewrite /injective.
-  Admitted.
-
-  Goal forall (f : rat -> rat), (~ injective f -> ~ injective (fun x => f x + x)).
-  Proof.
-    move=> f Hf.
-    rewrite /injective.
-    apply: contra_not.
-  Admitted.
+  Section e14.
+(**
+``f(x) = - x`` のとき、``f(1) + 1 = f(2) + 2 = 0`` という反例を示す。
+*)
+    Let f (x : rat) : rat := - x.
+    
+(**
+   f(x) = -x は単射である。
+*)
+    Lemma injective_f : injective f.
+    Proof.
+      done.
+    Qed.
+    
+    Goal ~ forall (f : rat -> rat), injective f -> injective (fun x => f x + x).
+    Proof.
+      move/(_ f injective_f).
+      rewrite /injective.
+      have Hcontra : (fun x => - x + x) 1%:Q = (fun x => - x + x) 2%:Q by done.
+      move/(_ 1 2 Hcontra).
+      done.
+    Qed.
+  End e14.
 
 (**
 ### 8.1.13. Exercises 15.
