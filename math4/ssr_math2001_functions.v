@@ -564,12 +564,12 @@ Musketeer type 三銃士型
     Proof.
       move/(_ f injective_f).
       rewrite /injective.
-      have Hcontra : (fun x => - x + x) 1%:Q = (fun x => - x + x) 2%:Q by done.
+      have Hcontra : (fun x => f x + x) 1%:Q = (fun x => f x + x) 2%:Q by done.
       move/(_ 1 2 Hcontra).
       done.
     Qed.
   End e14.
-
+  
 (**
 ### 8.1.13. Exercises 15.
  *)
