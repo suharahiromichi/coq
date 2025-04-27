@@ -7,6 +7,9 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+(**
+# MathComp を使う例
+*)
 Section a.
   
   Check inhabited : Type -> Prop.
@@ -41,14 +44,17 @@ Section a1.
   Proof.
     by apply: inhabited_witness.
   Defined.
-
+  
 End a1.
 
 (* 型Aに要素が存在するなら、その要素を返す。 *)
 Check default : forall A : Type, inhabited A -> A.
 
+(**
+# バニラCoqの例
+*)
 Section b.
-
+  
   Check inhabited : Type -> Prop.
   (* 公理として提供 *)
   (* 型Aに要素が存在するなら、弱い依存和として定義できる。 *)

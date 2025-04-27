@@ -182,7 +182,7 @@ Section c.
       move=> a.
       rewrite /g /linv /dite.
       
-      case: (pselect (exists a0, f a0 = f a)) => H.
+      case: (pselect (exists b, f b = f a)) => H.
       (* H が成り立つ場合 *)
       - apply: hinj.
         by rewrite (projT2 (cid H)).
