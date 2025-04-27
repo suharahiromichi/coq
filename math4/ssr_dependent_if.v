@@ -3,8 +3,14 @@ Lean で多用されている Dependent if-then-else を Coq/MathComp で定義�
 
 # Lean の式を読み解く
 
+## Lean問題集
+
 - https://github.com/lean-ja/lean-problems/blob/main/LeanBook/Exercise/InverseSurjInj.lean
 - https://github.com/lean-ja/lean-problems/blob/main/LeanBook/Solution/InverseSurjInj.lean
+
+## MIL - Mathematics in Lean
+
+- https://leanprover-community.github.io/mathematics_in_lean/C04_Sets_and_Functions.html#functions
 
 
 f の左逆写像：
@@ -118,23 +124,23 @@ Section a.
 
 Notationのif-then-elseを使った例
 *)
-  Definition linv (f : A -> B) (b : B) : A :=
+  Definition inverse (f : A -> B) (b : B) : A :=
     if H of exists a : A, f a = b then proj1_sig (cid H) (* lean の Classical.choose h *)
     else inhabited_witness hnonempty.       (* lean の default *)
   
   Section d.
     Variable f : A -> B.
     Variable y : B.
-    Check linv f y : A.
+    Check inverse f y : A.
   End d.
   
 (**
 ## 左逆写像が仕様を満たすことの証明
 *)
-  Lemma linv_spec (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
+  Lemma inverse_spec (f : A -> B) (y : B) : (exists x, f x = y) -> f (inverse f y) = y.
   Proof.
     case=> x fx_y.
-    rewrite /linv /dite.
+    rewrite /inverse /dite.
     case: pselect => H //=.               (* 排中律で場合分けする。 *)
     (* ``h : exists x, f x = y`` が成立する場合 *)
     - by rewrite (proj2_sig (cid H)). (* lean の Classical.choose_spec h *)
@@ -147,26 +153,30 @@ Notationのif-then-elseを使った例
 (**
 ## 補題を使って証明した例
 *)
-  Lemma linv_spec' (f : A -> B) (y : B) : (exists x, f x = y) -> f (linv f y) = y.
+  Lemma inverse_spec' (f : A -> B) (y : B) : (exists x, f x = y) -> f (inverse f y) = y.
   Proof.
     case=> x fx_y.
-    rewrite /linv dif_pos // => [| H].
+    rewrite /inverse dif_pos // => [| H].
     - by exists x.
     - by rewrite (proj2_sig (cid H)).
   Qed.
 
 End a.
 
-(**
-# 単射から逆方向の全射
-
-`f : A → B` が単射であれば、逆方向の全射 `g : B → A` も存在することを示しましょう。
-*)
+(* 単射 mathcomp の定意を使用する。 *)
+Print injective.
+Check injective : forall B A : Type, (A -> B) -> Prop.
+Check fun (B A : Type) (f : A -> B) => forall x1 x2 : A, f x1 = f x2 -> x1 = x2.
 
 (* 全射 *)
 Definition surjective {B A : Type} (f : A -> B) := forall b : B, exists a : A, f a = b.
 Check @surjective : forall B A : Type, (A -> B) -> Prop.
 
+(**
+# 単射から逆方向の全射
+
+`f : A → B` が単射であれば、逆方向の全射 `g : B → A` も存在することを示しましょう。
+*)
 Section c.
   
   Variable A B : Type.
@@ -175,12 +185,12 @@ Section c.
     inhabited A -> injective f -> exists g : B -> A, surjective g.
   Proof.
     move=> hnonempty hinj.
-    pose g := linv hnonempty f.
+    pose g := inverse hnonempty f.
     
     have gdef : forall a, g (f a) = a.
     {
       move=> a.
-      rewrite /g /linv /dite.
+      rewrite /g /inverse /dite.
       
       case: (pselect (exists b, f b = f a)) => H.
       (* H が成り立つ場合 *)
@@ -200,6 +210,40 @@ Section c.
 
 End c.
 
+(** `LeftInverse g f` means that g is a left inverse to f. That is, `g ∘ f = id`. *)
+Definition leftinverse {A B : Type} (g : B -> A) (f : A -> B) : Prop := forall x, g (f x) = x.
+
+(** `RightInverse g f` means that g is a right inverse to f. That is, `f ∘ g = id`. *)
+Definition rightinverse {A B : Type} (g : B -> A) (f : A -> B) : Prop := leftinverse f g.
+
+(**
+# MIL で証明している定理
+*)
+Section d.
+  Variable A B : Type.
+  Variable hnonempty : inhabited A.
+  Variable f : A -> B.
+  
+  Goal injective f <-> leftinverse (inverse hnonempty f) f.
+  Proof.
+    split.
+    - move=> H y.
+      apply/H/inverse_spec.
+      by exists y.
+    - move=> H x1 x2 e.
+      by rewrite -(H x1) -(H x2) e.
+  Qed.
+  
+  Goal surjective f <-> rightinverse (inverse hnonempty f) f.
+  Proof.
+    split.
+    - move=> H y.
+      by apply/inverse_spec/H.
+    - move=> H y.
+      by exists (inverse hnonempty f y).
+  Qed.
+End d.
+
 (**
 # おまけ 1 : 左逆写像 を直接求める
 *)
@@ -207,7 +251,7 @@ Section b.
 
   Variable A B : Type.
 
-  Definition linv' (hnonempty : inhabited A) (f : A -> B) : B -> A.
+  Definition inverse' (hnonempty : inhabited A) (f : A -> B) : B -> A.
   Proof.
     move=> b.
     case: (pselect (exists a, f a = b)) => H.
@@ -217,7 +261,7 @@ Section b.
 
 End b.
 
-Goal linv = linv'.
+Goal inverse = inverse'.
 Proof.
   done.
 Qed.
