@@ -22,15 +22,15 @@ Proof.
   (* 対角線集合を定義する。 *)
   set (D := fun x : A => (f x) x).          (* 対角線 *)
   Check D : set A.
-  set (notD := fun x : A => ~ (f x) x).     (* 対角線の否定 *)
-  Check notD : set A.
+  set (B := fun x : A => ~ (f x) x).        (* 対角線の否定 *)
+  Check B : set A.
   
-  (* H によれば、notDに対しても存在する a がある *)
-  Check H notD : exists a : A, f a = notD.
-  destruct (H notD) as [a Ha].              (* 前提のexistは場合分する。 *)
+  (* H によれば、B に対しても存在する a がある *)
+  Check H B : exists a : A, f a = B.
+  destruct (H B) as [a Ha].              (* 前提のexistは場合分する。 *)
   
   (* a について考える *)
-  unfold notD in Ha.
+  unfold B in Ha.
   (* Ha : f a = fun x => ~ (f x) x *)
   Check f_equal (fun g => g a) Ha
     : f a a = (~ f a a). (* Ha の両辺に a を適用する。 *)
@@ -62,15 +62,15 @@ Proof.
   
   (* 対角線集合を定義する。 *)
   set (D := fun x : A => (f x) x).          (* 対角線 *)
-  Check D : set A.
-  set (notD := fun x : A => ~ (f x) x).     (* 対角線の否定 *)
-  Check notD : set A.
+  Check D : set A.                          (* D = {a ⊂ A | a ∈ f(a)} *)
+  set (B := fun x : A => ~ (f x) x).        (* 対角線の否定 *)
+  Check B : set A.                          (* B = {a ⊂ A | a ∉ f(a)} *)
   
-  (* H によれば、notDに対しても存在する a がある *)
-  Check H notD : exists a : A, f a = notD.
-  case: (H notD) => a Hfa.              (* 前提のexistは場合分する。 *)
+  (* H によれば、B に対しても存在する a がある *)
+  Check H B : exists a : A, f a = B.
+  case: (H B) => a Hfa.              (* 前提のexistは場合分する。 *)
   (* a について考える *)
-  rewrite /notD in Hfa.
+  rewrite /B in Hfa.
   Check Hfa : f a = fun x => ~ (f x) x.
   Check f_equal (fun g => g a) Hfa : f a a = (~ f a a). (* Hfa の両辺に a を適用する。 *)
   move: (f_equal (fun g => g a) Hfa) => {Hfa} H1. (* ここの箇所が単純になる。 *)
@@ -87,5 +87,41 @@ Proof.
     rewrite H1.
     now apply Hnotfaa.
 Qed.
+
+(**
+集合A の濃度が、その冪集合2^A の濃度より小さいことを示す。
+全単射である関数 f : A -> 2^A が存在するなら、A と 2^A の濃度は等しい。
+全射である関数 f : A -> 2^A が存在しないなら、A の濃度は 2^A より小さい。
+
+対角線論法で、全射であることの反例を作る。
+次の表の行を集合(冪集合2^Aの要素と)見て、1が要素がある、0は要素がないことを示す。
+
+         |--------- A --------->
+-          a1  a2  a3  a4
+|   f(a1)  1   0   0   0   .    |  f(a1) = {a1}    
+|   f(a2)  0   0   1   0   .    |  f(a2) = {a3}    
+2^A f(a3)  0   1   0   0   .    |  f(a3) = {a2}    
+|   f(a4)  0   0   0   1   .    |  f(a4) = {a4}    ここまでは単射である。
+|          .   .   .   .   .    ↓ ....................
+----------------------------------------------------
+     D     1   0   0   1   .       対角線、存在するかもしれない。
+     B     0   1   1   0   .       対角線の否定、存在し得ない。
+
+
+まず、関数 f が単射である。その理由は以下による。
+a1 ∈ f(a1) ⊂ 2^A であるところの a1 ∈ A が存在する。f(a1) = { a1 } と考えられる。
+一般に、
+a  ∈ f(a ) ⊂ 2^A であるところの a  ∈ A が存在する。f(a)  = { a  } と考えられる。
+
+対角線Dを考える。a  ∈ f(a) であるところの a  ⊂ A
+D = {a ⊂ A | a ∈ f(a)}
+
+
+対角線 D の否定を考える。a ∉ f(a) であるところの a  ⊂ A
+B = {a ⊂ A | a ∉ f(a)}
+これは、存在し得ない。
+
+B ⊂ 2^A だが、f の値としてとり得ないものが存在する。
+よって、f は単射であっても、全射ではない。つまり全単射ではない。
 
 (* END *)
