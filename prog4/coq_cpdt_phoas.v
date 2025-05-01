@@ -1,3 +1,6 @@
+(*
+Chapter 17 A Taste of Reasoning About Programming Language Syntax
+*)
 Require Import FunctionalExtensionality List. (* ext *)
 Require Import Coq.Program.Equality.        (* dep_destruct E *)
 Set Implicit Arguments.
@@ -14,6 +17,8 @@ Ltac dep_destruct E :=
   try match goal with
     | [ H : _ = E |- _ ] => try rewrite <- H in *; clear H
     end.
+
+(* pl タクティクは使えない。 *)
 
 Inductive type : Type :=
 | Nat : type
@@ -69,7 +74,7 @@ Module HigherOrder.
       Note that, when we go under binders in the cases for [Abs] and [Let],
       we must provide the data value to annotate on the new variable we pass beneath.
       For our current choice of [unit] data, we always pass [tt].
-*)
+   *)
   
   (* sample *)
   Section test.
@@ -143,7 +148,7 @@ Module HigherOrder.
       Check (fun (var : type -> Type) => Const 3) : Term Nat.
       Check ((fun (var : type -> Type) => Const 3) var) : term var Nat.
       Compute ((fun (var : type -> Type) => Const 3) var). (* = Const 3 *)
-        (* 評価結果 *)
+      (* 評価結果 *)
       Check Const 3 : term var Nat.
       Check @Const var 3.
 
@@ -533,7 +538,8 @@ Module HigherOrder.
     -> termDenote (unlet e1) = termDenote e2.
   Proof.
     Fail induction 1; pl.
-    induction 1.
+    induction 1; try easy.
+    
   Admitted.
   
   Theorem UnletSound : forall t (E : Term t), Wf E
@@ -593,6 +599,27 @@ Module HigherOrder.
   
   Eval compute in TermDenote Three_the_hard_way. (*  *)
 
+(**
+まとめ
+*)
+  (*                                                             ↓パラメトリックに与えるなにか *)
+  Check countVars : forall t : type,                        term [unit]     t -> nat.
+  Check pretty    : forall t : type,                        term [string]   t -> string -> string.
+  Check squash    : forall (var : type -> Type) (t : type), term (term var) t -> term var t.
+  Check termDenote : forall t : type,                       term typeDenote t -> typeDenote t.
+  Check ident     : forall (var : type -> Type) (t : type), term var        t -> term var t.
+  Check cfold     : forall (var : type -> Type) (t : type), term var        t -> term var t.
+  Check unlet     : forall (var : type -> Type) (t : type), term (term var) t -> term var t.
+
+  Section a.
+    Variable var : type -> Type.
+    
+    Check term var : type -> Type.
+    Check [unit] : type -> Type.        (* ``fun _ => unit`` の意味 *)
+    Check [string] : type -> Type.
+    Check typeDenote : type -> Type.
+  End a.
+  
 End HigherOrder.
 
 (* END *)
