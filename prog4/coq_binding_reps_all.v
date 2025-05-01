@@ -10,9 +10,9 @@ PHOASの必要性
   ホスト言語をソース言語やターゲット言語にするわけにいかない。
 - Named ASTと同等以上の表現力が欲しいが、Substをホスト言語の機能を利用して楽をしたい。
 - PHOAS は、Named ASTの変数をパラメタライズしたもの。これにより、Subst を自分で実装しなくてもよい。
-- パラメタライズに当たって、ソース言語やターゲット言語の型を表す場合と、
-  ソース言語やターゲット言語の型からホスト言語の型への変換を表す場合がある。Typed PHOAS、TPHOAS。
-  CPDTでは、後者をPHOASと呼んでいる。後者(TPHOAS)の方がホスト言語への埋め込みが易しい。
+- パラメタライズを行う際、ソース言語やターゲット言語の型を表す場合と、
+  ソース言語やターゲット言語の型からホスト言語の型への変換を表す場合がある。
+  Typed PHOAS、TPHOAS と呼ばれる後者の方が、ホスト言語への埋め込みが容易です。CPDT では、後者を PHOAS と呼んでいる。
  *)
 
 Require Import String.
@@ -22,7 +22,7 @@ Import ListNotations.
 Open Scope string_scope.
 
 (**
-De Bruijn Index
+# De Bruijn Index
 *)
 Module DeBrujin.
   Section DeBrujin.
@@ -41,7 +41,7 @@ Module DeBrujin.
 End DeBrujin.
 
 (**
-Named AST
+# Named AST
  *)
 Module NAST.
   Section NAST.
@@ -62,15 +62,17 @@ Module NAST.
 End NAST.
 
 (**
+# 使えないHOAS
+
 これはCoqでは実装できない。
 *)
-Module HOAS.
-  Section HOAS.
+Module HOAS'.
+  Section HOAS'.
     
     Fail Inductive expr : Type :=
     | App : expr -> expr -> expr
     | Lam : (expr -> expr) -> expr.
-  End HOAS.
+  End HOAS'.
   
   Fail Definition I := Lam (fun x => x).
   Fail Definition K := Lam (fun x => Lam (fun y => x)).
@@ -79,21 +81,22 @@ Module HOAS.
                                      Lam (fun z =>
                                        App (App x z)
                                          (App y z)))).
-End HOAS.
+End HOAS'.
 
 (**
-HOAS2
+# HOAS
 
-NAST と比べると、似ていて異なる。
+- NAST と比べると、似ていて異なる。
+- x y z は string型
  *)
-Module HOAS2.
-  Section HOAS2.
+Module HOAS.
+  Section HOAS.
     
     Inductive expr : Type :=
     | Var : string -> expr
     | App : expr -> expr -> expr
     | Lam : (string -> expr) -> expr.
-  End HOAS2.
+  End HOAS.
   
   Definition I := Lam (fun x => Var x).
   Definition K := Lam (fun x => Lam (fun y => Var x)).
@@ -102,16 +105,16 @@ Module HOAS2.
                                 Lam (fun z =>
                                        App (App (Var x) (Var z))
                                          (App (Var y) (Var z))))).
-End HOAS2.
+End HOAS.
 
 (**
-PHOAS
+# PHOAS
 
-型を引数にとる。
+- var型を引数にとる。var型は後で決めることができる。
+- x y z は var 型。
  *)
 Module PHOAS.
   Section PHOAS.
-    
     Variable var : Type.
     
     Inductive expr : Type :=
@@ -127,14 +130,13 @@ Module PHOAS.
                                                    Lam var (fun z =>
                                                               App var (App var (Var var x) (Var var z))
                                                                 (App var (Var var y) (Var var z))))).
-  (* x y z は var 型 *)
 End PHOAS.
 
 (**
-Typed PHOAS
+# Typed PHOAS (TPHOAS)
 
-CPDTなどのPHOASはこれ。
-型ファミリ（依存型）を引数にとる。
+- CPDTなどのPHOASはこれ。
+- 型ファミリ（依存型）を引数にとる。
 *)
 Module TPHOAS.
   Section TPHOAS.

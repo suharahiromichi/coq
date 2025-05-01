@@ -1,6 +1,17 @@
 (**
+TPHOAS
+Typed PHOAS
+Typed Parametric Higher-Order Abstract Syntax
+
+TPHOAS とはパラメタライズを行う際、
+ソース言語やターゲット言語の型からホスト言語の型への変換をパラメタライズすること。
+CPDT ではこれを単に PHOAS と呼んでいる。
+
 -http://adam.chlipala.net/cpdt/
 CPDT の 17.2 章の PHOAS の解説のうち、termDenote と ident の関数を抜き出す。
+termDenote 関数、typeDenote でパラメタライズ var を埋める
+ident 関数、パラメタライズ var を具体化せず、var のまま引き回す。
+
 
 - https://qiita.com/mrkbc/items/89b034dadc69df2ad274
 PHOASでshift/resetのCPS変換 in Rocq(旧Coq)
@@ -15,12 +26,9 @@ Set Asymmetric Patterns.
 
 Ltac ext := let x := fresh "x" in extensionality x.
 
-Ltac dep_destruct E :=
-  let x := fresh "x" in
-  remember E as x; simpl in x; dependent destruction x;
-  try match goal with
-    | [ H : _ = E |- _ ] => try rewrite <- H in *; clear H
-    end.
+(* ********** *)
+(* 導入       *)
+(* ********** *)
 
 (** * 型の定義 *)
 
@@ -29,8 +37,9 @@ Inductive type : Type :=
 | Func : type -> type -> type.
 
 (** 型を考える。  *)
-Check Func Nat.
-Check Func Nat Nat.
+Check Nat : type.
+Check Func Nat : type -> type.
+Check Func Nat Nat : type.
 
 Fixpoint typeDenote (t : type) : Type :=
   match t with
@@ -40,12 +49,13 @@ Fixpoint typeDenote (t : type) : Type :=
 
 (** 先の型をCoqの型に変換する。 *)
 Compute typeDenote Nat.                     (* nat *)
+Fail Compute typeDenote (Func Nat).         (* type にならない。 *)
 Compute typeDenote (Func Nat Nat).          (* nat -> nat *)
 
 
 (** * 17.2 Parametric Higher-Order Abstract Syntax *)
 
-Module HigherOrder.
+Module HigherOrder.                         (* TPHOAS *)
 
   Section var.
     Variable var : type -> Type.
@@ -85,9 +95,13 @@ Module HigherOrder.
                                      (@Const var 1))
     : Term Nat.
   
+  (* ********** *)
+  (* 各論その 1 *)
+  (* ********** *)
+  
   (** ** 17.2.1 Functional Programming with PHOAS *)
-
   (** *** termDenote 表示的意味論を与える関数 *)
+  (* パラメタライズに typeDenote を与える。 *)
   
   Fixpoint termDenote (t : type) (e : term typeDenote t) : typeDenote t :=
     match e with
@@ -128,11 +142,17 @@ Module HigherOrder.
   Check 1 : typeDenote Nat.
   Check 1 : nat.
   
-  (** **** ident 関数 *)
-
+  (* ********** *)
+  (* 各論その 2 *)
+  (* ********** *)
+  
+  (** ** 17.2.2 Verifying Program Transformations *)
+  (** *** ident 関数 *)
+  (* パラメタライズを var のままにしておく。 *)
+  
   Fixpoint ident (var : type -> Type) (t : type) (e : term var t) : term var t :=
     match e with
-    | Var t0      v => Var v
+    | Var t0      v     => Var v
     | Const       n     => Const n
     | Plus        e1 e2 => Plus (ident e1) (ident e2)
     | Abs dom ran e1    => Abs (fun x: var dom => ident (e1 x))
@@ -140,17 +160,22 @@ Module HigherOrder.
     | Let t1  t2  e1 e2 => Let (ident e1) (fun x => ident (e2 x))
     end.
   (* Set Printing All. *)
-  Print ident.
-
+  Print ident.                  (* var は引数で引きまわされている。 *)
+  
   Definition Ident (t : type) (E : Term t) : Term t := fun var => ident (E var).
   
-  (** TermDenote を実行してみる。引数は Term t  *)
+  (** Ident を実行してみる。引数は Term t  *)
   Check (fun var => (App (Abs (fun x : var Nat => Var x)) (Const 1))) : Term Nat.
   Compute Ident (fun var => (App (Abs (fun x : var Nat => Var x)) (Const 1))).
   (* 結果は *)
   Check (fun var : type -> Type => App (Abs (fun x : var Nat => Var x)) (Const 1)) : Term Nat.
   
-  (** **** 証明 *)
+  (* ********** *)
+  (* まとめ     *)
+  (* ********** *)
+  
+  (** *** 証明 *)
+  (* termDenote と ident を一緒に使う。  *)
 
   Lemma identSound : forall t (e : term typeDenote t),
       termDenote (ident e) = termDenote e.

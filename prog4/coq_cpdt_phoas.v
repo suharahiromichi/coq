@@ -3,6 +3,9 @@ Require Import Coq.Program.Equality.        (* dep_destruct E *)
 Set Implicit Arguments.
 Set Asymmetric Patterns.
 
+Require Import String.
+Open Scope string_scope.
+
 Ltac ext := let x := fresh "x" in extensionality x.
 
 Ltac dep_destruct E :=
@@ -67,6 +70,7 @@ Module HigherOrder.
       we must provide the data value to annotate on the new variable we pass beneath.
       For our current choice of [unit] data, we always pass [tt].
 *)
+  
   (* sample *)
   Section test.
     
@@ -80,6 +84,7 @@ Module HigherOrder.
     Check (fun (var : type -> Type) => Const 3)
       : forall (var : type -> Type), term var Nat.
     
+    (* ``E : Term t`` のとき *)
     (* constVars の引数は、``E (fun _ => unit)`` であるから *)
     Check ((fun (var : type -> Type) => Const 3) (fun _ => unit))
       : term (fun _ : type => unit) Nat.
@@ -166,9 +171,6 @@ Module HigherOrder.
     | @Let   _ t1  t2   e1 e2  => @countVars t1 e1 + @countVars t2 (e2 tt)
     end.
 (*
-  Set Prinitng All.
-  Print countVars.
-  
   Fixpoint countVars (t : type) (e : term (fun _ => unit) t) : nat :=
     match e with
     | Var _ _ => 1
@@ -204,15 +206,6 @@ Module HigherOrder.
       We evolve this name by adding a prime to its end.
       To avoid getting bogged down in orthogonal details, we render all constants as the string ["N"].
    *)
-  Require Import String.
-  Open Scope string_scope.
-
-  Section test2.
-    (* pretty の引数は、``E (fun _ => string)`` であるから *)
-    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-             (fun _ => string)).
-    (* : term (fun _ : type => unit) (Func Nat Nat) *)
-  End test2.
   
   Fixpoint pretty (t : type) (e : term (fun _ => string) t) (x : string) : string :=
     match e with
@@ -316,14 +309,6 @@ Module HigherOrder.
   
   (** 表示的意味論を与える関数を定義できる。 *)
   
-  (* sample *)
-  Section test4.
-    (* termDenote の引数は、``E typeDenote`` であるから *)
-    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-             typeDenote).
-    (* : term typeDenote (Func Nat Nat) *)
-  End test4.
-  
   Fixpoint termDenote t (e : term typeDenote t) : typeDenote t :=
     match e with
     | Var _ v => v
@@ -359,13 +344,6 @@ Module HigherOrder.
       まず、前のサブセクションと同じパターンに従う再帰的な恒等関数があり、
       タグ選択で多態的なヘルパー関数と、選択を適切にインスタンス化する最終関数があります。
    *)
-  
-  (* sample *)
-  Section test5.
-    (* ident の引数は、``E var`` であるから *)
-    Check fun var => (fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) var.
-    (* forall var : type -> Type, term var (Func Nat Nat) *)
-  End test5.
   
   Fixpoint ident var t (e : term var t) : term var t :=
     match e with
@@ -435,8 +413,8 @@ Module HigherOrder.
 
   (* sample *)
   Compute Cfold (fun var : type -> Type => Plus (Const 1) (Const 2)).
-  Compute Cfold (fun var : type -> Type => Plus (Plus (Const 1) (Const 2)) (Var _)).
-  Compute Cfold (fun var : type -> Type => Plus (Const 1) (Plus (Const 2) (Var _))).
+  Compute Cfold (fun var : type -> Type => Abs (fun x => Plus (Plus (Const 1) (Const 2)) (Var x))).
+  Compute Cfold (fun var : type -> Type => Abs (fun x => Plus (Const 1) (Plus (Const 2) (Var x)))).
 
   Lemma cfoldSound : forall t (e : term typeDenote t),
       termDenote (cfold e) = termDenote e.
