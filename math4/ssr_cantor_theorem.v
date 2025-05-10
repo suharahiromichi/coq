@@ -6,6 +6,14 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
+(**
+カントールの定理：
+ *)
+(**
+集合αの冪集合の濃度は、もとの集合αの濃度よりの真に大きい。
+そのことを「集合αからαの冪集合への関数fは全射ではない」で示す。
+*)
+
 Definition set (A : Type) := A -> Prop.
 
 Definition surjective {A B : Type} (f : A -> B) :=
@@ -33,13 +41,13 @@ Proof.
   unfold B in Ha.
   (* Ha : f a = fun x => ~ (f x) x *)
   Check f_equal (fun g => g a) Ha
-    : f a a = (~ f a a). (* Ha の両辺に a を適用する。 *)
+    : (f a) a = ~ (f a) a.            (* Ha の両辺に a を適用する。 *)
   
   specialize (f_equal (fun g => g a) Ha).
   intro H1.
   unfold not in H1.
   (* H1 : (f a) a = ~ (f a) a *)
-  Check (classic ((f a) a)) : f a a \/ ~ f a a.
+  Check (classic ((f a) a)) : (f a) a \/ ~ (f a) a.
   destruct (classic ((f a) a)) as [Hfaa | Hfaa].
   - (* (f a) a が真の場合 *)
     rewrite H1 in Hfaa.
@@ -72,11 +80,11 @@ Proof.
   (* a について考える *)
   rewrite /B in Hfa.
   Check Hfa : f a = fun x => ~ (f x) x.
-  Check f_equal (fun g => g a) Hfa : f a a = (~ f a a). (* Hfa の両辺に a を適用する。 *)
+  Check f_equal (fun g => g a) Hfa : (f a) a = ~ (f a) a. (* Hfa の両辺に a を適用する。 *)
   move: (f_equal (fun g => g a) Hfa) => {Hfa} H1. (* ここの箇所が単純になる。 *)
   Check H1 : (f a) a = ~ (f a) a.
   
-  Check (classic ((f a) a)) : f a a \/ ~ f a a.
+  Check (classic ((f a) a)) : (f a) a \/ ~ (f a) a.
   case: (classic ((f a) a)) => [Hfaa | Hnotfaa].
   - (* (f a) a が真の場合 *)
     rewrite H1 in Hfaa.
