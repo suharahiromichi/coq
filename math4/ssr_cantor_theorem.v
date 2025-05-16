@@ -25,7 +25,7 @@ GPT-4-turbo モデル（2025年4月時点）の出力を動くようにしたも
 *)
 Theorem Cantor : forall (A : Type) (f : A -> set A), ~ surjective f.
 Proof.
-  intros A f H.
+  intros A f Hsurj.
   
   (* 対角線集合を定義する。 *)
   set (D := fun x : A => (f x) x).          (* 対角線 *)
@@ -33,9 +33,9 @@ Proof.
   set (B := fun x : A => ~ (f x) x).        (* 対角線の否定 *)
   Check B : set A.
   
-  (* H によれば、B に対しても存在する a がある *)
-  Check H B : exists a : A, f a = B.
-  destruct (H B) as [a Ha].              (* 前提のexistは場合分する。 *)
+  (* Hsurj によれば、B に対しても存在する a がある *)
+  Check Hsurj B : exists a : A, f a = B.
+  destruct (Hsurj B) as [a Ha].              (* 前提のexistは場合分する。 *)
   
   (* a について考える *)
   unfold B in Ha.
@@ -66,7 +66,7 @@ GPT-4-turbo モデル（2025年4月時点）の出力を動くようにしたも
 *)
 Theorem Cantor' : forall (A : Type) (f : A -> set A), ~ surjective f.
 Proof.
-  move=> A f H.
+  move=> A f Hsurj.
   
   (* 対角線集合を定義する。 *)
   set (D := fun x : A => (f x) x).          (* 対角線 *)
@@ -75,8 +75,8 @@ Proof.
   Check B : set A.                          (* B = {a ⊂ A | a ∉ f(a)} *)
   
   (* H によれば、B に対しても存在する a がある *)
-  Check H B : exists a : A, f a = B.
-  case: (H B) => a Hfa.              (* 前提のexistは場合分する。 *)
+  Check Hsurj B : exists a : A, f a = B.
+  case: (Hsurj B) => a Hfa.            (* 前提のexistは場合分する。 *)
   (* a について考える *)
   rewrite /B in Hfa.
   Check Hfa : f a = fun x => ~ (f x) x.
