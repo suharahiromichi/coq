@@ -9,8 +9,10 @@ Set Asymmetric Patterns.
 Require Import String.
 Open Scope string_scope.
 
+(* f_equal の「逆」をするタクティク *)
 Ltac ext := let x := fresh "x" in extensionality x.
 
+(* 複雑な場合分をする。 *)
 Ltac dep_destruct E :=
   let x := fresh "x" in
   remember E as x; simpl in x; dependent destruction x;
@@ -20,10 +22,13 @@ Ltac dep_destruct E :=
 
 (* pl タクティクは使えない。 *)
 
+(* 対象言語（変換は扱うが、ソース言語もターゲット言語も同じ） *)
+(* 対象言語の型 *)
 Inductive type : Type :=
 | Nat : type
 | Func : type -> type -> type.
 
+(* 対象言語の型をGallinaの型に変換する関数 *)
 Fixpoint typeDenote (t : type) : Type :=
   match t with
   | Nat => nat
@@ -33,10 +38,12 @@ Fixpoint typeDenote (t : type) : Type :=
 (** * 17.2 Parametric Higher-Order Abstract Syntax *)
 
 Module HigherOrder.
-
+  
+  (* Typed PHOAS による対象言語の定義 *)
   Section var.
     Variable var : type -> Type.
 
+    (* 型ファミリ（依存型）を引数 var にとる。var は representation of variables という。 *)
     Inductive term : type -> Type :=
     | Var : forall t, var t -> term t
     | Const : nat -> term Nat
@@ -50,23 +57,85 @@ Module HigherOrder.
   Arguments Const [var] _.
   Arguments Abs [var dom ran] _.
 
+  (* var を forall にした Term を定義する。 *)
   Definition Term t := forall (var : type -> Type), term var t.
   Check term : (type -> Type) -> type -> Type.
   Check Term : type -> Type.
   
+  (* Typed PHOAS による対象言語の定義の例 *)
+  (* forall (Π) 型の実体は、fun (λ) である。 *)
   Example add : Term (Func Nat (Func Nat Nat)) :=
     fun var => Abs (fun x => Abs (fun y => Plus (Var x) (Var y))).
-  Example three_the_hard_way : Term Nat :=
-    fun var => App (App (add var) (Const 1)) (Const 2).
   Example add' : Term (Func Nat (Func Nat Nat)) :=
     fun _ => Abs (fun x => Abs (fun y => Plus (Var x) (Var y))).
+  
+  Example three_the_hard_way : Term Nat :=
+    fun var => App (App (add var) (Const 1)) (Const 2).
   Example three_the_hard_way' : Term Nat :=
     fun _ => App (App (add' _) (Const 1)) (Const 2).
 
+  (* e全体の型は、``term var t`` であるが、コンストラクタによって、以下のように振り分けられる。  *)
+  (* さらに、Var の中で、パラメタライズされた ``var t`` が出現する。 *)
+  Check @Var   : forall (var : type -> Type)
+                        (t : type),         (* t *)
+      var t ->                              (* tt これがパラメタライズされたもの。 *)
+      term var t.                           (* e全体 *)
+  Check @Const : forall (var : type -> Type),
+      nat ->                                (* n *)
+      term var Nat.                         (* e全体 *)
+  Check @Plus  : forall (var : type -> Type),
+      term var Nat ->                       (* e1 *)
+      term var Nat ->                       (* e2 *)
+      term var Nat.                         (* e全体 *)
+  Check @Abs   : forall (var : type -> Type) (dom ran : type),
+      (var dom -> term var ran) ->          (* e1 *)
+      term var (Func dom ran).              (* e全体 *)
+  Check @App   : forall (var : type -> Type) (dom ran : type),
+      term var (Func dom ran) ->            (* e1 *)
+      term var dom ->                       (* e2 *)
+      term var ran.                         (* e全体 *)
+  Check @Let   : forall (var : type -> Type) (t1 t2 : type),
+      term var t1 ->                        (* e1 *)
+      (var t1 -> term var t2) ->            (* e2 *)
+      term var t2.                          (* e全体 *)
+  
+  (* ``e : term var t`` で受けた値を、コンストラクタで組み立てられた要素に分解する。 *)
+  
+  (* 具体的に作った例： *)
+  Check (fun (var : type -> Type) (t : type) => @Var var t _)         : forall var t, term var t.
+  Check (fun var : type -> Type => @Const var 1)                      : forall var, term var Nat.
+  Check (fun var : type -> Type => @Plus var (Const 1) (Const 1))     : forall var, term var Nat.
+  Check (fun var : type -> Type =>
+           (@Abs var Nat Nat (fun x => @Plus var (Const 1) (Var x)))) : forall var, term var (Func Nat Nat).
+  Check (fun var : type -> Type =>
+           (@Abs var Nat Nat (fun x => Var x))) : forall var, term var (Func Nat Nat).
+  Check (fun var : type -> Type =>
+           (@Abs var Nat (Func Nat Nat)
+              (fun x => @Abs var Nat Nat
+                          (fun y => @Plus var (@Const var 1) (@Plus var (Var x) (Var x))))))
+    : forall var, term var (Func Nat (Func Nat Nat)).
+  
+  Check (fun (var : type -> Type) (t : type) => Var _)         : forall var t, term var t.
+  Check (fun var : type -> Type => Const 1)                    : forall var, term var Nat.
+  Check (fun var : type -> Type => Plus (Const 1) (Const 1))   : forall var, term var Nat.
+  Check (fun var : type -> Type =>
+           (Abs (fun x => Plus (Const 1) (Var x))))            : forall var, term var (Func Nat Nat).
+  Check (fun var : type -> Type =>
+           (Abs (fun x => Plus (Plus (Const 1) (Const 2)) (Var x)))) : forall var, term var (Func Nat Nat).
+  Check (fun var : type -> Type => (Abs (fun x => Var x))) : forall var, term var (Func Nat Nat).
+  Check (fun var : type -> Type =>
+           (Abs (fun x => Abs (fun y => Plus (Const 1) (Plus (Var x) (Var x))))))
+    : forall var, term var (Func Nat (Func Nat Nat)).
+
+  (* fun var => ... は外せない。 *)
+  Check (fun var : type -> Type => @Const var 1)               : Term Nat.
+  Check (fun var : type -> Type => Const 1)                    : Term Nat.
+  (* Typed PHOAS による対象言語の定義。終わり。 *)
+  
   (** ** 17.2.1 Functional Programming with PHOAS *)
 
   (** *** CountVars *)
-
+  
   (** This operation requires no data annotated on variables,
       so we simply annotate variables with [unit] values.
       数で注釈がついているデータを必要としない。
@@ -76,140 +145,50 @@ Module HigherOrder.
       For our current choice of [unit] data, we always pass [tt].
    *)
   
-  (* sample *)
-  Section test.
-    
-    (* (1) Nat *)
-    Check Term Nat.
-    (* これは、以下と同じ。 *)
-    Check forall (var : type -> Type), term var Nat.
-    
-    (* この型を持つ値は、 *)
-    Check (fun (var : type -> Type) => Const 3) : Term Nat.
-    Check (fun (var : type -> Type) => Const 3) : forall (var : type -> Type), term var Nat.
-    
-    (* ``E : Term t`` のとき *)
-    (* constVars の引数は、``E (fun _ => unit)`` であるから *)
-    Check ((fun (var : type -> Type) => Const 3) (fun _ => unit))
-      : term (fun _ : type => unit) Nat.
-    Compute ((fun (var : type -> Type) => Const 3) (fun _ => unit)).
-    (* 評価結果 *)
-    Check Const 3 : term (fun _ : type => unit) Nat.
-    Check @Const (fun _ : type => unit) 3.
-    
-    (* termDenote の引数は、``E typeDenote`` であるから *)
-    Check ((fun (var : type -> Type) => Const 3) typeDenote)
-      : term typeDenote Nat.
-    Compute ((fun (var : type -> Type) => Const 3) typeDenote).
-    (* 評価結果 *)
-    Check Const 3 : term typeDenote Nat.
-    Check @Const typeDenote 3.
-    
-    (* (2) Nat -> Nat *)
-    Check Term (Func Nat Nat).
-    (* これは、以下と同じ。 *)
-    Check forall (var : type -> Type), term var (Func Nat Nat).
-    
-    (* この型を持つ値は、 *)
-    Check (fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) : Term (Func Nat Nat).
-    Check (fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-      : forall (var : type -> Type), term var (Func Nat Nat).
-    
-    (* constVars の引数は、``E (fun _ => unit)`` であるから *)
-    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-             (fun _ => unit)).
-    Compute ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-               (fun _ => unit)).
-    (* 評価結果 *)
-    Check Abs (fun x : (fun _ : type => unit) Nat => Var x)
-      : term (fun _ : type => unit) (Func Nat Nat).
-    Check @Abs (fun _ : type => unit)
-      Nat
-      Nat
-      (fun x : (fun _ : type => unit) Nat => @Var (fun _ : type => unit) Nat x).
-    
-    (* termDenote の引数は、``E typeDenote`` であるから *)
-    Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-             typeDenote).
-    Compute ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x))
-               typeDenote).
-    (* 評価結果 *)
-    Check Abs (fun x : typeDenote Nat => Var x) : term typeDenote (Func Nat Nat).
-    Check @Abs typeDenote
-      Nat
-      Nat
-      (fun x : typeDenote Nat => @Var typeDenote Nat x) : term typeDenote (Func Nat Nat).
-
-    Section var.
-      Variable var : type -> Type.
-
-      (* 引数は、``E : Term t`` のとき ``E var`` であるから *)
-      Check (fun (var : type -> Type) => Const 3) : Term Nat.
-      Check ((fun (var : type -> Type) => Const 3) var) : term var Nat.
-      Compute ((fun (var : type -> Type) => Const 3) var). (* = Const 3 *)
-      (* 評価結果 *)
-      Check Const 3 : term var Nat.
-      Check @Const var 3.
-
-      Check ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) var) : term var (Func Nat Nat).
-      Compute ((fun (var : type -> Type) => Abs (fun (x : var Nat) => Var x)) var).
-      (* 評価結果 *)
-      Check Abs (fun x : var Nat => Var x) : term var (Func Nat Nat).
-      Check @Abs var Nat Nat (fun x : var Nat => @Var var Nat x).
-
-      Check term : (type -> Type) -> type -> Type.
-      Check term var : type -> Type.
-      Check term (term var) : type -> Type.
-      Check term (term (term var)) : type -> Type.
-      
-    End var.
-  End test.
-  
-  (* e の型は、``term var t`` であるが、コンストラクタによって、以下のように振り分けられる。  *)
-  Check @Var   : forall (var : type -> Type) (t : type), var t                 -> term var t.
-  Check @Const : forall (var : type -> Type),            nat                   -> term var Nat.
-  Check @Plus  : forall (var : type -> Type),            term var Nat   -> term var Nat -> term var Nat.
-  Check @Abs   : forall (var : type -> Type) (dom ran : type),
-      (var dom -> term var ran) -> term var (Func dom ran).
-  
   (* コンストラクタの引数と、match の実引数を比べる。 *)
   Fixpoint countVars (t : type) (e : term (fun _ => unit) t) : nat :=
     match e with
-    (*       (var)           (var t)    (返値:term var t) *)
+    (*                       ↓↓↓↓↓↓↓ ``var t : unit`` がパターンに出てくる。 *)
+    (*       (var) (t)       (var t)                       (e全体 : term var t) *)
     | @Var   _     t         tt      => 1
-    (*       (var)           (nat)      (返値:term var Nat) *)
+    (*       (var)           (nat)                         (e全体 : term var Nat) *)
     | @Const _               n       => 0
-    (*       (var)           (term var Nat) (term var Nat) (返値:term var Nat) *)
+    (*       (var)           (term var Nat) (term var Nat) (e全体 : term var Nat) *)
     | @Plus  _               e1 e2   => @countVars Nat e1 + @countVars Nat e2
-    (*       (var)           (var dom -> term var ran)     (返値:term var (Func dom ran) *)
+    (*       (var)           (var dom -> term var ran)     (e全体 : term var (Func dom ran)) *)
     | @Abs   _     dom ran   e1      => @countVars ran (e1 tt)
+    (*       (var)           (term var (Func dom ran)) (term var dom) (e全体 : term var ran) *)
     | @App   _     dom ran   e1 e2   => @countVars (Func dom ran) e1 + @countVars dom e2
     | @Let   _     t1  t2    e1 e2   => @countVars t1 e1 + @countVars t2 (e2 tt)
     end.
+  (* ``e : term var t`` で受けた値を、コンストラクタで組み立てられた要素に分解する。 *)
+  
 (*
   Fixpoint countVars (t : type) (e : term (fun _ => unit) t) : nat :=
     match e with
-    | Var _ _ => 1
-    | Const _ => 0
-    | Plus e1 e2 => countVars e1 + countVars e2
-    | Abs _ _ e1 => countVars (e1 tt)
+    | Var _    _    => 1
+    | Const    _    => 0
+    | Plus    e1 e2 => countVars e1 + countVars e2
+    | Abs _ _ e1    => countVars (e1 tt)
     | App _ _ e1 e2 => countVars e1 + countVars e2
     | Let _ _ e1 e2 => countVars e1 + countVars (e2 tt)
     end.
 *)  
-  Compute @countVars _ (three_the_hard_way (fun _ : type => unit)). (* 2 *)
   
+  (* パラメトリックに与えられる引数は、ここで追加される。 *)
   Definition CountVars t (E : Term t) := countVars (E (fun _ => unit)).
   
   Eval compute in CountVars three_the_hard_way. (* 2 *)
   (* sample *)
-  Compute CountVars (fun var : type -> Type => (Abs (fun x => Var x))).
-  Compute CountVars (fun var : type -> Type => Const 1).
-  Compute CountVars (fun var : type -> Type => Plus (Const 1) (Const 1)).
-  Compute CountVars (fun var : type -> Type => (Abs (fun x => Plus (Const 1) (Var x)))).
-  Compute CountVars (fun var : type -> Type => (Abs (fun x => Plus (Plus (Const 1) (Const 2)) (Var x)))).
+  Compute CountVars (fun var : type -> Type => (Abs (fun x => Var x))). (* 1 *)
+  Compute CountVars (fun var : type -> Type => Const 1). (* 0 *)
+  Compute CountVars (fun var : type -> Type => Plus (Const 1) (Const 1)). (* 0 *)
   Compute CountVars (fun var : type -> Type =>
-                       (Abs (fun x => Abs (fun y => Plus (Const 1) (Plus (Var x) (Var x)))))).
+                       (Abs (fun x => Plus (Const 1) (Var x)))). (* 1 *)
+  Compute CountVars (fun var : type -> Type =>
+                       (Abs (fun x => Plus (Plus (Const 1) (Const 2)) (Var x)))). (* 1 *)
+  Compute CountVars (fun var : type -> Type =>
+                       (Abs (fun x => Abs (fun y => Plus (Const 1) (Plus (Var x) (Var x)))))). (* 2 *)
   
   (** *** Pretty *)  
   
@@ -223,15 +202,18 @@ Module HigherOrder.
       To avoid getting bogged down in orthogonal details, we render all constants as the string ["N"].
    *)
   
+  (*                                                         ↓ λの束縛変数に使う文字で、本質ではない。 *)
   Fixpoint pretty (t : type) (e : term (fun _ => string) t) (x : string) : string :=
     match e with
-    | Var _ s => s
-    | Const _ => "N"
-    | Plus e1 e2 => "(" ++ pretty e1 x ++ " + " ++ pretty e2 x ++ ")"
-    | Abs _ _ e1 => "(fun " ++ x ++ " => " ++ pretty (e1 x) (x ++ "'") ++ ")"
+    (*            ↓ ``var t : string`` がパターンに出てくる。 *)
+    | Var _       s => s
+    | Const       _ => "N"
+    | Plus    e1 e2 => "(" ++ pretty e1 x ++ " + " ++ pretty e2 x ++ ")"
+    | Abs _ _ e1    => "(fun " ++ x ++ " => " ++ pretty (e1 x) (x ++ "'") ++ ")"
     | App _ _ e1 e2 => "(" ++ pretty e1 x ++ " " ++ pretty e2 x ++ ")"
     | Let _ _ e1 e2 => "(let " ++ x ++ " = " ++ pretty e1 x ++ " in "
                          ++ pretty (e2 x) (x ++ "'") ++ ")"
+                         (* Let の e2 は ``var t = string`` を引数に取る。 *)
     end.
   Compute pretty (three_the_hard_way (fun _ => string)) "x".
 
@@ -247,31 +229,16 @@ Module HigherOrder.
   Compute Pretty (fun var : type -> Type => Abs (fun x => Plus (Const 1) (Plus (Const 2) (Var x)))).
   
   (** *** squash *)
+  
   (** Note that this function squash is parameterized over a specific var choice.
       この関数 squash は、特定の var 選択に対してパラメーター化されることに注意してください。
    *)
 
   Definition Term1 (t1 t2 : type) := forall (var : type -> Type), var t1 -> term var t2.
   
-  Section test3.
-    Check Term1 Nat Nat.
-    (* これは、以下と同じ。 *)
-    Check forall (var : type -> Type), var Nat -> term var Nat.
-
-    (* この型を持つ値は、 *)
-    Check (fun (var : type -> Type) => fun (x : var Nat) => Var x) : Term1 Nat Nat.
-    Check (fun (var : type -> Type) => fun (x : var Nat) => Var x)
-      : forall (var : type -> Type), var Nat -> term var Nat.
-
-    (* squash の引数は、``E (term var) (E' var))`` であるから *)
-    (* ******************** *)
-    (* ここを補足する！！！ *)
-    (* ******************** *)
-    
-  End test3.
-  
   Fixpoint squash var (t : type) (e : term (term var) t) : term var t :=
     match e with
+    (*                 ↓↓ ``var t : term var t`` がパターンに出てくる。 *)
     | @Var   _ t       e1    => e1   (* ``Var e`` を e に変換する。 *)
     | @Const _         n     => @Const var n
     | @Plus  _         e1 e2 => @Plus  var (squash e1) (squash e2)
@@ -330,10 +297,11 @@ Module HigherOrder.
   
   Fixpoint termDenote t (e : term typeDenote t) : typeDenote t :=
     match e with
-    | Var _ v => v
-    | Const n => n
-    | Plus e1 e2 => termDenote e1 + termDenote e2
-    | Abs _ _ e1 => fun x => termDenote (e1 x)
+    (*            ↓ ``var t = typeDenote t`` がパターンに出てくる。項 t のGallinaの型 *)
+    | Var _       v => v
+    | Const       n => n
+    | Plus    e1 e2 => termDenote e1 + termDenote e2
+    | Abs _ _ e1    => fun x => termDenote (e1 x)
     | App _ _ e1 e2 => (termDenote e1) (termDenote e2)
     | Let _ _ e1 e2 => termDenote (e2 (termDenote e1))
     end.
@@ -358,6 +326,7 @@ Module HigherOrder.
   (** ** 17.2.2 Verifying Program Transformations *)
   
   (** *** ident *)
+  
   (** 前のセクション (17.1) の 3 つのプログラム変換例をもう一度見てみましょう。
       それぞれは PHOAS で簡単に実装でき、最後のものは 1 階表現よりも大幅に簡単です。
       まず、前のサブセクションと同じパターンに従う再帰的な恒等関数があり、
@@ -366,10 +335,11 @@ Module HigherOrder.
   
   Fixpoint ident var t (e : term var t) : term var t :=
     match e with
-    | Var _ x => Var x
-    | Const n => Const n
-    | Plus e1 e2 => Plus (ident e1) (ident e2)
-    | Abs _ _ e1 => Abs (fun x => ident (e1 x))
+    (*        ↓ ``var t = var t`` がパターンに出てくる。 *)
+    | Var _    x    => Var x
+    | Const    n    => Const n
+    | Plus    e1 e2 => Plus (ident e1) (ident e2)
+    | Abs _ _ e1    => Abs (fun x => ident (e1 x))
     | App _ _ e1 e2 => App (ident e1) (ident e2)
     | Let _ _ e1 e2 => Let (ident e1) (fun x => ident (e2 x))
     end.
@@ -409,23 +379,25 @@ Module HigherOrder.
   Qed.
 
   (** *** cfold *)
+  
   (** 定数畳み込み関数の翻訳とその証明は、ほぼ同じように機能します。 *)
 
   Fixpoint cfold var t (e : term var t) : term var t :=
     match e with
-    | Plus e1 e2 =>
+    | Plus    e1 e2 =>
         let e1' := cfold e1 in
         let e2' := cfold e2 in
         match e1', e2' with
         | Const n1, Const n2 => Const (n1 + n2) (* Plus の引数が定数になったら、定数に置き換える。 *)
         | _, _ => Plus e1' e2'
         end
-    | Abs _ _ e1 => Abs (fun x => cfold (e1 x))
+    | Abs _ _ e1    => Abs (fun x => cfold (e1 x))
     | App _ _ e1 e2 => App (cfold e1) (cfold e2)
     | Let _ _ e1 e2 => Let (cfold e1) (fun x => cfold (e2 x))
 (*  | e => e *)
-    | Var _ e => Var e
-    | Const n => Const n
+    (*        ↓ ``var t = var t`` がパターンに出てくる。 *)
+    | Var _   e     => Var e
+    | Const   n     => Const n
     end.
 
   Definition Cfold t (E : Term t) : Term t := fun var => cfold (E var).
@@ -468,10 +440,11 @@ Module HigherOrder.
 
   Fixpoint unlet var t (e : term (term var) t) : term var t :=
     match e with
-    | Var _ e1 => e1
-    | Const n => Const n
-    | Plus e1 e2 => Plus (unlet e1) (unlet e2)
-    | Abs _ _ e1 => Abs (fun x => unlet (e1 (Var x)))
+    (*        ↓ ``var t = tarm var t`` がパターンに出てくる。 *)
+    | Var _   e1    => e1
+    | Const   n     => Const n
+    | Plus    e1 e2 => Plus (unlet e1) (unlet e2)
+    | Abs _ _ e1    => Abs (fun x => unlet (e1 (Var x)))
     | App _ _ e1 e2 => App (unlet e1) (unlet e2)
     | Let _ _ e1 e2 => unlet (e2 (unlet e1))
     end.
@@ -496,7 +469,7 @@ Module HigherOrder.
   Eval compute in Unlet three_a_harder_way'. (* Let が消えた。 *)
   
   
-(** *** wf *)
+  (** *** wf *)
 
   Section wf.
     Variables var1 var2 : type -> Type.
@@ -553,7 +526,6 @@ Module HigherOrder.
   Proof.
     Fail induction 1; pl.
     induction 1.
-    
   Admitted.
   
   Theorem UnletSound : forall t (E : Term t), Wf E
@@ -611,28 +583,58 @@ Module HigherOrder.
   Example Three_the_hard_way : Term Nat :=
     [Add _ @ #1 @ #2].
   
-  Eval compute in TermDenote Three_the_hard_way. (*  *)
+  Eval compute in TermDenote Three_the_hard_way.
 
 (**
-まとめ
+まとめ。
+引数は1個 ``term var t`` または ``Term t`` であることに注意
 *)
-  (*                                                              ↓パラメトリックに与えるなにか *)
-  Check countVars  : forall t : type,                        term [unit]     t -> nat.
-  Check pretty     : forall t : type,                        term [string]   t -> string -> string.
-  Check squash     : forall (var : type -> Type) (t : type), term (term var) t -> term var t.
-  Check termDenote : forall t : type,                        term typeDenote t -> typeDenote t.
-  Check ident      : forall (var : type -> Type) (t : type), term var        t -> term var t.
-  Check cfold      : forall (var : type -> Type) (t : type), term var        t -> term var t.
-  Check unlet      : forall (var : type -> Type) (t : type), term (term var) t -> term var t.
-
+  (* ``var : type -> Type`` として与えられるものの例： *)
   Section a.
-    Variable var : type -> Type.
-    
     Check [unit]          : type -> Type. (* ``fun _ => unit`` の意味 *)
     Check [string]        : type -> Type.
+    (* term var も var として与えられる。 *)
+    Variable var : type -> Type.
     Check term var        : type -> Type.
     Check typeDenote      : type -> Type.
   End a.
+
+  (* ``var t : Type`` パターンマッチ ``Var _ s`` に出現する s の型の例： *)
+  Section b.
+    (* term var も var として与えられる。 *)
+    Variable var : type -> Type.
+    Variable t : type.  (* 対象言語の項、対象言語の type 型である。 *)
+    
+    (*                          ____________ ← s の型 *)
+    Check @Var var t          : var t                 -> term var t.
+    Check @Var [unit] t       : unit                  -> term [unit] t.
+    Check @Var [string] t     : string                -> term [string] t.
+    Check @Var (term var) t   : term var t            -> term (term var) t.
+    Check @Var typeDenote t   : typeDenote t          -> term typeDenote t.
+    Check @Var typeDenote Nat : nat                   -> term typeDenote Nat.
+  End b.
+
+  (*                                                               ↓パラメトリックに与える var  *)
+  Check countVars  : forall t : type,                        (term [unit]     t) -> nat.
+  Check pretty     : forall t : type,                        (term [string]   t) -> string -> string.
+  Check squash     : forall (var : type -> Type) (t : type), (term (term var) t) -> (term var t).
+  Check termDenote : forall t : type,                        (term typeDenote t) -> (typeDenote t).
+  Check ident      : forall (var : type -> Type) (t : type), (term var        t) -> (term var t).
+  Check cfold      : forall (var : type -> Type) (t : type), (term var        t) -> (term var t).
+  Check unlet      : forall (var : type -> Type) (t : type), (term (term var) t) -> (term var t).
+  
+  Check Term  : type -> Type.
+  (* Term  *) Check fun t     : type => forall var : type -> Type,           term var t.
+  Check Term1 : type -> type -> Type.
+  (* Term1 *) Check fun t1 t2 : type => forall var : type -> Type, var t1 -> term var t2.
+  
+  Check CountVars  : forall t : type,                        (Term t)            -> nat.
+  Check Pretty     : forall t : type,                        (Term t)            -> string.
+  Check Subst      : forall t1 t2 : type, (Term1 t1 t2) -> (Term t1) -> (Term t2). (* squash *)
+  Check TermDenote : forall t : type,                        (Term t)            -> (typeDenote t).
+  Check Ident      : forall t : type,                        (Term t)            -> (Term t).
+  Check Cfold      : forall t : type,                        (Term t)            -> (Term t).
+  Check Unlet      : forall t : type,                        (Term t)            -> (Term t).
   
 End HigherOrder.
 
