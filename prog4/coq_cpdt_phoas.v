@@ -148,7 +148,7 @@ Module HigherOrder.
   (* コンストラクタの引数と、match の実引数を比べる。 *)
   Fixpoint countVars (t : type) (e : term (fun _ => unit) t) : nat :=
     match e with
-    (*                       ↓↓↓↓↓↓↓ ``var t : unit`` がパターンに出てくる。 *)
+    (*                       ↓↓↓↓↓↓↓ 型 ``var t : unit`` がパターンに出てくる。 *)
     (*       (var) (t)       (var t)                       (e全体 : term var t) *)
     | @Var   _     t         tt      => 1
     (*       (var)           (nat)                         (e全体 : term var Nat) *)
@@ -176,7 +176,7 @@ Module HigherOrder.
 *)  
   
   (* パラメトリックに与えられる引数は、ここで追加される。 *)
-  Definition CountVars t (E : Term t) := countVars (E (fun _ => unit)).
+  Definition CountVars (t : type) (E : Term t) := countVars (E (fun _ => unit)).
   
   Eval compute in CountVars three_the_hard_way. (* 2 *)
   (* sample *)
@@ -205,7 +205,7 @@ Module HigherOrder.
   (*                                                         ↓ λの束縛変数に使う文字で、本質ではない。 *)
   Fixpoint pretty (t : type) (e : term (fun _ => string) t) (x : string) : string :=
     match e with
-    (*            ↓ ``var t : string`` がパターンに出てくる。 *)
+    (*            ↓ 型 ``var t : string`` がパターンに出てくる。 *)
     | Var _       s => s
     | Const       _ => "N"
     | Plus    e1 e2 => "(" ++ pretty e1 x ++ " + " ++ pretty e2 x ++ ")"
@@ -217,7 +217,7 @@ Module HigherOrder.
     end.
   Compute pretty (three_the_hard_way (fun _ => string)) "x".
 
-  Definition Pretty t (E : Term t) := pretty (E (fun _ => string)) "x".
+  Definition Pretty (t : type) (E : Term t) := pretty (E (fun _ => string)) "x".
 
   Eval compute in Pretty three_the_hard_way. (* "(((fun x => (fun x' => (x + x'))) N) N)" *)
   (* sample *)
@@ -236,10 +236,10 @@ Module HigherOrder.
 
   Definition Term1 (t1 t2 : type) := forall (var : type -> Type), var t1 -> term var t2.
   
-  Fixpoint squash var (t : type) (e : term (term var) t) : term var t :=
+  Fixpoint squash (var : type -> Type) (t : type) (e : term (term var) t) : term var t :=
     match e with
-    (*                 ↓↓ ``var t : term var t`` がパターンに出てくる。 *)
-    | @Var   _ t       e1    => e1   (* ``Var e`` を e に変換する。 *)
+    (*                 ↓↓ 型 ``var t = term var t`` がパターンに出てくる。 *)
+    | @Var   _ t       v     => v   (* ``Var v`` を v に変換する。 *)
     | @Const _         n     => @Const var n
     | @Plus  _         e1 e2 => @Plus  var (squash e1) (squash e2)
     | @Abs   _ t   ran e1    => @Abs   var t ran
@@ -295,9 +295,10 @@ Module HigherOrder.
   
   (** 表示的意味論を与える関数を定義できる。 *)
   
-  Fixpoint termDenote t (e : term typeDenote t) : typeDenote t :=
+  Fixpoint termDenote (t : type) (e : term typeDenote t) : typeDenote t :=
     match e with
-    (*            ↓ ``var t = typeDenote t`` がパターンに出てくる。項 t のGallinaの型 *)
+    (* ここで、t と e の関係をよく見ておくこと。 *)
+    (*            ↓ 型 ``var t = typeDenote t`` がパターンに出てくる。 *)
     | Var _       v => v
     | Const       n => n
     | Plus    e1 e2 => termDenote e1 + termDenote e2
@@ -306,7 +307,7 @@ Module HigherOrder.
     | Let _ _ e1 e2 => termDenote (e2 (termDenote e1))
     end.
   
-  Definition TermDenote t (E : Term t) : typeDenote t := termDenote (E typeDenote).
+  Definition TermDenote (t : type) (E : Term t) : typeDenote t := termDenote (E typeDenote).
   
   Eval compute in TermDenote three_the_hard_way. (* = 3 *)
   (* sample *)
@@ -333,9 +334,9 @@ Module HigherOrder.
       タグ選択で多態的なヘルパー関数と、選択を適切にインスタンス化する最終関数があります。
    *)
   
-  Fixpoint ident var t (e : term var t) : term var t :=
+  Fixpoint ident (var : type -> Type) (t : type) (e : term var t) : term var t :=
     match e with
-    (*        ↓ ``var t = var t`` がパターンに出てくる。 *)
+    (*         ↓ 型 ``var t = var t`` がパターンに出てくる。 *)
     | Var _    x    => Var x
     | Const    n    => Const n
     | Plus    e1 e2 => Plus (ident e1) (ident e2)
@@ -344,7 +345,7 @@ Module HigherOrder.
     | Let _ _ e1 e2 => Let (ident e1) (fun x => ident (e2 x))
     end.
 
-  Definition Ident t (E : Term t) : Term t := fun var => ident (E var).
+  Definition Ident (t : type) (E : Term t) : Term t := fun var => ident (E var).
 
   (* sample *)
   Compute Ident (fun var : type -> Type => Abs (fun (x : var Nat) => Var x)).
@@ -382,7 +383,7 @@ Module HigherOrder.
   
   (** 定数畳み込み関数の翻訳とその証明は、ほぼ同じように機能します。 *)
 
-  Fixpoint cfold var t (e : term var t) : term var t :=
+  Fixpoint cfold (var : type -> Type) (t : type) (e : term var t) : term var t :=
     match e with
     | Plus    e1 e2 =>
         let e1' := cfold e1 in
@@ -395,12 +396,12 @@ Module HigherOrder.
     | App _ _ e1 e2 => App (cfold e1) (cfold e2)
     | Let _ _ e1 e2 => Let (cfold e1) (fun x => cfold (e2 x))
 (*  | e => e *)
-    (*        ↓ ``var t = var t`` がパターンに出てくる。 *)
+    (*        ↓ 型 ``var t = var t`` がパターンに出てくる。 *)
     | Var _   e     => Var e
     | Const   n     => Const n
     end.
 
-  Definition Cfold t (E : Term t) : Term t := fun var => cfold (E var).
+  Definition Cfold (t : type) (E : Term t) : Term t := fun var => cfold (E var).
 
   (* sample *)
   Compute Cfold (fun var : type -> Type => Plus (Const 1) (Const 2)).
@@ -438,9 +439,9 @@ Module HigherOrder.
 
 (** *** unlet *)
 
-  Fixpoint unlet var t (e : term (term var) t) : term var t :=
+  Fixpoint unlet (var : type -> Type) (t : type) (e : term (term var) t) : term var t :=
     match e with
-    (*        ↓ ``var t = tarm var t`` がパターンに出てくる。 *)
+    (*        ↓ 型 ``var t = tarm var t`` がパターンに出てくる。 *)
     | Var _   e1    => e1
     | Const   n     => Const n
     | Plus    e1 e2 => Plus (unlet e1) (unlet e2)
@@ -449,7 +450,7 @@ Module HigherOrder.
     | Let _ _ e1 e2 => unlet (e2 (unlet e1))
     end.
   
-  Definition Unlet t (E : Term t) : Term t := fun var => unlet (E (term var)).
+  Definition Unlet (t : type) (E : Term t) : Term t := fun var => unlet (E (term var)).
   
   Eval compute in three_the_hard_way.
   Eval compute in Unlet three_the_hard_way. (* 変化はない。 *)
@@ -504,7 +505,7 @@ Module HigherOrder.
       -> wf G (Let e1 e2) (Let e1' e2').
   End wf.
   
-  Definition Wf t (E : Term t) := forall var1 var2, wf nil (E var1) (E var2).
+  Definition Wf (t : type) (E : Term t) := forall var1 var2, wf nil (E var1) (E var2).
   
   Theorem three_the_hard_way_Wf : Wf three_the_hard_way.
   Proof.
@@ -603,7 +604,7 @@ Module HigherOrder.
   Section b.
     (* term var も var として与えられる。 *)
     Variable var : type -> Type.
-    Variable t : type.  (* 対象言語の項、対象言語の type 型である。 *)
+    Variable t : type.                      (* 対象言語型 *)
     
     (*                          ____________ ← s の型 *)
     Check @Var var t          : var t                 -> term var t.
