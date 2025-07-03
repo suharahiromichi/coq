@@ -2,13 +2,23 @@
 依存マッチで証明を進める方法
 
 http://www.a-k-r.org/pub/2025-06-28-akr-proof-summit-2025.pdf
+ *)
+From mathcomp Require Import all_ssreflect.
+Import EqNotations.                         (* rew *)
+Require Import JMeq.                        (* JMeq *)
+Require Import Coq.Program.Equality.        (* dependent destruction *)
 
+Set Implicit Arguments.
+Unset Strict Implicit.
+Unset Printing Implicit Defensive.
+
+(*
 # 説明：
 
 ## match 式を生成するtactic
-- dependent destruction ............ JMeq による等式の生成 (公理が必要)
+- ○ dependent destruction .......... JMeq による等式の生成 (公理が必要)
   (Lean) cases ..................... HEq (Lean)
-- refine (match ....) .............. rew を使った等式の生成（連立方程式を生成）
+- ○ refine (match ....)............. rew を使った等式の生成（連立方程式を生成）
 - depelim (Equations パッケージ) ... sigma 型を使った等式の生成
 
 ## JMeq を使う。
@@ -21,14 +31,6 @@ http://www.a-k-r.org/pub/2025-06-28-akr-proof-summit-2025.pdf
   - injectivity .... no confusion 補題を使用する。
   - solution
 *)
-
-From mathcomp Require Import all_ssreflect.
-Import EqNotations.                         (* rew *)
-Require Import Coq.Program.Equality.        (* JMeq *)
-
-Set Implicit Arguments.
-Unset Strict Implicit.
-Unset Printing Implicit Defensive.
 
 (**
 # nat についての no confusion 補題 p.43
