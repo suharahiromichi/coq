@@ -1,4 +1,12 @@
 (**
+ビットとバイナリー
+ *)
+From elpi Require Import elpi.
+From HB Require Import structures.
+From mathcomp Require Import all_ssreflect.
+From mathcomp Require Import all_algebra.
+
+(**
 b を2進表現の正整数としたとき、
 左シフトが2倍に等しいこと
 
@@ -6,11 +14,6 @@ b << 1 = b * 2
 
 であることをしめせ。
 *)
-From elpi Require Import elpi.
-From HB Require Import structures.
-From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import all_algebra.
-
 
 Definition bin := seq bool.
 
@@ -63,6 +66,15 @@ Qed.
 Module rocq.
   Require Import NArith.
   
+  (* バニラCoqと mathcomp の相互運用性 *)
+  Check nat_of_pos (1 : positive) : nat.
+  Check nat_of_N (1 : N) : nat.
+  Check N_of_nat 1 : N.
+  
+  Check 1 : nat.
+  Check 1 : N.                              (* oercion は効く。 *)
+  Check 1%N : N.                            (* 型の指定 *)
+  
   (* NArith/BinNat.v *)
   About N.shiftl_succ_r.
   Check N.shiftl_succ_r
@@ -71,10 +83,58 @@ Module rocq.
   Goal forall x : N, N.shiftl x 1 = N.double x.
   Proof.
     move=> x.
-    have -> : (1 : N) = N.succ (0 : N) by done.
+    have -> : 1%N = N.succ 0%N by done.
     by rewrite N.shiftl_succ_r N.shiftl_0_r.
   Qed.
 
 End rocq.
 
+(**
+ルーラー関数
+*)
+Module rocq2.
+  From Equations Require Import Equations.
+  Require Import ZArith Lia.
+  
+  (* n = 0 then 0 *)
+  Definition ruler (n : nat) :=
+    let x := Z_of_nat n in Z.log2 (Z.land x (Z.opp x)).
+  
+  Equations ruler_rec (n : nat) : Z by wf n :=
+    ruler_rec 0 => 0 ;
+    ruler_rec n.+1 with odd n.+1 => {
+      | true  => 0
+      | false => Z.add (ruler_rec n.+1./2) 1%Z
+      }.
+  Obligation 1.
+  apply/ltP.
+  rewrite ltn_uphalf_double -muln2.
+  by apply: ltn_Pmulr.
+  Qed.
+  
+  Example test (n : nat) := (ruler n = ruler_rec n).
+
+  Goal test 0. Proof. done. Qed.
+  Goal test 1. Proof. done. Qed.
+  Goal test 2. Proof. done. Qed.
+  Goal test 3. Proof. done. Qed.
+  Goal test 4. Proof. done. Qed.
+  Goal test 5. Proof. done. Qed.
+  Goal test 6. Proof. done. Qed.
+  Goal test 7. Proof. done. Qed.
+  Goal test 8. Proof. done. Qed.
+
+  Compute ruler_rec 0.  
+  Compute ruler_rec 1.  
+  Compute ruler_rec 2.  
+  Compute ruler_rec 3.  
+  Compute ruler_rec 4.
+  Compute ruler_rec 5.  
+  Compute ruler_rec 7.  
+  Compute ruler_rec 8.  
+
+  Goal forall (n : nat), ruler n = ruler_rec n.
+  Proof.
+  Admitted.
+  
 (* END *)
