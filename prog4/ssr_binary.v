@@ -144,9 +144,13 @@ Module rocq2.
       f_equal.
       Check Z.land _ (Z.lnot _ + 1)%Z = 1%Z.
       (* 奇数だと、not の LBSが0なので、+ 1 でそこだけ変わる。 *)
+      (* 奇数なら、+1 は、land 1 に等しい。 *)
       admit.
     
     - (* n が偶数なら *)
+      Check uphalfE : forall n : nat, uphalf n = n.+1./2.
+      (* uphalf n で成り立つ *)
+      (* n.+1 で成り立つことを証明する。 *)
 (*
   n : nat
   H : ruler (uphalf n) = ruler_rec (uphalf n)
@@ -155,6 +159,24 @@ Module rocq2.
   ============================
   ruler n.+1 = Z.add (ruler_rec (uphalf n)) 1%Z
 *)
+      move: Heq.
+      move: Heqcall.
+      move: H.
+      rewrite uphalfE.
+      set m := n.+1.
+      move=> H.
+      move=> Heqcall.
+      move=> Heq.
+      (*
+  n : nat
+  m := n.+1 : nat
+  H : ruler m./2 = ruler_rec m./2
+  Heqcall : Z.add (ruler_rec m./2) 1%Z = ruler_rec m
+  Heq : odd m = false
+  ============================
+  ruler m = Z.add (ruler_rec m./2) 1%Z
+*)
+
   Admitted.
 
   
