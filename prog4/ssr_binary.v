@@ -1,10 +1,8 @@
 (**
 ビットとバイナリー
  *)
-From elpi Require Import elpi.
-From HB Require Import structures.
 From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import all_algebra.
+(* From mathcomp Require Import all_algebra. *)
 
 (**
 b を2進表現の正整数としたとき、
@@ -98,7 +96,7 @@ Module rocq2.
   
   (* n = 0 then 0 *)
   Definition ruler (n : nat) :=
-    let x := Z_of_nat n in Z.log2 (Z.land x (Z.opp x)).
+    let x := Z_of_nat n in Z.log2 (Z.land x (- x)%Z).
   
   Equations ruler_rec (n : nat) : Z by wf n :=
     ruler_rec 0 => 0 ;
@@ -135,6 +133,29 @@ Module rocq2.
 
   Goal forall (n : nat), ruler n = ruler_rec n.
   Proof.
+    move=> n.
+    funelim (ruler_rec n) => //=.
+    
+    (* nが奇数なら、ruler の値は0である。 *)
+    Check odd n.+1 = true -> ruler n.+1 = 0%Z.
+    - rewrite /ruler.
+      rewrite -Z.succ_lnot.
+      have <- : Z.log2 1%Z = 0%Z by done.
+      f_equal.
+      Check Z.land _ (Z.lnot _ + 1)%Z = 1%Z.
+      (* 奇数だと、not の LBSが0なので、+ 1 でそこだけ変わる。 *)
+      admit.
+    
+    - (* n が偶数なら *)
+(*
+  n : nat
+  H : ruler (uphalf n) = ruler_rec (uphalf n)
+  Heq : odd n.+1 = false
+  Heqcall : Z.add (ruler_rec n.+1./2) 1%Z = ruler_rec n.+1
+  ============================
+  ruler n.+1 = Z.add (ruler_rec (uphalf n)) 1%Z
+*)
   Admitted.
+
   
 (* END *)
