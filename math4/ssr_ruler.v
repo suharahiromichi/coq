@@ -148,23 +148,34 @@ Section bitwise.
   Notation "x .^ y" := (lxor x y) (at level 30).
   Notation "x .[ i ]" := (testbit x i).
   
-  Lemma lor_spec (x y : int) (i : nat) : (x .| y).[i] = x.[i] || y.[i].
+  Lemma lnot_spec (x : int) (i : nat) : (.~ x).[i] = ~~ x.[i].
   Proof.
-    case: x; case: y => m' n';
-                        rewrite ?testbit_equation_1 ?testbit_equation_2.
-    - by rewrite Nat.lor_spec.
-    - rewrite Nat.ldiff_spec.
-      by rewrite negb_and negbK orbC.
-    - rewrite Nat.ldiff_spec.
-      by rewrite negb_and negbK orbC.
-    - rewrite Nat.land_spec.
-      by rewrite negb_and.
+    case: x => n; simp lnot testbit; rewrite //=.
+    by rewrite negbK.
   Qed.
   
-  Axiom land_spec  : forall (x y : int) (i : nat), (x .& y).[i] = x.[i] && y.[i].
-  Axiom lxor_spec  : forall (x y : int) (i : nat), (x .^ y).[i] = xorb (x.[i]) (y.[i]).
-  Axiom ldiff_spec : forall (x y : int) (i : nat), (ldiff x y).[i] = x.[i] && ~~ y.[i].
+  Lemma lor_spec (x y : int) (i : nat) : (x .| y).[i] = x.[i] || y.[i].
+  Proof.
+    case: x; case: y => m n;
+      rewrite ?testbit_equation_1 ?testbit_equation_2
+        ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //.
+    - by rewrite negb_and negbK orbC.
+    - by rewrite negb_and negbK orbC.
+    - by rewrite negb_and.
+  Qed.
+  
+  Lemma land_spec (x y : int) (i : nat) : (x .& y).[i] = x.[i] && y.[i].
+  Proof.
+  Admitted.
+  
+  Lemma lxor_spec (x y : int) (i : nat) : (x .^ y).[i] = xorb (x.[i]) (y.[i]).
+  Proof.
+  Admitted.
 
+  Lemma ldiff_spec (x y : int) (i : nat) : (ldiff x y).[i] = x.[i] && ~~ y.[i].
+  Proof.
+  Admitted.
+  
 (**
 # 問題をPeanNatの問題にする
  *)
