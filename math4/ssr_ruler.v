@@ -21,6 +21,7 @@ Open Scope ring_scope.
 # 無限長2進数の世界
 
 2進数でも任意の自然数・整数・有理数を表現できる。
+補数表現は、有限の桁数（8ビットで256を法とするなど）に限らない。
 
 …1111111.      = -1    小数点が右端
 .1111111…      = 1     小数点が左端
@@ -100,20 +101,38 @@ Fail Check Nat.lnor.                        (* これは無い。 *)
 
 (**
 # 2進整数のbitwise計算
-
-わからない。
 *)
 
 Section bitwise.
+(**
+## not
+
+自然数の not (ビットワイズの反転) は定義できないが、
+整数の not は定義できる。
+*)
+  Equations lnot (x : int) : int :=
+    lnot (Posz n) := Negz n;
+    lnot (Negz n) := Posz n.
+  
+  Compute lnot 2.                           (* = (-3)%Z *)
+  Compute lnot 1.                           (* = (-2)%Z *)
+  Compute lnot 0.                           (* = (-1)%Z *)
+  Compute lnot (-1).                        (* = 0%Z *)
+  Compute lnot (-2).                        (* = 1%Z *)
+  Compute lnot (-3).                        (* = 2%Z *)
+  
+  Equations lor (x y : int) : int :=
+    lor (Posz m) (Posz n) := Posz (Nat.lor m n);
+    lor (Posz m) (Negz n) := Negz (Nat.ldiff n m);
+    lor (Negz m) (Posz n) := Negz (Nat.ldiff m n);
+    lor (Negz m) (Negz n) := Negz (Nat.land m n).
+
+  (* Leanを参考にして定義する。 *)
   Variable land : int -> int -> int.
-  Variable lor  : int -> int -> int.
   Variable lxor : int -> int -> int.
   Variable ldiff : int -> int -> int.
 
-  Notation "x & y" := (land x y) (at level 50).
-  Notation "x | y" := (lor x y) (at level 50).
-  Notation "x ^ y" := (lxor x y) (at level 30).
-  
+
 (**
 ただし、testbit 関数を次のように定義できる。
 *)
@@ -123,45 +142,64 @@ Section bitwise.
   Check testbit_equation_1: forall n m : nat, testbit n m = Nat.testbit n m.
   Check testbit_equation_2: forall n m : nat, testbit (Negz n) m = ~~ Nat.testbit n m.
   
-  Axiom land_spec  : forall (x y : int) (m : nat), testbit (x & y) m = testbit x m && testbit y m.
-  Axiom lor_spec   : forall (x y : int) (m : nat), testbit (x | y) m = testbit x m || testbit y m.
-  Axiom lxor_spec  : forall (x y : int) (m : nat), testbit (x ^ y) m = xorb (testbit x m) (testbit y m).
-  Axiom ldiff_spec : forall (x y : int) (m : nat), testbit (ldiff x y) m = testbit x m && ~~ testbit y m.
+  Notation ".~ x" := (lnot x) (at level 35).
+  Notation "x .& y" := (land x y) (at level 50).
+  Notation "x .| y" := (lor x y) (at level 50).
+  Notation "x .^ y" := (lxor x y) (at level 30).
+  Notation "x .[ i ]" := (testbit x i).
+  
+  Lemma lor_spec (x y : int) (i : nat) : (x .| y).[i] = x.[i] || y.[i].
+  Proof.
+    case: x; case: y => m' n';
+                        rewrite ?testbit_equation_1 ?testbit_equation_2.
+    - by rewrite Nat.lor_spec.
+    - rewrite Nat.ldiff_spec.
+      by rewrite negb_and negbK orbC.
+    - rewrite Nat.ldiff_spec.
+      by rewrite negb_and negbK orbC.
+    - rewrite Nat.land_spec.
+      by rewrite negb_and.
+  Qed.
+  
+  Axiom land_spec  : forall (x y : int) (i : nat), (x .& y).[i] = x.[i] && y.[i].
+  Axiom lxor_spec  : forall (x y : int) (i : nat), (x .^ y).[i] = xorb (x.[i]) (y.[i]).
+  Axiom ldiff_spec : forall (x y : int) (i : nat), (ldiff x y).[i] = x.[i] && ~~ y.[i].
 
 (**
 # 問題をPeanNatの問題にする
  *)
 
-  Definition prog (x : int) := x & (- x).
+  Definition prog (x : int) := x .& (- x).
 
-  Lemma prog_0 m : testbit (prog 0) m = false.
+  Lemma prog_0 i : (prog 0).[i] = false.
   Proof.
     rewrite land_spec testbit_equation_1.
     now rewrite Nat.bits_0.
   Qed.
   
-  Lemma prog_pos n m : testbit (prog (Posz n.+1)) m = Nat.testbit n.+1 m && ~~ Nat.testbit n m.
+  Lemma prog_pos n i : (prog (Posz n.+1)).[i] = Nat.testbit n.+1 i && ~~ Nat.testbit n i.
   Proof.
     rewrite land_spec.
     done.
   Qed.
 
-  Lemma prog_neg n m : testbit (prog (Negz n)) m = ~~ Nat.testbit n m && Nat.testbit n.+1 m.
+  Lemma prog_neg n i : (prog (Negz n)).[i] = ~~ Nat.testbit n i && Nat.testbit n.+1 i.
   Proof.
     rewrite land_spec.
     done.
   Qed.
-
+  
 (**
 # ルーラー関数
 *)
-
-  Variable log2 : int -> nat.               (* これから定義する。 *)
-  (* n = 0 then 0 *)
+  Equations log2 (x : int) : nat :=
+    log2 (Posz n) := Nat.log2 n;
+    log2 (Negz _) := 0.
+  Compute log2 0%Z.                         (* = 0%N *)
   
-  Definition ruler (n : nat) := log2 (n%:Z & (- n%:Z)).
+  Definition ruler (n : nat) := log2 (n%:Z .& (- n%:Z)).
   
-  Definition ruler' (n : nat) := log2 (n%:Z ^ n.-1%:Z).
+  Definition ruler' (n : nat) := log2 (n%:Z .^ n.-1%:Z).
   
   Equations ruler_rec (n : nat) : nat by wf n :=
     ruler_rec 0 => 0 ;
@@ -211,5 +249,24 @@ Section bitwise.
 
 End bitwise.
   
-(* END *)
+(**
+# 補足説明
 
+## Standard Coq
+
+- NArith/BinNatDef.v
+- ZArith/BinInt.v       ZArith/Zbitwise.v
+
+
+## Lean
+
+- Mathlib/Data/Num/Bitwise.lean
+- Mathlib/Data/Int/Bitwise.lean
+
+Negz にあたるコンストラクタは neg_succ_of_nat という
+
+``-[ ・ +1]`` または ``-[1+ ・ ]`` というノーテーション
+
+*)
+
+(* END *)
