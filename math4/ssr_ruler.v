@@ -4,6 +4,7 @@
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 From mathcomp Require Import ssrZ zify ring lra.
+(* opam install coq-equations *)
 From Equations Require Import Equations.
 Import Arith.                               (* Nat.land_spec *)
 
@@ -22,8 +23,8 @@ Open Scope ring_scope.
 
 2進数でも任意の自然数・整数・有理数を表現できる。
 
-…1111111.      = -1    小数点が右端
 .1111111…      = 1     小数点が左端
+…1111111.      = -1    小数点が右端
 …111.111…      = 0     小数点が途中 (2進実数)
 
 この話のポイントは、補数表現は有限の桁数（8ビットで256を法とするなど）に限らないことである。
@@ -36,7 +37,16 @@ Open Scope ring_scope.
 負数とビット単位での論理積をとる。
 
 結城浩「数学ガールの秘密のノート ビットとバイナリー」
+
+
+0001 1111      0001              1      1       0
+0010 1110      0010              2      2       1
+0011 1101      0001              3      1       0
+0100 1100      0100              4      4       2
+0101 1011      0001              5      1       0
+0110 1010      0010              6      2       1
 *)
+
 
 (**
 # mathcomp の ssrint
@@ -109,13 +119,14 @@ Check Nat.lxor_spec
 Check Nat.ldiff_spec
   : forall a b n : nat, Nat.testbit (Nat.ldiff a b) n = Nat.testbit a n && ~~ Nat.testbit b n.
 
-(* ビット毎の論理否定が定義されていない。なぜでしょうか。 *)
-Fail Check Nat.lnor.
+(* ビット毎の論理否定が普通の形で定義されていない。なぜでしょうか。 *)
+Print Nat.lnot.                             (* 桁数の指定が要る。 *)
+Print Nat.ones.                             (* 桁数の指定が要る。 *)
 
 (**
 # 整数 int のbitwise計算
 
-本題にはいります。
+本題にはいります。mathcomp にないので自分で定義します。
 *)
 
 Section bitwise.
@@ -137,21 +148,34 @@ Section bitwise.
   Compute lnot (-3).                        (* = 2%Z *)
   
   Equations lor (x y : int) : int :=
-    lor (Posz m) (Posz n) := Posz (Nat.lor m n);
-    lor (Posz m) (Negz n) := Negz (Nat.ldiff n m);
-    lor (Negz m) (Posz n) := Negz (Nat.ldiff m n);
-    lor (Negz m) (Negz n) := Negz (Nat.land m n).
+    lor (Posz m) (Posz n) := Posz (Nat.lor m n);   (* x | y *)
+    lor (Posz m) (Negz n) := Negz (Nat.ldiff n m); (* x | ~y = ~(~x & y) *)
+    lor (Negz m) (Posz n) := Negz (Nat.ldiff m n); (* ~x | y = ~(x & ~y) *)
+    lor (Negz m) (Negz n) := Negz (Nat.land m n).  (* ~x | ~y) = ~(x & y) *)
   (* simp lor で以下のrewrite ができる。 *)
   Check lor_equation_1 : forall m n : nat, lor m n = Nat.lor m n.
   Check lor_equation_2 : forall m n : nat, lor m (Negz n) = Negz (Nat.ldiff n m).
   Check lor_equation_3 : forall m n : nat, lor (Negz m) n = Negz (Nat.ldiff m n).
   Check lor_equation_4 : forall m n : nat, lor (Negz m) (Negz n) = Negz (Nat.land m n).
 
-  (* Leanを参考にして定義する。 *)
-  Variable land : int -> int -> int.
-  Variable lxor : int -> int -> int.
-  Variable ldiff : int -> int -> int.
+  (* この定義から 2025/8/23 ProorCafe *)
+  Equations land (x y : int) : int :=
+    land (Posz m) (Posz n) := Posz (Nat.land m n);  (* x & y *)
+    land (Posz m) (Negz n) := Posz (Nat.ldiff m n); (* x & ~y *)
+    land (Negz m) (Posz n) := Posz (Nat.ldiff n m); (* ~x & y *)
+    land (Negz m) (Negz n) := Negz (Nat.lor m n).   (* ~x & ~y = ~(x | y) *)
 
+  Equations lxor (x y : int) : int :=
+    lxor (Posz m) (Posz n) := Posz (Nat.lxor m n);
+    lxor (Posz m) (Negz n) := Negz (Nat.lxor m n);
+    lxor (Negz m) (Posz n) := Negz (Nat.lxor m n);
+    lxor (Negz m) (Negz n) := Posz (Nat.lxor m n).
+  
+  Equations ldiff (x y : int) : int :=
+    ldiff (Posz m) (Posz n) := Posz (Nat.ldiff m n); (* x & ~ y *)
+    ldiff (Posz m) (Negz n) := Posz (Nat.land m n); (* x & ~ ~y = x & y *)
+    ldiff (Negz m) (Posz n) := Negz (Nat.lor m n);  (* ~x & ~ y = ~(x | y) *)
+    ldiff (Negz m) (Negz n) := Posz (Nat.ldiff n m). (* ~x & ~ ~y = ~ x & y *)
 
 (**
 testbit 関数を次のように定義できる。これは定義！
@@ -166,8 +190,9 @@ testbit 関数を次のように定義できる。これは定義！
   Notation ".~ x" := (lnot x) (at level 35).
   Notation "x .& y" := (land x y) (at level 50).
   Notation "x .| y" := (lor x y) (at level 50).
-  Notation "x .^ y" := (lxor x y) (at level 30).
+  Notation "x .^ y" := (lxor x y) (at level 50).
   Notation "x .[ i ]" := (testbit x i).
+  Notation "a ^^ b" := (xorb a b) (at level 50).
   
   Lemma lnot_spec (x : int) (i : nat) : (.~ x).[i] = ~~ x.[i].
   Proof.
@@ -185,20 +210,38 @@ testbit 関数を次のように定義できる。これは定義！
     - by rewrite negb_and.
   Qed.
   
+  (* この証明から 2025/8/23 ProorCafe *)
   Lemma land_spec (x y : int) (i : nat) : (x .& y).[i] = x.[i] && y.[i].
   Proof.
-  Admitted.
+    case: x; case: y => m n;
+      rewrite ?testbit_equation_1 ?testbit_equation_2
+        ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //.
+    - by rewrite andbC.
+    - by rewrite negb_or.
+  Qed.
   
-  Lemma lxor_spec (x y : int) (i : nat) : (x .^ y).[i] = xorb (x.[i]) (y.[i]).
+  Lemma lxor_spec (x y : int) (i : nat) : (x .^ y).[i] = x.[i] ^^ y.[i].
   Proof.
-  Admitted.
-
+    case: x; case: y => m n;
+      rewrite ?testbit_equation_1 ?testbit_equation_2
+        ?Nat.lor_spec ?Nat.land_spec ?Nat.lxor_spec ?Nat.ldiff_spec //.
+    - by rewrite Bool.negb_xorb_r.
+    - by rewrite Bool.negb_xorb_l.
+    - by rewrite Bool.xorb_negb_negb.
+  Qed.
+  
   Lemma ldiff_spec (x y : int) (i : nat) : (ldiff x y).[i] = x.[i] && ~~ y.[i].
   Proof.
-  Admitted.
+    case: x; case: y => m n;
+      rewrite ?testbit_equation_1 ?testbit_equation_2
+        ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //.
+    - by rewrite negbK.
+    - by rewrite negb_or.
+    - by rewrite negbK andbC.
+  Qed.
   
 (**
-# 数学ガールの問題を 自然数 (PeanNat) の問題にする
+# 数学ガールの問題を 自然数 (PeanoNat) の問題にする
  *)
 
   Definition prog (x : int) := x .& (- x).
