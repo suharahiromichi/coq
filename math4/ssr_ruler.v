@@ -21,22 +21,28 @@ Open Scope ring_scope.
 # 無限長2進数の世界
 
 2進数でも任意の自然数・整数・有理数を表現できる。
-補数表現は、有限の桁数（8ビットで256を法とするなど）に限らない。
 
 …1111111.      = -1    小数点が右端
 .1111111…      = 1     小数点が左端
 …111.111…      = 0     小数点が途中 (2進実数)
 
+この話のポイントは、補数表現は有限の桁数（8ビットで256を法とするなど）に限らないことである。
+とりあえず、整数を扱う。
  *)
 
 (**
 # 問題 ``x & (- x)`` の意味
+
+負数とビット単位での論理積をとる。
 
 結城浩「数学ガールの秘密のノート ビットとバイナリー」
 *)
 
 (**
 # mathcomp の ssrint
+
+ここでは、mathcomp の int を使う。
+Standard Rocq (Coq) とは異なるが、Lean も同じ定義である。
 *)
 
 Print int.
@@ -45,6 +51,15 @@ Variant int : Set :=
 | Posz : nat -> int
 | Negz : nat -> int.
 *)
+
+Compute Posz 2.                             (* = 2%Z *)
+Compute Posz 1.                             (* = 1%Z *)
+Compute Posz 0.                             (* = 0%Z *)
+Compute Negz 0.                             (* = (-1)%Z *)
+Compute Negz 1.                             (* = (-2)%Z *)
+Compute Negz 2.                             (* = (-3)%Z *)
+
+(* Negz のほうの定義が判りにくい。Leanでは… *)
 
 Goal forall (m : nat), Negz m = - m.+1%:Z.
 Proof.
@@ -56,15 +71,8 @@ Proof.
   by case.
 Qed.
 
-Compute Posz 2.                             (* = 2%Z *)
-Compute Posz 1.                             (* = 1%Z *)
-Compute Posz 0.                             (* = 0%Z *)
-Compute Negz 0.                             (* = (-1)%Z *)
-Compute Negz 1.                             (* = (-2)%Z *)
-Compute Negz 2.                             (* = (-3)%Z *)
-
 (**
-## oppz (- x)
+## oppz (- x) 負数
 *)
 
 Section opp_test.
@@ -77,7 +85,10 @@ Section opp_test.
 End opp_test.
 
 (**
-# Standard coq (PeanoNat の bitwise 計算
+# Standard coq の自然数 (PeanoNat) の bitwise 計算
+
+MathComp であっても、Standard Rocq (Coq) で定義された自然数のbitwize計算は全て使える。
+モジュール名 ``Nat.`` を付けること。
  *)
 Print Nat.testbit.
 (*
@@ -97,10 +108,14 @@ Check Nat.lxor_spec
   : forall a b n : nat, Nat.testbit (Nat.lxor a b) n = xorb (Nat.testbit a n) (Nat.testbit b n).
 Check Nat.ldiff_spec
   : forall a b n : nat, Nat.testbit (Nat.ldiff a b) n = Nat.testbit a n && ~~ Nat.testbit b n.
-Fail Check Nat.lnor.                        (* これは無い。 *)
+
+(* ビット毎の論理否定が定義されていない。なぜでしょうか。 *)
+Fail Check Nat.lnor.
 
 (**
-# 2進整数のbitwise計算
+# 整数 int のbitwise計算
+
+本題にはいります。
 *)
 
 Section bitwise.
@@ -126,6 +141,11 @@ Section bitwise.
     lor (Posz m) (Negz n) := Negz (Nat.ldiff n m);
     lor (Negz m) (Posz n) := Negz (Nat.ldiff m n);
     lor (Negz m) (Negz n) := Negz (Nat.land m n).
+  (* simp lor で以下のrewrite ができる。 *)
+  Check lor_equation_1 : forall m n : nat, lor m n = Nat.lor m n.
+  Check lor_equation_2 : forall m n : nat, lor m (Negz n) = Negz (Nat.ldiff n m).
+  Check lor_equation_3 : forall m n : nat, lor (Negz m) n = Negz (Nat.ldiff m n).
+  Check lor_equation_4 : forall m n : nat, lor (Negz m) (Negz n) = Negz (Nat.land m n).
 
   (* Leanを参考にして定義する。 *)
   Variable land : int -> int -> int.
@@ -134,11 +154,12 @@ Section bitwise.
 
 
 (**
-ただし、testbit 関数を次のように定義できる。
+testbit 関数を次のように定義できる。これは定義！
 *)
   Equations testbit (x : int) (n : nat) : bool :=
     testbit (Posz n) m := Nat.testbit n m ;
     testbit (Negz n) m := ~~ Nat.testbit n m.
+  (* simp testbit で以下のrewrite ができる。 *)
   Check testbit_equation_1: forall n m : nat, testbit n m = Nat.testbit n m.
   Check testbit_equation_2: forall n m : nat, testbit (Negz n) m = ~~ Nat.testbit n m.
   
@@ -150,7 +171,7 @@ Section bitwise.
   
   Lemma lnot_spec (x : int) (i : nat) : (.~ x).[i] = ~~ x.[i].
   Proof.
-    case: x => n; simp lnot testbit; rewrite //=.
+    case: x => n; simp lnot testbit => //=.
     by rewrite negbK.
   Qed.
   
@@ -177,7 +198,7 @@ Section bitwise.
   Admitted.
   
 (**
-# 問題をPeanNatの問題にする
+# 数学ガールの問題を 自然数 (PeanNat) の問題にする
  *)
 
   Definition prog (x : int) := x .& (- x).
@@ -202,13 +223,15 @@ Section bitwise.
   
 (**
 # ルーラー関数
+
+以下の三つの定義が等しいことを証明したい。
 *)
   Equations log2 (x : int) : nat :=
     log2 (Posz n) := Nat.log2 n;
     log2 (Negz _) := 0.
   Compute log2 0%Z.                         (* = 0%N *)
   
-  Definition ruler (n : nat) := log2 (n%:Z .& (- n%:Z)).
+  Definition ruler (n : nat) := log2 (prog n%:Z). (* log2 (n%:Z .& (- n%:Z)) *)
   
   Definition ruler' (n : nat) := log2 (n%:Z .^ n.-1%:Z).
   
