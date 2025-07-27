@@ -45,6 +45,8 @@ Open Scope ring_scope.
 0100 1100      0100              4      4       2
 0101 1011      0001              5      1       0
 0110 1010      0010              6      2       1
+0111 1001
+1000 1000      1000              8      8       3
 *)
 
 
@@ -159,12 +161,15 @@ Section bitwise.
   Check lor_equation_4 : forall m n : nat, lor (Negz m) (Negz n) = Negz (Nat.land m n).
 
   (* この定義から 2025/8/23 ProorCafe *)
-  Equations land (x y : int) : int :=
-    land (Posz m) (Posz n) := Posz (Nat.land m n);  (* x & y *)
-    land (Posz m) (Negz n) := Posz (Nat.ldiff m n); (* x & ~y *)
-    land (Negz m) (Posz n) := Posz (Nat.ldiff n m); (* ~x & y *)
-    land (Negz m) (Negz n) := Negz (Nat.lor m n).   (* ~x & ~y = ~(x | y) *)
-
+  (* Equations と mathcomp の併用は問題がある。 *)
+  Definition land (x y : int) : int :=
+    match x, y with
+    | (Posz m), (Posz n) => Posz (Nat.land m n)  (* x & y *)
+    | (Posz m), (Negz n) => Posz (Nat.ldiff m n) (* x & ~y *)
+    | (Negz m), (Posz n) => Posz (Nat.ldiff n m) (* ~x & y *)
+    | (Negz m), (Negz n) => Negz (Nat.lor m n)   (* ~x & ~y = ~(x | y) *)
+    end.
+  
   Equations lxor (x y : int) : int :=
     lxor (Posz m) (Posz n) := Posz (Nat.lxor m n);
     lxor (Posz m) (Negz n) := Negz (Nat.lxor m n);
@@ -246,6 +251,35 @@ testbit 関数を次のように定義できる。これは定義！
 
   Definition prog (x : int) := x .& (- x).
 
+  Lemma prog_diff n  : prog (Posz n.+1) = Nat.ldiff n.+1 n.
+  Proof.
+    done.
+  Qed.
+  
+  Lemma prog_diff' n  : (0 < n)%N -> prog (Posz n) = Nat.ldiff n n.-1.
+  Proof.
+    by case: n.
+  Qed.
+  
+  Search (Nat.ldiff).
+  About ldiff_elim.                         (* ここで Equations で定義 *)
+  About Nat.ldiff_odd_l.                    (* ./Numbers/Natural/Abstract/NBits.v *)
+  Check Nat.binary_induction.               (* Arith/PeanoNat.v *)
+
+  Search (prime_decomp).
+  Search Nat.testbit Nat.shiftr.
+  Check Nat.mul_pow2_bits_add
+    : forall a n m : nat, Nat.testbit (a * 2 ^ n)%coq_nat (m + n)%coq_nat = Nat.testbit a m.
+  
+
+  Check Nat.testbit_odd_succ':
+    forall a n : nat, Nat.testbit ((2 * a)%coq_nat + 1)%coq_nat n.+1 = Nat.testbit a n.
+  
+  Check forall a n m : nat, testbit (Posz a * 2^n) (m + n) = Nat.testbit a m.
+  Check forall a n m : nat, testbit (Negz a * 2^n) (m + n) = ~~ Nat.testbit a m.
+  
+  (* ****** *)
+  
   Lemma prog_0 i : (prog 0).[i] = false.
   Proof.
     rewrite land_spec testbit_equation_1.
@@ -268,7 +302,38 @@ testbit 関数を次のように定義できる。これは定義！
 # ルーラー関数
 
 以下の三つの定義が等しいことを証明したい。
+
 *)
+
+  (**
+別の定義：
+
+x = n (> 0) のとき、n と n.-1 を一致するまで、右シフトまたは2で割るを繰り返す。
+繰り返しの回数が m なら、ルーラー関数の値は m.-1
+
+x = 6
+6 3 1
+5 2 1
+2回しふとなので、値は1
+
+x=3
+3 1
+2 1
+1回しふとなので、値は0
+
+x=4
+4 2 1 0
+3 1 0 0
+3回しふとなので、値は2
+
+
+x=8
+8 4 2 1 0
+7 3 1 0 0
+4回しふとなので、値は3
+*)
+
+
   Equations log2 (x : int) : nat :=
     log2 (Posz n) := Nat.log2 n;
     log2 (Negz _) := 0.
@@ -294,27 +359,25 @@ testbit 関数を次のように定義できる。これは定義！
   Example test' (n : nat) := (ruler' n = ruler_rec n).
   Example test2 (n : nat) := (ruler n = ruler' n).
 
-(*
-  Goal test2 0. Proof. done. Qed.
-  Goal test2 1. Proof. done. Qed.
-  Goal test2 2. Proof. done. Qed.
-  Goal test2 3. Proof. done. Qed.
-  Goal test2 4. Proof. done. Qed.
-  Goal test2 5. Proof. done. Qed.
-  Goal test2 6. Proof. done. Qed.
-  Goal test2 7. Proof. done. Qed.
-  Goal test2 8. Proof. done. Qed.
+  Goal test 0. Proof. done. Qed.
+  Goal test 1. Proof. done. Qed.
+  Goal test 2. Proof. done. Qed.
+  Goal test 3. Proof. done. Qed.
+  Goal test 4. Proof. done. Qed.
+  Goal test 5. Proof. done. Qed.
+  Goal test 6. Proof. done. Qed.
+  Goal test 7. Proof. done. Qed.
+  Goal test 8. Proof. done. Qed.
   
-  Compute ruler' 0.
-  Compute ruler' 1.
-  Compute ruler' 2.
-  Compute ruler' 3.
-  Compute ruler' 4.
-  Compute ruler' 5.  
-  Compute ruler' 7.  
-  Compute ruler' 8.  
-*)  
-
+  Compute ruler 0.
+  Compute ruler 1.
+  Compute ruler 2.
+  Compute ruler 3.
+  Compute ruler 4.
+  Compute ruler 5.  
+  Compute ruler 7.  
+  Compute ruler 8.  
+  
   Compute ruler_rec 0.
   Compute ruler_rec 1.
   Compute ruler_rec 2.
