@@ -90,7 +90,6 @@ Qed.
 Section opp_test.
   Variable n : nat.
   Print oppz.
-  
   Compute oppz (Posz 0).                    (* = 0%Z *)
   Compute oppz (Posz n.+1).                 (* = Negz n *)
   Compute oppz (Negz n).                    (* = Posz n.+1 *)
@@ -138,10 +137,11 @@ Section bitwise.
 自然数の not (ビットワイズの反転) は定義できないが、
 整数の not は定義できる。
 *)
-  Equations lnot (x : int) : int :=
-    lnot (Posz n) := Negz n;
-    lnot (Negz n) := Posz n.
-  
+  Definition lnot (x : int) : int :=
+    match x with
+    | (Posz n) => Negz n
+    | (Negz n) => Posz n
+    end.
   Compute lnot 2.                           (* = (-3)%Z *)
   Compute lnot 1.                           (* = (-2)%Z *)
   Compute lnot 0.                           (* = (-1)%Z *)
@@ -149,17 +149,14 @@ Section bitwise.
   Compute lnot (-2).                        (* = 1%Z *)
   Compute lnot (-3).                        (* = 2%Z *)
   
-  Equations lor (x y : int) : int :=
-    lor (Posz m) (Posz n) := Posz (Nat.lor m n);   (* x | y *)
-    lor (Posz m) (Negz n) := Negz (Nat.ldiff n m); (* x | ~y = ~(~x & y) *)
-    lor (Negz m) (Posz n) := Negz (Nat.ldiff m n); (* ~x | y = ~(x & ~y) *)
-    lor (Negz m) (Negz n) := Negz (Nat.land m n).  (* ~x | ~y) = ~(x & y) *)
-  (* simp lor で以下のrewrite ができる。 *)
-  Check lor_equation_1 : forall m n : nat, lor m n = Nat.lor m n.
-  Check lor_equation_2 : forall m n : nat, lor m (Negz n) = Negz (Nat.ldiff n m).
-  Check lor_equation_3 : forall m n : nat, lor (Negz m) n = Negz (Nat.ldiff m n).
-  Check lor_equation_4 : forall m n : nat, lor (Negz m) (Negz n) = Negz (Nat.land m n).
-
+  Definition lor (x y : int) : int :=
+    match x, y with
+    | (Posz m), (Posz n) => Posz (Nat.lor m n)   (* x | y *)
+    | (Posz m), (Negz n) => Negz (Nat.ldiff n m) (* x | ~y = ~(~x & y) *)
+    | (Negz m), (Posz n) => Negz (Nat.ldiff m n) (* ~x | y = ~(x & ~y) *)
+    | (Negz m), (Negz n) => Negz (Nat.land m n)  (* ~x | ~y) = ~(x & y) *)
+    end.
+    
   (* この定義から 2025/8/23 ProorCafe *)
   (* Equations と mathcomp の併用は問題がある。 *)
   Definition land (x y : int) : int :=
@@ -170,28 +167,39 @@ Section bitwise.
     | (Negz m), (Negz n) => Negz (Nat.lor m n)   (* ~x & ~y = ~(x | y) *)
     end.
   
-  Equations lxor (x y : int) : int :=
-    lxor (Posz m) (Posz n) := Posz (Nat.lxor m n);
-    lxor (Posz m) (Negz n) := Negz (Nat.lxor m n);
-    lxor (Negz m) (Posz n) := Negz (Nat.lxor m n);
-    lxor (Negz m) (Negz n) := Posz (Nat.lxor m n).
+  Definition lxor (x y : int) : int :=
+    match x, y with
+    | (Posz m), (Posz n) => Posz (Nat.lxor m n)
+    | (Posz m), (Negz n) => Negz (Nat.lxor m n)
+    | (Negz m), (Posz n) => Negz (Nat.lxor m n)
+    | (Negz m), (Negz n) => Posz (Nat.lxor m n)
+    end.
   
-  Equations ldiff (x y : int) : int :=
-    ldiff (Posz m) (Posz n) := Posz (Nat.ldiff m n); (* x & ~ y *)
-    ldiff (Posz m) (Negz n) := Posz (Nat.land m n); (* x & ~ ~y = x & y *)
-    ldiff (Negz m) (Posz n) := Negz (Nat.lor m n);  (* ~x & ~ y = ~(x | y) *)
-    ldiff (Negz m) (Negz n) := Posz (Nat.ldiff n m). (* ~x & ~ ~y = ~ x & y *)
-
+  Definition ldiff (x y : int) : int :=
+    match x, y with
+    | (Posz m), (Posz n) => Posz (Nat.ldiff m n) (* x & ~ y *)
+    | (Posz m), (Negz n) => Posz (Nat.land m n)  (* x & ~ ~y = x & y *)
+    | (Negz m), (Posz n) => Negz (Nat.lor m n)   (* ~x & ~ y = ~(x | y) *)
+    | (Negz m), (Negz n) => Posz (Nat.ldiff n m) (* ~x & ~ ~y = ~ x & y *)
+    end.
+  
 (**
 testbit 関数を次のように定義できる。これは定義！
 *)
-  Equations testbit (x : int) (n : nat) : bool :=
+(*
+  Equations testbit (x : int) (m : nat) : bool :=
     testbit (Posz n) m := Nat.testbit n m ;
     testbit (Negz n) m := ~~ Nat.testbit n m.
   (* simp testbit で以下のrewrite ができる。 *)
   Check testbit_equation_1: forall n m : nat, testbit n m = Nat.testbit n m.
   Check testbit_equation_2: forall n m : nat, testbit (Negz n) m = ~~ Nat.testbit n m.
-  
+*)
+  Definition testbit (x : int) (m : nat) : bool :=
+    match x with
+    | Posz n => Nat.testbit n m
+    | Negz n => ~~ Nat.testbit n m
+    end.
+
   Notation ".~ x" := (lnot x) (at level 35).
   Notation "x .& y" := (land x y) (at level 50).
   Notation "x .| y" := (lor x y) (at level 50).
@@ -201,15 +209,15 @@ testbit 関数を次のように定義できる。これは定義！
   
   Lemma lnot_spec (x : int) (i : nat) : (.~ x).[i] = ~~ x.[i].
   Proof.
-    case: x => n; simp lnot testbit => //=.
+    case: x => n //=.
     by rewrite negbK.
   Qed.
   
   Lemma lor_spec (x y : int) (i : nat) : (x .| y).[i] = x.[i] || y.[i].
   Proof.
-    case: x; case: y => m n;
-      rewrite ?testbit_equation_1 ?testbit_equation_2
-        ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //.
+    case: x; case: y;
+      rewrite /testbit //= => x y;
+        rewrite ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //=.
     - by rewrite negb_and negbK orbC.
     - by rewrite negb_and negbK orbC.
     - by rewrite negb_and.
@@ -218,18 +226,18 @@ testbit 関数を次のように定義できる。これは定義！
   (* この証明から 2025/8/23 ProorCafe *)
   Lemma land_spec (x y : int) (i : nat) : (x .& y).[i] = x.[i] && y.[i].
   Proof.
-    case: x; case: y => m n;
-      rewrite ?testbit_equation_1 ?testbit_equation_2
-        ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //.
+    case: x; case: y;
+      rewrite /testbit //= => x y;
+        rewrite ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //=.
     - by rewrite andbC.
     - by rewrite negb_or.
   Qed.
   
   Lemma lxor_spec (x y : int) (i : nat) : (x .^ y).[i] = x.[i] ^^ y.[i].
   Proof.
-    case: x; case: y => m n;
-      rewrite ?testbit_equation_1 ?testbit_equation_2
-        ?Nat.lor_spec ?Nat.land_spec ?Nat.lxor_spec ?Nat.ldiff_spec //.
+    case: x; case: y;
+      rewrite /testbit //= => x y;
+        rewrite ?Nat.lxor_spec //=.
     - by rewrite Bool.negb_xorb_r.
     - by rewrite Bool.negb_xorb_l.
     - by rewrite Bool.xorb_negb_negb.
@@ -237,9 +245,9 @@ testbit 関数を次のように定義できる。これは定義！
   
   Lemma ldiff_spec (x y : int) (i : nat) : (ldiff x y).[i] = x.[i] && ~~ y.[i].
   Proof.
-    case: x; case: y => m n;
-      rewrite ?testbit_equation_1 ?testbit_equation_2
-        ?Nat.lor_spec ?Nat.land_spec ?Nat.ldiff_spec //.
+    case: x; case: y;
+      rewrite /testbit //= => x y;
+        rewrite ?Nat.land_spec ?Nat.lor_spec ?Nat.ldiff_spec //=.
     - by rewrite negbK.
     - by rewrite negb_or.
     - by rewrite negbK andbC.
@@ -249,14 +257,14 @@ testbit 関数を次のように定義できる。これは定義！
 # 数学ガールの問題を 自然数 (PeanoNat) の問題にする
  *)
 
-  Definition prog (x : int) := x .& (- x).
+  Definition p (x : int) := x .& (- x).
 
-  Lemma prog_diff n  : prog (Posz n.+1) = Nat.ldiff n.+1 n.
+  Lemma p_diff n  : p (Posz n.+1) = Nat.ldiff n.+1 n.
   Proof.
     done.
   Qed.
   
-  Lemma prog_diff' n  : (0 < n)%N -> prog (Posz n) = Nat.ldiff n n.-1.
+  Lemma p_diff' n  : (0 < n)%N -> p (Posz n) = Nat.ldiff n n.-1.
   Proof.
     by case: n.
   Qed.
@@ -280,29 +288,24 @@ testbit 関数を次のように定義できる。これは定義！
   
   (* ****** *)
   
-  Lemma prog_0 i : (prog 0).[i] = false.
+  Lemma p_0 i : (p 0).[i] = false.
   Proof.
-    rewrite land_spec testbit_equation_1.
-    now rewrite Nat.bits_0.
+    rewrite /p land_spec //=.
+    by rewrite Nat.bits_0.
   Qed.
   
-  Lemma prog_pos n i : (prog (Posz n.+1)).[i] = Nat.testbit n.+1 i && ~~ Nat.testbit n i.
+  Lemma p_pos n i : (p (Posz n.+1)).[i] = Nat.testbit n.+1 i && ~~ Nat.testbit n i.
   Proof.
-    rewrite land_spec.
-    done.
+    by rewrite land_spec.
   Qed.
 
-  Lemma prog_neg n i : (prog (Negz n)).[i] = ~~ Nat.testbit n i && Nat.testbit n.+1 i.
+  Lemma p_neg n i : (p (Negz n)).[i] = ~~ Nat.testbit n i && Nat.testbit n.+1 i.
   Proof.
-    rewrite land_spec.
-    done.
+    by rewrite land_spec.
   Qed.
   
 (**
 # ルーラー関数
-
-以下の三つの定義が等しいことを証明したい。
-
 *)
 
   (**
@@ -333,13 +336,57 @@ x=8
 4回しふとなので、値は3
 *)
 
+  (* 任意の自然数で成り立つ。 *)
+  Check Nat.testbit_div2
+    : forall a n : nat, Nat.testbit (Nat.div2 a) n = Nat.testbit a n.+1.
+
+  Lemma div2 a : Nat.div2 a = a./2.
+  Proof.
+  Admitted.
+  
+  Definition p' (n : nat) := n .& (- n%:Z).
+  
+  Lemma p_even (n i : nat) : (0 < n)%N -> ~~ odd n -> (p' n).[i.+1] = (p' n./2).[i].
+  Proof.
+    move=> Hn0 Hne.
+    rewrite /p'.
+    rewrite 2!land_spec.
+    f_equal.
+    - rewrite /testbit.
+      rewrite -div2.
+      by apply: Nat.testbit_div2.
+      
+    - Search (- _./2).
+  Admitted.
+  
+  Lemma p_odd_bit0 (n : nat) : odd n -> (p' n).[0] = true.
+  Proof.
+    move=> Hno.
+    rewrite /p'.
+    rewrite land_spec.
+    apply: andb_true_intro.
+    split.
+  Admitted.
+  
+  Lemma p_odd_not_bit0 (n : nat) (i : nat) : odd n -> (0 < i)%N -> (p' n).[i] = false.
+  Proof.
+    move=> Hno Hn.
+    rewrite /p'.
+    rewrite land_spec.
+    apply/Bool.andb_false_iff.
+  Admitted.
+  
+  
+(**
+以下の三つの定義が等しいことを証明したい。
+*)
 
   Equations log2 (x : int) : nat :=
     log2 (Posz n) := Nat.log2 n;
     log2 (Negz _) := 0.
   Compute log2 0%Z.                         (* = 0%N *)
   
-  Definition ruler (n : nat) := log2 (prog n%:Z). (* log2 (n%:Z .& (- n%:Z)) *)
+  Definition ruler (n : nat) := log2 (p n%:Z). (* log2 (n%:Z .& (- n%:Z)) *)
   
   Definition ruler' (n : nat) := log2 (n%:Z .^ n.-1%:Z).
   
