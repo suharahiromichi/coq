@@ -73,14 +73,14 @@ Compute Negz 2.                             (* = (-3)%Z *)
 
 (* Negz のほうの定義が判りにくい。Leanでは… *)
 
-Goal forall (m : nat), Negz m = - m.+1%:Z.
+Lemma negz_m__minus_n1 (m : nat) : Negz m = - m.+1%:Z.
 Proof.
   done.
 Qed.
 
-Goal forall (m : nat), (0 < m)%nat -> Negz m.-1 = - m%:Z.
+Lemma negzm_1__minus_m (m : nat) : (0 < m)%nat -> Negz m.-1 = - m%:Z.
 Proof.
-  by case.
+  by case: m.
 Qed.
 
 (**
@@ -336,45 +336,91 @@ x=8
 4回しふとなので、値は3
 *)
 
-  (* 任意の自然数で成り立つ。 *)
+  (* a の n ビット目と、a/2 の n-1 ビット目は同じ。これは任意の自然数aで成り立つ。 *)
   Check Nat.testbit_div2
     : forall a n : nat, Nat.testbit (Nat.div2 a) n = Nat.testbit a n.+1.
 
-  Lemma div2 a : Nat.div2 a = a./2.
+  Lemma divn2 a : Nat.div2 a = a./2.
   Proof.
   Admitted.
   
   Definition p' (n : nat) := n .& (- n%:Z).
   
+  (* p 関数の引数が偶数の場合 *)
   Lemma p_even (n i : nat) : (0 < n)%N -> ~~ odd n -> (p' n).[i.+1] = (p' n./2).[i].
   Proof.
+    case: n => //= n Hn Hno.
+    Check Nat.testbit (Nat.div2 (Nat.ldiff n.+1 n)) i = (p' (uphalf n)).[i].
+
+    Restart.
     move=> Hn0 Hne.
     rewrite /p'.
     rewrite 2!land_spec.
     f_equal.
+    (* 結果が正の場合は、testbit_div2 がそのまま使える。 *)
     - rewrite /testbit.
-      rewrite -div2.
+      rewrite -divn2.
       by apply: Nat.testbit_div2.
-      
-    - Search (- _./2).
+    (* 結果が負の場合は、 *)
+    - simpl.
+      Check Hne : ~~ odd n.
+      Check (- n%:Z).[i.+1] = (- n./2%:Z).[i].
+      rewrite -negzm_1__minus_m //=.
+      case: n Hne Hn0 => //=.
+
   Admitted.
   
+  (* 偶数+1 diff 偶数 = 1 *)
+  Lemma ldiff_even_n_n1_diff_n__1 n : ~~ odd n -> Nat.ldiff n.+1 n = 1.
+  Proof.
+    move/even_halfK.
+    move=> <-.
+    have -> : n./2.*2 = (2 * n./2)%coq_nat by lia.
+    have -> : (2 * n./2)%coq_nat.+1 = ((2 * n./2)%coq_nat + 1)%N by lia.
+    Check Nat.ldiff_odd_even n n
+      : Nat.ldiff ((2 * n)%coq_nat + 1)%coq_nat (2 * n)%coq_nat = ((2 * Nat.ldiff n n)%coq_nat + 1)%coq_nat.
+    rewrite Nat.ldiff_odd_even Nat.ldiff_diag.
+    rewrite Nat.mul_0_r Nat.add_0_l.
+    done.
+  Qed.
+  
+  (* testbit で unfold する前に、PoszとNegz 、または 0 日零で場合分するとよい、 *)
+  
+  (* p 関数の引数が奇数の場合、値は1なので、0ビットめだけtrue *)
   Lemma p_odd_bit0 (n : nat) : odd n -> (p' n).[0] = true.
   Proof.
-    move=> Hno.
-    rewrite /p'.
-    rewrite land_spec.
-    apply: andb_true_intro.
-    split.
-  Admitted.
+    (* Check andb_true_intro. *)
+    case: n => //= n Hno.
+    Check Hno : ~~ odd n.                    (* n は偶数。 *)
+    Check Nat.odd (Nat.ldiff n.+1 n) = true. (* 偶数+1 diff 偶数 *)
+    by rewrite ldiff_even_n_n1_diff_n__1.
+  Qed.
   
+  (* p 関数の引数が奇数の場合、値は1なので、0ビットめ以外はfalse *)
   Lemma p_odd_not_bit0 (n : nat) (i : nat) : odd n -> (0 < i)%N -> (p' n).[i] = false.
   Proof.
+    case: n => //= n Hno Hn.
+    Check Hno : ~~ odd n.                           (* n は偶数。 *)
+    Check Nat.testbit (Nat.ldiff n.+1 n) i = false. (* 偶数+1 diff 偶数 *)
+    Search (Nat.testbit _ _ = false).
+    rewrite ldiff_even_n_n1_diff_n__1 //.
+    move/prednK in Hn.
+    rewrite -Hn.
+    have -> : i.-1.+1 = (i.-1 + 1)%N by lia.
+    Check Nat.shiftr_spec 1 1
+      : forall m : nat, Nat.le 0 m -> Nat.testbit (Nat.shiftr 1 1) m = Nat.testbit 1 (m + 1)%coq_nat.
+    rewrite -( Nat.shiftr_spec 1 1) /=.
+    - by rewrite Nat.bits_0.
+    - lia.
+  Qed.
+(*
+    Restart.
     move=> Hno Hn.
     rewrite /p'.
     rewrite land_spec.
     apply/Bool.andb_false_iff.
-  Admitted.
+    Check n%:Z.[i] = false \/ (- n%:Z).[i] = false.
+*)
   
   
 (**
