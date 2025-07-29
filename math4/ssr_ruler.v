@@ -363,11 +363,24 @@ x=8
       by apply: Nat.testbit_div2.
     (* 結果が負の場合は、 *)
     - simpl.
+      move: Hn0 Hne.
+      case: n; case.
+      + done.                              (* n = 0 *)
+      + done.                              (* n = 1 *)
+      + move=> n Hn0 Hne.
+        have -> : n.+2./2 = n./2.+1 by lia.
+        have -> : n.+2 = n.+1 + 1 by lia.
+        simpl.
+        f_equal.
+        f_equal.
+        Check Nat.div2 (n + 1)%coq_nat = n./2. (* nは偶数なので正しい。 *)
+        Search (_./2).
+(*
       Check Hne : ~~ odd n.
       Check (- n%:Z).[i.+1] = (- n./2%:Z).[i].
       rewrite -negzm_1__minus_m //=.
       case: n Hne Hn0 => //=.
-
+*)
   Admitted.
   
   (* 偶数+1 diff 偶数 = 1 *)
