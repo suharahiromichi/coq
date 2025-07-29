@@ -374,7 +374,13 @@ x=8
         f_equal.
         f_equal.
         Check Nat.div2 (n + 1)%coq_nat = n./2. (* nは偶数なので正しい。 *)
-        Search (_./2).
+        Check Nat.Even_div2
+          : forall n : nat, Nat.Even n -> Nat.div2 n = Nat.div2 n.+1.
+        have -> : (n + 1)%coq_nat = n.+1 by lia.
+        rewrite -Nat.Even_div2.
+        * by rewrite divn2.
+        * Check Nat.Even n.
+          admit.
 (*
       Check Hne : ~~ odd n.
       Check (- n%:Z).[i.+1] = (- n./2%:Z).[i].
