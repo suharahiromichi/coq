@@ -294,13 +294,38 @@ testbit 関数を次のように定義できる。これは定義！
   Check Nat.testbit_div2
     : forall a n : nat, Nat.testbit (Nat.div2 a) n = Nat.testbit a n.+1.
 
+  Lemma nat_ind2 :
+    forall P : nat -> Prop,
+      P 0 ->
+      P 1 ->
+      (forall n : nat, P n -> P (S (S n))) ->
+      forall n : nat, P n.
+  Proof.
+    move=> P HP0 HP1 IH n.
+    have H : (P n /\ P (S n)).
+    - elim: n.
+      + by split.
+      + move=> n [] HPn HPsn.
+        split=> //=.
+        by apply: IH.
+    - by case: H.
+  Qed.
+  
   Lemma coq_divn2 n : Nat.div2 n = n./2.
   Proof.
-  Admitted.
+    elim/nat_ind2 : n => //= n IHn.
+    by rewrite IHn.
+  Qed.
   
   Lemma coq_evenP n : Nat.Even n <-> ~~ odd n.
   Proof.
-  Admitted.
+    split => [/Nat.even_spec | H].
+    - elim/nat_ind2 : n => [|| n IHn] //=.
+      by rewrite negbK.
+    - apply/Nat.even_spec.       
+      elim/nat_ind2 : n H => [_ || n IHn] //=.
+      by rewrite negbK.
+  Qed.
   
   (* p 関数の引数が偶数の場合、testbit_div2 が使えそうである。 *)
   Lemma p_even (n i : nat) : (0 < n)%N -> ~~ odd n -> (p' n).[i.+1] = (p' n./2).[i].
