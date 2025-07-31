@@ -269,25 +269,6 @@ testbit 関数を次のように定義できる。これは定義！
     by case: n.
   Qed.
   
-  Search (Nat.ldiff).
-  About ldiff_elim.                         (* ここで Equations で定義 *)
-  About Nat.ldiff_odd_l.                    (* ./Numbers/Natural/Abstract/NBits.v *)
-  Check Nat.binary_induction.               (* Arith/PeanoNat.v *)
-
-  Search (prime_decomp).
-  Search Nat.testbit Nat.shiftr.
-  Check Nat.mul_pow2_bits_add
-    : forall a n m : nat, Nat.testbit (a * 2 ^ n)%coq_nat (m + n)%coq_nat = Nat.testbit a m.
-  
-
-  Check Nat.testbit_odd_succ':
-    forall a n : nat, Nat.testbit ((2 * a)%coq_nat + 1)%coq_nat n.+1 = Nat.testbit a n.
-  
-  Check forall a n m : nat, testbit (Posz a * 2^n) (m + n) = Nat.testbit a m.
-  Check forall a n m : nat, testbit (Negz a * 2^n) (m + n) = ~~ Nat.testbit a m.
-  
-  (* ****** *)
-  
   Lemma p_0 i : (p 0).[i] = false.
   Proof.
     rewrite /p land_spec //=.
@@ -305,37 +286,10 @@ testbit 関数を次のように定義できる。これは定義！
   Qed.
   
 (**
-# ルーラー関数
+## 頑張った別の形式化
 *)
-
-  (**
-別の定義：
-
-x = n (> 0) のとき、n と n.-1 を一致するまで、右シフトまたは2で割るを繰り返す。
-繰り返しの回数が m なら、ルーラー関数の値は m.-1
-
-x = 6
-6 3 1
-5 2 1
-2回しふとなので、値は1
-
-x=3
-3 1
-2 1
-1回しふとなので、値は0
-
-x=4
-4 2 1 0
-3 1 0 0
-3回しふとなので、値は2
-
-
-x=8
-8 4 2 1 0
-7 3 1 0 0
-4回しふとなので、値は3
-*)
-
+  Definition p' (n : nat) := n .& (- n%:Z).
+  
   (* a の n ビット目と、a/2 の n-1 ビット目は同じ。これは任意の自然数aで成り立つ。 *)
   Check Nat.testbit_div2
     : forall a n : nat, Nat.testbit (Nat.div2 a) n = Nat.testbit a n.+1.
@@ -344,7 +298,9 @@ x=8
   Proof.
   Admitted.
   
-  Definition p' (n : nat) := n .& (- n%:Z).
+  Lemma coq_evenP n : Nat.Even n <-> ~~ odd n.
+  Proof.
+  Admitted.
   
   (* p 関数の引数が偶数の場合 *)
   Lemma p_even (n i : nat) : (0 < n)%N -> ~~ odd n -> (p' n).[i.+1] = (p' n./2).[i].
@@ -380,14 +336,16 @@ x=8
         rewrite -Nat.Even_div2.
         * by rewrite divn2.
         * Check Nat.Even n.
-          admit.
+          simpl in Hne.
+          rewrite negbK in Hne.
+          by apply/coq_evenP.
+  Qed.
 (*
       Check Hne : ~~ odd n.
       Check (- n%:Z).[i.+1] = (- n./2%:Z).[i].
       rewrite -negzm_1__minus_m //=.
       case: n Hne Hn0 => //=.
 *)
-  Admitted.
   
   (* 偶数+1 diff 偶数 = 1 *)
   Lemma ldiff_even_n_n1_diff_n__1 n : ~~ odd n -> Nat.ldiff n.+1 n = 1.
@@ -441,6 +399,14 @@ x=8
     Check n%:Z.[i] = false \/ (- n%:Z).[i] = false.
 *)
   
+
+
+
+
+
+(**
+# ルーラー関数
+*)
   
 (**
 以下の三つの定義が等しいことを証明したい。
@@ -501,6 +467,34 @@ x=8
 
 End bitwise.
   
+  (**
+別の定義：
+
+x = n (> 0) のとき、n と n.-1 を一致するまで、右シフトまたは2で割るを繰り返す。
+繰り返しの回数が m なら、ルーラー関数の値は m.-1
+
+x = 6
+6 3 1
+5 2 1
+2回しふとなので、値は1
+
+x=3
+3 1
+2 1
+1回しふとなので、値は0
+
+x=4
+4 2 1 0
+3 1 0 0
+3回しふとなので、値は2
+
+
+x=8
+8 4 2 1 0
+7 3 1 0 0
+4回しふとなので、値は3
+*)
+
 (**
 # 補足説明
 
