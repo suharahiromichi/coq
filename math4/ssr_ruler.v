@@ -355,12 +355,24 @@ testbit 関数を次のように定義できる。これは定義！
         by apply/coq_evenP.
   Qed.
   
+  Lemma mul2K n : n.*2./2 = n.
+  Proof.
+    lia.
+  Qed.
+
+  (* 似た様な補題 *)
+  Lemma p_even' (n i : nat) : (0 < n)%N -> (p' n.*2).[i.+1] = (p' n).[i].
+  Proof.
+    move=> Hn0.
+    rewrite (@p_even n.*2 i); try lia.
+    by rewrite mul2K.
+  Qed.
+  
   (* 補題：偶数+1 diff 偶数 = 1 *)
   Lemma ldiff_even_n_n1_diff_n__1 n : ~~ odd n -> Nat.ldiff n.+1 n = 1.
   Proof.
     move/even_halfK => <-.
-    rewrite -muln2 mulnC.
-    rewrite -addn1.
+    rewrite -muln2 mulnC -addn1.
     
     Check Nat.ldiff_odd_even n n
       : Nat.ldiff ((2 * n)%coq_nat + 1)%coq_nat (2 * n)%coq_nat = ((2 * Nat.ldiff n n)%coq_nat + 1)%coq_nat.
@@ -386,7 +398,7 @@ testbit 関数を次のように定義できる。これは定義！
     move/prednK => <-.
     rewrite -addn1.
     
-  Check Nat.shiftr_spec 1 1
+    Check Nat.shiftr_spec 1 1
       : forall m : nat, Nat.le 0 m -> Nat.testbit (Nat.shiftr 1 1) m = Nat.testbit 1 (m + 1)%coq_nat.
   
     rewrite -( Nat.shiftr_spec 1 1) /=.
@@ -395,19 +407,18 @@ testbit 関数を次のように定義できる。これは定義！
   Qed.
 
 (**
-# ルーラー関数
+# ルーラー関数 の漸化式
 *)
   
 (**
 以下の三つの定義が等しいことを証明したい。
 *)
-
   Equations log2 (x : int) : nat :=
     log2 (Posz n) := Nat.log2 n;
     log2 (Negz _) := 0.
   Compute log2 0%Z.                         (* = 0%N *)
   
-  Definition ruler (n : nat) := log2 (p n%:Z). (* log2 (n%:Z .& (- n%:Z)) *)
+  Definition ruler (n : nat) := log2 (p' n). (* log2 (n%:Z .& (- n%:Z)) *)
   
   Definition ruler' (n : nat) := log2 (n%:Z .^ n.-1%:Z).
   
@@ -455,6 +466,32 @@ testbit 関数を次のように定義できる。これは定義！
   Compute ruler_rec 7.  
   Compute ruler_rec 8.  
 
+(**
+## ruler_rec の定義から明らかな性質
+*)
+  Lemma ruler_rec_0 : ruler_rec 0 = 0.
+  Proof.
+    by simp ruler_rec.
+  Qed.
+
+  Lemma ruler_rec_odd (n : nat) : odd n -> ruler_rec n = 0.
+  Proof.
+    case: n => //= n Ho.
+    simp ruler_rec.
+    rewrite [odd n.+1]/= Ho.
+    by rewrite ruler_rec_clause_2_equation_1.
+  Qed.
+
+  Lemma ruler_rec_even (n : nat) : (0 < n)%N -> ~~ odd n -> ruler_rec n = (ruler_rec n./2).+1.
+  Proof.
+    case: n => //= n Hn.
+    rewrite negbK => He.
+    simp ruler_rec => //=.
+    rewrite He.
+    rewrite ruler_rec_clause_2_equation_2 /=.
+    done.
+  Qed.
+  
 End bitwise.
   
   (**
