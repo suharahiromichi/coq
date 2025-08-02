@@ -186,27 +186,32 @@ Section a.
   Proof.
   Admitted.                                 (* XXXXXX *)
   
-  Lemma pd_even2' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
+  Check Nat.testbit_even_succ' : forall a i : nat, (2 * a)%coq_nat.[i.+1] = a.[i].
+  
+  Lemma pd_even_l_0bit n : (pd n.*2).[0] = false.
   Proof.
-    move=> Hn Ho.
-    apply: testbit_inj => i.
-    rewrite -coq_muln2.
-    Check Nat.testbit_even_succ.
-    case: i.
-    - admit.
-    - move=> n'.
-      rewrite Nat.testbit_even_succ'; try lia.
-      by rewrite pd_even.
-  Abort.
+    rewrite /pd Nat.ldiff_spec /=.
+    rewrite -coq_muln2 Nat.odd_even.
+    done.
+  Qed.
+  
+  Lemma pd_even_r_0bit n : (pd n).*2.[0] = false.
+  Proof.
+    rewrite /pd.
+    rewrite -coq_muln2 Nat.testbit_even_0.
+    done.
+  Qed.
   
   Lemma pd_even2 (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
   Proof.
     move=> Hn.
     apply: testbit_inj => i.
-    rewrite -[(pd n).*2]coq_muln2.
-    case: i.
-    admit.
-  Admitted.
+    case: i => [| n']. (* i を 0 か 1以上で分ける。避けられないか？ *)
+    - by rewrite pd_even_l_0bit pd_even_r_0bit.
+    - rewrite -[(pd n).*2]coq_muln2 //.
+      rewrite Nat.testbit_even_succ'.
+      by rewrite pd_even'.
+  Qed.
   
   (* pd 関数の引数が奇数の場合、値は 1 である。 *)
   Lemma pd_odd__1 (n : nat) (i : nat) : odd n -> pd n = 1.
@@ -260,6 +265,18 @@ Section a.
       (* n は2以上だが、2のとき1になるので、成り立つはずである。 *)
   Admitted.
 
+  Lemma rulerd_even' (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
+  Proof.
+    move=> Hn.
+    rewrite /rulerd.
+    rewrite -Nat.log2_double.
+    - f_equal.
+      Check pd n.*2 = (2 * pd n)%coq_nat.
+      admit.
+    - rewrite /pd.
+      Check (0 < n .- n.-1)%coq_nat.
+  Admitted.
+  
 (**
 # ルーラー関数の漸化式
 *) 
@@ -301,6 +318,13 @@ Section a.
     done.
   Qed.
 
+  Lemma ruler_rec_even' (n : nat) : (0 < n)%N -> ruler_rec n.*2 = (ruler_rec n).+1.
+  Proof.
+    move=> Hn.
+    rewrite (@ruler_rec_even n.*2); try lia.
+    - by rewrite mul2K.
+  Qed.
+  
 End a.
 
 (* END *)
