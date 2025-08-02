@@ -202,6 +202,7 @@ Section a.
     done.
   Qed.
   
+  (* 苦労した補題 *)
   Lemma pd_even2 (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
   Proof.
     move=> Hn.
@@ -211,6 +212,16 @@ Section a.
     - rewrite -[(pd n).*2]coq_muln2 //.
       rewrite Nat.testbit_even_succ'.
       by rewrite pd_even'.
+  Qed.
+
+  (* 似た補題 *)
+  Lemma pd_even2' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
+  Proof.
+    move=> Hn He.
+    have := (@pd_even2 n./2).
+    rewrite even_halfK //=.
+    have Hn2 : 0 < n./2 by lia.
+    by move=> ->.
   Qed.
   
   (* pd 関数の引数が奇数の場合、値は 1 である。 *)
@@ -252,30 +263,41 @@ Section a.
     by rewrite /rulerd pd_odd__1.
   Qed.
   
-  Lemma rulerd_even (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
+  Lemma pd_gt_0' n : 0 < n -> ~~ odd n -> 0 < pd n./2.
+  Proof.
+  Admitted.
+
+  Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
+  Proof.
+    case: n => //= n Hn1.
+    Check ldiff_even_n_n1_diff_n__1.
+    rewrite /pd -pred_Sn ldiff_even_n_n1_diff_n__1.
+  Admitted.
+
+  
+  Lemma rulerd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
   Proof.
     move=> Hn He.
     rewrite /rulerd.
     rewrite -Nat.log2_double.
-    - f_equal.
-      Check pd n = (2 * pd n./2)%coq_nat.
-      admit.
-    - rewrite /pd.
-      Check 0 < n./2 .- n./2.-1.
-      (* n は2以上だが、2のとき1になるので、成り立つはずである。 *)
-  Admitted.
-
-  Lemma rulerd_even' (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
+    - f_equal.                              (* log2 を消す。 *)
+      rewrite coq_muln2.
+      by rewrite pd_even2'.
+    - apply/ltP.
+      by rewrite pd_gt_0'.
+  Qed.
+  
+  Lemma rulerd_even (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
   Proof.
     move=> Hn.
     rewrite /rulerd.
     rewrite -Nat.log2_double.
-    - f_equal.
-      Check pd n.*2 = (2 * pd n)%coq_nat.
-      admit.
-    - rewrite /pd.
-      Check (0 < n .- n.-1)%coq_nat.
-  Admitted.
+    - f_equal.                              (* log2 を消す。 *)
+      rewrite coq_muln2.
+      by rewrite pd_even2.
+    - apply/ltP.
+      by rewrite pd_gt_0.
+  Qed.
   
 (**
 # ルーラー関数の漸化式
