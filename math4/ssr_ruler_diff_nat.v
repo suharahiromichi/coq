@@ -85,6 +85,11 @@ Section a.
     - by case: H.
   Qed.
   
+  Lemma coq_muln2 (n : nat) : (2 * n)%coq_nat = n.*2.
+  Proof.
+    lia.
+  Qed.
+
   Lemma coq_divn2 n : Nat.div2 n = n./2.
   Proof.
     elim/nat_ind2 : n => //= n IHn.
@@ -118,6 +123,14 @@ Section a.
   (* pd 関数の引数が 0 以外の偶数の場合、testbit_div2 のようなことになる。 *)
   Check Nat.testbit_div2 : forall a n : nat, (Nat.div2 a).[n] = a.[n.+1].
   
+  (* この補題は正しいが、この問題には適用できない。 *)
+  (* 8 .- 7     = 8 *)
+  (* と *)
+  (* (4 .- 3)*2 = 4*2 *)
+  (* が等しいのが、問題の趣旨だが、 *)
+  (* この補題は、 *)
+  (* 8 .- 6     = 8 *)
+  (* であることを証明している。 *)
   Lemma doubleDiff (m n : nat) : (m .- n).*2 = m.*2 .- n.*2.
   Proof.
     have H x : x.*2 = (x * 2 ^ 1)%coq_nat by rewrite Nat.pow_1_r -muln2.
@@ -126,10 +139,6 @@ Section a.
     by rewrite Nat.shiftl_ldiff.
   Qed.
   
-  Lemma shiftr1_div2 (n : nat) : n./2 = Nat.shiftr n 1.
-  Proof.
-  Admitted.
-
   Lemma halfDiff (m n : nat) : (m .- n)./2 = m./2 .- n./2.
   Proof.
 (*
@@ -157,20 +166,46 @@ Section a.
     congr ((_ .- _) .[ _]).
     lia.
   Qed.
-  
-  Lemma pd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
+
+  Lemma mul2K n : n.*2./2 = n.
   Proof.
-    case: n => //= n _ Ho.
-    rewrite /pd.
-    rewrite -pred_Sn.
-    rewrite negbK in Ho.
-    (* rewrite Nat.testbit_div2. *)
-    rewrite uphalfE doubleDiff.
-    f_equal.
-    - lia.
-    - have -> : n.+1./2 = n./2.+1 by lia.   (* n は奇数 *)
-      rewrite -pred_Sn.
-      Check n = n./2.*2.                    (* n は奇数なので成り立たない。 *)
+    lia.
+  Qed.
+
+  (* 似た補題 *)
+  Lemma pd_even' (n i : nat) : (0 < n)%N -> (pd n.*2).[i.+1] = (pd n).[i].
+  Proof.
+    move=> Hn0.
+    rewrite (@pd_even n.*2); try lia.
+    by rewrite mul2K.
+  Qed.
+  
+  (* doubleDiff 補題が使えそうだが、正しい証明にならない。= になるのは別な理由である。 *)
+  (* その代わりに、testbit の単射性を使う。 *)
+  Lemma testbit_inj m n : (forall i, m.[i] = n.[i]) -> m = n.
+  Proof.
+  Admitted.                                 (* XXXXXX *)
+  
+  Lemma pd_even2' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
+  Proof.
+    move=> Hn Ho.
+    apply: testbit_inj => i.
+    rewrite -coq_muln2.
+    Check Nat.testbit_even_succ.
+    case: i.
+    - admit.
+    - move=> n'.
+      rewrite Nat.testbit_even_succ'; try lia.
+      by rewrite pd_even.
+  Abort.
+  
+  Lemma pd_even2 (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
+  Proof.
+    move=> Hn.
+    apply: testbit_inj => i.
+    rewrite -[(pd n).*2]coq_muln2.
+    case: i.
+    admit.
   Admitted.
   
   (* pd 関数の引数が奇数の場合、値は 1 である。 *)
@@ -217,9 +252,9 @@ Section a.
     move=> Hn He.
     rewrite /rulerd.
     rewrite -Nat.log2_double.
-    - rewrite pd_even' => //.
-      f_equal.
-      lia.
+    - f_equal.
+      Check pd n = (2 * pd n./2)%coq_nat.
+      admit.
     - rewrite /pd.
       Check 0 < n./2 .- n./2.-1.
       (* n は2以上だが、2のとき1になるので、成り立つはずである。 *)
