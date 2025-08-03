@@ -68,6 +68,9 @@ Section a.
   Compute pd 7.                             (* = 0x0001 *)
   Compute pd 8.                             (* = 0x1000 *)
 
+(**
+## 補題
+*)
   Lemma nat_ind2 :
     forall P : nat -> Prop,
       P 0 ->
@@ -155,7 +158,33 @@ Section a.
     by rewrite Nat.shiftr_ldiff.
   Qed.
   
-  Lemma pd_even (n i : nat) : (0 < n)%N -> ~~ odd n -> (pd n).[i.+1] = (pd n./2).[i].
+  Lemma mul2K n : n.*2./2 = n.
+  Proof.
+    lia.
+  Qed.
+
+  Lemma testbit_inj m n : (forall i, m.[i] = n.[i]) -> m = n.
+  Proof.
+  Admitted.                                 (* XXXXXX *)
+  
+  (**
+## p関数の性質
+*)
+  
+  (**
+### pd 関数の引数が奇数の場合、値は 1 である。
+   *)
+  Lemma pd_odd__1 (n : nat) (i : nat) : odd n -> pd n = 1.
+  Proof.
+    case: n => //= n Hno.
+    rewrite /pd -pred_Sn.
+    by rewrite ldiff_even_n_n1_diff_n__1 //.
+  Qed.
+  
+  (**
+### pd 関数の引数が偶数の場合、./2 した値から再帰的に求められる。testbit版
+   *)
+  Lemma pd_even_testbit (n i : nat) : (0 < n)%N -> ~~ odd n -> (pd n).[i.+1] = (pd n./2).[i].
   Proof.
     case: n => //= n _ Ho.
     rewrite /pd.
@@ -167,26 +196,21 @@ Section a.
     lia.
   Qed.
 
-  Lemma mul2K n : n.*2./2 = n.
-  Proof.
-    lia.
-  Qed.
-
   (* 似た補題 *)
-  Lemma pd_even' (n i : nat) : (0 < n)%N -> (pd n.*2).[i.+1] = (pd n).[i].
+  Lemma pd_even'_testbit (n i : nat) : (0 < n)%N -> (pd n.*2).[i.+1] = (pd n).[i].
   Proof.
     move=> Hn0.
-    rewrite (@pd_even n.*2); try lia.
+    rewrite (@pd_even_testbit n.*2); try lia.
     by rewrite mul2K.
   Qed.
   
-  (* pd_even2 の証明では、doubleDiff 補題が使えそうだが、正しい証明にならない。
+  (**
+### pd 関数の引数が偶数の場合、./2 した値から再帰的に求められる。2倍版
+   *)
+
+  (* pd_even の証明では、doubleDiff 補題が使えそうだが、正しい証明にならない。
      なぜなら、= になるのは別な理由であるからだ。 *)
-  (* その代わりに、testbit の単射性を使う。 *)
-  
-  Lemma testbit_inj m n : (forall i, m.[i] = n.[i]) -> m = n.
-  Proof.
-  Admitted.                                 (* XXXXXX *)
+  (* その代わりに、testbit の単射性 testbit_inj を使う。 *)
   
   Check Nat.testbit_even_succ' : forall a i : nat, (2 * a)%coq_nat.[i.+1] = a.[i].
   
@@ -205,7 +229,7 @@ Section a.
   Qed.
   
   (* 苦労した補題 *)
-  Lemma pd_even2 (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
+  Lemma pd_even (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
   Proof.
     move=> Hn.
     apply: testbit_inj => i.
@@ -213,25 +237,17 @@ Section a.
     - by rewrite pd_even_l_0bit pd_even_r_0bit.
     - rewrite -[(pd n).*2]coq_muln2 //.
       rewrite Nat.testbit_even_succ'.
-      by rewrite pd_even'.
+      by rewrite pd_even'_testbit.
   Qed.
 
   (* 似た補題 *)
-  Lemma pd_even2' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
+  Lemma pd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
   Proof.
     move=> Hn He.
-    have := (@pd_even2 n./2).
+    have := (@pd_even n./2).
     rewrite even_halfK //=.
     have Hn2 : 0 < n./2 by lia.
     by move=> ->.
-  Qed.
-  
-  (* pd 関数の引数が奇数の場合、値は 1 である。 *)
-  Lemma pd_odd__1 (n : nat) (i : nat) : odd n -> pd n = 1.
-  Proof.
-    case: n => //= n Hno.
-    rewrite /pd -pred_Sn.
-    by rewrite ldiff_even_n_n1_diff_n__1 //.
   Qed.
   
 (**
@@ -253,18 +269,10 @@ Section a.
 (**
 ## ルーラー関数の性質
  *)
-  
-  Lemma rulerd_0 : rulerd 0 = 0.
-  Proof.
-    done.
-  Qed.
 
-  Lemma rulerd_odd (n : nat) : odd n -> rulerd n = 0.
-  Proof.
-    move=> Ho.
-    by rewrite /rulerd pd_odd__1.
-  Qed.
-  
+  (**
+### 補題
+   *)
   Lemma nat_div2_rect :
     forall (P : nat -> Type),
       P 0 ->
@@ -274,6 +282,7 @@ Section a.
   Proof.
   Admitted.
   
+  (* 引数が1以上なら、値は1以上である。./2 による帰納法で求める。 *)
   Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
   Proof.
     elim/nat_div2_rect: n => //= n Hn1 IHn Hn.
@@ -282,7 +291,7 @@ Section a.
     (* n が奇数のとき、pd n = 1 *)
     - by rewrite pd_odd__1.
     (* n が偶数のとき、帰納法を使う。 *)
-    - rewrite pd_even2' //=.
+    - rewrite pd_even' //=.
       rewrite double_gt0.
       apply: IHn.
       lia.
@@ -296,6 +305,26 @@ Section a.
     lia.
   Qed.
   
+  (**
+### 引数が0の時、値は0である。
+  *)
+  Lemma rulerd_0 : rulerd 0 = 0.
+  Proof.
+    done.
+  Qed.
+
+  (**
+### 引数が奇数のとき、値は0である。
+   *)
+  Lemma rulerd_odd (n : nat) : odd n -> rulerd n = 0.
+  Proof.
+    move=> Ho.
+    by rewrite /rulerd pd_odd__1.
+  Qed.
+  
+  (**
+### 引数が偶数のとき、./2の値から再帰的に求めることができる。
+   *)
   Lemma rulerd_even (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
   Proof.
     move=> Hn.
@@ -303,11 +332,12 @@ Section a.
     rewrite -Nat.log2_double.
     - f_equal.                              (* log2 を消す。 *)
       rewrite coq_muln2.
-      by rewrite pd_even2.
+      by rewrite pd_even.
     - apply/ltP.
       by rewrite pd_gt_0.
   Qed.
   
+  (* 似た補題 *)
   Lemma rulerd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
   Proof.
     move=> Hn He.
@@ -315,7 +345,7 @@ Section a.
     rewrite -Nat.log2_double.
     - f_equal.                              (* log2 を消す。 *)
       rewrite coq_muln2.
-      by rewrite pd_even2'.
+      by rewrite pd_even'.
     - apply/ltP.
       by rewrite pd_gt_0'.
   Qed.
@@ -337,6 +367,8 @@ Section a.
 
 (**
 ## ruler_rec の定義から明らかな性質
+
+ruleed の性質と対応している。
 *)
   Lemma ruler_rec_0 : ruler_rec 0 = 0.
   Proof.
