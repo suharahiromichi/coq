@@ -263,28 +263,24 @@ Section a.
     by rewrite /rulerd pd_odd__1.
   Qed.
   
-  Lemma pd_gt_0' n : 0 < n -> ~~ odd n -> 0 < pd n./2.
-  Proof.
-  Admitted.
-
   Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
   Proof.
-    case: n => //= n Hn1.
-    Check ldiff_even_n_n1_diff_n__1.
-    rewrite /pd -pred_Sn ldiff_even_n_n1_diff_n__1.
+    have := orbN (odd n).
+    case/orP => Heo Hn.
+    (* n が奇数のとき、pd n = 1 *)
+    - by rewrite pd_odd__1.
+    - case: n Heo Hn => //=.
+      case=> //= n.
+      rewrite negbK => He Hn.
+      rewrite /pd -pred_Sn ldiff_even_n_n1_diff_n__1 //.
   Admitted.
 
-  
-  Lemma rulerd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
+  Lemma pd_gt_0' n : 0 < n -> ~~ odd n -> 0 < pd n./2.
   Proof.
     move=> Hn He.
-    rewrite /rulerd.
-    rewrite -Nat.log2_double.
-    - f_equal.                              (* log2 を消す。 *)
-      rewrite coq_muln2.
-      by rewrite pd_even2'.
-    - apply/ltP.
-      by rewrite pd_gt_0'.
+    Check @pd_gt_0 (n./2).
+    rewrite (@pd_gt_0 (n./2)) //=.
+    lia.
   Qed.
   
   Lemma rulerd_even (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
@@ -297,6 +293,18 @@ Section a.
       by rewrite pd_even2.
     - apply/ltP.
       by rewrite pd_gt_0.
+  Qed.
+  
+  Lemma rulerd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
+  Proof.
+    move=> Hn He.
+    rewrite /rulerd.
+    rewrite -Nat.log2_double.
+    - f_equal.                              (* log2 を消す。 *)
+      rewrite coq_muln2.
+      by rewrite pd_even2'.
+    - apply/ltP.
+      by rewrite pd_gt_0'.
   Qed.
   
 (**
