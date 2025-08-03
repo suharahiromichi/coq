@@ -180,8 +180,10 @@ Section a.
     by rewrite mul2K.
   Qed.
   
-  (* doubleDiff 補題が使えそうだが、正しい証明にならない。= になるのは別な理由である。 *)
+  (* pd_even2 の証明では、doubleDiff 補題が使えそうだが、正しい証明にならない。
+     なぜなら、= になるのは別な理由であるからだ。 *)
   (* その代わりに、testbit の単射性を使う。 *)
+  
   Lemma testbit_inj m n : (forall i, m.[i] = n.[i]) -> m = n.
   Proof.
   Admitted.                                 (* XXXXXX *)
@@ -263,18 +265,29 @@ Section a.
     by rewrite /rulerd pd_odd__1.
   Qed.
   
+  Lemma nat_div2_rect :
+    forall (P : nat -> Type),
+      P 0 ->
+      P 1 ->
+      (forall n, 1 < n -> P (n./2) -> P n) ->
+      forall n, P n.
+  Proof.
+  Admitted.
+  
   Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
   Proof.
+    elim/nat_div2_rect: n => //= n Hn1 IHn Hn.
     have := orbN (odd n).
-    case/orP => Heo Hn.
+    case/orP => Heo.
     (* n が奇数のとき、pd n = 1 *)
     - by rewrite pd_odd__1.
-    - case: n Heo Hn => //=.
-      case=> //= n.
-      rewrite negbK => He Hn.
-      rewrite /pd -pred_Sn ldiff_even_n_n1_diff_n__1 //.
-  Admitted.
-
+    (* n が偶数のとき、帰納法を使う。 *)
+    - rewrite pd_even2' //=.
+      rewrite double_gt0.
+      apply: IHn.
+      lia.
+  Qed.
+  
   Lemma pd_gt_0' n : 0 < n -> ~~ odd n -> 0 < pd n./2.
   Proof.
     move=> Hn He.
