@@ -1,5 +1,7 @@
 (**
 無限長2進数とルーラー関数
+
+see also. coq4/prog4/ssr_binary.v
 *)
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
