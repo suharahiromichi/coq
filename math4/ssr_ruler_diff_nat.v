@@ -79,14 +79,25 @@ Section a.
       forall n : nat, P n.
   Proof.
     move=> P HP0 HP1 IH n.
-    have H : (P n /\ P (S n)).
-    - elim: n.
-      + by split.
-      + move=> n [] HPn HPsn.
-        split=> //=.
-        by apply: IH.
-    - by case: H.
+    have H : (P n /\ P (n.+1)).
+    {
+      elim: n => [| n [] HPn HPsn]; split => //=.
+      by apply: IH.
+    }.
+    by case: H.
   Qed.
+  
+  Lemma nat_div2_rect :
+    forall (P : nat -> Prop),
+      P 0 ->
+      P 1 ->
+      (forall n, 1 < n -> P (n./2) -> P n) ->
+      forall n, P n.
+  Proof.
+    move=> P H0 H1 Hstep n.
+    have [m Hnm] := ubnP n.
+    elim: m => // m IH in n Hnm *.
+  Admitted.                                 (* XXXXX *)
   
   Lemma coq_muln2 (n : nat) : (2 * n)%coq_nat = n.*2.
   Proof.
@@ -163,9 +174,16 @@ Section a.
     lia.
   Qed.
 
+  Check Nat.bits_inj
+    : forall a b : nat, Nat.eqf (Nat.testbit a) (Nat.testbit b) -> a = b.
+  Print Nat.eqf.
+  (* = fun f g : nat -> bool => forall n : nat, f n = g n *)
+  
   Lemma testbit_inj m n : (forall i, m.[i] = n.[i]) -> m = n.
   Proof.
-  Admitted.                                 (* XXXXXX *)
+    move=> H.
+    by apply: Nat.bits_inj.
+  Qed.
   
   (**
 ## p関数の性質
@@ -299,15 +317,6 @@ Section a.
   (**
 ### 補題
    *)
-  Lemma nat_div2_rect :
-    forall (P : nat -> Type),
-      P 0 ->
-      P 1 ->
-      (forall n, 1 < n -> P (n./2) -> P n) ->
-      forall n, P n.
-  Proof.
-  Admitted.
-  
   (* 引数が1以上なら、値は1以上である。./2 による帰納法で求める。 *)
   Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
   Proof.
