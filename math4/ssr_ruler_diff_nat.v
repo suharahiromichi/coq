@@ -214,40 +214,66 @@ Section a.
   
   Check Nat.testbit_even_succ' : forall a i : nat, (2 * a)%coq_nat.[i.+1] = a.[i].
   
-  Lemma pd_even_l_0bit n : (pd n.*2).[0] = false.
+  Lemma pd_even_nm2_0bit n : (pd n.*2).[0] = false.
   Proof.
     rewrite /pd Nat.ldiff_spec /=.
     rewrite -coq_muln2 Nat.odd_even.
     done.
   Qed.
   
-  Lemma pd_even_r_0bit n : (pd n).*2.[0] = false.
+  Lemma pd_even_pm2_0bit n : (pd n).*2.[0] = false.
   Proof.
     rewrite /pd.
     rewrite -coq_muln2 Nat.testbit_even_0.
     done.
   Qed.
   
+  Lemma pd_even_d2pm2_0bit n : (pd n./2).*2.[0] = false.
+  Proof.
+    rewrite /pd.
+    rewrite -coq_muln2 Nat.testbit_even_0.
+    done.
+  Qed.
+
+  Lemma pd_even_0bit n : ~~ odd n -> (pd n).[0] = false.
+  Proof.
+    move=> He.
+    rewrite -[n in (pd n)]even_uphalfK //=.
+    rewrite -Nat.bit0_odd.
+    by rewrite pd_even_nm2_0bit.
+  Qed.
+  
   (* 苦労した補題 *)
-  Lemma pd_even (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
+  Lemma pd_even (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
+  Proof.
+(*
+(* 間接証明 *)
+    move=> Hn He.
+    have := (@pd_even' n./2).
+    rewrite even_halfK //=.
+    have Hn2 : 0 < n./2 by lia.
+    by move=> ->.
+*)
+    Restart.                                (* 直接証明 *)
+    move=> Hn He.
+    apply: testbit_inj => i.
+    case: i => [| n']. (* i を 0 か 1以上で分ける。避けられないか？ *)
+    - by rewrite pd_even_d2pm2_0bit pd_even_0bit.
+    - rewrite -coq_muln2.
+      rewrite Nat.testbit_even_succ'.
+      by rewrite pd_even_testbit.
+  Qed.
+
+  (* 似た補題 *)
+  Lemma pd_even' (n : nat) : (0 < n)%N -> (pd n.*2) = (pd n).*2.
   Proof.
     move=> Hn.
     apply: testbit_inj => i.
     case: i => [| n']. (* i を 0 か 1以上で分ける。避けられないか？ *)
-    - by rewrite pd_even_l_0bit pd_even_r_0bit.
+    - by rewrite pd_even_nm2_0bit pd_even_pm2_0bit.
     - rewrite -[(pd n).*2]coq_muln2 //.
       rewrite Nat.testbit_even_succ'.
       by rewrite pd_even'_testbit.
-  Qed.
-
-  (* 似た補題 *)
-  Lemma pd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> (pd n) = (pd n./2).*2.
-  Proof.
-    move=> Hn He.
-    have := (@pd_even n./2).
-    rewrite even_halfK //=.
-    have Hn2 : 0 < n./2 by lia.
-    by move=> ->.
   Qed.
   
 (**
@@ -291,7 +317,7 @@ Section a.
     (* n が奇数のとき、pd n = 1 *)
     - by rewrite pd_odd__1.
     (* n が偶数のとき、帰納法を使う。 *)
-    - rewrite pd_even' //=.
+    - rewrite pd_even //=.
       rewrite double_gt0.
       apply: IHn.
       lia.
@@ -325,31 +351,31 @@ Section a.
   (**
 ### 引数が偶数のとき、./2の値から再帰的に求めることができる。
    *)
-  Lemma rulerd_even (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
-  Proof.
-    move=> Hn.
-    rewrite /rulerd.
-    rewrite -Nat.log2_double.
-    - f_equal.                              (* log2 を消す。 *)
-      rewrite coq_muln2.
-      by rewrite pd_even.
-    - apply/ltP.
-      by rewrite pd_gt_0.
-  Qed.
-  
-  (* 似た補題 *)
-  Lemma rulerd_even' (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
+  Lemma rulerd_even (n : nat) : (0 < n)%N -> ~~ odd n -> rulerd n = (rulerd n./2).+1.
   Proof.
     move=> Hn He.
     rewrite /rulerd.
     rewrite -Nat.log2_double.
     - f_equal.                              (* log2 を消す。 *)
       rewrite coq_muln2.
-      by rewrite pd_even'.
+      by rewrite pd_even.
     - apply/ltP.
       by rewrite pd_gt_0'.
   Qed.
   
+  (* 似た補題 *)
+  Lemma rulerd_even' (n : nat) : (0 < n)%N -> rulerd n.*2 = (rulerd n).+1.
+  Proof.
+    move=> Hn.
+    rewrite /rulerd.
+    rewrite -Nat.log2_double.
+    - f_equal.                              (* log2 を消す。 *)
+      rewrite coq_muln2.
+      by rewrite pd_even'.
+    - apply/ltP.
+      by rewrite pd_gt_0.
+  Qed.
+
 (**
 # ルーラー関数の漸化式
 *) 
