@@ -71,33 +71,62 @@ Section a.
 (**
 ## 補題
 *)
+
+(*
+  Definition nat_ind2 :
+    forall (P : nat -> Prop),
+      P 0 ->
+      P 1 ->
+      (forall n : nat, P n -> P (S(S n))) ->
+      forall n : nat , P n :=
+    fun P => fun P0 => fun P1 => fun PSS =>
+      fix f (n : nat) := match n with
+                       | 0 => P0
+                       | 1 => P1
+                       | n'.+2 => PSS n' (f n')
+                       end.
+  (* .+1 はコンストラクタであるので、=> の左の書ける。 *)
+*)
   Lemma nat_ind2 :
     forall P : nat -> Prop,
       P 0 ->
       P 1 ->
-      (forall n : nat, P n -> P (S (S n))) ->
+      (forall n : nat, P n -> P n.+2) ->
       forall n : nat, P n.
   Proof.
     move=> P HP0 HP1 IH n.
-    have H : (P n /\ P (n.+1)).
+    have H : (P n /\ P n.+1).
     {
-      elim: n => [| n [] HPn HPsn]; split => //=.
+      elim : n => [| n [] HPn HPsn]; split => //=.
       by apply: IH.
     }.
     by case: H.
   Qed.
   
-  Lemma nat_div2_rect :
+  Lemma half_ind (P : nat -> Prop) :
+    P 0 ->
+    P 1 ->
+    (forall n, 1 < n -> P n./2 -> P n) ->
+    forall n, P n.
+  Proof.
+  Admitted.
+  
+  Lemma double_ind :
     forall (P : nat -> Prop),
       P 0 ->
       P 1 ->
-      (forall n, 1 < n -> P (n./2) -> P n) ->
+      (forall n, P n -> P n.*2) ->
+      (forall n, P n -> P n.*2.+1) ->
       forall n, P n.
   Proof.
-    move=> P H0 H1 Hstep n.
-    have [m Hnm] := ubnP n.
-    elim: m => // m IH in n Hnm *.
-  Admitted.                                 (* XXXXX *)
+    move=> P HP0 HP1 IH1 IH2 n.
+    have : P n.*2.
+    elim: n.
+    - by apply IH1.
+    - move=> n H'.
+      apply IH1.
+  (* 通常の帰納法で n に対して構造帰納法を行う *)
+  Admitted.
   
   Lemma coq_muln2 (n : nat) : (2 * n)%coq_nat = n.*2.
   Proof.
@@ -174,7 +203,7 @@ Section a.
     lia.
   Qed.
 
-  Check Nat.bits_inj
+  Check Nat.bits_inj           (*  Numbers/Natural/Abstract/NBits.v *)
     : forall a b : nat, Nat.eqf (Nat.testbit a) (Nat.testbit b) -> a = b.
   Print Nat.eqf.
   (* = fun f g : nat -> bool => forall n : nat, f n = g n *)
@@ -320,7 +349,7 @@ Section a.
   (* 引数が1以上なら、値は1以上である。./2 による帰納法で求める。 *)
   Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
   Proof.
-    elim/nat_div2_rect: n => //= n Hn1 IHn Hn.
+    elim/half_ind : n => //= n Hn1 IHn Hn.
     have := orbN (odd n).
     case/orP => Heo.
     (* n が奇数のとき、pd n = 1 *)
