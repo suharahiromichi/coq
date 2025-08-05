@@ -72,21 +72,9 @@ Section a.
 ## 補題
 *)
 
-(*
-  Definition nat_ind2 :
-    forall (P : nat -> Prop),
-      P 0 ->
-      P 1 ->
-      (forall n : nat, P n -> P (S(S n))) ->
-      forall n : nat , P n :=
-    fun P => fun P0 => fun P1 => fun PSS =>
-      fix f (n : nat) := match n with
-                       | 0 => P0
-                       | 1 => P1
-                       | n'.+2 => PSS n' (f n')
-                       end.
-  (* .+1 はコンストラクタであるので、=> の左の書ける。 *)
-*)
+(**
+### 二つ飛びの帰納法
+ *)
   Lemma nat_ind2 :
     forall P : nat -> Prop,
       P 0 ->
@@ -103,31 +91,9 @@ Section a.
     by case: H.
   Qed.
   
-  Lemma half_ind (P : nat -> Prop) :
-    P 0 ->
-    P 1 ->
-    (forall n, 1 < n -> P n./2 -> P n) ->
-    forall n, P n.
-  Proof.
-  Admitted.
-  
-  Lemma double_ind :
-    forall (P : nat -> Prop),
-      P 0 ->
-      P 1 ->
-      (forall n, P n -> P n.*2) ->
-      (forall n, P n -> P n.*2.+1) ->
-      forall n, P n.
-  Proof.
-    move=> P HP0 HP1 IH1 IH2 n.
-    have : P n.*2.
-    elim: n.
-    - by apply IH1.
-    - move=> n H'.
-      apply IH1.
-  (* 通常の帰納法で n に対して構造帰納法を行う *)
-  Admitted.
-  
+(**
+### Coqのための補題
+ *)
   Lemma coq_muln2 (n : nat) : (2 * n)%coq_nat = n.*2.
   Proof.
     lia.
@@ -149,6 +115,48 @@ Section a.
       by rewrite negbK.
   Qed.
   
+(**
+### 2で割る帰納法
+ *)
+  Lemma div2_lt : forall n, 2 <= n -> Nat.div2 n < n.
+  Proof.
+    intros n H.
+    destruct n as [| [| n']]; simpl in *.
+    - inversion H. (* n = 0 の場合 *)
+    - inversion H. (* n = 1 の場合 *)
+    - (* n >= 2 の場合 *)
+      (* n = S (S n') *)
+      rewrite -[_.+1]addn1 -[_.+2]addn1 leq_add2r.
+      rewrite ltnS.
+      apply/leP/Nat.div2_decr.
+      lia.
+  Qed.
+
+  Definition div2_wf : well_founded (fun x y => Nat.div2 y = x /\ x < y).
+  Proof.
+    apply well_founded_lt_compat with (f := fun x => x).
+    move=> x y [Heq Hlt].
+    by apply/ltP.
+  Qed.
+  
+  Lemma div2_ind :
+    forall (P : nat -> Prop),
+      P 0 ->
+      P 1 ->
+      (forall n, 1 < n -> P n./2 -> P n) ->
+      forall n, P n.
+  Proof.
+    move=> P H0 H1 Hstep.
+    apply: (well_founded_induction (well_founded_ltof _ (fun n => n))).
+    case=> [| [| n'] IH] //=.
+    apply: Hstep => //.
+    apply: IH.
+    rewrite /ltof.
+    apply/ltP.
+    rewrite -coq_divn2.
+    by apply div2_lt.
+  Qed.
+
   (* 補題：偶数+1 diff 偶数 = 1 *)
   Lemma ldiff_even_n_n1_diff_n__1 n : ~~ odd n -> n.+1 .- n = 1.
   Proof.
@@ -349,7 +357,7 @@ Section a.
   (* 引数が1以上なら、値は1以上である。./2 による帰納法で求める。 *)
   Lemma pd_gt_0 n : 0 < n -> 0 < pd n.
   Proof.
-    elim/half_ind : n => //= n Hn1 IHn Hn.
+    elim/div2_ind : n => //= n Hn1 IHn Hn.
     have := orbN (odd n).
     case/orP => Heo.
     (* n が奇数のとき、pd n = 1 *)
