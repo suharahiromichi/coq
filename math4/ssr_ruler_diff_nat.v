@@ -472,6 +472,26 @@ ruleed の性質と対応している。
     - by rewrite mul2K.
   Qed.
   
+
+(**
+任意の n について、ruler_rec と rulerd が等しい。
+*)
+  Theorem ruler_rec__ruler'' n : ruler_rec n = rulerd n.
+  Proof.
+    elim/div2_ind : n => [| | n H1 IH].
+    - by rewrite rulerd_0.
+    - by rewrite rulerd_odd.
+    - have := orbN (odd n).
+      case/orP => Heo.
+      + case: n H1 IH Heo.
+        * by rewrite rulerd_0.
+        * intros.
+          rewrite rulerd_odd //=.
+          by rewrite ruler_rec_odd.
+      + rewrite rulerd_even; try lia.
+        rewrite ruler_rec_even; try lia.
+  Qed.
+  
 End a.
 
 (* END *)
