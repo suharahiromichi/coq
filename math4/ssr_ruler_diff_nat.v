@@ -452,7 +452,7 @@ ruleed の性質と対応している。
     case: n => //= n Ho.
     simp ruler_rec.
     rewrite [odd n.+1]/= Ho.
-    by rewrite ruler_rec_clause_2_equation_1.
+    by simp ruler_rec.    (* rewrite ruler_rec_clause_2_equation_1. *)
   Qed.
 
   Lemma ruler_rec_even (n : nat) : (0 < n)%N -> ~~ odd n -> ruler_rec n = (ruler_rec n./2).+1.
@@ -461,7 +461,7 @@ ruleed の性質と対応している。
     rewrite negbK => He.
     simp ruler_rec => //=.
     rewrite He.
-    rewrite ruler_rec_clause_2_equation_2 /=.
+    simp ruler_rec.    (* rewrite ruler_rec_clause_2_equation_2 /=. *)
     done.
   Qed.
 
@@ -478,17 +478,17 @@ ruleed の性質と対応している。
 *)
   Theorem ruler_rec__ruler'' n : ruler_rec n = rulerd n.
   Proof.
-    elim/div2_ind : n => [| | n H1 IH].
-    - by rewrite rulerd_0.
-    - by rewrite rulerd_odd.
-    - have := orbN (odd n).
+    elim/div2_ind : n => [|| n H1 IH].
+    - by rewrite rulerd_0.                  (* 0 の場合 *)
+    - by rewrite rulerd_odd.                (* 1 の場合 *)
+    - have := orbN (odd n).                 (* 偶奇で場合分けする。 *)
       case/orP => Heo.
-      + case: n H1 IH Heo.
-        * by rewrite rulerd_0.
-        * intros.
+      + case: n H1 IH Heo.                  (* 奇数の場合 *)
+        * by rewrite rulerd_0.              (* 0の場合 *)
+        * move=> n H1 IH Ho.                (* 1以上の場合 *)
           rewrite rulerd_odd //=.
           by rewrite ruler_rec_odd.
-      + rewrite rulerd_even; try lia.
+      + rewrite rulerd_even; try lia.       (* 偶数の場合 *)
         rewrite ruler_rec_even; try lia.
   Qed.
   
