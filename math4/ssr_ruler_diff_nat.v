@@ -476,7 +476,7 @@ ruleed の性質と対応している。
 (**
 任意の n について、ruler_rec と rulerd が等しい。
 *)
-  Theorem ruler_rec__ruler'' n : ruler_rec n = rulerd n.
+  Lemma ruler_rec__rulerd n : ruler_rec n = rulerd n.
   Proof.
     elim/div2_ind : n => [|| n H1 IH].
     - by rewrite rulerd_0.                  (* 0 の場合 *)

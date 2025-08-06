@@ -261,6 +261,72 @@ testbit 関数を次のように定義できる。これは定義！
 
   Definition p (x : int) := x .& (- x).
 
+  Definition pd (n : nat) := Nat.ldiff n n.-1.
+
+  Lemma p__pd (n : nat) : p n = pd n.
+  Proof.
+    by case: n.
+  Qed.
+
+(**
+# ルーラー関数
+*)
+
+  Equations log2 (x : int) : nat :=
+    log2 (Posz n) := Nat.log2 n;
+    log2 (Negz _) := 0.
+  Compute log2 0%Z.                         (* = 0%N *)
+  
+  Definition ruler (x : int) := log2 (p x).
+
+  (**
+## 自然数化したもの
+*)
+  Definition rulerd (n : nat) := Nat.log2 (pd n).
+
+  Lemma ruler__rulerd (n : nat) : ruler n = rulerd n.
+  Proof.
+    rewrite /ruler /rulerd.
+    by rewrite p__pd.
+  Qed.
+  
+(**
+# ルーラー関数の漸化式
+*)
+  Equations ruler_rec (n : nat) : nat by wf n :=
+    ruler_rec 0 => 0 ;
+    ruler_rec n.+1 with odd n.+1 => {
+      | true  => 0 ;
+      | false => (ruler_rec n.+1./2).+1
+      }.
+  Obligation 1.
+  apply/ltP.
+  rewrite ltn_uphalf_double -muln2.
+  by apply: ltn_Pmulr.
+  Qed.
+
+  (**
+# 上記の定義が等しいことを証明する。
+   *)
+  
+(**
+任意の n について、ruler_rec と rulerd が等しい。
+*)
+  Lemma ruler_rec__rulerd n : ruler_rec n = rulerd n.
+  Proof.
+  Admitted.                             (* see ssr_ruler_diff_nat.v *)
+
+  Theorem ruler_rec__ruler (n : nat) : ruler_rec n = ruler n.
+  Proof.
+    rewrite ruler__rulerd.
+    rewrite ruler_rec__rulerd.
+    done.
+  Qed.
+
+(**
+## 以下は予備とする。
+*)  
+
   Lemma p_diff n  : p (Posz n.+1) = Nat.ldiff n.+1 n.
   Proof.
     done.
@@ -408,37 +474,12 @@ testbit 関数を次のように定義できる。これは定義！
     - lia.
   Qed.
 
-(**
-# ルーラー関数 の漸化式
+  (**
+## 検算
 *)
-  
-(**
-以下の三つの定義が等しいことを証明したい。
-*)
-  Equations log2 (x : int) : nat :=
-    log2 (Posz n) := Nat.log2 n;
-    log2 (Negz _) := 0.
-  Compute log2 0%Z.                         (* = 0%N *)
-  
-  Definition ruler (n : nat) := log2 (p' n). (* log2 (n%:Z .& (- n%:Z)) *)
-  
-  Definition ruler' (n : nat) := log2 (n%:Z .^ n.-1%:Z).
-  
-  Equations ruler_rec (n : nat) : nat by wf n :=
-    ruler_rec 0 => 0 ;
-    ruler_rec n.+1 with odd n.+1 => {
-      | true  => 0 ;
-      | false => (ruler_rec n.+1./2).+1
-      }.
-  Obligation 1.
-  apply/ltP.
-  rewrite ltn_uphalf_double -muln2.
-  by apply: ltn_Pmulr.
-  Qed.
-
   Example test (n : nat) := (ruler n = ruler_rec n).
-  Example test' (n : nat) := (ruler' n = ruler_rec n).
-  Example test2 (n : nat) := (ruler n = ruler' n).
+  Example test' (n : nat) := (rulerd n = ruler_rec n).
+  Example test2 (n : nat) := (ruler n = rulerd n).
 
   Goal test 0. Proof. done. Qed.
   Goal test 1. Proof. done. Qed.
