@@ -6,6 +6,10 @@ Import Arith.                               (* Nat.land_spec *)
 Require Import Coq.Arith.Wf_nat.
 Require Import Coq.Arith.Arith.
 
+(**
+ChatGPTに「div2 は整礎か」とだけ質問した回答をベースにしている。
+*)
+
 Section a.
 
 (*
