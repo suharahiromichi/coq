@@ -99,12 +99,11 @@ fun (A : Type) (R : A -> A -> Prop) => forall a : A, Acc R a
   (* 不使用 *)
   Definition div2_wf : well_founded (fun x y => Nat.div2 y = x /\ x < y).
   Proof.
-    rewrite /well_founded.
-    Check forall a : nat, Acc (fun x y : nat => Nat.div2 y = x /\ x < y) a.
+    (* 関係R から lt が導けるなら、関係 R は整礎である。 *)
+    Check (@well_founded_lt_compat _ id)
+      : forall R : nat -> nat -> Prop, (forall x y : nat, R x y -> (x < y)%coq_nat) -> well_founded R.
+    apply: (@well_founded_lt_compat _ id).
     
-    (* apply well_founded_lt_compat with (f := fun x => x). *)
-    Check (@well_founded_lt_compat _ (fun x => x)).
-    apply: (@well_founded_lt_compat _ (fun x => x)).
     move=> x y [Heq Hlt].
     by apply/ltP.
   Qed.
@@ -118,17 +117,17 @@ fun (A : Type) (R : A -> A -> Prop) => forall a : A, Acc R a
   Proof.
     move=> P H0 H1 Hstep.
     
-    (* div2 の帰納法は、lt が整礎であることを使って示す。 *)
+    (* lt についての整礎帰納法で証明する。 *)
     Check well_founded_induction
       : forall (A : Type) (R : A -> A -> Prop),
         well_founded R ->
         forall P : A -> Set, (forall x : A, (forall y : A, R y x -> P y) -> P x) -> forall a : A, P a.
-    
+(*
     Check well_founded_ltof
       : forall (A : Type) (f : A -> nat), well_founded (ltof A f).
     Print ltof. (* = fun (A : Type) (f : A -> nat) (a b : A) => (f a < f b)%coq_nat *)
     (* ltof ではばく、単に lt が整礎であればよい。 *)
-    
+*)
     Check lt_wf : well_founded lt.
     Check lt_wf : forall a : nat, Acc lt a.  (* lt が well_founded である。 *)
     Check forall P : nat -> Set,
