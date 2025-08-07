@@ -120,23 +120,10 @@ Section a.
  *)
   Lemma div2_lt : forall n, 2 <= n -> Nat.div2 n < n.
   Proof.
-    intros n H.
-    destruct n as [| [| n']]; simpl in *.
-    - inversion H. (* n = 0 の場合 *)
-    - inversion H. (* n = 1 の場合 *)
-    - (* n >= 2 の場合 *)
-      (* n = S (S n') *)
-      rewrite -[_.+1]addn1 -[_.+2]addn1 leq_add2r.
-      rewrite ltnS.
-      apply/leP/Nat.div2_decr.
-      lia.
-  Qed.
-
-  Definition div2_wf : well_founded (fun x y => Nat.div2 y = x /\ x < y).
-  Proof.
-    apply well_founded_lt_compat with (f := fun x => x).
-    move=> x y [Heq Hlt].
-    by apply/ltP.
+    case => [| [| n' IH]] //.
+    rewrite -2!addn1 leq_add2r.
+    apply/leP/Nat.div2_decr.
+    lia.
   Qed.
   
   Lemma div2_ind :
@@ -147,16 +134,18 @@ Section a.
       forall n, P n.
   Proof.
     move=> P H0 H1 Hstep.
-    apply: (well_founded_induction (well_founded_ltof _ (fun n => n))).
-    case=> [| [| n'] IH] //=.
+    Check (well_founded_induction lt_wf)
+      : forall P : nat -> Set,
+        (forall x : nat, (forall y : nat, (y < x)%coq_nat -> P y) -> P x) -> forall a : nat, P a.
+    apply: (well_founded_induction lt_wf). (* lt について整礎帰納法を使う。 *)
+    case=> [| [|]] //= n IH. (* n を 0 と 1 と n'+2 に場合分けする。 *)
     apply: Hstep => //.
     apply: IH.
-    rewrite /ltof.
     apply/ltP.
     rewrite -coq_divn2.
     by apply div2_lt.
   Qed.
-
+  
   (* 補題：偶数+1 diff 偶数 = 1 *)
   Lemma ldiff_even_n_n1_diff_n__1 n : ~~ odd n -> n.+1 .- n = 1.
   Proof.
@@ -472,7 +461,6 @@ ruleed の性質と対応している。
     - by rewrite mul2K.
   Qed.
   
-
 (**
 任意の n について、ruler_rec と rulerd が等しい。
 *)
