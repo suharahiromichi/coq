@@ -80,7 +80,7 @@ n が偶数の場合は、``n/2`` のルーラー関数の値の ``+1`` にな�
 
 x の i 桁目の値が 0 なら false、1 なら true を返すものです。
 
-testbit 関数は単射性があるため、すべてのの桁の値どうしが等しければ同じ値であることが言えます。
+testbit関数は単射性があるため、すべての桁の値どうしが等しければ同じ値であることが言えます。
 
 ``(∀i, x.[i] = y.[i]) -> x = y``
 
@@ -437,9 +437,10 @@ ldiff は、引数の``./2``について結果が保存されます。
   Qed.
 
 (**
-## ruler_rec の定義から明らかな性質
+## ルーラー関数の漸化式 ruler_rec の定義から明らかな性質
 
-ruler_rec の定義から比較的簡単に導かれる性質を証明しておきます。
+ルーラー関数の漸化式 ruler_rec の定義から比較的簡単に導かれる性質を証明しておきます。
+引数が 0、奇数、偶数のそれぞれの場合について示します。
 *)
   Lemma ruler_rec_0 : ruler_rec 0 = 0.
   Proof.
@@ -526,6 +527,10 @@ End d.
 
 (**
 # ルーラー関数の性質
+
+p 関数の性質から、ルーラーの性質をみていきます。
+引数が 0、奇数、偶数のそれぞれの場合について示します。
+前出のルーラー関数の漸化式の性質と同じ場合分けにしています。
  *)
 Section e.
 (**
@@ -556,7 +561,9 @@ Section e.
   Qed.
   
 (**
-## 引数が0の時、値は0である。
+## 引数による場合分け
+
+引数が0の時、値は0です。
 *)
   Lemma ruler_0 : ruler 0 = 0.
   Proof.
@@ -564,7 +571,7 @@ Section e.
   Qed.
 
 (**
-## 引数が奇数のとき、値は0である。
+引数が奇数のとき、値は0です。
 *)
   Lemma ruler_odd (n : nat) : odd n -> ruler n = 0.
   Proof.
@@ -573,7 +580,7 @@ Section e.
   Qed.
   
 (**
-## 引数が偶数のとき、./2の値から再帰的に求めることができる。
+引数が偶数のとき、./2の値から再帰的に求めることができます。
 *)
   Lemma ruler_even (n : nat) : (0 < n)%N -> ~~ odd n -> ruler n = (ruler n./2).+1.
   Proof.
@@ -591,15 +598,15 @@ End e.
 (**
 ## 自然数化したルーラー関数とルーラー関数の漸化式が等しい
 
-任意の自然数 n について、ruler と ruler_rec が等しい。
-div2 についての帰納法を使用する。
+上記で示した性質を使って、任意の自然数 n について、ruler と ruler_rec が等しいことを示します。
+偶数の場合帰納法が必要になるので、div2 についての帰納法を使用します。
 *)
 Section f.
 
   Lemma ruler__ruler_rec (n : nat) : ruler n = ruler_rec n.
   Proof.
     elim/div2_ind : n => [|| n H1 IH].
-    - by rewrite ruler_0.                   (*  の場合 *)
+    - by rewrite ruler_0.                   (* 0 の場合 *)
     - by rewrite ruler_odd.                 (* 1 の場合 *)
     - have := orbN (odd n).                 (* 偶奇で場合分けする。 *)
       case/orP => Heo.
@@ -628,11 +635,15 @@ Qed.
 (**
 # Appendix
 
-ProofCafe mh氏による。
+本記事で使用しなかった整数のビット演算についての定義と補題の証明を記載しておきます。
+これは、ProofCafe mh氏によります。
 *)
 Section g.
   Open Scope int_scope.
   
+(**
+## ビット演算の定義
+*)
   Equations lor (x y : int) : int :=
     lor (Posz m) (Posz n) := Posz (Nat.lor m n);   (* x | y *)
     lor (Posz m) (Negz n) := Negz (Nat.ldiff n m); (* ~(~x & ~ y) *)
@@ -661,7 +672,10 @@ Section g.
   Notation "a ^^ b" := (xorb a b) (at level 50) : int_scope.
 
 (**
-## spec
+## 補題
+
+上記のビット演算が正しいことを示すために、整数版のtestbitを使って、
+ビット演算をboolの論理演算に変換できることを証明します。
 *)
   Lemma lnot_spec (x : int) (i : nat) : (.~ x).[i] = ~~ x.[i].
   Proof.
