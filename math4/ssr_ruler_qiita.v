@@ -17,14 +17,19 @@
 (**
 # 問題
 
-(1) ``n & -n`` は何を意味するか。ただし、``n``は1以上の自然数、``&``はビット毎の論理積、``-``は負号（2の補数）とする。
+(1) ``n & -n`` は何を意味するか。
+ただし、``n``は1以上の自然数、``&``はビット毎の論理積、``-``は負号（2の補数）とする。
 
-(2) ``log2 (n & -n)`` がルーラー関数 (Ruler function [2]) であることを示す。ただし、``log2``は 2を底とする対数とする。
+(2) ``log2 (n & -n)`` がルーラー関数 (Ruler function [2]) であることを示す。
+ただし、``log2``は 2を底とする対数とする。
 
 (3) ルーラー関数の漸化式を定義し、(2)と等しいことを証明する。
 
 
-ルーラー関数というのは``n``を2進表現したときの「最も右側の``1``の桁数、ただし0桁目から数える」を返す関数です。
+ルーラー関数というのは``n``を2進表現したときの「最も右側の``1``の桁数、
+ただし0桁目から数える」を返す関数です。
+値の進み方が定規の刻みに似ているのでこの名前がついたそうです。
+
 例えば、n = 6 = 0110 なので、n=6のルーラー関数は1 となります。ちょっと計算してみると、次のようになります。
 
 | n | n    | -n    | n & -n | log2 (n & -n)  |
@@ -37,6 +42,9 @@
 | 6 | 00110 | 11010  | 00010   | 1     |
 | 7 | 00111 | 11001  | 00001   | 0     |
 | 9 | 01000 | 11000  | 01000   | 3     |
+
+n が奇数の場合は、``n & -n`` は 00001 になりルーラー関数に値は0になり、
+n が偶数の場合は、``n-1`` のルーラー関数の値の ``+1`` になっていることがわかります。
 
 本記事では、(3)を形式化して証明する過程で、(1)や(2)を明らかにしていきます。
  *)
@@ -54,9 +62,9 @@ MathComp の nat と Standard Rocq の Nat の自然数の定義は同じなの�
 わずかな非互換の箇所については説明します。
 
 整数については、Standard Rocq の 整数 Z (ZArith) は使わず、MathComp の int の上で独自に定義します。
-このとき Lean/Math4 を参考にします。Lean の定義のほうが、MathComp に近いからです。
+このとき Lean/Math4 [5] を参考にします。Lean の定義のほうが、MathComp に近いからです。
 
-これとは別に、関数の定義には Rocq の Equations を使用します。
+これとは別に、関数の定義には Rocq の Equations [3] を使用します。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -83,6 +91,13 @@ Notation "x .[ i ]" := (Nat.testbit x i) : nat_scope.
 Notation "a ^^ b" := (xorb a b) (at level 50) : nat_scope.
 
 (**
+なお、自然数の範囲では lnot は定義されない（Rocq にも Lean にもない）ことに注意してください。
+これは ``lnot 0 = ...11111`` となり計算が終了しないためです。
+その代わりに、``○ .- ○`` の ldiff 関数、``○ .& (.~ ○)`` が用意されています。
+これは、かならず計算が終了します。
+*)
+
+(**
 ## 整数のビット演算の定義
 *)
 Section a.
@@ -102,11 +117,22 @@ Notation ".~ x" := (lnot x) (at level 35) : int_scope.
 Notation "x .& y" := (land x y) (at level 50) : int_scope.
 
 (**
+以上は Lean/Math4 [5] そのままです。
+整数の場合は、``lnot 0 = -1`` となり、定義ができます。
+*)
+
+(**
 # 問題の形式化
  *)
 
 (**
 ## 数学ガールの式
+
+[1] の定義をそのまま形式化すると、次のようになります。
+``0 < x`` との制限がありますが、ここでは0を含めて定義し、
+``log2 0 = 0`` として扱います。
+
+負号（2の補数）が含まれることから、自然数ではなく整数の範囲での定義になります。
 *)
 Module mg.
 Section mg.
@@ -114,6 +140,10 @@ Section mg.
   
   Definition p (x : int) : int := x .& (- x).
 
+(**
+整数を定義域にとるlog2を定義します。
+値域は自然数として、0以下は0を返すようにします。
+*)
   Equations log2 (x : int) : nat :=
     log2 (Posz n) := Nat.log2 n;
     log2 (Negz _) := 0.
@@ -124,15 +154,41 @@ End mg.
 End mg.
 
 Section b.
-  (**
+(**
 ## 自然数化した式
+
+本記事で実際に扱うのは、自然数の範囲で定義される次の式（以下 p 関数と呼びます）、
+および、それの対数をとった ruler 関数です。
 *)  
   Definition p (n : nat) : nat := n .- n.-1.
 
+(**
+``○ .- ○`` は ldiff 関数であり、``○ .& (.~ ○)`` です。すなわち、
+
+```
+n .- (n.-1) = n .& .~(n.-1) = n .& (- n)
+```
+
+です。ここで、2の補数は「全ビットを反転させてから +1 する」
+から「-1 してから全ビットを反転する」を使っています。
+
+```
+- n = .~n + 1 = .~(n - 1)
+```
+
+この``- 1``は自然数の範囲で考えます。そのため、n は 1 以上となりますが、
+ここでは、``n = 0`` の場合でも ``n .- (n - 1) = 0 .- 0 = 0`` とします。
+*)
+
+(**
+log2 は自然数の範囲で Rocq ライブラリにあるものが使えます。
+*)
   Definition ruler (n : nat) : nat := Nat.log2 (p n).
   
-  (**
+(**
 ## ルーラー関数の漸化式
+
+停止性が判らないので、それを証明します。
 *)
   Equations ruler_rec (n : nat) : nat by wf n :=
     ruler_rec 0 => 0 ;
@@ -155,7 +211,8 @@ Section b.
 - 自然数化したルーラー関数
 - ルーラー関数の漸化式
 
-の3つに定義が得られました。数学ガールの式と自然数化した式が等しいことの証明を済ませておきます。
+の3つに定義が得られました。
+まず、数学ガールの式と自然数化した式が等しいことの証明を済ませておきます。
 *)
   Lemma mg_p__p (n : nat) : mg.p n = p n.
   Proof.
@@ -170,17 +227,23 @@ Section b.
 
 (**
 以下で、自然数化したルーラー関数とルーラー関数が等しいことを証明すれば、
-数学ガールのルーラー関数とルーラー関数の漸化式が等しいことが証明できます。
+数学ガールのルーラー関数とルーラー関数の漸化式が等しいことが証明できることになります。
 *)
 End b.
 
 (**
 ＃補題と帰納原理
+
+最初にいくつかの補題と帰納原理を証明しておきます。
 *)
 
 Section c.
 (**
 ## 2を足していく帰納法（ひとつ飛びの帰納法）
+
+通常の1を足していく帰納法では解けない補題があるので、
+ひとつ飛ばしの帰納原理を証明しておきます。
+これは [4] で詳しく説明されているので、参考にしてください。
  *)
   Lemma nat_ind2 :
     forall P : nat -> Prop,
@@ -200,18 +263,25 @@ Section c.
   
 (**
 ## Coqのための補題
-*)
-  Lemma coq_muln2 (n : nat) : (2 * n)%coq_nat = n.*2.
-  Proof.
-    lia.
-  Qed.
 
+前述の通り、Standard Rocq の Nat と、MathComp の nat との自然数の定義は同じですが、
+一部の述語や関数の定義に違いがあります。
+それらを相互に変換する補題を証明しておきます。
+いずれも nat_ind2 を使います。
+*)
+
+(**
+2で割るdiv2 と、MathComp の half関数 (./2 演算子)の同値を証明します。
+*)
   Lemma coq_divn2 n : Nat.div2 n = n./2.
   Proof.
     elim/nat_ind2 : n => //= n IHn.
     by rewrite IHn.
   Qed.
   
+(**
+偶奇判定の EvenとOdd述語と、MathComp の odd述語の同値を証明します。
+*)
   Lemma coq_evenP n : Nat.Even n <-> ~~ odd n.
   Proof.
     split => [/Nat.even_spec | H].
@@ -223,18 +293,39 @@ Section c.
   Qed.
   
 (**
-## 2で割っていく帰納法
- *)
-  Lemma div2_lt : forall n, 2 <= n -> Nat.div2 n < n.
+このほか、le (<=) や lt (<) の定義の同値を示す補題は用意されているので、使います。
+*)  
+  Check @leP : forall m n : nat, reflect (m <= n)%coq_nat (m <= n).
+  Check @ltP : forall m n : nat, reflect (m < n)%coq_nat (m < n).
+
+(**
+頻出する2倍についての補題も証明しておきます。
+*)
+  Lemma coq_muln2 (n : nat) : (2 * n)%coq_nat = n.*2.
   Proof.
-    case => [| [| n' IH]] //.
+    lia.
+  Qed.
+
+(**
+## 2で割っていく帰納法
+
+この記事では、2で割っていく帰納法が重要になります。
+ルーラー関数の性質から、任意の自然数 n について、
+それを 2 で割っていくことでいつかは奇数になり、ルーラー関数の値が0になるからです。
+
+この定義と証明は ChatGPT の解答をもとに
+well_founded_induction 補題を使いましたが、
+ほかに証明の方法はあるかもしれません。
+*)
+  Lemma div2_lt : forall n, 1 < n -> Nat.div2 n < n.
+  Proof.
+    case=> [| [| n' IH]] //.
     rewrite -2!addn1 leq_add2r.
     apply/leP/Nat.div2_decr.
     lia.
   Qed.
   
-  Lemma div2_ind :
-    forall (P : nat -> Prop),
+  Lemma div2_ind : forall (P : nat -> Prop),
       P 0 ->
       P 1 ->
       (forall n, 1 < n -> P n./2 -> P n) ->
@@ -254,15 +345,20 @@ Section c.
   Qed.
   
 (**
-## 偶数+1 diff 偶数 = 1
- *)
-  Lemma ldiff_even_n_n1_diff_n__1 n : ~~ odd n -> n.+1 .- n = 1.
+## ldiff についての補題
+
+隣り合った奇数と偶数の ldiff は 1 になります。
+これを証明します。
+より一般的なかたちで証明されているので、それから導きます。
+*)
+  Lemma ldiff_odd_even__1 n : ~~ odd n -> n.+1 .- n = 1.
   Proof.
     move/even_halfK => <-.
     rewrite -muln2 mulnC -addn1.
     
     Check Nat.ldiff_odd_even n n
-      : Nat.ldiff ((2 * n)%coq_nat + 1)%coq_nat (2 * n)%coq_nat = ((2 * Nat.ldiff n n)%coq_nat + 1)%coq_nat.
+      : Nat.ldiff ((2 * n)%coq_nat + 1)%coq_nat (2 * n)%coq_nat
+        = ((2 * Nat.ldiff n n)%coq_nat + 1)%coq_nat.
     
     rewrite Nat.ldiff_odd_even Nat.ldiff_diag.
     rewrite Nat.mul_0_r Nat.add_0_l.
@@ -270,26 +366,23 @@ Section c.
   Qed.
 
 (**
-## 
-
-pd 関数の引数が 0 以外の偶数の場合、testbit_div2 のようなことになる。
+ldiff は、引数の``./2``について結果が保存されます。
 *)
-  Check Nat.testbit_div2 : forall a n : nat, (Nat.div2 a).[n] = a.[n.+1].
   Lemma halfDiff (m n : nat) : (m .- n)./2 = m./2 .- n./2.
   Proof.
-    have H x : x./2 = (x / 2 ^ 1)%coq_nat by rewrite Nat.pow_1_r -Nat.div2_div coq_divn2.
+    have H x : x./2 = (x / 2 ^ 1)%coq_nat
+      by rewrite Nat.pow_1_r -Nat.div2_div coq_divn2.
     rewrite 3!H.
     rewrite -3!Nat.shiftr_div_pow2.
     by rewrite Nat.shiftr_ldiff.
   Qed.
   
-  Lemma mul2K n : n.*2./2 = n.
-  Proof.
-    lia.
-  Qed.
-
 (**
 ## testbit が全単射
+
+2進数の任意の桁（任意のビット）が同じ値であるふたつの数は、等しいといえます。
+これは強力なツールになるので、使用します。
+これもより一般的なかたちで証明されているので、それから導きます。
 *)
   Lemma testbit_inj m n : (forall i, m.[i] = n.[i]) -> m = n.
   Proof.
@@ -299,6 +392,8 @@ pd 関数の引数が 0 以外の偶数の場合、testbit_div2 のようなこ�
 
 (**
 ## ruler_rec の定義から明らかな性質
+
+ruler_rec の定義から比較的簡単に導かれる性質を証明しておきます。
 *)
   Lemma ruler_rec_0 : ruler_rec 0 = 0.
   Proof.
@@ -310,23 +405,23 @@ pd 関数の引数が 0 以外の偶数の場合、testbit_div2 のようなこ�
     case: n => //= n Ho.
     simp ruler_rec.
     rewrite [odd n.+1]/= Ho.
-    by simp ruler_rec.    (* rewrite ruler_rec_clause_2_equation_1. *)
+    by simp ruler_rec.
   Qed.
 
-  Lemma ruler_rec_even (n : nat) : (0 < n)%N -> ~~ odd n -> ruler_rec n = (ruler_rec n./2).+1.
+  Lemma ruler_rec_even (n : nat) : (0 < n)%N -> ~~ odd n ->
+                                   ruler_rec n = (ruler_rec n./2).+1.
   Proof.
     case: n => //= n Hn.
     rewrite negbK => He.
     simp ruler_rec => //=.
     rewrite He.
-    simp ruler_rec.    (* rewrite ruler_rec_clause_2_equation_2 /=. *)
-    done.
+    by simp ruler_rec.
   Qed.
 End c.
   
 
 (**
-# p関数の性質
+# p 関数の性質
 *)
 Section d.
 (**
@@ -336,11 +431,11 @@ Section d.
   Proof.
     case: n => //= n Hno.
     rewrite /p -pred_Sn.
-    by rewrite ldiff_even_n_n1_diff_n__1 //.
+    by rewrite ldiff_odd_even__1 //.
   Qed.
   
 (**
-## p 関数の引数が偶数の場合、./2 した値から再帰的に求められる。
+## p 関数の引数が偶数の場合、./2 した値から再帰的に求められます。
 *)
   Lemma p_even_testbit (n i : nat) : (0 < n)%N -> ~~ odd n -> (p n).[i.+1] = (p n./2).[i].
   Proof.
@@ -474,10 +569,10 @@ Section f.
     elim/div2_ind : n => [|| n H1 IH].
     - by rewrite ruler_0.                  (* 0 の場合 *)
     - by rewrite ruler_odd.                (* 1 の場合 *)
-    - have := orbN (odd n).                 (* 偶奇で場合分けする。 *)
+    - have := orbN (odd n).                (* 偶奇で場合分けする。 *)
       case/orP => Heo.
       + case: n H1 IH Heo.                  (* 奇数の場合 *)
-        * by rewrite ruler_0.              (* 0の場合 *)
+        * by rewrite ruler_0.               (* 0の場合 *)
         * move=> n H1 IH Ho.                (* 1以上の場合 *)
           rewrite ruler_odd //=.
           by rewrite ruler_rec_odd.
@@ -599,7 +694,11 @@ End g.
 
 [2] https://en.wikipedia.org/wiki/Ruler_function
 
-[4] https://rocq-prover.github.io/platform-docs/equations/tutorial_basics.html
+[3] https://rocq-prover.github.io/platform-docs/equations/tutorial_basics.html
+
+[4] https://softwarefoundations.cis.upenn.edu/lf-current/IndPrinciples.html
+
+[5] https://github.com/leanprover-community/mathlib4/blob/master/Mathlib/Data/Int/Bitwise.lean
 *)
 
 (* END *)
