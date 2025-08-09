@@ -70,10 +70,6 @@ Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 
-Import GRing.Theory.                        (* ssralg.v *)
-Import Num.Def Num.Theory.                  (* ssrnum.v *)
-Import intZmod.
-
 (**
 # ビット演算の定義
 
@@ -91,23 +87,92 @@ Notation "a ^^ b" := (xorb a b) (at level 50) : nat_scope.
 *)
 Section a.
 
-  Definition lnot (x : int) : int :=
-    match x with
-    | (Posz n) => Negz n
-    | (Negz n) => Posz n
-    end.
-    
-  Definition land (x y : int) : int :=
-    match x, y with
-    | (Posz m), (Posz n) => Posz (Nat.land m n)  (* x & y *)
-    | (Posz m), (Negz n) => Posz (Nat.ldiff m n) (* x & ~y *)
-    | (Negz m), (Posz n) => Posz (Nat.ldiff n m) (* ~x & y *)
-    | (Negz m), (Negz n) => Negz (Nat.lor m n)   (* ~x & ~y = ~(x | y) *)
-    end.
+  Equations lnot (x : int) : int :=
+    lnot (Posz n) := Negz n;
+    lnot (Negz n) := Posz n.
+  
+  Equations land (x y : int) : int :=
+    land (Posz m) (Posz n) := Posz (Nat.land m n);  (* x & y *)
+    land (Posz m) (Negz n) := Posz (Nat.ldiff m n); (* x & ~y *)
+    land (Negz m) (Posz n) := Posz (Nat.ldiff n m); (* ~x & y *)
+    land (Negz m) (Negz n) := Negz (Nat.lor m n).   (* ~x & ~y = ~(x | y) *)
 End a.
 
 Notation ".~ x" := (lnot x) (at level 35) : int_scope.
 Notation "x .& y" := (land x y) (at level 50) : int_scope.
+
+(**
+# 問題の形式化
+ *)
+
+(**
+## 数学ガールの式
+*)
+Module mg.
+Section mg.
+  Open Scope int_scope.
+  
+  Definition p (x : int) : int := x .& (- x).
+
+  Equations log2 (x : int) : nat :=
+    log2 (Posz n) := Nat.log2 n;
+    log2 (Negz _) := 0.
+  Compute log2 0%Z.                         (* = 0%N *)
+  
+  Definition ruler (x : int) := log2 (p x).
+End mg.
+End mg.
+
+Section b.
+  (**
+## 自然数化した式
+*)  
+  Definition p (n : nat) : nat := n .- n.-1.
+
+  Definition ruler (n : nat) : nat := Nat.log2 (p n).
+  
+  (**
+## ルーラー関数の漸化式
+*)
+  Equations ruler_rec (n : nat) : nat by wf n :=
+    ruler_rec 0 => 0 ;
+    ruler_rec n.+1 with odd n.+1 => {
+      | true  => 0 ;
+      | false => (ruler_rec n.+1./2).+1
+      }.
+  Obligation 1.
+  apply/ltP.
+  rewrite ltn_uphalf_double -muln2.
+  by apply: ltn_Pmulr.
+  Qed.
+
+(**
+# いくつかの証明
+
+以上で、
+
+- 数学ガールのルーラー関数
+- 自然数化したルーラー関数
+- ルーラー関数の漸化式
+
+の3つに定義が得られました。数学ガールの式と自然数化した式が等しいことの証明を済ませておきます。
+*)
+  Lemma mg_p__p (n : nat) : mg.p n = p n.
+  Proof.
+    by case: n.
+  Qed.
+
+  Lemma mg_ruler__ruler (n : nat) : mg.ruler n = ruler n.
+  Proof.
+    rewrite /mg.ruler /ruler.
+    by rewrite mg_p__p.
+  Qed.    
+
+(**
+以下で、自然数化したルーラー関数とルーラー関数が等しいことを証明すれば、
+数学ガールのルーラー関数とルーラー関数の漸化式が等しいことが証明できます。
+*)
+End b.
 
 (**
 ＃補題と帰納原理
@@ -231,57 +296,9 @@ pd 関数の引数が 0 以外の偶数の場合、testbit_div2 のようなこ�
     move=> H.
     by apply: Nat.bits_inj.
   Qed.
-End c.
-
-(**
-# 問題の形式化
- *)
-
-(**
-## 数学ガールの式
-*)
-Module mg.
-Section mg.
-  Open Scope int_scope.
-  
-  Definition p (x : int) : int := x .& (- x).
-
-  Equations log2 (x : int) : nat :=
-    log2 (Posz n) := Nat.log2 n;
-    log2 (Negz _) := 0.
-  Compute log2 0%Z.                         (* = 0%N *)
-  
-  Definition ruler (x : int) := log2 (p x).
-End mg.
-End mg.
-
-Section b.
-  (**
-## 自然数化した式
-*)  
-  Definition p (n : nat) : nat := n .- n.-1.
-
-  Definition ruler (n : nat) : nat := Nat.log2 (p n).
-  
-  (**
-## ルーラー関数の漸化式
-*)
-  Equations ruler_rec (n : nat) : nat by wf n :=
-    ruler_rec 0 => 0 ;
-    ruler_rec n.+1 with odd n.+1 => {
-      | true  => 0 ;
-      | false => (ruler_rec n.+1./2).+1
-      }.
-  Obligation 1.
-  apply/ltP.
-  rewrite ltn_uphalf_double -muln2.
-  by apply: ltn_Pmulr.
-  Qed.
 
 (**
 ## ruler_rec の定義から明らかな性質
-
-ruleed の性質と対応している。
 *)
   Lemma ruler_rec_0 : ruler_rec 0 = 0.
   Proof.
@@ -305,41 +322,15 @@ ruleed の性質と対応している。
     simp ruler_rec.    (* rewrite ruler_rec_clause_2_equation_2 /=. *)
     done.
   Qed.
+End c.
   
-(**
-# いくつかの証明
-
-以上で、
-
-- 数学ガールのルーラー関数
-- 自然数化したルーラー関数
-- ルーラー関数の漸化式
-
-の3つに定義が得られました。数学ガールの式と自然数化した式が等しいことの証明を済ませておきます。
-*)
-  Lemma mg_p__p (n : nat) : mg.p n = p n.
-  Proof.
-    by case: n.
-  Qed.
-
-  Lemma mg_ruler__ruler (n : nat) : mg.ruler n = ruler n.
-  Proof.
-    rewrite /mg.ruler /ruler.
-    by rewrite mg_p__p.
-  Qed.    
-
-(**
-以下で、自然数化したルーラー関数とルーラー関数が等しいことを証明すれば、
-数学ガールのルーラー関数とルーラー関数の漸化式が等しいことが証明できます。
-*)
-End b.
 
 (**
 # p関数の性質
 *)
 Section d.
 (**
-## pd 関数の引数が奇数の場合、値は 1 である。
+## p 関数の引数が奇数の場合、値は 1 である。
 *)
   Lemma p_odd__1 (n : nat) (i : nat) : odd n -> p n = 1.
   Proof.
@@ -349,7 +340,7 @@ Section d.
   Qed.
   
 (**
-## p 関数の引数が偶数の場合、./2 した値から再帰的に求められる。testbit版
+## p 関数の引数が偶数の場合、./2 した値から再帰的に求められる。
 *)
   Lemma p_even_testbit (n i : nat) : (0 < n)%N -> ~~ odd n -> (p n).[i.+1] = (p n./2).[i].
   Proof.
@@ -362,25 +353,10 @@ Section d.
     congr ((_ .- _) .[ _]).
     lia.
   Qed.
-
-  (* 似た補題 *)
-  Lemma p_even'_testbit (n i : nat) : (0 < n)%N -> (p n.*2).[i.+1] = (p n).[i].
-  Proof.
-    move=> Hn0.
-    rewrite (@p_even_testbit n.*2); try lia.
-    by rewrite mul2K.
-  Qed.
   
 (**
-## p 関数の引数が偶数の場合、./2 した値から再帰的に求められる。2倍版
+## p 関数の引数が偶数の場合、./2 した値から再帰的に求められる。
 *)
-
-  (* p_even の証明では、doubleDiff 補題が使えそうだが、正しい証明にならない。
-     なぜなら、= になるのは別な理由であるからだ。 *)
-  (* その代わりに、testbit の単射性 testbit_inj を使う。 *)
-  
-  Check Nat.testbit_even_succ' : forall a i : nat, (2 * a)%coq_nat.[i.+1] = a.[i].
-  
   Lemma p_even_nm2_0bit n : (p n.*2).[0] = false.
   Proof.
     rewrite /p Nat.ldiff_spec /=.
@@ -410,12 +386,11 @@ Section d.
     by rewrite p_even_nm2_0bit.
   Qed.
   
-  (* 苦労した補題 *)
   Lemma p_even (n : nat) : (0 < n)%N -> ~~ odd n -> (p n) = (p n./2).*2.
   Proof.
     move=> Hn He.
     apply: testbit_inj => i.
-    case: i => [| n']. (* i を 0 か 1以上で分ける。避けられないか？ *)
+    case: i => [| n'].
     - by rewrite p_even_d2pm2_0bit p_even_0bit.
     - rewrite -coq_muln2.
       rewrite Nat.testbit_even_succ'.
@@ -423,14 +398,13 @@ Section d.
   Qed.
 End d.
 
-
 (**
 # ルーラー関数の性質
  *)
 Section e.
-  (**
-### 補題
-   *)
+(**
+## 補題
+*)
   (* 引数が1以上なら、値は1以上である。./2 による帰納法で求める。 *)
   Lemma p_gt_0 n : 0 < n -> 0 < p n.
   Proof.
@@ -454,26 +428,26 @@ Section e.
     lia.
   Qed.
   
-  (**
-### 引数が0の時、値は0である。
-  *)
+(**
+## 引数が0の時、値は0である。
+*)
   Lemma ruler_0 : ruler 0 = 0.
   Proof.
     done.
   Qed.
 
-  (**
-### 引数が奇数のとき、値は0である。
-   *)
+(**
+## 引数が奇数のとき、値は0である。
+*)
   Lemma ruler_odd (n : nat) : odd n -> ruler n = 0.
   Proof.
     move=> Ho.
     by rewrite /ruler p_odd__1.
   Qed.
   
-  (**
-### 引数が偶数のとき、./2の値から再帰的に求めることができる。
-   *)
+(**
+## 引数が偶数のとき、./2の値から再帰的に求めることができる。
+*)
   Lemma ruler_even (n : nat) : (0 < n)%N -> ~~ odd n -> ruler n = (ruler n./2).+1.
   Proof.
     move=> Hn He.
@@ -495,7 +469,7 @@ End e.
 *)
 Section f.
 
-  Lemma ruler_rec__ruler (n : nat) : ruler n = ruler_rec n.
+  Lemma ruler__ruler_rec (n : nat) : ruler n = ruler_rec n.
   Proof.
     elim/div2_ind : n => [|| n H1 IH].
     - by rewrite ruler_0.                  (* 0 の場合 *)
@@ -521,7 +495,7 @@ End f.
 Theorem mg_ruler__ruler_rec (n : nat) : mg.ruler n = ruler_rec n.
 Proof.
   rewrite mg_ruler__ruler.
-  rewrite ruler_rec__ruler.
+  rewrite ruler__ruler_rec.
   done.
 Qed.
 
@@ -552,19 +526,17 @@ Section g.
     lxor (Negz m) (Negz n) := Posz (Nat.lxor m n). (* ~x ^ ~y *)
   
   Equations testbit (x : int) (m : nat) : bool :=
-  testbit (Posz n) m := Nat.testbit n m ;
-  testbit (Negz n) m := ~~ Nat.testbit n m.
+    testbit (Posz n) m := Nat.testbit n m ;
+    testbit (Negz n) m := ~~ Nat.testbit n m.
   
-  Notation ".~ x" := (lnot x) (at level 35) : int_scope.
-  Notation "x .& y" := (land x y) (at level 50) : int_scope.
   Notation "x .| y" := (lor x y) (at level 50) : int_scope.
   Notation "x .^ y" := (lxor x y) (at level 50) : int_scope.
   Notation "x .[ i ]" := (testbit x i) : int_scope.
   Notation "a ^^ b" := (xorb a b) (at level 50) : int_scope.
 
-  (**
+(**
 ## spec
-   *)
+*)
   Lemma lnot_spec (x : int) (i : nat) : (.~ x).[i] = ~~ x.[i].
   Proof.
     case: x => n; simp lnot testbit => //=.
