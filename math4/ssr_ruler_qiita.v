@@ -51,6 +51,8 @@ n が偶数の場合は、``n-1`` のルーラー関数の値の ``+1`` にな�
 
 (**
 # 証明の方針
+
+
 *)
 
 (**
@@ -67,12 +69,18 @@ MathComp の nat と Standard Rocq の Nat の自然数の定義は同じなの�
 これとは別に、関数の定義には Rocq の Equations [3] を使用します。
 *)
 
+(**
+ソースコードは、以下にあります。
+
+https://github.com/suharahiromichi/coq/blob/master/math4/ssr_ruler_qiita.v
+*)
+
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 From mathcomp Require Import ssrZ zify ring lra.
 (* opam install coq-equations *)
 From Equations Require Import Equations.
-Import Arith.                               (* Nat.land_spec *)
+Import Arith.                            (* Nat.Even, Nat.land_spec *)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -307,7 +315,7 @@ Section c.
   Qed.
 
 (**
-## 2で割っていく帰納法
+## 2で割っていく帰納法（div2 についての帰納法）
 
 この記事では、2で割っていく帰納法が重要になります。
 ルーラー関数の性質から、任意の自然数 n について、
@@ -418,14 +426,15 @@ ruler_rec の定義から比較的簡単に導かれる性質を証明してお�
     by simp ruler_rec.
   Qed.
 End c.
-  
 
 (**
 # p 関数の性質
 *)
 Section d.
 (**
-## p 関数の引数が奇数の場合、値は 1 である。
+## p 関数の引数が奇数の場合
+
+値は 1 であることを直接求めます。
 *)
   Lemma p_odd__1 (n : nat) (i : nat) : odd n -> p n = 1.
   Proof.
@@ -435,7 +444,21 @@ Section d.
   Qed.
   
 (**
-## p 関数の引数が偶数の場合、./2 した値から再帰的に求められます。
+## p 関数の引数が偶数の場合
+
+0ビット目はかならず 0 です。
+*)
+  Lemma p_even_0bit n : ~~ odd n -> (p n).[0] = false.
+  Proof.
+    move=> He.
+    rewrite -[n in (p n)]even_uphalfK //=.
+    rewrite -Nat.bit0_odd.
+    rewrite /p Nat.ldiff_spec /=.
+    by rewrite -coq_muln2 Nat.odd_even.
+  Qed.
+  
+(**
+0ビット目以外は、1/2した値から再帰的に求められます。
 *)
   Lemma p_even_testbit (n i : nat) : (0 < n)%N -> ~~ odd n -> (p n).[i.+1] = (p n./2).[i].
   Proof.
@@ -443,50 +466,20 @@ Section d.
     rewrite /p.
     rewrite -pred_Sn.
     rewrite negbK in Ho.
-    (* rewrite Nat.testbit_div2. *)
     rewrite coq_divn2 halfDiff uphalfE.
     congr ((_ .- _) .[ _]).
     lia.
   Qed.
   
 (**
-## p 関数の引数が偶数の場合、./2 した値から再帰的に求められる。
+testbit の単射性をつかって、testbit を外しておきます。
 *)
-  Lemma p_even_nm2_0bit n : (p n.*2).[0] = false.
-  Proof.
-    rewrite /p Nat.ldiff_spec /=.
-    rewrite -coq_muln2 Nat.odd_even.
-    done.
-  Qed.
-  
-  Lemma p_even_pm2_0bit n : (p n).*2.[0] = false.
-  Proof.
-    rewrite /p.
-    rewrite -coq_muln2 Nat.testbit_even_0.
-    done.
-  Qed.
-  
-  Lemma p_even_d2pm2_0bit n : (p n./2).*2.[0] = false.
-  Proof.
-    rewrite /p.
-    rewrite -coq_muln2 Nat.testbit_even_0.
-    done.
-  Qed.
-
-  Lemma p_even_0bit n : ~~ odd n -> (p n).[0] = false.
-  Proof.
-    move=> He.
-    rewrite -[n in (p n)]even_uphalfK //=.
-    rewrite -Nat.bit0_odd.
-    by rewrite p_even_nm2_0bit.
-  Qed.
-  
   Lemma p_even (n : nat) : (0 < n)%N -> ~~ odd n -> (p n) = (p n./2).*2.
   Proof.
     move=> Hn He.
     apply: testbit_inj => i.
     case: i => [| n'].
-    - by rewrite p_even_d2pm2_0bit p_even_0bit.
+    - by rewrite -coq_muln2 Nat.testbit_even_0 p_even_0bit.
     - rewrite -coq_muln2.
       rewrite Nat.testbit_even_succ'.
       by rewrite p_even_testbit.
@@ -499,8 +492,9 @@ End d.
 Section e.
 (**
 ## 補題
+
+引数が1以上なら、値は1以上である。./2 による帰納法で求める。
 *)
-  (* 引数が1以上なら、値は1以上である。./2 による帰納法で求める。 *)
   Lemma p_gt_0 n : 0 < n -> 0 < p n.
   Proof.
     elim/div2_ind : n => //= n Hn1 IHn Hn.
@@ -548,38 +542,37 @@ Section e.
     move=> Hn He.
     rewrite /ruler.
     rewrite -Nat.log2_double.
-    - f_equal.                              (* log2 を消す。 *)
+    - congr (Nat.log2 _).                   (* log2 を消す。 *)
       rewrite coq_muln2.
       by rewrite p_even.
     - apply/ltP.
       by rewrite p_gt_0'.
   Qed.
-
 End e.
 
 (**
-##
+## 自然数化したルーラー関数とルーラー関数の漸化式が等しい
 
 任意の自然数 n について、ruler と ruler_rec が等しい。
+div2 についての帰納法を使用する。
 *)
 Section f.
 
   Lemma ruler__ruler_rec (n : nat) : ruler n = ruler_rec n.
   Proof.
     elim/div2_ind : n => [|| n H1 IH].
-    - by rewrite ruler_0.                  (* 0 の場合 *)
-    - by rewrite ruler_odd.                (* 1 の場合 *)
-    - have := orbN (odd n).                (* 偶奇で場合分けする。 *)
+    - by rewrite ruler_0.                   (*  の場合 *)
+    - by rewrite ruler_odd.                 (* 1 の場合 *)
+    - have := orbN (odd n).                 (* 偶奇で場合分けする。 *)
       case/orP => Heo.
       + case: n H1 IH Heo.                  (* 奇数の場合 *)
         * by rewrite ruler_0.               (* 0の場合 *)
         * move=> n H1 IH Ho.                (* 1以上の場合 *)
           rewrite ruler_odd //=.
           by rewrite ruler_rec_odd.
-      + rewrite ruler_even; try lia.       (* 偶数の場合 *)
+      + rewrite ruler_even; try lia.        (* 偶数の場合 *)
         rewrite ruler_rec_even; try lia.
   Qed.
-
 End f.
 
 (**
@@ -638,7 +631,6 @@ Section g.
     by rewrite negbK.
    Qed.
 
-  (* この証明から 2025/8/23 ProorCafe *)
   Lemma land_spec (x y : int) (i : nat) : (x .& y).[i] = x.[i] && y.[i].
   Proof.
     case: x; case: y => m n;
