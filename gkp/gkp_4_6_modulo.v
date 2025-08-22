@@ -236,10 +236,13 @@ $$ m d_1 = n d_1 \pmod{d_2 d_1} \Longleftrightarrow m = n \pmod{d_2}, 但し 0 \
     (* 右側： (m %% d2 * d1 == n %% d2 * d1) *)
     
     (* 右側の両辺に、d1による剰余の分配則を適用する。これも d1≠0なので可能である。 *)
-    Check @muln_modl d1 :
-      forall m d : nat, 0 < d1 -> (m %% d) * d1 = (m * d1) %% (d * d1).
-    
-    rewrite 2!(muln_modl Hd1). (* MathCompの最新版で条件 0 < p 条件が削除されている。 *)
+    Check @muln_modl d1
+      : forall m d : nat, m %% d * d1 = (m * d1) %% (d * d1).
+    (* MathCompの最新版で条件 0 < p 条件が削除されている。 *)
+    (*    
+          forall m d : nat, 0 < d1 -> (m %% d) * d1 = (m * d1) %% (d * d1).
+     *)
+    rewrite 2!muln_modl. 
     done.
   Qed.
   
