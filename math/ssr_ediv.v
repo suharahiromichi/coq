@@ -197,7 +197,7 @@ Section INT.
   Check ltz_nat m n : (m%:Z < n%:Z) = (m < n)%N.   (* 両辺はbool *)
   
   Variables x y : int.
-  Check oppz_add x y : - (x + y) = -x + -y.
+  Check oppzD x y : - (x + y) = -x + -y.
 End INT.
 
 (**
@@ -311,11 +311,11 @@ Section NORM.
   Lemma norm_nat (n : nat) : `| n%:Z | = n%:Z. (* `|n| = n *)
   Proof. by rewrite -abszE absz_nat. Qed.
   (* 正整数 *)
-  Check @ger0_norm int_numDomainType x : 0 <= x -> `|x| = x :> int. (* `|x| = x *)
-  Check @gtr0_norm int_numDomainType x : 0 < x -> `|x| = x :> int.
+  Check @ger0_norm int x : 0 <= x -> `|x| = x :> int. (* `|x| = x *)
+  Check @gtr0_norm int x : 0 < x -> `|x| = x :> int.
   (* 負整数 *)
-  Check @ler0_norm int_numDomainType x : x <= 0 -> `|x| = - x :> int.
-  Check @ltr0_norm int_numDomainType x : x < 0 -> `|x| = - x :> int.
+  Check @ler0_norm int x : x <= 0 -> `|x| = - x :> int.
+  Check @ltr0_norm int x : x < 0 -> `|x| = - x :> int.
 End NORM.
 
 Lemma normq0_eq (x y : int) : `|x - y| = 0  <-> x = y.
@@ -393,7 +393,9 @@ Compute edivn_ceil 10 3.                    (* 4 *)
 そうでない場合は被除数未満となります。このふたつの条件をあわせて補題にしています。
 
 ```math
-\lfloor m / d \rfloor d \le m \\
+\lfloor m / d \rfloor d \le m
+```
+```math
 \lceil m / d \rceil d \ge m
 ```
 
@@ -423,7 +425,9 @@ Qed.
 ついで、商と除数の積と被除数の差が、除数未満であることを証明します。
 
 ```math
-m - \lfloor m / d \rfloor d \lt d \\
+m - \lfloor m / d \rfloor d \lt d
+```
+```math
 \lceil m / d \rceil d - m   \lt d
 ```
 *)
@@ -454,7 +458,7 @@ Proof.
     have l_dist (m' : nat) : (m' + 1)%N%:Z * d = (m' * d)%N%:Z + d
       by apply/eqP; rewrite eqz_nat mulnDl mul1n.
     rewrite l_dist //= addrA [- _ + _]addrC.
-    rewrite eq_subz add0r ltr_subl_addl ltr_addr.
+    rewrite eq_subz add0r ltrBDl ltrDr.
     rewrite ltz_nat lt0n.
     (* Goal : (m %% d)%N != 0 *)
     rewrite /dvdn in H.
@@ -702,10 +706,10 @@ Proof.
   move/andP : Hr1 => [Hr1 Hr1d].
   move/andP : Hr2 => [Hr2 Hr2d].
 
-  move: (ltr_paddr Hr1 Hr1d) => Hr1dr1.     (* Hr1dr1 : r1 < d + r1 *)
-  move: (ltr_paddr Hr2 Hr1d) => Hr1dr2.     (* Hr1dr2 : r1 < d + r2 *)
-  move: (ltr_paddr Hr1 Hr2d) => Hr2dr1.     (* Hr2dr1 : r2 < d + r1 *)
-  move: (ltr_paddr Hr2 Hr2d) => Hr2dr2.     (* Hr2dr2 : r2 < d + r2 *)
+  move: (ltr_wpDr Hr1 Hr1d) => Hr1dr1.     (* Hr1dr1 : r1 < d + r1 *)
+  move: (ltr_wpDr Hr2 Hr1d) => Hr1dr2.     (* Hr1dr2 : r1 < d + r2 *)
+  move: (ltr_wpDr Hr1 Hr2d) => Hr2dr1.     (* Hr2dr1 : r2 < d + r1 *)
+  move: (ltr_wpDr Hr2 Hr2d) => Hr2dr2.     (* Hr2dr2 : r2 < d + r2 *)
   
   (* r1 と r2 は0以上なので、絶対値記号をつけます。 *)
   Check gez0_abs Hr1 : `|r1|%N%:Z = r1.
