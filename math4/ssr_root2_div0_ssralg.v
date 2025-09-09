@@ -49,9 +49,7 @@ Section Root2.
 *)
     Lemma l_dd4_d2 x : (4 %| x.*2) = (2 %| x).
     Proof.
-      rewrite -muln2.
-      have -> : 4 = 2 * 2 by done.
-      by rewrite dvdn_pmul2r.
+      lia.
     Qed.
 
 (**
@@ -59,9 +57,7 @@ Section Root2.
 *)
     Lemma l_d4s x : 2 %| x -> 4 %| (x * x).
     Proof.
-      move=> H.
-      have -> : 4 = 2 * 2 by done.
-      by apply: dvdn_mul.
+      lia.
     Qed.
 
 (**
@@ -91,10 +87,7 @@ Section Root2.
 *)  
     Lemma l_h0_0 p : 2 %| p -> p./2 = 0 -> p = 0.
     Proof.
-      move=> Hp.
-      move/eqP.
-      rewrite -divn2 -eqn_mul //=.
-      by rewrite mul0n => /eqP.
+      lia.
     Qed.
     
 (**
@@ -102,13 +95,7 @@ Section Root2.
 *)
     Lemma l_hh_sq x : 2 %| x -> x./2 * x./2 = (x * x) %/ 4.
     Proof.
-      move=> H.
-      have -> : 4 = 2 * 2 by done.
-      rewrite divnMA.
-      rewrite -muln_divA //.
-      rewrite -divn_mulAC //.
-      rewrite divn2.
-      done.
+      lia.
     Qed.
 
 (**
@@ -118,23 +105,6 @@ Section Root2.
     Proof.
       move=> H.
       by rewrite -2!muln2 divn_mulAC.
-    Qed.
-    
-
-
-    Lemma ll_main_ba n : 0 < n -> n./2 < n.
-    Proof.
-      move=> H.
-      rewrite -divn2.
-      by apply: ltn_Pdiv.
-    Qed.
-    
-
-
-    Lemma ll_main_ba' n : 0 < n -> n./2 <= n.
-    Proof.
-      move=> H.
-      lia.
     Qed.
     
     Lemma ll_main_ih (n p : nat) :
