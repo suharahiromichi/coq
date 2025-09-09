@@ -153,18 +153,12 @@ n/2 < n なので、
 
 という代入のもとで p/2 = 0 を証明する。p/2 = 0 ならば p = 0 といえる。
 *)
-    Lemma test m n : m <= n -> m./2 < n.
-    Proof.
-      case: m => //=.
-    Admitted.
-
-
 
     Theorem main_thm (n p : nat) : n * n = (p * p).*2 -> p = 0.
     Proof.
       elim/lt_wf_ind: n p => n.               (* 清礎帰納法 *)
       case: (posnP n) => [-> _ [] // | Hn IH p Hnp].
-      (*
+(*
   n : nat
   Hn : 0 < n
   IH : forall m : nat, (m < n)%coq_nat -> forall p : nat, m * m = (p * p).*2 -> p = 0
@@ -186,30 +180,66 @@ n/2 < n なので、
       Restart.
       
       elim: n {-2}n (leqnn n) p; try lia.
-      move=> n IH m Hn p Hnp.
+      move=> n IH m Hn p Hmp.
+(*
+  n : nat
+  IH : forall n0 : nat, n0 <= n -> forall p : nat, n0 * n0 = (p * p).*2 -> p = 0
+  m : nat
+  Hn : m <= n.+1
+  p : nat
+  Hnp : m * m = (p * p).*2
+  ============================
+  p = 0
+*)
       apply: l_h0_0.
       Check 2 %| p.
-      - by apply: (l_d2p Hnp).                (* pは2の倍数。 *)
+      - by apply: (l_d2p Hmp).                (* pは2の倍数。 *)
       Check p./2 = 0.
       Check (IH m./2).
       - apply: (IH m./2).
+        Check m./2 <= n.
         + lia.
+          Check Hmp : m * m = (p * p).*2.
+          Check m./2 * m./2 = (p./2 * p./2).*2.
         + by apply: ll_main_ih.
-(*      
+          
       Restart.
 
       move: n p => m.
       have [n] := ubnP m.
-      elim: n m => // n IH m => /ltnSE Hn p Hmp.
+      elim: n m.
+      - lia.
+      - move=> n IH m Hn p Hmp.
+(*    elim: n m => // n IH m => (* /ltnSE *) Hn p Hmp. *)
+ (*
+  n : nat
+  IH : forall m : nat, m < n -> forall p : nat, m * m = (p * p).*2 -> p = 0
+  m : nat
+  Hn : m <= n.+1
+  p : nat
+  Hmp : m * m = (p * p).*2
+  ============================
+  p = 0
+*)
       apply: l_h0_0.
       - by apply: (l_d2p Hmp).                (* pは2の倍数。 *)
         
       Check IH m./2.
       - apply: (IH m./2).
-        + by rewrite test.
-        + by apply: ll_main_ih.
+        Check m./2 < n.                     (* ubnP *)
+        Check m./2 <= n.                    (* ubnPleq *)
+        + admit.
+          (* ubnP *)
+          Check Hmp : m * m = (p * p).*2.
+          Check m./2 * m./2 = (p./2 * p./2).*2.
+          (* ubnPleq *)
+(*
+          Check Hmp : n.+1 * n.+1 = (p * p).*2.
+          Check n * n = (p./2 * p./2).*2.
 *)
-    Qed.
+        + by apply: ll_main_ih.
+
+    Admitted.
   End Nat.
 
 (*
