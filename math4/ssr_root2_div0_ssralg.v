@@ -207,39 +207,16 @@ n/2 < n なので、
 
       move: n p => m.
       have [n] := ubnP m.
-      elim: n m.
+      case: n => //= n Hn.                  (* ***** *)
+      elim: n m Hn.
       - lia.
       - move=> n IH m Hn p Hmp.
-(*    elim: n m => // n IH m => (* /ltnSE *) Hn p Hmp. *)
- (*
-  n : nat
-  IH : forall m : nat, m < n -> forall p : nat, m * m = (p * p).*2 -> p = 0
-  m : nat
-  Hn : m <= n.+1
-  p : nat
-  Hmp : m * m = (p * p).*2
-  ============================
-  p = 0
-*)
-      apply: l_h0_0.
-      - by apply: (l_d2p Hmp).                (* pは2の倍数。 *)
-        
-      Check IH m./2.
-      - apply: (IH m./2).
-        Check m./2 < n.                     (* ubnP *)
-        Check m./2 <= n.                    (* ubnPleq *)
-        + admit.
-          (* ubnP *)
-          Check Hmp : m * m = (p * p).*2.
-          Check m./2 * m./2 = (p./2 * p./2).*2.
-          (* ubnPleq *)
-(*
-          Check Hmp : n.+1 * n.+1 = (p * p).*2.
-          Check n * n = (p./2 * p./2).*2.
-*)
-        + by apply: ll_main_ih.
-
-    Admitted.
+        apply: l_h0_0.
+        + by apply: (l_d2p Hmp).                (* pは2の倍数。 *)
+        + apply: (IH m./2).
+          * lia.
+          * by apply: ll_main_ih.
+    Qed.
   End Nat.
 
 (*
