@@ -157,7 +157,8 @@ n/2 < n なので、
     Theorem main_thm (n p : nat) : n * n = (p * p).*2 -> p = 0.
     Proof.
       elim/lt_wf_ind: n p => n.               (* 清礎帰納法 *)
-      case: (posnP n) => [-> _ [] // | Hn IH p Hnp].
+      case: (posnP n); try lia.
+      move=> Hn IH p Hnp.
 (*
   n : nat
   Hn : 0 < n
@@ -168,22 +169,16 @@ n/2 < n なので、
   p = 0
 *)
       apply: l_h0_0.
-      Check 2 %| p.
-      - by apply: (l_d2p Hnp).                (* pは2の倍数。 *)
-      Check p./2 = 0.
-      - apply: (IH n./2).
-        Check (n./2 < n)%coq_nat.
-        + apply/ltP.
-          lia.
-        + by apply: ll_main_ih.
-          
+      - by apply: (l_d2p Hnp).              (* pは2の倍数。 *)
+      - apply: (IH n./2); try lia.
+        by apply: ll_main_ih.
+        
       Restart.
-      
       elim: n {-2}n (leqnn n) p; try lia.
       move=> n IH m Hn p Hmp.
 (*
   n : nat
-  IH : forall n0 : nat, n0 <= n -> forall p : nat, n0 * n0 = (p * p).*2 -> p = 0
+  IH : forall m : nat, m <= n -> forall p : nat, m * m = (p * p).*2 -> p = 0
   m : nat
   Hn : m <= n.+1
   p : nat
@@ -192,37 +187,39 @@ n/2 < n なので、
   p = 0
 *)
       apply: l_h0_0.
-      Check 2 %| p.
-      - by apply: (l_d2p Hmp).                (* pは2の倍数。 *)
-      Check p./2 = 0.
-      Check (IH m./2).
-      - apply: (IH m./2).
-        Check m./2 <= n.
-        + lia.
-          Check Hmp : m * m = (p * p).*2.
-          Check m./2 * m./2 = (p./2 * p./2).*2.
-        + by apply: ll_main_ih.
+      - by apply: (l_d2p Hmp).              (* pは2の倍数。 *)
+      - apply: (IH m./2); try lia.
+        by apply: ll_main_ih.
           
       Restart.
-
       move: n p => m.
       have [n] := ubnP m.
-      case: n => //= n Hn.                  (* ***** *)
-      elim: n m Hn.
-      - lia.
-      - move=> n IH m Hn p Hmp.
-        apply: l_h0_0.
-        + by apply: (l_d2p Hmp).                (* pは2の倍数。 *)
-        + apply: (IH m./2).
-          * lia.
-          * by apply: ll_main_ih.
+      case: n => //= n.                     (* ***** *)
+      elim: n m; try lia.
+      move=> n IH m Hn p Hmp.
+(*
+  n : nat
+  IH : forall m : nat, m < n.+1 -> forall p : nat, m * m = (p * p).*2 -> p = 0
+  m : nat
+  Hn : m < n.+2
+  p : nat
+  Hmp : m * m = (p * p).*2
+  ============================
+  p = 0
+*)
+      apply: l_h0_0.
+      - by apply: (l_d2p Hmp).              (* pは2の倍数。 *)
+      - apply: (IH m./2); try lia.
+        by apply: ll_main_ih.
     Qed.
+    
   End Nat.
 
 (*
 # 無理数
 *)
   Section Real.
+    
     Open Scope ring_scope.
     Import GRing.                        (* natrM *)
     Import Num.Theory.                   (* sqr_sqrtr, eqr_nat など *)
@@ -248,10 +245,10 @@ n/2 < n なので、
 *)
     Theorem irrational_sqrt_2 : irrational (Num.sqrt 2).
     Proof.
-      move=> p q Hq Hrt.
-      apply/Hq/(@main_thm p).
-      
-      apply/eqP.
+      move=> p q Hq.
+      (* 対偶を取る。ただし Hq は残しておく。 *)
+      apply: contra_not (Hq) => Hrt.
+      apply/(@main_thm p)/eqP.
       rewrite -(eqr_nat R) natrM -mul2n natrM.
       rewrite -(@sqr_sqrtr R 2) //= Hrt.
       apply/eqP.
