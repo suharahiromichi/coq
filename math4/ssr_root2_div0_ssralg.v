@@ -2,6 +2,7 @@
 2020_AW 6. 数の証明
 
 ``https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2020_AW/ssrcoq6.pdf``
+``file:///Users/suhara/Documents/CS%E6%96%87%E7%8C%AE/mathcomp/akr/202205%E5%A4%A9%E6%B3%A3%E8%A8%98.html``
 
 3. √2 が無理数
 
@@ -162,7 +163,7 @@ n/2 < n なので、
 (*
   n : nat
   Hn : 0 < n
-  IH : forall m : nat, (m < n)%coq_nat -> forall p : nat, m * m = (p * p).*2 -> p = 0
+  IH : forall n0 : nat, (n0 < n)%coq_nat -> forall p : nat, n0 * n0 = (p * p).*2 -> p = 0
   p : nat
   Hnp : n * n = (p * p).*2
   ============================
@@ -173,12 +174,14 @@ n/2 < n なので、
       - apply: (IH n./2); try lia.
         by apply: ll_main_ih.
         
-      Restart.
+(* *************************** *)
+      Restart. Show.
+      (* P n を forall m, m <= n -> P m に一般化してから普通の自然数の帰納法 (nat_ind) を使う。 *)
       elim: n {-2}n (leqnn n) p; try lia.
       move=> n IH m Hn p Hmp.
 (*
   n : nat
-  IH : forall m : nat, m <= n -> forall p : nat, m * m = (p * p).*2 -> p = 0
+  IH : forall n0 : nat, n0 <= n -> forall p : nat, n0 * n0 = (p * p).*2 -> p = 0
   m : nat
   Hn : m <= n.+1
   p : nat
@@ -190,16 +193,20 @@ n/2 < n なので、
       - by apply: (l_d2p Hmp).              (* pは2の倍数。 *)
       - apply: (IH m./2); try lia.
         by apply: ll_main_ih.
-          
-      Restart.
+        
+(* *************************** *)
+      Restart. Show.
       move: n p => m.
-      have [n] := ubnP m.
-      case: n => //= n.                     (* ***** *)
+      (* P n を forall m, m < n -> P m に一般化する。 *)
+      have [n] := ubnP m.                   (* upper bound Predicate *)
+      (* P n を forall m, m <= n -> P m に一般化する。 *)
+      case: n => //= n; rewrite ltnS.       (* ltnS はおまけ。 *)
+      (* 普通の自然数の帰納法 (nat_ind) を使う。 *)
       elim: n m; try lia.
       move=> n IH m Hn p Hmp.
 (*
   n : nat
-  IH : forall m : nat, m < n.+1 -> forall p : nat, m * m = (p * p).*2 -> p = 0
+  IH : forall n0 : nat, n0 < n.+1 -> forall p : nat, n0 * n0 = (p * p).*2 -> p = 0
   m : nat
   Hn : m < n.+2
   p : nat
