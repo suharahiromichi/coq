@@ -157,7 +157,8 @@ n/2 < n なので、
 
     Theorem main_thm (n p : nat) : n * n = (p * p).*2 -> p = 0.
     Proof.
-      elim/lt_wf_ind: n p => n.               (* 清礎帰納法 *)
+      move: p.
+      elim/lt_wf_ind: n => n.               (* 清礎帰納法 *)
       case: (posnP n); try lia.
       move=> Hn IH p Hnp.
 (*
@@ -176,8 +177,11 @@ n/2 < n なので、
         
 (* *************************** *)
       Restart. Show.
-      (* P n を forall m, m <= n -> P m に一般化してから普通の自然数の帰納法 (nat_ind) を使う。 *)
-      elim: n {-2}n (leqnn n) p; try lia.
+      move: p.
+      (* ``forall p, P n p`` を
+         ``forall m, m <= n -> forall p, P m p`` に一般化してから
+         普通の自然数の帰納法 (nat_ind) を使う。 *)
+      elim: n {-2}n (leqnn n); try lia.
       move=> n IH m Hn p Hmp.
 (*
   n : nat
@@ -196,10 +200,12 @@ n/2 < n なので、
         
 (* *************************** *)
       Restart. Show.
-      move: n p => m.
-      (* P n を forall m, m < n -> P m に一般化する。 *)
+      move: p.
+      (* ``forall p, P m p`` *)
+      move: n => m.
+      (* ``forall m, m < n -> (forall p, P m p)`` に一般化する。 *)
       have [n] := ubnP m.                   (* upper bound Predicate *)
-      (* P n を forall m, m <= n -> P m に一般化する。 *)
+      (* ``forall m, m <= n -> (forall p, P m p)`` にする。 *)
       case: n => //= n; rewrite ltnS.       (* ltnS はおまけ。 *)
       (* 普通の自然数の帰納法 (nat_ind) を使う。 *)
       elim: n m; try lia.
@@ -267,5 +273,105 @@ n/2 < n なので、
 
   End Real.
 End Root2.
+
+(* upper bound Predicate *)
+Section Ubn.
+
+  Variable P : nat -> nat -> bool.
+
+  (* ************** *)
+  (* 常套句シリーズ *)
+  (* ************** *)
+  (* 有名な常套句 *)
+  Goal forall n p, P n p.
+  Proof.
+    move=> n.
+    elim: n {-2}n (leqnn n) => [n Hn p | n IH m Hnm p].
+    - Check P n p.
+      admit.
+    - Check IH : forall n0 : nat, n0 <= n -> forall p : nat, P n0 p.
+      Check Hnm : m <= n.+1.
+  Abort.      
+
+  (* 完全に互換にするには、ubnP のあと n に下駄を履かせる。 *)
+  Goal forall n p, P n p.
+  Proof.
+    move=> m.
+    have [n] := ubnP m.
+    Check m < n -> forall p : nat, P m p.
+    case: n => //= n.                       (* ！！これが必要！！ *)
+    elim: n m => [n Hm p | n IH m Hnm p].
+    - Check P n p.
+      admit.
+    - Check IH : forall n0 : nat, n0 < n.+1 -> forall p : nat, P n0 p. (* n0 <= n *)
+      Check Hnm : m < n.+2.                 (* m <= n.+1 *)
+  Abort.
+  
+  (* ubnP と完全に互換なのは、この常套句である。 *)
+  Goal forall n p, P n p.
+  Proof.
+    move=> n.
+    elim: n.+1 {-2}n (ltnSn n) => [// | n' IH m Hnm p].
+    clear n.                              (* n が残るのが苦しい。 *)
+    move: n' IH Hnm => n IH Hnm.          (* n' を n に書き換える。 *)
+    Check IH : forall n0 : nat, n0 < n -> forall p : nat, P n0 p.
+    Check Hnm : m < n.+1.                   (* m <= n *)
+    Check P m p.
+    Abort.
+  
+  (* ************** *)
+  (* ubnP シリーズ  *)
+  (* ************** *)
+  Goal forall n p, P n p.
+  Proof.
+    move=> m.
+    have [n] := ubnP m.
+    Check m < n -> forall p : nat, P m p.
+    elim: n m => // n IH m Hn p.
+    Check IH : forall n0 : nat, n0 < n -> forall p : nat, P n0 p.
+    Check Hn : m < n.+1.                    (* m <= n *)
+    Check P m p.
+  Abort.
+
+  Goal forall n p, P n p.
+  Proof.
+    move=> m.
+    have [n] := ubnPgeq m.
+    Check n <= m -> forall p : nat, P n p.
+    elim: n m => [n Hn p | n IH m Hnm p].
+    - Check Hn : 0 <= n.
+      Check P 0 p.
+      admit.
+    - Check IH : forall n0 : nat, n <= n0 -> forall p : nat, P n p.
+      Check Hnm : n < m.
+  Abort.
+  
+  Goal forall n p, P n p.
+  Proof.
+    move=> m.
+    have [n] := ubnPleq m.
+    Check m <= n -> forall p : nat, P n p.
+    elim: n m => [n Hn p | n IH m Hnm p].
+    - Check Hn : n <= 0.
+      Check P 0 p.
+      admit.
+    - Check IH : forall n0 : nat, n0 <= n -> forall p : nat, P n p.
+      Check Hnm : m <= n.+1.
+  Abort.
+
+  Goal forall n p, P n p.
+  Proof.
+    move=> m.
+    have [n] := ubnPeq m.
+    Check m == n -> forall p : nat, P n p.
+    elim: n m => [n Hn p | n IH m Hnm p].
+    - Check Hn : n == 0.
+      Check P 0 p.
+      admit.
+    - Check IH : forall n0 : nat, n0 == n -> forall p : nat, P n p.
+      Check Hnm : m == n.+1.
+  Abort.
+  
+End Ubn.
 
 (* END *)
