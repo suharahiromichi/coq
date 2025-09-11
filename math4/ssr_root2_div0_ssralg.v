@@ -159,7 +159,7 @@ n/2 < n なので、
     Proof.
       move: p.
       elim/lt_wf_ind: n => n.               (* 清礎帰納法 *)
-      case: (posnP n); try lia.
+      case: (posnP n); try lia.             (* n に下駄を履かせる。 *)
       move=> Hn IH p Hnp.
 (*
   n : nat
@@ -206,7 +206,7 @@ n/2 < n なので、
       (* ``forall m, m < n -> (forall p, P m p)`` に一般化する。 *)
       have [n] := ubnP m.                   (* upper bound Predicate *)
       (* ``forall m, m <= n -> (forall p, P m p)`` にする。 *)
-      case: n => //= n; rewrite ltnS.       (* ltnS はおまけ。 *)
+      case: n => //= n; rewrite ltnS.        (* n に下駄を履かせる。 ltnS はおまけ。 *)
       (* 普通の自然数の帰納法 (nat_ind) を使う。 *)
       elim: n m; try lia.
       move=> n IH m Hn p Hmp.
@@ -279,6 +279,25 @@ Section Ubn.
 
   Variable P : nat -> nat -> bool.
 
+  (* *********** *)
+  (* バニラCoq   *)
+  (* *********** *)
+  (* ubnP と同じ。 *)
+  Goal forall n p, P n p.
+  Proof.
+    move=> n.
+    elim/lt_wf_ind: n => n IH p.
+    Check IH : forall n0 : nat, (n0 < n)%coq_nat -> forall p : nat, P n0 p.
+  Abort.
+  (* 上の問題では、n に下駄を履かせて使う。 *)
+
+  Goal forall n p, P n p.
+  Proof.
+    move=> n.
+    elim/gt_wf_ind: n => n IH p.
+    Check IH : forall n0 : nat, (n > n0)%coq_nat -> forall p : nat, P n0 p.
+  Abort.
+  
   (* ************** *)
   (* 常套句シリーズ *)
   (* ************** *)
@@ -293,13 +312,13 @@ Section Ubn.
       Check Hnm : m <= n.+1.
   Abort.      
 
-  (* 完全に互換にするには、ubnP のあと n に下駄を履かせる。 *)
+  (* 有名な常套句と同じにするには、ubnP の n に下駄を履かせる。 *)
   Goal forall n p, P n p.
   Proof.
     move=> m.
     have [n] := ubnP m.
     Check m < n -> forall p : nat, P m p.
-    case: n => //= n.                       (* ！！これが必要！！ *)
+    case: n => //= n.                       (* ！！下駄を履かせる！！ *)
     elim: n m => [n Hm p | n IH m Hnm p].
     - Check P n p.
       admit.
@@ -326,6 +345,12 @@ Section Ubn.
   Proof.
     move=> m.
     have [n] := ubnP m.
+(*
+  これの意味はわからない。
+    elim: n m => // n IH m => /ltnSE.
+    (* IH : forall m : nat, m < n -> P m *)
+    rewrite leq_eqVlt => /orP [/eqP -> {m}|]; last by apply IH.
+*)
     Check m < n -> forall p : nat, P m p.
     elim: n m => // n IH m Hn p.
     Check IH : forall n0 : nat, n0 < n -> forall p : nat, P n0 p.
