@@ -87,18 +87,46 @@ Section Root2.
     
   (**
 ## 証明したいもの ``sqrt 2`` は無理数である。
+
+√2 が無理数であるとは、
+互いに素な自然数 p q を使って、
+``p / q`` と表すことができない、ということである。
    *)
     Theorem irrational_sqrt_2 : irrational (Num.sqrt 2).
     Proof.
-      move=> p q Hq Hco Hrt.
+      move=> p q Hq Hco.
       move/negPn/negP in Hco.
-      apply/Hco/two_p2_implies_not_coprime.
-
+(*
+  Hq : q <> 0
+  Hco : ~ ~~ coprime p q
+  ============================
+  Num.sqrt 2 <> p%:R / q%:R
+*)
+(*
+      move=> Hrt.
+      Check Logic.False.                    (* Goal *)
+      apply: Hco.                           (* 対偶を取る。 *)
+*)      
+      apply: contra_not Hco => Hrt.         (* 対偶を取る。 *)
+(**
+対偶を取ると、
+``p / q`` と表すことができるなら、
+p q は互いに素ではない、ということになる。
+*)
+(*
+  Hq : q <> 0
+  Hrt : Num.sqrt 2 = p%:R / q%:R
+  ============================
+  ~~ coprime p q
+*)
+      apply: two_p2_implies_not_coprime.
+      Check (2 * q ^ 2)%N = (p ^ 2)%N.
+(**
+``2 * q^2 = p^2`` なら p q は互いに素ではないので、それを証明する。
+*)      
       apply/eqP.
       rewrite -(eqr_nat R) natrM.
       apply/eqP.
-      
-      Check @sqr_sqrtr R 2 : 0 <= 2 -> Num.sqrt 2 ^+ 2 = 2.
       rewrite -(@sqr_sqrtr R 2).
       
       Check Num.sqrt 2 ^+ 2 * (q ^ 2)%:R = (p ^ 2)%:R.
