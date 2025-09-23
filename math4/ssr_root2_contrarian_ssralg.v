@@ -15,7 +15,7 @@
 これはnが奇数ならn^2が奇数であることの対偶である。
 
 左辺は偶数なので、右辺の p^2 は偶数、よって p は偶数。
-右辺は4の倍数なので、左辺の q^2 は偶数、よって q は偶数。
+右辺は4の倍数なので、左辺の q^2 は2の倍数で偶数、よって q は偶数。
 p も q も偶数なので、互いに素ではない。
 
 
@@ -61,26 +61,70 @@ Section Root2.
     (**
 ## 自然数の補題
      *)
-    Lemma evenP n : reflect (exists m, n = 2 * m) (~~ odd n).
+    Lemma evenP n : reflect (exists m, n = m.*2) (~~ odd n).
     Proof.
       have -> : ~~ odd n = (2 %| n) by lia.
-      apply: (iffP eqP) => [md0 | [k ->]]; last by rewrite modnMr.
+      apply: (iffP eqP) => [md0 | [k ->]]; last by rewrite -mul2n modnMr.
       exists (n %/ 2).
       lia.
     Qed.
+    (* m * 2 にすると、even_not_coprime で展開される順番が変わり、done で終わらなくなる。 *)
     
-    (* これだと done がうまくいかないのは、なぜだろう。 *)
-    Lemma evenP' n : reflect (exists m, n = m * 2) (~~ odd n).
+    (* **************************** *)
+    Lemma oddP n : reflect (exists m, n = m.*2.+1) (odd n).
     Proof.
-      have -> : ~~ odd n = (2 %| n) by lia.
-      by apply: dvdnP.
+    Admitted.
+    
+    Lemma even_sq__even n : ~~ odd (n^2) <-> ~~ odd n.
+    Proof.
+      split.
+      - apply/contra => /oddP [m] Hn.
+        apply/oddP.
+        exists (m^2 + m).*2.
+        lia.
+      - by rewrite oddX.
     Qed.
+    
+    Lemma even_sq__evenE n : ~~ odd (n^2) = ~~ odd n.
+    Proof.
+      apply/idP/idP; by move/even_sq__even.
+    Qed.
+    
+    Lemma evenE n m : 2 * n = m -> ~~ odd m.
+    Proof.
+      lia.
+    Qed.
+    
+    Lemma evenE2 p q : ~~ odd p -> 2 * (q^2) = p^2 -> ~~ odd q.
+    Proof.
+      move=> Hp.
+      have H : p = p./2.*2 by rewrite (even_halfK (Hp)).
+      rewrite -even_sq__evenE in Hp.
+      rewrite H -muln2 expnMn.
+      have -> x : x * (2^2) = 2 * (x * 2) by lia.
+      have H2n2 x y : 2 * x = 2 * y -> x = y by lia.
+      move/H2n2.
+      rewrite mulnC.
+      by move/esym/evenE/even_sq__even.
+    Qed.
+    
+    Lemma two_p2_implies_not_coprime' (p q : nat) : 2 * q ^ 2 = p ^ 2 -> ~~ coprime p q.
+    Proof.
+      move=> H2qp.
+      move: (H2qp) => Hp.
+      move/evenE/even_sq__even in Hp.
+      move: (Hp) => Hq.
+      move/evenE2 in Hq.
+      move: (Hq q) => {} Hq.
+      move: (Hq H2qp) => {} Hq.
+    Admitted.
+    (* ******************************** *)
     
     Lemma even_not_coprime p q : ~~ odd p -> ~~ odd q -> ~~ coprime p q.
     Proof.
       move/evenP => [p' ->].
       move/evenP => [q' ->].
-      rewrite coprimeMl 2!coprimeMr.
+      rewrite -!mul2n coprimeMl 2!coprimeMr.
       Check ~~ [&& coprime 2 2 && coprime 2 q', coprime p' 2 & coprime p' q'].
       done.
     Qed.
