@@ -73,16 +73,18 @@ Section Root2.
     (* **************************** *)
     Lemma oddP n : reflect (exists m, n = m.*2.+1) (odd n).
     Proof.
-    Admitted.
+    Admitted.                               (* notu *)
     
     Lemma even_sq__even n : ~~ odd (n^2) <-> ~~ odd n.
     Proof.
+(*
       split.
       - apply/contra => /oddP [m] Hn.
         apply/oddP.
         exists (m^2 + m).*2.
         lia.
-      - by rewrite oddX.
+*)
+      by rewrite oddX.
     Qed.
     
     Lemma even_sq__evenE n : ~~ odd (n^2) = ~~ odd n.
