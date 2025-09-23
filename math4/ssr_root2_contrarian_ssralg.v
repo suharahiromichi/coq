@@ -9,7 +9,14 @@
 ``2 * q^2 = p^2`` ならば p と q は互いに素ではない。
 
 下記では、互いに素についての性質を使って証明しているが、
-それを避けることはできないだろうか。
+以下のように証明もできる。
+
+まず n^2 が偶数なら n も偶数である。
+これはnが奇数ならn^2が奇数であることの対偶である。
+
+左辺は偶数なので、右辺の p^2 は偶数、よって p は偶数。
+右辺は4の倍数なので、左辺の q^2 は偶数、よって q は偶数。
+p も q も偶数なので、互いに素ではない。
 
 
 # 有名な背理法をつかう証明
@@ -40,7 +47,6 @@
 主補題の証明に帰納法（整礎帰納法）を使わないことで、簡単であるといえる。
 また、Standard Coq の Real を使用せず、MathComp の rcfType を使用した。
 *)
-
 From mathcomp Require Import all_ssreflect.
 From mathcomp Require Import all_algebra.
 From mathcomp Require Import ssrZ zify ring lra.
