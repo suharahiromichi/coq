@@ -39,6 +39,7 @@ p も q も偶数なので、互いに素ではない。
 
 
 # 名大のcoqの授業
+see. ssr_root2_div0_ssralg.v
 
 - https://www.math.nagoya-u.ac.jp/~garrigue/lecture/2020_AW/ssrcoq6.pdf
 - https://gitlab.com/proofcafe/nu/-/blob/master/nu_ssrcoq6_3_root2.v
@@ -70,21 +71,48 @@ Section Root2.
     Qed.
     (* m * 2 にすると、even_not_coprime で展開される順番が変わり、done で終わらなくなる。 *)
     
-    (* **************************** *)
+    Lemma even_not_coprime p q : ~~ odd p -> ~~ odd q -> ~~ coprime p q.
+    Proof.
+      move/evenP => [p' ->].
+      move/evenP => [q' ->].
+      rewrite -!mul2n coprimeMl 2!coprimeMr.
+      Check ~~ [&& coprime 2 2 && coprime 2 q', coprime p' 2 & coprime p' q'].
+      done.
+    Qed.
+    
+    Lemma two_p2_implies_not_coprime (p q : nat) :
+      2 * q ^ 2 = p ^ 2 -> ~~ coprime p q.
+    Proof.
+      move=> H.
+      have Hq_even : ~~ odd p by lia.           (* q が偶数である。 *)
+      case: q H => [| q] H.
+      (* p = 0 の場合 *)
+      - rewrite /coprime gcdn0.
+        lia.
+      (* p != 0 の場合 *)
+      - have Hp_even : ~~ odd q.+1 by lia.      (* p が偶数である。 *)
+        by rewrite even_not_coprime.
+    Qed.
+
+    (* おまけ two_p2_implies_not_coprime の別証明。 *)
+    (* coprime や gcd の補題を使わないようにする。 *)
     Lemma oddP n : reflect (exists m, n = m.*2.+1) (odd n).
     Proof.
-    Admitted.                               (* notu *)
+      apply: (iffP idP) => [H | [m]].
+      - exists n.-1./2.
+        lia.
+      - lia.
+    Qed.
     
     Lemma even_sq__even n : ~~ odd (n^2) <-> ~~ odd n.
     Proof.
-(*
       split.
       - apply/contra => /oddP [m] Hn.
         apply/oddP.
         exists (m^2 + m).*2.
         lia.
-*)
-      by rewrite oddX.
+      - case/evenP => m ->.
+        lia.
     Qed.
     
     Lemma even_sq__evenE n : ~~ odd (n^2) = ~~ odd n.
@@ -110,6 +138,11 @@ Section Root2.
       by move/esym/evenE/even_sq__even.
     Qed.
     
+    Lemma even_even_not_coprime p q : ~~ odd p -> ~~ odd q -> ~~ coprime p q.
+    Proof.
+      (* これは明らかに成り立つが、証明は odd や coprime (gcd) の定義に遡る必要がある。  *)
+    Admitted.      
+    
     Lemma two_p2_implies_not_coprime' (p q : nat) : 2 * q ^ 2 = p ^ 2 -> ~~ coprime p q.
     Proof.
       move=> H2qp.
@@ -119,31 +152,11 @@ Section Root2.
       move/evenE2 in Hq.
       move: (Hq q) => {} Hq.
       move: (Hq H2qp) => {} Hq.
-    Admitted.
+      by apply: even_even_not_coprime.
+    Qed.
     (* ******************************** *)
     
-    Lemma even_not_coprime p q : ~~ odd p -> ~~ odd q -> ~~ coprime p q.
-    Proof.
-      move/evenP => [p' ->].
-      move/evenP => [q' ->].
-      rewrite -!mul2n coprimeMl 2!coprimeMr.
-      Check ~~ [&& coprime 2 2 && coprime 2 q', coprime p' 2 & coprime p' q'].
-      done.
-    Qed.
     
-    Lemma two_p2_implies_not_coprime (p q : nat) :
-      2 * q ^ 2 = p ^ 2 -> ~~ coprime p q.
-    Proof.
-      move=> H.
-      have Hq_even : ~~ odd p by lia.           (* q が偶数である。 *)
-      case: q H => [| q] H.
-      (* p = 0 の場合 *)
-      - rewrite /coprime gcdn0.
-        lia.
-      (* p != 0 の場合 *)
-      - have Hp_even : ~~ odd q.+1 by lia.      (* p が偶数である。 *)
-        by rewrite even_not_coprime.
-    Qed.
   End Nat.
   
   Section Real.
