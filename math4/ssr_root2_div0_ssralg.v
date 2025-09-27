@@ -132,6 +132,7 @@ Goal に直接 apply IH せず、一旦 p/2 = 0 に変換してからおこな�
 
 非形式的な証明：
 
+
 - 右辺は偶数なので、左辺も偶数なので、n は 偶数である。
 - nが偶数なら、両辺は 4 の倍数なので、p も 偶数である。
 - n = 2n' と p = 2p'を代入すると、再び n'*n' = 2*p'*p' , n'<n が得られる。
@@ -282,15 +283,35 @@ Section Ubn.
   (* *********** *)
   (* バニラCoq   *)
   (* *********** *)
+  (* Require Import Wf_nat.          (* 整礎帰納法 *) *)
+  Search "wf_ind".
+  Check lt_wf_ind : forall (n : nat) (P : nat -> Prop),
+      (forall n0 : nat, (forall m : nat, (m < n0)%coq_nat -> P m) -> P n0) -> P n.
+  Check gt_wf_ind : forall (n : nat) (P : nat -> Prop),
+      (forall n0 : nat, (forall m : nat, (n0 > m)%coq_nat -> P m) -> P n0) -> P n.
+  
   (* ubnP と同じ。 *)
   Goal forall n p, P n p.
   Proof.
     move=> n.
     elim/lt_wf_ind: n => n IH p.
     Check IH : forall n0 : nat, (n0 < n)%coq_nat -> forall p : nat, P n0 p.
+    Check P n p.
   Abort.
   (* 上の問題では、n に下駄を履かせて使う。 *)
 
+  Goal forall n p, P n p.
+  Proof.
+    move=> n.
+    elim/lt_wf_ind: n => n IH p.
+    case: (posnP n); try done.              (* n に下駄を履かせる。 *)
+    - Check IH : forall n0 : nat, (n0 < n)%coq_nat -> forall p : nat, P n0 p.
+      Check n = 0 -> P n p.
+      admit.
+    - Check IH : forall n0 : nat, (n0 < n)%coq_nat -> forall p : nat, P n0 p.
+      Check 0 < n -> P n p.
+  Abort.
+  
   Goal forall n p, P n p.
   Proof.
     move=> n.
@@ -305,11 +326,14 @@ Section Ubn.
   Goal forall n p, P n p.
   Proof.
     move=> n.
-    elim: n {-2}n (leqnn n) => [n Hn p | n IH m Hnm p].
+    move: n {-2}n (leqnn n) => n m.
+    Check m <= n -> forall p : nat, P m p.  (* ****** *)
+    elim: n m => [n Hn p | n IH m Hnm p].
     - Check P n p.
       admit.
     - Check IH : forall n0 : nat, n0 <= n -> forall p : nat, P n0 p.
       Check Hnm : m <= n.+1.
+      Check P m p.
   Abort.      
 
   (* 有名な常套句と同じにするには、ubnP の n に下駄を履かせる。 *)
@@ -319,18 +343,22 @@ Section Ubn.
     have [n] := ubnP m.
     Check m < n -> forall p : nat, P m p.
     case: n => //= n.                       (* ！！下駄を履かせる！！ *)
+    Check m < n.+1 -> forall p : nat, P m p. (* ****** *)
     elim: n m => [n Hm p | n IH m Hnm p].
     - Check P n p.
       admit.
     - Check IH : forall n0 : nat, n0 < n.+1 -> forall p : nat, P n0 p. (* n0 <= n *)
       Check Hnm : m < n.+2.                 (* m <= n.+1 *)
+      Check P m p.
   Abort.
   
   (* ubnP と完全に互換なのは、この常套句である。 *)
   Goal forall n p, P n p.
   Proof.
     move=> n.
-    elim: n.+1 {-2}n (ltnSn n) => [// | n' IH m Hnm p].
+    move: n.+1 {-2}n (ltnSn n).
+    Check forall n0 n1 : nat, n1 < n0 -> forall p : nat, P n1 p.
+    elim=> [// | n' IH m Hnm p].
     clear n.                              (* n が残るのが苦しい。 *)
     move: n' IH Hnm => n IH Hnm.          (* n' を n に書き換える。 *)
     Check IH : forall n0 : nat, n0 < n -> forall p : nat, P n0 p.
@@ -341,22 +369,22 @@ Section Ubn.
   (* ************** *)
   (* ubnP シリーズ  *)
   (* ************** *)
+  Check ubnP : forall m : nat, {n : nat | m < n}.
+  Check ubnPgeq : forall m : nat, ubn_geq_spec m m.
+  Check ubnPleq : forall m : nat, ubn_leq_spec m m.
+  Check ubnPeq : forall m : nat, ubn_eq_spec m m.
+  
   Goal forall n p, P n p.
   Proof.
     move=> m.
     have [n] := ubnP m.
-(*
-  これの意味はわからない。
-    elim: n m => // n IH m => /ltnSE.
-    (* IH : forall m : nat, m < n -> P m *)
-    rewrite leq_eqVlt => /orP [/eqP -> {m}|]; last by apply IH.
-*)
     Check m < n -> forall p : nat, P m p.
     elim: n m => // n IH m Hn p.
     Check IH : forall n0 : nat, n0 < n -> forall p : nat, P n0 p.
     Check Hn : m < n.+1.                    (* m <= n *)
     Check P m p.
   Abort.
+
 
   Goal forall n p, P n p.
   Proof.

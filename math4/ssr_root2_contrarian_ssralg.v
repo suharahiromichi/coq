@@ -1,10 +1,8 @@
 (**
 √2 が無理数
 
-高校数学の美しい物語 ルート２が無理数であることの４通りの証明
-- https://manabitimes.jp/math/1030
 
-# 補題：
+# 補題（素因数分解を用いた証明）
 
 ``2 * q^2 = p^2`` ならば p と q は互いに素ではない。
 
@@ -22,18 +20,18 @@ p も q も偶数なので、互いに素ではない。
 # 有名な背理法をつかう証明
 
 √2 が有理数と仮定する。ならば、
-互いに素な自然数 p と q を使って、√2 = p / q とおける。
-ゴールを両辺二乗して分母を払うと 2 * q^2 = p^2
+互いに素な自然数 p と q を使って、``√2 = p / q`` とおける。
+ゴールを両辺二乗して分母を払うと ``2 * q^2 = p^2``
 ゴールに補題を適用すると、p と q は互いに素ではない。
 矛盾なので、√2は有理数ではない。
 
 
-# 素因数分解を用いた証明
+# 背理法を使わない証明
 
 √2 が無理数であるなら、
 互いに素な自然数 p と q を使って、``p / q`` と表すことができない、
 これの対偶を取ると、``√2 = p / q`` なら、p と q は互いに素ではない。
-前提を両辺二乗して分母を払うと 2 * q^2 = p^2
+前提を両辺二乗して分母を払うと ``2 * q^2 = p^2``
 前提に補題を適用すると、p と q は互いに素ではない。
 よって、√2は無理数である。
 
@@ -69,13 +67,13 @@ Section Root2.
       exists (n %/ 2).
       lia.
     Qed.
-    (* m * 2 にすると、even_not_coprime で展開される順番が変わり、done で終わらなくなる。 *)
     
     Lemma even_not_coprime p q : ~~ odd p -> ~~ odd q -> ~~ coprime p q.
     Proof.
-      move/evenP => [p' ->].
-      move/evenP => [q' ->].
-      rewrite -!mul2n coprimeMl 2!coprimeMr.
+      case/evenP => [p' ->].
+      case/evenP => [q' ->].
+      rewrite -2!mul2n coprimeMl 2!coprimeMr.
+      (* ``m * 2`` にすると、even_not_coprime で展開される順番が変わり、done で終わらなくなる。 *)
       Check ~~ [&& coprime 2 2 && coprime 2 q', coprime p' 2 & coprime p' q'].
       done.
     Qed.
@@ -84,16 +82,17 @@ Section Root2.
       2 * q ^ 2 = p ^ 2 -> ~~ coprime p q.
     Proof.
       move=> H.
-      have Hq_even : ~~ odd p by lia.           (* q が偶数である。 *)
+      have Hq_even : ~~ odd p by lia.           (* p が偶数である。 *)
       case: q H => [| q] H.
-      (* p = 0 の場合 *)
+      (* q = 0 の場合 *)
       - rewrite /coprime gcdn0.
         lia.
-      (* p != 0 の場合 *)
-      - have Hp_even : ~~ odd q.+1 by lia.      (* p が偶数である。 *)
+      (* q != 0 の場合 *)
+      - have Hq1_even : ~~ odd q.+1 by lia.      (* q+1 が偶数である。 *)
         by rewrite even_not_coprime.
     Qed.
-
+    
+    (* ******************************** *)
     (* おまけ two_p2_implies_not_coprime の別証明。 *)
     (* coprime や gcd の補題を使わないようにする。 *)
     Lemma oddP n : reflect (exists m, n = m.*2.+1) (odd n).
@@ -138,24 +137,18 @@ Section Root2.
       by move/esym/evenE/even_sq__even.
     Qed.
     
-    Lemma even_even_not_coprime p q : ~~ odd p -> ~~ odd q -> ~~ coprime p q.
-    Proof.
-      (* これは明らかに成り立つが、証明は odd や coprime (gcd) の定義に遡る必要がある。  *)
-    Admitted.      
-    
     Lemma two_p2_implies_not_coprime' (p q : nat) : 2 * q ^ 2 = p ^ 2 -> ~~ coprime p q.
     Proof.
       move=> H2qp.
       move: (H2qp) => Hp.
-      move/evenE/even_sq__even in Hp.
+      move/evenE/even_sq__even in Hp.       (* p は偶数である。 *)
       move: (Hp) => Hq.
       move/evenE2 in Hq.
       move: (Hq q) => {} Hq.
-      move: (Hq H2qp) => {} Hq.
-      by apply: even_even_not_coprime.
+      move: (Hq H2qp) => {} Hq.             (* q は偶数である。 *)
+      by apply: even_not_coprime.           (* 前出 *)
     Qed.
     (* ******************************** *)
-    
     
   End Nat.
   
@@ -167,7 +160,7 @@ Section Root2.
     Variable R : rcfType.                   (* sqrt が計算できる型 *)
     
     Search "sqrt".
-    Check Num.Theory.sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> Num.sqrt a ^+ 2 = a.
+    Check Num.Theory.sqr_sqrtr : forall (R : rcfType) (a : R), 0 <= a -> (Num.sqrt a) ^+ 2 = a.
     
     (* R と nat の相互変換 *)
     Check eqr_nat R : forall m n : nat, (m%:R == n%:R) = (m == n).
@@ -231,7 +224,7 @@ p q は互いに素ではない、ということになる。
         lia.
         
       Check 0 <= 2.
-      - auto.
+      - done.
       (*
       - move/eqP in Hq.
         rewrite -(eqr_nat R) in Hq.
