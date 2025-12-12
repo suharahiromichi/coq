@@ -16,11 +16,11 @@ foreach $pkg (@list)
     {
         $ocaml = $1;
     }
-    elsif ($pkg =~ /^coq\s+(\S+)\s/)
+    elsif ($pkg =~ /^rocq\-core\s+(\S+)\s/)
     {
         $coq = $1;
     }
-    elsif ($pkg =~ /^coq-mathcomp-ssreflect\s+(\S+)\s/)
+    elsif ($pkg =~ /^rocq-mathcomp-ssreflect\s+(\S+)\s/)
     {
         $mathcomp = $1;
     }
@@ -32,11 +32,11 @@ foreach $pkg (@list)
     {
         $elpi = $1;
     }
-    elsif ($pkg =~ /^coq-elpi\s+(\S+)\s/)
+    elsif ($pkg =~ /^rocq-elpi\s+(\S+)\s/)
     {
         $coq_elpi = $1;
     }
-    elsif ($pkg =~ /^coq-hierarchy-builder\s+(\S+)\s/)
+    elsif ($pkg =~ /^rocq-hierarchy-builder\s+(\S+)\s/)
     {
         $hb = $1;
     }
