@@ -11,7 +11,8 @@
 # はじめに
 
 いろいろな整数割算をみてみる。
-計算をすることを前提に。
+
+計算をすることを前提にゼロ割は考慮せず、できるだけ簡単な式で求める。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -337,11 +338,10 @@ Qed.
 
 Definition edivmod_t (m d : int) : int * int :=
   let: (q, r) := tdivmod m d in
-  if (r == 0) then (q, r)
-  else if (0 <= r) then (q, r)
+  if (0 <= r) then (q, r)
   else
     let: r1 := r + d in
-    if (0 <= r1) && (r1 < `|d|) then (q - 1, r1)
+    if (0 <= r1) && (r1 < d) then (q - 1, r1)
     else (q + 1, r - d).
 
 (**
@@ -367,7 +367,7 @@ Qed.
 剰余の範囲を確認する。
  *)
 Goal forall m d : int, d != 0 ->
-                   let: (q, r) := edivmod_t m d in r < `| d |.
+                   let: (q, r) := edivmod_t m d in 0 <= r < `|d|.
 Proof.
   move=> m n Hd //=.
   rewrite /edivmod_t /tdivmod.
