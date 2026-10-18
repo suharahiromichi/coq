@@ -11,7 +11,8 @@
 # はじめに
 
 いろいろな整数割算をみてみる。
-証明をすることを前提に。
+
+切り上げ割り算と切り捨て割り算を定義し場合分を明確のしたうえで、証明をする。
 *)
 
 From mathcomp Require Import all_ssreflect.
@@ -122,9 +123,12 @@ Compute edivmod (-1) (-3).                  (* 1, 2 *)
 (**
 ゼロ割
  *)
-Goal forall m : int, let: (q, r) := edivmod m 0 in q == 0.
+Goal forall m : int, let: (q, r) := edivmod m 0 in q == 0 /\ r == m.
 Proof.
-  done.
+  move=> m.
+  rewrite /edivmod /divmod_floor /divmod_ceil /div_floor /div_ceil.
+  rewrite /=.
+  lia.
 Qed.
 
 (**
@@ -203,11 +207,12 @@ Compute tdivmod (-1) (-3).                  (* 0, -1 *)
 (**
 ゼロ割
  *)
-Goal forall m : int, let: (q, r) := tdivmod m 0 in q == 0.
+Goal forall m : int, let: (q, r) := tdivmod m 0 in q == 0 /\ r == m.
 Proof.
   move=> m.
   rewrite /tdivmod /divmod_ceil /divmod_floor /div_ceil /div_floor.
-  by rewrite /= if_same.
+  rewrite /= if_same.
+  lia.
 Qed.
 
 (**
@@ -283,11 +288,12 @@ Compute fdivmod (-1) (-3).                  (* 0, -1 *)
 (**
 ゼロ割
  *)
-Goal forall m : int, let: (q, r) := fdivmod m 0 in q == 0.
+Goal forall m : int, let: (q, r) := fdivmod m 0 in q == 0 /\ r == m.
 Proof.
   move=> m.
   rewrite /fdivmod /divmod_floor /div_floor.
-  by rewrite /=.
+  rewrite /=.
+  lia.
 Qed.
 
 (**
@@ -363,11 +369,12 @@ Compute sdivmod (-1) (-3).                  (* 1, 2 *)
 (**
 ゼロ割
  *)
-Goal forall m : int, let: (q, r) := sdivmod m 0 in q == 0.
+Goal forall m : int, let: (q, r) := sdivmod m 0 in q == 0 /\ r == m.
 Proof.
   move=> m.
   rewrite /sdivmod /divmod_floor /divmod_ceil /div_floor /div_ceil.
-  by rewrite /= if_same.
+  rewrite /= if_same.
+  lia.
 Qed.
 
 (**
