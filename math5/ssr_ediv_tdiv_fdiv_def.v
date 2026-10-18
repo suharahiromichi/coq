@@ -99,7 +99,8 @@ Qed.
  *)
 
 Definition edivmod (m d : int) :=
-  if (0 < d) then divmod_floor m d else divmod_ceil m d.
+  if (0 <= d) then divmod_floor m d
+  else divmod_ceil m d.
 
 (**
 例
@@ -169,11 +170,10 @@ Qed.
 *)
 
 Definition tdivmod (m d : int) :=
-  if (0 < m) then
+  if (0 <= m) then
     if (0 < d) then divmod_floor m d else divmod_ceil m d
-  else if (m < 0) then
-    if (0 < d) then divmod_ceil m d else divmod_floor m d
-  else (0, 0).                              (* m == 0 *)
+  else
+    if (0 < d) then divmod_ceil m d else divmod_floor m d.
 
 (**
 例
@@ -243,7 +243,7 @@ Qed.
 - Python の ``%%``
 *)
 
-Definition fdivmod (m d : int) := if (m == 0) then (0, 0) else divmod_floor m d.
+Definition fdivmod (m d : int) := divmod_floor m d.
 
 (**
 例
@@ -312,9 +312,9 @@ Qed.
  *)
 
 Definition sdivmod (m d : int) :=
-  if (0 < m) then divmod_floor m d
-  else if (m < 0) then divmod_ceil m d
-  else (0, 0).                              (* m == 0 *)
+  if (0 <= m) then divmod_floor m d
+  else divmod_ceil m d.
+
 (**
 例
 *)
