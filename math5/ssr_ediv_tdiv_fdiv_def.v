@@ -34,7 +34,8 @@ Open Scope ring_scope.       (* 環の四則演算を使えるようにする。
 ## 切り捨て割り算
 *)
 Definition div_floor (m d : int) :=
-  if (m %% d == 0)%Z then (m %/ d)%Z
+  if (d == 0) then 0
+  else if (m %% d == 0)%Z then (m %/ d)%Z
   else if (0 < d) then (m %/ d)%Z else (m %/ d)%Z - 1.
 
 Definition divmod_floor (m d : int) :=
@@ -64,7 +65,8 @@ Qed.
 ## 切り上げ割り算
 *)
 Definition div_ceil (m d : int) :=
-  if (m %% d == 0)%Z then (m %/ d)%Z
+  if (d == 0) then 0
+  else if (m %% d == 0)%Z then (m %/ d)%Z
   else if (0 < d) then (m %/ d)%Z + 1 else (m %/ d)%Z.
 
 Definition divmod_ceil (m d : int) :=
@@ -116,6 +118,14 @@ Compute edivmod 1 3.                        (* 0, 1 *)
 Compute edivmod 1 (-3).                     (* 0, 1 *)
 Compute edivmod (-1) 3.                     (* -1, 2 *)
 Compute edivmod (-1) (-3).                  (* 1, 2 *)
+
+(**
+ゼロ割
+ *)
+Goal forall m : int, let: (q, r) := edivmod m 0 in q == 0.
+Proof.
+  done.
+Qed.
 
 (**
 被除数に戻ること。
@@ -191,6 +201,16 @@ Compute tdivmod (-1) 3.                     (* 0, -1 *)
 Compute tdivmod (-1) (-3).                  (* 0, -1 *)
 
 (**
+ゼロ割
+ *)
+Goal forall m : int, let: (q, r) := tdivmod m 0 in q == 0.
+Proof.
+  move=> m.
+  rewrite /tdivmod /divmod_ceil /divmod_floor /div_ceil /div_floor.
+  by rewrite /= if_same.
+Qed.
+
+(**
 被除数に戻ること。
  *)
 Goal forall m d : int, d != 0 ->
@@ -261,6 +281,16 @@ Compute fdivmod (-1) 3.                     (* -1, 2 *)
 Compute fdivmod (-1) (-3).                  (* 0, -1 *)
 
 (**
+ゼロ割
+ *)
+Goal forall m : int, let: (q, r) := fdivmod m 0 in q == 0.
+Proof.
+  move=> m.
+  rewrite /fdivmod /divmod_floor /div_floor.
+  by rewrite /=.
+Qed.
+
+(**
 被除数に戻ること。
  *)
 Goal forall m d : int, d != 0 ->
@@ -329,6 +359,16 @@ Compute sdivmod 1 3.                        (* 0, 1 *)
 Compute sdivmod 1 (-3).                     (* -1, -2 *)
 Compute sdivmod (-1) 3.                     (* 0, -1 *)
 Compute sdivmod (-1) (-3).                  (* 1, 2 *)
+
+(**
+ゼロ割
+ *)
+Goal forall m : int, let: (q, r) := sdivmod m 0 in q == 0.
+Proof.
+  move=> m.
+  rewrite /sdivmod /divmod_floor /divmod_ceil /div_floor /div_ceil.
+  by rewrite /= if_same.
+Qed.
 
 (**
 被除数に戻ること。
