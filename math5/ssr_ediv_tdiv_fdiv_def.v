@@ -412,7 +412,6 @@ Qed.
 (**
 まとめた式
 *)
-
 Goal forall m d : int, d != 0 -> let: (q, r) := sdivmod m d in
                              if (0 < q) then 0 <= r < `|d|
                              else if (q < 0) then - `|d| < r <= 0

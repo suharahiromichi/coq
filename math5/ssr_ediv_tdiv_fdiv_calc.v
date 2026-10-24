@@ -341,7 +341,7 @@ Definition edivmod_t (m d : int) : int * int :=
   if (0 <= r) then (q, r)
   else
     let: r1 := r + d in
-    if (0 <= r1) && (r1 < d) then (q - 1, r1)
+    if (0 <= r1) then (q - 1, r1)
     else (q + 1, r - d).
 
 (**
@@ -351,6 +351,13 @@ Compute edivmod_t 10 3.                     (* 3, 1 *)
 Compute edivmod_t 10 (-3).                  (* -3, 1 *)
 Compute edivmod_t (-10) 3.                  (* -4, 2 *)
 Compute edivmod_t (-10) (-3).               (* 4, 2 *)
+
+Compute edivmod_t 0 3.                      (* 0, 0 *)
+Compute edivmod_t 0 (-3).                   (* 0, 0 *)
+Compute edivmod_t 1 3.                      (* 0, 1 *)
+Compute edivmod_t 1 (-3).                   (* 0, 1 *)
+Compute edivmod_t (-1) 3.                   (* -1, 2 *)
+Compute edivmod_t (-1) (-3).                (* 1, 2 *)
 
 (**
 被除数に戻ること。
@@ -392,6 +399,13 @@ Compute edivmod_f 10 3.                     (* 3, 1 *)
 Compute edivmod_f 10 (-3).                  (* -3, 1 *)
 Compute edivmod_f (-10) 3.                  (* -4, 2 *)
 Compute edivmod_f (-10) (-3).               (* 4, 2 *)
+
+Compute edivmod_f 0 3.                      (* 0, 0 *)
+Compute edivmod_f 0 (-3).                   (* 0, 0 *)
+Compute edivmod_f 1 3.                      (* 0, 1 *)
+Compute edivmod_f 1 (-3).                   (* 0, 1 *)
+Compute edivmod_f (-1) 3.                   (* -1, 2 *)
+Compute edivmod_f (-1) (-3).                (* 1, 2 *)
 
 (**
 被除数に戻ること。
@@ -435,6 +449,13 @@ Compute edivmod_s 10 3.                     (* 3, 1 *)
 Compute edivmod_s 10 (-3).                  (* -3, 1 *)
 Compute edivmod_s (-10) 3.                  (* -4, 2 *)
 Compute edivmod_s (-10) (-3).               (* 4, 2 *)
+
+Compute edivmod_s 0 3.                      (* 0, 0 *)
+Compute edivmod_s 0 (-3).                   (* 0, 0 *)
+Compute edivmod_s 1 3.                      (* 0, 1 *)
+Compute edivmod_s 1 (-3).                   (* 0, 1 *)
+Compute edivmod_s (-1) 3.                   (* -1, 2 *)
+Compute edivmod_s (-1) (-3).                (* 1, 2 *)
 
 (**
 被除数に戻ること。
